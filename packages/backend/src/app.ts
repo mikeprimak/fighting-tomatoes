@@ -1,66 +1,45 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
-import { PrismaClient } from '@prisma/client';
-import routes from './routes';
+// packages/backend/src/app.ts
+import express from 'express'
+import helmet from 'helmet'
+import morgan from 'morgan'
+import corsMiddleware from './middleware/cors'
+import { errorHandler } from './middleware/errorHandler'
+import authRoutes from './routes/auth'
 
-const app = express();
+const app = express()
 
-// Initialize Prisma Client
-export const prisma = new PrismaClient({
-  log: ['query', 'info', 'warn', 'error'],
-});
+// Security middleware
+app.use(helmet())
+app.use(corsMiddleware)
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-});
+// Logging
+app.use(morgan('combined'))
 
-// Middleware
-app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
-  credentials: true,
-}));
-app.use(limiter);
-app.use(morgan('combined'));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+// Body parsing
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
-// Health check endpoint
+// Health check
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
-    service: 'Fighting Tomatoes API'
-  });
-});
+    environment: process.env.NODE_ENV || 'development'
+  })
+})
 
 // API routes
-app.use('/api', routes);
+app.use('/api/auth', authRoutes)
 
 // 404 handler
 app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+  res.status(404).json({
+    error: 'Route not found',
+    code: 'ROUTE_NOT_FOUND'
+  })
+})
 
-// Error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Error:', err);
-  res.status(err.status || 500).json({
-    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
-  });
-});
+// Error handling
+app.use(errorHandler)
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('Shutting down gracefully...');
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
-export default app;
+export default app
