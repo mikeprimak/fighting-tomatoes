@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: yourapp-postgres
+    restart: unless-stopped
+    ports:
+      - "5433:5432"  # External port 5433 to avoid conflicts
+    environment:
+      POSTGRES_DB: yourapp_dev
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_HOST_AUTH_METHOD: md5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d  # For any init scripts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev -d yourapp_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis for sessions/caching (optional but good for enterprise apps)
+  redis:
+    image: redis:7-alpine
+    container_name: yourapp-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Backend API (when ready)
+  api:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile
+    container_name: yourapp-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://dev:devpassword@postgres:5432/yourapp_dev
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: your-jwt-secret-change-in-production
+      PORT: 3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/backend:/app
+      - /app/node_modules
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: yourapp-network 

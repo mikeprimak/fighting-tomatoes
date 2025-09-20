@@ -1,0 +1,21 @@
+{
+  "name": "@yourapp/shared",
+  "version": "1.0.0",
+  "description": "Shared types and utilities for Fighting Tomatoes",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist && rm -rf node_modules",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.22.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.1.6"
+  }
+} 

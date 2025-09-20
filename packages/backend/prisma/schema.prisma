@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Authentication & Management
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String   // hashed
+  firstName String?
+  lastName  String?
+  avatar    String?  // URL to avatar image
+  
+  // Account status
+  isActive    Boolean   @default(true)
+  isVerified  Boolean   @default(false)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastLogin DateTime?
+  
+  // Relations
+  sessions     Session[]
+  fightRatings FightRating[]
+  
+  @@map("users")
+}
+
+// JWT Session Management (for refresh tokens)
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  refreshToken String   @unique
+  deviceInfo   String?  // User agent, device type
+  ipAddress    String?
+  expiresAt    DateTime
+  isRevoked    Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sessions")
+}
+
+// Fighting Tomatoes - Combat Sports Domain Models
+
+// Organizations (UFC, Bellator, ONE FC, etc.)
+model Organization {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  shortName String   @unique // "UFC", "Bellator", etc.
+  logoUrl   String?
+  isActive  Boolean  @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  events Event[]
+  
+  @@map("organizations")
+}
+
+// Events (UFC 295, Bellator 300, etc.)
+model Event {
+  id             String        @id @default(cuid())
+  name           String        // "UFC 295: Prochazka vs Pereira"
+  shortName      String        // "UFC 295"
+  date           DateTime
+  venue          String?       // "Madison Square Garden"
+  location       String?       // "New York, NY"
+  posterUrl      String?
+  isComplete     Boolean       @default(false)
+  
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  fights Fight[]
+  
+  @@map("events")
+}
+
+// Individual Fighters
+model Fighter {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  nickname    String?  // "The Spider", "Bones", etc.
+  photoUrl    String?
+  record      String?  // "25-7-0"
+  weightClass String?  // "Middleweight", "Light Heavyweight"
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations - fighters can be in multiple fights
+  fighterAFights Fight[] @relation("FighterA")
+  fighterBFights Fight[] @relation("FighterB")
+  
+  @@map("fighters")
+}
+
+// Individual Fights
+model Fight {
+  id          String    @id @default(cuid())
+  
+  // Fight details
+  fightOrder  Int       // Main event = 1, Co-main = 2, etc.
+  weightClass String?   // "Middleweight", "Catchweight"
+  rounds      Int       @default(3)
+  isTitle     Boolean   @default(false)
+  
+  // Result (filled after fight)
+  result      String?   // "Decision", "KO", "Submission", "Draw", "No Contest"
+  winner      String?   // "fighterA", "fighterB", "draw", "no_contest"
+  endRound    Int?
+  endTime     String?   // "2:34"
+  
+  // Relations
+  eventId     String
+  event       Event     @relation(fields: [eventId], references: [id])
+  
+  fighterAId  String
+  fighterA    Fighter   @relation("FighterA", fields: [fighterAId], references: [id])
+  
+  fighterBId  String
+  fighterB    Fighter   @relation("FighterB", fields: [fighterBId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  ratings FightRating[]
+  
+  @@map("fights")
+}
+
+// User Ratings for Fights (the core feature!)
+model FightRating {
+  id       String @id @default(cuid())
+  rating   Int    // 1-10 scale
+  comment  String? // Optional comment about the fight
+  
+  // Relations
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  fightId  String
+  fight    Fight  @relation(fields: [fightId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Ensure one rating per user per fight
+  @@unique([userId, fightId])
+  @@map("fight_ratings")
+}
