@@ -28,6 +28,11 @@ model User {
   appleId           String?   @unique
   refreshTokens     RefreshToken[]
   
+  
+  emailVerificationExpires DateTime?
+  passwordResetToken       String?
+  passwordResetExpires     DateTime?
+  
   // Profile settings
   isActive          Boolean   @default(true)
   isEmailVerified   Boolean   @default(false)
