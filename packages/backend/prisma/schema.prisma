@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Fighting Tomatoes Database Schema
+// Modern PostgreSQL schema using Prisma ORM
 
 generator client {
   provider = "prisma-client-js"
@@ -10,165 +10,575 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User Authentication & Management
+// ============== USERS ==============
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  username  String   @unique
-  password  String   // hashed
-  firstName String?
-  lastName  String?
-  avatar    String?  // URL to avatar image
+  id                String    @id @default(uuid())
+  email             String    @unique
+  emailVerified     Boolean   @default(false)
+  emailVerificationToken String?
+  password          String?   // nullable for OAuth users
+  firstName         String?
+  lastName          String?
+  displayName       String?
+  avatar            String?
   
-  // Account status
-  isActive    Boolean   @default(true)
-  isVerified  Boolean   @default(false)
+  // Authentication
+  authProvider      AuthProvider @default(EMAIL)
+  googleId          String?   @unique
+  appleId           String?   @unique
+  refreshTokens     RefreshToken[]
+  
+  // Profile settings
+  isActive          Boolean   @default(true)
+  isEmailVerified   Boolean   @default(false)
+  wantsEmails       Boolean   @default(true)
+  
+  // Media/Professional users
+  isMedia           Boolean   @default(false)
+  mediaOrganization String?
+  mediaWebsite      String?
+  
+  // Gamification & Stats
+  points            Int       @default(0)
+  level             Int       @default(1)
+  totalRatings      Int       @default(0)
+  totalReviews      Int       @default(0)
+  upvotesReceived   Int       @default(0)
+  downvotesReceived Int       @default(0)
+  accuracyScore     Float     @default(0)  // prediction accuracy
   
   // Timestamps
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  lastLogin DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  lastLoginAt       DateTime?
   
   // Relations
-  sessions     Session[]
-  fightRatings FightRating[]
+  ratings           FightRating[]
+  reviews           FightReview[]
+  predictions       FightPrediction[]
+  followedFighters  UserFighterFollow[]
+  fightAlerts       FightAlert[]
+  reviewVotes       ReviewVote[]
+  activityLog       UserActivity[]
+  notifications     UserNotification[]
   
   @@map("users")
 }
 
-// JWT Session Management (for refresh tokens)
-model Session {
-  id           String   @id @default(cuid())
-  userId       String
-  refreshToken String   @unique
-  deviceInfo   String?  // User agent, device type
-  ipAddress    String?
-  expiresAt    DateTime
-  isRevoked    Boolean  @default(false)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@map("sessions")
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  APPLE
 }
 
-// Fighting Tomatoes - Combat Sports Domain Models
-
-// Organizations (UFC, Bellator, ONE FC, etc.)
-model Organization {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  shortName String   @unique // "UFC", "Bellator", etc.
-  logoUrl   String?
-  isActive  Boolean  @default(true)
-  
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
   
-  // Relations
-  events Event[]
-  
-  @@map("organizations")
+  @@map("refresh_tokens")
 }
 
-// Events (UFC 295, Bellator 300, etc.)
-model Event {
-  id             String        @id @default(cuid())
-  name           String        // "UFC 295: Prochazka vs Pereira"
-  shortName      String        // "UFC 295"
-  date           DateTime
-  venue          String?       // "Madison Square Garden"
-  location       String?       // "New York, NY"
-  posterUrl      String?
-  isComplete     Boolean       @default(false)
-  
-  organizationId String
-  organization   Organization  @relation(fields: [organizationId], references: [id])
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  fights Fight[]
-  
-  @@map("events")
-}
-
-// Individual Fighters
+// ============== FIGHTERS ==============
 model Fighter {
-  id          String   @id @default(cuid())
-  firstName   String
-  lastName    String
-  nickname    String?  // "The Spider", "Bones", etc.
-  photoUrl    String?
-  record      String?  // "25-7-0"
-  weightClass String?  // "Middleweight", "Light Heavyweight"
+  id              String    @id @default(uuid())
+  firstName       String
+  lastName        String
+  nickname        String?
   
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Record
+  wins            Int       @default(0)
+  losses          Int       @default(0)
+  draws           Int       @default(0)
+  noContests      Int       @default(0)
   
-  // Relations - fighters can be in multiple fights
-  fighterAFights Fight[] @relation("FighterA")
-  fighterBFights Fight[] @relation("FighterB")
+  // Profile
+  profileImage    String?   // headshot
+  actionImage     String?   // action shot
+  weightClass     WeightClass?
+  sport           Sport     @default(MMA)
+  gender          Gender
+  isActive        Boolean   @default(true)
+  isChampion      Boolean   @default(false)
+  championshipTitle String?
+  
+  // Stats
+  averageRating   Float     @default(0)
+  totalRatings    Int       @default(0)
+  totalFights     Int       @default(0)
+  greatFights     Int       @default(0) // fights rated 85+
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  fightsAsFighter1 Fight[]  @relation("Fighter1")
+  fightsAsFighter2 Fight[]  @relation("Fighter2")
+  followers        UserFighterFollow[]
   
   @@map("fighters")
 }
 
-// Individual Fights
+enum WeightClass {
+  STRAWWEIGHT
+  FLYWEIGHT
+  BANTAMWEIGHT
+  FEATHERWEIGHT
+  LIGHTWEIGHT
+  WELTERWEIGHT
+  MIDDLEWEIGHT
+  LIGHT_HEAVYWEIGHT
+  HEAVYWEIGHT
+  SUPER_HEAVYWEIGHT
+  // Women's divisions
+  WOMENS_STRAWWEIGHT
+  WOMENS_FLYWEIGHT
+  WOMENS_BANTAMWEIGHT
+  WOMENS_FEATHERWEIGHT
+}
+
+enum Sport {
+  MMA
+  BOXING
+  BARE_KNUCKLE_BOXING
+  MUAY_THAI
+  KICKBOXING
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+// ============== EVENTS ==============
+model Event {
+  id                String    @id @default(uuid())
+  name              String
+  promotion         String    // UFC, Bellator, etc.
+  date              DateTime
+  venue             String?
+  location          String?
+  
+  // Timing
+  prelimStartTime   DateTime?
+  mainStartTime     DateTime?
+  
+  // Media
+  bannerImage       String?
+  
+  // Viewing info
+  mainChannel       String?   // ESPN+, DAZN, etc.
+  mainLink          String?
+  prelimChannel     String?
+  prelimLink        String?
+  
+  // Stats
+  averageRating     Float     @default(0)
+  totalRatings      Int       @default(0)
+  greatFights       Int       @default(0) // fights rated 85+
+  
+  // Status
+  hasStarted        Boolean   @default(false)
+  isComplete        Boolean   @default(false)
+  
+  // Timestamps
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  fights            Fight[]
+  
+  @@map("events")
+}
+
+// ============== FIGHTS ==============
 model Fight {
-  id          String    @id @default(cuid())
+  id              String    @id @default(uuid())
+  
+  // Event relationship
+  eventId         String
+  event           Event     @relation(fields: [eventId], references: [id])
+  
+  // Fighters
+  fighter1Id      String
+  fighter1        Fighter   @relation("Fighter1", fields: [fighter1Id], references: [id])
+  fighter2Id      String
+  fighter2        Fighter   @relation("Fighter2", fields: [fighter2Id], references: [id])
   
   // Fight details
-  fightOrder  Int       // Main event = 1, Co-main = 2, etc.
-  weightClass String?   // "Middleweight", "Catchweight"
-  rounds      Int       @default(3)
-  isTitle     Boolean   @default(false)
+  weightClass     WeightClass?
+  isTitle         Boolean   @default(false)
+  titleName       String?   // "UFC Heavyweight Championship"
+  orderOnCard     Int       // 1 = main event, higher numbers = earlier fights
   
-  // Result (filled after fight)
-  result      String?   // "Decision", "KO", "Submission", "Draw", "No Contest"
-  winner      String?   // "fighterA", "fighterB", "draw", "no_contest"
-  endRound    Int?
-  endTime     String?   // "2:34"
+  // Result
+  winner          String?   // fighter1Id, fighter2Id, or "draw"/"nc"
+  method          String?   // "KO", "TKO", "Submission", "Decision"
+  round           Int?
+  time            String?   // "4:37"
+  
+  // Ratings & Stats
+  averageRating   Float     @default(0)
+  totalRatings    Int       @default(0)
+  totalReviews    Int       @default(0)
+  
+  // Rating distribution (for analytics)
+  ratings1        Int       @default(0)
+  ratings2        Int       @default(0)
+  ratings3        Int       @default(0)
+  ratings4        Int       @default(0)
+  ratings5        Int       @default(0)
+  ratings6        Int       @default(0)
+  ratings7        Int       @default(0)
+  ratings8        Int       @default(0)
+  ratings9        Int       @default(0)
+  ratings10       Int       @default(0)
+  
+  // Status
+  hasStarted      Boolean   @default(false)
+  isComplete      Boolean   @default(false)
+  
+  // Media
+  highlightUrl    String?
+  thumbnailUrl    String?
+  
+  // Watch info
+  watchPlatform   String?
+  watchUrl        String?
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   
   // Relations
-  eventId     String
-  event       Event     @relation(fields: [eventId], references: [id])
-  
-  fighterAId  String
-  fighterA    Fighter   @relation("FighterA", fields: [fighterAId], references: [id])
-  
-  fighterBId  String
-  fighterB    Fighter   @relation("FighterB", fields: [fighterBId], references: [id])
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Relations
-  ratings FightRating[]
+  ratings         FightRating[]
+  reviews         FightReview[]
+  predictions     FightPrediction[]
+  tags            FightTag[]
+  alerts          FightAlert[]
   
   @@map("fights")
 }
 
-// User Ratings for Fights (the core feature!)
+// ============== RATINGS ==============
 model FightRating {
-  id       String @id @default(cuid())
-  rating   Int    // 1-10 scale
-  comment  String? // Optional comment about the fight
+  id          String    @id @default(uuid())
   
-  // Relations
-  userId   String
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Relationships
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fightId     String
+  fight       Fight     @relation(fields: [fightId], references: [id], onDelete: Cascade)
   
-  fightId  String
-  fight    Fight  @relation(fields: [fightId], references: [id], onDelete: Cascade)
+  // Rating
+  rating      Int       // 1-10
   
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   
-  // Ensure one rating per user per fight
   @@unique([userId, fightId])
   @@map("fight_ratings")
+}
+
+// ============== PREDICTIONS ==============
+model FightPrediction {
+  id              String    @id @default(uuid())
+  
+  // Relationships
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fightId         String
+  fight           Fight     @relation(fields: [fightId], references: [id], onDelete: Cascade)
+  
+  // Prediction
+  predictedRating Int       // 1-10 how exciting user thinks it will be
+  
+  // Accuracy tracking (filled after fight)
+  actualRating    Int?      // actual rating user gave after fight
+  accuracy        Float?    // calculated accuracy score
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([userId, fightId])
+  @@map("fight_predictions")
+}
+
+// ============== REVIEWS ==============
+model FightReview {
+  id              String    @id @default(uuid())
+  
+  // Relationships
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fightId         String
+  fight           Fight     @relation(fields: [fightId], references: [id], onDelete: Cascade)
+  
+  // Review content
+  content         String
+  rating          Int       // 1-10 (might duplicate FightRating)
+  
+  // Media links (for media users)
+  articleUrl      String?
+  articleTitle    String?
+  
+  // Moderation
+  isReported      Boolean   @default(false)
+  isHidden        Boolean   @default(false)
+  
+  // Vote counts
+  upvotes         Int       @default(0)
+  downvotes       Int       @default(0)
+  
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  votes           ReviewVote[]
+  reports         ReviewReport[]
+  
+  @@unique([userId, fightId])
+  @@map("fight_reviews")
+}
+
+model ReviewVote {
+  id        String    @id @default(uuid())
+  
+  // Relationships
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewId  String
+  review    FightReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  
+  // Vote
+  isUpvote  Boolean   // true = upvote, false = downvote
+  
+  // Timestamps
+  createdAt DateTime  @default(now())
+  
+  @@unique([userId, reviewId])
+  @@map("review_votes")
+}
+
+model ReviewReport {
+  id          String    @id @default(uuid())
+  
+  // Relationships
+  reporterId  String    // user who reported
+  reviewId    String
+  review      FightReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  
+  // Report details
+  reason      ReportReason
+  description String?
+  
+  // Status
+  isResolved  Boolean   @default(false)
+  
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+  
+  @@map("review_reports")
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  INAPPROPRIATE_CONTENT
+  MISINFORMATION
+  OTHER
+}
+
+// ============== TAGS ==============
+model Tag {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  category    TagCategory
+  
+  // Display settings
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  
+  // Usage for different rating ranges
+  forHighRatings    Boolean @default(false) // 9-10
+  forMediumRatings  Boolean @default(false) // 7-8
+  forLowRatings     Boolean @default(false) // 5-6
+  forVeryLowRatings Boolean @default(false) // 1-4
+  
+  // Relations
+  fightTags   FightTag[]
+  
+  @@map("tags")
+}
+
+enum TagCategory {
+  STYLE        // "Technical", "Brawl", "Striking"
+  PACE         // "Fast-paced", "Slow burn"
+  OUTCOME      // "Knockout", "Submission", "Decision"
+  EMOTION      // "Heart", "Brutal", "Inspiring"
+  QUALITY      // "FOTY", "FOTN", "Boring"
+}
+
+model FightTag {
+  id      String @id @default(uuid())
+  
+  // Relationships
+  userId  String
+  fightId String
+  fight   Fight  @relation(fields: [fightId], references: [id], onDelete: Cascade)
+  tagId   String
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, fightId, tagId])
+  @@map("fight_tags")
+}
+
+// ============== FOLLOWS & ALERTS ==============
+model UserFighterFollow {
+  id        String @id @default(uuid())
+  
+  // Relationships
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fighterId String
+  fighter   Fighter @relation(fields: [fighterId], references: [id], onDelete: Cascade)
+  
+  // Notification preferences
+  dayBeforeNotification Boolean @default(true)
+  startOfFightNotification Boolean @default(false)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, fighterId])
+  @@map("user_fighter_follows")
+}
+
+model FightAlert {
+  id        String @id @default(uuid())
+  
+  // Relationships
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fightId   String
+  fight     Fight  @relation(fields: [fightId], references: [id], onDelete: Cascade)
+  
+  // Alert timing
+  alertTime DateTime
+  
+  // Status
+  isSent    Boolean @default(false)
+  isActive  Boolean @default(true)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, fightId])
+  @@map("fight_alerts")
+}
+
+// ============== GAMIFICATION ==============
+model UserActivity {
+  id          String @id @default(uuid())
+  
+  // Relationships
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Activity details
+  activityType ActivityType
+  points      Int
+  description String?
+  
+  // Context (optional references)
+  fightId     String?
+  reviewId    String?
+  predictionId String?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  
+  @@map("user_activities")
+}
+
+enum ActivityType {
+  FIGHT_RATED
+  REVIEW_WRITTEN
+  PREDICTION_MADE
+  PREDICTION_ACCURATE
+  REVIEW_UPVOTED
+  DAILY_LOGIN
+  FIGHTER_FOLLOWED
+}
+
+// ============== NOTIFICATIONS ==============
+model UserNotification {
+  id        String @id @default(uuid())
+  
+  // Relationships
+  userId    String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Notification content
+  title     String
+  message   String
+  type      NotificationType
+  
+  // Status
+  isRead    Boolean @default(false)
+  
+  // Optional links
+  linkUrl   String?
+  linkType  String? // "fight", "event", "review"
+  linkId    String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  readAt    DateTime?
+  
+  @@map("user_notifications")
+}
+
+enum NotificationType {
+  FIGHT_STARTING
+  FIGHTER_FIGHTING_SOON
+  REVIEW_UPVOTED
+  LEVEL_UP
+  PREDICTION_RESULT
+  SYSTEM_ANNOUNCEMENT
+}
+
+// ============== ANALYTICS & RECOMMENDATIONS ==============
+model UserRecommendation {
+  id        String @id @default(uuid())
+  
+  // Relationships
+  userId    String
+  fightId   String
+  
+  // Recommendation details
+  score     Float     // 0-1 confidence score
+  reason    String?   // "Based on your ratings of similar fights"
+  
+  // Status
+  isViewed  Boolean   @default(false)
+  isRated   Boolean   @default(false)
+  
+  // Timestamps
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
+  
+  @@unique([userId, fightId])
+  @@map("user_recommendations")
 }
