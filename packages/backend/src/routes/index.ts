@@ -1,26 +1,102 @@
-import { Router } from 'express';
-import authRoutes from './auth.routes';
-import fightsRoutes from './fights.routes';
-import eventsRoutes from './events.routes';
+// packages/backend/src/routes/index.ts
+import { FastifyInstance } from 'fastify';
 
-const router = Router();
-
-// Mount route modules
-router.use('/auth', authRoutes);
-router.use('/fights', fightsRoutes);
-router.use('/events', eventsRoutes);
-
-// API info endpoint
-router.get('/', (req, res) => {
-  res.json({
-    message: 'Fighting Tomatoes API',
-    version: '1.0.0',
-    endpoints: {
-      auth: '/api/auth',
-      fights: '/api/fights',
-      events: '/api/events',
+export async function registerRoutes(fastify: FastifyInstance) {
+  // Health check endpoint
+  fastify.get('/health', {
+    schema: {
+      description: 'Health check endpoint',
+      tags: ['system'],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            status: { type: 'string' },
+            timestamp: { type: 'string', format: 'date-time' },
+            version: { type: 'string' },
+            database: { type: 'string' },
+          },
+        },
+        503: {
+          type: 'object',
+          properties: {
+            status: { type: 'string' },
+            timestamp: { type: 'string', format: 'date-time' },
+            version: { type: 'string' },
+            database: { type: 'string' },
+            error: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    try {
+      // Test database connection
+      await fastify.prisma.$queryRaw`SELECT 1`;
+      
+      return reply.code(200).send({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+        database: 'connected',
+      });
+    } catch (error) {
+      return reply.code(503).send({
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+        database: 'disconnected',
+        error: 'Database connection failed',
+      });
     }
   });
-});
 
-export default router;
+  // API status endpoint
+  fastify.get('/api/status', {
+    schema: {
+      description: 'API status and statistics',
+      tags: ['system'],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            status: { type: 'string' },
+            version: { type: 'string' },
+            environment: { type: 'string' },
+            uptime: { type: 'number' },
+            timestamp: { type: 'string', format: 'date-time' },
+            features: {
+              type: 'object',
+              properties: {
+                emailVerification: { type: 'boolean' },
+                pushNotifications: { type: 'boolean' },
+                realTimeUpdates: { type: 'boolean' },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    return reply.code(200).send({
+      status: 'operational',
+      version: '1.0.0',
+      environment: process.env.NODE_ENV || 'development',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      features: {
+        emailVerification: process.env.SKIP_EMAIL_VERIFICATION !== 'true',
+        pushNotifications: false, // To be implemented
+        realTimeUpdates: false,   // To be implemented
+      },
+    });
+  });
+
+  // Simple test endpoint for your existing functionality
+  fastify.get('/api/test', async (request, reply) => {
+    return reply.code(200).send({
+      message: 'Fighting Tomatoes API is working!',
+      timestamp: new Date().toISOString(),
+    });
+  });
+}
