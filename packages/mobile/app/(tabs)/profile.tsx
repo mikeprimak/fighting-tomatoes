@@ -29,7 +29,14 @@ export default function ProfileScreen() {
         {
           text: 'Sign Out',
           style: 'destructive',
-          onPress: logout,
+          onPress: async () => {
+            try {
+              await logout();
+            } catch (error) {
+              console.error('Logout error:', error);
+              Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+          },
         },
       ]
     );
@@ -100,10 +107,10 @@ export default function ProfileScreen() {
             <View style={styles.statusContainer}>
               <View style={[
                 styles.statusDot,
-                { backgroundColor: user?.isActive ? colors.success : colors.danger }
+                { backgroundColor: colors.success }
               ]} />
               <Text style={[styles.infoValue, { color: colors.text }]}>
-                {user?.isActive ? 'Active' : 'Inactive'}
+                Active
               </Text>
             </View>
           </View>
@@ -111,9 +118,9 @@ export default function ProfileScreen() {
           <View style={styles.infoRow}>
             <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Email Verified</Text>
             <Text style={[styles.infoValue, { 
-              color: user?.isVerified ? colors.success : colors.warning 
+              color: user?.isEmailVerified ? colors.success : colors.warning
             }]}>
-              {user?.isVerified ? 'Verified' : 'Not Verified'}
+              {user?.isEmailVerified ? 'Verified' : 'Not Verified'}
             </Text>
           </View>
         </View>

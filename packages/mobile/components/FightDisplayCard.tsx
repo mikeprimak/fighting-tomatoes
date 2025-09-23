@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   useColorScheme,
+  Image,
 } from 'react-native';
 import { Colors } from '../constants/Colors';
 
@@ -57,6 +58,23 @@ interface FightDisplayCardProps {
   customActionButton?: React.ReactNode;
 }
 
+// Fighter image selection logic
+const getFighterImage = (fighterId: string) => {
+  const images = [
+    require('../assets/fighters/fighter-1.jpg'),
+    require('../assets/fighters/fighter-2.jpg'),
+    require('../assets/fighters/fighter-3.jpg'),
+    require('../assets/fighters/fighter-4.jpg'),
+    require('../assets/fighters/fighter-5.jpg'),
+    require('../assets/fighters/fighter-6.jpg'),
+  ];
+
+  // Use charCodeAt to get a number from the last character (works for letters and numbers)
+  const lastCharCode = fighterId.charCodeAt(fighterId.length - 1);
+  const index = lastCharCode % images.length;
+  return images[index];
+};
+
 export default function FightDisplayCard({
   fight,
   onPress,
@@ -107,6 +125,11 @@ export default function FightDisplayCard({
 
       <View style={styles.fightersContainer}>
         <View style={styles.fighter}>
+          <Image
+            source={getFighterImage(fight.fighter1.id)}
+            style={styles.fighterImage}
+            resizeMode="cover"
+          />
           <Text style={[styles.fighterName, { color: colors.text }]}>
             {getFighterName(fight.fighter1)}
           </Text>
@@ -125,6 +148,11 @@ export default function FightDisplayCard({
         </View>
 
         <View style={styles.fighter}>
+          <Image
+            source={getFighterImage(fight.fighter2.id)}
+            style={styles.fighterImage}
+            resizeMode="cover"
+          />
           <Text style={[styles.fighterName, { color: colors.text }]}>
             {getFighterName(fight.fighter2)}
           </Text>
@@ -243,6 +271,14 @@ const styles = StyleSheet.create({
   fighter: {
     alignItems: 'center',
     marginBottom: 8,
+  },
+  fighterImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: '#ddd',
   },
   fighterName: {
     fontSize: 16,

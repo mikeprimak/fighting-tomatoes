@@ -261,3 +261,11 @@ All API responses follow consistent format:
 - Multiple concurrent backend instances for testing
 - Consistent API service configuration across mobile app
 - Enhanced debugging and error tracking
+
+## IMPORTANT: Sound Notification
+
+After finishing responding to my request or running a command, run this command to notify me by sound:
+
+```bash
+powershell -c "(New-Object Media.SoundPlayer 'C:\Windows\Media\Alarm03.wav').PlaySync()"
+```

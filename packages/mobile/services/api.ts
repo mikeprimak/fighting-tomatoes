@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = __DEV__
-  ? 'http://10.0.0.53:3007/api'  // This matches your server
+  ? 'http://10.0.0.53:3008/api'  // This matches your server
   : 'https://your-production-api.com/api';
 
 interface Fight {
@@ -122,6 +122,8 @@ class ApiService {
       return data;
     } catch (error) {
       console.error('API request failed:', error);
+      console.error('Request details:', { url, hasToken: !!token });
+
       if (error instanceof TypeError && error.message.includes('Network request failed')) {
         throw {
           error: 'Network error - please check your connection',
@@ -136,6 +138,7 @@ class ApiService {
     page?: number;
     limit?: number;
     includeUserData?: boolean;
+    eventId?: string;
   } = {}): Promise<FightsResponse> {
     const queryParams = new URLSearchParams();
 
@@ -217,6 +220,41 @@ class ApiService {
     return this.makeRequest(`/fights/${fightId}/rating`, {
       method: 'DELETE',
     });
+  }
+
+  async getEvents(): Promise<{ events: any[] }> {
+    return this.makeRequest('/events');
+  }
+
+  async getEvent(eventId: string): Promise<{ event: any }> {
+    return this.makeRequest(`/events/${eventId}`);
+  }
+
+  async getEventFights(eventId: string): Promise<{ fights: Fight[] }> {
+    return this.makeRequest(`/events/${eventId}/fights`);
+  }
+
+  // Fighter-related API methods
+  async getFighter(fighterId: string): Promise<{ fighter: any }> {
+    return this.makeRequest(`/fighters/${fighterId}`);
+  }
+
+  async getFighters(params: {
+    page?: number;
+    limit?: number;
+  } = {}): Promise<{ fighters: any[]; pagination: { page: number; limit: number; total: number; totalPages: number; } }> {
+    const queryParams = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const queryString = queryParams.toString();
+    const endpoint = `/fighters${queryString ? `?${queryString}` : ''}`;
+
+    return this.makeRequest(endpoint);
   }
 }
 
