@@ -128,22 +128,26 @@ pnpm clean        # Clean Expo and node_modules cache
 ## Key Files and Locations
 
 ### Backend Core Files
-- `packages/backend/src/app.ts` - Express app configuration
-- `packages/backend/src/server.ts` - Server entry point
-- `packages/backend/prisma/schema.prisma` - Database schema
-- `packages/backend/src/routes/` - API route handlers
-- `packages/backend/src/middleware/` - Custom middleware
+- `packages/backend/src/app.ts` - Fastify app configuration
+- `packages/backend/src/server.ts` - Server entry point (configurable port via PORT env var)
+- `packages/backend/prisma/schema.prisma` - Database schema with comprehensive fight rating system
+- `packages/backend/src/routes/fights.ts` - **Primary API route** with full CRUD operations for fights, ratings, reviews, and tags
+- `packages/backend/src/routes/auth.ts` - Authentication endpoints with JWT dual-token system
+- `packages/backend/src/routes/index.ts` - Route registration and middleware setup
+- `packages/backend/src/middleware/` - Custom middleware for auth, validation, and error handling
 
 ### Mobile Core Files
 - `packages/mobile/app/_layout.tsx` - Root layout with React Query and Auth providers
 - `packages/mobile/app/(tabs)/_layout.tsx` - Tab navigation with auth guards
 - `packages/mobile/app/(tabs)/index.tsx` - Events list screen (home)
-- `packages/mobile/app/(tabs)/fights.tsx` - Fights rating screen
+- `packages/mobile/app/(tabs)/fights.tsx` - **Primary fights screen** with rating/review functionality
 - `packages/mobile/app/(tabs)/profile.tsx` - User profile and settings
 - `packages/mobile/app/(auth)/login.tsx` - Login form with validation
 - `packages/mobile/app/(auth)/register.tsx` - Registration form
 - `packages/mobile/store/AuthContext.tsx` - JWT authentication state management
-- `packages/mobile/services/api.ts` - API service layer with type-safe endpoints
+- `packages/mobile/services/api.ts` - **Complete API service layer** with all fight endpoints and type safety
+- `packages/mobile/components/FightDisplayCard.tsx` - **Reusable fight card** with user rating display
+- `packages/mobile/components/index.ts` - Component exports
 - `packages/mobile/constants/Colors.ts` - Theme colors and design system
 - `packages/mobile/app.json` - Expo configuration with platform settings
 
@@ -154,7 +158,7 @@ pnpm clean        # Clean Expo and node_modules cache
 ## API Endpoints
 
 ### Base URL
-- **Development**: `http://10.0.0.53:3001/api` (matches mobile API service)
+- **Development**: `http://10.0.0.53:3007/api` (current active development server)
 - **Production**: `https://your-production-api.com/api`
 
 ### Authentication Endpoints (`/api/auth/`)
@@ -168,13 +172,19 @@ pnpm clean        # Clean Expo and node_modules cache
 - `POST /reset-password` - Reset password with token
 
 ### Fight Endpoints (`/api/fights/`)
-- `GET /fights` - List fights with filtering, pagination, and sorting
-  - Query params: `page`, `limit`, `eventId`, `fighterId`, `weightClass`, `isTitle`, `hasStarted`, `isComplete`, `minRating`, `sortBy`, `sortOrder`
+- `GET /fights` - List fights with filtering, pagination, and user data inclusion
+  - Query params: `page`, `limit`, `eventId`, `fighterId`, `weightClass`, `isTitle`, `hasStarted`, `isComplete`, `minRating`, `sortBy`, `sortOrder`, **`includeUserData`**
+  - **New**: When `includeUserData=true` and user is authenticated, includes user's ratings, reviews, and tags
 - `GET /fights/:id` - Get single fight with full details, ratings, and reviews
 - `GET /fights/search` - Search fights by fighter names or event names
   - Query params: `q` (search term), `page`, `limit`
 - `POST /fights/:id/rate` - Rate a fight (1-10 scale, requires auth + email verification)
 - `DELETE /fights/:id/rate` - Remove user's rating from fight (requires auth)
+- **`POST /fights/:id/review`** - Create or update a fight review with rating (requires auth + email verification)
+- **`PUT /fights/:id/review`** - Update existing fight review (requires auth + email verification)
+- **`POST /fights/:id/tags`** - Apply tags to a fight (requires auth + email verification)
+- **`GET /fights/:id/tags`** - Get all tags for a fight
+- `DELETE /fights/:id/rating` - Remove all user data (rating, review, tags) for a fight (requires auth)
 
 ### Other Available Endpoints
 - `GET /health` - System health check with database status
@@ -219,3 +229,35 @@ All API responses follow consistent format:
 - Local development uses Docker PostgreSQL on port 5433
 - Connection string format: `postgresql://dev:devpassword@localhost:5433/yourapp_dev`
 - Prisma handles connection pooling and migrations
+
+## Recent Feature Implementations
+
+### Fight Rating & Review System (Completed)
+✅ **Complete end-to-end rating/review/tagging functionality**
+- Full CRUD operations for fight ratings (1-10 scale)
+- Rich review system with content, ratings, and article linking
+- Comprehensive tagging system with predefined categories
+- User data persistence and display on fight cards
+- Real-time updates and optimistic UI responses
+
+### API Enhancements (Completed)
+✅ **Enhanced Fight API with user data inclusion**
+- Added `includeUserData` parameter to `/fights` endpoint
+- Automatic user-specific data aggregation when authenticated
+- Proper data transformation for mobile consumption
+- Consistent error handling and response formatting
+
+### Mobile UI Components (Completed)
+✅ **Reusable FightDisplayCard component**
+- Displays user ratings with star visualization (★★★★★☆☆☆☆☆)
+- Shows user review excerpts with "Your Rating" section
+- Tag display with overflow handling (+N more)
+- Consistent theming and responsive design
+- Action buttons for rating/reviewing fights
+
+### Development Infrastructure (Completed)
+✅ **Improved development workflow**
+- Configurable backend port via PORT environment variable
+- Multiple concurrent backend instances for testing
+- Consistent API service configuration across mobile app
+- Enhanced debugging and error tracking
