@@ -99,9 +99,10 @@ pnpm clean        # Clean Expo and node_modules cache
 - **Authentication Stack** (`app/(auth)/`): Login and registration screens
   - `/login` - User login with JWT authentication
   - `/register` - User registration with email verification
-- **Tab Navigation** (`app/(tabs)/`): Main app navigation with 3 tabs
+- **Tab Navigation** (`app/(tabs)/`): Main app navigation with 4 tabs
   - `/` (index) - Events tab with calendar icon
   - `/fights` - Fights tab with star icon for rating fights
+  - `/fighters` - Fighters tab with users icon for browsing fighters
   - `/profile` - User profile tab with user icon
 - **404 Handling**: Custom not-found page (`app/+not-found.tsx`)
 
@@ -141,12 +142,19 @@ pnpm clean        # Clean Expo and node_modules cache
 - `packages/mobile/app/(tabs)/_layout.tsx` - Tab navigation with auth guards
 - `packages/mobile/app/(tabs)/index.tsx` - Events list screen (home)
 - `packages/mobile/app/(tabs)/fights.tsx` - **Primary fights screen** with rating/review functionality
+- `packages/mobile/app/(tabs)/fighters.tsx` - **NEW** - Fighters list screen with infinite scroll and search
 - `packages/mobile/app/(tabs)/profile.tsx` - User profile and settings
+- `packages/mobile/app/event/[id].tsx` - **NEW** - Event detail screen with fight listings and banner images
+- `packages/mobile/app/fighter/[id].tsx` - **NEW** - Fighter detail screen with profile and fight history
 - `packages/mobile/app/(auth)/login.tsx` - Login form with validation
 - `packages/mobile/app/(auth)/register.tsx` - Registration form
 - `packages/mobile/store/AuthContext.tsx` - JWT authentication state management
 - `packages/mobile/services/api.ts` - **Complete API service layer** with all fight endpoints and type safety
-- `packages/mobile/components/FightDisplayCard.tsx` - **Reusable fight card** with user rating display
+- `packages/mobile/components/FightDisplayCard.tsx` - **Reusable fight card** with user rating display and fighter avatars
+- `packages/mobile/components/FighterCard.tsx` - **NEW** - Reusable fighter card for list display
+- `packages/mobile/components/EventCard.tsx` - **NEW** - Reusable event card with banner images
+- `packages/mobile/components/RateFightModal.tsx` - **NEW** - Enhanced rating modal with fighter images and validation
+- `packages/mobile/components/TabBar.tsx` - **NEW** - Reusable tab navigation component
 - `packages/mobile/components/index.ts` - Component exports
 - `packages/mobile/constants/Colors.ts` - Theme colors and design system
 - `packages/mobile/app.json` - Expo configuration with platform settings
@@ -158,7 +166,7 @@ pnpm clean        # Clean Expo and node_modules cache
 ## API Endpoints
 
 ### Base URL
-- **Development**: `http://10.0.0.53:3007/api` (current active development server)
+- **Development**: `http://10.0.0.53:3008/api` (current active development server)
 - **Production**: `https://your-production-api.com/api`
 
 ### Authentication Endpoints (`/api/auth/`)
@@ -186,11 +194,24 @@ pnpm clean        # Clean Expo and node_modules cache
 - **`GET /fights/:id/tags`** - Get all tags for a fight
 - `DELETE /fights/:id/rating` - Remove all user data (rating, review, tags) for a fight (requires auth)
 
+### Fighter Endpoints (`/api/fighters/`)
+- `GET /fighters` - List fighters with pagination
+  - Query params: `page`, `limit` (defaults: page=1, limit=20)
+  - Returns: `{ fighters: Fighter[], pagination: {...} }`
+- `GET /fighters/:id` - Get single fighter details
+  - Returns: `{ fighter: Fighter }` with full profile information
+
+### Event Endpoints (`/api/events/`)
+- `GET /events` - List events with pagination
+  - Query params: `page`, `limit`
+  - Returns: `{ events: Event[], pagination: {...} }`
+- `GET /events/:id` - Get single event details
+  - Returns: `{ event: Event }` with full event information
+
 ### Other Available Endpoints
 - `GET /health` - System health check with database status
 - `GET /api/status` - API status with feature flags and uptime
 - `GET /api/test` - Simple test endpoint
-- **Additional routes**: Events, Fighters, Users, Reviews, Tags (available but not yet implemented in mobile)
 
 ### Response Format
 All API responses follow consistent format:
@@ -261,6 +282,51 @@ All API responses follow consistent format:
 - Multiple concurrent backend instances for testing
 - Consistent API service configuration across mobile app
 - Enhanced debugging and error tracking
+
+### Fighter Management System (Completed)
+✅ **Complete fighter browsing and management functionality**
+- Fighters list screen with infinite scroll pagination (20 fighters per page)
+- Real-time search functionality filtering by name and nickname
+- Individual fighter detail screens with profile, stats, and fight history
+- Fighter images with consistent selection algorithm using charCodeAt()
+- Integration with existing fight rating/review system
+- Pull-to-refresh capability and optimized performance
+
+### Enhanced Navigation & UI (Completed)
+✅ **4-tab navigation system with enhanced screens**
+- **Events Tab**: Event listings with banner images and event detail screens
+- **Fights Tab**: Fight listings with rating/review functionality
+- **Fighters Tab**: NEW - Complete fighter browsing with search and infinite scroll
+- **Profile Tab**: User profile and settings
+- Custom tab bar component with consistent theming and icon system
+- Event detail screens with fight listings and banner images
+- Fighter detail screens with comprehensive profile information
+
+### Reusable Component Library (Completed)
+✅ **Comprehensive component system**
+- **FighterCard**: Displays fighter with image, record, and basic info
+- **EventCard**: Event display with banner images and event details
+- **FightDisplayCard**: Enhanced with fighter avatar images (60x60px circular)
+- **RateFightModal**: Enhanced with fighter images (80x80px) and improved validation
+- **TabBar**: Reusable tab navigation component with configurable tabs
+- Consistent image selection algorithm across all components
+- Proper theme integration and responsive design
+
+### Image Asset Management (Completed)
+✅ **Comprehensive image system**
+- 6 fighter profile images with consistent selection via charCodeAt()
+- 3 event banner images with rotation algorithm
+- Proper asset organization under `packages/mobile/assets/`
+- Optimized image loading and display across all components
+- Circular fighter avatars and rectangular event banners
+
+### API Schema Alignment (Completed)
+✅ **Backend API fixes and optimization**
+- Fixed TypeScript compilation errors in fighter endpoints
+- Aligned API responses with actual database schema
+- Removed non-existent fields (team, nationality, birthDate, height, reach)
+- Updated API configuration to use port 3008
+- Proper pagination support for fighters endpoint
 
 ## IMPORTANT: Sound Notification
 
