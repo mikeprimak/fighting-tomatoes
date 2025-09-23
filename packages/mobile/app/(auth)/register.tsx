@@ -19,7 +19,6 @@ import { useColorScheme } from 'react-native';
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
     email: '',
-    username: '',
     password: '',
     confirmPassword: '',
     firstName: '',
@@ -35,10 +34,10 @@ export default function RegisterScreen() {
   };
 
   const validateForm = () => {
-    const { email, username, password, confirmPassword } = formData;
+    const { email, password, confirmPassword } = formData;
 
-    if (!email.trim() || !username.trim() || !password.trim()) {
-      Alert.alert('Error', 'Email, username, and password are required');
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Error', 'Email and password are required');
       return false;
     }
 
@@ -49,11 +48,6 @@ export default function RegisterScreen() {
 
     if (password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters');
-      return false;
-    }
-
-    if (username.length < 3) {
-      Alert.alert('Error', 'Username must be at least 3 characters');
       return false;
     }
 
@@ -69,7 +63,6 @@ export default function RegisterScreen() {
       await register({
         ...registerData,
         email: registerData.email.trim().toLowerCase(),
-        username: registerData.username.trim(),
       });
     } catch (error) {
       Alert.alert('Registration Failed', error instanceof Error ? error.message : 'An error occurred');
@@ -136,18 +129,6 @@ export default function RegisterScreen() {
                 />
               </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Username *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.username}
-                  onChangeText={(value) => updateField('username', value)}
-                  placeholder="Choose a username"
-                  placeholderTextColor={colors.textSecondary}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Password *</Text>

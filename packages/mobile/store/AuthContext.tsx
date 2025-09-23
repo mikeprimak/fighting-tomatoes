@@ -5,12 +5,10 @@ import { router } from 'expo-router';
 interface User {
   id: string;
   email: string;
-  username: string;
   firstName?: string;
   lastName?: string;
-  avatar?: string;
-  isActive: boolean;
-  isVerified: boolean;
+  displayName?: string;
+  isEmailVerified: boolean;
   createdAt: string;
 }
 
@@ -27,7 +25,6 @@ interface AuthContextType {
 
 interface RegisterData {
   email: string;
-  username: string;
   password: string;
   firstName?: string;
   lastName?: string;
@@ -35,7 +32,9 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL = 'http://10.0.0.53:3001/api';
+const API_BASE_URL = __DEV__
+  ? 'http://10.0.0.53:3007/api'
+  : 'https://your-production-api.com/api';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);

@@ -1,188 +1,221 @@
-# Fighting Tomatoes - Combat Sports Rating App
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-A React Native + Node.js application for rating combat sports fights (like Rotten Tomatoes for fights). Users can browse upcoming/past events and rate fights on a 1-10 scale.
 
-## Business Goal
-Create an enterprise-ready app suitable for acquisition by larger companies (UFC, ESPN, etc.).
+Fighting Tomatoes is a React Native + Node.js application for rating combat sports fights, designed as an enterprise-ready app for potential acquisition by organizations like UFC or ESPN.
 
-## Current Focus
-[UPDATE EACH CHAT SESSION]
+## Development Commands
 
-Database architecture and setup completed. Moving to API development and authentication system implementation.
-Recent Completion:
+### Root Level Commands
+- `pnpm dev` - Start all services in development mode (parallel)
+- `pnpm build` - Build all packages
+- `pnpm test` - Run tests across all packages
+- `pnpm lint` - Run linting across all packages
+- `pnpm lint:fix` - Fix lint issues across all packages
+- `pnpm type-check` - Type check all packages
+- `pnpm setup` - Full setup: install deps, migrate DB, seed data
 
-Modern PostgreSQL database with comprehensive schema
-Eliminated legacy MD5 table structure
-Implemented proper relationships and foreign keys
-Added gamification, notifications, and analytics foundation
-Complete data seeding with realistic scenarios
+### Database Commands
+- `pnpm db:migrate` - Run Prisma migrations
+- `pnpm db:seed` - Seed database with test data
+- `pnpm db:studio` - Open Prisma Studio
 
-Next Priority:
+### Docker Commands
+- `pnpm docker:up` - Start PostgreSQL and Redis containers
+- `pnpm docker:down` - Stop containers
+- `pnpm docker:logs` - View container logs
 
-JWT-based authentication system
-RESTful API endpoints using new Prisma schema
-User registration and email verification
-
-## Quick Context for Claude
-- Monorepo structure with backend, mobile, and shared packages
-- Working auth system, event browsing, and fight rating features
-- Need to add search, social features, analytics, and admin panel
-- All core CRUD operations are functional
-
-## Last Updated
-[DATE] - [BRIEF SUMMARY OF LAST SESSION'S WORK]
-
-Current Focus:
-Authentication system completed and tested. Moving to core API development for fights, ratings, and user interactions.
-Recent Completion:
-
-Complete JWT-based authentication system with refresh tokens
-User registration and login endpoints working
-Email verification infrastructure (disabled for development)
-Password reset functionality
-Rate limiting and security middleware
-Input validation with Zod schemas
-Comprehensive error handling
-Production-ready authentication tested and verified
-
-Next Priority:
-
-Core API endpoints for fights, fighters, events
-User action APIs (ratings, reviews, follows)
-Real-time features and WebSocket integration
-
-# Fighting Tomatoes - Combat Sports Rating App
-
-## Project Overview
-A React Native + Node.js application for rating combat sports fights (like Rotten Tomatoes for fights). Users can browse upcoming/past events and rate fights on a 1-10 scale.
-
-## Business Goal
-Create an enterprise-ready app suitable for acquisition by larger companies (UFC, ESPN, etc.).
-
-## Current Focus
-**API Infrastructure Development - September 21, 2025**
-
-**Recent Completion**:
-- Basic Fastify API server successfully running on port 3001
-- Health check and status endpoints operational
-- Database connectivity verified with PostgreSQL
-- TypeScript compilation issues resolved
-- CORS configuration completed for mobile development
-- Foundational route architecture established
-
-**Current Status**:
-- Database layer: COMPLETED (modern PostgreSQL with comprehensive schema)
-- Authentication system: COMPLETED (JWT with email verification)
-- API infrastructure: Basic server OPERATIONAL, comprehensive routes DESIGNED
-- Mobile app: Existing UI ready for API integration
-
-**Next Priority**:
-- Implement comprehensive API routes (fights, events, fighters, users, reviews, tags)
-- Connect mobile app to new API endpoints
-- Integrate email verification flow
-
-## Technical Architecture Status
-
-**Backend API (Fastify + TypeScript)**:
-- Server running stable with auto-restart
-- Prisma ORM integration working
-- Enhanced authentication middleware designed
-- Comprehensive route structure planned and documented
-- Email verification configurable (bypassed in dev)
-
-**Database (PostgreSQL)**:
-- Modern schema with UUID primary keys
-- 20+ tables with proper relationships
-- Gamification system (points, levels, activities)
-- Tag categorization with rating-based logic
-- Social features (follows, notifications, voting)
-- Complete seed data for development
-
-**Mobile App (React Native + Expo)**:
-- Existing authentication and basic UI functional
-- Ready for API integration
-- TypeScript throughout
-- React Query for state management
-
-**Key Features Implemented**:
-- JWT authentication with refresh tokens
-- User registration and login flows
-- Basic event browsing and fight rating
-- Dark/light theme support
-- Monorepo structure with pnpm workspaces
-
-## API Implementation Plan
-
-**Comprehensive Routes Designed**:
-- **Fights API**: Rating (1-10), tagging, reviews, predictions, search
-- **Events API**: CRUD operations, fight cards, upcoming/past filtering
-- **Fighters API**: Profiles, following system, statistics, search
-- **Users API**: Profiles, leaderboards, activity feeds, statistics
-- **Reviews API**: Voting, reporting, moderation system
-- **Tags API**: Rating-based categorization and management
-
-**Key Business Logic**:
-- Rating scale: User input 1-10, API aggregates as 0-100
-- Tag system: Smart filtering based on user's fight rating
-- Email verification: Required for all user actions
-- Gamification: Points for ratings, reviews, predictions
-- Social features: Following fighters, review voting
-
-**Security Features**:
-- Email verification enforcement for user actions
-- Rate limiting on authentication endpoints
-- Input validation with Zod schemas
-- JWT tokens with proper expiration
-- Admin-level permissions for content management
-
-## Development Status
-
-**Files Structure Established**:
-```
-packages/backend/src/
-├── server.ts              # Main Fastify server (working)
-├── routes/
-│   ├── index.ts          # Basic routes (working)
-│   ├── fights.ts         # Comprehensive fights API (designed)
-│   ├── events.ts         # Event management (designed)
-│   ├── fighters.ts       # Fighter profiles (designed)
-│   ├── users.ts          # User management (designed)
-│   ├── reviews.ts        # Review system (designed)
-│   └── tags.ts           # Tag management (designed)
-└── middleware/
-    └── auth.ts           # Enhanced auth middleware (designed)
+### Backend-Specific Commands
+```bash
+cd packages/backend
+pnpm dev          # Start backend in development mode
+pnpm build        # Build TypeScript
+pnpm start        # Start production server
+pnpm test         # Run Jest tests
+pnpm test:watch   # Run tests in watch mode
 ```
 
-**Environment Configuration**:
-```env
-PORT=3001
-DATABASE_URL=postgresql://...
-JWT_SECRET=your-secret-key
-SKIP_EMAIL_VERIFICATION=true  # Development only
-ADMIN_EMAILS=admin@example.com
+### Mobile-Specific Commands
+```bash
+cd packages/mobile
+# Development
+pnpm start        # Start Expo development server
+pnpm dev          # Start with development client
+pnpm android      # Run on Android device/emulator
+pnpm ios          # Run on iOS device/simulator
+pnpm web          # Run in web browser
+
+# Building & Deployment
+pnpm build:android    # Build Android app with EAS
+pnpm build:ios        # Build iOS app with EAS
+pnpm submit:android   # Submit to Google Play Store
+pnpm submit:ios       # Submit to Apple App Store
+
+# Maintenance
+pnpm test         # Run Jest tests
+pnpm clean        # Clean Expo and node_modules cache
 ```
 
-**Verified Working Endpoints**:
-- GET `/health` - Database connectivity test
-- GET `/api/status` - API status with feature flags
-- GET `/api/test` - Basic functionality verification
+## Architecture
 
-## Ready for Next Development Phase
+### Monorepo Structure
+- **packages/backend** - Fastify API server with TypeScript, Prisma ORM, PostgreSQL
+- **packages/mobile** - React Native (Expo) app with Expo Router
+- **packages/shared** - Shared TypeScript types and utilities
 
-**Immediate Implementation Path**:
-1. Add comprehensive fights routes with all business logic
-2. Integrate authentication middleware protection
-3. Test with realistic data using existing seed data
-4. Create API service layer in React Native
-5. Update mobile UI for new tag selection system
+### Key Technologies
+- **Package Manager**: pnpm with workspaces
+- **Backend**: Node.js, Fastify, TypeScript, Prisma, PostgreSQL, JWT auth
+- **Mobile**: React Native (Expo), Expo Router, React Query, Zustand
+- **Database**: PostgreSQL with Docker, Redis for caching
+- **Development**: ESLint, Prettier, Husky, TypeScript strict mode
 
-**Success Criteria for Next Session**:
-- Complete fights API with rating, tagging, and review functionality
-- At least one mobile screen connected to new API
-- Email verification flow working end-to-end
+### Database Architecture
+- Single PostgreSQL database with 20+ interconnected tables
+- UUID v4 primary keys via Prisma
+- JWT dual-token authentication (15min access, 7-day refresh)
+- Email verification with crypto-based tokens
+- Comprehensive user ratings, reviews, and tagging system
 
-The project now has a solid foundation for rapid feature development with enterprise-ready patterns and is positioned well for potential acquisition by major sports organizations.
+### API Patterns
+- RESTful endpoints with consistent `{ error, code, details? }` response format
+- Centralized error handling with machine-readable codes
+- Zod schemas for input validation
+- Layered middleware (auth, validation, rate limiting, CORS)
 
-## Last Updated
-September 21, 2025 - API infrastructure foundation completed, comprehensive route implementation ready to begin.
+### Mobile Architecture
+
+#### Target Platforms
+- **iOS**: Native iOS app with tablet support (Bundle ID: `com.fightingtomatoes.mobile`)
+- **Android**: Native Android app with adaptive icon (Package: `com.fightingtomatoes.mobile`)
+- **Web**: Metro bundler with static output for web deployment
+- **Development**: Expo Development Build for faster development cycles
+
+#### Navigation Structure
+- **File-based routing** with Expo Router (v6.0.7)
+- **Root Layout** (`app/_layout.tsx`): Provides global providers and stack navigation
+- **Authentication Stack** (`app/(auth)/`): Login and registration screens
+  - `/login` - User login with JWT authentication
+  - `/register` - User registration with email verification
+- **Tab Navigation** (`app/(tabs)/`): Main app navigation with 3 tabs
+  - `/` (index) - Events tab with calendar icon
+  - `/fights` - Fights tab with star icon for rating fights
+  - `/profile` - User profile tab with user icon
+- **404 Handling**: Custom not-found page (`app/+not-found.tsx`)
+
+#### State Management
+- **Authentication**: React Context (`store/AuthContext.tsx`) with JWT dual-token system
+  - Access token storage with 15-minute expiration
+  - Refresh token with 7-day rotation
+  - Automatic token refresh and secure storage via Expo SecureStore
+  - User profile state management with real-time auth status
+- **API State**: TanStack React Query (v4.32.6) for server state management
+  - 5-minute stale time for cached data
+  - Retry logic with 2 attempts
+  - Background refetching and optimistic updates
+- **Local Storage**: AsyncStorage for non-sensitive data, SecureStore for tokens
+
+#### Theme System
+- **Automatic theme detection**: Light/dark mode support with system preference detection
+- **Custom color scheme** (`constants/Colors.ts`): Combat sports inspired design
+  - Primary: Red (#dc2626 light, #ef4444 dark) - "Fighting Tomatoes" brand color
+  - Semantic colors: Success (Emerald), Warning (Amber), Danger (Red)
+  - Tab bar theming with active/inactive states
+- **Typography**: FontAwesome icons for consistent UI elements
+
+## Key Files and Locations
+
+### Backend Core Files
+- `packages/backend/src/app.ts` - Express app configuration
+- `packages/backend/src/server.ts` - Server entry point
+- `packages/backend/prisma/schema.prisma` - Database schema
+- `packages/backend/src/routes/` - API route handlers
+- `packages/backend/src/middleware/` - Custom middleware
+
+### Mobile Core Files
+- `packages/mobile/app/_layout.tsx` - Root layout with React Query and Auth providers
+- `packages/mobile/app/(tabs)/_layout.tsx` - Tab navigation with auth guards
+- `packages/mobile/app/(tabs)/index.tsx` - Events list screen (home)
+- `packages/mobile/app/(tabs)/fights.tsx` - Fights rating screen
+- `packages/mobile/app/(tabs)/profile.tsx` - User profile and settings
+- `packages/mobile/app/(auth)/login.tsx` - Login form with validation
+- `packages/mobile/app/(auth)/register.tsx` - Registration form
+- `packages/mobile/store/AuthContext.tsx` - JWT authentication state management
+- `packages/mobile/services/api.ts` - API service layer with type-safe endpoints
+- `packages/mobile/constants/Colors.ts` - Theme colors and design system
+- `packages/mobile/app.json` - Expo configuration with platform settings
+
+### Shared Types
+- `packages/shared/src/types/` - Shared TypeScript interfaces
+- `packages/shared/src/utils/` - Shared utilities and constants
+
+## API Endpoints
+
+### Base URL
+- **Development**: `http://10.0.0.53:3001/api` (matches mobile API service)
+- **Production**: `https://your-production-api.com/api`
+
+### Authentication Endpoints (`/api/auth/`)
+- `POST /register` - User registration with email verification
+- `POST /login` - User login with JWT token response
+- `POST /logout` - Revoke refresh token and logout
+- `POST /refresh` - Refresh access token using refresh token
+- `GET /profile` - Get authenticated user profile (requires auth)
+- `GET /verify-email` - Email verification via token
+- `POST /request-password-reset` - Request password reset email
+- `POST /reset-password` - Reset password with token
+
+### Fight Endpoints (`/api/fights/`)
+- `GET /fights` - List fights with filtering, pagination, and sorting
+  - Query params: `page`, `limit`, `eventId`, `fighterId`, `weightClass`, `isTitle`, `hasStarted`, `isComplete`, `minRating`, `sortBy`, `sortOrder`
+- `GET /fights/:id` - Get single fight with full details, ratings, and reviews
+- `GET /fights/search` - Search fights by fighter names or event names
+  - Query params: `q` (search term), `page`, `limit`
+- `POST /fights/:id/rate` - Rate a fight (1-10 scale, requires auth + email verification)
+- `DELETE /fights/:id/rate` - Remove user's rating from fight (requires auth)
+
+### Other Available Endpoints
+- `GET /health` - System health check with database status
+- `GET /api/status` - API status with feature flags and uptime
+- `GET /api/test` - Simple test endpoint
+- **Additional routes**: Events, Fighters, Users, Reviews, Tags (available but not yet implemented in mobile)
+
+### Response Format
+All API responses follow consistent format:
+```typescript
+// Success responses return data directly
+{ fights: Fight[], pagination: {...} }
+
+// Error responses
+{
+  error: string,           // Human-readable error message
+  code: string,            // Machine-readable error code
+  details?: any            // Optional validation details
+}
+```
+
+### Rate Limiting
+- **Auth endpoints**: 5 requests per 15 minutes
+- **General endpoints**: 10 requests per 15 minutes
+- Headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+
+## Development Workflow
+
+1. Start Docker services: `pnpm docker:up`
+2. Install dependencies: `pnpm install`
+3. Run database migrations: `pnpm db:migrate`
+4. Seed database: `pnpm db:seed`
+5. Start development: `pnpm dev`
+
+## Authentication Flow
+- JWT-based with refresh token rotation
+- Password requirements: 8+ chars, uppercase, lowercase, number, special char
+- Email verification required for new accounts
+- Rate limiting: 5 attempts per 15 minutes
+
+## Database Connection
+- Local development uses Docker PostgreSQL on port 5433
+- Connection string format: `postgresql://dev:devpassword@localhost:5433/yourapp_dev`
+- Prisma handles connection pooling and migrations

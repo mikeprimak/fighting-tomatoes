@@ -1,0 +1,107 @@
+Hello Claude. Please use all the information in this folder to develop context. You and I ae going to be working on developing this mobile app in this chat.
+
+Fighting Tomatoes - Combat Sports Rating App
+I'm building a React Native + Node.js app called "Fighting Tomatoes" - like Rotten Tomatoes but for rating combat sports fights (UFC, Bellator, etc.). The goal is to create an enterprise-ready app suitable for acquisition by larger companies like UFC/ESPN.
+Current Tech Stack & Architecture
+* Frontend: React Native (Expo), Expo Router, TypeScript, React Query
+* Backend: Node.js, Express, TypeScript, Prisma ORM, PostgreSQL
+* Structure: Monorepo with pnpm workspaces (backend, mobile, shared packages)
+* Auth: JWT with refresh tokens, SecureStore for mobile storage
+
+
+---------------
+mobile app required functions
+----------------
+
+
+-- users ---
+
+Users can:
+
+- create account (with email or 'sign up with google')
+- accounts created with email must verify email before taking any action on site (verify by way of a code is sent to their email and they must enter it on the app)
+- log in
+- keep me logged in
+- log out
+- rate fights on a scale between 1 and 10.
+- change their rating on any fight
+- remove their reating from a fight
+- leave a comment/review of a fight 
+- select 'tags' to apply to a fight, such as "back and forth", "Quick finish" or "Edge of your seat"
+- see all of the fights they have rated, and what rating they gave.
+- see all of the comments they have left on fights
+- create and change a display name
+- if the account is create by email, they change their password 
+- can "follow" one or more fighters to get a push notification the day before that fighter fights, or be alerted anytime that fighter has a fight starting live (the user can choose if they want day-before notifications or 'start-of-fight' notifications.
+- can set alarms on certain fights to alert them when that fight is starting.
+- a ratings distribution chart can be shown for each user, showing how many fights they've rated 10 vs 9 vs 8 vs ....
+- show how many fights they've rated
+- show how many reviews they've left
+- how many 'upvotes' and 'downvotes' they have received on their reviews
+- before a fight happens, users can 'guess'/'predict' how exciting the fight will be on a scale from 1 to 10.
+- some users can be members of the media (combat sports journalists) and they have special indicators on their account and their reviews are featured in a different area in the UI and they can include the name of their publication and a link to it in their reviews.
+
+-- fights --
+
+Fights can:
+
+- must involve two fighters
+- are associated with one event, one promotion/organization and one date.
+- be rated by users, and each fight has an aggregate score which is the average score given by users. Even though the user ratings are given out of ten, the aggregate score for a fight is expressed as a number out of 100.
+- be reviewed/commented on my users. Each user can leave one comment per fight.
+- can be tagged with various tags by users such as "Exciting", "Edge of your Seat" and "Crazy Knockdowns"...
+- a ratings distribution chart can be shown for each fight, showing how many users rated it 10 vs 9 vs 8 ....
+- before fights hapen, users can give them a score between 1 to 10 on how entertaining the user predicts the fight will be.
+- have a 'how to watch' field, which stores info about where they fight is (espn+, DAZN, Youtube...), and a link to that watch platform.
+
+
+
+-- fighters --
+
+- have a first name, last name and nickname
+- keep track of their wins, losses record.
+- have a primary profile photo, which is a headshot.
+- have a secondary photo which is an action shot.
+- can have ratings distribution chart showing how many 10s they've received from users, vs how many 9s, 8s....
+- have an average score, showign the average rating they've been given by users (or if lots of their fights are rated around 8, their average score could be around 80.
+- has info abut if they are a current champion
+- weightclass
+- sports (MMA, boxing, Bareknuckle boxing, muay thai...)
+
+
+
+-- events -- 
+
+- have a date, promotion/organization, venue, prelim start time, main event start time, an image (which is like a banner for the event), and keeps track of how many fights on the evnt have an aggregate score over 85%., has an aggregate score for the event an average of all fight scores for that event.
+
+
+
+
+
+-- reviews --
+
+- a review is left by a user on a fight.
+- each user may leave one review per fight.
+- reviews can be changed or delete by the user.
+- reviews can be 'flagged as inappropriate' by other users
+- reviews can be 'upvoted' or 'downvoted' by other users.
+
+
+
+
+-- tags --
+
+- when a user is rating or commenting on a fight, they can also select one or more from a list of tags to apply to that fight, such as "Fast Paced" "Quick KO" or "Back and forth"
+
+- these tags can later be used to create lists like "best fights that are "fast Paced"
+
+
+
+
+
+-- the site as a whole --
+
+- the site as a whole must ba able to store some data and perform some analytics.
+- for example, I will want to analyze the data and run recommendation engines on it to develop recommendations for users. i want the database to allow for a variety of different analysis and insight generation.
+- the database should follow all current best practices.
+

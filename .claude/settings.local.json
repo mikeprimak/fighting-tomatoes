@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm db:seed:*)",
+      "Bash(pnpm exec prisma db reset:*)",
+      "Bash(pnpm exec prisma migrate:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(Stop-Process -Id 2800 -Force)",
+      "Bash(pnpm start:*)",
+      "Bash(npx expo start:*)",
+      "Bash(pnpm docker:up:*)",
+      "Bash(docker:*)",
+      "Bash(start \"\" \"C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe\")",
+      "Bash(timeout:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

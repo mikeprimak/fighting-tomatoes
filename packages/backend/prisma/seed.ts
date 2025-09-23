@@ -59,6 +59,15 @@ async function main() {
   
   const usersData = [
     {
+      email: 'test@fightingtomatoes.com',
+      password: hashedPassword,
+      displayName: 'Test User',
+      isEmailVerified: true,
+      authProvider: AuthProvider.EMAIL,
+      points: 150,
+      level: 1,
+    },
+    {
       email: 'admin@fightingtomatoes.com',
       password: hashedPassword,
       displayName: 'Admin User',

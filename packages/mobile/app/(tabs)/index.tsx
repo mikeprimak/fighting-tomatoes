@@ -63,37 +63,85 @@ export default function EventsScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const { accessToken } = useAuth();
 
-  const {
-    data: events,
-    isLoading,
-    refetch,
-    isRefetching,
-  } = useQuery({
-    queryKey: ['events', selectedTab],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      
-      if (selectedTab === 'past') {
-        params.append('past', 'true');
-      }
-      // For upcoming, we don't need to pass any parameter - it's the default
-      
-      params.append('limit', '20');
-      
-      console.log('Fetching events with params:', params.toString());
-      const response = await fetch(`${API_BASE_URL}/events?${params.toString()}`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', response.status, errorText);
-        throw new Error(`Failed to fetch events: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Events data received:', data);
-      return data.events as Event[];
+  // Mock data for events
+  const mockEvents: Event[] = [
+    {
+      id: '1',
+      name: 'UFC 300: Pereira vs Hill',
+      shortName: 'UFC 300',
+      date: '2024-04-13T00:00:00Z',
+      venue: 'T-Mobile Arena',
+      location: 'Las Vegas, NV',
+      isComplete: true,
+      organization: {
+        id: 'ufc',
+        name: 'Ultimate Fighting Championship',
+        shortName: 'UFC'
+      },
+      fights: [
+        {
+          id: 'fight1',
+          fightOrder: 1,
+          weightClass: 'Light Heavyweight',
+          rounds: 5,
+          isTitle: true,
+          averageRating: 8.5,
+          totalRatings: 1250,
+          fighterA: { id: 'f1', firstName: 'Alex', lastName: 'Pereira' },
+          fighterB: { id: 'f2', firstName: 'Jamahal', lastName: 'Hill' }
+        },
+        {
+          id: 'fight2',
+          fightOrder: 2,
+          weightClass: 'Welterweight',
+          rounds: 3,
+          isTitle: false,
+          averageRating: 7.8,
+          totalRatings: 890,
+          fighterA: { id: 'f3', firstName: 'Leon', lastName: 'Edwards' },
+          fighterB: { id: 'f4', firstName: 'Colby', lastName: 'Covington' }
+        }
+      ]
     },
-  });
+    {
+      id: '2',
+      name: 'UFC 301: Pantoja vs Erceg',
+      shortName: 'UFC 301',
+      date: '2024-05-04T00:00:00Z',
+      venue: 'Farmasi Arena',
+      location: 'Rio de Janeiro, Brazil',
+      isComplete: false,
+      organization: {
+        id: 'ufc',
+        name: 'Ultimate Fighting Championship',
+        shortName: 'UFC'
+      },
+      fights: [
+        {
+          id: 'fight3',
+          fightOrder: 1,
+          weightClass: 'Flyweight',
+          rounds: 5,
+          isTitle: true,
+          averageRating: 9.2,
+          totalRatings: 2100,
+          fighterA: { id: 'f5', firstName: 'Alexandre', lastName: 'Pantoja' },
+          fighterB: { id: 'f6', firstName: 'Steve', lastName: 'Erceg' }
+        }
+      ]
+    }
+  ];
+
+  const isLoading = false;
+  const isRefetching = false;
+
+  const events = selectedTab === 'past'
+    ? mockEvents.filter(e => e.isComplete)
+    : mockEvents.filter(e => !e.isComplete);
+
+  const refetch = () => {
+    console.log('Mock refetch called');
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

@@ -1,5 +1,7 @@
 // packages/backend/src/routes/index.ts
 import { FastifyInstance } from 'fastify';
+import { fightRoutes } from './fights';
+import { authRoutes } from './auth.fastify';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Health check endpoint
@@ -31,7 +33,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
     },
   }, async (request, reply) => {
     try {
-      // Test database connection
       await fastify.prisma.$queryRaw`SELECT 1`;
       
       return reply.code(200).send({
@@ -86,17 +87,126 @@ export async function registerRoutes(fastify: FastifyInstance) {
       timestamp: new Date().toISOString(),
       features: {
         emailVerification: process.env.SKIP_EMAIL_VERIFICATION !== 'true',
-        pushNotifications: false, // To be implemented
-        realTimeUpdates: false,   // To be implemented
+        pushNotifications: false,
+        realTimeUpdates: false,
       },
     });
   });
 
-  // Simple test endpoint for your existing functionality
+  // Simple test endpoint
   fastify.get('/api/test', async (request, reply) => {
     return reply.code(200).send({
       message: 'Fighting Tomatoes API is working!',
       timestamp: new Date().toISOString(),
     });
   });
+
+  // Events endpoint
+  fastify.get('/api/events', {
+    schema: {
+      description: 'Get events list',
+      tags: ['events'],
+      querystring: {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+          page: { type: 'integer', minimum: 1, default: 1 },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            events: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  name: { type: 'string' },
+                  promotion: { type: 'string' },
+                  date: { type: 'string' },
+                  venue: { type: 'string' },
+                  location: { type: 'string' },
+                  hasStarted: { type: 'boolean' },
+                  isComplete: { type: 'boolean' },
+                },
+              },
+            },
+            pagination: {
+              type: 'object',
+              properties: {
+                page: { type: 'integer' },
+                limit: { type: 'integer' },
+                total: { type: 'integer' },
+                totalPages: { type: 'integer' },
+              },
+            },
+          },
+        },
+        500: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { limit = 20, page = 1 } = request.query as any;
+    const skip = (page - 1) * limit;
+
+    try {
+      const [events, total] = await Promise.all([
+        fastify.prisma.event.findMany({
+          skip,
+          take: limit,
+          orderBy: { date: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            promotion: true,
+            date: true,
+            venue: true,
+            location: true,
+            hasStarted: true,
+            isComplete: true,
+            averageRating: true,
+            totalRatings: true,
+            greatFights: true,
+          },
+        }),
+        fastify.prisma.event.count(),
+      ]);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return reply.code(200).send({
+        events,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+        },
+      });
+    } catch (error: any) {
+      request.log.error('Events fetch error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Register auth routes under /api prefix
+  await fastify.register(async function(fastify) {
+    await authRoutes(fastify);
+  }, { prefix: '/api/auth' });
+
+  // Register fight routes under /api prefix
+  await fastify.register(async function(fastify) {
+    await fightRoutes(fastify);
+  }, { prefix: '/api' });
 }

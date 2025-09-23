@@ -53,17 +53,19 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             <Text style={styles.avatarText}>
-              {user?.firstName ? user.firstName.charAt(0).toUpperCase() : user?.username.charAt(0).toUpperCase()}
+              {user?.firstName ? user.firstName.charAt(0).toUpperCase() :
+               user?.displayName ? user.displayName.charAt(0).toUpperCase() :
+               user?.email ? user.email.charAt(0).toUpperCase() : '?'}
             </Text>
           </View>
           <Text style={[styles.name, { color: colors.text }]}>
-            {user?.firstName && user?.lastName 
+            {user?.firstName && user?.lastName
               ? `${user.firstName} ${user.lastName}`
-              : user?.username
+              : user?.displayName || 'User'
             }
           </Text>
           <Text style={[styles.username, { color: colors.textSecondary }]}>
-            @{user?.username}
+            {user?.displayName && `@${user.displayName}`}
           </Text>
           <Text style={[styles.email, { color: colors.textSecondary }]}>
             {user?.email}
