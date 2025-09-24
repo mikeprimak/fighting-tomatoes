@@ -59,7 +59,7 @@ async function main() {
   
   const usersData = [
     {
-      email: 'test@fightingtomatoes.com',
+      email: 'test@fightcrewapp.com',
       password: hashedPassword,
       displayName: 'Test User',
       isEmailVerified: true,
@@ -68,7 +68,7 @@ async function main() {
       level: 1,
     },
     {
-      email: 'admin@fightingtomatoes.com',
+      email: 'admin@fightcrewapp.com',
       password: hashedPassword,
       displayName: 'Admin User',
       isEmailVerified: true,

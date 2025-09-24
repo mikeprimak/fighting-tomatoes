@@ -82,15 +82,15 @@ export default function TabBar({ tabs, defaultHeaderTitle }: TabBarProps) {
 }
 
 /**
- * Pre-configured Fighting Tomatoes Tab Bar
+ * Pre-configured FightCrewApp Tab Bar
  */
-export function FightingTomatoesTabBar() {
+export function FightCrewAppTabBar() {
   const tabs: TabConfig[] = [
     {
       name: 'index',
       title: 'Events',
       iconName: 'calendar',
-      headerTitle: '🍅 Fighting Tomatoes'
+      headerTitle: '🥊 FightCrewApp'
     },
     {
       name: 'fights',
@@ -109,7 +109,7 @@ export function FightingTomatoesTabBar() {
     }
   ];
 
-  return <TabBar tabs={tabs} defaultHeaderTitle="Fighting Tomatoes" />;
+  return <TabBar tabs={tabs} defaultHeaderTitle="FightCrewApp" />;
 }
 
 /**

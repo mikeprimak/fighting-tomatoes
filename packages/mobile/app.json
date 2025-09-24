@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Fighting Tomatoes",
-    "slug": "fighting-tomatoes",
+    "name": "FightCrewApp",
+    "slug": "fightcrewapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
@@ -10,13 +10,13 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.fightingtomatoes.mobile"
+      "bundleIdentifier": "com.fightcrewapp.mobile"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#1a1a1a"
       },
-      "package": "com.fightingtomatoes.mobile"
+      "package": "com.fightcrewapp.mobile"
     },
     "web": {
       "bundler": "metro",
@@ -27,7 +27,7 @@
       "expo-font",
       "expo-secure-store"
     ],
-    "scheme": "fighting-tomatoes",
+    "scheme": "fightcrewapp",
     "extra": {
       "router": {
         "origin": false

@@ -1,4 +1,4 @@
-// Fighting Tomatoes Database Schema
+// FightCrewApp Database Schema
 // Modern PostgreSQL schema using Prisma ORM
 
 generator client {

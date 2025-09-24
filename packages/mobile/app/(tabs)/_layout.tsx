@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../store/AuthContext';
 import { Redirect } from 'expo-router';
-import { FightingTomatoesTabBar } from '../../components';
+import { FightCrewAppTabBar } from '../../components';
 
 export default function TabLayout() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -16,5 +16,5 @@ export default function TabLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  return <FightingTomatoesTabBar />;
+  return <FightCrewAppTabBar />;
 }

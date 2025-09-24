@@ -1,4 +1,4 @@
-# Fighting Tomatoes
+# FightCrewApp
 
 A React Native + Node.js application for rating combat sports fights.
 

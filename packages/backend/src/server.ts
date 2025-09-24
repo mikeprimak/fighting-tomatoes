@@ -175,7 +175,7 @@ async function start() {
       host,
     });
 
-    console.log(`Fighting Tomatoes API server started on http://${host}:${port}`);
+    console.log(`FightCrewApp API server started on http://${host}:${port}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`Node version: ${process.version}`);
 

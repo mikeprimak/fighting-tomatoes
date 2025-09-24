@@ -96,7 +96,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
   // Simple test endpoint
   fastify.get('/api/test', async (request, reply) => {
     return reply.code(200).send({
-      message: 'Fighting Tomatoes API is working!',
+      message: 'FightCrewApp API is working!',
       timestamp: new Date().toISOString(),
     });
   });

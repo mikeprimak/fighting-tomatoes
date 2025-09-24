@@ -1,7 +1,7 @@
-Fighting Tomatoes – Project Context
+FightCrewApp – Project Context
 1. Project Overview
 
-Fighting Tomatoes is a React Native + Node.js application for rating combat sports fights — similar to “Rotten Tomatoes” but for fights.
+FightCrewApp is a React Native + Node.js application for rating combat sports fights — similar to "Rotten Tomatoes" but for fights.
 Users can browse upcoming/past events, rate fights on a 1–10 scale, and interact with reviews, tags, and community features.
 
 Business Goal

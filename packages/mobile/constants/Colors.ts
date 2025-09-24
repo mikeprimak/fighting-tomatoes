@@ -1,5 +1,5 @@
 /**
- * Fighting Tomatoes Color Scheme
+ * FightCrewApp Color Scheme
  * Combat sports inspired design with red accents
  */
 

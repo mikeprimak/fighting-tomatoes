@@ -21,16 +21,16 @@ export class EmailService {
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`
     
     const mailOptions = {
-      from: process.env.SMTP_FROM || 'noreply@fightingtomatoes.com',
+      from: process.env.SMTP_FROM || 'noreply@fightcrewapp.com',
       to: email,
-      subject: 'Verify Your Fighting Tomatoes Account',
+      subject: 'Verify Your FightCrewApp Account',
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-          <h1 style="color: #d32f2f;">Welcome to Fighting Tomatoes!</h1>
+          <h1 style="color: #d32f2f;">Welcome to FightCrewApp!</h1>
           
           <p>Hi ${firstName || 'there'},</p>
           
-          <p>Thanks for joining Fighting Tomatoes - the premier platform for rating combat sports fights!</p>
+          <p>Thanks for joining FightCrewApp - the premier platform for rating combat sports fights!</p>
           
           <p>To complete your registration and start rating fights, please verify your email address:</p>
           
@@ -58,7 +58,7 @@ export class EmailService {
           <p>If you didn't create this account, you can safely ignore this email.</p>
           
           <p>Welcome to the community!</p>
-          <p>The Fighting Tomatoes Team</p>
+          <p>The FightCrewApp Team</p>
         </div>
       `
     }
@@ -70,14 +70,14 @@ export class EmailService {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`
     
     const mailOptions = {
-      from: process.env.SMTP_FROM || 'noreply@fightingtomatoes.com',
+      from: process.env.SMTP_FROM || 'noreply@fightcrewapp.com',
       to: email,
-      subject: 'Reset Your Fighting Tomatoes Password',
+      subject: 'Reset Your FightCrewApp Password',
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
           <h1 style="color: #d32f2f;">Password Reset Request</h1>
           
-          <p>You requested a password reset for your Fighting Tomatoes account.</p>
+          <p>You requested a password reset for your FightCrewApp account.</p>
           
           <p>Click the button below to reset your password:</p>
           
@@ -95,7 +95,7 @@ export class EmailService {
           
           <p>If you didn't request this reset, you can safely ignore this email.</p>
           
-          <p>The Fighting Tomatoes Team</p>
+          <p>The FightCrewApp Team</p>
         </div>
       `
     }

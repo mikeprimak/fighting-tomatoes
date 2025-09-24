@@ -83,8 +83,8 @@ export default function RegisterScreen() {
           <View style={styles.content}>
             {/* Header */}
             <View style={styles.header}>
-              <Text style={styles.title}>🍅</Text>
-              <Text style={styles.subtitle}>Join Fighting Tomatoes</Text>
+              <Text style={styles.title}>🥊</Text>
+              <Text style={styles.subtitle}>Join FightCrewApp</Text>
               <Text style={styles.tagline}>Start rating fights today</Text>
             </View>
 

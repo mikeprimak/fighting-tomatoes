@@ -48,8 +48,8 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>🍅</Text>
-          <Text style={styles.subtitle}>Fighting Tomatoes</Text>
+          <Text style={styles.title}>🥊</Text>
+          <Text style={styles.subtitle}>FightCrewApp</Text>
         </View>
 
         {/* Status Display */}

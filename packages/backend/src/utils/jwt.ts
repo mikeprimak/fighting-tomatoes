@@ -11,14 +11,14 @@ export class JWTService {
   static generateAccessToken(payload: JWTPayload): string {
     return jwt.sign(payload, JWT_SECRET, { 
       expiresIn: ACCESS_TOKEN_EXPIRES,
-      issuer: 'fighting-tomatoes'
+      issuer: 'fightcrewapp'
     })
   }
 
   static generateRefreshToken(payload: JWTPayload): string {
     return jwt.sign(payload, JWT_REFRESH_SECRET, { 
       expiresIn: REFRESH_TOKEN_EXPIRES,
-      issuer: 'fighting-tomatoes'
+      issuer: 'fightcrewapp'
     })
   }
 

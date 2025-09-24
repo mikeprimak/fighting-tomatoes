@@ -1,7 +1,7 @@
 Hello Claude. Please use all the information in this folder to develop context. You and I ae going to be working on developing this mobile app in this chat.
 
-Fighting Tomatoes - Combat Sports Rating App
-I'm building a React Native + Node.js app called "Fighting Tomatoes" - like Rotten Tomatoes but for rating combat sports fights (UFC, Bellator, etc.). The goal is to create an enterprise-ready app suitable for acquisition by larger companies like UFC/ESPN.
+FightCrewApp - Combat Sports Rating App
+I'm building a React Native + Node.js app called "FightCrewApp" - like Rotten Tomatoes but for rating combat sports fights (UFC, Bellator, etc.). The goal is to create an enterprise-ready app suitable for acquisition by larger companies like UFC/ESPN.
 Current Tech Stack & Architecture
 * Frontend: React Native (Expo), Expo Router, TypeScript, React Query
 * Backend: Node.js, Express, TypeScript, Prisma ORM, PostgreSQL

@@ -127,7 +127,7 @@ export default function ProfileScreen() {
 
         {/* App Info */}
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>About Fighting Tomatoes</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>About FightCrewApp</Text>
           
           <Text style={[styles.aboutText, { color: colors.textSecondary }]}>
             Rate and discover the most entertaining fights in combat sports. 

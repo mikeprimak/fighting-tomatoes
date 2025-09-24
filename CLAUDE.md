@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Fighting Tomatoes is a React Native + Node.js application for rating combat sports fights, designed as an enterprise-ready app for potential acquisition by organizations like UFC or ESPN.
+FightCrewApp is a React Native + Node.js application for rating combat sports fights, designed as an enterprise-ready app for potential acquisition by organizations like UFC or ESPN.
 
 ## Development Commands
 
@@ -88,8 +88,8 @@ pnpm clean        # Clean Expo and node_modules cache
 ### Mobile Architecture
 
 #### Target Platforms
-- **iOS**: Native iOS app with tablet support (Bundle ID: `com.fightingtomatoes.mobile`)
-- **Android**: Native Android app with adaptive icon (Package: `com.fightingtomatoes.mobile`)
+- **iOS**: Native iOS app with tablet support (Bundle ID: `com.fightcrewapp.mobile`)
+- **Android**: Native Android app with adaptive icon (Package: `com.fightcrewapp.mobile`)
 - **Web**: Metro bundler with static output for web deployment
 - **Development**: Expo Development Build for faster development cycles
 
@@ -121,7 +121,7 @@ pnpm clean        # Clean Expo and node_modules cache
 #### Theme System
 - **Automatic theme detection**: Light/dark mode support with system preference detection
 - **Custom color scheme** (`constants/Colors.ts`): Combat sports inspired design
-  - Primary: Red (#dc2626 light, #ef4444 dark) - "Fighting Tomatoes" brand color
+  - Primary: Red (#dc2626 light, #ef4444 dark) - "FightCrewApp" brand color
   - Semantic colors: Success (Emerald), Warning (Amber), Danger (Red)
   - Tab bar theming with active/inactive states
 - **Typography**: FontAwesome icons for consistent UI elements

@@ -1,5 +1,5 @@
 @echo off
-echo 🍅 Setting up Fighting Tomatoes mobile app project structure...
+echo 🥊 Setting up FightCrewApp mobile app project structure...
 
 REM Create main project directory structure
 mkdir .github\workflows 2>nul
@@ -104,4 +104,4 @@ echo 2. Run: pnpm install
 echo 3. Run: docker-compose up -d
 echo 4. Run: cd packages\backend ^&^& pnpm prisma migrate dev --name init
 echo.
-echo 🍅 Happy coding!
+echo 🥊 Happy coding!

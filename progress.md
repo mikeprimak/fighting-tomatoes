@@ -60,7 +60,7 @@ Backend API development can now proceed with clean, scalable data layer.
 
 
 
-Fighting Tomatoes Development Progress
+FightCrewApp Development Progress
 Major Milestone Completed: Authentication System
 Week of 2025-09-20
 
