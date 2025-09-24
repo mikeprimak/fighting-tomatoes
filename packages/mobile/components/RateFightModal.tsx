@@ -16,6 +16,7 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { apiService, type ApiError } from '../services/api';
 import { useAuth } from '../store/AuthContext';
+import { AnalyticsService } from '../services/analytics';
 
 interface Fight {
   id: string;
@@ -190,8 +191,20 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
     mutationFn: ({ fightId, rating }: { fightId: string; rating: number }) => {
       return apiService.rateFight(fightId, rating);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('Rate fight SUCCESS:', data);
+
+      // Track analytics
+      if (fight) {
+        await AnalyticsService.trackFightRating(fight.id, rating);
+
+        // Check if this is user's first rating
+        const existingRating = fight.userRating;
+        if (!existingRating) {
+          await AnalyticsService.trackFirstRating();
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey });
       closeModal();
       Alert.alert('Success', 'Rating saved successfully!');
@@ -206,8 +219,20 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
     mutationFn: ({ fightId, data }: { fightId: string; data: any }) => {
       return apiService.reviewFight(fightId, data);
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       console.log('Review fight SUCCESS:', data);
+
+      // Track analytics
+      if (fight) {
+        await AnalyticsService.trackReviewPosted(fight.id, comment.length);
+
+        // Check if this is user's first review
+        const existingReview = fight.userReview;
+        if (!existingReview) {
+          await AnalyticsService.trackFirstReview();
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey });
       closeModal();
       Alert.alert('Success', 'Review saved successfully!');

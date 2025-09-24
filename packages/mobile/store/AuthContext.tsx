@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import { AnalyticsService } from '../services/analytics';
 
 interface User {
   id: string;
@@ -46,6 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initialize auth state on app start
   useEffect(() => {
     initializeAuth();
+    // Initialize analytics service
+    AnalyticsService.initialize();
   }, []);
 
   const initializeAuth = async () => {
@@ -88,6 +91,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessToken(data.accessToken);
       setUser(data.user);
 
+      // Set user ID for analytics
+      await AnalyticsService.setUserId(data.user.id);
+
+      // Track successful login
+      await AnalyticsService.trackUserLogin();
+
       // Navigate to main app
       router.replace('/(tabs)');
     } catch (error) {
@@ -119,6 +128,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAccessToken(data.accessToken);
       setUser(data.user);
+
+      // Set user ID for analytics
+      await AnalyticsService.setUserId(data.user.id);
+
+      // Track successful registration
+      await AnalyticsService.trackUserRegistration();
 
       // Navigate to main app
       router.replace('/(tabs)');
@@ -152,6 +167,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAccessToken(null);
       setUser(null);
+
+      // Clear analytics user ID and end session
+      await AnalyticsService.clearUserId();
+      await AnalyticsService.endSession();
 
       // Navigate to auth screen
       router.replace('/(auth)/login');

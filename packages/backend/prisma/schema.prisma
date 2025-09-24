@@ -66,6 +66,10 @@ model User {
   reviewVotes       ReviewVote[]
   activityLog       UserActivity[]
   notifications     UserNotification[]
+
+  // Analytics relations
+  analyticsEvents   AnalyticsEvent[]
+  userSessions      UserSession[]
   
   @@map("users")
 }
@@ -586,4 +590,129 @@ model UserRecommendation {
   
   @@unique([userId, fightId])
   @@map("user_recommendations")
+}
+
+// ============== ANALYTICS SYSTEM ==============
+model AnalyticsEvent {
+  id          String @id @default(uuid())
+
+  // Event identification
+  eventName   String        // e.g., "user_registered", "fight_rated", "review_posted"
+  eventType   EventType
+
+  // User context (nullable for anonymous events)
+  userId      String?
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionId   String?       // For tracking user sessions
+
+  // Event properties (JSON for flexibility)
+  properties  Json?         // e.g., { "fightId": "123", "rating": 8, "platform": "mobile" }
+
+  // Context metadata
+  userAgent   String?
+  platform    String?       // "ios", "android", "web"
+  appVersion  String?
+  ipAddress   String?       // For geographic analytics
+
+  // Timestamps
+  createdAt   DateTime      @default(now())
+
+  // Indexes for common queries
+  @@index([eventName, createdAt])
+  @@index([userId, createdAt])
+  @@index([eventType, createdAt])
+  @@index([platform, createdAt])
+  @@map("analytics_events")
+}
+
+enum EventType {
+  // User lifecycle
+  USER_LIFECYCLE     // registration, email_verified, profile_completed
+
+  // Authentication & sessions
+  AUTH_SESSION       // login, logout, session_start, session_end
+
+  // Core app actions
+  CONTENT_INTERACTION // fight_viewed, fighter_viewed, event_viewed
+  USER_ACTION        // fight_rated, review_posted, tag_applied, search_performed
+
+  // Navigation & engagement
+  NAVIGATION         // screen_viewed, tab_switched, deep_link_opened
+  ENGAGEMENT         // app_opened, app_backgrounded, push_notification_tapped
+
+  // Business metrics
+  CONVERSION         // first_rating, first_review, returned_user
+
+  // Technical & errors
+  PERFORMANCE        // api_response_time, crash_occurred, error_encountered
+}
+
+model UserSession {
+  id              String    @id @default(uuid())
+
+  // User context
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  sessionId       String    @unique
+
+  // Session metadata
+  platform        String?   // "ios", "android", "web"
+  appVersion      String?
+  deviceId        String?   // Anonymous device identifier
+
+  // Session timing
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
+  durationSeconds Int?      // Calculated on session end
+
+  // Session activity metrics
+  screenViewCount Int       @default(0)
+  eventCount      Int       @default(0)
+  ratingsGiven    Int       @default(0)
+  reviewsPosted   Int       @default(0)
+
+  // Session outcomes
+  wasConverted    Boolean   @default(false) // Did user complete a key action?
+  lastScreenName  String?
+
+  @@index([userId, startedAt])
+  @@index([sessionId])
+  @@map("user_sessions")
+}
+
+// Aggregated daily metrics for performance
+model DailyMetrics {
+  id                    String   @id @default(uuid())
+  date                  DateTime @unique @db.Date
+
+  // User metrics
+  totalUsers            Int      @default(0)
+  newUsers              Int      @default(0)
+  activeUsers           Int      @default(0)
+  returningUsers        Int      @default(0)
+
+  // Content metrics
+  totalRatings          Int      @default(0)
+  totalReviews          Int      @default(0)
+  totalTags             Int      @default(0)
+
+  // Engagement metrics
+  totalSessions         Int      @default(0)
+  avgSessionDuration    Float?   // in minutes
+  totalScreenViews      Int      @default(0)
+
+  // Fight-specific metrics
+  fightsRated           Int      @default(0)
+  avgRating             Float?
+  fightsViewed          Int      @default(0)
+
+  // Platform breakdown (JSON for flexibility)
+  platformMetrics       Json?    // { "ios": {...}, "android": {...}, "web": {...} }
+
+  // Auto-generated timestamp
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([date])
+  @@map("daily_metrics")
 }

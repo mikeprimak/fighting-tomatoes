@@ -15,6 +15,7 @@ import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../store/AuthContext';
 import { apiService, type Fight as ApiFight } from '../../services/api';
 import { FightDisplayCard, RateFightModal } from '../../components';
+import { useScreenTracking } from '../../services/analytics';
 
 // Helper function to extract user data from fight API response
 const extractUserDataFromFight = (fight: any, userId: string) => {
@@ -65,6 +66,9 @@ const extractUserDataFromFight = (fight: any, userId: string) => {
 };
 
 export default function FightsScreen() {
+  // Track screen view for analytics
+  useScreenTracking('Fights', { tab: 'fights' });
+
   const [selectedFight, setSelectedFight] = useState<any | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [processedFightId, setProcessedFightId] = useState<string | null>(null);
