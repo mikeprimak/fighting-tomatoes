@@ -30,7 +30,22 @@
       "Bash(rm:*)",
       "Bash(git push:*)",
       "Bash(pnpm prisma:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(pnpm install:*)",
+      "Bash(npx:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(pnpm store prune:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(ipconfig /flushdns)",
+      "Bash(cmd /c:*)",
+      "Bash(start \"\" http://localhost:8085)",
+      "Bash(start \"\" http://localhost:8086)",
+      "Bash(pnpm add:*)",
+      "Bash(start \"\" http://localhost:8087)",
+      "Bash(PORT=3008 node -r ts-node/register src/server.ts)",
+      "Bash(powershell:*)",
+      "Bash(ipconfig)",
+      "Bash(pnpm clean:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import { Platform } from 'react-native';
 import { AnalyticsService } from '../services/analytics';
 
 interface User {
@@ -33,9 +34,22 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL = __DEV__
-  ? 'http://10.0.0.53:3007/api'
-  : 'https://your-production-api.com/api';
+const getApiBaseUrl = () => {
+  const isDevelopment = (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.NODE_ENV === 'development';
+
+  if (!isDevelopment) {
+    return 'https://your-production-api.com/api';
+  }
+
+  // In development, use localhost for web and network IP for mobile
+  if (Platform.OS === 'web') {
+    return 'http://localhost:3008/api';
+  } else {
+    return 'http://10.0.0.53:3008/api';  // Network IP for mobile devices
+  }
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);

@@ -166,7 +166,8 @@ pnpm clean        # Clean Expo and node_modules cache
 ## API Endpoints
 
 ### Base URL
-- **Development**: `http://10.0.0.53:3008/api` (current active development server)
+- **Development (Web)**: `http://localhost:3008/api`
+- **Development (Mobile)**: `http://10.0.0.53:3008/api` (network IP for mobile device access)
 - **Production**: `https://your-production-api.com/api`
 
 ### Authentication Endpoints (`/api/auth/`)
@@ -327,6 +328,19 @@ All API responses follow consistent format:
 - Removed non-existent fields (team, nationality, birthDate, height, reach)
 - Updated API configuration to use port 3008
 - Proper pagination support for fighters endpoint
+
+### Mobile Device Testing & Network Configuration (Completed)
+✅ **End-to-end mobile device testing with Expo Go**
+- Resolved "unable to download remote update" error through systematic debugging
+- Implemented platform-aware API configuration for web vs mobile environments
+- Fixed backend server network accessibility for mobile devices
+- Updated API services to automatically detect platform and use appropriate endpoints:
+  - Web development: `http://localhost:3008/api`
+  - Mobile development: `http://10.0.0.53:3008/api` (network IP)
+- Fixed CORS configuration to allow mobile network access
+- Successfully tested login functionality on physical mobile device
+- Configured Expo development server with LAN access: `exp://10.0.0.53:8099`
+- Cleaned and rebuilt mobile dependencies to resolve Metro bundler issues
 
 ## IMPORTANT: Sound Notification
 

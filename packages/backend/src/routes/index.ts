@@ -2,7 +2,7 @@
 import { FastifyInstance } from 'fastify';
 import { fightRoutes } from './fights';
 import { authRoutes } from './auth.fastify';
-import analyticsRoutes from './analytics';
+// import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Health check endpoint
@@ -484,8 +484,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
     await fightRoutes(fastify);
   }, { prefix: '/api' });
 
-  // Register analytics routes under /api prefix
-  await fastify.register(async function(fastify) {
-    await analyticsRoutes(fastify);
-  }, { prefix: '/api/analytics' });
+  // Register analytics routes under /api prefix - TEMPORARILY DISABLED
+  // await fastify.register(async function(fastify) {
+  //   await analyticsRoutes(fastify);
+  // }, { prefix: '/api/analytics' });
 }

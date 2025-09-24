@@ -1,6 +1,7 @@
-import Fastify from 'fastify';
+import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import { PrismaClient } from '@prisma/client';
+import authPlugin from './middleware/auth.fastify';
 import { registerRoutes } from './routes';
 
 // Initialize Prisma client
@@ -11,10 +12,12 @@ const fastify = Fastify({
   logger: true
 });
 
-// Declare Prisma on Fastify instance
+// Declare Prisma and Auth on Fastify instance
 declare module 'fastify' {
   interface FastifyInstance {
     prisma: PrismaClient;
+    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    optionalAuthenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 
@@ -60,17 +63,26 @@ async function start() {
       origin: [
         'http://localhost:3000',      // Web development
         'http://localhost:8081',      // Expo development
+        'http://localhost:8087',      // Expo development client
         'exp://localhost:8081',       // Expo development
-        'http://192.168.1.100:8081',  // Local network (adjust IP as needed)
-        'exp://192.168.1.100:8081',   // Local network Expo
+        'exp://localhost:8087',       // Expo development client
+        'http://10.0.0.53:8081',      // Mobile network access
+        'http://10.0.0.53:8087',      // Mobile network access
+        'exp://10.0.0.53:8081',       // Expo mobile development
+        'exp://10.0.0.53:8087',       // Expo mobile development
       ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization'],
+      preflightContinue: false,
+      optionsSuccessStatus: 200,
     });
 
     // Add Prisma to Fastify context for easy access in routes
     fastify.decorate('prisma', prisma);
+
+    // Register auth plugin to add authentication middleware
+    await fastify.register(authPlugin);
 
     // Add request logging middleware
     fastify.addHook('onRequest', async (request, reply) => {

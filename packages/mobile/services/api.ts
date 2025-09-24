@@ -1,8 +1,23 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = __DEV__
-  ? 'http://10.0.0.53:3008/api'  // This matches your server
-  : 'https://your-production-api.com/api';
+import { Platform } from 'react-native';
+
+const getApiBaseUrl = () => {
+  const isDevelopment = (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.NODE_ENV === 'development';
+
+  if (!isDevelopment) {
+    return 'https://your-production-api.com/api';
+  }
+
+  // In development, use localhost for web and network IP for mobile
+  if (Platform.OS === 'web') {
+    return 'http://localhost:3008/api';
+  } else {
+    return 'http://10.0.0.53:3008/api';  // Network IP for mobile devices
+  }
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface Fight {
   id: string;
@@ -84,6 +99,7 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
+
     const url = `${API_BASE_URL}${endpoint}`;
     const token = await this.getAuthToken();
 
