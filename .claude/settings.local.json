@@ -15,9 +15,43 @@
       "Bash(pnpm docker:up:*)",
       "Bash(docker:*)",
       "Bash(start \"\" \"C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe\")",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(ls:*)",
+      "Bash(python:*)",
+      "Bash(paste:*)",
+      "Bash(PORT=3007 pnpm dev)",
+      "Bash(cd:*)",
+      "Bash(copy:*)",
+      "Bash(PORT=3008 pnpm dev)",
+      "Bash(git add:*)",
+      "Bash(git pull:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -c \"(New-Object Media.SoundPlayer 'C:\\Windows\\Media\\Alarm03.wav').PlaySync()\""
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -c \"(New-Object Media.SoundPlayer 'C:\\Windows\\Media\\Windows Notify System Generic.wav').PlaySync()\""
+          }
+        ]
+      }
+    ]
   }
 }
