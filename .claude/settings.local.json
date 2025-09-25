@@ -45,7 +45,12 @@
       "Bash(PORT=3008 node -r ts-node/register src/server.ts)",
       "Bash(powershell:*)",
       "Bash(ipconfig)",
-      "Bash(pnpm clean:*)"
+      "Bash(pnpm clean:*)",
+      "Bash(git commit:*)",
+      "Bash(pnpm exec prisma:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm db:migrate:*)",
+      "Bash(psql:*)"
     ],
     "deny": [],
     "ask": []

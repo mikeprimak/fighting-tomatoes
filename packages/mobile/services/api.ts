@@ -272,6 +272,80 @@ class ApiService {
 
     return this.makeRequest(endpoint);
   }
+
+  // Crew-related API methods
+  async getCrews(): Promise<{ crews: any[] }> {
+    return this.makeRequest('/crews');
+  }
+
+  async createCrew(data: {
+    name: string;
+    description?: string;
+    maxMembers?: number;
+    allowPredictions?: boolean;
+    allowRoundVoting?: boolean;
+    allowReactions?: boolean;
+  }): Promise<{ crew: any }> {
+    return this.makeRequest('/crews', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async joinCrew(inviteCode: string): Promise<{ crew: any }> {
+    return this.makeRequest('/crews/join', {
+      method: 'POST',
+      body: JSON.stringify({ inviteCode }),
+    });
+  }
+
+  async getCrew(crewId: string): Promise<{ crew: any }> {
+    return this.makeRequest(`/crews/${crewId}`);
+  }
+
+  async getCrewMessages(crewId: string, params: {
+    limit?: number;
+    before?: string;
+  } = {}): Promise<{ messages: any[] }> {
+    const queryParams = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const queryString = queryParams.toString();
+    const endpoint = `/crews/${crewId}/messages${queryString ? `?${queryString}` : ''}`;
+
+    return this.makeRequest(endpoint);
+  }
+
+  async sendCrewMessage(crewId: string, data: {
+    content: string;
+    fightId?: string;
+  }): Promise<{ message: any }> {
+    return this.makeRequest(`/crews/${crewId}/messages`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createCrewPrediction(crewId: string, fightId: string, data: {
+    hypeLevel: number;
+    predictedWinner?: string;
+    predictedMethod?: 'DECISION' | 'KO_TKO' | 'SUBMISSION';
+    predictedRound?: number;
+  }): Promise<{ prediction: any }> {
+    return this.makeRequest(`/crews/${crewId}/predictions/${fightId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getCrewPredictions(crewId: string, fightId: string): Promise<{ predictions: any[] }> {
+    return this.makeRequest(`/crews/${crewId}/predictions/${fightId}`);
+  }
 }
 
 export const apiService = new ApiService();

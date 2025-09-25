@@ -342,6 +342,48 @@ All API responses follow consistent format:
 - Configured Expo development server with LAN access: `exp://10.0.0.53:8099`
 - Cleaned and rebuilt mobile dependencies to resolve Metro bundler issues
 
+### Modal Component Reusability & Prepopulation System (December 2024)
+✅ **Reusable Modal Component Architecture**
+- **PredictionModal**: Converted from inline crew chat modal to reusable component (`packages/mobile/components/PredictionModal.tsx`)
+  - Full TypeScript interfaces with proper null safety
+  - Comprehensive crew prediction integration with React Query
+  - Automatic prepopulation of existing user predictions (hype level, predicted winner, method, round)
+  - Handles both `existingPrediction` prop and fetched crew predictions
+  - Intelligent form reset for new predictions vs existing data
+- **RateFightModal**: Replaced inline crew chat rating modal with existing reusable component
+  - Enhanced prepopulation logic for ratings, reviews, and tags
+  - Handles different API response structures (rating as number vs object)
+  - Smart data preference logic (review data over standalone ratings)
+  - Maps existing backend tags to frontend tag structure
+  - "Remove All My Data" functionality when user has existing data
+
+✅ **Data Persistence & Query Management**
+- **Fight Data Fetching**: Added real fight data queries to crew chat screen
+  - Fetches actual fight data with user information via `apiService.getFight()`
+  - Conditional query enabling only when modals are open for performance
+  - Proper query invalidation after successful submissions for fresh data
+  - Falls back to mock data when real API data unavailable
+- **Query Cache Integration**:
+  - Added `queryKey={['fight', fightId, 'withUserData']}` to RateFightModal
+  - PredictionModal invalidates fight data queries in `onSuccess` callback
+  - Ensures next modal open shows updated user data
+
+🔄 **In Progress: Modal Prepopulation Debugging**
+- Issue identified: Crew chat screen mock data lacks user-specific information
+- Root cause: Mock fight object missing `userRating`, `userReview`, `userTags` properties
+- Solution implemented: Added real API data fetching with user data inclusion
+- Status: Implementation complete but requires testing to verify full functionality
+- Next steps: Debug API response structure and ensure proper data mapping
+
+### Recent Component Updates (December 2024)
+- **packages/mobile/components/index.ts**: Updated exports for PredictionModal and RateFightModal
+- **packages/mobile/app/crew/[id].tsx**:
+  - Removed 200+ lines of inline prediction modal code
+  - Removed inline fight rating modal code and old state management
+  - Added fight data fetching query with user data
+  - Updated modal opening functions to use actual API data
+  - Added proper query invalidation for data refresh
+
 ## IMPORTANT: Sound Notification
 
 After finishing responding to my request or running a command, run this command to notify me by sound:

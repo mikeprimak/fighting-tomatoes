@@ -1,0 +1,588 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  Alert,
+} from 'react-native';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useColorScheme } from 'react-native';
+import { Colors } from '../constants/Colors';
+import { FontAwesome } from '@expo/vector-icons';
+import { apiService } from '../services/api';
+import { useAuth } from '../store/AuthContext';
+
+export type PredictionMethod = 'DECISION' | 'KO_TKO' | 'SUBMISSION';
+
+export interface Fighter {
+  id: string;
+  firstName: string;
+  lastName: string;
+  nickname?: string;
+}
+
+export interface Fight {
+  id: string;
+  scheduledRounds: number;
+  fighter1: Fighter;
+  fighter2: Fighter;
+  event: {
+    id: string;
+    name: string;
+    date: string;
+    promotion: string;
+  };
+}
+
+export interface PredictionData {
+  hypeLevel?: number;
+  predictedWinner?: string;
+  predictedMethod?: PredictionMethod;
+  predictedRound?: number;
+}
+
+interface PredictionModalProps {
+  visible: boolean;
+  onClose: () => void;
+  fight: Fight | null;
+  crewId?: string;
+  onSuccess?: (isUpdate: boolean) => void;
+  onSubmit?: (data: PredictionData) => Promise<void>;
+  existingPrediction?: PredictionData | null;
+  title?: string;
+  submitButtonText?: string;
+  updateButtonText?: string;
+}
+
+export function PredictionModal({
+  visible,
+  onClose,
+  fight,
+  crewId,
+  onSuccess,
+  onSubmit,
+  existingPrediction,
+  title = "Pre-Fight Predictions",
+  submitButtonText = "Submit Prediction",
+  updateButtonText = "Update Prediction",
+}: PredictionModalProps) {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  // Prediction state
+  const [hypeLevel, setHypeLevel] = useState(0);
+  const [predictedWinner, setPredictedWinner] = useState<string>('');
+  const [predictedMethod, setPredictedMethod] = useState<PredictionMethod | ''>('');
+  const [predictedRound, setPredictedRound] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch existing predictions for crew-based predictions
+  const { data: existingPredictions } = useQuery({
+    queryKey: ['crewPredictions', crewId, fight?.id],
+    queryFn: () => fight?.id && crewId ? apiService.getCrewPredictions(crewId, fight.id) : null,
+    enabled: !!fight?.id && !!crewId && visible,
+  });
+
+  // Create prediction mutation for crew-based predictions
+  const createPredictionMutation = useMutation({
+    mutationFn: (data: PredictionData) => {
+      if (!fight?.id || !crewId) throw new Error('Missing fight or crew ID');
+      return apiService.createCrewPrediction(crewId, fight.id, data);
+    },
+    onSuccess: () => {
+      if (crewId) {
+        queryClient.invalidateQueries({ queryKey: ['crewMessages', crewId] });
+        queryClient.invalidateQueries({ queryKey: ['crews'] });
+        queryClient.invalidateQueries({ queryKey: ['crewPredictions', crewId, fight?.id] });
+      }
+
+      const isUpdate = !!getCurrentUserPrediction();
+      const message = isUpdate ? 'Your prediction has been updated!' : 'Your prediction has been recorded!';
+      const alertTitle = isUpdate ? 'Prediction Updated' : 'Prediction Submitted';
+
+      Alert.alert(alertTitle, message);
+      onSuccess?.(isUpdate);
+      onClose();
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error.error || error.message || 'Failed to submit prediction');
+    },
+  });
+
+  // Get current user's existing prediction
+  const getCurrentUserPrediction = () => {
+    if (existingPrediction) return existingPrediction;
+    if (existingPredictions?.predictions && user) {
+      return existingPredictions.predictions.find((p: any) => p.userId === user.id);
+    }
+    return null;
+  };
+
+  // Populate modal with existing prediction data when it opens
+  useEffect(() => {
+    if (visible && fight && user) {
+      const userPrediction = getCurrentUserPrediction();
+
+      if (userPrediction) {
+        // Populate with existing prediction
+        setHypeLevel(userPrediction.hypeLevel || 0);
+        setPredictedWinner(userPrediction.predictedWinner || '');
+        setPredictedMethod(userPrediction.predictedMethod || '');
+        setPredictedRound(userPrediction.predictedRound || 0);
+      } else {
+        // Reset to blank state for new predictions
+        resetForm();
+      }
+    } else if (visible) {
+      // Reset to blank state when no existing predictions
+      resetForm();
+    }
+  }, [visible, existingPredictions, existingPrediction, fight, user]);
+
+  const resetForm = () => {
+    setHypeLevel(0);
+    setPredictedWinner('');
+    setPredictedMethod('');
+    setPredictedRound(0);
+  };
+
+  const handleClose = () => {
+    onClose();
+  };
+
+  const handleRoundSelection = (round: number) => {
+    setPredictedRound(round);
+    if (!fight) return;
+
+    const finalRound = fight.scheduledRounds;
+    // If Decision is selected but the new round isn't the final round, deselect method
+    if (predictedMethod === 'DECISION' && round !== finalRound) {
+      setPredictedMethod(''); // Deselect method
+    }
+  };
+
+  // Handle method selection with round logic
+  const handleMethodSelection = (method: PredictionMethod) => {
+    setPredictedMethod(method);
+    if (!fight) return;
+
+    // If Decision is selected, automatically set round to final round
+    if (method === 'DECISION') {
+      setPredictedRound(fight.scheduledRounds);
+    }
+  };
+
+  const handleSubmitPrediction = async () => {
+    // Check if at least one field is filled
+    const hasAnyPrediction = hypeLevel > 0 || predictedWinner || predictedMethod || predictedRound > 0;
+
+    if (!hasAnyPrediction) {
+      Alert.alert('No Prediction', 'Please make at least one prediction before submitting.');
+      return;
+    }
+
+    if (!fight) {
+      Alert.alert('Error', 'No fight selected for prediction.');
+      return;
+    }
+
+    const predictionData: PredictionData = {
+      hypeLevel: hypeLevel > 0 ? hypeLevel : undefined,
+      predictedWinner: predictedWinner || undefined,
+      predictedMethod: predictedMethod || undefined,
+      predictedRound: predictedRound > 0 ? predictedRound : undefined,
+    };
+
+    try {
+      setIsSubmitting(true);
+
+      if (onSubmit) {
+        // Custom submit handler
+        await onSubmit(predictionData);
+        const isUpdate = !!getCurrentUserPrediction();
+        onSuccess?.(isUpdate);
+        onClose();
+      } else if (crewId) {
+        // Default crew prediction submission
+        createPredictionMutation.mutate(predictionData);
+      } else {
+        throw new Error('No submission method provided');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to submit prediction');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!fight) {
+    console.log('PredictionModal: fight is null/undefined, not rendering');
+    return null;
+  }
+
+  if (!fight.fighter1 || !fight.fighter2) {
+    console.log('PredictionModal: fighters missing', { fighter1: fight.fighter1, fighter2: fight.fighter2 });
+    return null;
+  }
+
+  console.log('PredictionModal: rendering with fight', {
+    fightId: fight.id,
+    fighter1: fight.fighter1?.lastName,
+    fighter2: fight.fighter2?.lastName,
+    scheduledRounds: fight.scheduledRounds
+  });
+
+  const currentPrediction = getCurrentUserPrediction();
+  const isUpdate = !!currentPrediction;
+  const isPending = createPredictionMutation.isPending || isSubmitting;
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={handleClose}
+    >
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={handleClose}
+      >
+        <TouchableOpacity
+          style={[styles.predictionContainer, { backgroundColor: colors.card }]}
+          activeOpacity={1}
+        >
+          {/* Header */}
+          <View style={styles.predictionHeader}>
+            <Text style={[styles.predictionTitle, { color: colors.text }]}>
+              {title}
+            </Text>
+            <TouchableOpacity onPress={handleClose}>
+              <FontAwesome name="times" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Fight Info */}
+          <View style={[styles.fightInfo, { backgroundColor: colors.background }]}>
+            <Text style={[styles.fightTitle, { color: colors.text }]}>
+              {fight.fighter1?.lastName || 'Fighter 1'} vs {fight.fighter2?.lastName || 'Fighter 2'}
+            </Text>
+            <Text style={[styles.fightSubtitle, { color: colors.textSecondary }]}>
+              {fight.scheduledRounds} rounds scheduled
+            </Text>
+          </View>
+
+          {/* Hype Level */}
+          <View style={styles.predictionSection}>
+            <Text style={[styles.sectionLabel, { color: colors.text }]}>
+              1. How hyped are you for this fight? (1-10)
+            </Text>
+            <View style={styles.starContainer}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
+                <TouchableOpacity
+                  key={level}
+                  onPress={() => setHypeLevel(level)}
+                  style={styles.starButton}
+                >
+                  <Text style={[
+                    styles.star,
+                    { color: level <= hypeLevel ? colors.primary : colors.textSecondary }
+                  ]}>★</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={[styles.selectionHint, { color: colors.textSecondary }]}>
+              {hypeLevel > 0 ? `${hypeLevel}/10 selected` : 'Tap a star to select your hype level'}
+            </Text>
+          </View>
+
+          {/* Predicted Winner */}
+          <View style={styles.predictionSection}>
+            <Text style={[styles.sectionLabel, { color: colors.text }]}>
+              2. Who do you think will win?
+            </Text>
+            <View style={styles.fighterButtons}>
+              <TouchableOpacity
+                style={[
+                  styles.fighterButton,
+                  {
+                    backgroundColor: predictedWinner === fight.fighter1?.id ? colors.tint : colors.background,
+                    borderColor: colors.border,
+                  }
+                ]}
+                onPress={() => fight.fighter1?.id && setPredictedWinner(fight.fighter1.id)}
+              >
+                <Text style={[
+                  styles.fighterButtonText,
+                  {
+                    color: predictedWinner === fight.fighter1?.id ? 'white' : colors.text
+                  }
+                ]}>
+                  {fight.fighter1?.lastName || 'Fighter 1'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.fighterButton,
+                  {
+                    backgroundColor: predictedWinner === fight.fighter2?.id ? colors.tint : colors.background,
+                    borderColor: colors.border,
+                  }
+                ]}
+                onPress={() => fight.fighter2?.id && setPredictedWinner(fight.fighter2.id)}
+              >
+                <Text style={[
+                  styles.fighterButtonText,
+                  {
+                    color: predictedWinner === fight.fighter2?.id ? 'white' : colors.text
+                  }
+                ]}>
+                  {fight.fighter2?.lastName || 'Fighter 2'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Predicted Round */}
+          <View style={styles.predictionSection}>
+            <Text style={[styles.sectionLabel, { color: colors.text }]}>
+              3. What round will it end in?
+            </Text>
+            <View style={styles.roundButtons}>
+              {Array.from({ length: fight.scheduledRounds }, (_, i) => i + 1).map((round) => (
+                <TouchableOpacity
+                  key={round}
+                  style={[
+                    styles.roundButton,
+                    {
+                      backgroundColor: predictedRound === round ? colors.tint : colors.background,
+                      borderColor: colors.border,
+                    }
+                  ]}
+                  onPress={() => handleRoundSelection(round)}
+                >
+                  <Text style={[
+                    styles.roundButtonText,
+                    {
+                      color: predictedRound === round ? 'white' : colors.text
+                    }
+                  ]}>
+                    {round}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Predicted Method */}
+          <View style={styles.predictionSection}>
+            <Text style={[styles.sectionLabel, { color: colors.text }]}>
+              4. How will it end?
+            </Text>
+            <View style={styles.methodButtons}>
+              {(['DECISION', 'KO_TKO', 'SUBMISSION'] as const).map((method) => {
+                // Decision only available for final round
+                const isDecisionDisabled = method === 'DECISION' && predictedRound !== fight.scheduledRounds;
+
+                return (
+                  <TouchableOpacity
+                    key={method}
+                    style={[
+                      styles.methodButton,
+                      {
+                        backgroundColor: predictedMethod === method ? colors.tint : colors.background,
+                        borderColor: colors.border,
+                        opacity: isDecisionDisabled ? 0.5 : 1,
+                      }
+                    ]}
+                    onPress={() => !isDecisionDisabled && handleMethodSelection(method)}
+                    disabled={isDecisionDisabled}
+                  >
+                    <Text style={[
+                      styles.methodButtonText,
+                      {
+                        color: predictedMethod === method ? 'white' : colors.text
+                      }
+                    ]}>
+                      {method === 'KO_TKO' ? 'KO/TKO' : method}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Submit/Cancel Buttons */}
+          <View style={styles.predictionButtons}>
+            {(hypeLevel > 0 || predictedWinner || predictedMethod || predictedRound) ? (
+              <TouchableOpacity
+                style={[styles.submitButton, { backgroundColor: colors.primary }]}
+                onPress={handleSubmitPrediction}
+                disabled={isPending}
+              >
+                <Text style={styles.submitButtonText}>
+                  {isPending
+                    ? (isUpdate ? 'Updating...' : 'Submitting...')
+                    : (isUpdate ? updateButtonText : submitButtonText)}
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.cancelButton, { borderColor: colors.border }]}
+                onPress={handleClose}
+              >
+                <Text style={[styles.cancelButtonText, { color: colors.text }]}>Close</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  predictionContainer: {
+    width: '95%',
+    maxWidth: 450,
+    maxHeight: '90%',
+    padding: 20,
+    borderRadius: 16,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  predictionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  predictionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  fightInfo: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  fightTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  fightSubtitle: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  predictionSection: {
+    marginBottom: 20,
+  },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  starContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  starButton: {
+    padding: 4,
+  },
+  star: {
+    fontSize: 28,
+  },
+  selectionHint: {
+    textAlign: 'center',
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+  fighterButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  fighterButton: {
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  fighterButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  roundButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  roundButton: {
+    width: 50,
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  roundButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  methodButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  methodButton: {
+    flex: 1,
+    minWidth: 100,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  methodButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  predictionButtons: {
+    marginTop: 8,
+  },
+  submitButton: {
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

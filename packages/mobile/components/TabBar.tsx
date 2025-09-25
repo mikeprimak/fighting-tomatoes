@@ -103,6 +103,11 @@ export function FightCrewAppTabBar() {
       iconName: 'users'
     },
     {
+      name: 'crews',
+      title: 'Crews',
+      iconName: 'comments'
+    },
+    {
       name: 'profile',
       title: 'Profile',
       iconName: 'user'

@@ -1,24 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Platform,
+  Keyboard,
+  KeyboardEvent,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../store/AuthContext';
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from 'react-native';
+import { router } from 'expo-router';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const { login } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+
+  // Handle keyboard show/hide
+  useEffect(() => {
+    const keyboardShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (event: KeyboardEvent) => {
+        setKeyboardHeight(event.endCoordinates.height);
+      }
+    );
+
+    const keyboardHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardShowListener?.remove();
+      keyboardHideListener?.remove();
+    };
+  }, []);
 
   const handleLogin = async () => {
     setStatus('Button clicked!');
@@ -46,7 +73,7 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
+      <View style={[styles.content, { marginBottom: keyboardHeight }]}>
         <View style={styles.header}>
           <Text style={styles.title}>🥊</Text>
           <Text style={styles.subtitle}>FightCrewApp</Text>
@@ -98,6 +125,16 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
         </View>
+
+        {/* Sign Up Link */}
+        <TouchableOpacity
+          style={styles.signUpLink}
+          onPress={() => router.push('/register')}
+        >
+          <Text style={styles.signUpText}>
+            New? <Text style={[styles.signUpLinkText, { color: colors.tint }]}>Sign Up</Text>
+          </Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -174,6 +211,17 @@ const createStyles = (colors: any) => StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  signUpLink: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  signUpText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  signUpLinkText: {
     fontWeight: '600',
   },
 });

@@ -70,7 +70,15 @@ model User {
   // Analytics relations
   analyticsEvents   AnalyticsEvent[]
   userSessions      UserSession[]
-  
+
+  // Crew relations
+  createdCrews      Crew[]         @relation("CreatedCrews")
+  crewMemberships   CrewMember[]
+  crewMessages      CrewMessage[]
+  crewPredictions   CrewPrediction[]
+  crewRoundVotes    CrewRoundVote[]
+  crewReactions     CrewReaction[]
+
   @@map("users")
 }
 
@@ -222,6 +230,7 @@ model Fight {
   weightClass     WeightClass?
   isTitle         Boolean   @default(false)
   titleName       String?   // "UFC Heavyweight Championship"
+  scheduledRounds Int       @default(3)   // 3 for MMA, 5 for title fights, 8/10/12 for boxing
   orderOnCard     Int       // 1 = main event, higher numbers = earlier fights
   
   // Result
@@ -269,7 +278,13 @@ model Fight {
   predictions     FightPrediction[]
   tags            FightTag[]
   alerts          FightAlert[]
-  
+
+  // Crew relations
+  crewMessages      CrewMessage[]
+  crewPredictions   CrewPrediction[]
+  crewRoundVotes    CrewRoundVote[]
+  crewReactions     CrewReaction[]
+
   @@map("fights")
 }
 
@@ -715,4 +730,216 @@ model DailyMetrics {
 
   @@index([date])
   @@map("daily_metrics")
+}
+
+// ============== PRIVATE FIGHT CREWS ==============
+
+// Crew management
+model Crew {
+  id              String    @id @default(uuid())
+  name            String
+  description     String?
+
+  // Access control
+  inviteCode      String    @unique  // 6-8 char code for joining
+  isPrivate       Boolean   @default(true)
+  maxMembers      Int       @default(20)
+
+  // Creator
+  createdBy       String
+  creator         User      @relation("CreatedCrews", fields: [createdBy], references: [id])
+
+  // Settings
+  allowPredictions Boolean  @default(true)
+  allowRoundVoting Boolean  @default(true)
+  allowReactions   Boolean  @default(true)
+
+  // Stats
+  totalMembers    Int       @default(1)
+  totalMessages   Int       @default(0)
+  totalFights     Int       @default(0) // fights watched together
+
+  // Status
+  isActive        Boolean   @default(true)
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  members         CrewMember[]
+  messages        CrewMessage[]
+  predictions     CrewPrediction[]
+  roundVotes      CrewRoundVote[]
+  reactions       CrewReaction[]
+
+  @@map("crews")
+}
+
+// Crew membership
+model CrewMember {
+  id          String    @id @default(uuid())
+
+  // Relationships
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  crewId      String
+  crew        Crew      @relation(fields: [crewId], references: [id], onDelete: Cascade)
+
+  // Role & permissions
+  role        CrewRole  @default(MEMBER)
+
+  // Member stats
+  messagesCount    Int       @default(0)
+  predictionsCount Int       @default(0)
+  correctPredictions Int     @default(0)
+
+  // Status
+  isActive    Boolean   @default(true)
+  isMuted     Boolean   @default(false)
+
+  // Timestamps
+  joinedAt    DateTime  @default(now())
+  lastActiveAt DateTime @default(now())
+
+  @@unique([userId, crewId])
+  @@map("crew_members")
+}
+
+enum CrewRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// Chat messages (MVP core feature)
+model CrewMessage {
+  id              String    @id @default(uuid())
+
+  // Relationships
+  crewId          String
+  crew            Crew      @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Message content
+  content         String?   // nullable for structured messages
+  messageType     MessageType @default(TEXT)
+
+  // Fight context (for structured messages)
+  fightId         String?
+  fight           Fight?    @relation(fields: [fightId], references: [id])
+
+  // Structured data (JSON for predictions, votes, etc.)
+  structuredData  Json?     // { "predictionData": {...}, "voteData": {...} }
+
+  // Message status
+  isEdited        Boolean   @default(false)
+  isDeleted       Boolean   @default(false)
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  editedAt        DateTime?
+
+  @@index([crewId, createdAt])
+  @@map("crew_messages")
+}
+
+enum MessageType {
+  TEXT              // Regular chat message
+  PREDICTION        // "John predicts Fighter A by KO in Round 2"
+  ROUND_VOTE        // "Round 1 voting: Fighter A (3 votes), Fighter B (1 vote)"
+  RATING           // "John rated this fight 8/10"
+  REACTION         // "🔥 John: This round was fire!"
+  FIGHT_UPDATE     // "Fight starting now!" (automated)
+  FIGHT_RESULT     // "Winner: Fighter A by TKO R2" (automated)
+}
+
+// Predictions (MVP must-have)
+model CrewPrediction {
+  id              String    @id @default(uuid())
+
+  // Relationships
+  crewId          String
+  crew            Crew      @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  fightId         String
+  fight           Fight     @relation(fields: [fightId], references: [id])
+
+  // Pre-fight prediction data (user's predictions)
+  hypeLevel       Int       // 1-10 how hyped the user is for this fight
+  predictedWinner String?   // fighter1Id or fighter2Id
+  predictedMethod PredictionMethod? // Decision, KO/TKO, Submission
+  predictedRound  Int?      // 1-5 (depends on fight type)
+  confidence      Int       @default(5) // 1-10 scale (optional for now)
+
+  // Result tracking (filled after fight)
+  isCorrectWinner Boolean?  // filled after fight
+  isCorrectMethod Boolean?
+  isCorrectRound  Boolean?
+  accuracyScore   Float?    // overall accuracy 0-1
+
+  // Status
+  isLocked        Boolean   @default(false) // locked when fight starts
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([crewId, userId, fightId])
+  @@map("crew_predictions")
+}
+
+enum PredictionMethod {
+  DECISION
+  KO_TKO
+  SUBMISSION
+}
+
+// Round voting (MVP must-have)
+model CrewRoundVote {
+  id          String    @id @default(uuid())
+
+  // Relationships
+  crewId      String
+  crew        Crew      @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  fightId     String
+  fight       Fight     @relation(fields: [fightId], references: [id])
+
+  // Round data
+  roundNumber Int       // 1-5
+  winner      String    // fighter1Id or fighter2Id
+  score       String?   // "10-9", "10-8", etc.
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+
+  @@unique([crewId, userId, fightId, roundNumber])
+  @@map("crew_round_votes")
+}
+
+// Reactions (Phase 2, but simple to add)
+model CrewReaction {
+  id          String    @id @default(uuid())
+
+  // Relationships
+  crewId      String
+  crew        Crew      @relation(fields: [crewId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  fightId     String?
+  fight       Fight?    @relation(fields: [fightId], references: [id])
+
+  // Reaction data
+  emoji       String    // "🔥", "😱", "🥱", "💪"
+  context     String?   // "round_1", "ko_finish", "fight_start"
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+
+  @@map("crew_reactions")
 }

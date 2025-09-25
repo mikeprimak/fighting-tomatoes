@@ -2,6 +2,7 @@
 import { FastifyInstance } from 'fastify';
 import { fightRoutes } from './fights';
 import { authRoutes } from './auth.fastify';
+import { crewRoutes } from './crews';
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
 
 export async function registerRoutes(fastify: FastifyInstance) {
@@ -482,6 +483,11 @@ export async function registerRoutes(fastify: FastifyInstance) {
   // Register fight routes under /api prefix
   await fastify.register(async function(fastify) {
     await fightRoutes(fastify);
+  }, { prefix: '/api' });
+
+  // Register crew routes under /api prefix
+  await fastify.register(async function(fastify) {
+    await crewRoutes(fastify);
   }, { prefix: '/api' });
 
   // Register analytics routes under /api prefix - TEMPORARILY DISABLED
