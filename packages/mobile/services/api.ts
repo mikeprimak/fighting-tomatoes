@@ -13,7 +13,7 @@ const getApiBaseUrl = () => {
   if (Platform.OS === 'web') {
     return 'http://localhost:3008/api';
   } else {
-    return 'http://10.0.0.53:3008/api';  // Network IP for mobile devices
+    return 'http://10.0.0.53:3008/api';  // Network IP for mobile devices (working server)
   }
 };
 

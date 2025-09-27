@@ -265,9 +265,12 @@ export async function fightRoutes(fastify: FastifyInstance) {
   });
 
   // GET /api/fights/:id - Get single fight with full details
-  fastify.get('/fights/:id', async (request, reply) => {
+  fastify.get('/fights/:id', { preHandler: optionalAuth }, async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
+      const currentUserId = (request as any).user?.id; // Optional auth - may or may not be present
+
+      console.log('Getting single fight with ID:', id, 'User ID:', currentUserId);
 
       const fight = await prisma.fight.findUnique({
         where: { id },
@@ -275,7 +278,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
           event: true,
           fighter1: true,
           fighter2: true,
-          ratings: {
+          ratings: currentUserId ? {
+            where: { userId: currentUserId }, // Only get current user's rating
             include: {
               user: {
                 select: {
@@ -289,10 +293,12 @@ export async function fightRoutes(fastify: FastifyInstance) {
                 },
               },
             },
-            orderBy: { createdAt: 'desc' },
-            take: 20,
-          },
-          reviews: {
+          } : false, // Don't include ratings if no user
+          reviews: currentUserId ? {
+            where: {
+              userId: currentUserId,
+              isHidden: false
+            }, // Only get current user's review
             include: {
               user: {
                 select: {
@@ -306,15 +312,15 @@ export async function fightRoutes(fastify: FastifyInstance) {
                 },
               },
             },
-            where: { isHidden: false },
-            orderBy: { upvotes: 'desc' },
-            take: 10,
-          },
-          tags: {
+          } : false, // Don't include reviews if no user
+          tags: currentUserId ? {
+            where: {
+              userId: currentUserId // Only get current user's tags
+            },
             include: {
               tag: true,
             },
-          },
+          } : false, // Don't include tags if no user
         },
       });
 
@@ -325,8 +331,50 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      return reply.code(200).send({ fight });
+      // Transform the fight data to include user-specific data in the expected format (like the /fights endpoint)
+      const fightWithRelations = fight as any;
+      const transformedFight: any = { ...fight };
+
+      if (currentUserId) {
+        // Transform user rating (take the first/only rating)
+        if (fightWithRelations.ratings && fightWithRelations.ratings.length > 0) {
+          transformedFight.userRating = fightWithRelations.ratings[0].rating;
+          console.log('Found user rating:', fightWithRelations.ratings[0].rating);
+        }
+
+        // Transform user review (take the first/only review)
+        if (fightWithRelations.reviews && fightWithRelations.reviews.length > 0) {
+          transformedFight.userReview = {
+            content: fightWithRelations.reviews[0].content,
+            rating: fightWithRelations.reviews[0].rating,
+            createdAt: fightWithRelations.reviews[0].createdAt,
+          };
+          console.log('Found user review:', transformedFight.userReview);
+        }
+
+        // Transform user tags (extract tag names)
+        if (fightWithRelations.tags && fightWithRelations.tags.length > 0) {
+          transformedFight.userTags = fightWithRelations.tags.map((fightTag: any) => fightTag.tag.name);
+          console.log('Found user tags:', transformedFight.userTags);
+        }
+
+        // Remove the raw arrays to avoid confusion
+        delete transformedFight.ratings;
+        delete transformedFight.reviews;
+        delete transformedFight.tags;
+      }
+
+      // Final response logging
+      console.log('Returning fight data with user-specific info:', {
+        fightId: id,
+        hasUserRating: !!transformedFight.userRating,
+        hasUserReview: !!transformedFight.userReview,
+        hasUserTags: !!transformedFight.userTags
+      });
+
+      return reply.code(200).send({ fight: transformedFight });
     } catch (error) {
+      console.error('Error in /fights/:id route:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',

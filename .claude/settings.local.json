@@ -50,7 +50,9 @@
       "Bash(pnpm exec prisma:*)",
       "Bash(pnpm remove:*)",
       "Bash(pnpm db:migrate:*)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(pnpm type-check:*)",
+      "Bash(pnpm lint:*)"
     ],
     "deny": [],
     "ask": []

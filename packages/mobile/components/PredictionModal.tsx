@@ -68,6 +68,7 @@ export function PredictionModal({
   submitButtonText = "Submit Prediction",
   updateButtonText = "Update Prediction",
 }: PredictionModalProps) {
+  console.log('🔥 PredictionModal RENDER - Fight:', fight?.id, 'Visible:', visible, 'CrewId:', crewId);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
@@ -81,9 +82,17 @@ export function PredictionModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch existing predictions for crew-based predictions
-  const { data: existingPredictions } = useQuery({
+  const { data: existingPredictions, isLoading: predictionsLoading, error: predictionsError } = useQuery({
     queryKey: ['crewPredictions', crewId, fight?.id],
-    queryFn: () => fight?.id && crewId ? apiService.getCrewPredictions(crewId, fight.id) : null,
+    queryFn: async () => {
+      if (fight?.id && crewId) {
+        console.log('PredictionModal: Fetching predictions for crewId:', crewId, 'fightId:', fight.id);
+        const result = await apiService.getCrewPredictions(crewId, fight.id);
+        console.log('PredictionModal: Predictions API response:', result);
+        return result;
+      }
+      return null;
+    },
     enabled: !!fight?.id && !!crewId && visible,
   });
 
@@ -117,7 +126,12 @@ export function PredictionModal({
   const getCurrentUserPrediction = () => {
     if (existingPrediction) return existingPrediction;
     if (existingPredictions?.predictions && user) {
-      return existingPredictions.predictions.find((p: any) => p.userId === user.id);
+      console.log('PredictionModal: Looking for user prediction. User ID:', user.id);
+      console.log('PredictionModal: Available predictions:', existingPredictions.predictions);
+      // Backend returns predictions with user.id, not userId
+      const userPrediction = existingPredictions.predictions.find((p: any) => p.user?.id === user.id);
+      console.log('PredictionModal: Found user prediction:', userPrediction);
+      return userPrediction;
     }
     return null;
   };
@@ -127,17 +141,42 @@ export function PredictionModal({
     if (visible && fight && user) {
       const userPrediction = getCurrentUserPrediction();
 
+      console.log('PredictionModal useEffect - Debug data:', {
+        visible,
+        fightId: fight?.id,
+        userId: user?.id,
+        existingPredictions: existingPredictions,
+        existingPrediction: existingPrediction,
+        userPrediction: userPrediction,
+        crewId: crewId
+      });
+
       if (userPrediction) {
+        console.log('PredictionModal: Populating with existing prediction:', userPrediction);
         // Populate with existing prediction
         setHypeLevel(userPrediction.hypeLevel || 0);
         setPredictedWinner(userPrediction.predictedWinner || '');
-        setPredictedMethod(userPrediction.predictedMethod || '');
-        setPredictedRound(userPrediction.predictedRound || 0);
+
+        const round = userPrediction.predictedRound || 0;
+        const method = userPrediction.predictedMethod || '';
+
+        // Validate Decision method with round selection
+        if (method === 'DECISION' && round !== fight.scheduledRounds) {
+          console.log('PredictionModal: Invalid combination - Decision with non-final round, fixing...');
+          // If Decision is selected but round is not final, deselect Decision
+          setPredictedMethod('');
+          setPredictedRound(round);
+        } else {
+          setPredictedMethod(method);
+          setPredictedRound(round);
+        }
       } else {
+        console.log('PredictionModal: No existing prediction found, resetting form');
         // Reset to blank state for new predictions
         resetForm();
       }
     } else if (visible) {
+      console.log('PredictionModal: Visible but missing fight/user, resetting form');
       // Reset to blank state when no existing predictions
       resetForm();
     }
@@ -261,7 +300,7 @@ export function PredictionModal({
             <Text style={[styles.predictionTitle, { color: colors.text }]}>
               {title}
             </Text>
-            <TouchableOpacity onPress={handleClose}>
+            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <FontAwesome name="times" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -473,6 +512,10 @@ const styles = StyleSheet.create({
   predictionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 12,
+    margin: -12,
   },
   fightInfo: {
     padding: 12,

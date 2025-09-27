@@ -68,6 +68,12 @@ export default function LoginScreen() {
     }
   };
 
+  const fillTestCredentials = () => {
+    setEmail('test@fightingtomatoes.com');
+    setPassword('password123');
+    setStatus('Test credentials filled');
+  };
+
 
   const styles = createStyles(colors);
 
@@ -121,6 +127,16 @@ export default function LoginScreen() {
           >
             <Text style={styles.buttonText}>
               {isLoading ? 'Signing In...' : 'Sign In'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Development Login Button */}
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={fillTestCredentials}
+          >
+            <Text style={styles.devButtonText}>
+              🧪 Fill Test Credentials (Dev)
             </Text>
           </TouchableOpacity>
 
@@ -212,6 +228,20 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  devButton: {
+    backgroundColor: colors.textSecondary,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  devButtonText: {
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '500',
   },
   signUpLink: {
     marginTop: 24,

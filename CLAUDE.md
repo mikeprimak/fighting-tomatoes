@@ -241,6 +241,9 @@ All API responses follow consistent format:
 4. Seed database: `pnpm db:seed`
 5. Start development: `pnpm dev`
 
+### Server Startup Troubleshooting
+**IMPORTANT**: When starting servers, if Expo doesn't show the QR code immediately, open the development server directly with `curl http://localhost:8081` to trigger Metro bundler completion. This ensures the Expo development server fully initializes and displays the QR code for mobile device access.
+
 ## Authentication Flow
 - JWT-based with refresh token rotation
 - Password requirements: 8+ chars, uppercase, lowercase, number, special char
@@ -384,10 +387,40 @@ All API responses follow consistent format:
   - Updated modal opening functions to use actual API data
   - Added proper query invalidation for data refresh
 
-## IMPORTANT: Sound Notification
+### Crew Chat Keyboard & UX Improvements (December 2024)
+✅ **Stable Keyboard Behavior Implementation**
+- **Point A - Stable Keyboard Behavior**: Eliminated visual glitching on first message send
+  - Removed KeyboardAvoidingView wrapper that caused layout conflicts
+  - Implemented absolute positioning for input area with dynamic keyboard height detection
+  - Used manual keyboard height tracking: `bottom: keyboardHeight > 0 ? keyboardHeight + 23 : (Platform.OS === 'ios' ? 34 : 0)`
+  - Fixed chat container with `paddingBottom: 70` to prevent message overlap
+  - Simplified scroll logic to prevent timing conflicts during initial load
 
-After finishing responding to my request or running a command, run this command to notify me by sound:
+- **Point B - Inverted FlatList with Instant Bottom Positioning**: Enhanced chat opening behavior
+  - Implemented `inverted` prop on FlatList for natural bottom-up chat interface
+  - Used reversed message data: `[...messages].reverse()` to maintain chronological order
+  - Eliminated scroll animations and delays on chat open - instantly shows newest messages
+  - Removed complex `initialScrollIndex` and `getItemLayout` calculations
+  - Achieved immediate positioning without timeouts or scroll handling
 
-```bash
-powershell -c "(New-Object Media.SoundPlayer 'C:\Windows\Media\Alarm03.wav').PlaySync()"
-```
+✅ **Key Technical Solutions**:
+- **Input Area Positioning**: Absolute positioning with keyboard-aware bottom calculation
+- **Glitch Prevention**: Removed competing layout systems (KeyboardAvoidingView)
+- **Chat Opening**: Inverted FlatList for instant bottom positioning
+- **Keyboard Handling**: Manual keyboard height detection via Keyboard API listeners
+- **Safe Area Support**: iOS safe area (34px) when keyboard hidden, dynamic when visible
+
+**File Modified**: `packages/mobile/app/crew/[id].tsx`
+- Keyboard height tracking with proper event listeners
+- Absolute positioned input container with dynamic bottom positioning
+- Inverted FlatList with reversed message data for instant bottom display
+- Simplified message mutation without forced scroll handling
+
+## Next Session Priority
+🔄 **Chat Messages Keyboard Integration**
+When we start the next session, we'll begin by implementing keyboard-aware chat message positioning. The goal is to make all chat messages rise up with the keyboard and input area so that the most recent message remains visible while typing. This will require:
+- Adjusting the chat container's bottom padding/margin dynamically with keyboard height
+- Ensuring the inverted FlatList responds properly to keyboard changes
+- Maintaining the stable keyboard behavior from Point B while adding message area responsiveness
+- Testing that messages stay visible and scrollable during keyboard interaction
+

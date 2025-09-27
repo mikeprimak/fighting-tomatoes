@@ -7,3 +7,4 @@ export { default as EventCard } from './EventCard';
 export { default as FighterCard } from './FighterCard';
 export { PredictionModal } from './PredictionModal';
 export type { PredictionData, PredictionMethod, Fighter, Fight } from './PredictionModal';
+export { default as RoundVotingSlideup } from './RoundVotingSlideup';

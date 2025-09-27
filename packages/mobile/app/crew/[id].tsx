@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,16 +13,17 @@ import {
   Dimensions,
   Modal,
   Share,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { FontAwesome } from '@expo/vector-icons';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
-import { PredictionModal, RateFightModal, Fight } from '../../components';
+import { PredictionModal, RateFightModal, RoundVotingSlideup, Fight } from '../../components';
 
 interface Message {
   id: string;
@@ -68,14 +69,45 @@ export default function CrewChatScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
   const flatListRef = useRef<FlatList>(null);
+  const textInputRef = useRef<TextInput>(null);
   const { user } = useAuth();
+
 
   const [message, setMessage] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showFightRatingModal, setShowFightRatingModal] = useState(false);
   const [showPredictionModal, setShowPredictionModal] = useState(false);
+  const [showRoundVoting, setShowRoundVoting] = useState(false);
   const [currentFight, setCurrentFight] = useState<Fight | null>(null);
+  const [currentRound, setCurrentRound] = useState(1);
+
+  // Manual keyboard height tracking
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (event) => {
+        setKeyboardHeight(event.endCoordinates.height);
+      }
+    );
+
+    const hideSubscription = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      showSubscription?.remove();
+      hideSubscription?.remove();
+      // Ensure keyboard is dismissed when leaving screen
+      Keyboard.dismiss();
+      setMessage('');
+      setKeyboardHeight(0);
+    };
+  }, []);
+
 
   // Mock fight data for testing - using real fight ID from database
   const mockFight: Fight = {
@@ -100,31 +132,6 @@ export default function CrewChatScreen() {
     }
   };
 
-  // Handle keyboard show/hide
-  useEffect(() => {
-    const keyboardShowListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (event: KeyboardEvent) => {
-        setKeyboardHeight(event.endCoordinates.height);
-        // Scroll to bottom when keyboard shows
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-      }
-    );
-
-    const keyboardHideListener = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => {
-        setKeyboardHeight(0);
-      }
-    );
-
-    return () => {
-      keyboardShowListener?.remove();
-      keyboardHideListener?.remove();
-    };
-  }, []);
 
   // Generate consistent color for each user
   const getUserColor = (userId: string): string => {
@@ -154,6 +161,7 @@ export default function CrewChatScreen() {
     return colors[Math.abs(hash) % colors.length];
   };
 
+
   // Get crew details
   const {
     data: crewData,
@@ -178,6 +186,7 @@ export default function CrewChatScreen() {
     refetchInterval: 5000, // Poll every 5 seconds for new messages
   });
 
+
   // Fetch actual fight data with user data for modals
   const {
     data: actualFightData,
@@ -191,16 +200,13 @@ export default function CrewChatScreen() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: (content: string) =>
-      apiService.sendCrewMessage(id!, { content }),
-    onSuccess: () => {
+    mutationFn: (data: { content: string; fightId?: string }) => {
+      return apiService.sendCrewMessage(id!, data);
+    },
+    onSuccess: (data) => {
       setMessage('');
       queryClient.invalidateQueries({ queryKey: ['crewMessages', id] });
       queryClient.invalidateQueries({ queryKey: ['crews'] });
-      // Scroll to bottom after sending
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
     },
     onError: (error: any) => {
       Alert.alert('Error', error.error || 'Failed to send message');
@@ -209,9 +215,13 @@ export default function CrewChatScreen() {
 
 
   const handleSendMessage = () => {
-    if (message.trim()) {
-      sendMessageMutation.mutate(message.trim());
-      Keyboard.dismiss();
+    if (message.trim() && !sendMessageMutation.isPending) {
+      // Send message first
+      sendMessageMutation.mutate({ content: message.trim() });
+      // Then blur input with a small delay to prevent layout conflicts
+      setTimeout(() => {
+        textInputRef.current?.blur();
+      }, 50);
     }
   };
 
@@ -270,6 +280,14 @@ export default function CrewChatScreen() {
     setShowPredictionModal(true);
   };
 
+  // Function to simulate round ending and show round voting slideup
+  const simulateRoundEnd = () => {
+    const fightToUse = actualFightData?.fight || mockFight;
+    console.log('simulateRoundEnd - Round', currentRound, 'ended for fight:', fightToUse.id);
+    setCurrentFight(fightToUse);
+    setShowRoundVoting(true);
+  };
+
 
   const closeFightRatingModal = () => {
     setShowFightRatingModal(false);
@@ -281,34 +299,107 @@ export default function CrewChatScreen() {
     setCurrentFight(null);
   };
 
+  const closeRoundVoting = () => {
+    setShowRoundVoting(false);
+    setCurrentFight(null);
+  };
+
+  const handleRoundWinnerSelected = (fighterId: string, fighterName: string) => {
+    console.log(`Round ${currentRound} winner selected:`, fighterName, `(ID: ${fighterId})`);
+
+    // Send message to crew chat about round winner selection
+    const message = `Round ${currentRound}: ${fighterName} 🥊`;
+    sendMessageMutation.mutate({
+      content: message,
+      fightId: currentFight?.id
+    });
+
+    // Move to next round for next round voting
+    setCurrentRound(prev => prev + 1);
+
+    // Close the slideup
+    closeRoundVoting();
+  };
+
 
 
 
   const renderMessage = ({ item }: { item: Message }) => {
     const userColor = getUserColor(item.user.id);
+    const isCurrentUser = item.user.id === user?.id;
 
     return (
-      <View style={[styles.messageContainer, { borderLeftColor: userColor }]}>
-        <View style={styles.messageHeader}>
-          <Text style={[styles.userName, { color: userColor }]}>{item.user.name}</Text>
-        <Text style={[styles.timestamp, { color: colors.textSecondary }]}>
-          {new Date(item.createdAt).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit'
-          })}
-        </Text>
-      </View>
-      <Text style={[styles.messageContent, { color: colors.text }]}>
-        {item.content}
-      </Text>
-      {item.fight && (
-        <View style={[styles.fightReference, { backgroundColor: colors.background }]}>
-          <FontAwesome name="star" size={14} color={colors.tint} />
-          <Text style={[styles.fightText, { color: colors.textSecondary }]}>
-            {item.fight.matchup}
+      <View
+        style={[
+          styles.messageWrapper,
+          isCurrentUser ? styles.currentUserWrapper : styles.otherUserWrapper,
+        ]}
+      >
+        <View style={[
+          styles.messageContainer,
+          isCurrentUser ? [
+            styles.currentUserMessage,
+            { backgroundColor: '#5A7A9A' }
+          ] : [
+            styles.otherUserMessage,
+            { borderLeftColor: userColor, backgroundColor: colors.card }
+          ]
+        ]}>
+          {!isCurrentUser && (
+            <Text style={[
+              styles.userName,
+              {
+                color: userColor,
+                marginBottom: 4
+              }
+            ]}>
+              {item.user.name}
+            </Text>
+          )}
+          <Text style={[
+            styles.messageContent,
+            {
+              color: isCurrentUser ? 'white' : colors.text
+            }
+          ]}>
+            {item.content}
           </Text>
+          {item.fight && (
+            <View style={[
+              styles.fightReference,
+              {
+                backgroundColor: isCurrentUser ? 'rgba(255, 255, 255, 0.15)' : colors.background
+              }
+            ]}>
+              <FontAwesome
+                name="star"
+                size={14}
+                color={isCurrentUser ? 'white' : colors.tint}
+              />
+              <Text style={[
+                styles.fightText,
+                {
+                  color: isCurrentUser ? 'rgba(255, 255, 255, 0.9)' : colors.textSecondary
+                }
+              ]}>
+                {item.fight.matchup}
+              </Text>
+            </View>
+          )}
+          <View style={styles.messageFooter}>
+            <Text style={[
+              styles.timestamp,
+              {
+                color: isCurrentUser ? 'rgba(255, 255, 255, 0.8)' : colors.textSecondary
+              }
+            ]}>
+              {new Date(item.createdAt).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </Text>
+          </View>
         </View>
-      )}
       </View>
     );
   };
@@ -354,9 +445,11 @@ export default function CrewChatScreen() {
   const messages = messagesData?.messages || [];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+    <>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()}>
           <FontAwesome name="arrow-left" size={20} color={colors.text} />
         </TouchableOpacity>
@@ -372,6 +465,9 @@ export default function CrewChatScreen() {
           <TouchableOpacity onPress={simulatePreFight} style={styles.testButton}>
             <FontAwesome name="trophy" size={16} color={colors.tint} />
           </TouchableOpacity>
+          <TouchableOpacity onPress={simulateRoundEnd} style={styles.testButton}>
+            <FontAwesome name="clock-o" size={16} color={colors.tint} />
+          </TouchableOpacity>
           <TouchableOpacity onPress={simulateFightEnd} style={styles.testButton}>
             <FontAwesome name="star" size={16} color={colors.tint} />
           </TouchableOpacity>
@@ -381,57 +477,108 @@ export default function CrewChatScreen() {
         </View>
       </View>
 
-      <View style={styles.keyboardContainer}>
-        {/* Messages */}
-        <View style={[styles.chatContainer, { marginBottom: keyboardHeight > 0 ? -keyboardHeight : 0 }]}>
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={messages.length === 0 ? styles.emptyListContainer : styles.messagesContainer}
-            ListEmptyComponent={renderEmptyState}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-            onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          />
+      {/* Event/Fight Status Bar */}
+      <View style={[styles.statusBar, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+        <View style={styles.statusSection}>
+          <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Event</Text>
+          <Text style={[styles.statusValue, { color: colors.text }]} numberOfLines={1}>
+            {mockFight.event.name}
+          </Text>
         </View>
+        <View style={styles.statusDivider} />
+        <View style={styles.statusSection}>
+          <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Current Fight</Text>
+          <Text style={[styles.statusValue, { color: colors.text }]} numberOfLines={1}>
+            {mockFight.fighter1.lastName} vs {mockFight.fighter2.lastName}
+          </Text>
+        </View>
+        <View style={styles.statusDivider} />
+        <View style={styles.statusSection}>
+          <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Round</Text>
+          <Text style={[styles.statusValue, { color: colors.tint }]}>
+            {currentRound} / {mockFight.scheduledRounds}
+          </Text>
+        </View>
+      </View>
 
-        {/* Message Input */}
-        <View style={[styles.inputContainer, {
-          backgroundColor: colors.card,
-          borderTopColor: colors.border,
-          marginBottom: keyboardHeight
-        }]}>
-          <TextInput
-            style={[styles.textInput, {
-              backgroundColor: colors.background,
-              color: colors.text,
-              borderColor: colors.border
-            }]}
-            placeholder="Type a message..."
-            placeholderTextColor={colors.textSecondary}
-            value={message}
-            onChangeText={setMessage}
-            multiline
-            maxLength={500}
-            blurOnSubmit={false}
+      {/* Messages */}
+      <View style={[styles.chatContainer, { paddingBottom: 70 }]}>
+        <FlatList
+          ref={flatListRef}
+          data={[...messages].reverse()}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={messages.length === 0 ? styles.emptyListContainer : styles.messagesContainer}
+          ListEmptyComponent={renderEmptyState}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          inverted
+        />
+      </View>
+
+      {/* Round Voting Slideup - positioned above message input */}
+      {showRoundVoting && currentFight && (
+        <RoundVotingSlideup
+          visible={showRoundVoting}
+          fighter1={{
+            id: currentFight.fighter1.id,
+            firstName: currentFight.fighter1.firstName,
+            lastName: currentFight.fighter1.lastName,
+            nickname: currentFight.fighter1.nickname,
+          }}
+          fighter2={{
+            id: currentFight.fighter2.id,
+            firstName: currentFight.fighter2.firstName,
+            lastName: currentFight.fighter2.lastName,
+            nickname: currentFight.fighter2.nickname,
+          }}
+          currentRound={currentRound}
+          onSelectWinner={handleRoundWinnerSelected}
+          onClose={closeRoundVoting}
+        />
+      )}
+
+      {/* Message Input - Fixed at bottom */}
+      <View style={[styles.inputContainer, {
+        backgroundColor: colors.card,
+        borderTopColor: colors.border,
+        position: 'absolute',
+        bottom: keyboardHeight > 0 ? keyboardHeight + 23 : (Platform.OS === 'ios' ? 34 : 0),
+        left: 0,
+        right: 0,
+      }]}>
+        <TextInput
+          ref={textInputRef}
+          style={[styles.textInput, {
+            backgroundColor: colors.background,
+            color: colors.text,
+            borderColor: colors.border
+          }]}
+          placeholder="Type a message..."
+          placeholderTextColor={colors.textSecondary}
+          value={message}
+          onChangeText={setMessage}
+          multiline
+          maxLength={500}
+          blurOnSubmit={true}
+          onSubmitEditing={handleSendMessage}
+          returnKeyType="send"
+        />
+        <TouchableOpacity
+          style={[styles.sendButton, {
+            backgroundColor: message.trim() ? colors.tint : colors.textSecondary
+          }]}
+          onPress={handleSendMessage}
+          disabled={!message.trim() || sendMessageMutation.isPending}
+        >
+          <FontAwesome
+            name={sendMessageMutation.isPending ? "spinner" : "send"}
+            size={16}
+            color="white"
           />
-          <TouchableOpacity
-            style={[styles.sendButton, {
-              backgroundColor: message.trim() ? colors.tint : colors.textSecondary
-            }]}
-            onPress={handleSendMessage}
-            disabled={!message.trim() || sendMessageMutation.isPending}
-          >
-            <FontAwesome
-              name={sendMessageMutation.isPending ? "spinner" : "send"}
-              size={16}
-              color="white"
-            />
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
+      </View>
       </View>
 
       {/* Invite Modal */}
@@ -492,6 +639,13 @@ export default function CrewChatScreen() {
         fight={currentFight}
         onClose={closeFightRatingModal}
         queryKey={['fight', mockFight.id, 'withUserData']}
+        crewId={id}
+        onSuccess={(type) => {
+          // Invalidate fight data queries for fresh data on next modal open
+          queryClient.invalidateQueries({ queryKey: ['fight', mockFight.id, 'withUserData'] });
+          // Refresh crew messages to show the new message
+          queryClient.invalidateQueries({ queryKey: ['crewMessages', id] });
+        }}
       />
 
 
@@ -502,11 +656,14 @@ export default function CrewChatScreen() {
         fight={currentFight}
         crewId={id}
         onSuccess={(isUpdate) => {
-          // Invalidate the fight data query to refresh user data for next modal open
+          // Invalidate crew predictions query to refresh data for next modal open
+          queryClient.invalidateQueries({ queryKey: ['crewPredictions', id, mockFight.id] });
           queryClient.invalidateQueries({ queryKey: ['fight', mockFight.id, 'withUserData'] });
+          // Show success message
+          console.log(`Prediction ${isUpdate ? 'updated' : 'created'} successfully`);
         }}
       />
-    </SafeAreaView>
+    </>
   );
 }
 
@@ -514,7 +671,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  keyboardContainer: {
+  flex1: {
     flex: 1,
   },
   header: {
@@ -524,6 +681,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     gap: 12,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40, // Safe spacing below status bar
   },
   headerInfo: {
     flex: 1,
@@ -562,16 +720,45 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
-  messageContainer: {
+  messageWrapper: {
     marginBottom: 16,
-    paddingLeft: 12,
+    paddingHorizontal: 4,
+  },
+  currentUserWrapper: {
+    alignItems: 'flex-end',
+  },
+  otherUserWrapper: {
+    alignItems: 'flex-start',
+  },
+  messageContainer: {
+    borderRadius: 16,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  currentUserMessage: {
+    borderTopRightRadius: 4,
+    marginRight: 4,
+    alignSelf: 'stretch',
+  },
+  otherUserMessage: {
+    borderTopLeftRadius: 4,
     borderLeftWidth: 3,
+    marginLeft: 4,
+    alignSelf: 'stretch',
   },
   messageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
+  },
+  messageFooter: {
+    alignItems: 'flex-end',
+    marginTop: 4,
   },
   userName: {
     fontSize: 14,
@@ -922,5 +1109,31 @@ const styles = StyleSheet.create({
   predictionButtons: {
     alignItems: 'center',
     marginTop: 8,
+  },
+  // Status Bar Styles
+  statusBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    alignItems: 'center',
+  },
+  statusSection: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statusDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: '#666',
+    marginHorizontal: 8,
+  },
+  statusLabel: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  statusValue: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

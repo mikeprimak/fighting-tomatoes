@@ -166,8 +166,9 @@ export async function optionalAuth(request: FastifyRequest, reply: FastifyReply)
       (request as any).user = user;
     }
   } catch (error) {
-    // For optional auth, we silently continue without authentication on errors
+    // For optional auth, we log the error but continue without authentication
     // This allows the endpoint to work for anonymous users
+    console.log('OptionalAuth error (continuing without auth):', error);
   }
 }
 
