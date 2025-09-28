@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,9 @@ import {
   StyleSheet,
   Modal,
   Alert,
+  Image,
+  Animated,
+  Easing,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
@@ -13,6 +16,23 @@ import { Colors } from '../constants/Colors';
 import { FontAwesome } from '@expo/vector-icons';
 import { apiService } from '../services/api';
 import { useAuth } from '../store/AuthContext';
+
+// Fighter image selection logic (same as other components)
+const getFighterImage = (fighterId: string) => {
+  const images = [
+    require('../assets/fighters/fighter-1.jpg'),
+    require('../assets/fighters/fighter-2.jpg'),
+    require('../assets/fighters/fighter-3.jpg'),
+    require('../assets/fighters/fighter-4.jpg'),
+    require('../assets/fighters/fighter-5.jpg'),
+    require('../assets/fighters/fighter-6.jpg'),
+  ];
+
+  // Use charCodeAt to get a number from the last character
+  const lastCharCode = fighterId.charCodeAt(fighterId.length - 1);
+  const index = lastCharCode % images.length;
+  return images[index];
+};
 
 export type PredictionMethod = 'DECISION' | 'KO_TKO' | 'SUBMISSION';
 
@@ -80,6 +100,11 @@ export function PredictionModal({
   const [predictedMethod, setPredictedMethod] = useState<PredictionMethod | ''>('');
   const [predictedRound, setPredictedRound] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Animation state for rolling numbers
+  const [displayNumber, setDisplayNumber] = useState(0);
+  const rollAnimation = useRef(new Animated.Value(1)).current;
+  const wheelAnimation = useRef(new Animated.Value(0)).current;
 
   // Fetch existing predictions for crew-based predictions
   const { data: existingPredictions, isLoading: predictionsLoading, error: predictionsError } = useQuery({
@@ -154,8 +179,16 @@ export function PredictionModal({
       if (userPrediction) {
         console.log('PredictionModal: Populating with existing prediction:', userPrediction);
         // Populate with existing prediction
-        setHypeLevel(userPrediction.hypeLevel || 0);
+        const existingHypeLevel = userPrediction.hypeLevel || 0;
+        setHypeLevel(existingHypeLevel);
         setPredictedWinner(userPrediction.predictedWinner || '');
+
+        // Initialize wheel to show existing hype level
+        if (existingHypeLevel > 0) {
+          const wheelPosition = (10 - existingHypeLevel) * 120;
+          wheelAnimation.setValue(wheelPosition);
+          setDisplayNumber(existingHypeLevel);
+        }
 
         const round = userPrediction.predictedRound || 0;
         const method = userPrediction.predictedMethod || '';
@@ -187,6 +220,41 @@ export function PredictionModal({
     setPredictedWinner('');
     setPredictedMethod('');
     setPredictedRound(0);
+    setDisplayNumber(0);
+    // Reset wheel to initial position (no number showing)
+    wheelAnimation.setValue(0);
+  };
+
+  // Animated wheel effect for number display
+  const animateToNumber = (targetNumber: number) => {
+    const currentNumber = displayNumber;
+    if (currentNumber === targetNumber) return;
+
+    // Stop any existing animation to prevent conflicts
+    wheelAnimation.stopAnimation();
+
+    // Calculate target position (positioning number in center of visible area)
+    // Numbers are arranged 10,9,8,7,6,5,4,3,2,1 (10 at top, 1 at bottom)
+    // Position 0 = number 10, position 120 = number 9, ... position 1080 = number 1
+    const targetPosition = (10 - targetNumber) * 120;
+
+    // Simple, smooth animation - prioritizing smoothness over complex behaviors
+    Animated.timing(wheelAnimation, {
+      toValue: targetPosition,
+      duration: 800, // Fixed duration for consistent smoothness
+      easing: Easing.out(Easing.quad), // Simple, reliable easing
+      useNativeDriver: true,
+    }).start();
+
+    // Update display number for tracking
+    setDisplayNumber(targetNumber);
+
+    // Removed scale animation to prevent jumpiness in wheel motion
+  };
+
+  const handleHypeLevelSelection = (level: number) => {
+    setHypeLevel(level);
+    animateToNumber(level);
   };
 
   const handleClose = () => {
@@ -284,6 +352,7 @@ export function PredictionModal({
       visible={visible}
       animationType="slide"
       transparent={true}
+      statusBarTranslucent={true}
       onRequestClose={handleClose}
     >
       <TouchableOpacity
@@ -305,44 +374,10 @@ export function PredictionModal({
             </TouchableOpacity>
           </View>
 
-          {/* Fight Info */}
-          <View style={[styles.fightInfo, { backgroundColor: colors.background }]}>
-            <Text style={[styles.fightTitle, { color: colors.text }]}>
-              {fight.fighter1?.lastName || 'Fighter 1'} vs {fight.fighter2?.lastName || 'Fighter 2'}
-            </Text>
-            <Text style={[styles.fightSubtitle, { color: colors.textSecondary }]}>
-              {fight.scheduledRounds} rounds scheduled
-            </Text>
-          </View>
-
-          {/* Hype Level */}
-          <View style={styles.predictionSection}>
-            <Text style={[styles.sectionLabel, { color: colors.text }]}>
-              1. How hyped are you for this fight? (1-10)
-            </Text>
-            <View style={styles.starContainer}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
-                <TouchableOpacity
-                  key={level}
-                  onPress={() => setHypeLevel(level)}
-                  style={styles.starButton}
-                >
-                  <Text style={[
-                    styles.star,
-                    { color: level <= hypeLevel ? colors.primary : colors.textSecondary }
-                  ]}>★</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={[styles.selectionHint, { color: colors.textSecondary }]}>
-              {hypeLevel > 0 ? `${hypeLevel}/10 selected` : 'Tap a star to select your hype level'}
-            </Text>
-          </View>
-
           {/* Predicted Winner */}
           <View style={styles.predictionSection}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>
-              2. Who do you think will win?
+              1. Who do you think will win?
             </Text>
             <View style={styles.fighterButtons}>
               <TouchableOpacity
@@ -355,6 +390,10 @@ export function PredictionModal({
                 ]}
                 onPress={() => fight.fighter1?.id && setPredictedWinner(fight.fighter1.id)}
               >
+                <Image
+                  source={getFighterImage(fight.fighter1?.id || '')}
+                  style={styles.fighterImage}
+                />
                 <Text style={[
                   styles.fighterButtonText,
                   {
@@ -374,6 +413,10 @@ export function PredictionModal({
                 ]}
                 onPress={() => fight.fighter2?.id && setPredictedWinner(fight.fighter2.id)}
               >
+                <Image
+                  source={getFighterImage(fight.fighter2?.id || '')}
+                  style={styles.fighterImage}
+                />
                 <Text style={[
                   styles.fighterButtonText,
                   {
@@ -389,7 +432,7 @@ export function PredictionModal({
           {/* Predicted Round */}
           <View style={styles.predictionSection}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>
-              3. What round will it end in?
+              2. What round will it end in?
             </Text>
             <View style={styles.roundButtons}>
               {Array.from({ length: fight.scheduledRounds }, (_, i) => i + 1).map((round) => (
@@ -420,7 +463,7 @@ export function PredictionModal({
           {/* Predicted Method */}
           <View style={styles.predictionSection}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>
-              4. How will it end?
+              3. How will it end?
             </Text>
             <View style={styles.methodButtons}>
               {(['DECISION', 'KO_TKO', 'SUBMISSION'] as const).map((method) => {
@@ -452,6 +495,62 @@ export function PredictionModal({
                   </TouchableOpacity>
                 );
               })}
+            </View>
+          </View>
+
+          {/* Hype Level */}
+          <View style={styles.predictionSection}>
+            <Text style={[styles.sectionLabel, { color: colors.text }]}>
+              4. How hyped are you for this fight?
+            </Text>
+
+            {/* Large display star with wheel animation */}
+            <View style={styles.displayStarContainer}>
+              <View style={styles.animatedStarContainer}>
+                <Text style={[styles.displayStar, { color: '#666666' }]}>★</Text>
+                <View style={styles.wheelContainer}>
+                  <Animated.View style={[
+                    styles.wheelNumbers,
+                    {
+                      transform: [{
+                        translateY: wheelAnimation.interpolate({
+                          inputRange: [0, 1080], // 9 * 120px for positions 0-1080
+                          outputRange: [475, -605], // Moved down by 30px
+                        })
+                      }]
+                    }
+                  ]}>
+                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => (
+                      <Text key={number} style={[styles.wheelNumber, { color: colors.text }]}>
+                        {number}
+                      </Text>
+                    ))}
+                  </Animated.View>
+
+                  {/* Subtle top fade - stays away from center */}
+                  <View style={[styles.fadeOverlay, { top: 0, height: 15, backgroundColor: colors.card, opacity: 0.8 }]} />
+                  <View style={[styles.fadeOverlay, { top: 15, height: 8, backgroundColor: colors.card, opacity: 0.3 }]} />
+
+                  {/* Subtle bottom fade - stays away from center */}
+                  <View style={[styles.fadeOverlay, { bottom: 0, height: 15, backgroundColor: colors.card, opacity: 0.8 }]} />
+                  <View style={[styles.fadeOverlay, { bottom: 15, height: 8, backgroundColor: colors.card, opacity: 0.3 }]} />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.starContainer}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
+                <TouchableOpacity
+                  key={level}
+                  onPress={() => handleHypeLevelSelection(level)}
+                  style={styles.starButton}
+                >
+                  <Text style={[
+                    styles.star,
+                    { color: level <= hypeLevel ? colors.primary : '#666666' }
+                  ]}>★</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
@@ -487,7 +586,7 @@ export function PredictionModal({
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -517,21 +616,6 @@ const styles = StyleSheet.create({
     padding: 12,
     margin: -12,
   },
-  fightInfo: {
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  fightTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  fightSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-  },
   predictionSection: {
     marginBottom: 20,
   },
@@ -546,15 +630,50 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   starButton: {
-    padding: 4,
+    padding: 3,
   },
   star: {
-    fontSize: 28,
+    fontSize: 32,
   },
-  selectionHint: {
+  displayStarContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  animatedStarContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  displayStar: {
+    fontSize: 80,
+  },
+  wheelContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  wheelNumbers: {
+    alignItems: 'center',
+    paddingTop: 150, // Adjust padding to align numbers correctly
+  },
+  wheelNumber: {
+    fontSize: 52,
+    fontWeight: 'bold',
+    height: 120, // Increased from 60 to 120 for more spacing
     textAlign: 'center',
-    fontSize: 12,
-    fontStyle: 'italic',
+    textAlignVertical: 'center',
+    lineHeight: 120,
+  },
+  fadeOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 1,
   },
   fighterButtons: {
     flexDirection: 'row',
@@ -567,6 +686,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
   },
+  fighterImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 8,
+  },
   fighterButtonText: {
     fontSize: 16,
     fontWeight: '600',
@@ -577,7 +702,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   roundButton: {
-    width: 50,
+    flex: 1,
+    minWidth: 50,
     height: 40,
     borderRadius: 8,
     borderWidth: 1,
@@ -591,19 +717,18 @@ const styles = StyleSheet.create({
   methodButtons: {
     flexDirection: 'row',
     gap: 8,
-    flexWrap: 'wrap',
   },
   methodButton: {
     flex: 1,
-    minWidth: 100,
-    padding: 12,
+    padding: 10,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
   },
   methodButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
+    textAlign: 'center',
   },
   predictionButtons: {
     marginTop: 8,

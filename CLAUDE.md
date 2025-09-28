@@ -416,6 +416,28 @@ All API responses follow consistent format:
 - Inverted FlatList with reversed message data for instant bottom display
 - Simplified message mutation without forced scroll handling
 
+### PredictionModal Wheel Animation System (December 2024)
+✅ **Advanced Animated Wheel Interface for Hype Level Selection**
+- **Slot Machine-Style Animation**: Implemented vertical wheel animation with numbers 1-10 arranged top to bottom (10 at top, 1 at bottom)
+- **Realistic Physics**: Distance-based animation speeds - short changes slow/gentle, long changes fast/forceful with dramatic slowdown
+- **Smooth Easing**: `Easing.out(Easing.quad)` with 800ms duration for consistent smoothness
+- **Visual Design**: 80px large gray star (#666666) with 52px centered numbers, 120px spacing between wheel numbers for clean visibility
+- **Pre-existing Selection Detection**: Wheel initializes to show current user hype level on modal open
+- **Performance Optimized**: Native driver animations with conflict prevention via `stopAnimation()`
+
+✅ **Technical Implementation Details**:
+- **Wheel Structure**: Numbers arranged in 120px increments with overflow hidden and subtle fade overlays
+- **Position Calculation**: `(10 - targetNumber) * 120` for proper alignment with inverted number order
+- **Smooth Transitions**: Users see intermediate numbers scroll smoothly through view during longer animations
+- **State Management**: Immediate state updates with `setDisplayNumber()` to prevent animation conflicts
+- **Initialization Logic**: `wheelAnimation.setValue()` for instant positioning without animation on modal open
+
+**Files Modified**: `packages/mobile/components/PredictionModal.tsx`
+- Added Image import and fighter image display (80x80px circular) in fighter selection buttons
+- Implemented vertical wheel animation system with proper easing and spacing
+- Enhanced modal overlay with `statusBarTranslucent={true}` for full screen coverage
+- Simplified component styling for method buttons and removed visual clutter
+
 ## Next Session Priority
 🔄 **Chat Messages Keyboard Integration**
 When we start the next session, we'll begin by implementing keyboard-aware chat message positioning. The goal is to make all chat messages rise up with the keyboard and input area so that the most recent message remains visible while typing. This will require:

@@ -62,7 +62,8 @@ class AnalyticsServiceClass {
       this.isInitialized = true
       console.log('Analytics service initialized')
     } catch (error) {
-      console.error('Failed to initialize analytics service:', error)
+      // Silently handle analytics initialization errors
+      // console.error('Failed to initialize analytics service:', error)
     }
   }
 
@@ -280,7 +281,8 @@ class AnalyticsServiceClass {
         body: JSON.stringify(sessionData),
       })
     } catch (error) {
-      console.error('Failed to start analytics session:', error)
+      // Silently handle analytics session start errors
+      // console.error('Failed to start analytics session:', error)
     }
   }
 

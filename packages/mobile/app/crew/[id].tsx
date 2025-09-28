@@ -13,8 +13,11 @@ import {
   Dimensions,
   Modal,
   Share,
+  Image,
   KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -23,7 +26,7 @@ import { Colors } from '../../constants/Colors';
 import { FontAwesome } from '@expo/vector-icons';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
-import { PredictionModal, RateFightModal, RoundVotingSlideup, Fight } from '../../components';
+import { PredictionModal, RateFightModal, RoundVotingSlideup, Fight, FightDisplayCardMinimal } from '../../components';
 
 interface Message {
   id: string;
@@ -38,6 +41,14 @@ interface Message {
     id: string;
     matchup: string;
   };
+  reactions?: {
+    emoji: string;
+    users: Array<{
+      id: string;
+      name: string;
+    }>;
+    count: number;
+  }[];
   createdAt: string;
   isEdited: boolean;
 }
@@ -63,6 +74,20 @@ interface CrewDetails {
   createdAt: string;
 }
 
+// Event image selection logic (same as EventCard component)
+const getEventImage = (eventId: string) => {
+  const images = [
+    require('../../assets/events/event-banner-1.jpg'),
+    require('../../assets/events/event-banner-2.jpg'),
+    require('../../assets/events/event-banner-3.jpg'),
+  ];
+
+  // Use charCodeAt to get a number from the last character (works for letters and numbers)
+  const lastCharCode = eventId.charCodeAt(eventId.length - 1);
+  const index = lastCharCode % images.length;
+  return images[index];
+};
+
 export default function CrewChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colorScheme = useColorScheme();
@@ -81,6 +106,57 @@ export default function CrewChatScreen() {
   const [showRoundVoting, setShowRoundVoting] = useState(false);
   const [currentFight, setCurrentFight] = useState<Fight | null>(null);
   const [currentRound, setCurrentRound] = useState(1);
+  const [showReactionMenu, setShowReactionMenu] = useState(false);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [reactionMenuPosition, setReactionMenuPosition] = useState({ x: 0, y: 0 });
+  const [localReactions, setLocalReactions] = useState<Record<string, any[]>>({});
+  const [showReactionUsers, setShowReactionUsers] = useState(false);
+  const [selectedReactionData, setSelectedReactionData] = useState<any[]>([]);
+  const [showFightCard, setShowFightCard] = useState(false);
+
+  // Storage keys for persistent reactions
+  const REACTIONS_STORAGE_KEY = `crew_reactions_${id}`;
+
+  // Load reactions from AsyncStorage on component mount
+  useEffect(() => {
+    const loadStoredReactions = async () => {
+      try {
+        const storedReactions = await AsyncStorage.getItem(REACTIONS_STORAGE_KEY);
+        if (storedReactions) {
+          const parsedReactions = JSON.parse(storedReactions);
+          console.log('Loaded stored reactions:', parsedReactions);
+          setLocalReactions(parsedReactions);
+        }
+      } catch (error) {
+        console.error('Error loading stored reactions:', error);
+      }
+    };
+
+    if (id) {
+      loadStoredReactions();
+    }
+  }, [id]);
+
+  // Save reactions to AsyncStorage whenever localReactions changes
+  useEffect(() => {
+    const saveReactions = async () => {
+      try {
+        if (Object.keys(localReactions).length > 0) {
+          await AsyncStorage.setItem(REACTIONS_STORAGE_KEY, JSON.stringify(localReactions));
+          console.log('Saved reactions to storage:', Object.keys(localReactions).length, 'messages');
+        } else {
+          // Remove storage key if no reactions to prevent clutter
+          await AsyncStorage.removeItem(REACTIONS_STORAGE_KEY);
+          console.log('Removed empty reactions storage');
+        }
+      } catch (error) {
+        console.error('Error saving reactions:', error);
+      }
+    };
+
+    // Save whenever reactions change
+    saveReactions();
+  }, [localReactions, REACTIONS_STORAGE_KEY]);
 
   // Manual keyboard height tracking
   useEffect(() => {
@@ -131,6 +207,201 @@ export default function CrewChatScreen() {
       promotion: 'UFC'
     }
   };
+
+  // Comprehensive UFC Fight Card Seed Data
+  // Event State: All prelims completed, first 2 main card fights completed,
+  // currently between rounds 2-3 of 3rd main card fight, last 2 upcoming
+  const mockFightCard = [
+    // MAIN CARD FIGHTS (5 total)
+    {
+      id: 'main-5-jones-miocic',
+      fighter1: 'Jon Jones',
+      fighter2: 'Stipe Miocic',
+      isMainEvent: true,
+      isMainCard: true,
+      cardPosition: 5, // Headliner
+      weightClass: 'Heavyweight Championship',
+      scheduledRounds: 5,
+      status: 'upcoming',
+      isComplete: false,
+      aggregateRating: null,
+      totalRatings: 0,
+      userRating: null,
+      startTime: '10:30 PM EST'
+    },
+    {
+      id: 'main-4-pereira-adesanya',
+      fighter1: 'Alex Pereira',
+      fighter2: 'Israel Adesanya',
+      isMainEvent: false,
+      isMainCard: true,
+      cardPosition: 4, // Co-main
+      weightClass: 'Middleweight Championship',
+      scheduledRounds: 5,
+      status: 'upcoming',
+      isComplete: false,
+      aggregateRating: null,
+      totalRatings: 0,
+      userRating: null,
+      startTime: '10:00 PM EST'
+    },
+    {
+      id: 'main-3-holloway-volkanovski',
+      fighter1: 'Max Holloway',
+      fighter2: 'Alexander Volkanovski',
+      isMainEvent: false,
+      isMainCard: true,
+      cardPosition: 3,
+      weightClass: 'Featherweight Championship',
+      scheduledRounds: 5,
+      status: 'in_progress', // Currently between rounds 2-3
+      currentRound: 3,
+      completedRounds: 2,
+      isComplete: false,
+      aggregateRating: null,
+      totalRatings: 0,
+      userRating: null,
+      startTime: '9:30 PM EST'
+    },
+    {
+      id: 'main-2-oliveira-chandler',
+      fighter1: 'Charles Oliveira',
+      fighter2: 'Michael Chandler',
+      isMainEvent: false,
+      isMainCard: true,
+      cardPosition: 2,
+      weightClass: 'Lightweight',
+      scheduledRounds: 3,
+      status: 'completed',
+      isComplete: true,
+      result: 'Oliveira wins via TKO (R2, 3:47)',
+      aggregateRating: 8.9,
+      totalRatings: 1247,
+      userRating: 9,
+      completedAt: '9:15 PM EST'
+    },
+    {
+      id: 'main-1-yan-omalley',
+      fighter1: 'Petr Yan',
+      fighter2: "Sean O'Malley",
+      isMainEvent: false,
+      isMainCard: true,
+      cardPosition: 1,
+      weightClass: 'Bantamweight Championship',
+      scheduledRounds: 5,
+      status: 'completed',
+      isComplete: true,
+      result: "O'Malley wins via Split Decision",
+      aggregateRating: 7.4,
+      totalRatings: 892,
+      userRating: 8,
+      completedAt: '8:45 PM EST'
+    },
+
+    // PRELIMINARY CARD FIGHTS (6 total - ALL COMPLETED)
+    {
+      id: 'prelim-6-burns-muhammad',
+      fighter1: 'Gilbert Burns',
+      fighter2: 'Belal Muhammad',
+      isMainEvent: false,
+      isMainCard: false,
+      cardPosition: 6,
+      weightClass: 'Welterweight',
+      scheduledRounds: 3,
+      status: 'completed',
+      isComplete: true,
+      result: 'Muhammad wins via Unanimous Decision',
+      aggregateRating: 6.8,
+      totalRatings: 456,
+      userRating: 7,
+      completedAt: '8:15 PM EST'
+    },
+    {
+      id: 'prelim-5-luque-neal',
+      fighter1: 'Vicente Luque',
+      fighter2: 'Geoff Neal',
+      isMainEvent: false,
+      isMainCard: false,
+      cardPosition: 5,
+      weightClass: 'Welterweight',
+      scheduledRounds: 3,
+      status: 'completed',
+      isComplete: true,
+      result: 'Luque wins via Submission (R1, 4:12)',
+      aggregateRating: 8.1,
+      totalRatings: 324,
+      userRating: null,
+      completedAt: '7:45 PM EST'
+    },
+    {
+      id: 'prelim-4-craig-jacoby',
+      fighter1: 'Paul Craig',
+      fighter2: 'Brendan Jacoby',
+      isMainEvent: false,
+      isMainCard: false,
+      cardPosition: 4,
+      weightClass: 'Light Heavyweight',
+      scheduledRounds: 3,
+      status: 'completed',
+      isComplete: true,
+      result: 'Craig wins via TKO (R2, 2:34)',
+      aggregateRating: 7.2,
+      totalRatings: 287,
+      userRating: 8,
+      completedAt: '7:15 PM EST'
+    },
+    {
+      id: 'prelim-3-araujo-silva',
+      fighter1: 'Viviane Araujo',
+      fighter2: 'Karine Silva',
+      isMainEvent: false,
+      isMainCard: false,
+      cardPosition: 3,
+      weightClass: "Women's Flyweight",
+      scheduledRounds: 3,
+      status: 'completed',
+      isComplete: true,
+      result: 'Silva wins via Unanimous Decision',
+      aggregateRating: 6.3,
+      totalRatings: 198,
+      userRating: null,
+      completedAt: '6:45 PM EST'
+    },
+    {
+      id: 'prelim-2-murphy-fremd',
+      fighter1: 'Lauren Murphy',
+      fighter2: 'Casey Fremd',
+      isMainEvent: false,
+      isMainCard: false,
+      cardPosition: 2,
+      weightClass: "Women's Flyweight",
+      scheduledRounds: 3,
+      status: 'completed',
+      isComplete: true,
+      result: 'Murphy wins via Split Decision',
+      aggregateRating: 5.9,
+      totalRatings: 145,
+      userRating: 6,
+      completedAt: '6:15 PM EST'
+    },
+    {
+      id: 'prelim-1-walker-hill',
+      fighter1: 'Johnny Walker',
+      fighter2: 'Jamahal Hill',
+      isMainEvent: false,
+      isMainCard: false,
+      cardPosition: 1,
+      weightClass: 'Light Heavyweight',
+      scheduledRounds: 3,
+      status: 'completed',
+      isComplete: true,
+      result: 'Hill wins via KO (R1, 1:47)',
+      aggregateRating: 8.7,
+      totalRatings: 567,
+      userRating: 9,
+      completedAt: '5:45 PM EST'
+    }
+  ];
 
 
   // Generate consistent color for each user
@@ -185,6 +456,26 @@ export default function CrewChatScreen() {
     enabled: !!id,
     refetchInterval: 5000, // Poll every 5 seconds for new messages
   });
+
+  // Clean up reactions for messages that no longer exist
+  useEffect(() => {
+    if (messagesData?.messages && Object.keys(localReactions).length > 0) {
+      const currentMessageIds = new Set(messagesData.messages.map(m => m.id));
+      const reactionMessageIds = Object.keys(localReactions);
+
+      // Check if any stored reactions are for messages that no longer exist
+      const orphanedReactions = reactionMessageIds.filter(id => !currentMessageIds.has(id));
+
+      if (orphanedReactions.length > 0) {
+        console.log('Cleaning up reactions for deleted messages:', orphanedReactions);
+        setLocalReactions(prev => {
+          const cleaned = { ...prev };
+          orphanedReactions.forEach(id => delete cleaned[id]);
+          return cleaned;
+        });
+      }
+    }
+  }, [messagesData?.messages, localReactions]);
 
 
   // Fetch actual fight data with user data for modals
@@ -321,12 +612,223 @@ export default function CrewChatScreen() {
     closeRoundVoting();
   };
 
+  // Handle long press on message to show reaction menu
+  const handleMessageLongPress = (messageId: string, event: any) => {
+    const { pageX, pageY } = event.nativeEvent;
+    const screenWidth = Dimensions.get('window').width;
+    const screenHeight = Dimensions.get('window').height;
+
+    // Conservative menu dimensions (being safe with larger estimates)
+    const menuWidth = 320; // Conservative estimate for 6 emoji buttons + padding
+    const menuHeight = 60; // Conservative estimate for height + shadow
+    const menuPadding = 15; // Larger minimum distance from screen edges
+
+    console.log('Long press at:', { pageX, pageY, screenWidth, screenHeight });
+
+    // Calculate optimal position to keep menu fully visible
+    let optimalX = pageX - (menuWidth / 2); // Center menu on touch point
+    let optimalY = pageY - menuHeight - 15; // Position above touch point with more space
+
+    // Adjust X position if menu would go off-screen
+    if (optimalX < menuPadding) {
+      optimalX = menuPadding; // Too far left
+      console.log('Adjusted X for left edge:', optimalX);
+    } else if (optimalX + menuWidth > screenWidth - menuPadding) {
+      optimalX = screenWidth - menuWidth - menuPadding; // Too far right
+      console.log('Adjusted X for right edge:', optimalX);
+    }
+
+    // Adjust Y position if menu would go off-screen
+    if (optimalY < 60) {
+      optimalY = pageY + 15; // Position below touch point instead
+      console.log('Adjusted Y to below touch point:', optimalY);
+    }
+    if (optimalY + menuHeight > screenHeight - 120) {
+      optimalY = screenHeight - menuHeight - 120; // Ensure it's above keyboard/input area
+      console.log('Adjusted Y for bottom edge:', optimalY);
+    }
+
+    console.log('Final position:', { optimalX, optimalY });
+
+    setSelectedMessageId(messageId);
+    setReactionMenuPosition({ x: optimalX, y: optimalY });
+    setShowReactionMenu(true);
+  };
+
+  // Handle emoji reaction selection
+  const handleEmojiReaction = (emoji: string) => {
+    if (selectedMessageId && user) {
+      console.log(`Adding reaction ${emoji} to message ${selectedMessageId}`);
+      console.log('Current user object:', user);
+
+      // Update local reactions state (persistent across query refetches)
+      setLocalReactions(prev => {
+        const messageReactions = prev[selectedMessageId] || [];
+
+        // Check if user already reacted with this exact emoji
+        const userCurrentReaction = messageReactions.find(r =>
+          r.emoji === emoji && r.users.some(u => u.id === user.id)
+        );
+
+        // Remove user from ALL existing reactions (enforce one emoji per user)
+        let updatedReactions = messageReactions.map(reaction => ({
+          ...reaction,
+          users: reaction.users.filter(u => u.id !== user.id),
+          count: reaction.users.filter(u => u.id !== user.id).length
+        })).filter(reaction => reaction.count > 0); // Remove reactions with no users
+
+        // If user clicked the same emoji they already had, just remove it (toggle off)
+        if (userCurrentReaction) {
+          console.log(`User toggled off reaction ${emoji}`);
+          return {
+            ...prev,
+            [selectedMessageId]: updatedReactions
+          };
+        }
+
+        // Get user display name from available properties
+        const getUserDisplayName = (userObj: any) => {
+          return userObj.name || userObj.username || userObj.firstName ||
+                 (userObj.firstName && userObj.lastName ? `${userObj.firstName} ${userObj.lastName}` : null) ||
+                 userObj.email?.split('@')[0] || 'Unknown User';
+        };
+
+        // User clicked a different emoji - add their reaction to this emoji
+        const targetEmojiReaction = updatedReactions.find(r => r.emoji === emoji);
+        if (targetEmojiReaction) {
+          // Emoji already exists from other users, add current user to it
+          targetEmojiReaction.users.push({
+            id: user.id,
+            name: getUserDisplayName(user)
+          });
+          targetEmojiReaction.count = targetEmojiReaction.users.length;
+        } else {
+          // New emoji, create new reaction
+          updatedReactions.push({
+            emoji,
+            users: [{
+              id: user.id,
+              name: getUserDisplayName(user)
+            }],
+            count: 1
+          });
+        }
+
+        console.log(`User reacted with ${emoji}, total reactions:`, updatedReactions.length);
+        return {
+          ...prev,
+          [selectedMessageId]: updatedReactions
+        };
+      });
+
+      setShowReactionMenu(false);
+      setSelectedMessageId(null);
+    }
+  };
+
+  // Close reaction menu
+  const closeReactionMenu = () => {
+    setShowReactionMenu(false);
+    setSelectedMessageId(null);
+  };
+
+  // Handle tapping on reaction emoji to show users
+  const handleReactionTap = (messageReactions: any[], messageId: string) => {
+    console.log('Reaction tap - raw data:', messageReactions);
+    setSelectedReactionData(messageReactions);
+    setSelectedMessageId(messageId); // Store messageId for deletion
+    setShowReactionUsers(true);
+  };
+
+  // Close reaction users slideup
+  const closeReactionUsers = () => {
+    setShowReactionUsers(false);
+    setSelectedReactionData([]);
+  };
+
+  // Handle deleting user's reaction from slideup
+  const handleDeleteReaction = (emoji: string, messageId: string) => {
+    if (user) {
+      console.log(`Deleting reaction ${emoji} from message ${messageId}`);
+
+      // Remove user's reaction from local state
+      setLocalReactions(prev => {
+        const messageReactions = prev[messageId] || [];
+
+        // Remove user from all reactions and filter out empty reactions
+        const updatedReactions = messageReactions.map(reaction => ({
+          ...reaction,
+          users: reaction.users.filter(u => u.id !== user.id),
+          count: reaction.users.filter(u => u.id !== user.id).length
+        })).filter(reaction => reaction.count > 0);
+
+        return {
+          ...prev,
+          [messageId]: updatedReactions
+        };
+      });
+
+      // Close the slideup after deletion
+      closeReactionUsers();
+    }
+  };
+
+  // Handle tapping status bar to toggle fight card
+  const handleStatusBarTap = () => {
+    console.log('Status bar tapped, fight card data:', mockFightCard.length, 'fights');
+    setShowFightCard(prev => {
+      const newValue = !prev;
+      console.log('Setting showFightCard to:', newValue);
+      return newValue;
+    });
+  };
+
+  // Close fight card slidedown
+  const closeFightCard = () => {
+    setShowFightCard(false);
+  };
+
+  // Handle tapping a fight item to open appropriate modal based on status
+  const handleFightItemTap = (fightData: any) => {
+    // Create a Fight object from the fight card data for the modal
+    const fightForModal: Fight = {
+      id: fightData.id,
+      scheduledRounds: fightData.scheduledRounds,
+      fighter1: {
+        id: fightData.id + '-fighter1', // Mock IDs
+        firstName: fightData.fighter1.split(' ')[0],
+        lastName: fightData.fighter1.split(' ').slice(1).join(' '),
+        nickname: fightData.fighter1.includes('Jones') ? 'Bones' : undefined
+      },
+      fighter2: {
+        id: fightData.id + '-fighter2', // Mock IDs
+        firstName: fightData.fighter2.split(' ')[0],
+        lastName: fightData.fighter2.split(' ').slice(1).join(' '),
+      },
+      event: mockFight.event
+    };
+
+    setCurrentFight(fightForModal);
+
+    // Open prediction modal for upcoming fights, rating modal for completed/in-progress fights
+    if (fightData.status === 'upcoming') {
+      setShowPredictionModal(true);
+    } else {
+      setShowFightRatingModal(true);
+    }
+  };
+
 
 
 
   const renderMessage = ({ item }: { item: Message }) => {
     const userColor = getUserColor(item.user.id);
     const isCurrentUser = item.user.id === user?.id;
+
+    // Merge server reactions with local reactions
+    const serverReactions = item.reactions || [];
+    const localMessageReactions = localReactions[item.id] || [];
+    const allReactions = localMessageReactions.length > 0 ? localMessageReactions : serverReactions;
 
     return (
       <View
@@ -335,71 +837,96 @@ export default function CrewChatScreen() {
           isCurrentUser ? styles.currentUserWrapper : styles.otherUserWrapper,
         ]}
       >
-        <View style={[
-          styles.messageContainer,
-          isCurrentUser ? [
-            styles.currentUserMessage,
-            { backgroundColor: '#5A7A9A' }
-          ] : [
-            styles.otherUserMessage,
-            { borderLeftColor: userColor, backgroundColor: colors.card }
-          ]
-        ]}>
-          {!isCurrentUser && (
-            <Text style={[
-              styles.userName,
-              {
-                color: userColor,
-                marginBottom: 4
-              }
-            ]}>
-              {item.user.name}
-            </Text>
-          )}
-          <Text style={[
-            styles.messageContent,
-            {
-              color: isCurrentUser ? 'white' : colors.text
-            }
+        <TouchableOpacity
+          onLongPress={(event) => handleMessageLongPress(item.id, event)}
+          delayLongPress={500}
+          activeOpacity={0.8}
+        >
+          <View style={[
+            styles.messageContainer,
+            isCurrentUser ? [
+              styles.currentUserMessage,
+              { backgroundColor: '#5A7A9A' }
+            ] : [
+              styles.otherUserMessage,
+              { borderLeftColor: userColor, backgroundColor: colors.card }
+            ]
           ]}>
-            {item.content}
-          </Text>
-          {item.fight && (
-            <View style={[
-              styles.fightReference,
-              {
-                backgroundColor: isCurrentUser ? 'rgba(255, 255, 255, 0.15)' : colors.background
-              }
-            ]}>
-              <FontAwesome
-                name="star"
-                size={14}
-                color={isCurrentUser ? 'white' : colors.tint}
-              />
+            {!isCurrentUser && (
               <Text style={[
-                styles.fightText,
+                styles.userName,
                 {
-                  color: isCurrentUser ? 'rgba(255, 255, 255, 0.9)' : colors.textSecondary
+                  color: userColor,
+                  marginBottom: 4
                 }
               ]}>
-                {item.fight.matchup}
+                {item.user.name}
               </Text>
-            </View>
-          )}
-          <View style={styles.messageFooter}>
+            )}
             <Text style={[
-              styles.timestamp,
+              styles.messageContent,
               {
-                color: isCurrentUser ? 'rgba(255, 255, 255, 0.8)' : colors.textSecondary
+                color: isCurrentUser ? 'white' : colors.text
               }
             ]}>
-              {new Date(item.createdAt).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
+              {item.content}
             </Text>
+            {item.fight && (
+              <View style={[
+                styles.fightReference,
+                {
+                  backgroundColor: isCurrentUser ? 'rgba(255, 255, 255, 0.15)' : colors.background
+                }
+              ]}>
+                <FontAwesome
+                  name="star"
+                  size={14}
+                  color={isCurrentUser ? 'white' : colors.tint}
+                />
+                <Text style={[
+                  styles.fightText,
+                  {
+                    color: isCurrentUser ? 'rgba(255, 255, 255, 0.9)' : colors.textSecondary
+                  }
+                ]}>
+                  {item.fight.matchup}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.messageFooter}>
+              <Text style={[
+                styles.timestamp,
+                {
+                  color: isCurrentUser ? 'rgba(255, 255, 255, 0.8)' : colors.textSecondary
+                }
+              ]}>
+                {new Date(item.createdAt).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </Text>
+            </View>
           </View>
-        </View>
+        </TouchableOpacity>
+
+        {/* Reactions Display - Outside message container */}
+        {allReactions && allReactions.length > 0 && (
+          <TouchableOpacity
+            style={[
+              styles.reactionsContainer,
+              isCurrentUser ? styles.reactionsContainerRight : styles.reactionsContainerLeft
+            ]}
+            onPress={() => handleReactionTap(allReactions, item.id)}
+            activeOpacity={0.7}
+          >
+            {allReactions.map((reaction, index) => (
+              <Text key={index} style={styles.reactionEmojiClean}>
+                {reaction.emoji}
+              </Text>
+            ))}
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
@@ -450,7 +977,11 @@ export default function CrewChatScreen() {
       <View style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Header */}
         <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <FontAwesome name="arrow-left" size={20} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
@@ -477,44 +1008,155 @@ export default function CrewChatScreen() {
         </View>
       </View>
 
-      {/* Event/Fight Status Bar */}
-      <View style={[styles.statusBar, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
-        <View style={styles.statusSection}>
-          <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Event</Text>
-          <Text style={[styles.statusValue, { color: colors.text }]} numberOfLines={1}>
-            {mockFight.event.name}
-          </Text>
+      {/* Content Area - Contains both status bar and messages */}
+      <View style={styles.contentArea}>
+        {/* Event/Fight Status Bar - Always visible */}
+        <View style={[
+          styles.statusBarContainer,
+          {
+            backgroundColor: colors.background,
+            borderBottomColor: showFightCard ? 'transparent' : colors.border,
+          }
+        ]}>
+          <TouchableOpacity
+            style={[styles.statusBar, showFightCard && styles.statusBarExpanded]}
+            onPress={handleStatusBarTap}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.statusSection, showFightCard && styles.statusSectionExpanded]}>
+              <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Event</Text>
+              <Text style={[
+                styles.statusValue,
+                {
+                  color: colors.text,
+                  textAlign: 'center'
+                }
+              ]} numberOfLines={showFightCard ? undefined : 2}>
+                UFC 307: Periera vs Roundtree
+              </Text>
+            </View>
+            <View style={styles.statusDivider} />
+            <View style={[styles.statusSection, showFightCard && styles.statusSectionExpanded]}>
+              <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Current Fight</Text>
+              <Text style={[
+                styles.statusValue,
+                {
+                  color: colors.text,
+                  textAlign: 'center'
+                }
+              ]} numberOfLines={showFightCard ? undefined : 2}>
+                Holloway vs Volkanovski
+              </Text>
+            </View>
+            <View style={styles.statusDivider} />
+            <View style={[styles.statusSection, showFightCard && styles.statusSectionExpanded]}>
+              <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Round</Text>
+              <Text style={[
+                styles.statusValue,
+                {
+                  color: colors.tint,
+                  textAlign: 'center'
+                }
+              ]} numberOfLines={showFightCard ? undefined : 2}>
+                3 / 5{showFightCard ? '' : '\n '}
+              </Text>
+            </View>
+            <FontAwesome
+              name={showFightCard ? "chevron-up" : "chevron-down"}
+              size={12}
+              color={colors.textSecondary}
+              style={styles.statusChevron}
+            />
+          </TouchableOpacity>
         </View>
-        <View style={styles.statusDivider} />
-        <View style={styles.statusSection}>
-          <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Current Fight</Text>
-          <Text style={[styles.statusValue, { color: colors.text }]} numberOfLines={1}>
-            {mockFight.fighter1.lastName} vs {mockFight.fighter2.lastName}
-          </Text>
-        </View>
-        <View style={styles.statusDivider} />
-        <View style={styles.statusSection}>
-          <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Round</Text>
-          <Text style={[styles.statusValue, { color: colors.tint }]}>
-            {currentRound} / {mockFight.scheduledRounds}
-          </Text>
-        </View>
-      </View>
 
-      {/* Messages */}
-      <View style={[styles.chatContainer, { paddingBottom: 70 }]}>
-        <FlatList
-          ref={flatListRef}
-          data={[...messages].reverse()}
-          renderItem={renderMessage}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={messages.length === 0 ? styles.emptyListContainer : styles.messagesContainer}
-          ListEmptyComponent={renderEmptyState}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="interactive"
-          inverted
-        />
+        {/* Dynamic Content Area - Fight Card OR Messages */}
+        {showFightCard ? (
+          /* Expanded Fight Card Content */
+          <View style={styles.expandedFightCard}>
+            <View style={styles.fightCardExpandedContent}>
+              {/* Event Banner Image */}
+              <View style={{ marginHorizontal: 20, marginBottom: 8 }}>
+                <Image
+                  source={require('../../assets/events/event-banner-2.jpg')}
+                  style={styles.eventBannerImage}
+                  resizeMode="cover"
+                />
+              </View>
+
+              <ScrollView
+                style={styles.expandedFightsScrollView}
+                contentContainerStyle={{
+                  paddingHorizontal: 16,
+                  paddingTop: 16,
+                  paddingBottom: keyboardHeight > 0 ? keyboardHeight + 120 : 90, // Extra padding for message input area
+                }}
+                showsVerticalScrollIndicator={true}
+                bounces={true}
+              >
+                {mockFightCard.length > 0 ? (
+                  mockFightCard.map((fight, index) => {
+                    // Check if this is the first prelim fight (after all main card fights)
+                    const isFirstPrelimFight = !fight.isMainCard &&
+                      (index === 0 || mockFightCard[index - 1].isMainCard);
+
+                    // Check if this is the main event fight
+                    const isMainEvent = fight.isMainEvent;
+
+                    return (
+                      <View key={fight.id}>
+                        {/* Show "Main Event" divider before main event fight */}
+                        {isMainEvent && (
+                          <View style={styles.sectionDivider}>
+                            <Text style={[styles.sectionDividerText, { color: colors.textSecondary }]}>
+                              Main Event
+                            </Text>
+                          </View>
+                        )}
+                        {/* Show "Prelims" divider before first prelim fight */}
+                        {isFirstPrelimFight && (
+                          <View style={styles.sectionDivider}>
+                            <Text style={[styles.sectionDividerText, { color: colors.textSecondary }]}>
+                              Prelims
+                            </Text>
+                          </View>
+                        )}
+                        <View style={{ marginBottom: 16 }}>
+                          <FightDisplayCardMinimal
+                            fightData={fight}
+                            onPress={handleFightItemTap}
+                          />
+                        </View>
+                      </View>
+                    );
+                  })
+                ) : (
+                  <Text style={[{ color: colors.text, padding: 20, textAlign: 'center' }]}>
+                    No fights available
+                  </Text>
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        ) : (
+          /* Messages Container */
+          <View style={[styles.chatContainer, {
+            paddingBottom: keyboardHeight > 0 ? keyboardHeight + 93 : 70
+          }]}>
+            <FlatList
+              ref={flatListRef}
+              data={[...messages].reverse()}
+              renderItem={renderMessage}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={messages.length === 0 ? styles.emptyListContainer : styles.messagesContainer}
+              ListEmptyComponent={renderEmptyState}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="interactive"
+              inverted
+            />
+          </View>
+        )}
       </View>
 
       {/* Round Voting Slideup - positioned above message input */}
@@ -663,12 +1305,122 @@ export default function CrewChatScreen() {
           console.log(`Prediction ${isUpdate ? 'updated' : 'created'} successfully`);
         }}
       />
+
+      {/* Emoji Reaction Menu */}
+      {showReactionMenu && (
+        <Modal
+          visible={showReactionMenu}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={closeReactionMenu}
+        >
+          <TouchableOpacity
+            style={styles.reactionModalOverlay}
+            activeOpacity={1}
+            onPress={closeReactionMenu}
+          >
+            <View
+              style={[
+                styles.reactionMenu,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  top: reactionMenuPosition.y,
+                  left: reactionMenuPosition.x,
+                }
+              ]}
+            >
+              {['👍', '❤️', '😂', '😮', '😢', '🔥'].map((emoji, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.emojiButton}
+                  onPress={() => handleEmojiReaction(emoji)}
+                >
+                  <Text style={styles.emojiText}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+
+      {/* Reaction Users Slideup */}
+      {showReactionUsers && (
+        <Modal
+          visible={showReactionUsers}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={closeReactionUsers}
+        >
+          <TouchableOpacity
+            style={styles.reactionUsersOverlay}
+            activeOpacity={1}
+            onPress={closeReactionUsers}
+          >
+            <View style={[styles.reactionUsersContainer, { backgroundColor: colors.card }]}>
+              <View style={[styles.reactionUsersHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.reactionUsersTitle, { color: colors.text }]}>
+                  Reactions
+                </Text>
+                <TouchableOpacity onPress={closeReactionUsers}>
+                  <FontAwesome name="times" size={20} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.reactionUsersList}>
+                {selectedReactionData.map((reaction, index) => {
+                  console.log(`Rendering reaction ${index}:`, reaction);
+                  console.log(`Users for ${reaction.emoji}:`, reaction.users);
+                  return (
+                    <View key={index} style={styles.reactionUsersItem}>
+                      <Text style={styles.reactionUsersEmoji}>{reaction.emoji}</Text>
+                      <View style={styles.reactionUsersNames}>
+                        {reaction.users && reaction.users.length > 0 ? (
+                          reaction.users.map((reactionUser, userIndex) => {
+                            console.log(`Rendering user ${userIndex}:`, reactionUser);
+                            const isCurrentUser = reactionUser.id === user?.id;
+                            return (
+                              <View key={userIndex} style={styles.reactionUserRow}>
+                                <Text style={[styles.reactionUserName, { color: colors.text }]}>
+                                  {reactionUser.name || reactionUser.id || 'Unknown User'}
+                                </Text>
+                                {isCurrentUser && (
+                                  <TouchableOpacity
+                                    onPress={() => handleDeleteReaction(reaction.emoji, selectedMessageId!)}
+                                    style={styles.deleteReactionButton}
+                                  >
+                                    <Text style={[styles.deleteReactionText, { color: colors.textSecondary }]}>
+                                      tap to delete
+                                    </Text>
+                                  </TouchableOpacity>
+                                )}
+                              </View>
+                            );
+                          })
+                        ) : (
+                          <Text style={[styles.reactionUserName, { color: colors.textSecondary }]}>
+                            No users found
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Modal>
+      )}
+
     </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  contentArea: {
     flex: 1,
   },
   flex1: {
@@ -828,6 +1580,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   backButton: {
+    padding: 12,
+    marginLeft: -8,
+    marginRight: 4,
+  },
+  backButtonOriginal: {
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 24,
@@ -1111,16 +1868,29 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   // Status Bar Styles
+  statusBarContainer: {
+    borderBottomWidth: 1,
+  },
   statusBar: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingVertical: 16,
     alignItems: 'center',
+    minHeight: 70,
+  },
+  statusBarExpanded: {
+    minHeight: 80,
+    alignItems: 'flex-start',
+    paddingVertical: 16,
   },
   statusSection: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  statusSectionExpanded: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statusDivider: {
     width: 1,
@@ -1135,5 +1905,191 @@ const styles = StyleSheet.create({
   statusValue: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  statusChevron: {
+    position: 'absolute',
+    right: 12,
+    top: 35, // Adjusted to center in new taller collapsed state height
+  },
+  // Reaction Styles
+  reactionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: -8, // Negative margin to overlap message border
+    gap: 4,
+    paddingHorizontal: 4,
+  },
+  reactionsContainerLeft: {
+    alignSelf: 'flex-start',
+    marginLeft: 8, // Align with left side of message bubble
+  },
+  reactionsContainerRight: {
+    alignSelf: 'flex-end',
+    marginRight: 8, // Align with right side of message bubble
+  },
+  reactionBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  reactionEmoji: {
+    fontSize: 14,
+  },
+  reactionEmojiClean: {
+    fontSize: 18,
+    marginHorizontal: 2,
+  },
+  reactionCount: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  // Reaction Menu Styles
+  reactionModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  reactionMenu: {
+    position: 'absolute',
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 25,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  emojiButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  emojiText: {
+    fontSize: 28,
+  },
+  // Reaction Users Slideup Styles
+  reactionUsersOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  reactionUsersContainer: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+    maxHeight: '50%',
+  },
+  reactionUsersHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    marginBottom: 16,
+  },
+  reactionUsersTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  reactionUsersList: {
+    gap: 12,
+  },
+  reactionUsersItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  reactionUsersEmoji: {
+    fontSize: 24,
+    width: 30,
+  },
+  reactionUsersNames: {
+    flex: 1,
+    gap: 4,
+  },
+  reactionUserName: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  reactionUserRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  deleteReactionButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  deleteReactionText: {
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
+  // Expanded Status Bar Styles
+  expandedFightCard: {
+    paddingTop: 16,
+    paddingBottom: 16,
+    flex: 1, // Fill available space
+  },
+  fightCardExpandedContent: {
+    flex: 1,
+  },
+  eventBannerImage: {
+    width: '100%',
+    height: 140,
+    borderRadius: 8,
+    alignSelf: 'stretch',
+  },
+  fightCardExpandedSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  expandedFightsScrollView: {
+    flex: 1, // Fill remaining space
+  },
+  sectionDivider: {
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  sectionDividerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  fightCardOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  fightMainEvent: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    letterSpacing: 1,
+  },
+  fightMatchup: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  fightDetails: {
+    fontSize: 14,
   },
 });
