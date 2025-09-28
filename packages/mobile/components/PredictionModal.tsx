@@ -10,6 +10,7 @@ import {
   Animated,
   Easing,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
@@ -253,8 +254,13 @@ export function PredictionModal({
   };
 
   const handleHypeLevelSelection = (level: number) => {
-    setHypeLevel(level);
-    animateToNumber(level);
+    if (hypeLevel === level) {
+      setHypeLevel(0);
+      animateToNumber(0);
+    } else {
+      setHypeLevel(level);
+      animateToNumber(level);
+    }
   };
 
   const handleClose = () => {
@@ -262,24 +268,34 @@ export function PredictionModal({
   };
 
   const handleRoundSelection = (round: number) => {
-    setPredictedRound(round);
-    if (!fight) return;
+    if (predictedRound === round) {
+      setPredictedRound(0);
+      // If round is deselected, also deselect method
+      setPredictedMethod('');
+    } else {
+      setPredictedRound(round);
+      if (!fight) return;
 
-    const finalRound = fight.scheduledRounds;
-    // If Decision is selected but the new round isn't the final round, deselect method
-    if (predictedMethod === 'DECISION' && round !== finalRound) {
-      setPredictedMethod(''); // Deselect method
+      const finalRound = fight.scheduledRounds;
+      // If Decision is selected but the new round isn't the final round, deselect method
+      if (predictedMethod === 'DECISION' && round !== finalRound) {
+        setPredictedMethod(''); // Deselect method
+      }
     }
   };
 
   // Handle method selection with round logic
   const handleMethodSelection = (method: PredictionMethod) => {
-    setPredictedMethod(method);
-    if (!fight) return;
+    if (predictedMethod === method) {
+      setPredictedMethod('');
+    } else {
+      setPredictedMethod(method);
+      if (!fight) return;
 
-    // If Decision is selected, automatically set round to final round
-    if (method === 'DECISION') {
-      setPredictedRound(fight.scheduledRounds);
+      // If Decision is selected, automatically set round to final round
+      if (method === 'DECISION') {
+        setPredictedRound(fight.scheduledRounds);
+      }
     }
   };
 
@@ -377,7 +393,7 @@ export function PredictionModal({
           {/* Predicted Winner */}
           <View style={styles.predictionSection}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>
-              1. Who do you think will win?
+              Who do you think will win?
             </Text>
             <View style={styles.fighterButtons}>
               <TouchableOpacity
@@ -388,7 +404,10 @@ export function PredictionModal({
                     borderColor: colors.border,
                   }
                 ]}
-                onPress={() => fight.fighter1?.id && setPredictedWinner(fight.fighter1.id)}
+                onPress={() => {
+                  if (!fight.fighter1?.id) return;
+                  setPredictedWinner(predictedWinner === fight.fighter1.id ? '' : fight.fighter1.id);
+                }}
               >
                 <Image
                   source={getFighterImage(fight.fighter1?.id || '')}
@@ -411,7 +430,10 @@ export function PredictionModal({
                     borderColor: colors.border,
                   }
                 ]}
-                onPress={() => fight.fighter2?.id && setPredictedWinner(fight.fighter2.id)}
+                onPress={() => {
+                  if (!fight.fighter2?.id) return;
+                  setPredictedWinner(predictedWinner === fight.fighter2.id ? '' : fight.fighter2.id);
+                }}
               >
                 <Image
                   source={getFighterImage(fight.fighter2?.id || '')}
@@ -432,7 +454,7 @@ export function PredictionModal({
           {/* Predicted Round */}
           <View style={styles.predictionSection}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>
-              2. What round will it end in?
+              What round will it end in?
             </Text>
             <View style={styles.roundButtons}>
               {Array.from({ length: fight.scheduledRounds }, (_, i) => i + 1).map((round) => (
@@ -463,7 +485,7 @@ export function PredictionModal({
           {/* Predicted Method */}
           <View style={styles.predictionSection}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>
-              3. How will it end?
+              How will it end?
             </Text>
             <View style={styles.methodButtons}>
               {(['DECISION', 'KO_TKO', 'SUBMISSION'] as const).map((method) => {
@@ -501,7 +523,7 @@ export function PredictionModal({
           {/* Hype Level */}
           <View style={styles.predictionSection}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>
-              4. How hyped are you for this fight?
+              How hyped are you?
             </Text>
 
             {/* Large display star with wheel animation */}
@@ -527,13 +549,19 @@ export function PredictionModal({
                     ))}
                   </Animated.View>
 
-                  {/* Subtle top fade - stays away from center */}
-                  <View style={[styles.fadeOverlay, { top: 0, height: 15, backgroundColor: colors.card, opacity: 0.8 }]} />
-                  <View style={[styles.fadeOverlay, { top: 15, height: 8, backgroundColor: colors.card, opacity: 0.3 }]} />
+                  {/* Smooth top gradient fade - covers top edge completely */}
+                  <LinearGradient
+                    colors={[colors.card, `${colors.card}DD`, `${colors.card}99`, `${colors.card}44`, 'transparent']}
+                    style={[styles.fadeOverlay, { top: 0, height: 38 }]}
+                    pointerEvents="none"
+                  />
 
-                  {/* Subtle bottom fade - stays away from center */}
-                  <View style={[styles.fadeOverlay, { bottom: 0, height: 15, backgroundColor: colors.card, opacity: 0.8 }]} />
-                  <View style={[styles.fadeOverlay, { bottom: 15, height: 8, backgroundColor: colors.card, opacity: 0.3 }]} />
+                  {/* Smooth bottom gradient fade - moved down for better centering */}
+                  <LinearGradient
+                    colors={['transparent', `${colors.card}44`, `${colors.card}99`, `${colors.card}DD`, colors.card, colors.card]}
+                    style={[styles.fadeOverlay, { bottom: -8, height: 25 }]}
+                    pointerEvents="none"
+                  />
                 </View>
               </View>
             </View>

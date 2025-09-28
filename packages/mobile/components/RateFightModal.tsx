@@ -149,7 +149,7 @@ const ALL_FIGHT_TAGS = [
 ];
 
 // Function to shuffle array randomly
-const shuffleArray = <T>(array: T[]): T[] => {
+const shuffleArray = <T,>(array: T[]): T[] => {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -344,7 +344,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
         console.log('🎯 Processing user tags:', fightData.userTags);
 
         // Handle different possible tag structures
-        const existingTagIds = fightData.userTags.map(userTag => {
+        const existingTagIds = fightData.userTags.map((userTag: any) => {
           let tagName = '';
 
           // Handle different tag structures

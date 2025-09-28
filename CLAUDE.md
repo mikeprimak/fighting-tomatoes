@@ -438,6 +438,47 @@ All API responses follow consistent format:
 - Enhanced modal overlay with `statusBarTranslucent={true}` for full screen coverage
 - Simplified component styling for method buttons and removed visual clutter
 
+## TypeScript & Code Quality Guidelines
+
+### Critical TypeScript Rules for .tsx Files
+**MANDATORY**: Always use trailing comma for generic functions in `.tsx` files to prevent JSX parsing conflicts:
+```typescript
+// ❌ NEVER do this in .tsx files - causes catastrophic parsing errors
+const shuffleArray = <T>(array: T[]) => T[]
+
+// ✅ ALWAYS do this in .tsx files
+const shuffleArray = <T,>(array: T[]) => T[]
+```
+
+### Automated Code Quality Workflow
+Claude Code should ALWAYS follow these steps when making significant changes:
+
+1. **Before Major Changes**:
+   - Run `pnpm type-check` to establish baseline
+   - Consider creating git checkpoint: `git add . && git commit -m "Checkpoint before changes"`
+
+2. **During Development**:
+   - Run `pnpm type-check` after each significant code change
+   - Pay special attention to generic syntax in `.tsx` files
+   - Use trailing commas for all generics: `<T,>`, `<T extends Something,>`, `<T, U,>`
+
+3. **After Code Changes**:
+   - ALWAYS run `pnpm type-check` before completing the task
+   - Fix any TypeScript errors before declaring task complete
+   - If type-check fails, investigate and fix rather than ignoring
+
+### File Organization Best Practices
+- **Complex utility functions**: Move to `.ts` files (utils/) for cleaner generic syntax
+- **React components**: Keep in `.tsx` files with proper generic syntax
+- **Type definitions**: Prefer interface over type in `.tsx` files when possible
+
+### Emergency Recovery Procedures
+If TypeScript errors cascade (hundreds of errors from one file):
+1. Check for generic syntax issues: look for `<T>` patterns in `.tsx` files
+2. Add trailing commas to fix: `<T,>`
+3. If errors persist, check git history: `git log --oneline -- path/to/file.tsx`
+4. Use git restoration if needed: `git show COMMIT:path/to/file.tsx > temp_file.tsx`
+
 ## Next Session Priority
 🔄 **Chat Messages Keyboard Integration**
 When we start the next session, we'll begin by implementing keyboard-aware chat message positioning. The goal is to make all chat messages rise up with the keyboard and input area so that the most recent message remains visible while typing. This will require:
@@ -445,4 +486,18 @@ When we start the next session, we'll begin by implementing keyboard-aware chat 
 - Ensuring the inverted FlatList responds properly to keyboard changes
 - Maintaining the stable keyboard behavior from Point B while adding message area responsiveness
 - Testing that messages stay visible and scrollable during keyboard interaction
+
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+
+## TypeScript Quality Enforcement
+CRITICAL: Always follow these TypeScript practices to prevent code corruption:
+- Use trailing comma for ALL generics in .tsx files: `<T,>` not `<T>`
+- Run `pnpm type-check` after significant changes
+- Fix TypeScript errors before completing tasks
+- Check for generic syntax issues if hundreds of errors appear from one file
 
