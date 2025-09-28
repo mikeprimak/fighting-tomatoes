@@ -110,7 +110,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       const accessToken = jwt.sign(
         { userId: user.id },
         JWT_SECRET,
-        { expiresIn: '15m' }
+        { expiresIn: '1h' }
       );
 
       const refreshToken = jwt.sign(
@@ -251,7 +251,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       const accessToken = jwt.sign(
         { userId: user.id },
         JWT_SECRET,
-        { expiresIn: '15m' }
+        { expiresIn: '1h' }
       );
 
       const refreshToken = jwt.sign(
@@ -409,7 +409,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       const newAccessToken = jwt.sign(
         { userId: decoded.userId },
         JWT_SECRET,
-        { expiresIn: '15m' }
+        { expiresIn: '1h' }
       );
 
       const newRefreshToken = jwt.sign(

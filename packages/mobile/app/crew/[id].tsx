@@ -16,6 +16,7 @@ import {
   Image,
   KeyboardAvoidingView,
   ScrollView,
+  Animated,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -113,6 +114,25 @@ export default function CrewChatScreen() {
   const [showReactionUsers, setShowReactionUsers] = useState(false);
   const [selectedReactionData, setSelectedReactionData] = useState<any[]>([]);
   const [showFightCard, setShowFightCard] = useState(false);
+  const fightCardSlideAnim = useRef(new Animated.Value(-1000)).current;
+
+  // Calculate padding lines for consistent section heights
+  const getStatusPaddingLines = (baseText: string, maxLines: number = 3) => {
+    if (!showFightCard) return '';
+
+    // Estimate lines based on text length (rough approximation)
+    const eventText = "UFC 307: Periera vs Roundtree";
+    const estimatedEventLines = Math.max(1, Math.ceil(eventText.length / 25)); // ~25 chars per line
+    const currentLines = Math.max(1, Math.ceil(baseText.length / 25));
+    const paddingNeeded = Math.max(0, estimatedEventLines - currentLines);
+
+    return '\n'.repeat(paddingNeeded);
+  };
+
+  // Initialize animation position
+  useEffect(() => {
+    fightCardSlideAnim.setValue(showFightCard ? 0 : -1000);
+  }, []);
 
   // Storage keys for persistent reactions
   const REACTIONS_STORAGE_KEY = `crew_reactions_${id}`;
@@ -773,14 +793,27 @@ export default function CrewChatScreen() {
     }
   };
 
-  // Handle tapping status bar to toggle fight card
+  // Handle tapping status bar to toggle fight card with slide animation
   const handleStatusBarTap = () => {
     console.log('Status bar tapped, fight card data:', mockFightCard.length, 'fights');
-    setShowFightCard(prev => {
-      const newValue = !prev;
-      console.log('Setting showFightCard to:', newValue);
-      return newValue;
-    });
+    const newValue = !showFightCard;
+    console.log('Setting showFightCard to:', newValue);
+
+    if (newValue) {
+      setShowFightCard(true);
+      Animated.timing(fightCardSlideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      setShowFightCard(false);
+      Animated.timing(fightCardSlideAnim, {
+        toValue: -1000,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
   };
 
   // Close fight card slidedown
@@ -1016,14 +1049,15 @@ export default function CrewChatScreen() {
           {
             backgroundColor: colors.background,
             borderBottomColor: showFightCard ? 'transparent' : colors.border,
+            overflow: 'hidden',
           }
         ]}>
           <TouchableOpacity
-            style={[styles.statusBar, showFightCard && styles.statusBarExpanded]}
+            style={[styles.statusBar, showFightCard && { height: 120 }]}
             onPress={handleStatusBarTap}
             activeOpacity={0.8}
           >
-            <View style={[styles.statusSection, showFightCard && styles.statusSectionExpanded]}>
+            <View style={styles.statusSection}>
               <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Event</Text>
               <Text style={[
                 styles.statusValue,
@@ -1035,8 +1069,8 @@ export default function CrewChatScreen() {
                 UFC 307: Periera vs Roundtree
               </Text>
             </View>
-            <View style={styles.statusDivider} />
-            <View style={[styles.statusSection, showFightCard && styles.statusSectionExpanded]}>
+            <View style={[styles.statusDivider, { left: '33.33%', marginLeft: 16 }]} />
+            <View style={styles.statusSection}>
               <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Current Fight</Text>
               <Text style={[
                 styles.statusValue,
@@ -1045,11 +1079,11 @@ export default function CrewChatScreen() {
                   textAlign: 'center'
                 }
               ]} numberOfLines={showFightCard ? undefined : 2}>
-                Holloway vs Volkanovski
+                Holloway vs Volkanovski{getStatusPaddingLines("Holloway vs Volkanovski")}
               </Text>
             </View>
-            <View style={styles.statusDivider} />
-            <View style={[styles.statusSection, showFightCard && styles.statusSectionExpanded]}>
+            <View style={[styles.statusDivider, { left: '66.66%', marginLeft: 16 }]} />
+            <View style={styles.statusSection}>
               <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>Round</Text>
               <Text style={[
                 styles.statusValue,
@@ -1058,7 +1092,7 @@ export default function CrewChatScreen() {
                   textAlign: 'center'
                 }
               ]} numberOfLines={showFightCard ? undefined : 2}>
-                3 / 5{showFightCard ? '' : '\n '}
+                3 / 5{showFightCard ? '\n\n ' : ''}
               </Text>
             </View>
             <FontAwesome
@@ -1072,8 +1106,15 @@ export default function CrewChatScreen() {
 
         {/* Dynamic Content Area - Fight Card OR Messages */}
         {showFightCard ? (
-          /* Expanded Fight Card Content */
-          <View style={styles.expandedFightCard}>
+          /* Expanded Fight Card Content with Slide Animation */
+          <Animated.View
+            style={[
+              styles.expandedFightCard,
+              {
+                transform: [{ translateY: fightCardSlideAnim }]
+              }
+            ]}
+          >
             <View style={styles.fightCardExpandedContent}>
               {/* Event Banner Image */}
               <View style={{ marginHorizontal: 20, marginBottom: 8 }}>
@@ -1105,11 +1146,11 @@ export default function CrewChatScreen() {
 
                     return (
                       <View key={fight.id}>
-                        {/* Show "Main Event" divider before main event fight */}
+                        {/* Show "Main Card" divider before main event fight */}
                         {isMainEvent && (
                           <View style={styles.sectionDivider}>
                             <Text style={[styles.sectionDividerText, { color: colors.textSecondary }]}>
-                              Main Event
+                              Main Card
                             </Text>
                           </View>
                         )}
@@ -1137,7 +1178,7 @@ export default function CrewChatScreen() {
                 )}
               </ScrollView>
             </View>
-          </View>
+          </Animated.View>
         ) : (
           /* Messages Container */
           <View style={[styles.chatContainer, {
@@ -1422,6 +1463,7 @@ const styles = StyleSheet.create({
   },
   contentArea: {
     flex: 1,
+    overflow: 'hidden',
   },
   flex1: {
     flex: 1,
@@ -1870,33 +1912,39 @@ const styles = StyleSheet.create({
   // Status Bar Styles
   statusBarContainer: {
     borderBottomWidth: 1,
+    zIndex: 10,
+    position: 'relative',
   },
   statusBar: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-    minHeight: 70,
+    paddingTop: -1,
+    paddingBottom: 25,
+    alignItems: 'flex-start',
+    height: 85,
   },
   statusBarExpanded: {
     minHeight: 80,
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingVertical: 16,
   },
   statusSection: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
+    paddingTop: 8,
+    minHeight: 50,
   },
   statusSectionExpanded: {
-    alignItems: 'center',
     justifyContent: 'center',
   },
   statusDivider: {
+    position: 'absolute',
     width: 1,
     height: 30,
     backgroundColor: '#666',
-    marginHorizontal: 8,
+    top: 35,
+    transform: [{ translateX: -0.5 }],
   },
   statusLabel: {
     fontSize: 12,
@@ -1909,7 +1957,7 @@ const styles = StyleSheet.create({
   statusChevron: {
     position: 'absolute',
     right: 12,
-    top: 35, // Adjusted to center in new taller collapsed state height
+    top: 43, // Moved down 8px from 35
   },
   // Reaction Styles
   reactionsContainer: {
@@ -2044,6 +2092,8 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 16,
     flex: 1, // Fill available space
+    zIndex: 1,
+    position: 'relative',
   },
   fightCardExpandedContent: {
     flex: 1,

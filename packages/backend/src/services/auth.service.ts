@@ -4,7 +4,7 @@ import { prisma } from '../app';
 
 export class AuthService {
   private readonly JWT_SECRET = process.env.JWT_SECRET!;
-  private readonly JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '15m';
+  private readonly JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
   private readonly REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
 
   async generateTokens(userId: string, req: Request) {

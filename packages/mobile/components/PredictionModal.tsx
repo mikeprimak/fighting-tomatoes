@@ -488,7 +488,7 @@ export function PredictionModal({
               How will it end?
             </Text>
             <View style={styles.methodButtons}>
-              {(['DECISION', 'KO_TKO', 'SUBMISSION'] as const).map((method) => {
+              {(['KO_TKO', 'SUBMISSION', 'DECISION'] as const).map((method) => {
                 // Decision only available for final round
                 const isDecisionDisabled = method === 'DECISION' && predictedRound !== fight.scheduledRounds;
 
