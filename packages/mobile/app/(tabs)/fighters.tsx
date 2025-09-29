@@ -162,7 +162,7 @@ export default function FightersScreen() {
             onPress={handleRefresh}
             style={[styles.retryButton, { backgroundColor: colors.primary }]}
           >
-            <Text style={styles.retryButtonText}>Try Again</Text>
+            <Text style={[styles.retryButtonText, { color: colors.textOnAccent }]}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

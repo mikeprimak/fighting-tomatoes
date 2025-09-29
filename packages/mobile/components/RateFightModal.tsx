@@ -502,12 +502,22 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
   return (
     <Modal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
+      transparent={true}
+      animationType="fade"
+      statusBarTranslucent={true}
       onRequestClose={closeModal}
     >
-      <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-        <ScrollView contentContainerStyle={styles.modalContent}>
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={closeModal}
+      >
+        <TouchableOpacity
+          style={[styles.modalContainer, { backgroundColor: colors.background }]}
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <ScrollView contentContainerStyle={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Rate Fight</Text>
             <TouchableOpacity
@@ -627,7 +637,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
                   <Text style={[
                     styles.tagText,
                     {
-                      color: selectedTags.includes(tag.id) ? 'white' : colors.text
+                      color: selectedTags.includes(tag.id) ? colors.textOnAccent : colors.text
                     }
                   ]}>
                     {tag.name}
@@ -667,30 +677,44 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
               ]}
               disabled={updateUserDataMutation.isPending}
             >
-              <Text style={styles.saveButtonText}>
+              <Text style={[styles.saveButtonText, { color: colors.textOnAccent }]}>
                 {updateUserDataMutation.isPending ? 'Saving...' : 'Save'}
               </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
-      </SafeAreaView>
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '95%',
+    maxWidth: 450,
+    maxHeight: '90%',
+    borderRadius: 16,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
   },
   modalContent: {
-    flexGrow: 1,
     padding: 20,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 19,
   },
   closeButton: {
     padding: 12,
@@ -745,13 +769,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   ratingSection: {
-    marginBottom: 12,
+    marginBottom: 20,
     marginTop: -10, // Move up 10px towards fighters area
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 11,
+    marginBottom: 12,
   },
   displayStarContainer: {
     alignItems: 'center',
@@ -811,7 +835,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   commentSection: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   commentInput: {
     borderWidth: 1,
@@ -822,7 +846,7 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   tagsSection: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   tagsContainer: {
     flexDirection: 'row',
@@ -833,7 +857,7 @@ const styles = StyleSheet.create({
   tagButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 16,
+    borderRadius: 8,
     borderWidth: 1,
   },
   tagText: {
@@ -851,7 +875,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   saveSection: {
-    marginTop: 'auto',
+    marginTop: 8,
   },
   saveButton: {
     padding: 16,
@@ -859,7 +883,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   saveButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },

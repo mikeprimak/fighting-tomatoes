@@ -161,7 +161,7 @@ export default function RegisterScreen() {
                 onPress={handleRegister}
                 disabled={isLoading}
               >
-                <Text style={styles.buttonText}>
+                <Text style={[styles.buttonText, { color: colors.textOnAccent }]}>
                   {isLoading ? 'Creating Account...' : 'Create Account'}
                 </Text>
               </TouchableOpacity>
@@ -254,7 +254,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     opacity: 0.6,
   },
   buttonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },

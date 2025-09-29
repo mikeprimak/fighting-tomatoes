@@ -211,7 +211,7 @@ export default function EventDetailScreen() {
             onPress={() => router.back()}
             style={[styles.backButton, { backgroundColor: colors.primary }]}
           >
-            <Text style={styles.backButtonText}>Go Back</Text>
+            <Text style={[styles.backButtonText, { color: colors.textOnAccent }]}>Go Back</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>

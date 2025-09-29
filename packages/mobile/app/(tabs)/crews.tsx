@@ -204,7 +204,7 @@ export default function CrewsScreen() {
             style={[styles.retryButton, { backgroundColor: colors.tint }]}
             onPress={() => refetch()}
           >
-            <Text style={styles.retryButtonText}>Try Again</Text>
+            <Text style={[styles.retryButtonText, { color: colors.textOnAccent }]}>Try Again</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -223,16 +223,16 @@ export default function CrewsScreen() {
             onPress={showJoinCrewDialog}
             disabled={joinCrewMutation.isPending}
           >
-            <FontAwesome name="plus" size={16} color="white" />
-            <Text style={styles.headerButtonText}>Join</Text>
+            <FontAwesome name="plus" size={16} color={colors.textOnAccent} />
+            <Text style={[styles.headerButtonText, { color: colors.textOnAccent }]}>Join</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.headerButton, { backgroundColor: colors.tint }]}
             onPress={showCreateCrewDialog}
             disabled={createCrewMutation.isPending}
           >
-            <FontAwesome name="group" size={16} color="white" />
-            <Text style={styles.headerButtonText}>Create</Text>
+            <FontAwesome name="group" size={16} color={colors.textOnAccent} />
+            <Text style={[styles.headerButtonText, { color: colors.textOnAccent }]}>Create</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -289,7 +289,7 @@ export default function CrewsScreen() {
                 onPress={handleCreateCrew}
                 disabled={createCrewMutation.isPending}
               >
-                <Text style={styles.createButtonText}>
+                <Text style={[styles.createButtonText, { color: colors.textOnAccent }]}>
                   {createCrewMutation.isPending ? 'Creating...' : 'Create'}
                 </Text>
               </TouchableOpacity>
@@ -334,7 +334,7 @@ export default function CrewsScreen() {
                 onPress={handleJoinCrew}
                 disabled={joinCrewMutation.isPending}
               >
-                <Text style={styles.joinButtonText}>
+                <Text style={[styles.joinButtonText, { color: colors.textOnAccent }]}>
                   {joinCrewMutation.isPending ? 'Joining...' : 'Join'}
                 </Text>
               </TouchableOpacity>

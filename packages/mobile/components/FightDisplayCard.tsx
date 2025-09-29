@@ -208,7 +208,7 @@ export default function FightDisplayCard({
               style={[styles.actionButton, { backgroundColor: colors.primary }]}
               onPress={() => onPress(fight)}
             >
-              <Text style={styles.actionButtonText}>{actionButtonText}</Text>
+              <Text style={[styles.actionButtonText, { color: colors.textOnAccent }]}>{actionButtonText}</Text>
             </TouchableOpacity>
           </View>
         ) : null}
@@ -317,7 +317,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionButtonText: {
-    color: 'white',
     fontSize: 14,
     fontWeight: '600',
   },

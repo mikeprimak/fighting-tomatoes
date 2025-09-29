@@ -76,7 +76,7 @@ export default function EventsScreen() {
         >
           <Text style={[
             styles.tabText,
-            { color: selectedTab === 'upcoming' ? 'white' : colors.textSecondary }
+            { color: selectedTab === 'upcoming' ? colors.textOnAccent : colors.textSecondary }
           ]}>
             Upcoming
           </Text>
@@ -92,7 +92,7 @@ export default function EventsScreen() {
         >
           <Text style={[
             styles.tabText,
-            { color: selectedTab === 'past' ? 'white' : colors.textSecondary }
+            { color: selectedTab === 'past' ? colors.textOnAccent : colors.textSecondary }
           ]}>
             Past Events
           </Text>

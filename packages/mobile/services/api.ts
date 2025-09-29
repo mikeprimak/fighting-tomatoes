@@ -112,11 +112,11 @@ class ApiService {
 
     // Only add Content-Type for requests with a body
     if (options.body) {
-      headers['Content-Type'] = 'application/json';
+      (headers as any)['Content-Type'] = 'application/json';
     }
 
     if (token) {
-      headers.Authorization = `Bearer ${token}`;
+      (headers as any).Authorization = `Bearer ${token}`;
     }
 
     try {

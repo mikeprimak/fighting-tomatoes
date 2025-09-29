@@ -62,9 +62,9 @@ export default function FightDisplayCardMinimal({ fightData, onPress }: FightDis
   const getBackgroundColor = () => {
     switch (fightData.status) {
       case 'completed':
-        return colorScheme === 'dark' ? '#1a2e1a' : '#f0f9f0'; // Dark green tint
+        return colors.card; // Same as upcoming fights
       case 'in_progress':
-        return colorScheme === 'dark' ? '#2e1a1a' : '#fff5f5'; // Dark red tint
+        return colorScheme === 'dark' ? '#1a2e1a' : '#f0f9f0'; // Green tint for current fight
       case 'upcoming':
       default:
         return colors.card; // Default card color
@@ -147,7 +147,9 @@ export default function FightDisplayCardMinimal({ fightData, onPress }: FightDis
           )}
 
           {fightData.status === 'in_progress' && (
-            <Text style={[styles.statusText, { color: colors.tint }]} numberOfLines={1}>
+            <Text style={[styles.statusText, {
+              color: (!fightData.currentRound && !fightData.completedRounds) ? colors.danger : colors.tint
+            }]} numberOfLines={1}>
               {fightData.currentRound ? `Round ${fightData.currentRound}` :
                fightData.completedRounds ? `End R${fightData.completedRounds}` : 'Live'}
             </Text>

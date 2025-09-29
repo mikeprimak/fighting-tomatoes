@@ -59,7 +59,7 @@ export default function ProfileScreen() {
         {/* Profile Header */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
+            <Text style={[styles.avatarText, { color: colors.textOnAccent }]}>
               {user?.firstName ? user.firstName.charAt(0).toUpperCase() :
                user?.displayName ? user.displayName.charAt(0).toUpperCase() :
                user?.email ? user.email.charAt(0).toUpperCase() : '?'}
@@ -156,10 +156,10 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.logoutButton, { backgroundColor: colors.danger }]}
+            style={[styles.logoutButton, { backgroundColor: colors.primary }]}
             onPress={handleLogout}
           >
-            <Text style={styles.logoutButtonText}>Sign Out</Text>
+            <Text style={[styles.logoutButtonText, { color: colors.textOnAccent }]}>Sign Out</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
