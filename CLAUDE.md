@@ -608,6 +608,42 @@ Fixed the complex, broken RateFightModal submission system by implementing a cle
 
 The RateFightModal now functions as cleanly and simply as the PredictionModal, providing complete flexibility for fight data management while maintaining proper validation and a condensed, on-screen layout.
 
+### RateFightModal UI Polish & FightDisplayCardMinimal Enhancements (December 2024)
+✅ **RateFightModal Tag Layout & Spacing Improvements**
+- **Conservative Tag Display**: Implemented 8-tag maximum with dynamic expansion (removed fixed height)
+- **Improved Section Spacing**: Added proper padding between section titles and content
+  - Tags section: 14px padding between title and content (increased from 8px + 3px)
+  - Review section: 14px padding between title and content (increased from 8px + 3px)
+- **Layout Positioning**: Moved "Your Rating" section 10px higher toward fighters area for better visual hierarchy
+- **Dynamic Tag Container**: Removed fixed height constraint allowing natural content expansion without layout jumps
+
+✅ **FightDisplayCardMinimal Spoiler Protection & Enhanced Status Display**
+- **Spoiler Protection System**: Fight outcomes only display if user has interacted with fight
+  - Added `hasUserInteracted()` helper function checking for ratings, reviews, or tags
+  - Extended interface with `userRating?`, `userReview?`, and `userTags?` properties
+  - Conditional result display: `{fightData.status === 'completed' && fightData.result && hasUserInteracted()}`
+- **Enhanced In-Progress Display**: Improved live fight status information
+  - Shows `Round ${currentRound}` when current round is available
+  - Shows `End R${completedRounds}` when between rounds
+  - Fallback to `Live` when specific round info unavailable
+  - Removed generic "In Progress" text for more specific information
+- **Full Text Display**: Removed text truncation (`numberOfLines` restriction) allowing complete fight outcome display
+
+✅ **Technical Implementation Details**:
+- **RateFightModal**: `packages/mobile/components/RateFightModal.tsx`
+  - Conservative tag count: `const CONSERVATIVE_MAX_TAGS = 8`
+  - Enhanced spacing: `sectionTitle: { marginBottom: 14 }` (was 8px + 3px)
+  - Repositioning: `ratingSection: { marginTop: -10 }` for better layout
+  - Dynamic container: Removed `height: 120` from tagsContainer
+- **FightDisplayCardMinimal**: `packages/mobile/components/FightDisplayCardMinimal.tsx`
+  - User interaction detection for spoiler protection
+  - Intelligent status display logic for in-progress fights
+  - Full text display capability for fight outcomes
+
+**Files Modified**:
+- `packages/mobile/components/RateFightModal.tsx` - Tag layout optimization and spacing improvements
+- `packages/mobile/components/FightDisplayCardMinimal.tsx` - Spoiler protection and enhanced status display
+
 ## Next Session Priority
 🔄 **Chat Messages Keyboard Integration**
 When we start the next session, we'll begin by implementing keyboard-aware chat message positioning. The goal is to make all chat messages rise up with the keyboard and input area so that the most recent message remains visible while typing. This will require:

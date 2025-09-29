@@ -199,9 +199,13 @@ const getAvailableTagsForRating = (rating: number, selectedTags: string[]) => {
   // Remove already selected tags from eligible pool to avoid duplicates
   const unselectedEligibleTags = eligibleTags.filter(tag => !selectedTags.includes(tag.id));
 
-  // Determine how many random tags to show (limit to ~3 lines, roughly 6-9 tags total)
-  const minTags = 6;
-  const maxTags = 9;
+  // Calculate tags to show based on estimated layout for exactly 3 rows
+  // Average tag width: ~80px, gap: 8px, available width: ~320px (modal width - padding)
+  // Tags per row: floor((320 + 8) / (80 + 8)) = ~3.7, so conservatively 3 per row
+  // For exactly 3 rows: 3 tags × 3 rows = 9 tags maximum
+  const TAGS_PER_ROW = 3;
+  const MAX_ROWS = 3;
+  const maxTags = TAGS_PER_ROW * MAX_ROWS; // 9 tags for exactly 3 rows
   const selectedCount = mustIncludeTags.length;
   const remainingSlots = Math.max(0, Math.min(maxTags - selectedCount, unselectedEligibleTags.length));
   const targetRandomCount = Math.max(0, Math.min(remainingSlots, maxTags - selectedCount));
@@ -214,9 +218,14 @@ const getAvailableTagsForRating = (rating: number, selectedTags: string[]) => {
   }
 
   // Combine must-include tags with randomly selected tags
-  const finalTags = [...mustIncludeTags, ...randomlySelectedTags];
+  const allTags = [...mustIncludeTags, ...randomlySelectedTags];
 
-  return finalTags;
+  // Conservative approach: Just use a fixed count based on typical tag lengths
+  // This prevents the glitchy 4th row from ever appearing
+  // Better to show slightly fewer tags than to have layout glitches
+  const CONSERVATIVE_MAX_TAGS = 8; // Safe number that usually fits in 3 rows
+
+  return allTags.slice(0, CONSERVATIVE_MAX_TAGS);
 };
 
 // Fighter image selection logic (same as FightDisplayCard)
@@ -267,6 +276,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
   const availableTags = useMemo(() => {
     return getAvailableTagsForRating(rating, selectedTags);
   }, [rating, tagRandomSeed]);
+
 
   // Fetch fight data with user information for persistence
   const { data: fightWithUserData, isLoading: fightDataLoading } = useQuery({
@@ -736,11 +746,12 @@ const styles = StyleSheet.create({
   },
   ratingSection: {
     marginBottom: 12,
+    marginTop: -10, // Move up 10px towards fighters area
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 0,
+    marginBottom: 11,
   },
   displayStarContainer: {
     alignItems: 'center',
@@ -817,8 +828,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    maxHeight: 120, // Limit to ~3 lines of tags
-    overflow: 'hidden',
+    alignItems: 'flex-start',
   },
   tagButton: {
     paddingHorizontal: 12,

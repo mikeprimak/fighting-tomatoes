@@ -19,6 +19,8 @@ interface FightDisplayCardMinimalProps {
     aggregateRating: number | null;
     totalRatings: number;
     userRating?: number | null;
+    userReview?: { content: string; rating: number; createdAt: string; } | null;
+    userTags?: string[] | null;
     result?: string;
     startTime?: string;
     completedAt?: string;
@@ -47,6 +49,13 @@ export default function FightDisplayCardMinimal({ fightData, onPress }: FightDis
       .replace(/([A-Z][a-z]+)\s+([A-Z][a-z]+)/g, '$2') // Replace "FirstName LastName" with "LastName"
       .replace(/\s+/g, ' ') // Clean up extra spaces
       .trim();
+  };
+
+  // Check if user has interacted with the fight (rated, reviewed, or tagged)
+  const hasUserInteracted = () => {
+    return !!(fightData.userRating ||
+              fightData.userReview ||
+              (fightData.userTags && fightData.userTags.length > 0));
   };
 
   // Determine background color based on fight status
@@ -131,15 +140,16 @@ export default function FightDisplayCardMinimal({ fightData, onPress }: FightDis
 
         {/* Fight Status and Results */}
         <View style={styles.statusContainer}>
-          {fightData.status === 'completed' && fightData.result && (
-            <Text style={[styles.result, { color: colors.text }]} numberOfLines={2}>
+          {fightData.status === 'completed' && fightData.result && hasUserInteracted() && (
+            <Text style={[styles.result, { color: colors.text }]}>
               {cleanFightResult(fightData.result)}
             </Text>
           )}
 
           {fightData.status === 'in_progress' && (
             <Text style={[styles.statusText, { color: colors.tint }]} numberOfLines={1}>
-              Round {fightData.currentRound} • In Progress
+              {fightData.currentRound ? `Round ${fightData.currentRound}` :
+               fightData.completedRounds ? `End R${fightData.completedRounds}` : 'Live'}
             </Text>
           )}
 
