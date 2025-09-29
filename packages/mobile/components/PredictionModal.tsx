@@ -85,7 +85,7 @@ export function PredictionModal({
   onSuccess,
   onSubmit,
   existingPrediction,
-  title = "Pre-Fight Predictions",
+  title = "Pre-Fight Prediction",
   submitButtonText = "Submit Prediction",
   updateButtonText = "Update Prediction",
 }: PredictionModalProps) {
@@ -222,8 +222,8 @@ export function PredictionModal({
     setPredictedMethod('');
     setPredictedRound(0);
     setDisplayNumber(0);
-    // Reset wheel to initial position (no number showing)
-    wheelAnimation.setValue(0);
+    // Reset wheel to blank position (below "1" - position 1200)
+    wheelAnimation.setValue(1200);
   };
 
   // Animated wheel effect for number display
@@ -237,7 +237,8 @@ export function PredictionModal({
     // Calculate target position (positioning number in center of visible area)
     // Numbers are arranged 10,9,8,7,6,5,4,3,2,1 (10 at top, 1 at bottom)
     // Position 0 = number 10, position 120 = number 9, ... position 1080 = number 1
-    const targetPosition = (10 - targetNumber) * 120;
+    // Position 1200 = blank (below "1")
+    const targetPosition = targetNumber === 0 ? 1200 : (10 - targetNumber) * 120;
 
     // Simple, smooth animation - prioritizing smoothness over complex behaviors
     Animated.timing(wheelAnimation, {
@@ -536,8 +537,8 @@ export function PredictionModal({
                     {
                       transform: [{
                         translateY: wheelAnimation.interpolate({
-                          inputRange: [0, 1080], // 9 * 120px for positions 0-1080
-                          outputRange: [475, -605], // Moved down by 30px
+                          inputRange: [0, 1200], // Extended to include blank position at 1200
+                          outputRange: [475, -725], // Extended range for blank position
                         })
                       }]
                     }

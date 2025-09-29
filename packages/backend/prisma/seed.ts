@@ -68,6 +68,15 @@ async function main() {
       level: 1,
     },
     {
+      email: 'test@fightingtomatoes.com',
+      password: hashedPassword,
+      displayName: 'Fighting Tomatoes User',
+      isEmailVerified: true,
+      authProvider: AuthProvider.EMAIL,
+      points: 100,
+      level: 1,
+    },
+    {
       email: 'admin@fightcrewapp.com',
       password: hashedPassword,
       displayName: 'Admin User',

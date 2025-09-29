@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,10 @@ import {
   StyleSheet,
   Alert,
   Image,
+  Animated,
+  Easing,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
@@ -236,10 +239,23 @@ const getFighterImage = (fighterId: string) => {
 export default function RateFightModal({ visible, fight, onClose, queryKey = ['fights'], crewId, onSuccess }: RateFightModalProps) {
   console.log('🎯 RateFightModal RENDER - Fight:', fight?.id, 'Visible:', visible);
 
+  // Current form state
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [tagRandomSeed, setTagRandomSeed] = useState(0); // Trigger for re-randomizing tags
+  const [tagRandomSeed, setTagRandomSeed] = useState(0);
+
+  // Original data state (what user had when modal opened)
+  const [originalData, setOriginalData] = useState<{
+    rating: number;
+    comment: string;
+    tags: string[];
+    hasAnyData: boolean;
+  }>({ rating: 0, comment: '', tags: [], hasAnyData: false });
+
+  // Animation state for rolling numbers
+  const [displayNumber, setDisplayNumber] = useState(0);
+  const wheelAnimation = useRef(new Animated.Value(1200)).current;
 
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -268,242 +284,146 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
     staleTime: 30 * 1000, // 30 seconds
   });
 
-  // Custom setRating function that triggers tag re-randomization
+  // Animation function to move wheel to specific number
+  const animateToNumber = (targetNumber: number) => {
+    if (targetNumber === 0) {
+      // Animate to blank position (below "1")
+      wheelAnimation.stopAnimation();
+      Animated.timing(wheelAnimation, {
+        toValue: 1200,
+        duration: 800,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start();
+      setDisplayNumber(0);
+    } else {
+      // Calculate position for target number (10 at top, 1 at bottom)
+      const targetPosition = (10 - targetNumber) * 120;
+
+      wheelAnimation.stopAnimation();
+      Animated.timing(wheelAnimation, {
+        toValue: targetPosition,
+        duration: 800,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start();
+      setDisplayNumber(targetNumber);
+    }
+  };
+
+  // Custom setRating function that triggers tag re-randomization and animation
   const handleSetRating = (newRating: number) => {
-    setRating(newRating);
+    // If the same rating is selected, deselect it (set to 0)
+    const finalRating = rating === newRating ? 0 : newRating;
+
+    setRating(finalRating);
+    animateToNumber(finalRating);
     // Trigger tag re-randomization when rating changes
     setTagRandomSeed(prev => prev + 1);
   };
 
-  // Reset state when modal opens with new fight
+  // Reset and initialize state when modal opens
   useEffect(() => {
     if (visible && fight) {
-      console.log('🎯 RateFightModal useEffect: Pre-populating data for fight:', fight.id);
+      console.log('🎯 RateFightModal: Initializing for fight:', fight.id);
 
       // Reset random seed for fresh tag selection
       setTagRandomSeed(Math.floor(Math.random() * 1000));
 
-      // Use fetched fight data with user info if available, otherwise fallback to passed fight data
+      // Use API data if available, otherwise use passed fight data
       const fightData = fightWithUserData?.fight || fight;
-      console.log('🎯 RateFightModal: Fight data source:', {
+      console.log('🎯 Fight data available:', {
         hasApiData: !!fightWithUserData?.fight,
-        hasUserRating: !!fightData.userRating,
-        hasUserReview: !!fightData.userReview,
-        hasUserTags: !!fightData.userTags,
         userRating: fightData.userRating,
         userReview: fightData.userReview,
         userTags: fightData.userTags
       });
 
-      // Pre-populate with existing data if available
-      const hasUserRating = !!fightData.userRating;
-      const hasUserReview = !!fightData.userReview;
+      // Extract existing data in priority order (review > rating)
+      let currentRating = 0;
+      let currentComment = '';
+      let currentTags: string[] = [];
 
-      if (hasUserRating || hasUserReview) {
-        let finalRating = 0;
-        let finalComment = '';
-
-        if (hasUserRating && hasUserReview) {
-          // Both exist - prefer review if it has a rating, otherwise use rating
-          if (fightData.userReview.rating) {
-            finalRating = fightData.userReview.rating;
-            finalComment = fightData.userReview.content || '';
-            console.log('🎯 Using review data (both exist)');
-          } else {
-            finalRating = fightData.userRating.rating || fightData.userRating;
-            finalComment = fightData.userRating.comment || '';
-            console.log('🎯 Using rating data (both exist, review has no rating)');
-          }
-        } else if (hasUserReview) {
-          finalRating = fightData.userReview.rating;
-          finalComment = fightData.userReview.content || '';
-          console.log('🎯 Using review data (only review exists)');
-        } else if (hasUserRating) {
-          // Handle case where userRating might be just a number or an object
-          if (typeof fightData.userRating === 'number') {
-            finalRating = fightData.userRating;
-            finalComment = '';
-          } else {
-            finalRating = fightData.userRating.rating || 0;
-            finalComment = fightData.userRating.comment || '';
-          }
-          console.log('🎯 Using rating data (only rating exists)');
-        }
-
-        console.log('🎯 Pre-populating with:', { finalRating, finalComment });
-        setRating(finalRating);
-        setComment(finalComment);
-      } else {
-        console.log('🎯 No existing user data, starting fresh');
-        setRating(0);
-        setComment('');
+      // 1. Check for review data (most complete)
+      if (fightData.userReview) {
+        currentRating = fightData.userReview.rating || 0;
+        currentComment = fightData.userReview.content || '';
+        console.log('🎯 Found review data:', { rating: currentRating, hasContent: !!currentComment });
+      }
+      // 2. Check for standalone rating data if no review
+      else if (fightData.userRating) {
+        currentRating = typeof fightData.userRating === 'number'
+          ? fightData.userRating
+          : (fightData.userRating.rating || 0);
+        console.log('🎯 Found rating data:', currentRating);
       }
 
-      // Populate existing user tags if available
+      // 3. Extract existing tags
       if (fightData.userTags && fightData.userTags.length > 0) {
-        console.log('🎯 Processing user tags:', fightData.userTags);
-
-        // Handle different possible tag structures
-        const existingTagIds = fightData.userTags.map((userTag: any) => {
-          let tagName = '';
-
-          // Handle different tag structures
-          if (typeof userTag === 'string') {
-            tagName = userTag.toLowerCase();
-          } else if (userTag.tag && userTag.tag.name) {
-            tagName = userTag.tag.name.toLowerCase();
-          } else if (userTag.name) {
-            tagName = userTag.name.toLowerCase();
-          }
+        currentTags = fightData.userTags.map((userTag: any) => {
+          const tagName = typeof userTag === 'string'
+            ? userTag.toLowerCase()
+            : (userTag.tag?.name || userTag.name || '').toLowerCase();
 
           const frontendTag = ALL_FIGHT_TAGS.find(tag =>
             tag.name.toLowerCase() === tagName ||
-            tag.id.toLowerCase() === tagName ||
-            tag.name.toLowerCase().replace(/[^a-z0-9]/g, '-') === tagName.replace(/[^a-z0-9]/g, '-')
+            tag.id.toLowerCase() === tagName
           );
-
           return frontendTag?.id;
         }).filter(Boolean) as string[];
-
-        console.log('🎯 Mapped tag IDs:', existingTagIds);
-        setSelectedTags(existingTagIds);
-      } else {
-        console.log('🎯 No existing tags, starting fresh');
-        setSelectedTags([]);
+        console.log('🎯 Found tags:', currentTags);
       }
+
+      // Store original state for comparison
+      const hasAnyOriginalData = currentRating > 0 || !!currentComment || currentTags.length > 0;
+      setOriginalData({
+        rating: currentRating,
+        comment: currentComment,
+        tags: [...currentTags],
+        hasAnyData: hasAnyOriginalData
+      });
+
+      // Set current form state
+      setRating(currentRating);
+      setComment(currentComment);
+      setSelectedTags(currentTags);
+
+      // Initialize wheel animation
+      if (currentRating > 0) {
+        const wheelPosition = (10 - currentRating) * 120;
+        wheelAnimation.setValue(wheelPosition);
+        setDisplayNumber(currentRating);
+      } else {
+        wheelAnimation.setValue(1200);
+        setDisplayNumber(0);
+      }
+
+      console.log('🎯 Modal initialized with:', {
+        rating: currentRating,
+        hasComment: !!currentComment,
+        tagsCount: currentTags.length,
+        hasAnyData: hasAnyOriginalData
+      });
     }
   }, [visible, fight, fightWithUserData]);
 
-  // Mutations
-  const rateFightMutation = useMutation({
-    mutationFn: ({ fightId, rating }: { fightId: string; rating: number }) => {
-      return apiService.rateFight(fightId, rating);
+  // Simple unified mutation - like PredictionModal pattern
+  const updateUserDataMutation = useMutation({
+    mutationFn: async (data: { rating: number | null; review: string | null; tags: string[]; }) => {
+      return await apiService.updateFightUserData(fight!.id, data);
     },
-    onSuccess: async (data) => {
-      console.log('Rate fight SUCCESS:', data);
-
-      // Track analytics
-      if (fight) {
-        await AnalyticsService.trackFightRating(fight.id, rating);
-
-        // Check if this is user's first rating
-        const existingRating = fight.userRating;
-        if (!existingRating) {
-          await AnalyticsService.trackFirstRating();
-        }
-      }
-
-      // Send crew message with original format if crewId is provided
-      if (crewId && fight) {
-        try {
-          const fighter1LastName = fight.fighter1.lastName;
-          const fighter2LastName = fight.fighter2.lastName;
-          const message = `Rated ${fighter1LastName} vs ${fighter2LastName} ${rating}/10 ⭐`;
-
-          console.log('Sending crew message:', message);
-          await apiService.sendCrewMessage(crewId, {
-            content: message,
-            fightId: fight.id
-          });
-        } catch (error) {
-          console.error('Failed to send crew message:', error);
-          // Don't fail the entire operation if crew message fails
-        }
-      }
-
+    onSuccess: async () => {
+      // Refresh data
       queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: ['fight', fight?.id, 'withUserData'] });
+
       onSuccess?.('rating');
       closeModal();
-      Alert.alert('Success', 'Rating saved successfully!');
+      Alert.alert('Success', 'Data saved successfully!');
     },
-    onError: (error: ApiError) => {
-      console.error('Rate fight ERROR:', error);
-      Alert.alert('Error', error.error || 'Failed to save rating');
-    },
-  });
-
-  const reviewFightMutation = useMutation({
-    mutationFn: ({ fightId, data }: { fightId: string; data: any }) => {
-      return apiService.reviewFight(fightId, data);
-    },
-    onSuccess: async (data) => {
-      console.log('Review fight SUCCESS:', data);
-
-      // Track analytics
-      if (fight) {
-        await AnalyticsService.trackReviewPosted(fight.id, comment.length);
-
-        // Check if this is user's first review
-        const existingReview = fight.userReview;
-        if (!existingReview) {
-          await AnalyticsService.trackFirstReview();
-        }
-      }
-
-      // Send crew message with original format if crewId is provided
-      if (crewId && fight) {
-        try {
-          const fighter1LastName = fight.fighter1.lastName;
-          const fighter2LastName = fight.fighter2.lastName;
-          const message = `Rated ${fighter1LastName} vs ${fighter2LastName} ${rating}/10 ⭐`;
-
-          console.log('Sending crew message (from review):', message);
-          await apiService.sendCrewMessage(crewId, {
-            content: message,
-            fightId: fight.id
-          });
-        } catch (error) {
-          console.error('Failed to send crew message (from review):', error);
-          // Don't fail the entire operation if crew message fails
-        }
-      }
-
-      queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ['fight', fight?.id, 'withUserData'] });
-      onSuccess?.('review');
-      closeModal();
-      Alert.alert('Success', 'Review saved successfully!');
-    },
-    onError: (error: ApiError) => {
-      console.error('Review fight ERROR:', error);
-      Alert.alert('Error', error.error || 'Failed to save review');
-    },
-  });
-
-  const tagFightMutation = useMutation({
-    mutationFn: ({ fightId, tagNames }: { fightId: string; tagNames: string[] }) => {
-      return apiService.applyFightTags(fightId, tagNames);
-    },
-    onSuccess: (data) => {
-      console.log('Tag fight SUCCESS:', data);
-      queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ['fight', fight?.id, 'withUserData'] });
-      onSuccess?.('tags');
-      closeModal();
-      Alert.alert('Success', 'Tags applied successfully!');
-    },
-    onError: (error: ApiError) => {
-      console.error('Tag fight ERROR:', error);
-      Alert.alert('Error', error.error || 'Failed to apply tags');
-    },
-  });
-
-  const removeAllDataMutation = useMutation({
-    mutationFn: ({ fightId }: { fightId: string }) => {
-      return apiService.removeAllFightData(fightId);
-    },
-    onSuccess: (data) => {
-      console.log('Remove all data SUCCESS:', data);
-      queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ['fight', fight?.id, 'withUserData'] });
-      onSuccess?.('remove');
-      closeModal();
-      Alert.alert('Success', 'All data removed successfully!');
-    },
-    onError: (error: ApiError) => {
-      console.error('Remove all data ERROR:', error);
-      Alert.alert('Error', error.error || 'Failed to remove data');
+    onError: (error: any) => {
+      console.error('Update error:', error);
+      Alert.alert('Error', error?.error || 'Failed to save data');
     },
   });
 
@@ -512,68 +432,33 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
     setComment('');
     setSelectedTags([]);
     setTagRandomSeed(0);
+    setDisplayNumber(0);
+    setOriginalData({ rating: 0, comment: '', tags: [], hasAnyData: false });
+    wheelAnimation.setValue(1200);
     onClose();
   };
 
-  const submitRating = () => {
+  const handleSave = () => {
     if (!fight) {
       Alert.alert('Error', 'No fight selected');
       return;
     }
 
-    if (rating === 0) {
-      Alert.alert('Error', 'Please select a rating');
-      return;
-    }
-
-    // Validate comment length if comment exists
+    // Simple validation like PredictionModal
     if (comment.trim() && comment.trim().length < 3) {
       Alert.alert('Error', 'Comments must be at least 3 characters long');
       return;
     }
 
-    if (comment.trim() && selectedTags.length > 0) {
-      // Submit as review with tags
-      reviewFightMutation.mutate({
-        fightId: fight.id,
-        data: {
-          content: comment.trim(),
-          rating: rating,
-        }
-      });
 
-      // Apply tags separately
-      tagFightMutation.mutate({
-        fightId: fight.id,
-        tagNames: selectedTags,
-      });
-    } else if (comment.trim()) {
-      // Submit as review only
-      reviewFightMutation.mutate({
-        fightId: fight.id,
-        data: {
-          content: comment.trim(),
-          rating: rating,
-        }
-      });
-    } else if (selectedTags.length > 0) {
-      // Submit rating and apply tags
-      rateFightMutation.mutate({
-        fightId: fight.id,
-        rating: rating,
-      });
+    // Create data object like PredictionModal pattern
+    const submissionData = {
+      rating: rating > 0 ? rating : null,
+      review: comment.trim() || null,
+      tags: selectedTags
+    };
 
-      tagFightMutation.mutate({
-        fightId: fight.id,
-        tagNames: selectedTags,
-      });
-    } else {
-      // Submit rating only
-      rateFightMutation.mutate({
-        fightId: fight.id,
-        rating: rating,
-      });
-    }
+    updateUserDataMutation.mutate(submissionData);
   };
 
   const handleRemoveAllData = () => {
@@ -588,8 +473,13 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
           text: 'Remove',
           style: 'destructive',
           onPress: () => {
-            console.log('Removing all data for fight:', fight.id);
-            removeAllDataMutation.mutate({ fightId: fight.id });
+            // Clear all data by sending nulls/empty arrays
+            const clearData = {
+              rating: null,
+              review: null,
+              tags: []
+            };
+            updateUserDataMutation.mutate(clearData);
           }
         }
       ]
@@ -605,8 +495,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
   };
 
   const getFighterName = (fighter: any) => {
-    const name = `${fighter.firstName} ${fighter.lastName}`;
-    return fighter.nickname ? `${name} "${fighter.nickname}"` : name;
+    return fighter.lastName;
   };
 
   const formatDate = (dateString: string) => {
@@ -630,14 +519,13 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
       <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
         <ScrollView contentContainerStyle={styles.modalContent}>
           <View style={styles.modalHeader}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Rate Fight</Text>
             <TouchableOpacity
               onPress={closeModal}
               style={styles.closeButton}
             >
-              <Text style={[styles.closeText, { color: colors.textSecondary }]}>Cancel</Text>
+              <Text style={[styles.closeText, { color: colors.textSecondary }]}>✕</Text>
             </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Rate Fight</Text>
-            <View style={styles.placeholder} />
           </View>
 
           <View style={styles.fightInfo}>
@@ -668,63 +556,70 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
                 </Text>
               </View>
             </View>
-
-            <Text style={[styles.eventInfo, { color: colors.textSecondary }]}>
-              {fight.event.name} • {formatDate(fight.event.date)}
-            </Text>
           </View>
 
           <View style={styles.ratingSection}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Rating</Text>
-            <View style={styles.starsContainer}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
+
+            {/* Large display star with wheel animation */}
+            <View style={styles.displayStarContainer}>
+              <View style={styles.animatedStarContainer}>
+                <Text style={[styles.displayStar, { color: '#666666' }]}>★</Text>
+                <View style={styles.wheelContainer}>
+                  <Animated.View style={[
+                    styles.wheelNumbers,
+                    {
+                      transform: [{
+                        translateY: wheelAnimation.interpolate({
+                          inputRange: [0, 1200], // Extended to include blank position at 1200
+                          outputRange: [475, -725], // Extended range for blank position
+                        })
+                      }]
+                    }
+                  ]}>
+                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => (
+                      <Text key={number} style={[styles.wheelNumber, { color: colors.text }]}>
+                        {number}
+                      </Text>
+                    ))}
+                  </Animated.View>
+
+                  {/* Smooth top gradient fade - covers top edge completely */}
+                  <LinearGradient
+                    colors={[colors.background, `${colors.background}DD`, `${colors.background}99`, `${colors.background}44`, 'transparent']}
+                    style={[styles.fadeOverlay, { top: 0, height: 38 }]}
+                    pointerEvents="none"
+                  />
+
+                  {/* Smooth bottom gradient fade - moved down for better centering */}
+                  <LinearGradient
+                    colors={['transparent', `${colors.background}44`, `${colors.background}99`, `${colors.background}DD`, colors.background, colors.background]}
+                    style={[styles.fadeOverlay, { bottom: -8, height: 25 }]}
+                    pointerEvents="none"
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.starContainer}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
                 <TouchableOpacity
-                  key={star}
-                  onPress={() => handleSetRating(star)}
+                  key={level}
+                  onPress={() => handleSetRating(level)}
                   style={styles.starButton}
                 >
                   <Text style={[
                     styles.star,
-                    { color: star <= rating ? colors.primary : colors.textSecondary }
-                  ]}>
-                    ★
-                  </Text>
+                    { color: level <= rating ? colors.primary : '#666666' }
+                  ]}>★</Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={[styles.ratingText, { color: colors.textSecondary }]}>
-              {rating}/10 {rating > 0 && (rating <= 3 ? 'Poor' : rating <= 5 ? 'Fair' : rating <= 7 ? 'Good' : rating <= 9 ? 'Great' : 'Excellent')}
-            </Text>
-          </View>
-
-          <View style={styles.commentSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Review (Optional)</Text>
-            <TextInput
-              style={[
-                styles.commentInput,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                  color: colors.text
-                }
-              ]}
-              placeholder="Share your thoughts about this fight..."
-              placeholderTextColor={colors.textSecondary}
-              value={comment}
-              onChangeText={setComment}
-              multiline
-              numberOfLines={4}
-            />
           </View>
 
           <View style={styles.tagsSection}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Tags (Optional)
-              {rating > 0 && (
-                <Text style={[styles.tagHint, { color: colors.textSecondary }]}>
-                  {' '}• Tags adapt to your rating
-                </Text>
-              )}
+              Tags
             </Text>
             <View style={styles.tagsContainer}>
               {availableTags.map((tag) => (
@@ -757,11 +652,28 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
             )}
           </View>
 
+          <View style={styles.commentSection}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Review</Text>
+            <TextInput
+              style={[
+                styles.commentInput,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  color: colors.text
+                }
+              ]}
+              placeholder="Write comment..."
+              placeholderTextColor={colors.textSecondary}
+              value={comment}
+              onChangeText={setComment}
+              multiline
+              numberOfLines={4}
+            />
+          </View>
+
           {/* Remove Data Button */}
-          {(() => {
-            const fightData = fightWithUserData?.fight || fight;
-            return (fightData?.userRating || fightData?.userReview || fightData?.userTags?.length > 0);
-          })() && (
+          {originalData.hasAnyData && (
             <View style={styles.removeSection}>
               <TouchableOpacity
                 onPress={handleRemoveAllData}
@@ -776,15 +688,15 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
 
           <View style={styles.saveSection}>
             <TouchableOpacity
-              onPress={submitRating}
+              onPress={handleSave}
               style={[
                 styles.saveButton,
-                { backgroundColor: rating > 0 ? colors.primary : colors.textSecondary }
+                { backgroundColor: colors.primary }
               ]}
-              disabled={rating === 0 || rateFightMutation.isPending || reviewFightMutation.isPending}
+              disabled={updateUserDataMutation.isPending}
             >
               <Text style={styles.saveButtonText}>
-                {(rateFightMutation.isPending || reviewFightMutation.isPending) ? 'Saving...' : 'Save'}
+                {updateUserDataMutation.isPending ? 'Saving...' : 'Save'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -806,21 +718,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   closeButton: {
-    padding: 8,
+    padding: 12,
+    margin: -12,
   },
   closeText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '300',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-  },
-  placeholder: {
-    width: 60,
   },
   fightInfo: {
     marginBottom: 24,
@@ -863,20 +773,60 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   ratingSection: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 12,
   },
-  starsContainer: {
+  displayStarContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  animatedStarContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  displayStar: {
+    fontSize: 80,
+  },
+  wheelContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  wheelNumbers: {
+    alignItems: 'center',
+    paddingTop: 150, // Adjust padding to align numbers correctly
+  },
+  wheelNumber: {
+    fontSize: 52,
+    fontWeight: 'bold',
+    height: 120, // Increased from 60 to 120 for more spacing
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    lineHeight: 120,
+  },
+  fadeOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 1,
+  },
+  starContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: 8,
   },
   starButton: {
-    padding: 4,
+    padding: 3,
   },
   star: {
     fontSize: 32,

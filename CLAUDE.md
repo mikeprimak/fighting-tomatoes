@@ -241,8 +241,35 @@ All API responses follow consistent format:
 4. Seed database: `pnpm db:seed`
 5. Start development: `pnpm dev`
 
-### Server Startup Troubleshooting
-**IMPORTANT**: When starting servers, if Expo doesn't show the QR code immediately, open the development server directly with `curl http://localhost:8081` to trigger Metro bundler completion. This ensures the Expo development server fully initializes and displays the QR code for mobile device access.
+### Server Startup Troubleshooting & Protocol
+**CRITICAL**: Every time the user asks to start servers, follow this exact process due to port conflicts and Expo Go compatibility issues:
+
+#### Standard Startup Issues (Always Check):
+1. **Port Conflicts**: `pnpm dev` often fails because ports are occupied
+2. **Expo Go Compatibility**: `expo start --dev-client` requires development build, not Expo Go
+3. **Network Access**: Mobile devices need LAN access enabled for proper connection
+
+#### Required Startup Process:
+1. **Kill any existing processes** that may be using ports
+2. **Start Backend Separately**:
+   - Use the original `pnpm dev` if it's working, or
+   - `cd packages/backend && pnpm dev` on a different port if needed
+3. **Start Mobile with Expo Go Support**:
+   - Kill any existing Expo processes first
+   - Use `cd packages/mobile && npx expo start --port 8083 --lan` for Expo Go compatibility
+   - **Never use `--dev-client` flag** with Expo Go
+4. **Trigger Metro Bundler**: `curl http://localhost:8083` to ensure full initialization
+5. **Provide Network URLs**: Always use network IP (10.0.0.53) for mobile device access
+   - **Correct Expo Go URL**: `exp://10.0.0.53:8083`
+   - **Backend URL**: `http://10.0.0.53:3001` (or configured port)
+
+#### Why This Process is Necessary:
+- Port conflicts are common in this monorepo setup
+- Expo Go requires standard expo start, not dev-client mode
+- Mobile devices need network IP access, not localhost
+- Metro bundler often needs manual triggering to complete initialization
+
+**REMEMBER**: This exact process must be followed every time servers are started to avoid infinite loading spinners and connection issues.
 
 ## Authentication Flow
 - JWT-based with refresh token rotation
@@ -506,6 +533,62 @@ If TypeScript errors cascade (hundreds of errors from one file):
 2. Add trailing commas to fix: `<T,>`
 3. If errors persist, check git history: `git log --oneline -- path/to/file.tsx`
 4. Use git restoration if needed: `git show COMMIT:path/to/file.tsx > temp_file.tsx`
+
+### RateFightModal Unified Submission System (September 2024)
+✅ **Complete Redesign from Scratch**
+Fixed the complex, broken RateFightModal submission system by implementing a clean, unified approach inspired by the working PredictionModal pattern.
+
+- **Problem**: RateFightModal had become "complex and messy" with multiple critical issues:
+  - Users couldn't submit review-only data
+  - Deselection wasn't working properly
+  - Data wasn't loading correctly
+  - Users couldn't remove individual fields
+  - System was "going in circles" with validation conflicts
+
+- **Solution**: Designed and implemented a unified submission system from scratch:
+
+✅ **Unified Backend Endpoint**:
+- Created `PUT /api/fights/:id/user-data` endpoint for atomic operations
+- Single endpoint replaces individual endpoints (`rateFight`, `reviewFight`, `applyFightTags`)
+- Supports partial updates and field clearing with `null`/empty array values
+- Smart validation: Reviews no longer require ratings (defaults to rating 5 internally)
+- Proper statistics updates and gamification points integration
+
+✅ **Simplified Mobile API Service**:
+- Added `updateFightUserData()` method with clean interface
+- Single API call pattern matching PredictionModal approach
+- Interface: `{ rating?: number | null; review?: string | null; tags?: string[]; }`
+
+✅ **Streamlined Frontend Logic**:
+- Replaced 200+ lines of complex mutation logic with simple single-call approach
+- Eliminated multiple mutations, complex state tracking, and conditional validation
+- Simple data object creation following PredictionModal pattern
+- Removed blocking validation that prevented field clearing
+
+**Technical Implementation**:
+- **Files Modified**:
+  - `packages/mobile/services/api.ts` - Added unified API method
+  - `packages/mobile/components/RateFightModal.tsx` - Complete logic simplification
+  - `packages/backend/src/routes/fights.ts` - Added unified endpoint with proper ActivityType imports
+
+**Key Benefits Achieved**:
+1. **Flexible UX**: Users can submit any combination of rating, review, tags
+2. **Field Clearing**: Users can clear individual fields without validation conflicts
+3. **Review Independence**: Users can submit reviews without ratings
+4. **Reliable Persistence**: Atomic operations prevent data inconsistencies
+5. **Clean Architecture**: Single API call follows established PredictionModal pattern
+6. **No Validation Conflicts**: Smart validation allows clearing fields when user has existing data
+
+**User Experience Improvements**:
+- ✅ Rating only submissions
+- ✅ Review only submissions (no rating required)
+- ✅ Tags only submissions
+- ✅ Any combination of fields
+- ✅ Clearing individual fields works properly
+- ✅ Single "Save" button handles all operations
+- ✅ No more "going in circles" validation issues
+
+The RateFightModal now functions as cleanly and simply as the PredictionModal, providing complete flexibility for fight data management.
 
 ## Next Session Priority
 🔄 **Chat Messages Keyboard Integration**

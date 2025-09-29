@@ -205,32 +205,69 @@ export default function CrewChatScreen() {
   }, []);
 
 
-  // Mock fight data for testing - using real fight ID from database
+  // Mock fight data for testing - using real fight ID from UFC 312 database
   const mockFight: Fight = {
-    id: 'ce02a04d-69da-4ea4-9529-7912a967b97c', // Real fight ID from database
+    id: '84bc13be-9a50-49e6-b4f4-ad9e88b642f4', // Real fight ID - Israel Adesanya vs Sean Strickland (in-progress)
     scheduledRounds: 5, // This will be fetched from API in real implementation
     fighter1: {
       id: '3dd03c89-d96d-420a-91fb-8312d42a5a7f',
-      firstName: 'Jon',
-      lastName: 'Jones',
-      nickname: 'Bones'
+      firstName: 'Israel',
+      lastName: 'Adesanya',
+      nickname: 'The Last Stylebender'
     },
     fighter2: {
       id: '170f0e7d-667d-448c-b065-4a01e0967d12',
-      firstName: 'Stipe',
-      lastName: 'Miocic'
+      firstName: 'Sean',
+      lastName: 'Strickland'
     },
     event: {
-      id: 'test-event-id',
-      name: 'UFC Test Event',
-      date: '2024-12-31T00:00:00.000Z',
+      id: '9b7b4981-bf24-429a-9cef-723d2df09311', // Real event ID for UFC 312
+      name: 'UFC 312: Live Championship Night',
+      date: '2025-09-29T00:00:00.000Z',
       promotion: 'UFC'
     }
   };
 
-  // Comprehensive UFC Fight Card Seed Data
-  // Event State: All prelims completed, first 2 main card fights completed,
-  // currently between rounds 2-3 of 3rd main card fight, last 2 upcoming
+  // Fetch real fight card data - prioritizes events with in-progress fights
+  const { data: fightCardData } = useQuery({
+    queryKey: ['eventFights', 'latest'],
+    queryFn: async () => {
+      try {
+        // Get events sorted by date
+        const events = await apiService.getEvents({ page: 1, limit: 5 });
+        if (events.events && events.events.length > 0) {
+          // First, look for events with in-progress fights (UFC 312: Live Championship Night)
+          for (const event of events.events) {
+            const fights = await apiService.getFights({ eventId: event.id, limit: 20, includeUserData: true });
+            if (fights.fights) {
+              // Check if any fights are in progress
+              const hasInProgressFight = fights.fights.some(fight =>
+                fight.hasStarted && !fight.isComplete
+              );
+              if (hasInProgressFight) {
+                console.log(`Using LIVE event: ${event.name} with ${fights.fights.length} fights (has in-progress fights)`);
+                return { event, fights: fights.fights };
+              }
+            }
+          }
+
+          // If no live events, fall back to most recent by date
+          const sortedEvents = events.events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          const latestEvent = sortedEvents[0];
+          const fights = await apiService.getFights({ eventId: latestEvent.id, limit: 20, includeUserData: true });
+          console.log(`Using latest event: ${latestEvent.name} with ${fights.fights?.length || 0} fights`);
+          return { event: latestEvent, fights: fights.fights };
+        }
+        return null;
+      } catch (error) {
+        console.error('Error fetching fight card data:', error);
+        return null;
+      }
+    },
+    staleTime: 30 * 1000, // 30 seconds for live updates
+  });
+
+  // Backup mock fight card data (in case API fails)
   const mockFightCard = [
     // MAIN CARD FIGHTS (5 total)
     {
@@ -423,6 +460,35 @@ export default function CrewChatScreen() {
     }
   ];
 
+
+  // Transform real fight data to expected format
+  const transformFightData = (fights: any[]) => {
+    return fights.map((fight, index) => ({
+      id: fight.id,
+      fighter1: `${fight.fighter1.firstName} ${fight.fighter1.lastName}${fight.fighter1.nickname ? ` "${fight.fighter1.nickname}"` : ''}`,
+      fighter2: `${fight.fighter2.firstName} ${fight.fighter2.lastName}${fight.fighter2.nickname ? ` "${fight.fighter2.nickname}"` : ''}`,
+      isMainEvent: fight.orderOnCard === 1,
+      isMainCard: fight.orderOnCard <= 5,
+      cardPosition: fight.orderOnCard,
+      weightClass: fight.isTitle ? fight.titleName : (fight.weightClass ? fight.weightClass.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'),
+      scheduledRounds: fight.scheduledRounds || (fight.isTitle ? 5 : 3),
+      status: fight.hasStarted ? (fight.isComplete ? 'completed' : 'in_progress') : 'upcoming',
+      isComplete: fight.isComplete || false,
+      result: fight.winner ?
+        (fight.method ?
+          `${fight.winner === fight.fighter1.id ? fight.fighter1.firstName + ' ' + fight.fighter1.lastName : fight.fighter2.firstName + ' ' + fight.fighter2.lastName} via ${fight.method}${fight.round ? ` (R${fight.round})` : ''}` :
+          `Winner: ${fight.winner === fight.fighter1.id ? fight.fighter1.firstName + ' ' + fight.fighter1.lastName : fight.fighter2.firstName + ' ' + fight.fighter2.lastName}`
+        ) : null,
+      aggregateRating: fight.averageRating || null,
+      totalRatings: fight.totalRatings || 0,
+      userRating: fight.userRating !== undefined && fight.userRating !== null ? fight.userRating : null,
+      startTime: 'TBD'
+    })).sort((a, b) => a.cardPosition - b.cardPosition); // Sort by card position
+  };
+
+  // Get fight card data (prefer real data, fallback to mock)
+  const currentFightCard = fightCardData?.fights ? transformFightData(fightCardData.fights) : mockFightCard;
+  const currentEventName = fightCardData?.event?.name || 'UFC 307: Periera vs Roundtree';
 
   // Generate consistent color for each user
   const getUserColor = (userId: string): string => {
@@ -795,7 +861,7 @@ export default function CrewChatScreen() {
 
   // Handle tapping status bar to toggle fight card with slide animation
   const handleStatusBarTap = () => {
-    console.log('Status bar tapped, fight card data:', mockFightCard.length, 'fights');
+    console.log('Status bar tapped, fight card data:', currentFightCard.length, 'fights');
     const newValue = !showFightCard;
     console.log('Setting showFightCard to:', newValue);
 
@@ -821,6 +887,31 @@ export default function CrewChatScreen() {
     setShowFightCard(false);
   };
 
+  // Helper function to parse fighter name from display string
+  const parseFighterName = (displayName: string) => {
+    // Handle format: FirstName LastName "Nickname" or FirstName LastName
+    const nicknameMatch = displayName.match(/^(.+)\s+"([^"]+)"$/);
+
+    if (nicknameMatch) {
+      // Format: FirstName LastName "Nickname"
+      const nameWithoutNickname = nicknameMatch[1].trim();
+      const parts = nameWithoutNickname.split(' ');
+      return {
+        firstName: parts[0],
+        lastName: parts.slice(1).join(' '),
+        nickname: nicknameMatch[2]
+      };
+    } else {
+      // Format: FirstName LastName (no nickname)
+      const parts = displayName.split(' ');
+      return {
+        firstName: parts[0],
+        lastName: parts.slice(1).join(' '),
+        nickname: undefined
+      };
+    }
+  };
+
   // Handle tapping a fight item to open appropriate modal based on status
   const handleFightItemTap = (fightData: any) => {
     // Create a Fight object from the fight card data for the modal
@@ -829,14 +920,15 @@ export default function CrewChatScreen() {
       scheduledRounds: fightData.scheduledRounds,
       fighter1: {
         id: fightData.id + '-fighter1', // Mock IDs
-        firstName: fightData.fighter1.split(' ')[0],
-        lastName: fightData.fighter1.split(' ').slice(1).join(' '),
-        nickname: fightData.fighter1.includes('Jones') ? 'Bones' : undefined
+        firstName: parseFighterName(fightData.fighter1).firstName,
+        lastName: parseFighterName(fightData.fighter1).lastName,
+        nickname: parseFighterName(fightData.fighter1).nickname
       },
       fighter2: {
         id: fightData.id + '-fighter2', // Mock IDs
-        firstName: fightData.fighter2.split(' ')[0],
-        lastName: fightData.fighter2.split(' ').slice(1).join(' '),
+        firstName: parseFighterName(fightData.fighter2).firstName,
+        lastName: parseFighterName(fightData.fighter2).lastName,
+        nickname: parseFighterName(fightData.fighter2).nickname
       },
       event: mockFight.event
     };
@@ -965,7 +1057,7 @@ export default function CrewChatScreen() {
   };
 
   const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
+    <View style={[styles.emptyContainer, { transform: [{ rotate: '180deg' }] }]}>
       <FontAwesome name="comments-o" size={64} color={colors.textSecondary} />
       <Text style={[styles.emptyTitle, { color: colors.text }]}>Start the Conversation</Text>
       <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
@@ -1066,7 +1158,7 @@ export default function CrewChatScreen() {
                   textAlign: 'center'
                 }
               ]} numberOfLines={showFightCard ? undefined : 2}>
-                UFC 307: Periera vs Roundtree
+                {currentEventName}
               </Text>
             </View>
             <View style={[styles.statusDivider, { left: '33.33%', marginLeft: 16 }]} />
@@ -1079,7 +1171,15 @@ export default function CrewChatScreen() {
                   textAlign: 'center'
                 }
               ]} numberOfLines={showFightCard ? undefined : 2}>
-                Holloway vs Volkanovski{getStatusPaddingLines("Holloway vs Volkanovski")}
+                {(() => {
+                  // Find the current fight (in progress) or next upcoming fight
+                  const inProgressFight = currentFightCard.find(f => f.status === 'in_progress');
+                  const nextFight = inProgressFight || currentFightCard.find(f => f.status === 'upcoming');
+                  const currentFightName = nextFight ?
+                    `${nextFight.fighter1.split(' ')[0]} vs ${nextFight.fighter2.split(' ')[0]}` :
+                    'Holloway vs Volkanovski';
+                  return currentFightName + getStatusPaddingLines(currentFightName);
+                })()}
               </Text>
             </View>
             <View style={[styles.statusDivider, { left: '66.66%', marginLeft: 16 }]} />
@@ -1092,7 +1192,14 @@ export default function CrewChatScreen() {
                   textAlign: 'center'
                 }
               ]} numberOfLines={showFightCard ? undefined : 2}>
-                3 / 5{showFightCard ? '\n\n ' : ''}
+                {(() => {
+                  const inProgressFight = currentFightCard.find(f => f.status === 'in_progress');
+                  if (inProgressFight) {
+                    // Between rounds 2 and 3
+                    return `End R2\n${inProgressFight.scheduledRounds} Rds${showFightCard ? '\n ' : ''}`;
+                  }
+                  return `3 / 5${showFightCard ? '\n\n ' : ''}`;
+                })()}
               </Text>
             </View>
             <FontAwesome
@@ -1135,11 +1242,11 @@ export default function CrewChatScreen() {
                 showsVerticalScrollIndicator={true}
                 bounces={true}
               >
-                {mockFightCard.length > 0 ? (
-                  mockFightCard.map((fight, index) => {
+                {currentFightCard.length > 0 ? (
+                  currentFightCard.map((fight, index) => {
                     // Check if this is the first prelim fight (after all main card fights)
                     const isFirstPrelimFight = !fight.isMainCard &&
-                      (index === 0 || mockFightCard[index - 1].isMainCard);
+                      (index === 0 || currentFightCard[index - 1].isMainCard);
 
                     // Check if this is the main event fight
                     const isMainEvent = fight.isMainEvent;
@@ -1186,7 +1293,7 @@ export default function CrewChatScreen() {
           }]}>
             <FlatList
               ref={flatListRef}
-              data={[...messages].reverse()}
+              data={messages}
               renderItem={renderMessage}
               keyExtractor={(item) => item.id}
               contentContainerStyle={messages.length === 0 ? styles.emptyListContainer : styles.messagesContainer}
@@ -1321,11 +1428,13 @@ export default function CrewChatScreen() {
         visible={showFightRatingModal}
         fight={currentFight}
         onClose={closeFightRatingModal}
-        queryKey={['fight', mockFight.id, 'withUserData']}
+        queryKey={['fight', currentFight?.id || mockFight.id, 'withUserData']}
         crewId={id}
         onSuccess={(type) => {
           // Invalidate fight data queries for fresh data on next modal open
-          queryClient.invalidateQueries({ queryKey: ['fight', mockFight.id, 'withUserData'] });
+          queryClient.invalidateQueries({ queryKey: ['fight', currentFight?.id || mockFight.id, 'withUserData'] });
+          // Invalidate the event fights query to refresh the fight cards
+          queryClient.invalidateQueries({ queryKey: ['eventFights', 'latest'] });
           // Refresh crew messages to show the new message
           queryClient.invalidateQueries({ queryKey: ['crewMessages', id] });
         }}

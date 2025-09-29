@@ -230,6 +230,24 @@ class ApiService {
     return this.makeRequest(`/fights/${fightId}/tags`);
   }
 
+  async updateFightUserData(fightId: string, data: {
+    rating?: number | null;
+    review?: string | null;
+    tags?: string[];
+  }): Promise<{
+    message: string;
+    data: {
+      rating?: number;
+      review?: string;
+      tags?: string[];
+    };
+  }> {
+    return this.makeRequest(`/fights/${fightId}/user-data`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   async removeAllFightData(fightId: string): Promise<{
     message: string;
   }> {

@@ -32,6 +32,23 @@ export default function FightDisplayCardMinimal({ fightData, onPress }: FightDis
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
+  // Helper function to remove nicknames from fighter names
+  const cleanFighterName = (displayName: string) => {
+    // Handle format: FirstName LastName "Nickname" -> FirstName LastName
+    const nicknameMatch = displayName.match(/^(.+)\s+"([^"]+)"$/);
+    return nicknameMatch ? nicknameMatch[1].trim() : displayName;
+  };
+
+  // Helper function to clean fight result text
+  const cleanFightResult = (result: string) => {
+    // Remove first names, keep only last names and method
+    // Example: "Jon Jones defeats Max Holloway by TKO" -> "Jones defeats Holloway by TKO"
+    return result
+      .replace(/([A-Z][a-z]+)\s+([A-Z][a-z]+)/g, '$2') // Replace "FirstName LastName" with "LastName"
+      .replace(/\s+/g, ' ') // Clean up extra spaces
+      .trim();
+  };
+
   // Determine background color based on fight status
   const getBackgroundColor = () => {
     switch (fightData.status) {
@@ -57,58 +74,79 @@ export default function FightDisplayCardMinimal({ fightData, onPress }: FightDis
         </Text>
       )}
 
-      <View style={styles.content}>
-        <View style={styles.fightInfo}>
-          <Text style={[styles.matchup, { color: colors.text }]}>
-            {fightData.fighter1} vs {fightData.fighter2}
-          </Text>
-          <Text style={[styles.details, { color: colors.textSecondary }]}>
-            {fightData.weightClass} • {fightData.scheduledRounds} Rounds
-          </Text>
+      {/* Fighter Names - Full Width */}
+      <Text style={[styles.matchup, { color: colors.text }]}>
+        {cleanFighterName(fightData.fighter1)} vs {cleanFighterName(fightData.fighter2)}
+      </Text>
 
-          {/* Fight Status and Results */}
+      {/* Horizontal Info Row - Aggregate Rating, My Rating, Fight Status */}
+      <View style={styles.horizontalInfoRow}>
+        {/* Aggregate Rating (if fight is complete) */}
+        {fightData.isComplete && fightData.aggregateRating && (
+          <View style={styles.ratingRow}>
+            <View style={styles.partialStarContainer}>
+              {/* Empty star (outline) */}
+              <FontAwesome
+                name="star-o"
+                size={20}
+                color="#F5C518"
+                style={styles.starBase}
+              />
+              {/* Filled star (clipped based on rating) */}
+              <View style={[
+                styles.filledStarContainer,
+                {
+                  height: `${Math.min(100, Math.max(0, fightData.aggregateRating === 10 ? 100 : fightData.aggregateRating * 8.5))}%`,
+                }
+              ]}>
+                <FontAwesome
+                  name="star"
+                  size={20}
+                  color="#F5C518"
+                  style={styles.starFilled}
+                />
+              </View>
+            </View>
+            <Text style={[styles.aggregateLabel, { color: colors.textSecondary }]}>
+              {fightData.aggregateRating}
+            </Text>
+          </View>
+        )}
+
+        {/* User's Personal Rating */}
+        <View style={styles.ratingRow}>
+          <FontAwesome
+            name={fightData.userRating ? "star" : "star-o"}
+            size={20}
+            color="#83B4F3"
+            style={styles.ratingIcon}
+          />
+          <Text style={[
+            styles.userRatingText,
+            { color: '#83B4F3' }
+          ]}>
+            {fightData.userRating ? `${fightData.userRating}` : (fightData.status === 'upcoming' ? 'Predict' : 'Rate')}
+          </Text>
+        </View>
+
+        {/* Fight Status and Results */}
+        <View style={styles.statusContainer}>
           {fightData.status === 'completed' && fightData.result && (
-            <Text style={[styles.result, { color: colors.text }]}>
-              {fightData.result}
+            <Text style={[styles.result, { color: colors.text }]} numberOfLines={2}>
+              {cleanFightResult(fightData.result)}
             </Text>
           )}
 
           {fightData.status === 'in_progress' && (
-            <Text style={[styles.statusText, { color: colors.tint }]}>
+            <Text style={[styles.statusText, { color: colors.tint }]} numberOfLines={1}>
               Round {fightData.currentRound} • In Progress
             </Text>
           )}
 
           {fightData.status === 'upcoming' && fightData.startTime && (
-            <Text style={[styles.statusText, { color: colors.textSecondary }]}>
+            <Text style={[styles.statusText, { color: colors.textSecondary }]} numberOfLines={1}>
               Starts: {fightData.startTime}
             </Text>
-          )}
-        </View>
-
-        <View style={styles.ratingInfo}>
-          {/* User's Personal Rating */}
-          <View style={styles.userRatingSection}>
-            <FontAwesome
-              name={fightData.userRating ? "star" : "star-o"}
-              size={16}
-              color={fightData.userRating ? colors.tint : colors.textSecondary}
-            />
-            <Text style={[
-              styles.userRatingText,
-              { color: fightData.userRating ? colors.tint : colors.textSecondary }
-            ]}>
-              {fightData.userRating ? `${fightData.userRating}` : (fightData.status === 'upcoming' ? 'Predict' : 'Rate')}
-            </Text>
-          </View>
-
-          {/* Aggregate Rating (if fight is complete) */}
-          {fightData.isComplete && fightData.aggregateRating && (
-            <View style={styles.aggregateRatingSection}>
-              <Text style={[styles.aggregateLabel, { color: colors.textSecondary }]}>
-                Avg: {fightData.aggregateRating}
-              </Text>
-            </View>
           )}
         </View>
       </View>
@@ -148,34 +186,71 @@ const styles = StyleSheet.create({
   result: {
     fontSize: 13,
     fontWeight: '500',
-    marginTop: 4,
     fontStyle: 'italic',
   },
   statusText: {
     fontSize: 13,
     fontWeight: '600',
-    marginTop: 4,
   },
-  ratingInfo: {
+  statusContainer: {
+    flex: 1,
     alignItems: 'flex-end',
-    marginLeft: 12,
-    minWidth: 80,
+    justifyContent: 'center',
+    maxWidth: '40%',
   },
-  userRatingSection: {
+  horizontalInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 4,
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingHorizontal: 4,
+    gap: 16,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  ratingIcon: {
+    width: 24,
+    textAlign: 'center',
+    marginRight: 6,
+  },
+  partialStarContainer: {
+    position: 'relative',
+    width: 24,
+    height: 20,
+    marginRight: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  starBase: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+  },
+  filledStarContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    overflow: 'hidden',
+  },
+  starFilled: {
+    textAlign: 'center',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   userRatingText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  aggregateRatingSection: {
-    alignItems: 'flex-end',
+    fontSize: 16,
+    fontWeight: '500',
   },
   aggregateLabel: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: '500',
   },
   ratingCount: {

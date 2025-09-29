@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { PrismaClient, WeightClass, Sport, Gender } from '@prisma/client';
+import { PrismaClient, WeightClass, Sport, Gender, ActivityType } from '@prisma/client';
 import { authenticateUser, requireEmailVerification, optionalAuth } from '../middleware/auth';
 
 const prisma = new PrismaClient();
@@ -73,6 +73,12 @@ const UpdateReviewSchema = z.object({
 
 const FightTagsSchema = z.object({
   tagNames: z.array(z.string()).min(1).max(10),
+});
+
+const UpdateUserDataSchema = z.object({
+  rating: z.number().int().min(1).max(10).nullable().optional(),
+  review: z.string().min(3).max(5000).nullable().optional(),
+  tags: z.array(z.string()).max(10).optional(),
 });
 
 const SearchQuerySchema = z.object({
@@ -462,7 +468,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         await prisma.userActivity.create({
           data: {
             userId: currentUserId,
-            activityType: 'FIGHT_RATED',
+            activityType: ActivityType.FIGHT_RATED,
             points: 5,
             description: `Rated fight`,
             fightId,
@@ -874,6 +880,264 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
     } catch (error) {
       console.error('Get fight tags error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // PUT /api/fights/:id/user-data - Update all user data atomically
+  fastify.put('/fights/:id/user-data', {
+    preHandler: [authenticateUser, requireEmailVerification],
+  }, async (request, reply) => {
+    try {
+      const { id: fightId } = request.params as { id: string };
+      const { rating, review, tags } = UpdateUserDataSchema.parse(request.body);
+      const currentUserId = (request as any).user.id;
+
+      // Check if fight exists
+      const fight = await prisma.fight.findUnique({ where: { id: fightId } });
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Get previous data for tracking changes
+      const previousRating = await prisma.fightRating.findUnique({
+        where: {
+          userId_fightId: {
+            userId: currentUserId,
+            fightId,
+          },
+        },
+      });
+
+      const previousReview = await prisma.fightReview.findUnique({
+        where: {
+          userId_fightId: {
+            userId: currentUserId,
+            fightId,
+          },
+        },
+      });
+
+      const resultData: any = {};
+
+      // Handle rating
+      if (rating !== undefined) {
+        if (rating === null) {
+          // Remove rating
+          await prisma.fightRating.deleteMany({
+            where: {
+              userId: currentUserId,
+              fightId,
+            },
+          });
+        } else {
+          // Upsert rating
+          const fightRating = await prisma.fightRating.upsert({
+            where: {
+              userId_fightId: {
+                userId: currentUserId,
+                fightId,
+              },
+            },
+            create: {
+              userId: currentUserId,
+              fightId,
+              rating,
+            },
+            update: {
+              rating,
+            },
+          });
+          resultData.rating = rating;
+        }
+
+        // Update fight statistics
+        const ratingStats = await prisma.fightRating.aggregate({
+          where: { fightId },
+          _avg: { rating: true },
+          _count: { rating: true },
+        });
+
+        const ratingCounts = await prisma.fightRating.groupBy({
+          by: ['rating'],
+          where: { fightId },
+          _count: { rating: true },
+        });
+
+        const ratingDistribution: any = {};
+        for (let i = 1; i <= 10; i++) {
+          const count = ratingCounts.find(r => r.rating === i)?._count.rating || 0;
+          ratingDistribution[`ratings${i}`] = count;
+        }
+
+        await prisma.fight.update({
+          where: { id: fightId },
+          data: {
+            averageRating: ratingStats._avg.rating || 0,
+            totalRatings: ratingStats._count.rating || 0,
+            ...ratingDistribution,
+          },
+        });
+      }
+
+      // Handle review
+      if (review !== undefined) {
+        if (review === null) {
+          // Remove review
+          await prisma.fightReview.deleteMany({
+            where: {
+              userId: currentUserId,
+              fightId,
+            },
+          });
+        } else {
+          // Create review - rating is optional now
+          const effectiveRating = rating !== undefined && rating !== null
+            ? rating
+            : previousRating?.rating;
+
+          // Upsert review
+          const fightReview = await prisma.fightReview.upsert({
+            where: {
+              userId_fightId: {
+                userId: currentUserId,
+                fightId,
+              },
+            },
+            create: {
+              userId: currentUserId,
+              fightId,
+              content: review,
+              rating: effectiveRating || 5, // Default to 5 if no rating provided
+            },
+            update: {
+              content: review,
+              rating: effectiveRating || 5, // Default to 5 if no rating provided
+            },
+          });
+          resultData.review = review;
+        }
+
+        // Update fight review statistics
+        const reviewStats = await prisma.fightReview.aggregate({
+          where: { fightId },
+          _count: { id: true },
+        });
+
+        await prisma.fight.update({
+          where: { id: fightId },
+          data: {
+            totalReviews: reviewStats._count.id || 0,
+          },
+        });
+      }
+
+      // Handle tags
+      if (tags !== undefined) {
+        // Remove existing tags for this user and fight
+        await prisma.fightTag.deleteMany({
+          where: {
+            userId: currentUserId,
+            fightId,
+          },
+        });
+
+        // Add new tags
+        if (tags.length > 0) {
+          const tagRecords = [];
+          for (const tagName of tags) {
+            // Find or create the tag
+            const tag = await prisma.tag.upsert({
+              where: { name: tagName },
+              create: {
+                name: tagName,
+                category: 'STYLE' // Default category
+              },
+              update: {},
+            });
+
+            // Create the fight-tag association
+            const fightTag = await prisma.fightTag.create({
+              data: {
+                userId: currentUserId,
+                fightId,
+                tagId: tag.id,
+              },
+              include: {
+                tag: true,
+              },
+            });
+
+            tagRecords.push(fightTag);
+          }
+          resultData.tags = tags;
+        } else {
+          resultData.tags = [];
+        }
+      }
+
+      // Add gamification points only for new ratings/reviews
+      if (rating && rating > 0 && !previousRating) {
+        await prisma.userActivity.create({
+          data: {
+            userId: currentUserId,
+            activityType: ActivityType.FIGHT_RATED,
+            points: 5,
+            description: 'Rated fight',
+            fightId,
+          },
+        });
+
+        await prisma.user.update({
+          where: { id: currentUserId },
+          data: {
+            points: { increment: 5 },
+            totalRatings: { increment: 1 },
+          },
+        });
+      }
+
+      if (review && review.length > 0 && !previousReview) {
+        await prisma.userActivity.create({
+          data: {
+            userId: currentUserId,
+            activityType: ActivityType.REVIEW_WRITTEN,
+            points: 15,
+            description: 'Posted fight review',
+            fightId,
+          },
+        });
+
+        await prisma.user.update({
+          where: { id: currentUserId },
+          data: {
+            points: { increment: 15 },
+            totalReviews: { increment: 1 },
+          },
+        });
+      }
+
+      return reply.code(200).send({
+        message: 'User data updated successfully',
+        data: resultData,
+      });
+
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return reply.code(400).send({
+          error: 'Invalid request data',
+          code: 'INVALID_REQUEST_DATA',
+          details: error.errors,
+        });
+      }
+
+      console.error('Update user data error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
