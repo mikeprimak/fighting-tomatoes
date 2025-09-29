@@ -997,10 +997,17 @@ export async function fightRoutes(fastify: FastifyInstance) {
             },
           });
         } else {
-          // Create review - rating is optional now
+          // Review requires a rating - use existing rating or provided rating
           const effectiveRating = rating !== undefined && rating !== null
             ? rating
             : previousRating?.rating;
+
+          if (!effectiveRating) {
+            return reply.code(400).send({
+              error: 'Reviews require a rating. Please provide a rating with your review.',
+              code: 'REVIEW_REQUIRES_RATING',
+            });
+          }
 
           // Upsert review
           const fightReview = await prisma.fightReview.upsert({
@@ -1014,11 +1021,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
               userId: currentUserId,
               fightId,
               content: review,
-              rating: effectiveRating || 5, // Default to 5 if no rating provided
+              rating: effectiveRating,
             },
             update: {
               content: review,
-              rating: effectiveRating || 5, // Default to 5 if no rating provided
+              rating: effectiveRating,
             },
           });
           resultData.review = review;

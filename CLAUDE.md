@@ -551,7 +551,7 @@ Fixed the complex, broken RateFightModal submission system by implementing a cle
 - Created `PUT /api/fights/:id/user-data` endpoint for atomic operations
 - Single endpoint replaces individual endpoints (`rateFight`, `reviewFight`, `applyFightTags`)
 - Supports partial updates and field clearing with `null`/empty array values
-- Smart validation: Reviews no longer require ratings (defaults to rating 5 internally)
+- Smart validation: Reviews require ratings (reverted from rating-optional approach)
 - Proper statistics updates and gamification points integration
 
 ✅ **Simplified Mobile API Service**:
@@ -563,32 +563,50 @@ Fixed the complex, broken RateFightModal submission system by implementing a cle
 - Replaced 200+ lines of complex mutation logic with simple single-call approach
 - Eliminated multiple mutations, complex state tracking, and conditional validation
 - Simple data object creation following PredictionModal pattern
-- Removed blocking validation that prevented field clearing
+- Smart validation: Reviews require ratings with clear alert messaging
+- Removed blocking validation that prevented field clearing for existing data
+
+✅ **UI/UX Enhancements and Condensing**:
+- **Removed UI Clutter**: Eliminated "Remove All My Data" button and related functionality
+- **Removed Text Prompts**: Removed "Select a rating to see relevant tags" instruction text
+- **Visual Condensing**: Moved rating stars and large gray star 60px higher to fit modal on screen
+- **Tags Limitation**: Limited tags section to maximum 3 lines using `maxHeight: 120` with overflow hidden
+- **Tag Count Optimization**: Reduced available tags from 8-10 to 6-9 tags for better layout
 
 **Technical Implementation**:
 - **Files Modified**:
   - `packages/mobile/services/api.ts` - Added unified API method
-  - `packages/mobile/components/RateFightModal.tsx` - Complete logic simplification
+  - `packages/mobile/components/RateFightModal.tsx` - Complete logic simplification and UI condensing
   - `packages/backend/src/routes/fights.ts` - Added unified endpoint with proper ActivityType imports
 
 **Key Benefits Achieved**:
 1. **Flexible UX**: Users can submit any combination of rating, review, tags
 2. **Field Clearing**: Users can clear individual fields without validation conflicts
-3. **Review Independence**: Users can submit reviews without ratings
+3. **Review-Rating Coupling**: Reviews require ratings (consistent with database schema)
 4. **Reliable Persistence**: Atomic operations prevent data inconsistencies
 5. **Clean Architecture**: Single API call follows established PredictionModal pattern
-6. **No Validation Conflicts**: Smart validation allows clearing fields when user has existing data
+6. **Condensed Layout**: Modal fits on screen with improved visual hierarchy
+7. **Controlled Tags Display**: Maximum 3 lines prevents layout overflow
 
 **User Experience Improvements**:
 - ✅ Rating only submissions
-- ✅ Review only submissions (no rating required)
+- ✅ Review + rating submissions (reviews require ratings)
 - ✅ Tags only submissions
-- ✅ Any combination of fields
+- ✅ Any combination of fields (with review-rating requirement)
 - ✅ Clearing individual fields works properly
 - ✅ Single "Save" button handles all operations
 - ✅ No more "going in circles" validation issues
+- ✅ Condensed layout fits on screen without scrolling
+- ✅ Limited tags prevent UI overflow
 
-The RateFightModal now functions as cleanly and simply as the PredictionModal, providing complete flexibility for fight data management.
+**Final Implementation Details**:
+- **Validation Logic**: Reviews require ratings with alert: "Reviews require a rating"
+- **Tag Selection**: Limited to 6-9 available tags for optimal 3-line layout
+- **UI Positioning**: Rating elements moved 60px higher via margin adjustments
+- **Database Schema**: Maintains existing FightReview.rating requirement
+- **Error Handling**: Clear validation messages for missing required fields
+
+The RateFightModal now functions as cleanly and simply as the PredictionModal, providing complete flexibility for fight data management while maintaining proper validation and a condensed, on-screen layout.
 
 ## Next Session Priority
 🔄 **Chat Messages Keyboard Integration**

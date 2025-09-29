@@ -199,9 +199,9 @@ const getAvailableTagsForRating = (rating: number, selectedTags: string[]) => {
   // Remove already selected tags from eligible pool to avoid duplicates
   const unselectedEligibleTags = eligibleTags.filter(tag => !selectedTags.includes(tag.id));
 
-  // Determine how many random tags to show (8-10 total, minus already selected)
-  const minTags = 8;
-  const maxTags = 10;
+  // Determine how many random tags to show (limit to ~3 lines, roughly 6-9 tags total)
+  const minTags = 6;
+  const maxTags = 9;
   const selectedCount = mustIncludeTags.length;
   const remainingSlots = Math.max(0, Math.min(maxTags - selectedCount, unselectedEligibleTags.length));
   const targetRandomCount = Math.max(0, Math.min(remainingSlots, maxTags - selectedCount));
@@ -450,6 +450,10 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
       return;
     }
 
+    if (comment.trim() && rating === 0) {
+      Alert.alert('Error', 'Reviews require a rating.');
+      return;
+    }
 
     // Create data object like PredictionModal pattern
     const submissionData = {
@@ -461,30 +465,6 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
     updateUserDataMutation.mutate(submissionData);
   };
 
-  const handleRemoveAllData = () => {
-    if (!fight) return;
-
-    Alert.alert(
-      'Remove All Data',
-      'This will remove your rating, review, and tags for this fight. This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => {
-            // Clear all data by sending nulls/empty arrays
-            const clearData = {
-              rating: null,
-              review: null,
-              tags: []
-            };
-            updateUserDataMutation.mutate(clearData);
-          }
-        }
-      ]
-    );
-  };
 
   const toggleTag = (tagId: string) => {
     setSelectedTags(prev =>
@@ -645,11 +625,6 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
                 </TouchableOpacity>
               ))}
             </View>
-            {rating === 0 && (
-              <Text style={[styles.tagPrompt, { color: colors.textSecondary }]}>
-                Select a rating to see relevant tags
-              </Text>
-            )}
           </View>
 
           <View style={styles.commentSection}>
@@ -672,19 +647,6 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
             />
           </View>
 
-          {/* Remove Data Button */}
-          {originalData.hasAnyData && (
-            <View style={styles.removeSection}>
-              <TouchableOpacity
-                onPress={handleRemoveAllData}
-                style={[styles.removeButton, { borderColor: colors.danger }]}
-              >
-                <Text style={[styles.removeButtonText, { color: colors.danger }]}>
-                  Remove All My Data for This Fight
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
 
           <View style={styles.saveSection}>
             <TouchableOpacity
@@ -773,16 +735,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   ratingSection: {
-    marginBottom: 20,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: 0,
   },
   displayStarContainer: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 4,
+    marginTop: -28,
   },
   animatedStarContainer: {
     position: 'relative',
@@ -823,7 +786,7 @@ const styles = StyleSheet.create({
   starContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   starButton: {
     padding: 3,
@@ -854,6 +817,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+    maxHeight: 120, // Limit to ~3 lines of tags
+    overflow: 'hidden',
   },
   tagButton: {
     paddingHorizontal: 12,
@@ -874,19 +839,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
     fontStyle: 'italic',
-  },
-  removeSection: {
-    marginBottom: 24,
-  },
-  removeButton: {
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  removeButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
   },
   saveSection: {
     marginTop: 'auto',
