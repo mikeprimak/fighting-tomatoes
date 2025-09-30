@@ -467,6 +467,10 @@ export default function CrewChatScreen() {
       id: fight.id,
       fighter1: `${fight.fighter1.firstName} ${fight.fighter1.lastName}${fight.fighter1.nickname ? ` "${fight.fighter1.nickname}"` : ''}`,
       fighter2: `${fight.fighter2.firstName} ${fight.fighter2.lastName}${fight.fighter2.nickname ? ` "${fight.fighter2.nickname}"` : ''}`,
+      fighter1Id: fight.fighter1.id, // Store real fighter1 ID
+      fighter2Id: fight.fighter2.id, // Store real fighter2 ID
+      fighter1Object: fight.fighter1, // Store full fighter1 object
+      fighter2Object: fight.fighter2, // Store full fighter2 object
       isMainEvent: fight.orderOnCard === 1,
       isMainCard: fight.orderOnCard <= 5,
       cardPosition: fight.orderOnCard,
@@ -914,18 +918,18 @@ export default function CrewChatScreen() {
 
   // Handle tapping a fight item to open appropriate modal based on status
   const handleFightItemTap = (fightData: any) => {
-    // Create a Fight object from the fight card data for the modal
+    // Create a Fight object from the fight card data for the modal with REAL fighter IDs
     const fightForModal: Fight = {
       id: fightData.id,
       scheduledRounds: fightData.scheduledRounds,
-      fighter1: {
-        id: fightData.id + '-fighter1', // Mock IDs
+      fighter1: fightData.fighter1Object || {
+        id: fightData.fighter1Id || (fightData.id + '-fighter1'), // Use real ID, fallback to mock
         firstName: parseFighterName(fightData.fighter1).firstName,
         lastName: parseFighterName(fightData.fighter1).lastName,
         nickname: parseFighterName(fightData.fighter1).nickname
       },
-      fighter2: {
-        id: fightData.id + '-fighter2', // Mock IDs
+      fighter2: fightData.fighter2Object || {
+        id: fightData.fighter2Id || (fightData.id + '-fighter2'), // Use real ID, fallback to mock
         firstName: parseFighterName(fightData.fighter2).firstName,
         lastName: parseFighterName(fightData.fighter2).lastName,
         nickname: parseFighterName(fightData.fighter2).nickname

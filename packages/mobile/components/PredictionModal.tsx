@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { apiService } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 
@@ -89,7 +89,7 @@ export function PredictionModal({
   submitButtonText = "Submit Prediction",
   updateButtonText = "Update Prediction",
 }: PredictionModalProps) {
-  console.log('🔥 PredictionModal RENDER - Fight:', fight?.id, 'Visible:', visible, 'CrewId:', crewId);
+  console.log('🔥 PredictionModal RENDER v2 - Fight:', fight?.id, 'Visible:', visible, 'Using INDIVIDUAL API only');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
@@ -106,33 +106,57 @@ export function PredictionModal({
   const [displayNumber, setDisplayNumber] = useState(0);
   const rollAnimation = useRef(new Animated.Value(1)).current;
   const wheelAnimation = useRef(new Animated.Value(0)).current;
+  const flameColorAnimation = useRef(new Animated.Value(0)).current;
 
-  // Fetch existing predictions for crew-based predictions
+  // Fetch existing predictions - ALWAYS use individual FightPrediction (not crew-specific)
   const { data: existingPredictions, isLoading: predictionsLoading, error: predictionsError } = useQuery({
-    queryKey: ['crewPredictions', crewId, fight?.id],
+    queryKey: ['fightPrediction', fight?.id],
     queryFn: async () => {
-      if (fight?.id && crewId) {
-        console.log('PredictionModal: Fetching predictions for crewId:', crewId, 'fightId:', fight.id);
-        const result = await apiService.getCrewPredictions(crewId, fight.id);
-        console.log('PredictionModal: Predictions API response:', result);
-        return result;
+      if (fight?.id) {
+        console.log('PredictionModal: Fetching individual prediction for fightId:', fight.id);
+        try {
+          const result = await apiService.getFightPrediction(fight.id);
+          console.log('PredictionModal: Individual prediction API response:', result);
+          return result;
+        } catch (error: any) {
+          // If no prediction exists, that's expected - return null
+          if (error.status === 404) {
+            console.log('PredictionModal: No individual prediction found (404)');
+            return null;
+          }
+          throw error;
+        }
       }
       return null;
     },
-    enabled: !!fight?.id && !!crewId && visible,
+    enabled: !!fight?.id && visible,
   });
 
-  // Create prediction mutation for crew-based predictions
+  // Create prediction mutation - ALWAYS use individual FightPrediction API
   const createPredictionMutation = useMutation({
     mutationFn: (data: PredictionData) => {
-      if (!fight?.id || !crewId) throw new Error('Missing fight or crew ID');
-      return apiService.createCrewPrediction(crewId, fight.id, data);
+      if (!fight?.id) throw new Error('Missing fight ID');
+
+      // Always use individual prediction API - convert PredictionData to API format
+      const apiData = {
+        predictedRating: data.hypeLevel && data.hypeLevel > 0 ? data.hypeLevel : undefined,
+        predictedWinner: data.predictedWinner || undefined,
+        predictedMethod: data.predictedMethod || undefined,
+        predictedRound: data.predictedRound && data.predictedRound > 0 ? data.predictedRound : undefined,
+      };
+      console.log('📤 Sending prediction data to API:', apiData);
+      return apiService.createFightPrediction(fight.id, apiData);
     },
     onSuccess: () => {
+      // Invalidate individual prediction queries
+      queryClient.invalidateQueries({ queryKey: ['fightPrediction', fight?.id] });
+      queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight?.id] });
+      queryClient.invalidateQueries({ queryKey: ['fight', fight?.id, 'withUserData'] });
+
+      // If opened from crew context, also invalidate crew queries
       if (crewId) {
         queryClient.invalidateQueries({ queryKey: ['crewMessages', crewId] });
         queryClient.invalidateQueries({ queryKey: ['crews'] });
-        queryClient.invalidateQueries({ queryKey: ['crewPredictions', crewId, fight?.id] });
       }
 
       const isUpdate = !!getCurrentUserPrediction();
@@ -148,16 +172,20 @@ export function PredictionModal({
     },
   });
 
-  // Get current user's existing prediction
+  // Get current user's existing prediction - ALWAYS from individual FightPrediction
   const getCurrentUserPrediction = () => {
     if (existingPrediction) return existingPrediction;
-    if (existingPredictions?.predictions && user) {
-      console.log('PredictionModal: Looking for user prediction. User ID:', user.id);
-      console.log('PredictionModal: Available predictions:', existingPredictions.predictions);
-      // Backend returns predictions with user.id, not userId
-      const userPrediction = existingPredictions.predictions.find((p: any) => p.user?.id === user.id);
-      console.log('PredictionModal: Found user prediction:', userPrediction);
-      return userPrediction;
+
+    if (existingPredictions?.prediction) {
+      // Individual prediction - the API returns { prediction: { ... } }
+      console.log('PredictionModal: Found individual prediction:', existingPredictions.prediction);
+      const prediction = existingPredictions.prediction;
+      return {
+        hypeLevel: prediction.predictedRating,
+        predictedWinner: prediction.predictedWinner,
+        predictedMethod: prediction.predictedMethod,
+        predictedRound: prediction.predictedRound,
+      };
     }
     return null;
   };
@@ -189,6 +217,11 @@ export function PredictionModal({
           const wheelPosition = (10 - existingHypeLevel) * 120;
           wheelAnimation.setValue(wheelPosition);
           setDisplayNumber(existingHypeLevel);
+          // Set flame color to primary for existing hype level
+          flameColorAnimation.setValue(1);
+        } else {
+          // Set flame color to grey if no hype level
+          flameColorAnimation.setValue(0);
         }
 
         const round = userPrediction.predictedRound || 0;
@@ -224,6 +257,8 @@ export function PredictionModal({
     setDisplayNumber(0);
     // Reset wheel to blank position (below "1" - position 1200)
     wheelAnimation.setValue(1200);
+    // Reset flame color to grey
+    flameColorAnimation.setValue(0);
   };
 
   // Animated wheel effect for number display
@@ -258,9 +293,21 @@ export function PredictionModal({
     if (hypeLevel === level) {
       setHypeLevel(0);
       animateToNumber(0);
+      // Animate flame color to grey
+      Animated.timing(flameColorAnimation, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
     } else {
       setHypeLevel(level);
       animateToNumber(level);
+      // Animate flame color to primary color
+      Animated.timing(flameColorAnimation, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
     }
   };
 
@@ -301,7 +348,7 @@ export function PredictionModal({
   };
 
   const handleSubmitPrediction = async () => {
-    // Check if at least one field is filled
+    // Check if at least one field is filled (any prediction is valid)
     const hasAnyPrediction = hypeLevel > 0 || predictedWinner || predictedMethod || predictedRound > 0;
 
     if (!hasAnyPrediction) {
@@ -330,11 +377,9 @@ export function PredictionModal({
         const isUpdate = !!getCurrentUserPrediction();
         onSuccess?.(isUpdate);
         onClose();
-      } else if (crewId) {
-        // Default crew prediction submission
-        createPredictionMutation.mutate(predictionData);
       } else {
-        throw new Error('No submission method provided');
+        // Default prediction submission (crew or individual)
+        createPredictionMutation.mutate(predictionData);
       }
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to submit prediction');
@@ -372,15 +417,14 @@ export function PredictionModal({
       statusBarTranslucent={true}
       onRequestClose={handleClose}
     >
-      <TouchableOpacity
-        style={styles.modalOverlay}
-        activeOpacity={1}
-        onPress={handleClose}
-      >
+      <View style={styles.modalOverlay}>
         <TouchableOpacity
-          style={[styles.predictionContainer, { backgroundColor: colors.card }]}
+          style={styles.modalOverlayTouchable}
           activeOpacity={1}
-        >
+          onPress={handleClose}
+        />
+        <View style={[styles.predictionContainer, { backgroundColor: colors.card }]}>
+
           {/* Header */}
           <View style={styles.predictionHeader}>
             <Text style={[styles.predictionTitle, { color: colors.text }]}>
@@ -417,7 +461,7 @@ export function PredictionModal({
                 <Text style={[
                   styles.fighterButtonText,
                   {
-                    color: predictedWinner === fight.fighter1?.id ? 'white' : colors.text
+                    color: predictedWinner === fight.fighter1?.id ? colors.textOnAccent : colors.text
                   }
                 ]}>
                   {fight.fighter1?.lastName || 'Fighter 1'}
@@ -443,7 +487,7 @@ export function PredictionModal({
                 <Text style={[
                   styles.fighterButtonText,
                   {
-                    color: predictedWinner === fight.fighter2?.id ? 'white' : colors.text
+                    color: predictedWinner === fight.fighter2?.id ? colors.textOnAccent : colors.text
                   }
                 ]}>
                   {fight.fighter2?.lastName || 'Fighter 2'}
@@ -473,7 +517,7 @@ export function PredictionModal({
                   <Text style={[
                     styles.roundButtonText,
                     {
-                      color: predictedRound === round ? 'white' : colors.text
+                      color: predictedRound === round ? colors.textOnAccent : colors.text
                     }
                   ]}>
                     {round}
@@ -510,7 +554,7 @@ export function PredictionModal({
                     <Text style={[
                       styles.methodButtonText,
                       {
-                        color: predictedMethod === method ? 'white' : colors.text
+                        color: predictedMethod === method ? colors.textOnAccent : colors.text
                       }
                     ]}>
                       {method === 'KO_TKO' ? 'KO/TKO' : method}
@@ -527,10 +571,32 @@ export function PredictionModal({
               How hyped are you?
             </Text>
 
-            {/* Large display star with wheel animation */}
+            {/* Large display flame with wheel animation */}
             <View style={styles.displayStarContainer}>
               <View style={styles.animatedStarContainer}>
-                <Text style={[styles.displayStar, { color: '#666666' }]}>★</Text>
+                <View style={{ position: 'relative' }}>
+                  {/* Grey flame (base layer) */}
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={80}
+                    color="#666666"
+                  />
+                  {/* Primary color flame (overlay) */}
+                  <Animated.View
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      opacity: flameColorAnimation
+                    }}
+                  >
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={80}
+                      color={colors.primary}
+                    />
+                  </Animated.View>
+                </View>
                 <View style={styles.wheelContainer}>
                   <Animated.View style={[
                     styles.wheelNumbers,
@@ -553,14 +619,14 @@ export function PredictionModal({
                   {/* Smooth top gradient fade - covers top edge completely */}
                   <LinearGradient
                     colors={[colors.card, `${colors.card}DD`, `${colors.card}99`, `${colors.card}44`, 'transparent']}
-                    style={[styles.fadeOverlay, { top: 0, height: 38 }]}
+                    style={[styles.fadeOverlay, { top: -8, height: 38 }]}
                     pointerEvents="none"
                   />
 
                   {/* Smooth bottom gradient fade - moved down for better centering */}
                   <LinearGradient
                     colors={['transparent', `${colors.card}44`, `${colors.card}99`, `${colors.card}DD`, colors.card, colors.card]}
-                    style={[styles.fadeOverlay, { bottom: -8, height: 25 }]}
+                    style={[styles.fadeOverlay, { bottom: 0, height: 25 }]}
                     pointerEvents="none"
                   />
                 </View>
@@ -574,10 +640,11 @@ export function PredictionModal({
                   onPress={() => handleHypeLevelSelection(level)}
                   style={styles.starButton}
                 >
-                  <Text style={[
-                    styles.star,
-                    { color: level <= hypeLevel ? colors.primary : '#666666' }
-                  ]}>★</Text>
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={39}
+                    color={level <= hypeLevel ? colors.primary : '#666666'}
+                  />
                 </TouchableOpacity>
               ))}
             </View>
@@ -591,7 +658,7 @@ export function PredictionModal({
                 onPress={handleSubmitPrediction}
                 disabled={isPending}
               >
-                <Text style={styles.submitButtonText}>
+                <Text style={[styles.submitButtonText, { color: colors.textOnAccent }]}>
                   {isPending
                     ? (isUpdate ? 'Updating...' : 'Submitting...')
                     : (isUpdate ? updateButtonText : submitButtonText)}
@@ -606,8 +673,8 @@ export function PredictionModal({
               </TouchableOpacity>
             )}
           </View>
-        </TouchableOpacity>
-      </TouchableOpacity>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -618,6 +685,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalOverlayTouchable: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   predictionContainer: {
     width: '95%',
@@ -667,11 +741,14 @@ const styles = StyleSheet.create({
   displayStarContainer: {
     alignItems: 'center',
     marginBottom: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
   animatedStarContainer: {
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 120,
   },
   displayStar: {
     fontSize: 80,
@@ -697,6 +774,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textAlignVertical: 'center',
     lineHeight: 120,
+    color: 'white',
+    textShadowColor: 'black',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 24,
+    minWidth: 120, // Set minimum width to prevent squishing
   },
   fadeOverlay: {
     position: 'absolute',
@@ -768,7 +850,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   submitButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },

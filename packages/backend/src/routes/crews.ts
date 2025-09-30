@@ -23,7 +23,7 @@ const sendMessageSchema = z.object({
 });
 
 const createPredictionSchema = z.object({
-  hypeLevel: z.number().int().min(1).max(10),
+  hypeLevel: z.number().int().min(1).max(10).optional(),
   predictedWinner: z.string().optional(),
   predictedMethod: z.enum(['DECISION', 'KO_TKO', 'SUBMISSION']).optional(),
   predictedRound: z.number().int().min(1).max(5).optional(),
@@ -552,6 +552,28 @@ export async function crewRoutes(fastify: FastifyInstance) {
 
     const { hypeLevel, predictedWinner, predictedMethod, predictedRound } = validation.data;
 
+    console.log('✅ Received prediction data:', {
+      hypeLevel,
+      predictedWinner,
+      predictedMethod,
+      predictedRound,
+      fightId,
+      crewId
+    });
+
+    // Ensure at least one prediction field is provided (check for undefined/null, not falsy)
+    const hasAnyPrediction =
+      hypeLevel !== undefined ||
+      predictedWinner !== undefined ||
+      predictedMethod !== undefined ||
+      predictedRound !== undefined;
+    if (!hasAnyPrediction) {
+      return reply.status(400).send({
+        error: 'At least one prediction field must be provided',
+        code: 'NO_PREDICTION_DATA',
+      });
+    }
+
     try {
       // Verify crew membership
       const membership = await fastify.prisma.crewMember.findUnique({
@@ -617,6 +639,12 @@ export async function crewRoutes(fastify: FastifyInstance) {
 
       // Validate predicted winner is one of the fighters
       if (predictedWinner && predictedWinner !== fight.fighter1.id && predictedWinner !== fight.fighter2.id) {
+        console.log('❌ Invalid predicted winner:', {
+          predictedWinner,
+          fighter1Id: fight.fighter1.id,
+          fighter2Id: fight.fighter2.id,
+          fightId: fight.id
+        });
         return reply.status(400).send({
           error: 'Invalid predicted winner',
           code: 'INVALID_PREDICTED_WINNER',

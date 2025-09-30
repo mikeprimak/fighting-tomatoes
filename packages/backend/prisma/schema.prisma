@@ -312,24 +312,35 @@ model FightRating {
 // ============== PREDICTIONS ==============
 model FightPrediction {
   id              String    @id @default(uuid())
-  
+
   // Relationships
   userId          String
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   fightId         String
   fight           Fight     @relation(fields: [fightId], references: [id], onDelete: Cascade)
-  
-  // Prediction
-  predictedRating Int       // 1-10 how exciting user thinks it will be
-  
+
+  // Prediction data (all optional to allow flexible predictions)
+  predictedRating Int?      // 1-10 how exciting user thinks it will be (optional)
+  predictedWinner String?   // fighter1Id or fighter2Id
+  predictedMethod PredictionMethod? // Decision, KO/TKO, Submission
+  predictedRound  Int?      // 1-5 (depends on fight type)
+  confidence      Int       @default(5) // 1-10 scale (optional for now)
+
   // Accuracy tracking (filled after fight)
   actualRating    Int?      // actual rating user gave after fight
   accuracy        Float?    // calculated accuracy score
-  
+  isCorrectWinner Boolean?  // filled after fight
+  isCorrectMethod Boolean?
+  isCorrectRound  Boolean?
+  accuracyScore   Float?    // overall accuracy 0-1
+
+  // Status
+  isLocked        Boolean   @default(false) // locked when fight starts
+
   // Timestamps
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  
+
   @@unique([userId, fightId])
   @@map("fight_predictions")
 }
@@ -869,7 +880,7 @@ model CrewPrediction {
   fight           Fight     @relation(fields: [fightId], references: [id])
 
   // Pre-fight prediction data (user's predictions)
-  hypeLevel       Int       // 1-10 how hyped the user is for this fight
+  hypeLevel       Int?      // 1-10 how hyped the user is for this fight (optional)
   predictedWinner String?   // fighter1Id or fighter2Id
   predictedMethod PredictionMethod? // Decision, KO/TKO, Submission
   predictedRound  Int?      // 1-5 (depends on fight type)

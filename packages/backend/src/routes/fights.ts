@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { PrismaClient, WeightClass, Sport, Gender, ActivityType } from '@prisma/client';
+import { PrismaClient, WeightClass, Sport, Gender, ActivityType, PredictionMethod } from '@prisma/client';
 import { authenticateUser, requireEmailVerification, optionalAuth } from '../middleware/auth';
 
 const prisma = new PrismaClient();
@@ -85,6 +85,13 @@ const SearchQuerySchema = z.object({
   q: z.string().min(1).max(100),
   page: z.string().transform(val => parseInt(val) || 1).pipe(z.number().int().min(1)).default('1'),
   limit: z.string().transform(val => parseInt(val) || 20).pipe(z.number().int().min(1).max(50)).default('20'),
+});
+
+const CreatePredictionSchema = z.object({
+  predictedRating: z.number().int().min(1).max(10).optional(), // hype level (optional)
+  predictedWinner: z.string().uuid().optional(), // fighter1Id or fighter2Id
+  predictedMethod: z.nativeEnum(PredictionMethod).optional(),
+  predictedRound: z.number().int().min(1).max(12).optional(), // up to 12 rounds for boxing
 });
 
 export async function fightRoutes(fastify: FastifyInstance) {
@@ -1145,6 +1152,311 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       console.error('Update user data error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // POST /api/fights/:id/prediction - Create or update a fight prediction
+  fastify.post<{
+    Params: { id: string };
+    Body: unknown;
+  }>('/fights/:id/prediction', {
+    preHandler: [authenticateUser, requireEmailVerification],
+  }, async (request: any, reply: any) => {
+    try {
+      const fightId = request.params.id;
+      const currentUserId = (request as any).user.id;
+
+      // Validate request body
+      const validation = CreatePredictionSchema.safeParse(request.body);
+      if (!validation.success) {
+        return reply.code(400).send({
+          error: 'Invalid prediction data',
+          code: 'INVALID_PREDICTION_DATA',
+          details: validation.error.errors,
+        });
+      }
+
+      const { predictedRating, predictedWinner, predictedMethod, predictedRound } = validation.data;
+
+      // Ensure at least one prediction field is provided (check for undefined/null, not falsy)
+      const hasAnyPrediction =
+        predictedRating !== undefined ||
+        predictedWinner !== undefined ||
+        predictedMethod !== undefined ||
+        predictedRound !== undefined;
+      if (!hasAnyPrediction) {
+        return reply.code(400).send({
+          error: 'At least one prediction field must be provided',
+          code: 'NO_PREDICTION_DATA',
+        });
+      }
+
+      // Check if fight exists
+      const fight = await prisma.fight.findUnique({
+        where: { id: fightId },
+        include: {
+          fighter1: true,
+          fighter2: true,
+        },
+      });
+
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Check if fight has started (can't predict after it starts)
+      if (fight.hasStarted) {
+        return reply.code(400).send({
+          error: 'Cannot make predictions after fight has started',
+          code: 'FIGHT_ALREADY_STARTED',
+        });
+      }
+
+      // Validate predicted winner is one of the fighters
+      if (predictedWinner && predictedWinner !== fight.fighter1Id && predictedWinner !== fight.fighter2Id) {
+        return reply.code(400).send({
+          error: 'Predicted winner must be one of the fight participants',
+          code: 'INVALID_PREDICTED_WINNER',
+        });
+      }
+
+      // Create or update prediction
+      const prediction = await prisma.fightPrediction.upsert({
+        where: {
+          userId_fightId: {
+            userId: currentUserId,
+            fightId,
+          },
+        },
+        create: {
+          userId: currentUserId,
+          fightId,
+          predictedRating: predictedRating || null,
+          predictedWinner: predictedWinner || null,
+          predictedMethod: predictedMethod || null,
+          predictedRound: predictedRound || null,
+        },
+        update: {
+          predictedRating: predictedRating || null,
+          predictedWinner: predictedWinner || null,
+          predictedMethod: predictedMethod || null,
+          predictedRound: predictedRound || null,
+          updatedAt: new Date(),
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              displayName: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      });
+
+      // Add activity log for new predictions
+      const isNewPrediction = !await prisma.fightPrediction.findFirst({
+        where: {
+          userId: currentUserId,
+          fightId,
+          createdAt: { lt: new Date(Date.now() - 1000) }, // Created more than 1 second ago
+        },
+      });
+
+      if (isNewPrediction) {
+        await prisma.userActivity.create({
+          data: {
+            userId: currentUserId,
+            activityType: ActivityType.PREDICTION_MADE,
+            points: 5,
+            description: 'Made fight prediction',
+            fightId,
+            predictionId: prediction.id,
+          },
+        });
+
+        await prisma.user.update({
+          where: { id: currentUserId },
+          data: {
+            points: { increment: 5 },
+          },
+        });
+      }
+
+      return reply.send({
+        prediction: {
+          id: prediction.id,
+          predictedRating: prediction.predictedRating,
+          predictedWinner: (prediction as any).predictedWinner,
+          predictedMethod: (prediction as any).predictedMethod,
+          predictedRound: (prediction as any).predictedRound,
+          createdAt: prediction.createdAt,
+          updatedAt: prediction.updatedAt,
+          user: {
+            id: (prediction as any).user.id,
+            name: (prediction as any).user.displayName || `${(prediction as any).user.firstName} ${(prediction as any).user.lastName}`,
+          },
+        },
+        message: 'Prediction saved successfully',
+      });
+
+    } catch (error) {
+      console.error('Prediction creation error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // GET /api/fights/:id/prediction - Get user's prediction for a fight
+  fastify.get<{
+    Params: { id: string };
+  }>('/fights/:id/prediction', {
+    preHandler: [authenticateUser],
+  }, async (request: any, reply: any) => {
+    try {
+      const fightId = request.params.id;
+      const currentUserId = (request as any).user.id;
+
+      // Check if fight exists
+      const fight = await prisma.fight.findUnique({
+        where: { id: fightId },
+      });
+
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Get user's prediction
+      const prediction = await prisma.fightPrediction.findUnique({
+        where: {
+          userId_fightId: {
+            userId: currentUserId,
+            fightId,
+          },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              displayName: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      });
+
+      if (!prediction) {
+        return reply.code(404).send({
+          error: 'No prediction found for this fight',
+          code: 'PREDICTION_NOT_FOUND',
+        });
+      }
+
+      return reply.send({
+        prediction: {
+          id: prediction.id,
+          predictedRating: prediction.predictedRating,
+          predictedWinner: (prediction as any).predictedWinner,
+          predictedMethod: (prediction as any).predictedMethod,
+          predictedRound: (prediction as any).predictedRound,
+          createdAt: prediction.createdAt,
+          updatedAt: prediction.updatedAt,
+          user: {
+            id: (prediction as any).user.id,
+            name: (prediction as any).user.displayName || `${(prediction as any).user.firstName} ${(prediction as any).user.lastName}`,
+          },
+        },
+      });
+
+    } catch (error) {
+      console.error('Prediction fetch error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // GET /api/fights/:id/predictions - Get aggregate prediction stats for a fight
+  fastify.get('/fights/:id/predictions', async (request: FastifyRequest<{
+    Params: { id: string };
+  }>, reply: FastifyReply) => {
+    try {
+      const fightId = request.params.id;
+
+      // Check if fight exists
+      const fight = await prisma.fight.findUnique({
+        where: { id: fightId },
+        include: {
+          fighter1: true,
+          fighter2: true,
+        },
+      });
+
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Get aggregate prediction stats
+      const predictions = await prisma.fightPrediction.findMany({
+        where: { fightId },
+      });
+
+      const totalPredictions = predictions.length;
+      const predictionsWithRating = predictions.filter(p => p.predictedRating !== null);
+      const averageHype = predictionsWithRating.length > 0
+        ? predictionsWithRating.reduce((sum, p) => sum + (p.predictedRating as number), 0) / predictionsWithRating.length
+        : 0;
+
+      const fighter1Predictions = predictions.filter(p => (p as any).predictedWinner === fight.fighter1Id).length;
+      const fighter2Predictions = predictions.filter(p => (p as any).predictedWinner === fight.fighter2Id).length;
+
+      const methodBreakdown = {
+        DECISION: predictions.filter(p => (p as any).predictedMethod === 'DECISION').length,
+        KO_TKO: predictions.filter(p => (p as any).predictedMethod === 'KO_TKO').length,
+        SUBMISSION: predictions.filter(p => (p as any).predictedMethod === 'SUBMISSION').length,
+      };
+
+      return reply.send({
+        fightId,
+        totalPredictions,
+        averageHype: Math.round(averageHype * 10) / 10, // Round to 1 decimal
+        winnerPredictions: {
+          fighter1: {
+            id: fight.fighter1Id,
+            name: `${fight.fighter1.firstName} ${fight.fighter1.lastName}`,
+            predictions: fighter1Predictions,
+            percentage: totalPredictions > 0 ? Math.round((fighter1Predictions / totalPredictions) * 100) : 0,
+          },
+          fighter2: {
+            id: fight.fighter2Id,
+            name: `${fight.fighter2.firstName} ${fight.fighter2.lastName}`,
+            predictions: fighter2Predictions,
+            percentage: totalPredictions > 0 ? Math.round((fighter2Predictions / totalPredictions) * 100) : 0,
+          },
+        },
+        methodPredictions: methodBreakdown,
+      });
+
+    } catch (error) {
+      console.error('Aggregate predictions fetch error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
