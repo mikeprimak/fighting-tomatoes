@@ -209,6 +209,19 @@ export async function fightRoutes(fastify: FastifyInstance) {
             },
           },
         };
+
+        include.predictions = {
+          where: { userId: currentUserId },
+          select: {
+            id: true,
+            predictedRating: true,
+            predictedWinner: true,
+            predictedMethod: true,
+            predictedRound: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        };
       } else {
         console.log('Skipping user data processing:', {
           includeUserData: query.includeUserData,
@@ -249,10 +262,16 @@ export async function fightRoutes(fastify: FastifyInstance) {
           transformed.userTags = fight.tags.map((fightTag: any) => fightTag.tag.name);
         }
 
+        // Transform user prediction (take the first/only prediction)
+        if (fight.predictions && fight.predictions.length > 0) {
+          transformed.userHypePrediction = fight.predictions[0].predictedRating;
+        }
+
         // Remove the raw arrays to avoid confusion
         delete transformed.ratings;
         delete transformed.reviews;
         delete transformed.tags;
+        delete transformed.predictions;
 
         return transformed;
       });

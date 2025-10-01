@@ -644,6 +644,72 @@ The RateFightModal now functions as cleanly and simply as the PredictionModal, p
 - `packages/mobile/components/RateFightModal.tsx` - Tag layout optimization and spacing improvements
 - `packages/mobile/components/FightDisplayCardMinimal.tsx` - Spoiler protection and enhanced status display
 
+### Event Summary Fight Card Prediction & Rating Integration (September 2024)
+✅ **User Prediction Display on Fight Cards**
+- **Prediction Display**: User's hype prediction (1-10) now appears on FightDisplayCardMinimal for upcoming fights
+  - Replaces "Predict" text with user's selected hype level
+  - Real-time updates when predictions are submitted or changed
+  - Proper data flow from backend → API → transformation → component
+- **Backend Prediction Integration**: Added prediction data to fight queries
+  - Included `predictions` in `includeUserData` queries (packages/backend/src/routes/fights.ts:213-224)
+  - Transformed `predictedRating` → `userHypePrediction` for frontend (line 265-268)
+  - Proper cleanup of raw prediction arrays from API responses
+- **Frontend Data Transformation**: Updated crew chat screen fight data transformation
+  - Added `userHypePrediction` mapping in `transformFightData()` (packages/mobile/app/crew/[id].tsx:491)
+  - Proper null handling for prediction values
+- **Query Invalidation**: Added proper cache invalidation for prediction updates
+  - Invalidates `['eventFights', 'latest']` query on PredictionModal success
+  - Ensures fight cards update immediately after prediction submission
+
+✅ **Sparkle Animation for Predictions**
+- **Unified Animation System**: Extended rating sparkle animation to work for predictions
+  - Updated animation trigger condition to include both ratings and predictions: `(fightData.userRating || fightData.userHypePrediction)`
+  - 8-point sparkle particle system with scale, opacity, and translation animations
+  - Same visual feedback for both rating and prediction submissions
+- **Animation State Management**: Added prediction-specific animation tracking
+  - New state: `recentlyPredictedFightId` in crew chat screen
+  - 300ms delay before triggering animation, 1000ms duration
+  - Passes `animateRating` prop to FightDisplayCardMinimal for both ratings and predictions
+- **Alert Removal**: Removed success alerts from PredictionModal
+  - Deleted "Your prediction has been recorded" alert
+  - Deleted "Your prediction has been updated" alert
+  - Visual animation provides sufficient feedback
+
+✅ **Live Fight Card Redesign**
+- **Background & Text Colors**: Changed live fight cards from green to golden yellow theme
+  - Background: `colors.primary` (golden yellow #F5C518)
+  - Text: `colors.textOnAccent` (dark #202020) for all text except "Live" indicator
+  - "Live" indicator: `colors.danger` (red #ef4444)
+- **Layout Restructuring**: Improved horizontal information layout for live fights
+  - **Left Position**: Red "Live" text with pulsing dot (or Round/End Round status)
+  - **Middle Position**: User rating with dark star icon and dark text on yellow background
+  - **Right Position**: Status section (cleaned up, removed duplicate live indicator)
+  - Shows "Rate" text for live fights (not "Predict")
+- **Helper Functions**: Added `getBackgroundColor()` and `getTextColor()` helpers
+  - Centralizes color logic based on fight status
+  - Ensures consistent theming across all fight card states
+
+✅ **Technical Implementation Details**:
+- **FightDisplayCardMinimal**: `packages/mobile/components/FightDisplayCardMinimal.tsx`
+  - Separated rendering logic for upcoming, in-progress, and completed fights
+  - Live fights show star icon (not flame) with "Rate" text
+  - Dark colors (`colors.textOnAccent`) for rating icon and text on live fights
+  - Conditional rendering based on fight status for proper icon/text selection
+- **PredictionModal**: `packages/mobile/components/PredictionModal.tsx`
+  - Updated `onSuccess` callback to pass fight ID and hype level
+  - Removed Alert.alert calls for success feedback
+  - Proper query invalidation for fight data refresh
+- **Crew Chat Screen**: `packages/mobile/app/crew/[id].tsx`
+  - Added `recentlyPredictedFightId` state for animation tracking
+  - Enhanced `transformFightData()` with prediction mapping
+  - Query invalidation for `['eventFights', 'latest']` on prediction success
+
+**Files Modified**:
+- `packages/mobile/components/FightDisplayCardMinimal.tsx` - Prediction display, animation support, live fight redesign
+- `packages/mobile/components/PredictionModal.tsx` - Success callback updates, alert removal
+- `packages/mobile/app/crew/[id].tsx` - Prediction animation tracking, data transformation, query invalidation
+- `packages/backend/src/routes/fights.ts` - Prediction data inclusion and transformation
+
 ## Next Session Priority
 🔄 **Chat Messages Keyboard Integration**
 When we start the next session, we'll begin by implementing keyboard-aware chat message positioning. The goal is to make all chat messages rise up with the keyboard and input area so that the most recent message remains visible while typing. This will require:
