@@ -14,7 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
-import { FightDisplayCard, RateFightModal } from '../../components';
+import { FightDisplayCard, RateFightModal, PredictionModal } from '../../components';
 import { useAuth } from '../../store/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
 
@@ -93,6 +93,7 @@ export default function EventDetailScreen() {
   // Modal state
   const [selectedFight, setSelectedFight] = useState<Fight | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showPredictionModal, setShowPredictionModal] = useState(false);
 
   // Fetch event details
   const { data: eventData, isLoading: eventLoading, error: eventError } = useQuery({
@@ -132,7 +133,7 @@ export default function EventDetailScreen() {
     enabled: !!id,
   });
 
-  const handleFightPress = async (fight: Fight) => {
+  const openRatingModal = async (fight: Fight) => {
     try {
       console.log('Opening rating modal for fight:', fight.id);
       console.log('Fight already has user data:', {
@@ -184,9 +185,27 @@ export default function EventDetailScreen() {
     }
   };
 
+  const openPredictionModal = (fight: Fight) => {
+    console.log('Opening prediction modal for fight:', fight.id);
+    setSelectedFight(fight);
+    setShowPredictionModal(true);
+  };
+
+  const handleFightPress = (fight: Fight) => {
+    // Determine which modal to open based on fight status
+    if (fight.hasStarted || fight.isComplete) {
+      // For ongoing or completed fights, open rating modal
+      openRatingModal(fight);
+    } else {
+      // For upcoming fights, open prediction modal
+      openPredictionModal(fight);
+    }
+  };
+
   const closeModal = () => {
     setSelectedFight(null);
     setShowRatingModal(false);
+    setShowPredictionModal(false);
   };
 
   if (eventLoading || fightsLoading) {
@@ -417,6 +436,16 @@ export default function EventDetailScreen() {
         fight={selectedFight}
         onClose={closeModal}
         queryKey={['eventFights', id]}
+      />
+
+      <PredictionModal
+        visible={showPredictionModal}
+        fight={selectedFight}
+        onClose={closeModal}
+        onSuccess={() => {
+          // Invalidate fights query to refresh data
+          console.log('Prediction submitted successfully');
+        }}
       />
     </SafeAreaView>
   );

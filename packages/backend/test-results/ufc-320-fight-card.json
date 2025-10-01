@@ -1,0 +1,287 @@
+{
+  "sections": [
+    {
+      "cardType": "Main Card",
+      "startTime": "Sat, Oct 4 / 10:00 PM EDT",
+      "fightCount": 5
+    },
+    {
+      "cardType": "Prelims",
+      "startTime": "Sat, Oct 4 / 8:00 PM EDT",
+      "fightCount": 4
+    },
+    {
+      "cardType": "Early Prelims",
+      "startTime": "Sat, Oct 4 / 6:00 PM EDT",
+      "fightCount": 5
+    }
+  ],
+  "fights": [
+    {
+      "fightId": "12274",
+      "order": 1,
+      "cardType": "Main Card",
+      "weightClass": "Light Heavyweight",
+      "isTitle": true,
+      "fighterA": {
+        "name": "Magomed Ankalaev",
+        "rank": "C",
+        "country": "Russia",
+        "odds": "-285"
+      },
+      "fighterB": {
+        "name": "Alex Pereira",
+        "rank": "#1",
+        "country": "Brazil",
+        "odds": "+230"
+      }
+    },
+    {
+      "fightId": "12275",
+      "order": 2,
+      "cardType": "Main Card",
+      "weightClass": "Bantamweight",
+      "isTitle": true,
+      "fighterA": {
+        "name": "Merab Dvalishvili",
+        "rank": "C",
+        "country": "Georgia",
+        "odds": "-380"
+      },
+      "fighterB": {
+        "name": "Cory Sandhagen",
+        "rank": "#4",
+        "country": "United States",
+        "odds": "+300"
+      }
+    },
+    {
+      "fightId": "12276",
+      "order": 3,
+      "cardType": "Main Card",
+      "weightClass": "Light Heavyweight",
+      "isTitle": false,
+      "fighterA": {
+        "name": "Jiří Procházka",
+        "rank": "#2",
+        "country": "Czechia",
+        "odds": "-180"
+      },
+      "fighterB": {
+        "name": "Khalil Rountree Jr.",
+        "rank": "#4",
+        "country": "United States",
+        "odds": "+150"
+      }
+    },
+    {
+      "fightId": "12375",
+      "order": 4,
+      "cardType": "Main Card",
+      "weightClass": "Featherweight",
+      "isTitle": false,
+      "fighterA": {
+        "name": "Josh Emmett",
+        "rank": "#8",
+        "country": "United States",
+        "odds": "+330"
+      },
+      "fighterB": {
+        "name": "Youssef Zalal",
+        "rank": "#9",
+        "country": "Morocco",
+        "odds": "-425"
+      }
+    },
+    {
+      "fightId": "12318",
+      "order": 5,
+      "cardType": "Main Card",
+      "weightClass": "Middleweight",
+      "isTitle": false,
+      "fighterA": {
+        "name": "Abus Magomedov",
+        "rank": "#14",
+        "country": "Germany",
+        "odds": "+200"
+      },
+      "fighterB": {
+        "name": "Joe Pyfer",
+        "rank": "",
+        "country": "United States",
+        "odds": "-245"
+      }
+    },
+    {
+      "fightId": "12451",
+      "order": 6,
+      "cardType": "Prelims",
+      "weightClass": "Middleweight",
+      "isTitle": false,
+      "fighterA": {
+        "name": "Ateba Gautier",
+        "rank": "",
+        "country": "Cameroon",
+        "odds": "-"
+      },
+      "fighterB": {
+        "name": "Tre’ston Vines",
+        "rank": "",
+        "country": "United States",
+        "odds": "-"
+      }
+    },
+    {
+      "fightId": "12320",
+      "order": 7,
+      "cardType": "Prelims",
+      "weightClass": "Middleweight",
+      "isTitle": false,
+      "fighterA": {
+        "name": "Edmen Shahbazyan",
+        "rank": "",
+        "country": "United States",
+        "odds": "-298"
+      },
+      "fighterB": {
+        "name": "Andre Muniz",
+        "rank": "",
+        "country": "Brazil",
+        "odds": "+240"
+      }
+    },
+    {
+      "fightId": "12322",
+      "order": 8,
+      "cardType": "Prelims",
+      "weightClass": "Bantamweight",
+      "isTitle": false,
+      "fighterA": {
+        "name": "Chris Gutierrez",
+        "rank": "",
+        "country": "United States",
+        "odds": "+350"
+      },
+      "fighterB": {
+        "name": "Farid Basharat",
+        "rank": "",
+        "country": "",
+        "odds": "-455"
+      }
+    },
+    {
+      "fightId": "12404",
+      "order": 9,
+      "cardType": "Prelims",
+      "weightClass": "Featherweight",
+      "isTitle": false,
+      "fighterA": {
+        "name": "Daniel Santos",
+        "rank": "",
+        "country": "Brazil",
+        "odds": "-142"
+      },
+      "fighterB": {
+        "name": "JooSang Yoo",
+        "rank": "",
+        "country": "South Korea",
+        "odds": "+120"
+      }
+    },
+    {
+      "fightId": "12323",
+      "order": 10,
+      "cardType": "Early Prelims",
+      "weightClass": "Women's Bantamweight",
+      "isTitle": false,
+      "fighterA": {
+        "name": "Macy Chiasson",
+        "rank": "#5",
+        "country": "United States",
+        "odds": "-198"
+      },
+      "fighterB": {
+        "name": "Yana Santos",
+        "rank": "#10",
+        "country": "Russia",
+        "odds": "+164"
+      }
+    },
+    {
+      "fightId": "12358",
+      "order": 11,
+      "cardType": "Early Prelims",
+      "weightClass": "Bantamweight",
+      "isTitle": false,
+      "fighterA": {
+        "name": "Patchy Mix",
+        "rank": "",
+        "country": "United States",
+        "odds": "-305"
+      },
+      "fighterB": {
+        "name": "Jakub Wiklacz",
+        "rank": "",
+        "country": "Poland",
+        "odds": "+245"
+      }
+    },
+    {
+      "fightId": "12434",
+      "order": 12,
+      "cardType": "Early Prelims",
+      "weightClass": "Welterweight",
+      "isTitle": false,
+      "fighterA": {
+        "name": "Punahele Soriano",
+        "rank": "",
+        "country": "United States",
+        "odds": "-290"
+      },
+      "fighterB": {
+        "name": "Nikolay Veretennikov",
+        "rank": "",
+        "country": "Kazakhstan",
+        "odds": "+235"
+      }
+    },
+    {
+      "fightId": "12435",
+      "order": 13,
+      "cardType": "Early Prelims",
+      "weightClass": "Welterweight",
+      "isTitle": false,
+      "fighterA": {
+        "name": "Ramiz Brahimaj",
+        "rank": "",
+        "country": "United States",
+        "odds": "+240"
+      },
+      "fighterB": {
+        "name": "Austin Vanderford",
+        "rank": "",
+        "country": "United States",
+        "odds": "-298"
+      }
+    },
+    {
+      "fightId": "12321",
+      "order": 14,
+      "cardType": "Early Prelims",
+      "weightClass": "Women's Flyweight",
+      "isTitle": false,
+      "fighterA": {
+        "name": "Veronica Hardy",
+        "rank": "",
+        "country": "Venezuela",
+        "odds": "-700"
+      },
+      "fighterB": {
+        "name": "Brogan Walker",
+        "rank": "",
+        "country": "Guam",
+        "odds": "+500"
+      }
+    }
+  ]
+}

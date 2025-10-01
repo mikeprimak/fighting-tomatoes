@@ -11,9 +11,9 @@ const getApiBaseUrl = () => {
 
   // In development, use localhost for web and network IP for mobile
   if (Platform.OS === 'web') {
-    return 'http://localhost:3008/api';
+    return 'http://localhost:3001/api';
   } else {
-    return 'http://10.0.0.53:3008/api';  // Network IP for mobile devices (working server)
+    return 'http://10.0.0.53:3001/api';  // Network IP for mobile devices (working server)
   }
 };
 
@@ -350,7 +350,7 @@ class ApiService {
   }
 
   async createCrewPrediction(crewId: string, fightId: string, data: {
-    hypeLevel: number;
+    hypeLevel?: number; // Optional hype level
     predictedWinner?: string;
     predictedMethod?: 'DECISION' | 'KO_TKO' | 'SUBMISSION';
     predictedRound?: number;
@@ -363,6 +363,40 @@ class ApiService {
 
   async getCrewPredictions(crewId: string, fightId: string): Promise<{ predictions: any[] }> {
     return this.makeRequest(`/crews/${crewId}/predictions/${fightId}`);
+  }
+
+  // Individual fight prediction methods
+  async createFightPrediction(fightId: string, data: {
+    predictedRating?: number; // hype level 1-10 (optional)
+    predictedWinner?: string; // fighter1Id or fighter2Id
+    predictedMethod?: 'DECISION' | 'KO_TKO' | 'SUBMISSION';
+    predictedRound?: number;
+  }): Promise<{ prediction: any; message: string }> {
+    return this.makeRequest(`/fights/${fightId}/prediction`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getFightPrediction(fightId: string): Promise<{ prediction: any }> {
+    return this.makeRequest(`/fights/${fightId}/prediction`);
+  }
+
+  async getFightPredictionStats(fightId: string): Promise<{
+    fightId: string;
+    totalPredictions: number;
+    averageHype: number;
+    winnerPredictions: {
+      fighter1: { id: string; name: string; predictions: number; percentage: number };
+      fighter2: { id: string; name: string; predictions: number; percentage: number };
+    };
+    methodPredictions: {
+      DECISION: number;
+      KO_TKO: number;
+      SUBMISSION: number;
+    };
+  }> {
+    return this.makeRequest(`/fights/${fightId}/predictions`);
   }
 }
 

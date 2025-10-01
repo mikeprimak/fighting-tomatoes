@@ -14,7 +14,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../store/AuthContext';
 import { apiService, type Fight as ApiFight } from '../../services/api';
-import { FightDisplayCard, RateFightModal } from '../../components';
+import { FightDisplayCard, RateFightModal, PredictionModal } from '../../components';
 import { useScreenTracking } from '../../services/analytics';
 
 // Helper function to extract user data from fight API response
@@ -71,6 +71,7 @@ export default function FightsScreen() {
 
   const [selectedFight, setSelectedFight] = useState<any | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [processedFightId, setProcessedFightId] = useState<string | null>(null);
 
   const colorScheme = useColorScheme();
@@ -161,21 +162,39 @@ export default function FightsScreen() {
     }
   };
 
+  const openPredictionModal = (fight: any) => {
+    console.log('Opening prediction modal for fight:', fight.id);
+    setSelectedFight(fight);
+    setShowPredictionModal(true);
+  };
+
+  const handleFightPress = (fight: any) => {
+    // Determine which modal to open based on fight status
+    if (fight.hasStarted || fight.isComplete) {
+      // For ongoing or completed fights, open rating modal
+      openRatingModal(fight);
+    } else {
+      // For upcoming fights, open prediction modal
+      openPredictionModal(fight);
+    }
+  };
+
   // Handle automatic modal opening when fightId is passed as parameter
   useEffect(() => {
-    if (fightId && fightsData?.fights && !showRatingModal && processedFightId !== fightId) {
+    if (fightId && fightsData?.fights && !showRatingModal && !showPredictionModal && processedFightId !== fightId) {
       const fight = fightsData.fights.find(f => f.id === fightId);
       if (fight) {
         console.log('Auto-opening modal for fight:', fightId);
         setProcessedFightId(fightId);
-        openRatingModal(fight);
+        handleFightPress(fight);
       }
     }
-  }, [fightId, fightsData?.fights, showRatingModal, processedFightId]);
+  }, [fightId, fightsData?.fights, showRatingModal, showPredictionModal, processedFightId]);
 
   const closeModal = () => {
     setSelectedFight(null);
     setShowRatingModal(false);
+    setShowPredictionModal(false);
     setProcessedFightId(null);
 
     // Clear the fightId parameter from URL
@@ -187,7 +206,7 @@ export default function FightsScreen() {
   const renderFightCard = ({ item: fight }: { item: ApiFight }) => (
     <FightDisplayCard
       fight={fight}
-      onPress={openRatingModal}
+      onPress={handleFightPress}
     />
   );
 
@@ -244,6 +263,17 @@ export default function FightsScreen() {
         fight={selectedFight}
         onClose={closeModal}
         queryKey={['fights', user?.id]}
+      />
+
+      {/* Prediction Modal */}
+      <PredictionModal
+        visible={showPredictionModal}
+        fight={selectedFight}
+        onClose={closeModal}
+        onSuccess={() => {
+          // Invalidate fights query to refresh data
+          console.log('Prediction submitted successfully');
+        }}
       />
     </SafeAreaView>
   );

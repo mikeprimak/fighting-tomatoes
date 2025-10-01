@@ -88,9 +88,14 @@ export function FightCrewAppTabBar() {
   const tabs: TabConfig[] = [
     {
       name: 'index',
-      title: 'Events',
-      iconName: 'calendar',
+      title: 'Crews',
+      iconName: 'comments',
       headerTitle: '🥊 FightCrewApp'
+    },
+    {
+      name: 'events',
+      title: 'Events',
+      iconName: 'calendar'
     },
     {
       name: 'fights',
@@ -101,11 +106,6 @@ export function FightCrewAppTabBar() {
       name: 'fighters',
       title: 'Fighters',
       iconName: 'users'
-    },
-    {
-      name: 'crews',
-      title: 'Crews',
-      iconName: 'comments'
     },
     {
       name: 'profile',

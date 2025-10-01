@@ -31,10 +31,34 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('Logout button pressed - calling logout function');
               await logout();
+              console.log('Logout completed successfully');
             } catch (error) {
               console.error('Logout error:', error);
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
+              Alert.alert(
+                'Error',
+                'Failed to sign out. Force logout?',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Force Logout',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        // Force clear all storage
+                        const AsyncStorage = await import('@react-native-async-storage/async-storage');
+                        await AsyncStorage.default.clear();
+                        // Force navigation
+                        const { router } = await import('expo-router');
+                        router.replace('/(auth)/login');
+                      } catch (e) {
+                        console.error('Force logout error:', e);
+                      }
+                    },
+                  },
+                ]
+              );
             }
           },
         },

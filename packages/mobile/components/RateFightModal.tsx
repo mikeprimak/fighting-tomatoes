@@ -50,7 +50,7 @@ interface RateFightModalProps {
   onClose: () => void;
   queryKey?: string[];
   crewId?: string; // For sending crew messages
-  onSuccess?: (type: 'rating' | 'review' | 'tags' | 'remove') => void;
+  onSuccess?: (type: 'rating' | 'review' | 'tags' | 'remove', data?: { fightId?: string; rating?: number | null }) => void;
 }
 
 // Comprehensive fight descriptors organized by rating tiers
@@ -265,6 +265,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
   // Animation state for rolling numbers
   const [displayNumber, setDisplayNumber] = useState(0);
   const wheelAnimation = useRef(new Animated.Value(1200)).current;
+  const starColorAnimation = useRef(new Animated.Value(0)).current;
 
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -328,6 +329,14 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
 
     setRating(finalRating);
     animateToNumber(finalRating);
+
+    // Animate star color transition
+    Animated.timing(starColorAnimation, {
+      toValue: finalRating > 0 ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+
     // Trigger tag re-randomization when rating changes
     setTagRandomSeed(prev => prev + 1);
   };
@@ -339,6 +348,9 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
 
       // Reset random seed for fresh tag selection
       setTagRandomSeed(Math.floor(Math.random() * 1000));
+
+      // Reset star color animation
+      starColorAnimation.setValue(0);
 
       // Use API data if available, otherwise use passed fight data
       const fightData = fightWithUserData?.fight || fight;
@@ -403,9 +415,13 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
         const wheelPosition = (10 - currentRating) * 120;
         wheelAnimation.setValue(wheelPosition);
         setDisplayNumber(currentRating);
+        // Set star color to primary for existing rating
+        starColorAnimation.setValue(1);
       } else {
         wheelAnimation.setValue(1200);
         setDisplayNumber(0);
+        // Set star color to grey if no rating
+        starColorAnimation.setValue(0);
       }
 
       console.log('🎯 Modal initialized with:', {
@@ -427,9 +443,9 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
       queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: ['fight', fight?.id, 'withUserData'] });
 
-      onSuccess?.('rating');
+      // Pass the updated rating to parent for animation (use current form state)
+      onSuccess?.('rating', { fightId: fight?.id, rating: rating });
       closeModal();
-      Alert.alert('Success', 'Data saved successfully!');
     },
     onError: (error: any) => {
       console.error('Update error:', error);
@@ -438,14 +454,20 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
   });
 
   const closeModal = () => {
-    setRating(0);
-    setComment('');
-    setSelectedTags([]);
-    setTagRandomSeed(0);
-    setDisplayNumber(0);
-    setOriginalData({ rating: 0, comment: '', tags: [], hasAnyData: false });
-    wheelAnimation.setValue(1200);
+    // Immediately trigger modal close
     onClose();
+
+    // Delay state reset until after modal fade animation (typically 300ms)
+    setTimeout(() => {
+      setRating(0);
+      setComment('');
+      setSelectedTags([]);
+      setTagRandomSeed(0);
+      setDisplayNumber(0);
+      setOriginalData({ rating: 0, comment: '', tags: [], hasAnyData: false });
+      wheelAnimation.setValue(1200);
+      starColorAnimation.setValue(0);
+    }, 350);
   };
 
   const handleSave = () => {
@@ -507,17 +529,20 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
       statusBarTranslucent={true}
       onRequestClose={closeModal}
     >
-      <TouchableOpacity
-        style={styles.modalOverlay}
-        activeOpacity={1}
-        onPress={closeModal}
-      >
+      <View style={styles.modalOverlay}>
         <TouchableOpacity
-          style={[styles.modalContainer, { backgroundColor: colors.background }]}
+          style={styles.modalOverlayTouchable}
           activeOpacity={1}
-          onPress={(e) => e.stopPropagation()}
-        >
-          <ScrollView contentContainerStyle={styles.modalContent}>
+          onPress={closeModal}
+        />
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <ScrollView
+            contentContainerStyle={styles.modalContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={true}
+            nestedScrollEnabled={true}
+          >
           <View style={styles.modalHeader}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Rate Fight</Text>
             <TouchableOpacity
@@ -564,7 +589,21 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
             {/* Large display star with wheel animation */}
             <View style={styles.displayStarContainer}>
               <View style={styles.animatedStarContainer}>
-                <Text style={[styles.displayStar, { color: '#666666' }]}>★</Text>
+                <View style={{ position: 'relative' }}>
+                  {/* Grey star (base layer) */}
+                  <Text style={[styles.displayStar, { color: '#666666' }]}>★</Text>
+                  {/* Primary color star (overlay) */}
+                  <Animated.View
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      opacity: starColorAnimation
+                    }}
+                  >
+                    <Text style={[styles.displayStar, { color: colors.primary }]}>★</Text>
+                  </Animated.View>
+                </View>
                 <View style={styles.wheelContainer}>
                   <Animated.View style={[
                     styles.wheelNumbers,
@@ -683,8 +722,8 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
             </TouchableOpacity>
           </View>
         </ScrollView>
-        </TouchableOpacity>
-      </TouchableOpacity>
+        </View>
+      </View>
     </Modal>
   );
 }
@@ -695,6 +734,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  modalOverlayTouchable: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   modalContainer: {
     width: '95%',
@@ -807,10 +853,15 @@ const styles = StyleSheet.create({
   wheelNumber: {
     fontSize: 52,
     fontWeight: 'bold',
-    height: 120, // Increased from 60 to 120 for more spacing
+    height: 120,
     textAlign: 'center',
     textAlignVertical: 'center',
     lineHeight: 120,
+    color: 'white',
+    textShadowColor: 'black',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 24,
+    minWidth: 120,
   },
   fadeOverlay: {
     position: 'absolute',

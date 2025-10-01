@@ -52,7 +52,12 @@
       "Bash(pnpm db:migrate:*)",
       "Bash(psql:*)",
       "Bash(pnpm type-check:*)",
-      "Bash(pnpm lint:*)"
+      "Bash(pnpm lint:*)",
+      "Bash(npm view:*)",
+      "WebSearch",
+      "Bash(npm install:*)",
+      "Bash(tasklist)",
+      "WebFetch(domain:api.sportsdata.io)"
     ],
     "deny": [],
     "ask": []
