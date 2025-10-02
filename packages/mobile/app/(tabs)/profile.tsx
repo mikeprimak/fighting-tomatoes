@@ -5,64 +5,55 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../store/AuthContext';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import { CustomAlert } from '../../components/CustomAlert';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { alertState, showConfirm, showError, hideAlert } = useCustomAlert();
 
   const handleLogout = () => {
-    Alert.alert(
-      'Sign Out',
+    showConfirm(
       'Are you sure you want to sign out?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('Logout button pressed - calling logout function');
-              await logout();
-              console.log('Logout completed successfully');
-            } catch (error) {
-              console.error('Logout error:', error);
-              Alert.alert(
-                'Error',
-                'Failed to sign out. Force logout?',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Force Logout',
-                    style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        // Force clear all storage
-                        const AsyncStorage = await import('@react-native-async-storage/async-storage');
-                        await AsyncStorage.default.clear();
-                        // Force navigation
-                        const { router } = await import('expo-router');
-                        router.replace('/(auth)/login');
-                      } catch (e) {
-                        console.error('Force logout error:', e);
-                      }
-                    },
-                  },
-                ]
-              );
-            }
-          },
-        },
-      ]
+      async () => {
+        try {
+          console.log('Logout button pressed - calling logout function');
+          await logout();
+          console.log('Logout completed successfully');
+        } catch (error) {
+          console.error('Logout error:', error);
+          showConfirm(
+            'Failed to sign out. Force logout?',
+            async () => {
+              try {
+                // Force clear all storage
+                const AsyncStorage = await import('@react-native-async-storage/async-storage');
+                await AsyncStorage.default.clear();
+                // Force navigation
+                const { router } = await import('expo-router');
+                router.replace('/(auth)/login');
+              } catch (e) {
+                console.error('Force logout error:', e);
+              }
+            },
+            'Error',
+            'Force Logout',
+            'Cancel',
+            true
+          );
+        }
+      },
+      'Sign Out',
+      'Sign Out',
+      'Cancel',
+      true
     );
   };
 
@@ -167,14 +158,14 @@ export default function ProfileScreen() {
         <View style={styles.actionsContainer}>
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => Alert.alert('Coming Soon', 'Profile editing will be available in a future update')}
+            onPress={() => showError('Profile editing will be available in a future update', 'Coming Soon')}
           >
             <Text style={[styles.actionButtonText, { color: colors.text }]}>Edit Profile</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => Alert.alert('Coming Soon', 'Settings will be available in a future update')}
+            onPress={() => showError('Settings will be available in a future update', 'Coming Soon')}
           >
             <Text style={[styles.actionButtonText, { color: colors.text }]}>Settings</Text>
           </TouchableOpacity>
@@ -187,6 +178,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <CustomAlert {...alertState} onDismiss={hideAlert} />
     </SafeAreaView>
   );
 }

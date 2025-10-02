@@ -25,7 +25,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 ## Key Files
 
 **Backend**: `src/app.ts`, `src/server.ts` (PORT env), `prisma/schema.prisma`, `src/routes/fights.ts` (primary CRUD), `src/routes/auth.ts`, `src/middleware/`
-**Mobile**: `app/_layout.tsx`, `app/(tabs)/_layout.tsx`, `app/(tabs)/index|fights|fighters|profile.tsx`, `app/event/[id].tsx`, `app/fighter/[id].tsx`, `app/(auth)/login|register.tsx`, `store/AuthContext.tsx`, `services/api.ts`, `components/FightDisplayCard|FighterCard|EventCard|RateFightModal|TabBar.tsx`, `constants/Colors.ts`
+**Mobile**: `app/_layout.tsx`, `app/(tabs)/_layout.tsx`, `app/(tabs)/index|fights|fighters|profile.tsx`, `app/event/[id].tsx`, `app/fighter/[id].tsx`, `app/(auth)/login|register.tsx`, `app/crew/[id].tsx`, `app/crew/info/[id].tsx`, `store/AuthContext.tsx`, `services/api.ts`, `components/FightDisplayCard|FighterCard|EventCard|RateFightModal|TabBar|CustomAlert.tsx`, `hooks/useCustomAlert.tsx`, `constants/Colors.ts`, `CUSTOM_ALERTS.md`
 **Shared**: `src/types/`, `src/utils/`
 
 ## API Endpoints
@@ -35,6 +35,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 **Fights** (`/api/fights/`): `GET /fights` (params: page, limit, eventId, fighterId, weightClass, isTitle, hasStarted, isComplete, minRating, sortBy, sortOrder, **includeUserData**), `GET /fights/:id|search`, `POST /fights/:id/rate|review|tags`, `PUT /fights/:id/review`, `DELETE /fights/:id/rate|rating`, `GET /fights/:id/tags`
 **Fighters** (`/api/fighters/`): `GET /fighters` (page, limit=20), `GET /fighters/:id`
 **Events** (`/api/events/`): `GET /events` (page, limit), `GET /events/:id`
+**Crews** (`/api/crews/`): `GET /crews`, `POST /crews|/crews/join`, `GET /crews/:id|/crews/:id/messages`, `POST /crews/:id/messages`, `DELETE /crews/:id|/crews/:id/messages/:messageId|/crews/:crewId/members/:memberId` (owner only)
 **Other**: `GET /health|/api/status|/api/test`
 **Response**: Success `{ data, pagination? }`, Error `{ error, code, details? }`
 **Rate Limit**: Auth 5/15min, General 10/15min, headers: X-RateLimit-*
@@ -68,6 +69,21 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 **API**: `includeUserData` param, platform-aware config (localhost vs 10.0.0.53), CORS mobile access, schema alignment
 **Mobile Testing**: Expo Go on physical device, network IP config, Metro bundler fixes
 **UFC.com Scraper**: Puppeteer-based scraper extracts fight cards with fighter names, ranks, odds, countries, weight classes, title flags, card sections (Main/Prelims/Early), and start times
+
+**Crew Management** (Latest):
+- **Member Removal**: Owner can long-press members, trash icon appears, custom modal with "Remove"/"Remove and Block"/"Cancel" options
+- **Delete Crew**: Owner-only red danger zone, custom confirmation modal, cascade deletion (predictions→reactions→messages→memberships→crew), success modal with auto-navigate
+- **Backend**: `DELETE /crews/:crewId/members/:memberId` with block flag, `DELETE /crews/:crewId`, proper `totalMembers` decrement
+- **Cache Management**: Reduced crews query staleTime to 5s, `refetchOnMount: 'always'`, removed users see crews disappear on tab switch
+- **Join Success Modal**: Custom styled modal replaces Alert.alert when joining crew
+
+**Custom Alert System** (Latest):
+- **Reusable Components**: `CustomAlert.tsx` (5 types: success/error/info/warning/confirm), `useCustomAlert.tsx` hook
+- **App-wide Migration**: Replaced all 30 `Alert.alert` usages across 7 files with styled modals matching app theme
+- **Auto-dismiss**: Success (1.5s), error (2.5s), info (2s); confirmations require user action
+- **Features**: Theme-aware, dark/light mode, icons (checkmark/X/info/warning/question), destructive actions (red text)
+- **Usage**: `showSuccess()`, `showError()`, `showInfo()`, `showConfirm()` - see `packages/mobile/CUSTOM_ALERTS.md`
+- **Files**: `components/CustomAlert.tsx`, `hooks/useCustomAlert.tsx`, `CUSTOM_ALERTS.md` (guide)
 
 ## Live Event System (In Progress)
 

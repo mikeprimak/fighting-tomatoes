@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
-  Alert,
   Keyboard,
   KeyboardEvent,
   Dimensions,
@@ -18,6 +17,7 @@ import {
   ScrollView,
   Animated,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router, Stack } from 'expo-router';
@@ -28,6 +28,9 @@ import { FontAwesome } from '@expo/vector-icons';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
 import { PredictionModal, RateFightModal, RoundVotingSlideup, Fight, FightDisplayCardMinimal } from '../../components';
+import { GifPickerModal } from '../../components/GifPickerModal';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import { CustomAlert } from '../../components/CustomAlert';
 
 interface Message {
   id: string;
@@ -97,6 +100,7 @@ export default function CrewChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const textInputRef = useRef<TextInput>(null);
   const { user } = useAuth();
+  const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
 
 
   const [message, setMessage] = useState('');
@@ -105,6 +109,7 @@ export default function CrewChatScreen() {
   const [showFightRatingModal, setShowFightRatingModal] = useState(false);
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [showRoundVoting, setShowRoundVoting] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
   const [currentFight, setCurrentFight] = useState<Fight | null>(null);
   const [currentRound, setCurrentRound] = useState(1);
   const [showReactionMenu, setShowReactionMenu] = useState(false);
@@ -114,6 +119,10 @@ export default function CrewChatScreen() {
   const [showReactionUsers, setShowReactionUsers] = useState(false);
   const [selectedReactionData, setSelectedReactionData] = useState<any[]>([]);
   const [showFightCard, setShowFightCard] = useState(false);
+  const [selectedMessageForDeletion, setSelectedMessageForDeletion] = useState<string | null>(null);
+  const [showCrewMenu, setShowCrewMenu] = useState(false);
+  const [showMuteDialog, setShowMuteDialog] = useState(false);
+  const [showCodeCopiedToast, setShowCodeCopiedToast] = useState(false);
   const fightCardSlideAnim = useRef(new Animated.Value(-1000)).current;
   const [recentlyRatedFightId, setRecentlyRatedFightId] = useState<string | null>(null);
   const [recentlyPredictedFightId, setRecentlyPredictedFightId] = useState<string | null>(null);
@@ -504,14 +513,14 @@ export default function CrewChatScreen() {
       '#4ECDC4', // Teal
       '#45B7D1', // Blue
       '#96CEB4', // Green
-      '#FFEAA7', // Yellow
       '#DDA0DD', // Plum
       '#98D8C8', // Mint
-      '#F7DC6F', // Gold
       '#BB8FCE', // Purple
       '#85C1E9', // Light Blue
-      '#F8C471', // Orange
+      '#F08080', // Light Coral
       '#82E0AA', // Light Green
+      '#87CEEB', // Sky Blue
+      '#DDA0DD', // Plum
     ];
 
     // Use user ID to generate consistent color index
@@ -535,7 +544,19 @@ export default function CrewChatScreen() {
     queryKey: ['crew', id],
     queryFn: () => apiService.getCrew(id!),
     enabled: !!id,
+    retry: false, // Don't retry if crew not found
   });
+
+  // Handle crew not found error
+  useEffect(() => {
+    if (crewError) {
+      const error = crewError as any;
+      if (error.status === 404 || error.code === 'CREW_NOT_FOUND') {
+        // Crew was deleted or doesn't exist, navigate back
+        router.replace('/(tabs)/profile');
+      }
+    }
+  }, [crewError]);
 
   // Get crew messages
   const {
@@ -593,7 +614,20 @@ export default function CrewChatScreen() {
       queryClient.invalidateQueries({ queryKey: ['crews'] });
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.error || 'Failed to send message');
+      showError(error.error || 'Failed to send message', 'Error');
+    },
+  });
+
+  const deleteMessageMutation = useMutation({
+    mutationFn: (messageId: string) => {
+      return apiService.deleteCrewMessage(id!, messageId);
+    },
+    onSuccess: () => {
+      setSelectedMessageForDeletion(null);
+      queryClient.invalidateQueries({ queryKey: ['crewMessages', id] });
+    },
+    onError: (error: any) => {
+      showError(error.error || 'Failed to delete message', 'Error');
     },
   });
 
@@ -609,27 +643,23 @@ export default function CrewChatScreen() {
     }
   };
 
+  const handleSelectGif = (gifUrl: string) => {
+    if (!sendMessageMutation.isPending) {
+      // Send GIF URL as message content
+      sendMessageMutation.mutate({ content: gifUrl });
+    }
+  };
+
   const handleShowInvite = () => {
     setShowInviteModal(true);
   };
 
-  const handleCopyInviteCode = () => {
+  const handleCopyInviteCode = async () => {
     if (crew?.inviteCode) {
-      // For solo testing, show alert with code
-      Alert.alert(
-        'Invite Code Copied!',
-        `Code: ${crew.inviteCode}\n\nFor testing: Go to Crews tab > Join > Enter this code`,
-        [
-          {
-            text: 'Share Code',
-            onPress: () => handleShareInvite(),
-          },
-          {
-            text: 'OK',
-            style: 'default',
-          },
-        ]
-      );
+      await Clipboard.setStringAsync(crew.inviteCode);
+      setShowInviteModal(false);
+      setShowCodeCopiedToast(true);
+      setTimeout(() => setShowCodeCopiedToast(false), 2000);
     }
   };
 
@@ -706,7 +736,14 @@ export default function CrewChatScreen() {
   };
 
   // Handle long press on message to show reaction menu
-  const handleMessageLongPress = (messageId: string, event: any) => {
+  const handleMessageLongPress = (messageId: string, event: any, isCurrentUser: boolean) => {
+    // If it's the current user's message, show delete option
+    if (isCurrentUser) {
+      setSelectedMessageForDeletion(messageId);
+      return;
+    }
+
+    // Otherwise show reaction menu
     const { pageX, pageY } = event.nativeEvent;
     const screenWidth = Dimensions.get('window').width;
     const screenHeight = Dimensions.get('window').height;
@@ -970,7 +1007,7 @@ export default function CrewChatScreen() {
         ]}
       >
         <TouchableOpacity
-          onLongPress={(event) => handleMessageLongPress(item.id, event)}
+          onLongPress={(event) => handleMessageLongPress(item.id, event, isCurrentUser)}
           delayLongPress={500}
           activeOpacity={0.8}
         >
@@ -978,7 +1015,10 @@ export default function CrewChatScreen() {
             styles.messageContainer,
             isCurrentUser ? [
               styles.currentUserMessage,
-              { backgroundColor: '#5A7A9A' }
+              {
+                backgroundColor: selectedMessageForDeletion === item.id ? colors.danger + '20' : colors.card,
+                borderRightColor: colors.primary
+              }
             ] : [
               styles.otherUserMessage,
               { borderLeftColor: userColor, backgroundColor: colors.card }
@@ -995,14 +1035,34 @@ export default function CrewChatScreen() {
                 {item.user.name}
               </Text>
             )}
-            <Text style={[
-              styles.messageContent,
-              {
-                color: isCurrentUser ? 'white' : colors.text
-              }
-            ]}>
-              {item.content}
-            </Text>
+            {/* Check if message is deleted */}
+            {item.messageType === 'DELETED' ? (
+              <Text style={[
+                styles.messageContent,
+                {
+                  color: colors.textSecondary,
+                  fontStyle: 'italic'
+                }
+              ]}>
+                {item.content}
+              </Text>
+            ) : /* Check if content is a GIF URL */
+            item.content.match(/^https?:\/\/.*\.gif$/i) || item.content.includes('giphy.com') || item.content.includes('media.tenor.com') ? (
+              <Image
+                source={{ uri: item.content }}
+                style={styles.gifMessage}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={[
+                styles.messageContent,
+                {
+                  color: isCurrentUser ? 'white' : colors.text
+                }
+              ]}>
+                {item.content}
+              </Text>
+            )}
             {item.fight && (
               <View style={[
                 styles.fightReference,
@@ -1102,6 +1162,8 @@ export default function CrewChatScreen() {
 
   const crew = crewData.crew;
   const messages = messagesData?.messages || [];
+  // Reverse messages for inverted FlatList - newest messages should be at index 0
+  const reversedMessages = [...messages].reverse();
 
   return (
     <>
@@ -1125,18 +1187,45 @@ export default function CrewChatScreen() {
           </Text>
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity onPress={simulatePreFight} style={styles.testButton}>
-            <FontAwesome name="trophy" size={16} color={colors.tint} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={simulateRoundEnd} style={styles.testButton}>
-            <FontAwesome name="clock-o" size={16} color={colors.tint} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={simulateFightEnd} style={styles.testButton}>
-            <FontAwesome name="star" size={16} color={colors.tint} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleShowInvite}>
-            <FontAwesome name="share" size={20} color={colors.text} />
-          </TouchableOpacity>
+          {selectedMessageForDeletion ? (
+            <TouchableOpacity
+              onPress={() => {
+                const messageIdToDelete = selectedMessageForDeletion;
+                setSelectedMessageForDeletion(null);
+                if (messageIdToDelete) {
+                  deleteMessageMutation.mutate(messageIdToDelete);
+                }
+              }}
+              style={{
+                padding: 12,
+                margin: -12,
+                marginRight: -5,
+              }}
+            >
+              <FontAwesome name="trash" size={20} color={colors.danger} />
+            </TouchableOpacity>
+          ) : (
+            <>
+              <TouchableOpacity onPress={simulatePreFight} style={styles.testButton}>
+                <FontAwesome name="trophy" size={16} color={colors.tint} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={simulateRoundEnd} style={styles.testButton}>
+                <FontAwesome name="clock-o" size={16} color={colors.tint} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={simulateFightEnd} style={styles.testButton}>
+                <FontAwesome name="star" size={16} color={colors.tint} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setShowCrewMenu(true)}
+                style={{ padding: 8, margin: -8, marginRight: 8 }}
+              >
+                <FontAwesome name="ellipsis-v" size={20} color={colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleShowInvite}>
+                <FontAwesome name="share" size={20} color={colors.text} />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </View>
 
@@ -1153,7 +1242,13 @@ export default function CrewChatScreen() {
         ]}>
           <TouchableOpacity
             style={[styles.statusBar, showFightCard && { height: 120 }]}
-            onPress={handleStatusBarTap}
+            onPress={() => {
+              if (selectedMessageForDeletion) {
+                setSelectedMessageForDeletion(null);
+              } else {
+                handleStatusBarTap();
+              }
+            }}
             activeOpacity={0.8}
           >
             <View style={styles.statusSection}>
@@ -1211,7 +1306,7 @@ export default function CrewChatScreen() {
             </View>
             <FontAwesome
               name={showFightCard ? "chevron-up" : "chevron-down"}
-              size={12}
+              size={16}
               color={colors.textSecondary}
               style={styles.statusChevron}
             />
@@ -1296,12 +1391,20 @@ export default function CrewChatScreen() {
           </Animated.View>
         ) : (
           /* Messages Container */
-          <View style={[styles.chatContainer, {
-            paddingBottom: keyboardHeight > 0 ? keyboardHeight + 93 : 70
-          }]}>
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => {
+              if (selectedMessageForDeletion) {
+                setSelectedMessageForDeletion(null);
+              }
+            }}
+            style={[styles.chatContainer, {
+              paddingBottom: keyboardHeight > 0 ? keyboardHeight + 93 : 70
+            }]}
+          >
             <FlatList
               ref={flatListRef}
-              data={messages}
+              data={reversedMessages}
               renderItem={renderMessage}
               keyExtractor={(item) => item.id}
               contentContainerStyle={messages.length === 0 ? styles.emptyListContainer : styles.messagesContainer}
@@ -1311,7 +1414,7 @@ export default function CrewChatScreen() {
               keyboardDismissMode="interactive"
               inverted
             />
-          </View>
+          </TouchableOpacity>
         )}
       </View>
 
@@ -1346,6 +1449,16 @@ export default function CrewChatScreen() {
         left: 0,
         right: 0,
       }]}>
+        <TouchableOpacity
+          style={styles.gifButton}
+          onPress={() => setShowGifPicker(true)}
+        >
+          <FontAwesome
+            name="file-image-o"
+            size={20}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
         <TextInput
           ref={textInputRef}
           style={[styles.textInput, {
@@ -1384,6 +1497,7 @@ export default function CrewChatScreen() {
         visible={showInviteModal}
         animationType="slide"
         transparent={true}
+        statusBarTranslucent={true}
         onRequestClose={() => setShowInviteModal(false)}
       >
         <View style={styles.modalOverlay}>
@@ -1587,6 +1701,138 @@ export default function CrewChatScreen() {
         </Modal>
       )}
 
+      {/* Mute Chat Dialog */}
+      <Modal
+        visible={showMuteDialog}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowMuteDialog(false)}
+      >
+        <TouchableOpacity
+          style={styles.muteDialogOverlay}
+          activeOpacity={1}
+          onPress={() => setShowMuteDialog(false)}
+        >
+          <TouchableOpacity
+            style={[styles.muteDialogContainer, { backgroundColor: colors.card }]}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={[styles.muteDialogTitle, { color: colors.text }]}>Mute Chat</Text>
+            <Text style={[styles.muteDialogMessage, { color: colors.textSecondary }]}>
+              How long would you like to mute this chat?
+            </Text>
+
+            <View style={styles.muteDialogButtons}>
+              <TouchableOpacity
+                style={[styles.muteDialogButton, { borderTopColor: colors.border }]}
+                onPress={() => {
+                  setShowMuteDialog(false);
+                  // TODO: Implement 8-hour mute functionality
+                  showSuccess('Chat muted for 8 hours', 'Muted');
+                }}
+              >
+                <Text style={[styles.muteDialogButtonText, { color: colors.tint }]}>
+                  Mute for 8 hours
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.muteDialogButton, { borderTopColor: colors.border }]}
+                onPress={() => {
+                  setShowMuteDialog(false);
+                  // TODO: Implement permanent mute functionality
+                  showSuccess('Chat muted forever', 'Muted');
+                }}
+              >
+                <Text style={[styles.muteDialogButtonText, { color: colors.tint }]}>
+                  Mute Forever
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.muteDialogButton, { borderTopColor: colors.border }]}
+                onPress={() => setShowMuteDialog(false)}
+              >
+                <Text style={[styles.muteDialogButtonText, { color: colors.textSecondary, fontWeight: '600' }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Crew Menu Modal */}
+      <Modal
+        visible={showCrewMenu}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowCrewMenu(false)}
+      >
+        <TouchableOpacity
+          style={styles.crewMenuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowCrewMenu(false)}
+        >
+          <View style={[styles.crewMenuContainer, { backgroundColor: colors.card }]}>
+            <TouchableOpacity
+              style={[styles.crewMenuItem, { borderBottomColor: colors.border }]}
+              onPress={() => {
+                setShowCrewMenu(false);
+                router.push(`/crew/info/${id}`);
+              }}
+            >
+              <FontAwesome name="info-circle" size={20} color={colors.text} />
+              <Text style={[styles.crewMenuItemText, { color: colors.text }]}>Crew Info</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.crewMenuItem, { borderBottomColor: colors.border }]}
+              onPress={() => {
+                setShowCrewMenu(false);
+                setShowMuteDialog(true);
+              }}
+            >
+              <FontAwesome name="bell-slash" size={20} color={colors.text} />
+              <Text style={[styles.crewMenuItemText, { color: colors.text }]}>Mute Chat</Text>
+            </TouchableOpacity>
+
+            {crew.userRole !== 'OWNER' && (
+              <TouchableOpacity
+                style={styles.crewMenuItem}
+                onPress={() => {
+                  setShowCrewMenu(false);
+                  showError('Coming soon...', 'Leave Crew');
+                }}
+              >
+                <FontAwesome name="sign-out" size={20} color={colors.danger} />
+                <Text style={[styles.crewMenuItemText, { color: colors.danger }]}>Leave Crew</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* GIF Picker Modal */}
+      <GifPickerModal
+        visible={showGifPicker}
+        onClose={() => setShowGifPicker(false)}
+        onSelectGif={handleSelectGif}
+        colorScheme={colorScheme || 'dark'}
+      />
+
+      {/* Code Copied Toast */}
+      {showCodeCopiedToast && (
+        <View style={styles.toastContainer}>
+          <View style={[styles.toast, { backgroundColor: colors.card }]}>
+            <FontAwesome name="check-circle" size={20} color="#10b981" />
+            <Text style={[styles.toastText, { color: colors.text }]}>Code Copied!</Text>
+          </View>
+        </View>
+      )}
+
+      <CustomAlert {...alertState} onDismiss={hideAlert} />
     </>
   );
 }
@@ -1669,6 +1915,7 @@ const styles = StyleSheet.create({
   },
   currentUserMessage: {
     borderTopRightRadius: 4,
+    borderRightWidth: 3,
     marginRight: 4,
     alignSelf: 'stretch',
   },
@@ -1699,6 +1946,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
   },
+  gifMessage: {
+    width: 200,
+    height: 200,
+    borderRadius: 8,
+    marginTop: 4,
+  },
   fightReference: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1717,6 +1970,11 @@ const styles = StyleSheet.create({
     padding: 12,
     borderTopWidth: 1,
     gap: 8,
+  },
+  gifButton: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   textInput: {
     flex: 1,
@@ -1772,7 +2030,11 @@ const styles = StyleSheet.create({
   },
   // Invite Modal Styles
   modalOverlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -2090,8 +2352,8 @@ const styles = StyleSheet.create({
   },
   statusChevron: {
     position: 'absolute',
-    right: 12,
-    top: 43, // Moved down 8px from 35
+    right: 18,
+    top: 33,
   },
   // Reaction Styles
   reactionsContainer: {
@@ -2275,5 +2537,102 @@ const styles = StyleSheet.create({
   },
   fightDetails: {
     fontSize: 14,
+  },
+  crewMenuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: Platform.OS === 'ios' ? 100 : 80,
+    paddingRight: 16,
+  },
+  crewMenuContainer: {
+    borderRadius: 8,
+    minWidth: 200,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  crewMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 12,
+    borderBottomWidth: 1,
+  },
+  crewMenuItemText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  muteDialogOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  muteDialogContainer: {
+    borderRadius: 12,
+    width: '100%',
+    maxWidth: 320,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  muteDialogTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    paddingTop: 20,
+    paddingHorizontal: 20,
+  },
+  muteDialogMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingBottom: 20,
+  },
+  muteDialogButtons: {
+    borderTopWidth: 0,
+  },
+  muteDialogButton: {
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderTopWidth: 1,
+  },
+  muteDialogButtonText: {
+    fontSize: 16,
+  },
+  toastContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 100 : 80,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  toast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  toastText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

@@ -314,7 +314,8 @@ export async function crewRoutes(fastify: FastifyInstance) {
           allowReactions: crew.allowReactions,
           userRole: membership.role,
           members: crew.members.map(member => ({
-            id: member.user.id,
+            id: member.id, // membershipId for removal
+            userId: member.user.id,
             name: member.user.displayName || `${member.user.firstName} ${member.user.lastName}`,
             role: member.role,
             joinedAt: member.joinedAt,
@@ -527,6 +528,59 @@ export async function crewRoutes(fastify: FastifyInstance) {
       });
     } catch (error: any) {
       request.log.error('Message send error:', error);
+      return reply.status(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Delete a message
+  fastify.delete('/crews/:crewId/messages/:messageId', {
+    preValidation: [fastify.authenticate],
+  }, async (request: any, reply: any) => {
+    const userId = request.user!.id;
+    const { crewId, messageId } = request.params as { crewId: string; messageId: string };
+
+    try {
+      // Verify the message exists and belongs to the user
+      const message = await fastify.prisma.crewMessage.findUnique({
+        where: { id: messageId },
+      });
+
+      if (!message) {
+        return reply.status(404).send({
+          error: 'Message not found',
+          code: 'MESSAGE_NOT_FOUND',
+        });
+      }
+
+      if (message.userId !== userId) {
+        return reply.status(403).send({
+          error: 'You can only delete your own messages',
+          code: 'FORBIDDEN',
+        });
+      }
+
+      if (message.crewId !== crewId) {
+        return reply.status(400).send({
+          error: 'Message does not belong to this crew',
+          code: 'INVALID_REQUEST',
+        });
+      }
+
+      // Mark message as deleted by updating content
+      await fastify.prisma.crewMessage.update({
+        where: { id: messageId },
+        data: {
+          content: '[deleted]',
+          messageType: 'DELETED',
+        },
+      });
+
+      return reply.status(200).send({ success: true });
+    } catch (error: any) {
+      request.log.error('Message delete error:', error);
       return reply.status(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -828,4 +882,184 @@ export async function crewRoutes(fastify: FastifyInstance) {
       });
     }
   });
-}
+
+  // Delete a crew (Owner only)
+  fastify.delete('/crews/:crewId', {
+    preValidation: [fastify.authenticate],
+  }, async (request: any, reply: any) => {
+    const userId = request.user!.id;
+    const { crewId } = request.params;
+
+    try {
+      // Check if crew exists
+      const crew = await fastify.prisma.crew.findUnique({
+        where: { id: crewId },
+        include: {
+          members: {
+            where: { userId },
+          },
+        },
+      });
+
+      if (!crew) {
+        return reply.status(404).send({
+          error: 'Crew not found',
+          code: 'CREW_NOT_FOUND',
+        });
+      }
+
+      // Check if user is the owner
+      const membership = crew.members[0];
+      if (!membership || membership.role !== 'OWNER') {
+        return reply.status(403).send({
+          error: 'Only the crew owner can delete the crew',
+          code: 'FORBIDDEN',
+        });
+      }
+
+      // Delete all related data in the correct order (due to foreign key constraints)
+      // 1. Delete crew predictions
+      await fastify.prisma.crewPrediction.deleteMany({
+        where: { crewId },
+      });
+
+      // 2. Delete crew reactions
+      await fastify.prisma.crewReaction.deleteMany({
+        where: { crewId },
+      });
+
+      // 3. Delete crew messages
+      await fastify.prisma.crewMessage.deleteMany({
+        where: { crewId },
+      });
+
+      // 4. Delete crew memberships
+      await fastify.prisma.crewMember.deleteMany({
+        where: { crewId },
+      });
+
+      // 5. Finally delete the crew
+      await fastify.prisma.crew.delete({
+        where: { id: crewId },
+      });
+
+      return reply.status(200).send({
+        message: 'Crew deleted successfully',
+      });
+    } catch (error: any) {
+      request.log.error('Crew deletion error:', error);
+      return reply.status(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Remove a member from crew (Owner only)
+  fastify.delete('/crews/:crewId/members/:memberId', {
+    preValidation: [fastify.authenticate],
+  }, async (request: any, reply: any) => {
+    const userId = request.user!.id;
+    const { crewId, memberId } = request.params;
+    const { block } = request.body as { block: boolean };
+
+    try {
+      // Check if crew exists and user is owner
+      const crew = await fastify.prisma.crew.findUnique({
+        where: { id: crewId },
+        include: {
+          members: true,
+        },
+      });
+
+      if (!crew) {
+        return reply.status(404).send({
+          error: 'Crew not found',
+          code: 'CREW_NOT_FOUND',
+        });
+      }
+
+      // Check if requester is owner
+      const requesterMembership = crew.members.find(m => m.userId === userId);
+      if (!requesterMembership || requesterMembership.role !== 'OWNER') {
+        return reply.status(403).send({
+          error: 'Only the crew owner can remove members',
+          code: 'FORBIDDEN',
+        });
+      }
+
+      // Check if target member exists
+      const targetMembership = crew.members.find(m => m.id === memberId);
+      if (!targetMembership) {
+        return reply.status(404).send({
+          error: 'Member not found in this crew',
+          code: 'MEMBER_NOT_FOUND',
+        });
+      }
+
+      // Cannot remove owner
+      if (targetMembership.role === 'OWNER') {
+        return reply.status(403).send({
+          error: 'Cannot remove the crew owner',
+          code: 'FORBIDDEN',
+        });
+      }
+
+      // Delete member's data in correct order
+      // 1. Delete predictions
+      await fastify.prisma.crewPrediction.deleteMany({
+        where: {
+          crewId,
+          userId: targetMembership.userId,
+        },
+      });
+
+      // 2. Delete reactions
+      await fastify.prisma.crewReaction.deleteMany({
+        where: {
+          crewId,
+          userId: targetMembership.userId,
+        },
+      });
+
+      // 3. Mark messages as deleted
+      await fastify.prisma.crewMessage.updateMany({
+        where: {
+          crewId,
+          userId: targetMembership.userId,
+        },
+        data: {
+          content: '[deleted]',
+          messageType: 'DELETED',
+        },
+      });
+
+      // 4. Delete membership and update crew member count
+      await fastify.prisma.$transaction([
+        fastify.prisma.crewMember.delete({
+          where: { id: memberId },
+        }),
+        fastify.prisma.crew.update({
+          where: { id: crewId },
+          data: {
+            totalMembers: { decrement: 1 },
+          },
+        }),
+      ]);
+
+      // 5. If block is true, create a block record (optional future feature)
+      // TODO: Implement block functionality with a CrewBlock table
+
+      return reply.status(200).send({
+        message: block ? 'Member removed and blocked successfully' : 'Member removed successfully',
+        removedUserId: targetMembership.userId, // Return the removed user's ID so frontend can handle their cache
+      });
+    } catch (error: any) {
+      request.log.error('Remove member error:', error);
+      return reply.status(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+}// trigger restart

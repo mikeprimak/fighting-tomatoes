@@ -57,7 +57,8 @@
       "WebSearch",
       "Bash(npm install:*)",
       "Bash(tasklist)",
-      "WebFetch(domain:api.sportsdata.io)"
+      "WebFetch(domain:api.sportsdata.io)",
+      "Bash(pnpm list:*)"
     ],
     "deny": [],
     "ask": []

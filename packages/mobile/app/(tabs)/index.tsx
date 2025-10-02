@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   RefreshControl,
   Modal,
   TextInput,
@@ -19,6 +18,8 @@ import { Colors } from '../../constants/Colors';
 import { FontAwesome } from '@expo/vector-icons';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import { CustomAlert } from '../../components/CustomAlert';
 
 interface Crew {
   id: string;
@@ -40,10 +41,12 @@ export default function CrewsScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
+  const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
 
   const [refreshing, setRefreshing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showJoinSuccessModal, setShowJoinSuccessModal] = useState(false);
   const [crewName, setCrewName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
 
@@ -56,7 +59,8 @@ export default function CrewsScreen() {
     queryKey: ['crews'],
     queryFn: () => apiService.getCrews(),
     enabled: isAuthenticated,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 5 * 1000, // 5 seconds - refetch quickly to catch membership changes
+    refetchOnMount: 'always', // Always refetch when screen mounts
   });
 
   const onRefresh = async () => {
@@ -81,7 +85,7 @@ export default function CrewsScreen() {
       setShowCreateModal(false);
       setCrewName('');
     } else {
-      Alert.alert('Error', 'Please enter a crew name');
+      showError('Please enter a crew name', 'Error');
     }
   };
 
@@ -91,7 +95,7 @@ export default function CrewsScreen() {
       setShowJoinModal(false);
       setInviteCode('');
     } else {
-      Alert.alert('Error', 'Please enter a valid 6-character invite code');
+      showError('Please enter a valid 6-character invite code', 'Error');
     }
   };
 
@@ -100,10 +104,10 @@ export default function CrewsScreen() {
       apiService.createCrew({ name }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['crews'] });
-      Alert.alert('Success', 'Crew created successfully!');
+      showSuccess('Crew created successfully!', 'Success');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.error || error.message || 'Failed to create crew');
+      showError(error.error || error.message || 'Failed to create crew', 'Error');
     },
   });
 
@@ -111,11 +115,17 @@ export default function CrewsScreen() {
     mutationFn: (inviteCode: string) =>
       apiService.joinCrew(inviteCode),
     onSuccess: () => {
+      setShowJoinModal(false);
+      setInviteCode('');
+      setShowJoinSuccessModal(true);
       queryClient.invalidateQueries({ queryKey: ['crews'] });
-      Alert.alert('Success', 'Successfully joined crew!');
+      // Auto-dismiss after 1.5 seconds
+      setTimeout(() => {
+        setShowJoinSuccessModal(false);
+      }, 1500);
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.error || error.message || 'Failed to join crew');
+      showError(error.error || error.message || 'Failed to join crew', 'Error');
     },
   });
 
@@ -342,6 +352,25 @@ export default function CrewsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Join Success Modal */}
+      <Modal
+        visible={showJoinSuccessModal}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.successModalOverlay}>
+          <View style={[styles.successModalContainer, { backgroundColor: colors.card }]}>
+            <View style={styles.successModalHeader}>
+              <FontAwesome name="check-circle" size={64} color="#10b981" />
+            </View>
+            <Text style={[styles.successModalTitle, { color: colors.text }]}>
+              Successfully Joined Crew!
+            </Text>
+          </View>
+        </View>
+      </Modal>
+      <CustomAlert {...alertState} onDismiss={hideAlert} />
     </SafeAreaView>
   );
 }
@@ -542,5 +571,33 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  successModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  successModalContainer: {
+    borderRadius: 12,
+    width: '100%',
+    maxWidth: 300,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  successModalHeader: {
+    marginBottom: 20,
+  },
+  successModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

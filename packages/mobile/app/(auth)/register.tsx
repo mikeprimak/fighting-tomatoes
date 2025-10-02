@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -15,6 +14,8 @@ import { Link } from 'expo-router';
 import { useAuth } from '../../store/AuthContext';
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from 'react-native';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import { CustomAlert } from '../../components/CustomAlert';
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
@@ -28,6 +29,7 @@ export default function RegisterScreen() {
   const { register } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { alertState, showError, hideAlert } = useCustomAlert();
 
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -37,17 +39,17 @@ export default function RegisterScreen() {
     const { email, password, confirmPassword } = formData;
 
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Email and password are required');
+      showError('Email and password are required', 'Error');
       return false;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showError('Passwords do not match', 'Error');
       return false;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      showError('Password must be at least 6 characters', 'Error');
       return false;
     }
 
@@ -65,7 +67,7 @@ export default function RegisterScreen() {
         email: registerData.email.trim().toLowerCase(),
       });
     } catch (error) {
-      Alert.alert('Registration Failed', error instanceof Error ? error.message : 'An error occurred');
+      showError(error instanceof Error ? error.message : 'An error occurred', 'Registration Failed');
     } finally {
       setIsLoading(false);
     }
@@ -177,6 +179,7 @@ export default function RegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <CustomAlert {...alertState} onDismiss={hideAlert} />
     </SafeAreaView>
   );
 }

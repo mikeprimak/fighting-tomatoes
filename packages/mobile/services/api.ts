@@ -349,6 +349,12 @@ class ApiService {
     });
   }
 
+  async deleteCrewMessage(crewId: string, messageId: string): Promise<void> {
+    return this.makeRequest(`/crews/${crewId}/messages/${messageId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async createCrewPrediction(crewId: string, fightId: string, data: {
     hypeLevel?: number; // Optional hype level
     predictedWinner?: string;
@@ -363,6 +369,19 @@ class ApiService {
 
   async getCrewPredictions(crewId: string, fightId: string): Promise<{ predictions: any[] }> {
     return this.makeRequest(`/crews/${crewId}/predictions/${fightId}`);
+  }
+
+  async deleteCrew(crewId: string): Promise<{ message: string }> {
+    return this.makeRequest(`/crews/${crewId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async removeCrewMember(crewId: string, memberId: string, block: boolean): Promise<{ message: string }> {
+    return this.makeRequest(`/crews/${crewId}/members/${memberId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ block }),
+    });
   }
 
   // Individual fight prediction methods

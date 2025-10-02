@@ -7,7 +7,6 @@ import {
   TextInput,
   ScrollView,
   StyleSheet,
-  Alert,
   Image,
   Animated,
   Easing,
@@ -20,6 +19,8 @@ import { Colors } from '../constants/Colors';
 import { apiService, type ApiError } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import { AnalyticsService } from '../services/analytics';
+import { useCustomAlert } from '../hooks/useCustomAlert';
+import { CustomAlert } from './CustomAlert';
 
 interface Fight {
   id: string;
@@ -271,6 +272,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
   const colors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { alertState, showError, hideAlert } = useCustomAlert();
 
   // Calculate available tags based on current rating and preserve selected tags
   // Note: selectedTags is NOT in dependency array to prevent regeneration when user selects/deselects tags
@@ -449,7 +451,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
     },
     onError: (error: any) => {
       console.error('Update error:', error);
-      Alert.alert('Error', error?.error || 'Failed to save data');
+      showError(error?.error || 'Failed to save data', 'Error');
     },
   });
 
@@ -472,18 +474,18 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
 
   const handleSave = () => {
     if (!fight) {
-      Alert.alert('Error', 'No fight selected');
+      showError('No fight selected', 'Error');
       return;
     }
 
     // Simple validation like PredictionModal
     if (comment.trim() && comment.trim().length < 3) {
-      Alert.alert('Error', 'Comments must be at least 3 characters long');
+      showError('Comments must be at least 3 characters long', 'Error');
       return;
     }
 
     if (comment.trim() && rating === 0) {
-      Alert.alert('Error', 'Reviews require a rating.');
+      showError('Reviews require a rating.', 'Error');
       return;
     }
 
@@ -724,6 +726,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
         </ScrollView>
         </View>
       </View>
+      <CustomAlert {...alertState} onDismiss={hideAlert} />
     </Modal>
   );
 }

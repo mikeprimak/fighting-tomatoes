@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Modal,
-  Alert,
   Image,
   Animated,
   Easing,
@@ -17,6 +16,8 @@ import { Colors } from '../constants/Colors';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { apiService } from '../services/api';
 import { useAuth } from '../store/AuthContext';
+import { useCustomAlert } from '../hooks/useCustomAlert';
+import { CustomAlert } from './CustomAlert';
 
 // Fighter image selection logic (same as other components)
 const getFighterImage = (fighterId: string) => {
@@ -94,6 +95,7 @@ export function PredictionModal({
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { alertState, showError, hideAlert } = useCustomAlert();
 
   // Prediction state
   const [hypeLevel, setHypeLevel] = useState(0);
@@ -165,7 +167,7 @@ export function PredictionModal({
       onClose();
     },
     onError: (error: any) => {
-      Alert.alert('Error', error.error || error.message || 'Failed to submit prediction');
+      showError(error.error || error.message || 'Failed to submit prediction', 'Error');
     },
   });
 
@@ -349,12 +351,12 @@ export function PredictionModal({
     const hasAnyPrediction = hypeLevel > 0 || predictedWinner || predictedMethod || predictedRound > 0;
 
     if (!hasAnyPrediction) {
-      Alert.alert('No Prediction', 'Please make at least one prediction before submitting.');
+      showError('Please make at least one prediction before submitting.', 'No Prediction');
       return;
     }
 
     if (!fight) {
-      Alert.alert('Error', 'No fight selected for prediction.');
+      showError('No fight selected for prediction.', 'Error');
       return;
     }
 
@@ -379,7 +381,7 @@ export function PredictionModal({
         createPredictionMutation.mutate(predictionData);
       }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to submit prediction');
+      showError(error.message || 'Failed to submit prediction', 'Error');
     } finally {
       setIsSubmitting(false);
     }
@@ -672,6 +674,7 @@ export function PredictionModal({
           </View>
         </View>
       </View>
+      <CustomAlert {...alertState} onDismiss={hideAlert} />
     </Modal>
   );
 }

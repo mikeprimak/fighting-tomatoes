@@ -865,6 +865,7 @@ enum MessageType {
   REACTION         // "🔥 John: This round was fire!"
   FIGHT_UPDATE     // "Fight starting now!" (automated)
   FIGHT_RESULT     // "Winner: Fighter A by TKO R2" (automated)
+  DELETED          // Deleted message
 }
 
 // Predictions (MVP must-have)
