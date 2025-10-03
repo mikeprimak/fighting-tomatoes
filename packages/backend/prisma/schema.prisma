@@ -232,6 +232,7 @@ model Fight {
   titleName       String?   // "UFC Heavyweight Championship"
   scheduledRounds Int       @default(3)   // 3 for MMA, 5 for title fights, 8/10/12 for boxing
   orderOnCard     Int       // 1 = main event, higher numbers = earlier fights
+  startTime       String?   // Calculated fight start time (e.g., "10:00 PM")
   
   // Result
   winner          String?   // fighter1Id, fighter2Id, or "draw"/"nc"
@@ -808,6 +809,7 @@ model CrewMember {
   // Status
   isActive    Boolean   @default(true)
   isMuted     Boolean   @default(false)
+  mutedUntil  DateTime? // null = muted forever, date = muted until that time
 
   // Timestamps
   joinedAt    DateTime  @default(now())

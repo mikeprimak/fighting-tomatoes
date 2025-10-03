@@ -1,0 +1,100 @@
+{
+  "events": [
+    {
+      "eventName": "UFC 320: Ankalaev vs. Pereira",
+      "eventType": "Numbered",
+      "headline": "Ankalaev vs Pereira 2",
+      "eventUrl": "https://www.ufc.com/event/ufc-320",
+      "venue": "T-Mobile Arena",
+      "city": "Las Vegas",
+      "state": "NV",
+      "country": "United States",
+      "dateText": "Sat, Oct 4 / 10:00 PM EDT / Main Card",
+      "status": "Upcoming"
+    },
+    {
+      "eventName": "UFC Fight Night Oliveira vs. Gamrot",
+      "eventType": "Fight Night",
+      "headline": "Oliveira vs Gamrot",
+      "eventUrl": "https://www.ufc.com/event/ufc-fight-night-october-11-2025",
+      "venue": "Farmasi Arena",
+      "city": "Rio de Janeiro",
+      "state": "",
+      "country": "Brazil",
+      "dateText": "Sat, Oct 11 / 7:00 PM EDT / Main Card",
+      "status": "Upcoming"
+    },
+    {
+      "eventName": "UFC Fight Night Ridder vs. Allen",
+      "eventType": "Fight Night",
+      "headline": "de Ridder vs Allen",
+      "eventUrl": "https://www.ufc.com/event/ufc-fight-night-october-18-2025",
+      "venue": "Rogers Arena",
+      "city": "Vancouver",
+      "state": "BC",
+      "country": "Canada",
+      "dateText": "Sat, Oct 18 / 7:00 PM EDT / Main Card",
+      "status": "Upcoming"
+    },
+    {
+      "eventName": "UFC 321: Aspinall vs. Gane",
+      "eventType": "Numbered",
+      "headline": "Aspinall vs Gane",
+      "eventUrl": "https://www.ufc.com/event/ufc-321",
+      "venue": "Etihad Arena",
+      "city": "",
+      "state": "Abu Dhabi",
+      "country": "United Arab Emirates",
+      "dateText": "Sat, Oct 25 / 2:00 PM EDT / Main Card",
+      "status": "Upcoming"
+    },
+    {
+      "eventName": "UFC Fight Night Garcia vs. Onama",
+      "eventType": "Fight Night",
+      "headline": "Garcia vs Onama",
+      "eventUrl": "https://www.ufc.com/event/ufc-fight-night-november-01-2025",
+      "venue": "UFC APEX",
+      "city": "Las Vegas",
+      "state": "NV",
+      "country": "United States",
+      "dateText": "Sat, Nov 1 / 7:00 PM EDT / Main Card",
+      "status": "Upcoming"
+    },
+    {
+      "eventName": "UFC Fight Night Bonfim vs. Brown",
+      "eventType": "Fight Night",
+      "headline": "Bonfim vs Brown",
+      "eventUrl": "https://www.ufc.com/event/ufc-fight-night-november-08-2025",
+      "venue": "UFC APEX",
+      "city": "Las Vegas",
+      "state": "NV",
+      "country": "United States",
+      "dateText": "Sat, Nov 8 / 7:00 PM EDT / Main Card",
+      "status": "Upcoming"
+    },
+    {
+      "eventName": "UFC 322: Maddalena vs. Makhachev",
+      "eventType": "Numbered",
+      "headline": "Della Maddalena vs Makhachev",
+      "eventUrl": "https://www.ufc.com/event/ufc-322",
+      "venue": "Madison Square Garden",
+      "city": "New York",
+      "state": "NY",
+      "country": "United States",
+      "dateText": "Sat, Nov 15 / 10:00 PM EDT / Main Card",
+      "status": "Upcoming"
+    },
+    {
+      "eventName": "UFC Fight Night Tsarukyan vs. Hooker",
+      "eventType": "Fight Night",
+      "headline": "Tsarukyan vs Hooker",
+      "eventUrl": "https://www.ufc.com/event/ufc-fight-night-november-22-2025",
+      "venue": "ABHA Arena",
+      "city": "Doha",
+      "state": "",
+      "country": "Qatar",
+      "dateText": "Sat, Nov 22 / 1:00 PM EDT / Main Card",
+      "status": "Upcoming"
+    }
+  ]
+}
