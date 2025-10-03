@@ -425,32 +425,69 @@ async function scrapeAthletePage(browser, athleteUrl) {
 // ========================================
 // STEP 4: Download Images
 // ========================================
-async function downloadImage(browser, url, filepath) {
-  const page = await browser.newPage();
+async function downloadImage(browser, url, filepath, retries = 3) {
+  let lastError = null;
 
-  try {
-    // Navigate to the image URL
-    const response = await page.goto(url, {
-      waitUntil: 'networkidle2',
-      timeout: 30000
-    });
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    let page = null;
 
-    if (response && response.ok()) {
-      // Get the image as a buffer
-      const buffer = await response.buffer();
+    try {
+      // Add delay before opening new page to prevent rapid page creation
+      await new Promise(resolve => setTimeout(resolve, 200));
 
-      // Write to file
-      fs.writeFileSync(filepath, buffer);
-      await page.close();
-      return filepath;
-    } else {
-      await page.close();
-      throw new Error(`Failed to download: ${response ? response.status() : 'No response'}`);
+      page = await browser.newPage();
+
+      // Navigate to the image URL
+      const response = await page.goto(url, {
+        waitUntil: 'networkidle2',
+        timeout: 30000
+      });
+
+      if (response && response.ok()) {
+        // Get the image as a buffer
+        const buffer = await response.buffer();
+
+        // Write to file
+        fs.writeFileSync(filepath, buffer);
+
+        // Add delay before closing page to prevent protocol errors
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Close page safely
+        if (page && !page.isClosed()) {
+          try {
+            await page.close();
+          } catch (closeError) {
+            // Ignore close errors - page might already be closed
+          }
+        }
+
+        return filepath;
+      } else {
+        throw new Error(`Failed to download: ${response ? response.status() : 'No response'}`);
+      }
+    } catch (error) {
+      lastError = error;
+
+      // Clean up page on error
+      if (page && !page.isClosed()) {
+        try {
+          await page.close();
+        } catch (closeError) {
+          // Ignore close errors
+        }
+      }
+
+      // If not the last attempt, wait before retrying
+      if (attempt < retries) {
+        const backoffDelay = attempt * 500; // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+      }
     }
-  } catch (error) {
-    await page.close();
-    throw error;
   }
+
+  // All retries failed
+  throw lastError || new Error('Download failed after all retries');
 }
 
 // ========================================
@@ -544,6 +581,9 @@ async function main() {
             await downloadImage(browser, event.eventImageUrl, filepath);
             event.localImagePath = `/images/events/${filename}`;
             console.log(`      ✅ ${filename}`);
+
+            // Add delay between event banner downloads
+            await new Promise(resolve => setTimeout(resolve, 400));
           } catch (error) {
             console.log(`      ❌ ${filename}: ${error.message}`);
           }
@@ -557,6 +597,9 @@ async function main() {
     // Download athlete headshots
     console.log('\n   Athlete headshots:');
     let downloadCount = 0;
+    let currentCount = 0;
+    const totalToDownload = Array.from(uniqueAthletes.values()).filter(a => a.headshotUrl && !fs.existsSync(path.join(athleteImagesDir, `${a.url.split('/').pop()}.png`))).length;
+
     for (const [url, athlete] of uniqueAthletes) {
       if (athlete.headshotUrl) {
         const athleteSlug = url.split('/').pop();
@@ -564,11 +607,15 @@ async function main() {
         const filepath = path.join(athleteImagesDir, filename);
 
         if (!fs.existsSync(filepath)) {
+          currentCount++;
           try {
             await downloadImage(browser, athlete.headshotUrl, filepath);
             athlete.localHeadshotPath = `/images/athletes/${filename}`;
             downloadCount++;
-            console.log(`      ✅ ${filename}`);
+            console.log(`      ✅ ${filename} (${currentCount}/${totalToDownload})`);
+
+            // Add delay between athlete downloads to prevent browser overload
+            await new Promise(resolve => setTimeout(resolve, 500));
           } catch (error) {
             console.log(`      ❌ ${filename}: ${error.message}`);
           }
