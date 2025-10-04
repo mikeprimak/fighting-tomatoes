@@ -40,21 +40,19 @@ export async function registerPushToken(): Promise<string | null> {
       return null;
     }
 
-    // Skip token registration for now - requires Expo project setup
-    // TODO: Add projectId to app.json and uncomment this code
-    console.log('Push notification token registration skipped - requires Expo project configuration');
-    return null;
+    // Get push token
+    const token = await Notifications.getExpoPushTokenAsync({
+      projectId: '4a64b9f8-325e-4869-ab78-9e0674d18b32',
+    });
 
-    // Uncomment when projectId is configured:
-    // const token = await Notifications.getExpoPushTokenAsync({
-    //   projectId: 'your-project-id',
-    // });
-    // if (token.data) {
-    //   await apiService.registerPushToken(token.data);
-    //   console.log('Push token registered:', token.data);
-    //   return token.data;
-    // }
-    // return null;
+    if (token.data) {
+      // Register with backend
+      await apiService.registerPushToken(token.data);
+      console.log('Push token registered:', token.data);
+      return token.data;
+    }
+
+    return null;
   } catch (error) {
     console.error('Error registering push token:', error);
     return null;

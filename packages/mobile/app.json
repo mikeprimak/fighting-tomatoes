@@ -35,7 +35,11 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "4a64b9f8-325e-4869-ab78-9e0674d18b32"
       }
-    }
+    },
+    "owner": "mikeprimak"
   }
 }
