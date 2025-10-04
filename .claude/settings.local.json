@@ -59,7 +59,8 @@
       "Bash(tasklist)",
       "WebFetch(domain:api.sportsdata.io)",
       "Bash(pnpm list:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "WebFetch(domain:www.ufc.com)"
     ],
     "deny": [],
     "ask": []

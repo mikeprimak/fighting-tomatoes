@@ -189,7 +189,8 @@ export function FightCrewAppTabBar() {
               </Text>
             );
           },
-          headerShown: false,
+          headerShown: true,
+          headerTitle: 'Fighters',
         }}
         listeners={{
           tabPress: (e) => {

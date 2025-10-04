@@ -18,6 +18,7 @@ export default function EventsStackLayout() {
         contentStyle: {
           backgroundColor: colors.background,
         },
+        animation: 'none',
       }}
     >
       <Stack.Screen

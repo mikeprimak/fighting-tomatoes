@@ -338,18 +338,6 @@ export default function EventDetailScreen() {
               </View>
             )}
           </View>
-          {(event?.venue || event?.location) && (
-            <Text style={[styles.eventLocation, { color: colors.textSecondary }]} numberOfLines={1}>
-              {[event.venue, event.location]
-                .filter(Boolean)
-                .map(s => s.trim())
-                .filter(s => s.length > 0)
-                .join(', ')
-                .replace(/,\s*,/g, ',')
-                .replace(/^,\s*/, '')
-                .replace(/\s*,$/, '')}
-            </Text>
-          )}
         </View>
       </View>
 
@@ -500,10 +488,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-  },
-  eventLocation: {
-    fontSize: 14,
-    marginTop: 2,
   },
   scrollContainer: {
     paddingBottom: 20,

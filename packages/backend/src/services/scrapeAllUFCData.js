@@ -379,6 +379,13 @@ async function scrapeAthletePage(browser, athleteUrl) {
     });
 
     const athleteData = await page.evaluate(() => {
+      // Get athlete's name from the page
+      let athleteName = '';
+      const nameEl = document.querySelector('.hero-profile__name, h1.hero-profile__name');
+      if (nameEl) {
+        athleteName = nameEl.textContent.trim().toLowerCase();
+      }
+
       let record = null;
       const recordEl = document.querySelector('.hero-profile__division-body');
       if (recordEl) {
@@ -390,16 +397,57 @@ async function scrapeAthletePage(browser, athleteUrl) {
       }
 
       let headshotUrl = null;
-      const athleteResultImages = document.querySelectorAll(
-        '.c-card-event--athlete-results__image img, ' +
-        '.c-card-event--athlete-results__red-image img, ' +
-        '.c-card-event--athlete-results__blue-image img'
-      );
 
-      if (athleteResultImages.length > 0) {
-        headshotUrl = athleteResultImages[0].src;
+      // Try to find headshot from recent fight results
+      // We need to identify which corner (red or blue) belongs to this athlete
+      if (athleteName) {
+        const fightCards = document.querySelectorAll('.c-card-event--athlete-results');
+
+        for (const card of fightCards) {
+          // Check red corner
+          const redNameEl = card.querySelector('.c-listing-fight__corner-name--red');
+          const redName = redNameEl ? redNameEl.textContent.trim().toLowerCase() : '';
+
+          // Check blue corner
+          const blueNameEl = card.querySelector('.c-listing-fight__corner-name--blue');
+          const blueName = blueNameEl ? blueNameEl.textContent.trim().toLowerCase() : '';
+
+          // Determine which corner matches our athlete
+          let matchingCorner = null;
+          if (redName && athleteName.includes(redName.split(' ').pop())) {
+            // Red corner last name matches athlete last name
+            matchingCorner = 'red';
+          } else if (blueName && athleteName.includes(blueName.split(' ').pop())) {
+            // Blue corner last name matches athlete last name
+            matchingCorner = 'blue';
+          }
+
+          // Get headshot from matching corner
+          if (matchingCorner === 'red') {
+            const redImg = card.querySelector('.c-card-event--athlete-results__red-image img');
+            if (redImg && redImg.src) {
+              headshotUrl = redImg.src;
+              break;
+            }
+          } else if (matchingCorner === 'blue') {
+            const blueImg = card.querySelector('.c-card-event--athlete-results__blue-image img');
+            if (blueImg && blueImg.src) {
+              headshotUrl = blueImg.src;
+              break;
+            }
+          }
+        }
       }
 
+      // Fallback: try generic athlete result image
+      if (!headshotUrl) {
+        const athleteResultImage = document.querySelector('.c-card-event--athlete-results__image img');
+        if (athleteResultImage && athleteResultImage.src) {
+          headshotUrl = athleteResultImage.src;
+        }
+      }
+
+      // Final fallback: hero/bio image
       if (!headshotUrl) {
         const heroImage = document.querySelector('.hero-profile__image img, .c-bio__image img');
         if (heroImage && heroImage.src) {

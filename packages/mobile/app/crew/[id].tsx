@@ -537,6 +537,9 @@ export default function CrewChatScreen() {
   };
 
 
+  // Track if crew was deleted/not found to stop queries
+  const [crewNotFound, setCrewNotFound] = useState(false);
+
   // Get crew details
   const {
     data: crewData,
@@ -546,20 +549,26 @@ export default function CrewChatScreen() {
   } = useQuery<{ crew: CrewDetails }>({
     queryKey: ['crew', id],
     queryFn: () => apiService.getCrew(id!),
-    enabled: !!id,
+    enabled: !!id && !crewNotFound,
     retry: false, // Don't retry if crew not found
+    onError: (error: any) => {
+      // If crew not found, stop all queries immediately
+      if (error.status === 404 || error.code === 'CREW_NOT_FOUND') {
+        setCrewNotFound(true);
+      }
+    },
   });
 
-  // Handle crew not found error
+  // Handle crew not found error - navigate away
   useEffect(() => {
-    if (crewError) {
-      const error = crewError as any;
-      if (error.status === 404 || error.code === 'CREW_NOT_FOUND') {
-        // Crew was deleted or doesn't exist, navigate back
-        router.replace('/(tabs)/profile');
-      }
+    if (crewNotFound) {
+      // Cancel all queries for this crew
+      queryClient.cancelQueries({ queryKey: ['crew', id] });
+      queryClient.cancelQueries({ queryKey: ['crewMessages', id] });
+      // Navigate back
+      router.replace('/(tabs)');
     }
-  }, [crewError]);
+  }, [crewNotFound, id]);
 
   // Get crew messages
   const {
@@ -570,8 +579,15 @@ export default function CrewChatScreen() {
   } = useQuery<{ messages: Message[] }>({
     queryKey: ['crewMessages', id],
     queryFn: () => apiService.getCrewMessages(id!),
-    enabled: !!id,
-    refetchInterval: 5000, // Poll every 5 seconds for new messages
+    enabled: !!id && !crewNotFound,
+    refetchInterval: crewNotFound ? false : 5000, // Stop polling if crew not found
+    retry: false,
+    onError: (error: any) => {
+      // If crew not found, stop all queries
+      if (error.status === 404 || error.code === 'CREW_NOT_FOUND') {
+        setCrewNotFound(true);
+      }
+    },
   });
 
   // Clean up reactions for messages that no longer exist

@@ -210,9 +210,6 @@ export default function FightDisplayCard({
           </View>
         ) : status === 'in_progress' ? (
           <View style={styles.liveContainer}>
-            <Text style={[styles.statusText, { color: colors.danger }]} numberOfLines={1}>
-              Live
-            </Text>
             <Animated.View style={[
               styles.liveDot,
               {
@@ -220,6 +217,9 @@ export default function FightDisplayCard({
                 opacity: pulseAnim
               }
             ]} />
+            <Text style={[styles.statusText, { color: colors.danger }]} numberOfLines={1}>
+              Live
+            </Text>
           </View>
         ) : (
           fight.isComplete && fight.averageRating > 0 && (
@@ -420,9 +420,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   liveContainer: {
+    display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 12,
+    justifyContent: 'flex-start',
   },
   statusText: {
     fontSize: 16,

@@ -23,7 +23,6 @@ export default function CrewInfoScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [selectedMemberForRemoval, setSelectedMemberForRemoval] = useState<string | null>(null);
   const [showRemoveMemberDialog, setShowRemoveMemberDialog] = useState(false);
   const [showMemberRemovedDialog, setShowMemberRemovedDialog] = useState(false);
@@ -31,28 +30,47 @@ export default function CrewInfoScreen() {
   const queryClient = useQueryClient();
   const { alertState, showError, hideAlert } = useCustomAlert();
 
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const { data: crewData, isLoading } = useQuery({
     queryKey: ['crew', id],
     queryFn: () => apiService.getCrew(id!),
-    enabled: !!id,
+    enabled: !!id && !isDeleting,
+    retry: false,
+    onError: (error: any) => {
+      // If crew not found, navigate away
+      if (error.status === 404 || error.code === 'CREW_NOT_FOUND') {
+        router.replace('/(tabs)');
+      }
+    },
   });
 
   const deleteCrewMutation = useMutation({
     mutationFn: () => apiService.deleteCrew(id!),
-    onSuccess: () => {
-      // Show success dialog
-      setShowSuccessDialog(true);
+    onSuccess: async () => {
+      // Set deleting flag to disable queries
+      setIsDeleting(true);
+
+      // Cancel all ongoing queries for this crew immediately
+      await queryClient.cancelQueries({ queryKey: ['crew', id], exact: true });
+      await queryClient.cancelQueries({ queryKey: ['crewMessages', id], exact: true });
+
       // Remove all cached data for this crew
-      queryClient.removeQueries({ queryKey: ['crew', id] });
-      queryClient.removeQueries({ queryKey: ['crewMessages', id] });
-      // Invalidate crews list to refresh it
-      queryClient.invalidateQueries({ queryKey: ['crews'] });
-      // Navigate back after showing success message
-      setTimeout(() => {
-        router.replace('/(tabs)/profile');
-      }, 1500);
+      queryClient.removeQueries({ queryKey: ['crew', id], exact: true });
+      queryClient.removeQueries({ queryKey: ['crewMessages', id], exact: true });
+
+      // Invalidate crews list to refresh it (but not the individual crew queries)
+      queryClient.invalidateQueries({ queryKey: ['crews'], exact: true });
+
+      // Small delay to ensure queries are cancelled
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Navigate away - dismiss all modals and go to crews tab
+      router.dismissAll();
+      router.replace('/(tabs)');
     },
     onError: (error: any) => {
+      setIsDeleting(false);
       showError(
         error.error || 'Failed to delete crew. Please try again.',
         'Error'
@@ -363,6 +381,7 @@ export default function CrewInfoScreen() {
                 style={[styles.deleteDialogButton, { borderTopColor: colors.border }]}
                 onPress={() => {
                   setShowDeleteDialog(false);
+                  setIsDeleting(true);
                   deleteCrewMutation.mutate();
                 }}
               >
@@ -373,24 +392,6 @@ export default function CrewInfoScreen() {
             </View>
           </TouchableOpacity>
         </TouchableOpacity>
-      </Modal>
-
-      {/* Success Dialog */}
-      <Modal
-        visible={showSuccessDialog}
-        transparent={true}
-        animationType="fade"
-      >
-        <View style={styles.successDialogOverlay}>
-          <View style={[styles.successDialogContainer, { backgroundColor: colors.card }]}>
-            <View style={styles.successDialogHeader}>
-              <FontAwesome name="check-circle" size={64} color="#10b981" />
-            </View>
-            <Text style={[styles.successDialogTitle, { color: colors.text }]}>
-              Crew Successfully Deleted
-            </Text>
-          </View>
-        </View>
       </Modal>
 
       {/* Remove Member Confirmation Modal */}

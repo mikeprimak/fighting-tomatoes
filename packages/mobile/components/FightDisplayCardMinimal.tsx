@@ -258,10 +258,6 @@ export default function FightDisplayCardMinimal({ fightData, onPress, animateRat
         ) : fightData.status === 'in_progress' ? (
           // Live indicator for in-progress fights
           <View style={styles.liveContainer}>
-            <Text style={[styles.statusText, { color: colors.danger }]} numberOfLines={1}>
-              {fightData.currentRound ? `Round ${fightData.currentRound}` :
-               fightData.completedRounds ? `End R${fightData.completedRounds}` : 'Live'}
-            </Text>
             {/* Pulsing dot for live indicator */}
             {!fightData.currentRound && !fightData.completedRounds && (
               <Animated.View style={[
@@ -272,6 +268,10 @@ export default function FightDisplayCardMinimal({ fightData, onPress, animateRat
                 }
               ]} />
             )}
+            <Text style={[styles.statusText, { color: colors.danger }]} numberOfLines={1}>
+              {fightData.currentRound ? `Round ${fightData.currentRound}` :
+               fightData.completedRounds ? `End R${fightData.completedRounds}` : 'Live'}
+            </Text>
           </View>
         ) : (
           // Aggregate Rating for completed fights
@@ -612,9 +612,11 @@ const styles = StyleSheet.create({
     maxWidth: '40%',
   },
   liveContainer: {
+    display: 'flex',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 12,
+    justifyContent: 'flex-start',
   },
   liveDot: {
     width: 8,

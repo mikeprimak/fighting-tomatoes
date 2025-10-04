@@ -49,8 +49,7 @@ export default function EventsScreen() {
 
   const allEvents = eventsData?.events || [];
 
-  // Filter events based on current date and status
-  const now = new Date();
+  // Filter events based on status flags from backend
   const liveEvents = allEvents
     .filter((e: any) => e.hasStarted && !e.isComplete)
     .sort((a: any, b: any) => {
@@ -62,15 +61,10 @@ export default function EventsScreen() {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
   const upcomingEvents = allEvents
-    .filter((e: any) => !e.hasStarted && !e.isComplete && new Date(e.date) >= now)
+    .filter((e: any) => !e.hasStarted && !e.isComplete)
     .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()); // Sort ascending (soonest first)
   const pastEvents = allEvents
-    .filter((e: any) => {
-      // Exclude live events from past
-      if (e.hasStarted && !e.isComplete) return false;
-      // Include if complete OR past date
-      return e.isComplete || new Date(e.date) < now;
-    })
+    .filter((e: any) => e.isComplete)
     .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()); // Sort descending (most recent first)
 
   const hasLiveEvents = liveEvents.length > 0;
