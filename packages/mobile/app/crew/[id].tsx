@@ -695,6 +695,18 @@ export default function CrewChatScreen() {
     }
   };
 
+  const handleInviteFromContacts = () => {
+    setShowInviteModal(false);
+    router.push({
+      pathname: '/crew/invite-contacts',
+      params: {
+        crewId: id as string,
+        crewName: crew?.name || '',
+        inviteCode: crew?.inviteCode || '',
+      },
+    });
+  };
+
   // Function to simulate a fight ending and show rating modal
   const simulateFightEnd = () => {
     // Use actual fight data with user data if available, otherwise fallback to mock
@@ -1573,6 +1585,14 @@ export default function CrewChatScreen() {
             </View>
 
             <TouchableOpacity
+              style={[styles.inviteFromContactsButton, { backgroundColor: colors.success }]}
+              onPress={handleInviteFromContacts}
+            >
+              <FontAwesome name="users" size={16} color="white" />
+              <Text style={styles.inviteFromContactsButtonText}>Invite from Contacts</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={[styles.closeModalButton, { borderColor: colors.border }]}
               onPress={() => setShowInviteModal(false)}
             >
@@ -2152,6 +2172,20 @@ const styles = StyleSheet.create({
     // backgroundColor set dynamically
   },
   shareButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  inviteFromContactsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+    marginBottom: 16,
+  },
+  inviteFromContactsButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',

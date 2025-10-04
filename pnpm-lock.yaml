@@ -195,6 +195,9 @@ importers:
       expo-constants:
         specifier: ~18.0.9
         version: 18.0.9(expo@54.0.9)(react-native@0.81.4)
+      expo-contacts:
+        specifier: ^15.0.9
+        version: 15.0.9(expo@54.0.9)(react-native@0.81.4)(react@19.1.0)
       expo-dev-client:
         specifier: ^6.0.12
         version: 6.0.12(expo@54.0.9)
@@ -213,6 +216,9 @@ importers:
       expo-secure-store:
         specifier: ~15.0.7
         version: 15.0.7(expo@54.0.9)
+      expo-sms:
+        specifier: ^14.0.7
+        version: 14.0.7(expo@54.0.9)
       expo-splash-screen:
         specifier: ~31.0.10
         version: 31.0.10(expo@54.0.9)
@@ -7044,6 +7050,18 @@ packages:
     transitivePeerDependencies:
       - supports-color
 
+  /expo-contacts@15.0.9(expo@54.0.9)(react-native@0.81.4)(react@19.1.0):
+    resolution: {integrity: sha512-eIkpMNGmalRz3gA5w/4s8SLbAigUzaIRcBIu469JRKGWo6GH/3sKdP+oEVU5nomt0FwOnSOnEVTS50uex6IcNQ==}
+    peerDependencies:
+      expo: '*'
+      react: '*'
+      react-native: '*'
+    dependencies:
+      expo: 54.0.9(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.7)(react-native@0.81.4)(react@19.1.0)
+      react: 19.1.0
+      react-native: 0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0)
+    dev: false
+
   /expo-dev-client@6.0.12(expo@54.0.9):
     resolution: {integrity: sha512-Knr2abq0r6ALASsZtrX9QD4V0vP4ZL18iDVF5lgr6iFYawbuqQHuJRktIUETimu6qLusJK8Z3kZRabAdNqT+qw==}
     peerDependencies:
@@ -7255,6 +7273,14 @@ packages:
 
   /expo-secure-store@15.0.7(expo@54.0.9):
     resolution: {integrity: sha512-9q7+G1Zxr5P6J5NRIlm86KulvmYwc6UnQlYPjQLDu1drDnerz6AT6l884dPu29HgtDTn4rR0heYeeGFhMKM7/Q==}
+    peerDependencies:
+      expo: '*'
+    dependencies:
+      expo: 54.0.9(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.7)(react-native@0.81.4)(react@19.1.0)
+    dev: false
+
+  /expo-sms@14.0.7(expo@54.0.9):
+    resolution: {integrity: sha512-9rNnBxNikqdJAh1I0mcg1WhyLZ1bZ2FCIOEPQZiZNZ8fExOe0LehAMqdHSCxPuWrbONTaMJqIYJfxM54OBfJsw==}
     peerDependencies:
       expo: '*'
     dependencies:

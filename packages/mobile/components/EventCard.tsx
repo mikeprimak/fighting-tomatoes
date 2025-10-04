@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ interface Event {
   isComplete: boolean;
   bannerImage?: string | null;
   mainStartTime?: string | null;
+  prelimStartTime?: string | null;
 }
 
 interface EventCardProps {
@@ -46,6 +47,7 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [imageAspectRatio, setImageAspectRatio] = useState<number>(16 / 9);
+  const [countdown, setCountdown] = useState<string | null>(null);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -56,6 +58,52 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
       year: 'numeric',
     });
   };
+
+  const calculateCountdown = () => {
+    // Get the earliest start time (prelims or main card)
+    let eventTime: string;
+    if (event.prelimStartTime && event.mainStartTime) {
+      const prelimDate = new Date(event.prelimStartTime);
+      const mainDate = new Date(event.mainStartTime);
+      eventTime = prelimDate < mainDate ? event.prelimStartTime : event.mainStartTime;
+    } else {
+      eventTime = event.prelimStartTime || event.mainStartTime || event.date;
+    }
+
+    const eventDate = new Date(eventTime);
+    const now = new Date();
+    const diff = eventDate.getTime() - now.getTime();
+
+    // Only show countdown if event is within 12 hours and hasn't started
+    const twelveHours = 12 * 60 * 60 * 1000;
+    if (diff > 0 && diff <= twelveHours && !event.hasStarted) {
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      if (hours > 0) {
+        return `${hours}h ${minutes}m ${seconds}s`;
+      } else if (minutes > 0) {
+        return `${minutes}m ${seconds}s`;
+      } else {
+        return `${seconds}s`;
+      }
+    }
+
+    return null;
+  };
+
+  useEffect(() => {
+    // Initial calculation
+    setCountdown(calculateCountdown());
+
+    // Update every second
+    const interval = setInterval(() => {
+      setCountdown(calculateCountdown());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [event.prelimStartTime, event.mainStartTime, event.date, event.hasStarted]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -128,6 +176,13 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
                   .replace(/\s*,$/, '')}
               </Text>
             )}
+            {countdown && (
+              <View style={[styles.countdownContainer, { backgroundColor: colors.warning }]}>
+                <Text style={[styles.countdownText, { color: '#000' }]}>
+                  {event.prelimStartTime ? 'Prelims start in' : 'Starts in'} {countdown}
+                </Text>
+              </View>
+            )}
           </View>
           <View style={styles.orgBadge}>
             <Text style={[styles.orgText, { color: colors.primary }]}>
@@ -176,6 +231,17 @@ const createStyles = (colors: any, aspectRatio: number) => StyleSheet.create({
   },
   eventLocation: {
     fontSize: 14,
+  },
+  countdownContainer: {
+    marginTop: 8,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  countdownText: {
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   orgBadge: {
     backgroundColor: 'rgba(220, 38, 38, 0.1)',

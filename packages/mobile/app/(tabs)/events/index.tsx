@@ -29,6 +29,7 @@ interface Event {
   isComplete: boolean;
   bannerImage?: string | null;
   mainStartTime?: string | null;
+  prelimStartTime?: string | null;
 }
 
 
