@@ -268,6 +268,16 @@ async function importEvents(
       }
     }
 
+    // Find early prelim start time from sections
+    const earlyPrelimSection = eventData.sections?.find(s => s.cardType === 'Early Prelims');
+    let earlyPrelimStartTime: Date | undefined;
+    if (earlyPrelimSection) {
+      const earlyPrelimTimeMatch = earlyPrelimSection.startTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (earlyPrelimTimeMatch) {
+        earlyPrelimStartTime = parseEventTime(eventData.dateText, earlyPrelimTimeMatch[0], year);
+      }
+    }
+
     // Construct banner image URL from localImagePath
     // Use BASE_URL from environment or default to network IP on port 3001
     const baseUrl = process.env.BASE_URL || 'http://10.0.0.53:3001';
@@ -293,8 +303,9 @@ async function importEvents(
         venue: eventData.venue,
         location: `${eventData.city}, ${eventData.state || eventData.country}`,
         bannerImage: bannerImageUrl,
-        mainStartTime,
+        earlyPrelimStartTime,
         prelimStartTime,
+        mainStartTime,
         hasStarted: eventData.status === 'Live',
         isComplete: eventData.status === 'Complete',
       },
@@ -305,8 +316,9 @@ async function importEvents(
         venue: eventData.venue,
         location: `${eventData.city}, ${eventData.state || eventData.country}`,
         bannerImage: bannerImageUrl,
-        mainStartTime,
+        earlyPrelimStartTime,
         prelimStartTime,
+        mainStartTime,
         hasStarted: eventData.status === 'Live',
         isComplete: eventData.status === 'Complete',
       }

@@ -20,8 +20,9 @@ interface Event {
   hasStarted: boolean;
   isComplete: boolean;
   bannerImage?: string | null;
-  mainStartTime?: string | null;
+  earlyPrelimStartTime?: string | null;
   prelimStartTime?: string | null;
+  mainStartTime?: string | null;
 }
 
 interface EventCardProps {
@@ -47,7 +48,7 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [imageAspectRatio, setImageAspectRatio] = useState<number>(16 / 9);
-  const [countdown, setCountdown] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState<{ time: string; label: string } | null>(null);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -59,18 +60,31 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
     });
   };
 
-  const calculateCountdown = () => {
-    // Get the earliest start time (prelims or main card)
-    let eventTime: string;
-    if (event.prelimStartTime && event.mainStartTime) {
-      const prelimDate = new Date(event.prelimStartTime);
-      const mainDate = new Date(event.mainStartTime);
-      eventTime = prelimDate < mainDate ? event.prelimStartTime : event.mainStartTime;
-    } else {
-      eventTime = event.prelimStartTime || event.mainStartTime || event.date;
+  const calculateCountdown = (): { time: string; label: string } | null => {
+    // Get the earliest start time from card times (prioritize specific times over generic date)
+    const availableTimes = [
+      { time: event.earlyPrelimStartTime, label: 'Early prelims start in' },
+      { time: event.prelimStartTime, label: 'Prelims start in' },
+      { time: event.mainStartTime, label: 'Main card starts in' },
+    ].filter(item => item.time != null);
+
+    // Only use event.date as fallback if no specific card times are available
+    if (availableTimes.length === 0) {
+      availableTimes.push({ time: event.date, label: 'Starts in' });
     }
 
-    const eventDate = new Date(eventTime);
+    if (availableTimes.length === 0) {
+      return null;
+    }
+
+    // Find the earliest time
+    const earliest = availableTimes.reduce((earliestItem, currentItem) => {
+      const currentDate = new Date(currentItem.time!);
+      const earliestDate = new Date(earliestItem.time!);
+      return currentDate < earliestDate ? currentItem : earliestItem;
+    }, availableTimes[0]);
+
+    const eventDate = new Date(earliest.time!);
     const now = new Date();
     const diff = eventDate.getTime() - now.getTime();
 
@@ -81,13 +95,16 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
+      let time: string;
       if (hours > 0) {
-        return `${hours}h ${minutes}m ${seconds}s`;
+        time = `${hours}h ${minutes}m ${seconds}s`;
       } else if (minutes > 0) {
-        return `${minutes}m ${seconds}s`;
+        time = `${minutes}m ${seconds}s`;
       } else {
-        return `${seconds}s`;
+        time = `${seconds}s`;
       }
+
+      return { time, label: earliest.label };
     }
 
     return null;
@@ -103,7 +120,7 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [event.prelimStartTime, event.mainStartTime, event.date, event.hasStarted]);
+  }, [event.earlyPrelimStartTime, event.prelimStartTime, event.mainStartTime, event.date, event.hasStarted]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -179,7 +196,7 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
             {countdown && (
               <View style={[styles.countdownContainer, { backgroundColor: colors.warning }]}>
                 <Text style={[styles.countdownText, { color: '#000' }]}>
-                  {event.prelimStartTime ? 'Prelims start in' : 'Starts in'} {countdown}
+                  {countdown.label} {countdown.time}
                 </Text>
               </View>
             )}
