@@ -1,7 +1,6 @@
 // packages/backend/src/routes/crews.ts
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { AuthenticatedRequest } from '../middleware/auth.fastify';
 
 // Validation schemas
 const createCrewSchema = z.object({

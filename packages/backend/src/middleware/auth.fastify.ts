@@ -2,15 +2,6 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
 import fp from 'fastify-plugin';
 
-// Interface for authenticated requests
-export interface AuthenticatedRequest extends FastifyRequest {
-  user?: {
-    id: string;
-    email: string;
-    isEmailVerified: boolean;
-  };
-}
-
 // Authentication middleware
 async function authenticateMiddleware(request: FastifyRequest, reply: FastifyReply) {
   try {
@@ -31,8 +22,15 @@ async function authenticateMiddleware(request: FastifyRequest, reply: FastifyRep
       select: {
         id: true,
         email: true,
-        isEmailVerified: true,
+        firstName: true,
+        lastName: true,
+        displayName: true,
         isActive: true,
+        isEmailVerified: true,
+        isMedia: true,
+        mediaOrganization: true,
+        points: true,
+        level: true,
       }
     });
 
@@ -41,7 +39,7 @@ async function authenticateMiddleware(request: FastifyRequest, reply: FastifyRep
     }
 
     // Add user to request object
-    (request as AuthenticatedRequest).user = user;
+    request.user = user;
 
   } catch (error: any) {
     return reply.code(401).send({
@@ -72,14 +70,21 @@ async function optionalAuthenticateMiddleware(request: FastifyRequest, reply: Fa
       select: {
         id: true,
         email: true,
-        isEmailVerified: true,
+        firstName: true,
+        lastName: true,
+        displayName: true,
         isActive: true,
+        isEmailVerified: true,
+        isMedia: true,
+        mediaOrganization: true,
+        points: true,
+        level: true,
       }
     });
 
     if (user && user.isActive) {
       // Add user to request object only if valid
-      (request as AuthenticatedRequest).user = user;
+      request.user = user;
     }
 
   } catch (error) {

@@ -515,10 +515,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
     await liveEventsRoutes(fastify);
   }, { prefix: '/api/live-events' });
 
-  // Register notifications routes under /api prefix
-  await fastify.register(async function(fastify) {
-    await notificationsRoutes(fastify);
-  }, { prefix: '/api/notifications' });
+  // Register notifications routes under /api/notifications prefix
+  await fastify.register(notificationsRoutes, { prefix: '/api/notifications' });
 
   // Register analytics routes under /api prefix - TEMPORARILY DISABLED
   // await fastify.register(async function(fastify) {

@@ -37,30 +37,30 @@ services:
       timeout: 3s
       retries: 5
 
-  # Backend API (when ready)
-  api:
-    build:
-      context: ./packages/backend
-      dockerfile: Dockerfile
-    container_name: yourapp-api
-    restart: unless-stopped
-    ports:
-      - "3001:3001"
-    environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://dev:devpassword@postgres:5432/yourapp_dev
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: your-jwt-secret-change-in-production
-      PORT: 3001
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - ./packages/backend:/app
-      - /app/node_modules
-    command: npm run dev
+  # Backend API (disabled - run locally with `pnpm dev`)
+  # api:
+  #   build:
+  #     context: ./packages/backend
+  #     dockerfile: Dockerfile
+  #   container_name: yourapp-api
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3001:3001"
+  #   environment:
+  #     NODE_ENV: development
+  #     DATABASE_URL: postgresql://dev:devpassword@postgres:5432/yourapp_dev
+  #     REDIS_URL: redis://redis:6379
+  #     JWT_SECRET: your-jwt-secret-change-in-production
+  #     PORT: 3001
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./packages/backend:/app
+  #     - /app/node_modules
+  #   command: npm run dev
 
 volumes:
   postgres_data:

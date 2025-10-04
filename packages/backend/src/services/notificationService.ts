@@ -1,6 +1,7 @@
-import { prisma } from '../db';
+import { PrismaClient } from '@prisma/client';
 import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 
+const prisma = new PrismaClient();
 const expo = new Expo();
 
 interface NotificationPayload {
@@ -25,7 +26,7 @@ interface NotificationFilters {
 async function getUsersForNotification(
   notificationType: string,
   filters: NotificationFilters = {}
-): Promise<Array<{ id: string; pushToken: string }>> {
+): Promise<Array<{ id: string; pushToken: string | null }>> {
   const where: any = {
     pushToken: { not: null },
     notificationsEnabled: true,

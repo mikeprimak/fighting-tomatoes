@@ -1,7 +1,9 @@
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { authenticateToken } from '../middleware/auth';
-import { prisma } from '../db';
+import { PrismaClient } from '@prisma/client';
+import { authenticateUser } from '../middleware/auth';
+
+const prisma = new PrismaClient();
 
 const registerTokenSchema = z.object({
   pushToken: z.string(),
@@ -19,18 +21,18 @@ const updatePreferencesSchema = z.object({
   notifyFightResults: z.boolean().optional(),
 });
 
-const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
+const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
   /**
    * Register push notification token
    * POST /api/notifications/register-token
    */
   fastify.post(
     '/register-token',
-    { preHandler: authenticateToken },
+    { preHandler: authenticateUser },
     async (request, reply) => {
       try {
         const { pushToken } = registerTokenSchema.parse(request.body);
-        const userId = request.user!.userId;
+        const userId = request.user!.id;
 
         // Update user's push token
         await prisma.user.update({
@@ -60,9 +62,9 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
    */
   fastify.delete(
     '/register-token',
-    { preHandler: authenticateToken },
+    { preHandler: authenticateUser },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const userId = request.user!.id;
 
       await prisma.user.update({
         where: { id: userId },
@@ -81,9 +83,9 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
    */
   fastify.get(
     '/preferences',
-    { preHandler: authenticateToken },
+    { preHandler: authenticateUser },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const userId = request.user!.id;
 
       const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -114,11 +116,11 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
    */
   fastify.put(
     '/preferences',
-    { preHandler: authenticateToken },
+    { preHandler: authenticateUser },
     async (request, reply) => {
       try {
         const preferences = updatePreferencesSchema.parse(request.body);
-        const userId = request.user!.userId;
+        const userId = request.user!.id;
 
         const updatedUser = await prisma.user.update({
           where: { id: userId },
@@ -158,9 +160,9 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify) => {
    */
   fastify.post(
     '/test',
-    { preHandler: authenticateToken },
+    { preHandler: authenticateUser },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const userId = request.user!.id;
 
       const user = await prisma.user.findUnique({
         where: { id: userId },
