@@ -82,7 +82,7 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
     if (onPress) {
       onPress(event);
     } else {
-      router.push(`/event/${event.id}`);
+      router.push(`/(tabs)/events/${event.id}`);
     }
   };
 

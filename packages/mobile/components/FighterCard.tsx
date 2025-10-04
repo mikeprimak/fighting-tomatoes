@@ -60,7 +60,7 @@ export default function FighterCard({ fighter, onPress }: FighterCardProps) {
     if (onPress) {
       onPress(fighter);
     } else {
-      router.push(`/fighter/${fighter.id}`);
+      router.push(`/(tabs)/fighters/${fighter.id}`);
     }
   };
 

@@ -14,10 +14,10 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
-import { Colors } from '../../constants/Colors';
-import { apiService } from '../../services/api';
-import { FightDisplayCard, RateFightModal, PredictionModal } from '../../components';
-import { useAuth } from '../../store/AuthContext';
+import { Colors } from '../../../constants/Colors';
+import { apiService } from '../../../services/api';
+import { FightDisplayCard, RateFightModal, PredictionModal } from '../../../components';
+import { useAuth } from '../../../store/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
 
 interface EventDetails {
@@ -39,9 +39,9 @@ type Fight = any;
 // Placeholder image selection logic - same as EventCard
 const getPlaceholderImage = (eventId: string) => {
   const images = [
-    require('../../assets/events/event-banner-1.jpg'),
-    require('../../assets/events/event-banner-2.jpg'),
-    require('../../assets/events/event-banner-3.jpg'),
+    require('../../../assets/events/event-banner-1.jpg'),
+    require('../../../assets/events/event-banner-2.jpg'),
+    require('../../../assets/events/event-banner-3.jpg'),
   ];
 
   // Use charCodeAt to get a number from the last character (works for letters and numbers)
@@ -447,34 +447,6 @@ export default function EventDetailScreen() {
           console.log('Prediction submitted successfully');
         }}
       />
-
-      {/* Custom Tab Bar */}
-      <View style={[styles.tabBar, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: insets.bottom }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => router.push('/(tabs)/')}>
-          <FontAwesome name="comments" size={24} color={colors.tabIconDefault} />
-          <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Crews</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => router.push('/(tabs)/events')}>
-          <FontAwesome name="calendar" size={24} color={colors.tabIconDefault} />
-          <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Events</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => router.push('/(tabs)/fights')}>
-          <FontAwesome name="star" size={24} color={colors.tabIconDefault} />
-          <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Fights</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => router.push('/(tabs)/fighters')}>
-          <FontAwesome name="users" size={24} color={colors.tabIconDefault} />
-          <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Fighters</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => router.push('/(tabs)/profile')}>
-          <FontAwesome name="user" size={24} color={colors.tabIconDefault} />
-          <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Profile</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -669,21 +641,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     fontStyle: 'italic',
-  },
-  tabBar: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    paddingTop: 8,
-  },
-  tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-  },
-  tabLabel: {
-    fontSize: 12,
-    marginTop: 4,
-    fontWeight: '500',
   },
 }); 

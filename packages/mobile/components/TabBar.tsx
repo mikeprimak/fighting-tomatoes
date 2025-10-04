@@ -1,7 +1,7 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Tabs } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { Tabs, useRouter, usePathname } from 'expo-router';
+import { useColorScheme, Text } from 'react-native';
 import { Colors } from '../constants/Colors';
 
 /**
@@ -89,37 +89,128 @@ export default function TabBar({ tabs, defaultHeaderTitle, children }: TabBarPro
  * Pre-configured FightCrewApp Tab Bar
  */
 export function FightCrewAppTabBar() {
-  const tabs: TabConfig[] = [
-    {
-      name: 'index',
-      title: 'Crews',
-      iconName: 'comments',
-      headerTitle: '🥊 FightCrewApp'
-    },
-    {
-      name: 'events',
-      title: 'Events',
-      iconName: 'calendar',
-      headerTitle: 'Events'
-    },
-    {
-      name: 'fights',
-      title: 'Fights',
-      iconName: 'star'
-    },
-    {
-      name: 'fighters',
-      title: 'Fighters',
-      iconName: 'users'
-    },
-    {
-      name: 'profile',
-      title: 'Profile',
-      iconName: 'user'
-    }
-  ];
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter();
+  const pathname = usePathname();
 
-  return <TabBar tabs={tabs} defaultHeaderTitle="FightCrewApp" />;
+  return (
+    <Tabs
+      screenOptions={{
+        tabBarActiveTintColor: colors.tint,
+        tabBarInactiveTintColor: colors.tabIconDefault,
+        tabBarStyle: {
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
+        },
+        headerStyle: {
+          backgroundColor: colors.card,
+        },
+        headerTintColor: colors.text,
+        headerShadowVisible: false,
+        sceneStyle: {
+          backgroundColor: colors.background,
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Crews',
+          tabBarIcon: ({ color }) => <TabBarIcon name="comments" color={color} />,
+          headerTitle: '🥊 FightCrewApp',
+        }}
+      />
+      <Tabs.Screen
+        name="events"
+        options={{
+          title: 'Events',
+          tabBarIcon: ({ color, focused }) => {
+            // Only show as focused if on the events index page
+            const isOnEventsIndex = pathname === '/(tabs)/events' || pathname === '/events';
+            const iconColor = isOnEventsIndex ? color : colors.tabIconDefault;
+            return <TabBarIcon name="calendar" color={iconColor} />;
+          },
+          tabBarLabel: ({ color, focused }) => {
+            // Only show as focused if on the events index page
+            const isOnEventsIndex = pathname === '/(tabs)/events' || pathname === '/events';
+            return (
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: isOnEventsIndex ? color : colors.tabIconDefault,
+                }}
+              >
+                Events
+              </Text>
+            );
+          },
+          headerShown: false,
+        }}
+        listeners={{
+          tabPress: (e) => {
+            // If already in events tab (anywhere in the stack), navigate to index
+            if (pathname.startsWith('/(tabs)/events')) {
+              e.preventDefault();
+              router.push('/(tabs)/events');
+            }
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="fights"
+        options={{
+          title: 'Fights',
+          tabBarIcon: ({ color }) => <TabBarIcon name="star" color={color} />,
+          headerTitle: 'Fights',
+        }}
+      />
+      <Tabs.Screen
+        name="fighters"
+        options={{
+          title: 'Fighters',
+          tabBarIcon: ({ color, focused }) => {
+            // Only show as focused if on the fighters index page
+            const isOnFightersIndex = pathname === '/(tabs)/fighters' || pathname === '/fighters';
+            const iconColor = isOnFightersIndex ? color : colors.tabIconDefault;
+            return <TabBarIcon name="users" color={iconColor} />;
+          },
+          tabBarLabel: ({ color, focused }) => {
+            // Only show as focused if on the fighters index page
+            const isOnFightersIndex = pathname === '/(tabs)/fighters' || pathname === '/fighters';
+            return (
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: isOnFightersIndex ? color : colors.tabIconDefault,
+                }}
+              >
+                Fighters
+              </Text>
+            );
+          },
+          headerShown: false,
+        }}
+        listeners={{
+          tabPress: (e) => {
+            // If already in fighters tab (anywhere in the stack), navigate to index
+            if (pathname.startsWith('/(tabs)/fighters')) {
+              e.preventDefault();
+              router.push('/(tabs)/fighters');
+            }
+          },
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
+          headerTitle: 'Profile',
+        }}
+      />
+    </Tabs>
+  );
 }
 
 /**

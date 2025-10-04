@@ -97,10 +97,8 @@ function RootLayoutNav() {
           >
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="event/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="crew/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="crew/info/[id]" options={{ headerShown: false }} />
-            <Stack.Screen name="fighter/[id]" options={{ headerShown: false }} />
           </Stack>
         </ThemeProvider>
       </AuthProvider>

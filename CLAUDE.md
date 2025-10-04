@@ -17,7 +17,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 
 **Mobile**:
 - Platforms: iOS (`com.fightcrewapp.mobile`), Android, Web, Expo Dev Build
-- Navigation: Expo Router v6.0.7, file-based routing, tabs: `/` (events), `/fights`, `/fighters`, `/profile`
+- Navigation: Expo Router v6.0.7, Stack-inside-Tabs pattern, 5 tabs (crews/events/fights/fighters/profile)
 - Auth: React Context (`store/AuthContext.tsx`), JWT dual-token, SecureStore
 - State: React Query v4.32.6 (5min stale, 2 retries), AsyncStorage
 - Theme: Light/dark auto-detect, primary red (#dc2626/#ef4444), `constants/Colors.ts`
@@ -25,7 +25,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 ## Key Files
 
 **Backend**: `src/app.ts`, `src/server.ts` (PORT env), `prisma/schema.prisma`, `src/routes/fights.ts` (primary CRUD), `src/routes/auth.ts`, `src/middleware/`
-**Mobile**: `app/_layout.tsx`, `app/(tabs)/_layout.tsx`, `app/(tabs)/index|fights|fighters|profile.tsx`, `app/event/[id].tsx`, `app/fighter/[id].tsx`, `app/(auth)/login|register.tsx`, `app/crew/[id].tsx`, `app/crew/info/[id].tsx`, `store/AuthContext.tsx`, `services/api.ts`, `components/FightDisplayCard|FighterCard|EventCard|RateFightModal|TabBar|CustomAlert.tsx`, `hooks/useCustomAlert.tsx`, `constants/Colors.ts`, `CUSTOM_ALERTS.md`
+**Mobile**: `app/_layout.tsx`, `app/(tabs)/_layout.tsx`, `app/(tabs)/index|fights|profile.tsx`, `app/(tabs)/events/_layout.tsx|index.tsx|[id].tsx`, `app/(tabs)/fighters/_layout.tsx|index.tsx|[id].tsx`, `app/(auth)/login|register.tsx`, `app/crew/[id].tsx`, `app/crew/info/[id].tsx`, `store/AuthContext.tsx`, `services/api.ts`, `components/FightDisplayCard|FighterCard|EventCard|RateFightModal|TabBar|CustomAlert.tsx`, `hooks/useCustomAlert.tsx`, `constants/Colors.ts`, `CUSTOM_ALERTS.md`
 **Shared**: `src/types/`, `src/utils/`
 
 ## API Endpoints
@@ -77,13 +77,26 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 - **Cache Management**: Reduced crews query staleTime to 5s, `refetchOnMount: 'always'`, removed users see crews disappear on tab switch
 - **Join Success Modal**: Custom styled modal replaces Alert.alert when joining crew
 
-**Custom Alert System** (Latest):
+**Custom Alert System**:
 - **Reusable Components**: `CustomAlert.tsx` (5 types: success/error/info/warning/confirm), `useCustomAlert.tsx` hook
 - **App-wide Migration**: Replaced all 30 `Alert.alert` usages across 7 files with styled modals matching app theme
 - **Auto-dismiss**: Success (1.5s), error (2.5s), info (2s); confirmations require user action
 - **Features**: Theme-aware, dark/light mode, icons (checkmark/X/info/warning/question), destructive actions (red text)
 - **Usage**: `showSuccess()`, `showError()`, `showInfo()`, `showConfirm()` - see `packages/mobile/CUSTOM_ALERTS.md`
 - **Files**: `components/CustomAlert.tsx`, `hooks/useCustomAlert.tsx`, `CUSTOM_ALERTS.md` (guide)
+
+**Stack-inside-Tabs Navigation** (Latest):
+- **Architecture**: Implemented industry-standard Stack-inside-Tabs pattern for consistent navigation
+- **Tab Stacks**: Events and Fighters tabs now contain stack navigators with index and detail screens
+- **Folder Structure**:
+  - `app/(tabs)/events/` → `_layout.tsx` (Stack), `index.tsx` (Events list), `[id].tsx` (Event detail)
+  - `app/(tabs)/fighters/` → `_layout.tsx` (Stack), `index.tsx` (Fighters list), `[id].tsx` (Fighter detail)
+- **Native Tab Bar**: Persistent native tab bar on ALL screens (list and detail pages) with identical styling
+- **Smart Highlighting**: Tab only highlights when on index page, not detail pages (Events/Fighters tabs inactive on detail screens)
+- **Tab Press Behavior**: Tapping active tab navigates to index (standard iOS/Android pattern) - always returns to list
+- **Route Cleanup**: Removed old `app/event/` and `app/fighter/` folders, updated all navigation calls
+- **Component Updates**: EventCard and FighterCard now route to `/(tabs)/events/[id]` and `/(tabs)/fighters/[id]`
+- **Benefits**: 100% consistent tab bar, proper navigation stack per tab, better UX alignment with platform conventions
 
 ## Live Event System (In Progress)
 

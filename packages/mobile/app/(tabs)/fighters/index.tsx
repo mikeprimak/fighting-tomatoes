@@ -12,9 +12,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
-import { Colors } from '../../constants/Colors';
-import { apiService } from '../../services/api';
-import { FighterCard } from '../../components';
+import { Colors } from '../../../constants/Colors';
+import { apiService } from '../../../services/api';
+import { FighterCard } from '../../../components';
 import { FontAwesome } from '@expo/vector-icons';
 import { router } from 'expo-router';
 

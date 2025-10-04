@@ -12,10 +12,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
-import { Colors } from '../../constants/Colors';
-import { useAuth } from '../../store/AuthContext';
-import { apiService } from '../../services/api';
-import { EventCard } from '../../components';
+import { Colors } from '../../../constants/Colors';
+import { useAuth } from '../../../store/AuthContext';
+import { apiService } from '../../../services/api';
+import { EventCard } from '../../../components';
 
 
 interface Event {

@@ -12,10 +12,10 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
-import { Colors } from '../../constants/Colors';
-import { apiService } from '../../services/api';
-import { FightDisplayCard, RateFightModal } from '../../components';
-import { useAuth } from '../../store/AuthContext';
+import { Colors } from '../../../constants/Colors';
+import { apiService } from '../../../services/api';
+import { FightDisplayCard, RateFightModal } from '../../../components';
+import { useAuth } from '../../../store/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
 
 interface Fighter {
@@ -60,12 +60,12 @@ interface Fight {
 // Fighter image selection logic (same as other components)
 const getFighterImage = (fighterId: string) => {
   const images = [
-    require('../../assets/fighters/fighter-1.jpg'),
-    require('../../assets/fighters/fighter-2.jpg'),
-    require('../../assets/fighters/fighter-3.jpg'),
-    require('../../assets/fighters/fighter-4.jpg'),
-    require('../../assets/fighters/fighter-5.jpg'),
-    require('../../assets/fighters/fighter-6.jpg'),
+    require('../../../assets/fighters/fighter-1.jpg'),
+    require('../../../assets/fighters/fighter-2.jpg'),
+    require('../../../assets/fighters/fighter-3.jpg'),
+    require('../../../assets/fighters/fighter-4.jpg'),
+    require('../../../assets/fighters/fighter-5.jpg'),
+    require('../../../assets/fighters/fighter-6.jpg'),
   ];
 
   // Use charCodeAt to get a number from the last character (works for letters and numbers)
