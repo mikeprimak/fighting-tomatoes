@@ -63,8 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initialize auth state on app start
   useEffect(() => {
     initializeAuth();
-    // Initialize analytics service
-    AnalyticsService.initialize();
+    // Initialize analytics service - TEMPORARILY DISABLED (analytics routes disabled)
+    // AnalyticsService.initialize();
 
     // Setup notification response listener
     const subscription = notificationService.addNotificationResponseListener(
@@ -117,11 +117,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessToken(data.accessToken);
       setUser(data.user);
 
-      // Set user ID for analytics
-      await AnalyticsService.setUserId(data.user.id);
+      // Set user ID for analytics - TEMPORARILY DISABLED
+      // await AnalyticsService.setUserId(data.user.id);
 
-      // Track successful login
-      await AnalyticsService.trackUserLogin();
+      // Track successful login - TEMPORARILY DISABLED
+      // await AnalyticsService.trackUserLogin();
 
       // Register push token
       await notificationService.registerPushToken();
@@ -158,11 +158,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessToken(data.accessToken);
       setUser(data.user);
 
-      // Set user ID for analytics
-      await AnalyticsService.setUserId(data.user.id);
+      // Set user ID for analytics - TEMPORARILY DISABLED
+      // await AnalyticsService.setUserId(data.user.id);
 
-      // Track successful registration
-      await AnalyticsService.trackUserRegistration();
+      // Track successful registration - TEMPORARILY DISABLED
+      // await AnalyticsService.trackUserRegistration();
 
       // Register push token
       await notificationService.registerPushToken();
@@ -200,9 +200,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessToken(null);
       setUser(null);
 
-      // Clear analytics user ID and end session
-      await AnalyticsService.clearUserId();
-      await AnalyticsService.endSession();
+      // Clear analytics user ID and end session - TEMPORARILY DISABLED
+      // await AnalyticsService.clearUserId();
+      // await AnalyticsService.endSession();
 
       // Navigate to auth screen
       router.replace('/(auth)/login');

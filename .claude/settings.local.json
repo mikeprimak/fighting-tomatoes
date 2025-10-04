@@ -60,7 +60,16 @@
       "WebFetch(domain:api.sportsdata.io)",
       "Bash(pnpm list:*)",
       "Bash(cat:*)",
-      "WebFetch(domain:www.ufc.com)"
+      "WebFetch(domain:www.ufc.com)",
+      "Bash(pnpm db:generate:*)",
+      "Bash(pnpm exec:*)",
+      "Bash(for dir in prisma/migrations/*/)",
+      "Bash(do sqlfile=\"$dirmigration.sql\")",
+      "Bash(if [ -f \"$sqlfile\" ])",
+      "Bash(then echo \"Running: $sqlfile\")",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(start \"\" http://localhost:3001/admin.html)"
     ],
     "deny": [],
     "ask": []

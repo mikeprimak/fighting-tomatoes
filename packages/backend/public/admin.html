@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FightCrewApp Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #dc2626;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .tab {
+            background: transparent;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: #dc2626;
+        }
+
+        .tab.active {
+            color: #dc2626;
+            border-bottom-color: #dc2626;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Stats Grid */
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .stat-card {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f9fafb;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #b91c1c;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #6b7280;
+            cursor: pointer;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #dc2626;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .loader {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🥊 FightCrewApp Admin Dashboard</h1>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+            <button class="tab" onclick="switchTab('events')">Events</button>
+            <button class="tab" onclick="switchTab('fighters')">Fighters</button>
+            <button class="tab" onclick="switchTab('fights')">Fights</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content active">
+            <button class="btn btn-primary" onclick="fetchStats()">🔄 Refresh</button>
+            <span id="lastUpdated" style="margin-left: 12px; font-size: 12px; color: #6b7280;"></span>
+
+            <div id="loading" class="loader">Loading...</div>
+            <div id="error" class="error" style="display: none;"></div>
+
+            <div id="dashboard-content" style="display: none;">
+                <div class="section">
+                    <h2 class="section-title">👥 User Engagement</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Users</div>
+                            <div class="stat-value" id="totalUsers">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Active Today</div>
+                            <div class="stat-value" id="activeToday">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Active This Week</div>
+                            <div class="stat-value" id="activeWeek">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">New This Week</div>
+                            <div class="stat-value" id="newThisWeek">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2 class="section-title">📊 User Activity</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Ratings</div>
+                            <div class="stat-value" id="totalRatings">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Reviews</div>
+                            <div class="stat-value" id="totalReviews">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Ratings Today</div>
+                            <div class="stat-value" id="ratingsToday">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2 class="section-title">📦 Content</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Events</div>
+                            <div class="stat-value" id="totalEvents">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Fights</div>
+                            <div class="stat-value" id="totalFights">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Fighters</div>
+                            <div class="stat-value" id="totalFighters">-</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Upcoming Events</div>
+                            <div class="stat-value" id="upcomingEvents">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Events Tab -->
+        <div id="events-tab" class="tab-content">
+            <div style="margin-bottom: 16px;">
+                <button class="btn btn-primary" onclick="openEventModal()">+ Add Event</button>
+                <button class="btn btn-secondary" onclick="loadEvents()">🔄 Refresh</button>
+            </div>
+            <div id="events-message"></div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Promotion</th>
+                            <th>Date</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="events-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Fighters Tab -->
+        <div id="fighters-tab" class="tab-content">
+            <div style="margin-bottom: 16px;">
+                <button class="btn btn-primary" onclick="openFighterModal()">+ Add Fighter</button>
+                <button class="btn btn-secondary" onclick="loadFighters()">🔄 Refresh</button>
+            </div>
+            <div id="fighters-message"></div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Nickname</th>
+                            <th>Record</th>
+                            <th>Weight Class</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fighters-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Fights Tab -->
+        <div id="fights-tab" class="tab-content">
+            <div style="margin-bottom: 16px;">
+                <button class="btn btn-secondary" onclick="loadFights()">🔄 Refresh</button>
+            </div>
+            <div id="fights-message"></div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Event</th>
+                            <th>Fighter 1</th>
+                            <th>Fighter 2</th>
+                            <th>Weight Class</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fights-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Modal -->
+    <div id="event-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="event-modal-title">Add Event</h3>
+                <button class="close-btn" onclick="closeEventModal()">&times;</button>
+            </div>
+            <form id="event-form">
+                <input type="hidden" id="event-id">
+                <div class="form-group">
+                    <label class="form-label">Name *</label>
+                    <input type="text" class="form-input" id="event-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Promotion *</label>
+                    <input type="text" class="form-input" id="event-promotion" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date *</label>
+                    <input type="datetime-local" class="form-input" id="event-date" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Location</label>
+                    <input type="text" class="form-input" id="event-location">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Venue</label>
+                    <input type="text" class="form-input" id="event-venue">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" class="checkbox" id="event-started"> Has Started
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" class="checkbox" id="event-complete"> Is Complete
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Fighter Modal -->
+    <div id="fighter-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="fighter-modal-title">Add Fighter</h3>
+                <button class="close-btn" onclick="closeFighterModal()">&times;</button>
+            </div>
+            <form id="fighter-form">
+                <input type="hidden" id="fighter-id">
+                <div class="form-group">
+                    <label class="form-label">First Name *</label>
+                    <input type="text" class="form-input" id="fighter-firstName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Last Name *</label>
+                    <input type="text" class="form-input" id="fighter-lastName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nickname</label>
+                    <input type="text" class="form-input" id="fighter-nickname">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Weight Class</label>
+                    <input type="text" class="form-input" id="fighter-weightClass">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Wins</label>
+                    <input type="number" class="form-input" id="fighter-wins" value="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Losses</label>
+                    <input type="number" class="form-input" id="fighter-losses" value="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Draws</label>
+                    <input type="number" class="form-input" id="fighter-draws" value="0">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeFighterModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Fight Modal -->
+    <div id="fight-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Fight</h3>
+                <button class="close-btn" onclick="closeFightModal()">&times;</button>
+            </div>
+            <form id="fight-form">
+                <input type="hidden" id="fight-id">
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" class="checkbox" id="fight-started"> Has Started
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" class="checkbox" id="fight-complete"> Is Complete
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeFightModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api/admin';
+        let currentTab = 'dashboard';
+
+        // Tab switching
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(`${tab}-tab`).classList.add('active');
+
+            if (tab === 'dashboard') fetchStats();
+            else if (tab === 'events') loadEvents();
+            else if (tab === 'fighters') loadFighters();
+            else if (tab === 'fights') loadFights();
+        }
+
+        // Dashboard Stats
+        async function fetchStats() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'none';
+
+                const res = await fetch(`${API_URL}/stats`);
+                const data = await res.json();
+
+                document.getElementById('totalUsers').textContent = data.users.total;
+                document.getElementById('activeToday').textContent = data.users.activeToday;
+                document.getElementById('activeWeek').textContent = data.users.activeWeek;
+                document.getElementById('newThisWeek').textContent = data.users.newThisWeek;
+
+                document.getElementById('totalRatings').textContent = data.engagement.totalRatings;
+                document.getElementById('totalReviews').textContent = data.engagement.totalReviews;
+                document.getElementById('ratingsToday').textContent = data.engagement.ratingsToday;
+
+                document.getElementById('totalEvents').textContent = data.content.totalEvents;
+                document.getElementById('totalFights').textContent = data.content.totalFights;
+                document.getElementById('totalFighters').textContent = data.content.totalFighters;
+                document.getElementById('upcomingEvents').textContent = data.content.upcomingEvents;
+
+                document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `Error: ${error.message}`;
+            }
+        }
+
+        // Events CRUD
+        async function loadEvents() {
+            try {
+                const res = await fetch(`${API_URL}/events`);
+                const data = await res.json();
+                const tbody = document.getElementById('events-table');
+                tbody.innerHTML = data.events.map(e => `
+                    <tr>
+                        <td>${e.name}</td>
+                        <td>${e.promotion}</td>
+                        <td>${new Date(e.date).toLocaleDateString()}</td>
+                        <td>${e.location || '-'}</td>
+                        <td>
+                            ${e.isComplete ? '<span class="badge badge-success">Complete</span>' :
+                              e.hasStarted ? '<span class="badge badge-warning">Live</span>' :
+                              '<span class="badge">Upcoming</span>'}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick='editEvent(${JSON.stringify(e)})'>Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteEvent('${e.id}')">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                showMessage('events', error.message, 'error');
+            }
+        }
+
+        function openEventModal(event = null) {
+            document.getElementById('event-modal').classList.add('active');
+            document.getElementById('event-modal-title').textContent = event ? 'Edit Event' : 'Add Event';
+
+            if (event) {
+                document.getElementById('event-id').value = event.id;
+                document.getElementById('event-name').value = event.name;
+                document.getElementById('event-promotion').value = event.promotion;
+                document.getElementById('event-date').value = new Date(event.date).toISOString().slice(0,16);
+                document.getElementById('event-location').value = event.location || '';
+                document.getElementById('event-venue').value = event.venue || '';
+                document.getElementById('event-started').checked = event.hasStarted;
+                document.getElementById('event-complete').checked = event.isComplete;
+            } else {
+                document.getElementById('event-form').reset();
+                document.getElementById('event-id').value = '';
+            }
+        }
+
+        function editEvent(event) {
+            openEventModal(event);
+        }
+
+        function closeEventModal() {
+            document.getElementById('event-modal').classList.remove('active');
+        }
+
+        document.getElementById('event-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('event-id').value;
+            const data = {
+                name: document.getElementById('event-name').value,
+                promotion: document.getElementById('event-promotion').value,
+                date: new Date(document.getElementById('event-date').value).toISOString(),
+                location: document.getElementById('event-location').value || null,
+                venue: document.getElementById('event-venue').value || null,
+                hasStarted: document.getElementById('event-started').checked,
+                isComplete: document.getElementById('event-complete').checked,
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/events${id ? '/' + id : ''}`, {
+                    method: id ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    closeEventModal();
+                    loadEvents();
+                    showMessage('events', 'Event saved successfully!', 'success');
+                }
+            } catch (error) {
+                showMessage('events', error.message, 'error');
+            }
+        };
+
+        async function deleteEvent(id) {
+            if (!confirm('Delete this event?')) return;
+            try {
+                await fetch(`${API_URL}/events/${id}`, { method: 'DELETE' });
+                loadEvents();
+                showMessage('events', 'Event deleted successfully!', 'success');
+            } catch (error) {
+                showMessage('events', error.message, 'error');
+            }
+        }
+
+        // Fighters CRUD
+        async function loadFighters() {
+            try {
+                const res = await fetch(`${API_URL}/fighters`);
+                const data = await res.json();
+                const tbody = document.getElementById('fighters-table');
+                tbody.innerHTML = data.fighters.map(f => `
+                    <tr>
+                        <td>${f.firstName} ${f.lastName}</td>
+                        <td>${f.nickname || '-'}</td>
+                        <td>${f.wins}-${f.losses}-${f.draws}</td>
+                        <td>${f.weightClass || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick='editFighter(${JSON.stringify(f)})'>Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteFighter('${f.id}')">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                showMessage('fighters', error.message, 'error');
+            }
+        }
+
+        function openFighterModal(fighter = null) {
+            document.getElementById('fighter-modal').classList.add('active');
+            document.getElementById('fighter-modal-title').textContent = fighter ? 'Edit Fighter' : 'Add Fighter';
+
+            if (fighter) {
+                document.getElementById('fighter-id').value = fighter.id;
+                document.getElementById('fighter-firstName').value = fighter.firstName;
+                document.getElementById('fighter-lastName').value = fighter.lastName;
+                document.getElementById('fighter-nickname').value = fighter.nickname || '';
+                document.getElementById('fighter-weightClass').value = fighter.weightClass || '';
+                document.getElementById('fighter-wins').value = fighter.wins;
+                document.getElementById('fighter-losses').value = fighter.losses;
+                document.getElementById('fighter-draws').value = fighter.draws;
+            } else {
+                document.getElementById('fighter-form').reset();
+                document.getElementById('fighter-id').value = '';
+            }
+        }
+
+        function editFighter(fighter) {
+            openFighterModal(fighter);
+        }
+
+        function closeFighterModal() {
+            document.getElementById('fighter-modal').classList.remove('active');
+        }
+
+        document.getElementById('fighter-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('fighter-id').value;
+            const data = {
+                firstName: document.getElementById('fighter-firstName').value,
+                lastName: document.getElementById('fighter-lastName').value,
+                nickname: document.getElementById('fighter-nickname').value || null,
+                weightClass: document.getElementById('fighter-weightClass').value || null,
+                wins: parseInt(document.getElementById('fighter-wins').value) || 0,
+                losses: parseInt(document.getElementById('fighter-losses').value) || 0,
+                draws: parseInt(document.getElementById('fighter-draws').value) || 0,
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/fighters${id ? '/' + id : ''}`, {
+                    method: id ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    closeFighterModal();
+                    loadFighters();
+                    showMessage('fighters', 'Fighter saved successfully!', 'success');
+                }
+            } catch (error) {
+                showMessage('fighters', error.message, 'error');
+            }
+        };
+
+        async function deleteFighter(id) {
+            if (!confirm('Delete this fighter?')) return;
+            try {
+                await fetch(`${API_URL}/fighters/${id}`, { method: 'DELETE' });
+                loadFighters();
+                showMessage('fighters', 'Fighter deleted successfully!', 'success');
+            } catch (error) {
+                showMessage('fighters', error.message, 'error');
+            }
+        }
+
+        // Fights CRUD
+        async function loadFights() {
+            try {
+                const res = await fetch(`${API_URL}/fights`);
+                const data = await res.json();
+                const tbody = document.getElementById('fights-table');
+                tbody.innerHTML = data.fights.map(f => `
+                    <tr>
+                        <td>${f.event?.name || 'N/A'}</td>
+                        <td>${f.fighter1?.firstName} ${f.fighter1?.lastName}</td>
+                        <td>${f.fighter2?.firstName} ${f.fighter2?.lastName}</td>
+                        <td>${f.weightClass}</td>
+                        <td>
+                            ${f.isComplete ? '<span class="badge badge-success">Complete</span>' :
+                              f.hasStarted ? '<span class="badge badge-warning">Live</span>' :
+                              '<span class="badge">Upcoming</span>'}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick='editFight(${JSON.stringify(f)})'>Edit</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                showMessage('fights', error.message, 'error');
+            }
+        }
+
+        function editFight(fight) {
+            document.getElementById('fight-modal').classList.add('active');
+            document.getElementById('fight-id').value = fight.id;
+            document.getElementById('fight-started').checked = fight.hasStarted;
+            document.getElementById('fight-complete').checked = fight.isComplete;
+        }
+
+        function closeFightModal() {
+            document.getElementById('fight-modal').classList.remove('active');
+        }
+
+        document.getElementById('fight-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('fight-id').value;
+            const data = {
+                hasStarted: document.getElementById('fight-started').checked,
+                isComplete: document.getElementById('fight-complete').checked,
+            };
+
+            try {
+                const res = await fetch(`${API_URL}/fights/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    closeFightModal();
+                    loadFights();
+                    showMessage('fights', 'Fight updated successfully!', 'success');
+                }
+            } catch (error) {
+                showMessage('fights', error.message, 'error');
+            }
+        };
+
+        // Helper functions
+        function showMessage(tab, message, type) {
+            const el = document.getElementById(`${tab}-message`);
+            el.className = type;
+            el.textContent = message;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 3000);
+        }
+
+        // Initial load
+        fetchStats();
+    </script>
+</body>
+</html>

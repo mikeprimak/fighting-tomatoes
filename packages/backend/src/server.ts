@@ -92,6 +92,10 @@ async function start() {
     // Register auth plugin to add authentication middleware
     await fastify.register(authPlugin);
 
+    // Register AdminJS panel - TEMPORARILY DISABLED (ts-node module resolution issues)
+    // const { setupAdminPanel } = await import('./admin');
+    // await setupAdminPanel(fastify);
+
     // Add request logging middleware
     fastify.addHook('onRequest', async (request, reply) => {
       request.log.info({

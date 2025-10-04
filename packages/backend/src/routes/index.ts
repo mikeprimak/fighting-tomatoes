@@ -518,6 +518,10 @@ export async function registerRoutes(fastify: FastifyInstance) {
   // Register notifications routes under /api/notifications prefix
   await fastify.register(notificationsRoutes, { prefix: '/api/notifications' });
 
+  // Register admin stats routes under /api/admin prefix
+  const adminStatsRoutes = (await import('./adminStats')).default;
+  await fastify.register(adminStatsRoutes, { prefix: '/api/admin' });
+
   // Register analytics routes under /api prefix - TEMPORARILY DISABLED
   // await fastify.register(async function(fastify) {
   //   await analyticsRoutes(fastify);
