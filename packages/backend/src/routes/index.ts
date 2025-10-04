@@ -135,6 +135,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   isComplete: { type: 'boolean' },
                   bannerImage: { type: ['string', 'null'] },
                   mainStartTime: { type: ['string', 'null'] },
+                  prelimStartTime: { type: ['string', 'null'] },
                 },
               },
             },
@@ -182,6 +183,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
             greatFights: true,
             bannerImage: true,
             mainStartTime: true,
+            prelimStartTime: true,
           },
         }),
         fastify.prisma.event.count(),
@@ -238,6 +240,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 totalRatings: { type: 'integer' },
                 greatFights: { type: 'integer' },
                 bannerImage: { type: ['string', 'null'] },
+                mainStartTime: { type: ['string', 'null'] },
+                prelimStartTime: { type: ['string', 'null'] },
               },
             },
           },
@@ -277,6 +281,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
           totalRatings: true,
           greatFights: true,
           bannerImage: true,
+          mainStartTime: true,
+          prelimStartTime: true,
         },
       });
 

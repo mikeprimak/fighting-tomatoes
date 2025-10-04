@@ -21,6 +21,7 @@ const API_BASE_URL = getApiBaseUrl();
 
 interface Fight {
   id: string;
+  orderOnCard: number;
   event: {
     id: string;
     name: string;
@@ -381,6 +382,19 @@ class ApiService {
     return this.makeRequest(`/crews/${crewId}/members/${memberId}`, {
       method: 'DELETE',
       body: JSON.stringify({ block }),
+    });
+  }
+
+  async muteCrewChat(crewId: string, duration: '8hours' | 'forever'): Promise<{ message: string; mutedUntil: string | null }> {
+    return this.makeRequest(`/crews/${crewId}/mute`, {
+      method: 'POST',
+      body: JSON.stringify({ duration }),
+    });
+  }
+
+  async unmuteCrewChat(crewId: string): Promise<{ message: string }> {
+    return this.makeRequest(`/crews/${crewId}/unmute`, {
+      method: 'POST',
     });
   }
 

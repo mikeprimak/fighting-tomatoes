@@ -1,5 +1,7 @@
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import authPlugin from './middleware/auth.fastify';
 import { registerRoutes } from './routes';
@@ -80,6 +82,12 @@ async function start() {
 
     // Add Prisma to Fastify context for easy access in routes
     fastify.decorate('prisma', prisma);
+
+    // Register static file serving for images
+    await fastify.register(fastifyStatic, {
+      root: path.join(__dirname, '../public'),
+      prefix: '/', // Serves files at /images/...
+    });
 
     // Register auth plugin to add authentication middleware
     await fastify.register(authPlugin);
@@ -210,3 +218,4 @@ start();
 
 // Export for testing purposes
 export { fastify };
+

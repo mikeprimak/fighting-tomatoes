@@ -16,7 +16,11 @@
       "adaptiveIcon": {
         "backgroundColor": "#1a1a1a"
       },
-      "package": "com.fightcrewapp.mobile"
+      "package": "com.fightcrewapp.mobile",
+      "statusBar": {
+        "translucent": true,
+        "backgroundColor": "#00000000"
+      }
     },
     "web": {
       "bundler": "metro",

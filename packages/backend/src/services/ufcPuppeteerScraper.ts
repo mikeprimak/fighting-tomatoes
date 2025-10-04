@@ -20,6 +20,7 @@ interface FightData {
   isTitle: boolean;
   round?: number;
   time?: string;
+  startTime?: string; // Calculated fight start time
   result?: {
     winner?: string;
     method?: string;
@@ -32,6 +33,7 @@ interface EventData {
   eventName: string;
   eventFmid: string;
   isFinal: boolean;
+  eventStartTime?: string; // Event start time from page
   fights: FightData[];
   timestamp: string;
   screenshotPath?: string;
@@ -103,7 +105,7 @@ class UFCPuppeteerScraper {
   /**
    * Extract event metadata from page
    */
-  private async extractEventMetadata(): Promise<{ eventFmid: string; isFinal: boolean; eventName: string }> {
+  private async extractEventMetadata(): Promise<{ eventFmid: string; isFinal: boolean; eventName: string; eventStartTime?: string }> {
     if (!this.page) throw new Error('Page not initialized');
 
     const metadata = await this.page.evaluate(() => {
@@ -112,6 +114,7 @@ class UFCPuppeteerScraper {
       const scriptTags = document.querySelectorAll('script');
       let eventFmid = 'unknown';
       let isFinal = false;
+      let eventStartTime: string | undefined;
 
       // @ts-ignore
       scriptTags.forEach((script) => {
@@ -126,10 +129,23 @@ class UFCPuppeteerScraper {
         }
       });
 
+      // Extract event start time from page
+      // @ts-ignore
+      const timeElements = document.querySelectorAll('.c-hero__headline-suffix, .field--name-field-main-card-start-time, [class*="time"]');
+      // @ts-ignore
+      timeElements.forEach((el) => {
+        const text = el.textContent?.trim() || '';
+        // Look for patterns like "10:00 PM EDT", "8:00 PM", etc.
+        const timeMatch = text.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)(?:\s+[A-Z]{2,4})?)/i);
+        if (timeMatch && !eventStartTime) {
+          eventStartTime = timeMatch[1].trim();
+        }
+      });
+
       // @ts-ignore
       const eventName = document.title.trim();
 
-      return { eventFmid, isFinal, eventName };
+      return { eventFmid, isFinal, eventName, eventStartTime };
     });
 
     return metadata;
@@ -234,6 +250,51 @@ class UFCPuppeteerScraper {
   }
 
   /**
+   * Calculate fight start times based on event start time
+   * First fight starts at event time, each subsequent fight is 30 mins later
+   */
+  private calculateFightStartTimes(fights: FightData[], eventStartTime?: string): FightData[] {
+    if (!eventStartTime) return fights;
+
+    // Parse event start time (e.g., "10:00 PM EDT")
+    const baseTimeMatch = eventStartTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (!baseTimeMatch) return fights;
+
+    let hours = parseInt(baseTimeMatch[1], 10);
+    const minutes = parseInt(baseTimeMatch[2], 10);
+    const period = baseTimeMatch[3].toUpperCase();
+
+    // Convert to 24-hour format
+    if (period === 'PM' && hours !== 12) {
+      hours += 12;
+    } else if (period === 'AM' && hours === 12) {
+      hours = 0;
+    }
+
+    // Calculate start time for each fight
+    return fights.map((fight, index) => {
+      const minutesOffset = index * 30;
+      let fightHours = hours + Math.floor((minutes + minutesOffset) / 60);
+      let fightMinutes = (minutes + minutesOffset) % 60;
+
+      // Handle day overflow
+      if (fightHours >= 24) {
+        fightHours = fightHours % 24;
+      }
+
+      // Convert back to 12-hour format
+      const fightPeriod = fightHours >= 12 ? 'PM' : 'AM';
+      const displayHours = fightHours === 0 ? 12 : fightHours > 12 ? fightHours - 12 : fightHours;
+      const startTime = `${displayHours}:${fightMinutes.toString().padStart(2, '0')} ${fightPeriod}`;
+
+      return {
+        ...fight,
+        startTime,
+      };
+    });
+  }
+
+  /**
    * Take screenshot
    */
   private async takeScreenshot(filename: string): Promise<string> {
@@ -260,7 +321,10 @@ class UFCPuppeteerScraper {
     }
 
     const metadata = await this.extractEventMetadata();
-    const fights = await this.extractFightData();
+    let fights = await this.extractFightData();
+
+    // Calculate fight start times
+    fights = this.calculateFightStartTimes(fights, metadata.eventStartTime);
 
     // Take screenshot every scrape
     const screenshotFilename = `screenshot-${Date.now()}.png`;
@@ -270,6 +334,7 @@ class UFCPuppeteerScraper {
       eventName: metadata.eventName,
       eventFmid: metadata.eventFmid,
       isFinal: metadata.isFinal,
+      eventStartTime: metadata.eventStartTime,
       fights,
       timestamp,
       screenshotPath,
@@ -277,6 +342,7 @@ class UFCPuppeteerScraper {
 
     console.log(`Event: ${eventData.eventName}`);
     console.log(`Event FMID: ${eventData.eventFmid}`);
+    console.log(`Event Start Time: ${eventData.eventStartTime || 'Not found'}`);
     console.log(`Final: ${eventData.isFinal}`);
     console.log(`Fights: ${fights.length}`);
     console.log(`Screenshot: ${screenshotFilename}`);
@@ -285,7 +351,7 @@ class UFCPuppeteerScraper {
     fights.forEach(fight => {
       const { red, blue } = fight.fighters;
       if (fight.status) {
-        console.log(`  [${fight.status}] ${red.name} vs ${blue.name}`);
+        console.log(`  [${fight.status}] ${red.name} vs ${blue.name}${fight.startTime ? ` - Start: ${fight.startTime}` : ''}`);
       }
       if (fight.round && fight.time) {
         console.log(`    🔴 LIVE: Round ${fight.round}, ${fight.time}`);

@@ -136,7 +136,8 @@ model Fighter {
   fightsAsFighter1 Fight[]  @relation("Fighter1")
   fightsAsFighter2 Fight[]  @relation("Fighter2")
   followers        UserFighterFollow[]
-  
+
+  @@unique([firstName, lastName])
   @@map("fighters")
 }
 
@@ -208,7 +209,8 @@ model Event {
   
   // Relations
   fights            Fight[]
-  
+
+  @@unique([name, date])
   @@map("events")
 }
 
@@ -286,6 +288,7 @@ model Fight {
   crewRoundVotes    CrewRoundVote[]
   crewReactions     CrewReaction[]
 
+  @@unique([eventId, fighter1Id, fighter2Id])
   @@map("fights")
 }
 

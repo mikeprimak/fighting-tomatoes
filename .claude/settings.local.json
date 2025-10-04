@@ -58,7 +58,8 @@
       "Bash(npm install:*)",
       "Bash(tasklist)",
       "WebFetch(domain:api.sportsdata.io)",
-      "Bash(pnpm list:*)"
+      "Bash(pnpm list:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

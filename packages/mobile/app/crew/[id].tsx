@@ -68,6 +68,8 @@ interface CrewDetails {
   allowRoundVoting: boolean;
   allowReactions: boolean;
   userRole: string;
+  isMuted: boolean;
+  mutedUntil?: string | null;
   members: Array<{
     id: string;
     name: string;
@@ -540,6 +542,7 @@ export default function CrewChatScreen() {
     data: crewData,
     isLoading: crewLoading,
     error: crewError,
+    refetch: refetchCrew,
   } = useQuery<{ crew: CrewDetails }>({
     queryKey: ['crew', id],
     queryFn: () => apiService.getCrew(id!),
@@ -987,7 +990,25 @@ export default function CrewChatScreen() {
     }
   };
 
+  const handleMute = async (duration: '8hours' | 'forever') => {
+    try {
+      const result = await apiService.muteCrewChat(id, duration);
+      showSuccess(result.message, 'Muted');
+      refetchCrew();
+    } catch (error: any) {
+      showError(error.error || 'Failed to mute chat', 'Error');
+    }
+  };
 
+  const handleUnmute = async () => {
+    try {
+      const result = await apiService.unmuteCrewChat(id);
+      showSuccess(result.message, 'Unmuted');
+      refetchCrew();
+    } catch (error: any) {
+      showError(error.error || 'Failed to unmute chat', 'Error');
+    }
+  };
 
 
   const renderMessage = ({ item }: { item: Message }) => {
@@ -1728,8 +1749,7 @@ export default function CrewChatScreen() {
                 style={[styles.muteDialogButton, { borderTopColor: colors.border }]}
                 onPress={() => {
                   setShowMuteDialog(false);
-                  // TODO: Implement 8-hour mute functionality
-                  showSuccess('Chat muted for 8 hours', 'Muted');
+                  handleMute('8hours');
                 }}
               >
                 <Text style={[styles.muteDialogButtonText, { color: colors.tint }]}>
@@ -1741,8 +1761,7 @@ export default function CrewChatScreen() {
                 style={[styles.muteDialogButton, { borderTopColor: colors.border }]}
                 onPress={() => {
                   setShowMuteDialog(false);
-                  // TODO: Implement permanent mute functionality
-                  showSuccess('Chat muted forever', 'Muted');
+                  handleMute('forever');
                 }}
               >
                 <Text style={[styles.muteDialogButtonText, { color: colors.tint }]}>
@@ -1791,11 +1810,18 @@ export default function CrewChatScreen() {
               style={[styles.crewMenuItem, { borderBottomColor: colors.border }]}
               onPress={() => {
                 setShowCrewMenu(false);
-                setShowMuteDialog(true);
+                if (crew.isMuted) {
+                  // Unmute directly
+                  handleUnmute();
+                } else {
+                  setShowMuteDialog(true);
+                }
               }}
             >
-              <FontAwesome name="bell-slash" size={20} color={colors.text} />
-              <Text style={[styles.crewMenuItemText, { color: colors.text }]}>Mute Chat</Text>
+              <FontAwesome name={crew.isMuted ? "bell" : "bell-slash"} size={20} color={colors.text} />
+              <Text style={[styles.crewMenuItemText, { color: colors.text }]}>
+                {crew.isMuted ? 'Unmute Chat' : 'Mute Chat'}
+              </Text>
             </TouchableOpacity>
 
             {crew.userRole !== 'OWNER' && (

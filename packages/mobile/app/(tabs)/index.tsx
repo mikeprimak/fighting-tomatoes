@@ -28,6 +28,7 @@ interface Crew {
   totalMembers: number;
   totalMessages: number;
   lastMessageAt: string;
+  lastMessagePreview?: string;
   role: string;
   joinedAt: string;
 }
@@ -137,51 +138,60 @@ export default function CrewsScreen() {
     joinCrewMutation.mutate(inviteCode);
   };
 
-  const renderCrewItem = ({ item }: { item: Crew }) => (
-    <TouchableOpacity
-      style={[styles.crewCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-      onPress={() => {
-        router.push(`/crew/${item.id}`);
-      }}
-    >
-      <View style={styles.crewHeader}>
-        <View style={styles.crewInfo}>
-          <Text style={[styles.crewName, { color: colors.text }]} numberOfLines={1}>
-            {item.name}
-          </Text>
-          {item.description && (
-            <Text style={[styles.crewDescription, { color: colors.textSecondary }]} numberOfLines={2}>
-              {item.description}
-            </Text>
-          )}
-        </View>
-        <View style={styles.crewBadge}>
-          <FontAwesome name="comments" size={20} color={colors.tint} />
-        </View>
-      </View>
+  const renderCrewItem = ({ item }: { item: Crew }) => {
+    // Parse the last message preview to check if it's from the current user
+    const lastMessagePreview = item.lastMessagePreview || 'No messages yet';
+    const displayMessage = lastMessagePreview.startsWith(`${user?.firstName}:`)
+      ? lastMessagePreview.replace(`${user?.firstName}:`, 'You:')
+      : lastMessagePreview;
 
-      <View style={styles.crewStats}>
-        <View style={styles.statItem}>
-          <FontAwesome name="users" size={14} color={colors.textSecondary} />
-          <Text style={[styles.statText, { color: colors.textSecondary }]}>
-            {item.totalMembers} member{item.totalMembers !== 1 ? 's' : ''}
+    // Format time for last message
+    const formatTime = (dateString: string) => {
+      const date = new Date(dateString);
+      const now = new Date();
+      const isToday = date.toDateString() === now.toDateString();
+
+      if (isToday) {
+        // Show time for messages from today
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+
+        if (diffMins < 1) return 'now';
+        if (diffMins < 60) return `${diffMins}m`;
+        return `${diffHours}h`;
+      } else {
+        // Show date for messages not from today
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        style={[styles.crewCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        onPress={() => {
+          router.push(`/crew/${item.id}`);
+        }}
+      >
+        <View style={[styles.crewIcon, { backgroundColor: colors.tint }]}>
+          <FontAwesome name="users" size={20} color={colors.textOnAccent} />
+        </View>
+        <View style={styles.crewContent}>
+          <View style={styles.crewTopRow}>
+            <Text style={[styles.crewName, { color: colors.text }]} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={[styles.timeText, { color: colors.textSecondary }]}>
+              {formatTime(item.lastMessageAt)}
+            </Text>
+          </View>
+          <Text style={[styles.lastMessageText, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
+            {displayMessage}
           </Text>
         </View>
-        <View style={styles.statItem}>
-          <FontAwesome name="comment" size={14} color={colors.textSecondary} />
-          <Text style={[styles.statText, { color: colors.textSecondary }]}>
-            {item.totalMessages} message{item.totalMessages !== 1 ? 's' : ''}
-          </Text>
-        </View>
-        <View style={styles.statItem}>
-          <FontAwesome name="star" size={14} color={colors.tint} />
-          <Text style={[styles.roleText, { color: colors.tint }]}>
-            {item.role}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
@@ -195,7 +205,7 @@ export default function CrewsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.tint} />
           <Text style={[styles.loadingText, { color: colors.text }]}>Loading crews...</Text>
@@ -206,7 +216,7 @@ export default function CrewsScreen() {
 
   if (error) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
         <View style={styles.errorContainer}>
           <FontAwesome name="exclamation-triangle" size={48} color={colors.textSecondary} />
           <Text style={[styles.errorText, { color: colors.text }]}>Failed to load crews</Text>
@@ -224,7 +234,7 @@ export default function CrewsScreen() {
   const crews = crewsData?.crews || [];
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>My Crews</Text>
         <View style={styles.headerButtons}>
@@ -464,50 +474,43 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   crewCard: {
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  crewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  crewInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-  crewName: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  crewDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  crewBadge: {
-    padding: 8,
-  },
-  crewStats: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
   },
-  statText: {
-    fontSize: 12,
-    fontWeight: '500',
+  crewIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  roleText: {
-    fontSize: 12,
+  crewContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  crewTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  crewName: {
+    fontSize: 16,
     fontWeight: '600',
-    textTransform: 'uppercase',
+    flex: 1,
+  },
+  timeText: {
+    fontSize: 12,
+    marginLeft: 8,
+  },
+  lastMessageText: {
+    fontSize: 14,
+    color: '#999',
   },
   modalOverlay: {
     flex: 1,

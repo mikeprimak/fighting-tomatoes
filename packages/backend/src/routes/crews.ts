@@ -134,6 +134,21 @@ export async function crewRoutes(fastify: FastifyInstance) {
               totalMembers: true,
               totalMessages: true,
               updatedAt: true,
+              messages: {
+                orderBy: {
+                  createdAt: 'desc',
+                },
+                take: 1,
+                select: {
+                  content: true,
+                  user: {
+                    select: {
+                      firstName: true,
+                      lastName: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
@@ -142,16 +157,24 @@ export async function crewRoutes(fastify: FastifyInstance) {
         },
       });
 
-      const crews = crewMemberships.map(membership => ({
-        id: membership.crew.id,
-        name: membership.crew.name,
-        description: membership.crew.description,
-        totalMembers: membership.crew.totalMembers,
-        totalMessages: membership.crew.totalMessages,
-        lastMessageAt: membership.crew.updatedAt.toISOString(),
-        role: membership.role,
-        joinedAt: membership.joinedAt.toISOString(),
-      }));
+      const crews = crewMemberships.map(membership => {
+        const lastMessage = membership.crew.messages[0];
+        const lastMessagePreview = lastMessage
+          ? `${lastMessage.user.firstName || 'User'}: ${lastMessage.content}`
+          : 'No messages yet';
+
+        return {
+          id: membership.crew.id,
+          name: membership.crew.name,
+          description: membership.crew.description,
+          totalMembers: membership.crew.totalMembers,
+          totalMessages: membership.crew.totalMessages,
+          lastMessageAt: membership.crew.updatedAt.toISOString(),
+          lastMessagePreview,
+          role: membership.role,
+          joinedAt: membership.joinedAt.toISOString(),
+        };
+      });
 
       return reply.status(200).send({ crews });
     } catch (error: any) {
@@ -301,6 +324,11 @@ export async function crewRoutes(fastify: FastifyInstance) {
 
       const crew = membership.crew;
 
+      // Check if the 8-hour mute has expired
+      const now = new Date();
+      const isCurrentlyMuted = membership.isMuted &&
+        (!membership.mutedUntil || membership.mutedUntil > now);
+
       return reply.status(200).send({
         crew: {
           id: crew.id,
@@ -313,6 +341,8 @@ export async function crewRoutes(fastify: FastifyInstance) {
           allowRoundVoting: crew.allowRoundVoting,
           allowReactions: crew.allowReactions,
           userRole: membership.role,
+          isMuted: isCurrentlyMuted,
+          mutedUntil: membership.mutedUntil,
           members: crew.members.map(member => ({
             id: member.id, // membershipId for removal
             userId: member.user.id,
@@ -1056,6 +1086,114 @@ export async function crewRoutes(fastify: FastifyInstance) {
       });
     } catch (error: any) {
       request.log.error('Remove member error:', error);
+      return reply.status(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Mute/Unmute crew chat
+  fastify.post('/crews/:crewId/mute', {
+    preValidation: [fastify.authenticate],
+  }, async (request: any, reply: any) => {
+    const userId = request.user!.id;
+    const { crewId } = request.params;
+    const { duration } = request.body as { duration: '8hours' | 'forever' };
+
+    try {
+      // Check if user is a member
+      const membership = await fastify.prisma.crewMember.findUnique({
+        where: {
+          userId_crewId: {
+            userId,
+            crewId,
+          },
+        },
+      });
+
+      if (!membership || !membership.isActive) {
+        return reply.status(404).send({
+          error: 'Crew not found or access denied',
+          code: 'CREW_NOT_FOUND',
+        });
+      }
+
+      // Calculate mutedUntil timestamp
+      const mutedUntil = duration === '8hours'
+        ? new Date(Date.now() + 8 * 60 * 60 * 1000) // 8 hours from now
+        : null; // null = muted forever
+
+      // Update membership
+      await fastify.prisma.crewMember.update({
+        where: {
+          userId_crewId: {
+            userId,
+            crewId,
+          },
+        },
+        data: {
+          isMuted: true,
+          mutedUntil,
+        },
+      });
+
+      return reply.status(200).send({
+        message: duration === '8hours' ? 'Chat muted for 8 hours' : 'Chat muted forever',
+        mutedUntil,
+      });
+    } catch (error: any) {
+      request.log.error('Mute crew error:', error);
+      return reply.status(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  fastify.post('/crews/:crewId/unmute', {
+    preValidation: [fastify.authenticate],
+  }, async (request: any, reply: any) => {
+    const userId = request.user!.id;
+    const { crewId } = request.params;
+
+    try {
+      // Check if user is a member
+      const membership = await fastify.prisma.crewMember.findUnique({
+        where: {
+          userId_crewId: {
+            userId,
+            crewId,
+          },
+        },
+      });
+
+      if (!membership || !membership.isActive) {
+        return reply.status(404).send({
+          error: 'Crew not found or access denied',
+          code: 'CREW_NOT_FOUND',
+        });
+      }
+
+      // Update membership
+      await fastify.prisma.crewMember.update({
+        where: {
+          userId_crewId: {
+            userId,
+            crewId,
+          },
+        },
+        data: {
+          isMuted: false,
+          mutedUntil: null,
+        },
+      });
+
+      return reply.status(200).send({
+        message: 'Chat unmuted successfully',
+      });
+    } catch (error: any) {
+      request.log.error('Unmute crew error:', error);
       return reply.status(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',

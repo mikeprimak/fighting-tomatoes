@@ -1,0 +1,222 @@
+[
+  {
+    "eventName": "UFC 320: Ankalaev vs Pereira 2 | UFC",
+    "eventFmid": "1277",
+    "isFinal": false,
+    "eventStartTime": "10:00 PM EDT",
+    "fights": [
+      {
+        "fightId": "12274",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Light Heavyweight Title Bout",
+        "isTitle": true,
+        "startTime": "10:00 PM"
+      },
+      {
+        "fightId": "12275",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Bantamweight Title Bout",
+        "isTitle": true,
+        "startTime": "10:30 PM"
+      },
+      {
+        "fightId": "12276",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Light Heavyweight Bout",
+        "isTitle": false,
+        "startTime": "11:00 PM"
+      },
+      {
+        "fightId": "12375",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Featherweight Bout",
+        "isTitle": false,
+        "startTime": "11:30 PM"
+      },
+      {
+        "fightId": "12318",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Middleweight Bout",
+        "isTitle": false,
+        "startTime": "12:00 AM"
+      },
+      {
+        "fightId": "12451",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Middleweight Bout",
+        "isTitle": false,
+        "startTime": "12:30 AM"
+      },
+      {
+        "fightId": "12320",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Middleweight Bout",
+        "isTitle": false,
+        "startTime": "1:00 AM"
+      },
+      {
+        "fightId": "12322",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Bantamweight Bout",
+        "isTitle": false,
+        "startTime": "1:30 AM"
+      },
+      {
+        "fightId": "12404",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Featherweight Bout",
+        "isTitle": false,
+        "startTime": "2:00 AM"
+      },
+      {
+        "fightId": "12323",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Women's Bantamweight Bout",
+        "isTitle": false,
+        "startTime": "2:30 AM"
+      },
+      {
+        "fightId": "12358",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Bantamweight Bout",
+        "isTitle": false,
+        "startTime": "3:00 AM"
+      },
+      {
+        "fightId": "12434",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Welterweight Bout",
+        "isTitle": false,
+        "startTime": "3:30 AM"
+      },
+      {
+        "fightId": "12435",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Welterweight Bout",
+        "isTitle": false,
+        "startTime": "4:00 AM"
+      },
+      {
+        "fightId": "12321",
+        "status": "Upcoming-0-0",
+        "fighters": {
+          "red": {
+            "name": ""
+          },
+          "blue": {
+            "name": ""
+          }
+        },
+        "weightClass": "Women's Flyweight Bout",
+        "isTitle": false,
+        "startTime": "4:30 AM"
+      }
+    ],
+    "timestamp": "2025-10-03T00:19:23.793Z",
+    "screenshotPath": "C:\\Users\\avoca\\fight-mobile-app\\packages\\backend\\test-results\\ufc-puppeteer\\screenshot-1759450768738.png"
+  }
+]

@@ -121,7 +121,7 @@ export default function EventsScreen() {
   const renderEventCard = ({ item: event }: { item: Event }) => (
     <EventCard
       event={event}
-      showTime={selectedTab === 'upcoming'}
+      showTime={selectedTab === 'upcoming' || selectedTab === 'live'}
     />
   );
 
@@ -158,12 +158,6 @@ export default function EventsScreen() {
             onPress={() => setSelectedTab('live')}
           >
             <View style={styles.liveTabContent}>
-              <Text style={[
-                styles.tabText,
-                { color: colors.danger }
-              ]}>
-                Live
-              </Text>
               <Animated.View style={[
                 styles.liveDot,
                 {
@@ -171,6 +165,12 @@ export default function EventsScreen() {
                   opacity: pulseAnim
                 }
               ]} />
+              <Text style={[
+                styles.tabText,
+                { color: colors.danger }
+              ]}>
+                Live
+              </Text>
             </View>
           </TouchableOpacity>
         )}

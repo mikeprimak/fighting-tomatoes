@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  StatusBar,
+  Animated,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
@@ -27,51 +29,15 @@ interface EventDetails {
   promotion: string;
   hasStarted: boolean;
   isComplete: boolean;
+  bannerImage?: string | null;
+  mainStartTime?: string | null;
+  prelimStartTime?: string | null;
 }
 
-interface Fight {
-  id: string;
-  orderOnCard: number;
-  weightClass?: string;
-  isTitle: boolean;
-  titleName?: string;
-  hasStarted: boolean;
-  isComplete: boolean;
-  winner?: string;
-  method?: string;
-  round?: number;
-  time?: string;
-  averageRating: number;
-  totalRatings: number;
-  totalReviews: number;
-  event: EventDetails;
-  fighter1: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    nickname?: string;
-    wins: number;
-    losses: number;
-    draws: number;
-  };
-  fighter2: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    nickname?: string;
-    wins: number;
-    losses: number;
-    draws: number;
-  };
-  userRating?: number;
-  userReview?: {
-    content: string;
-  };
-  userTags?: Array<{ name: string }>;
-}
+type Fight = any;
 
-// Same image selection logic as EventCard
-const getEventImage = (eventId: string) => {
+// Placeholder image selection logic - same as EventCard
+const getPlaceholderImage = (eventId: string) => {
   const images = [
     require('../../assets/events/event-banner-1.jpg'),
     require('../../assets/events/event-banner-2.jpg'),
@@ -89,11 +55,16 @@ export default function EventDetailScreen() {
   const { user, isAuthenticated } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const insets = useSafeAreaInsets();
 
   // Modal state
   const [selectedFight, setSelectedFight] = useState<Fight | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showPredictionModal, setShowPredictionModal] = useState(false);
+  const [bannerAspectRatio, setBannerAspectRatio] = useState<number>(16 / 9);
+
+  // Pulsing animation for live indicator
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Fetch event details
   const { data: eventData, isLoading: eventLoading, error: eventError } = useQuery({
@@ -132,6 +103,47 @@ export default function EventDetailScreen() {
     },
     enabled: !!id,
   });
+
+  const event = eventData?.event;
+  const fights = fightsData?.fights || [];
+
+  // Helper to check if event is currently live
+  const isEventLive = (event: EventDetails | undefined) => {
+    if (!event || event.isComplete) return false;
+
+    const now = new Date();
+
+    // Get the earliest start time (prelims or main card)
+    const earliestTime = event.prelimStartTime || event.mainStartTime;
+    if (!earliestTime) return event.hasStarted; // Fallback to hasStarted flag
+
+    const startTime = new Date(earliestTime);
+    return now >= startTime && !event.isComplete;
+  };
+
+  const eventIsLive = isEventLive(event);
+
+  // Start pulsing animation when event is live
+  useEffect(() => {
+    if (eventIsLive) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.3,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+  }, [eventIsLive, pulseAnim]);
 
   const openRatingModal = async (fight: Fight) => {
     try {
@@ -208,20 +220,57 @@ export default function EventDetailScreen() {
     setShowPredictionModal(false);
   };
 
+  const handleBannerLoad = (e: any) => {
+    const { width, height } = e.nativeEvent.source;
+    if (width && height) {
+      setBannerAspectRatio(width / height);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const timeString = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short',
+    });
+    return timeString;
+  };
+
+  const getDisplayTime = (event: EventDetails | undefined) => {
+    if (!event) return null;
+    if (event.mainStartTime) {
+      return formatTime(event.mainStartTime);
+    }
+    return null;
+  };
+
   if (eventLoading || fightsLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar translucent backgroundColor="transparent" barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>Loading event...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (eventError || fightsError) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <StatusBar translucent backgroundColor="transparent" barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: colors.danger }]}>
             Error loading event details
@@ -233,31 +282,31 @@ export default function EventDetailScreen() {
             <Text style={[styles.backButtonText, { color: colors.textOnAccent }]}>Go Back</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
-  const event = eventData?.event;
-  const fights = fightsData?.fights || [];
+  // Group fights by card section based on orderOnCard
+  // Lower orderOnCard = main event (most important fights first)
+  const mainCard = fights.filter((f: Fight) => f.orderOnCard <= 5);
+  const prelimCard = fights.filter((f: Fight) => f.orderOnCard > 5 && f.orderOnCard <= 9);
+  const earlyPrelims = fights.filter((f: Fight) => f.orderOnCard > 9);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  // Group fights by card section
-  const mainCard = fights.filter((f: Fight) => f.orderOnCard >= 9);
-  const prelimCard = fights.filter((f: Fight) => f.orderOnCard >= 5 && f.orderOnCard < 9);
-  const earlyPrelims = fights.filter((f: Fight) => f.orderOnCard < 5);
+  // Debug: log fight ordering
+  console.log('Fight ordering debug:', {
+    totalFights: fights.length,
+    mainCardCount: mainCard.length,
+    prelimCardCount: prelimCard.length,
+    earlyPrelimsCount: earlyPrelims.length,
+    mainCardOrders: mainCard.map(f => f.orderOnCard),
+    prelimCardOrders: prelimCard.map(f => f.orderOnCard),
+    earlyPrelimsOrders: earlyPrelims.map(f => f.orderOnCard),
+  });
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar translucent backgroundColor="transparent" barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+      <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 12 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backIcon}>
           <FontAwesome name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
@@ -265,9 +314,38 @@ export default function EventDetailScreen() {
           <Text style={[styles.eventName, { color: colors.text }]} numberOfLines={1}>
             {event?.name || (eventLoading ? 'Loading...' : 'Event Details')}
           </Text>
-          <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-            {event?.date && formatDate(event.date)}
-          </Text>
+          <View style={styles.eventDateRow}>
+            <Text style={[styles.eventDate, { color: colors.textSecondary }]} numberOfLines={1}>
+              {event?.date && formatDate(event.date)}
+              {!eventIsLive && getDisplayTime(event) && ` • Main @ ${getDisplayTime(event)}`}
+            </Text>
+            {eventIsLive && (
+              <View style={styles.liveIndicator}>
+                <Animated.View
+                  style={[
+                    styles.liveDot,
+                    {
+                      backgroundColor: colors.danger,
+                      opacity: pulseAnim,
+                    },
+                  ]}
+                />
+                <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
+              </View>
+            )}
+          </View>
+          {(event?.venue || event?.location) && (
+            <Text style={[styles.eventLocation, { color: colors.textSecondary }]} numberOfLines={1}>
+              {[event.venue, event.location]
+                .filter(Boolean)
+                .map(s => s.trim())
+                .filter(s => s.length > 0)
+                .join(', ')
+                .replace(/,\s*,/g, ',')
+                .replace(/^,\s*/, '')
+                .replace(/\s*,$/, '')}
+            </Text>
+          )}
         </View>
       </View>
 
@@ -279,36 +357,12 @@ export default function EventDetailScreen() {
         {/* Event Banner Image */}
         {event?.id && (
           <Image
-            source={getEventImage(event.id)}
-            style={styles.eventBanner}
+            source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
+            style={[styles.eventBanner, { aspectRatio: bannerAspectRatio }]}
             resizeMode="cover"
+            onLoad={handleBannerLoad}
           />
         )}
-
-        {/* Event Info */}
-        <View style={[styles.eventInfo, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.venue, { color: colors.text }]}>
-            {event?.venue}
-          </Text>
-          <Text style={[styles.location, { color: colors.textSecondary }]}>
-            {event?.location}
-          </Text>
-          <View style={styles.statsRow}>
-            <Text style={[styles.stat, { color: colors.text }]}>
-              {fights.length} Fights
-            </Text>
-            {event?.isComplete && (
-              <View style={[styles.badge, { backgroundColor: colors.success }]}>
-                <Text style={styles.badgeText}>Complete</Text>
-              </View>
-            )}
-            {event?.hasStarted && !event?.isComplete && (
-              <View style={[styles.badge, { backgroundColor: colors.warning }]}>
-                <Text style={styles.badgeText}>Live</Text>
-              </View>
-            )}
-          </View>
-        </View>
 
         {/* Main Card */}
         {mainCard.length > 0 && (
@@ -316,32 +370,13 @@ export default function EventDetailScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               MAIN CARD
             </Text>
-            {mainCard.map((fight: Fight, index: number) => (
-              <View key={fight.id} style={styles.fightCard}>
-                <View style={[styles.fight, {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                  borderTopWidth: index === 0 ? 2 : 1,
-                  borderTopColor: index === 0 ? colors.primary : colors.border,
-                }]}>
-                  {index === 0 && (
-                    <View style={[styles.mainEventBadge, { backgroundColor: colors.primary }]}>
-                      <Text style={styles.mainEventText}>MAIN EVENT</Text>
-                    </View>
-                  )}
-                  {index === 1 && (
-                    <View style={[styles.coMainBadge, { backgroundColor: colors.secondary }]}>
-                      <Text style={styles.coMainText}>CO-MAIN EVENT</Text>
-                    </View>
-                  )}
-
-                  <FightDisplayCard
-                    fight={fight}
-                    onPress={() => handleFightPress(fight)}
-                    showEvent={false}
-                  />
-                </View>
-              </View>
+            {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
+              <FightDisplayCard
+                key={fight.id}
+                fight={fight}
+                onPress={() => handleFightPress(fight)}
+                showEvent={false}
+              />
             ))}
           </View>
         )}
@@ -352,19 +387,13 @@ export default function EventDetailScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               PRELIMINARY CARD
             </Text>
-            {prelimCard.map((fight: Fight) => (
-              <View key={fight.id} style={styles.fightCard}>
-                <View style={[styles.fight, {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border
-                }]}>
-                  <FightDisplayCard
-                    fight={fight}
-                    onPress={() => handleFightPress(fight)}
-                    showEvent={false}
-                  />
-                </View>
-              </View>
+            {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
+              <FightDisplayCard
+                key={fight.id}
+                fight={fight}
+                onPress={() => handleFightPress(fight)}
+                showEvent={false}
+              />
             ))}
           </View>
         )}
@@ -375,19 +404,13 @@ export default function EventDetailScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               EARLY PRELIMS
             </Text>
-            {earlyPrelims.map((fight: Fight) => (
-              <View key={fight.id} style={styles.fightCard}>
-                <View style={[styles.fight, {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border
-                }]}>
-                  <FightDisplayCard
-                    fight={fight}
-                    onPress={() => handleFightPress(fight)}
-                    showEvent={false}
-                  />
-                </View>
-              </View>
+            {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
+              <FightDisplayCard
+                key={fight.id}
+                fight={fight}
+                onPress={() => handleFightPress(fight)}
+                showEvent={false}
+              />
             ))}
           </View>
         )}
@@ -401,8 +424,9 @@ export default function EventDetailScreen() {
           </View>
         )}
         </ScrollView>
+      </View>
 
-        {/* Custom Tab Bar */}
+      {/* Custom Tab Bar */}
         <View style={[styles.tabBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
           <TouchableOpacity
             style={styles.tabItem}
@@ -428,7 +452,6 @@ export default function EventDetailScreen() {
             <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Profile</Text>
           </TouchableOpacity>
         </View>
-      </View>
 
       {/* Rating Modal */}
       <RateFightModal
@@ -447,7 +470,7 @@ export default function EventDetailScreen() {
           console.log('Prediction submitted successfully');
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -462,7 +485,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
   backIcon: {
@@ -479,12 +502,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 2,
   },
+  eventDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  liveIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 16,
+  },
+  liveText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  eventLocation: {
+    fontSize: 14,
+    marginTop: 2,
+  },
   scrollContainer: {
     paddingBottom: 20,
   },
   eventBanner: {
     width: '100%',
-    height: 200,
+    height: undefined,
     marginBottom: 16,
   },
   eventInfo: {
@@ -500,7 +547,12 @@ const styles = StyleSheet.create({
   },
   location: {
     fontSize: 14,
+    marginBottom: 4,
+  },
+  mainCardTime: {
+    fontSize: 14,
     marginBottom: 12,
+    fontWeight: '500',
   },
   statsRow: {
     flexDirection: 'row',
@@ -628,4 +680,4 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: '500',
   },
-});
+}); 

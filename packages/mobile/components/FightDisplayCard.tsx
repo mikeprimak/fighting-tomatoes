@@ -1,12 +1,7 @@
-import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  useColorScheme,
-  Image,
-} from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
+import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 
 // Type definitions based on the existing API types
@@ -29,6 +24,7 @@ interface Event {
 
 export interface FightData {
   id: string;
+  orderOnCard?: number;
   event: Event;
   fighter1: Fighter;
   fighter2: Fighter;
@@ -38,6 +34,8 @@ export interface FightData {
   averageRating: number;
   totalRatings: number;
   totalReviews: number;
+  hasStarted: boolean;
+  isComplete: boolean;
   watchPlatform?: string;
   watchUrl?: string;
   // User-specific data
@@ -56,43 +54,33 @@ interface FightDisplayCardProps {
   showActionButton?: boolean;
   actionButtonText?: string;
   customActionButton?: React.ReactNode;
+  showEvent?: boolean;
 }
-
-// Fighter image selection logic
-const getFighterImage = (fighterId: string) => {
-  const images = [
-    require('../assets/fighters/fighter-1.jpg'),
-    require('../assets/fighters/fighter-2.jpg'),
-    require('../assets/fighters/fighter-3.jpg'),
-    require('../assets/fighters/fighter-4.jpg'),
-    require('../assets/fighters/fighter-5.jpg'),
-    require('../assets/fighters/fighter-6.jpg'),
-  ];
-
-  // Use charCodeAt to get a number from the last character (works for letters and numbers)
-  const lastCharCode = fighterId.charCodeAt(fighterId.length - 1);
-  const index = lastCharCode % images.length;
-  return images[index];
-};
 
 export default function FightDisplayCard({
   fight,
   onPress,
-  showActionButton = true,
-  actionButtonText = 'Rate Fight',
-  customActionButton,
+  showEvent = true,
 }: FightDisplayCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
+  // Animated value for pulsing dot
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Animated values for rating save animation
+  const ratingScaleAnim = useRef(new Animated.Value(1)).current;
+  const ratingGlowAnim = useRef(new Animated.Value(0)).current;
 
   const getFighterName = (fighter: Fighter) => {
     const name = `${fighter.firstName} ${fighter.lastName}`;
     return fighter.nickname ? `${name} "${fighter.nickname}"` : name;
   };
 
-  const getFighterRecord = (fighter: Fighter) => {
-    return `${fighter.wins}-${fighter.losses}-${fighter.draws}`;
+  // Helper function to remove nicknames from fighter names
+  const cleanFighterName = (displayName: string) => {
+    const nicknameMatch = displayName.match(/^(.+)\s+"([^"]+)"$/);
+    return nicknameMatch ? nicknameMatch[1].trim() : displayName;
   };
 
   const formatDate = (dateString: string) => {
@@ -104,290 +92,301 @@ export default function FightDisplayCard({
     });
   };
 
+  // Start pulsing animation for live fights
+  useEffect(() => {
+    if (fight.hasStarted && !fight.isComplete) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.3,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+  }, [fight.hasStarted, fight.isComplete, pulseAnim]);
+
+  // Determine fight status
+  const getStatus = () => {
+    if (fight.isComplete) return 'completed';
+    if (fight.hasStarted) return 'in_progress';
+    return 'upcoming';
+  };
+
+  const status = getStatus();
+
+  // Determine background color based on fight status
+  const getBackgroundColor = () => {
+    if (status === 'in_progress') return colors.primary;
+    return colors.card;
+  };
+
+  // Determine text color based on fight status
+  const getTextColor = () => {
+    return status === 'in_progress' ? colors.textOnAccent : colors.text;
+  };
+
   return (
     <TouchableOpacity
-      style={[styles.fightCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+      style={[styles.container, { backgroundColor: getBackgroundColor() }]}
       onPress={() => onPress(fight)}
+      activeOpacity={0.7}
     >
-      <View style={styles.fightHeader}>
-        <View style={styles.eventInfo}>
-          <Text style={[styles.eventName, { color: colors.textSecondary }]}>
-            {fight.event.name} • {formatDate(fight.event.date)}
-          </Text>
-          {fight.isTitle && (
-            <Text style={[styles.titleBadge, { color: colors.primary }]}>TITLE FIGHT</Text>
-          )}
-        </View>
-        <Text style={[styles.orgBadge, { color: colors.primary }]}>
-          {fight.event.promotion}
+      {fight.isTitle && (
+        <Text style={[styles.mainEventLabel, { color: status === 'in_progress' ? colors.textOnAccent : colors.tint }]}>
+          TITLE FIGHT
         </Text>
-      </View>
+      )}
 
-      <View style={styles.fightersContainer}>
-        <View style={styles.fighter}>
-          <Image
-            source={getFighterImage(fight.fighter1.id)}
-            style={styles.fighterImage}
-            resizeMode="cover"
-          />
-          <Text style={[styles.fighterName, { color: colors.text }]}>
-            {getFighterName(fight.fighter1)}
-          </Text>
-          <Text style={[styles.record, { color: colors.textSecondary }]}>
-            {getFighterRecord(fight.fighter1)}
-          </Text>
+      {showEvent && (
+        <Text style={[styles.eventText, { color: status === 'in_progress' ? colors.textOnAccent : colors.textSecondary }]}>
+          {fight.event.name} • {formatDate(fight.event.date)}
+        </Text>
+      )}
+
+      {/* Fighter Names - Full Width */}
+      <Text style={[styles.matchup, { color: getTextColor() }]}>
+        {cleanFighterName(getFighterName(fight.fighter1))} vs {cleanFighterName(getFighterName(fight.fighter2))}
+      </Text>
+
+      {/* Horizontal Info Row - Aggregate Rating, My Rating, Fight Status */}
+      <View style={styles.horizontalInfoRow}>
+        {/* Aggregate Score / Live Indicator */}
+        {status === 'upcoming' ? (
+          <View style={styles.ratingRow}>
+            <FontAwesome6
+              name="fire-flame-curved"
+              size={20}
+              color={colors.primary}
+              style={styles.ratingIcon}
+            />
+            <Text style={[styles.aggregateLabel, { color: colors.textSecondary }]}>
+              8.2
+            </Text>
+          </View>
+        ) : status === 'in_progress' ? (
+          <View style={styles.liveContainer}>
+            <Text style={[styles.statusText, { color: colors.danger }]} numberOfLines={1}>
+              Live
+            </Text>
+            <Animated.View style={[
+              styles.liveDot,
+              {
+                backgroundColor: colors.danger,
+                opacity: pulseAnim
+              }
+            ]} />
+          </View>
+        ) : (
+          fight.isComplete && fight.averageRating > 0 && (
+            <View style={styles.ratingRow}>
+              <View style={styles.partialStarContainer}>
+                <FontAwesome
+                  name="star-o"
+                  size={20}
+                  color="#F5C518"
+                  style={styles.starBase}
+                />
+                <View style={[
+                  styles.filledStarContainer,
+                  {
+                    height: `${Math.min(100, Math.max(0, fight.averageRating === 10 ? 100 : fight.averageRating * 8.5))}%`,
+                  }
+                ]}>
+                  <FontAwesome
+                    name="star"
+                    size={20}
+                    color="#F5C518"
+                    style={styles.starFilled}
+                  />
+                </View>
+              </View>
+              <Text style={[styles.aggregateLabel, { color: colors.textSecondary }]}>
+                {fight.averageRating.toFixed(1)}
+              </Text>
+            </View>
+          )
+        )}
+
+        {/* User's Personal Rating */}
+        <View style={{ position: 'relative' }}>
+          <Animated.View style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: '#83B4F3',
+            borderRadius: 20,
+            opacity: ratingGlowAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0.3],
+            }),
+            transform: [{ scale: ratingGlowAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] }) }],
+          }} />
+
+          <Animated.View style={{
+            transform: [{ scale: ratingScaleAnim }],
+          }}>
+            <View style={styles.ratingRow}>
+              {status === 'upcoming' ? (
+                <>
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={20}
+                    color='#83B4F3'
+                    style={styles.ratingIcon}
+                  />
+                  <Text style={[styles.userRatingText, { color: '#83B4F3' }]}>
+                    Predict
+                  </Text>
+                </>
+              ) : status === 'in_progress' ? (
+                <>
+                  <FontAwesome
+                    name={fight.userRating ? "star" : "star-o"}
+                    size={20}
+                    color={colors.textOnAccent}
+                    style={styles.ratingIcon}
+                  />
+                  <Text style={[styles.userRatingText, { color: colors.textOnAccent }]}>
+                    {fight.userRating ? `${fight.userRating}` : 'Rate'}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <FontAwesome
+                    name={fight.userRating ? "star" : "star-o"}
+                    size={20}
+                    color="#83B4F3"
+                    style={styles.ratingIcon}
+                  />
+                  <Text style={[styles.userRatingText, { color: '#83B4F3' }]}>
+                    {fight.userRating ? `${fight.userRating}` : 'Rate'}
+                  </Text>
+                </>
+              )}
+            </View>
+          </Animated.View>
         </View>
 
-        <View style={styles.vsContainer}>
-          <Text style={[styles.vs, { color: colors.textSecondary }]}>VS</Text>
+        {/* Weight Class / Status */}
+        <View style={styles.statusContainer}>
           {fight.weightClass && (
-            <Text style={[styles.weightClass, { color: colors.textSecondary }]}>
+            <Text style={[styles.statusText, { color: status === 'in_progress' ? colors.textOnAccent : colors.textSecondary }]} numberOfLines={1}>
               {fight.weightClass}
             </Text>
           )}
         </View>
-
-        <View style={styles.fighter}>
-          <Image
-            source={getFighterImage(fight.fighter2.id)}
-            style={styles.fighterImage}
-            resizeMode="cover"
-          />
-          <Text style={[styles.fighterName, { color: colors.text }]}>
-            {getFighterName(fight.fighter2)}
-          </Text>
-          <Text style={[styles.record, { color: colors.textSecondary }]}>
-            {getFighterRecord(fight.fighter2)}
-          </Text>
-        </View>
       </View>
-
-      {/* User Rating Section */}
-      {fight.userRating && (
-        <View style={styles.userRatingSection}>
-          <Text style={[styles.userRatingLabel, { color: colors.textSecondary }]}>
-            Your Rating:
-          </Text>
-          <View style={styles.userRatingDisplay}>
-            <Text style={[styles.userRatingStars, { color: colors.primary }]}>
-              {'★'.repeat(fight.userRating)}{'☆'.repeat(10 - fight.userRating)}
-            </Text>
-            <Text style={[styles.userRatingNumber, { color: colors.primary }]}>
-              {fight.userRating}/10
-            </Text>
-          </View>
-          {fight.userReview && (
-            <Text style={[styles.userReviewText, { color: colors.text }]} numberOfLines={2}>
-              "{fight.userReview.content}"
-            </Text>
-          )}
-          {fight.userTags && fight.userTags.length > 0 && (
-            <View style={styles.userTagsContainer}>
-              {fight.userTags.slice(0, 3).map((tag, index) => (
-                <Text key={index} style={[styles.userTag, { color: colors.primary, borderColor: colors.primary }]}>
-                  {tag}
-                </Text>
-              ))}
-              {fight.userTags.length > 3 && (
-                <Text style={[styles.userTagsMore, { color: colors.textSecondary }]}>
-                  +{fight.userTags.length - 3} more
-                </Text>
-              )}
-            </View>
-          )}
-        </View>
-      )}
-
-
-      <View style={styles.ratingSection}>
-        {customActionButton ? (
-          customActionButton
-        ) : showActionButton ? (
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.primary }]}
-              onPress={() => onPress(fight)}
-            >
-              <Text style={[styles.actionButtonText, { color: colors.textOnAccent }]}>{actionButtonText}</Text>
-            </TouchableOpacity>
-          </View>
-        ) : null}
-
-        {fight.totalRatings > 0 && (
-          <View style={styles.avgRatingContainer}>
-            <Text style={[styles.avgRating, { color: colors.text }]}>
-              ⭐ {fight.averageRating.toFixed(1)}/10
-            </Text>
-            <Text style={[styles.ratingCount, { color: colors.textSecondary }]}>
-              ({fight.totalRatings} rating{fight.totalRatings !== 1 ? 's' : ''})
-              {fight.totalReviews > 0 && ` • ${fight.totalReviews} review${fight.totalReviews !== 1 ? 's' : ''}`}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {fight.watchPlatform && (
-        <View style={styles.watchInfo}>
-          <Text style={[styles.watchText, { color: colors.textSecondary }]}>
-            Watch on {fight.watchPlatform}
-          </Text>
-        </View>
-      )}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  fightCard: {
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-  },
-  fightHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  eventInfo: {
-    flex: 1,
-  },
-  eventName: {
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  titleBadge: {
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  orgBadge: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  fightersContainer: {
-    marginBottom: 12,
-  },
-  fighter: {
-    alignItems: 'center',
+  container: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginHorizontal: 4,
     marginBottom: 8,
   },
-  fighterImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 8,
-    borderWidth: 2,
-    borderColor: '#ddd',
+  mainEventLabel: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginBottom: 4,
+    letterSpacing: 1,
   },
-  fighterName: {
+  eventText: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  matchup: {
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 4,
+  },
+  horizontalInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingHorizontal: 4,
+    gap: 16,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  ratingIcon: {
+    width: 24,
+    textAlign: 'center',
+    marginRight: 6,
+  },
+  partialStarContainer: {
+    position: 'relative',
+    width: 24,
+    height: 20,
+    marginRight: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  starBase: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     textAlign: 'center',
   },
-  record: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  vsContainer: {
-    alignItems: 'center',
-    marginVertical: 8,
-  },
-  vs: {
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  weightClass: {
-    fontSize: 10,
-    marginTop: 2,
-  },
-  ratingSection: {
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  actionButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  avgRatingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avgRating: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginRight: 4,
-  },
-  ratingCount: {
-    fontSize: 12,
-  },
-  watchInfo: {
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  watchText: {
-    fontSize: 12,
-    fontStyle: 'italic',
-  },
-  // User Rating Styles
-  userRatingSection: {
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    padding: 12,
-    marginHorizontal: -16,
-    marginBottom: 12,
-    borderRadius: 8,
-  },
-  userRatingLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 6,
-  },
-  userRatingDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  userRatingStars: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  userRatingNumber: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  userReviewText: {
-    fontSize: 13,
-    fontStyle: 'italic',
-    marginBottom: 8,
-    lineHeight: 18,
-  },
-  userTagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  userTag: {
-    fontSize: 11,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderRadius: 12,
+  filledStarContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     overflow: 'hidden',
   },
-  userTagsMore: {
-    fontSize: 11,
-    paddingHorizontal: 4,
-    paddingVertical: 4,
+  starFilled: {
+    textAlign: 'center',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  userRatingText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  aggregateLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  statusContainer: {
+    flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    maxWidth: '40%',
+  },
+  statusText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  liveContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });

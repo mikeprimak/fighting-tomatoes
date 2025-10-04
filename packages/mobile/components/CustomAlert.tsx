@@ -79,7 +79,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
   if (isSimpleAlert) {
     // Simple alert with just icon and message (auto-dismiss)
     return (
-      <Modal visible={visible} transparent animationType="fade">
+      <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
         <View style={styles.overlay}>
           <View style={[styles.simpleContainer, { backgroundColor: colors.card }]}>
             <FontAwesome name={icon.name} size={64} color={icon.color} />
@@ -99,6 +99,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
       visible={visible}
       transparent
       animationType="fade"
+      statusBarTranslucent
       onRequestClose={onDismiss}
     >
       <TouchableOpacity
@@ -166,7 +167,11 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
