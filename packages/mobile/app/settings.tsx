@@ -7,12 +7,15 @@ import {
   Switch,
   TouchableOpacity,
   ActivityIndicator,
+  Linking,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { FontAwesome } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 import { apiService } from '../services/api';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from '../components/CustomAlert';
@@ -36,6 +39,7 @@ export default function SettingsScreen() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     notificationsEnabled: true,
     notifyEventStart: true,
@@ -50,7 +54,13 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     loadPreferences();
+    checkPermissions();
   }, []);
+
+  const checkPermissions = async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    setPermissionStatus(status);
+  };
 
   const loadPreferences = async () => {
     try {
@@ -75,6 +85,28 @@ export default function SettingsScreen() {
       // Revert on error
       setPreferences(prev => ({ ...prev, [key]: oldValue }));
       showError('Failed to update preference');
+    }
+  };
+
+  const requestPermissions = async () => {
+    const { status } = await Notifications.requestPermissionsAsync();
+    setPermissionStatus(status);
+
+    if (status === 'granted') {
+      showSuccess('Notification permissions granted!');
+    } else if (status === 'denied') {
+      // On iOS, once denied, user must go to settings
+      if (Platform.OS === 'ios') {
+        showError('Please enable notifications in Settings app', 'Permission Denied');
+      }
+    }
+  };
+
+  const openAppSettings = () => {
+    if (Platform.OS === 'ios') {
+      Linking.openURL('app-settings:');
+    } else {
+      Linking.openSettings();
     }
   };
 
@@ -162,6 +194,31 @@ export default function SettingsScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Permission Warning Banner */}
+        {permissionStatus !== 'granted' && (
+          <View style={[styles.permissionBanner, { backgroundColor: colors.warning + '20', borderColor: colors.warning }]}>
+            <FontAwesome name="exclamation-triangle" size={20} color={colors.warning} />
+            <View style={styles.permissionTextContainer}>
+              <Text style={[styles.permissionTitle, { color: colors.text }]}>
+                Notification Permissions Required
+              </Text>
+              <Text style={[styles.permissionText, { color: colors.textSecondary }]}>
+                {permissionStatus === 'denied'
+                  ? 'You denied notification permissions. Please enable them in your device settings.'
+                  : 'Grant permission to receive push notifications.'}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[styles.permissionButton, { backgroundColor: colors.primary }]}
+              onPress={permissionStatus === 'denied' ? openAppSettings : requestPermissions}
+            >
+              <Text style={styles.permissionButtonText}>
+                {permissionStatus === 'denied' ? 'Open Settings' : 'Enable'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Master Toggle */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Push Notifications</Text>
@@ -357,5 +414,36 @@ const createStyles = (colors: any) =>
       fontSize: 14,
       lineHeight: 20,
       textAlign: 'center',
+    },
+    permissionBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 16,
+      borderRadius: 12,
+      borderWidth: 1,
+      marginBottom: 16,
+      gap: 12,
+    },
+    permissionTextContainer: {
+      flex: 1,
+    },
+    permissionTitle: {
+      fontSize: 15,
+      fontWeight: '600',
+      marginBottom: 4,
+    },
+    permissionText: {
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    permissionButton: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 8,
+    },
+    permissionButtonText: {
+      color: 'white',
+      fontSize: 14,
+      fontWeight: '600',
     },
   });
