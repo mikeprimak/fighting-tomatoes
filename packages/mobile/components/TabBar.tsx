@@ -46,7 +46,7 @@ interface TabBarProps {
  * <TabBar tabs={tabs} defaultHeaderTitle="Fighting Tomatoes" />
  * ```
  */
-export default function TabBar({ tabs, defaultHeaderTitle }: TabBarProps) {
+export default function TabBar({ tabs, defaultHeaderTitle, children }: TabBarProps & { children?: React.ReactNode }) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -64,6 +64,9 @@ export default function TabBar({ tabs, defaultHeaderTitle }: TabBarProps) {
         },
         headerTintColor: colors.text,
         headerShadowVisible: false,
+        sceneStyle: {
+          backgroundColor: colors.background,
+        },
       }}
     >
       {tabs.map((tab) => (
@@ -77,6 +80,7 @@ export default function TabBar({ tabs, defaultHeaderTitle }: TabBarProps) {
           }}
         />
       ))}
+      {children}
     </Tabs>
   );
 }
@@ -95,7 +99,8 @@ export function FightCrewAppTabBar() {
     {
       name: 'events',
       title: 'Events',
-      iconName: 'calendar'
+      iconName: 'calendar',
+      headerTitle: 'Events'
     },
     {
       name: 'fights',

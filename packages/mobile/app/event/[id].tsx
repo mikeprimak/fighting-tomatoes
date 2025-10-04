@@ -307,7 +307,11 @@ export default function EventDetailScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar translucent backgroundColor="transparent" barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
       <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 12 }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backIcon}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backIcon}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
           <FontAwesome name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
@@ -426,33 +430,6 @@ export default function EventDetailScreen() {
         </ScrollView>
       </View>
 
-      {/* Custom Tab Bar */}
-        <View style={[styles.tabBar, { backgroundColor: colors.card, borderTopColor: colors.border }]}>
-          <TouchableOpacity
-            style={styles.tabItem}
-            onPress={() => router.push('/(tabs)/')}
-          >
-            <FontAwesome name="calendar" size={24} color={colors.tint} />
-            <Text style={[styles.tabLabel, { color: colors.tint }]}>Events</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.tabItem}
-            onPress={() => router.push('/(tabs)/fights')}
-          >
-            <FontAwesome name="star" size={24} color={colors.tabIconDefault} />
-            <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Fights</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.tabItem}
-            onPress={() => router.push('/(tabs)/profile')}
-          >
-            <FontAwesome name="user" size={24} color={colors.tabIconDefault} />
-            <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Profile</Text>
-          </TouchableOpacity>
-        </View>
-
       {/* Rating Modal */}
       <RateFightModal
         visible={showRatingModal}
@@ -470,6 +447,34 @@ export default function EventDetailScreen() {
           console.log('Prediction submitted successfully');
         }}
       />
+
+      {/* Custom Tab Bar */}
+      <View style={[styles.tabBar, { backgroundColor: colors.card, borderTopColor: colors.border, paddingBottom: insets.bottom }]}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => router.push('/(tabs)/')}>
+          <FontAwesome name="comments" size={24} color={colors.tabIconDefault} />
+          <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Crews</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} onPress={() => router.push('/(tabs)/events')}>
+          <FontAwesome name="calendar" size={24} color={colors.tabIconDefault} />
+          <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Events</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} onPress={() => router.push('/(tabs)/fights')}>
+          <FontAwesome name="star" size={24} color={colors.tabIconDefault} />
+          <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Fights</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} onPress={() => router.push('/(tabs)/fighters')}>
+          <FontAwesome name="users" size={24} color={colors.tabIconDefault} />
+          <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Fighters</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} onPress={() => router.push('/(tabs)/profile')}>
+          <FontAwesome name="user" size={24} color={colors.tabIconDefault} />
+          <Text style={[styles.tabLabel, { color: colors.tabIconDefault }]}>Profile</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -489,7 +494,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backIcon: {
-    marginRight: 16,
+    marginRight: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   headerContent: {
     flex: 1,
@@ -666,8 +673,7 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    paddingVertical: 8,
-    paddingBottom: 20, // Extra padding for safe area
+    paddingTop: 8,
   },
   tabItem: {
     flex: 1,

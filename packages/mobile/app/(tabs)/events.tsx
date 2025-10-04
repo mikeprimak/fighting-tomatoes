@@ -128,7 +128,7 @@ export default function EventsScreen() {
   const styles = createStyles(colors);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       {/* Tab Selector */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
@@ -227,7 +227,9 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    margin: 16,
+    marginHorizontal: 16,
+    marginTop: 15,
+    marginBottom: 16,
     backgroundColor: colors.backgroundSecondary,
     borderRadius: 8,
     padding: 4,

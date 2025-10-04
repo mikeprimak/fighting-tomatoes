@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Image } from 'react-native';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
@@ -10,6 +10,7 @@ interface Fighter {
   firstName: string;
   lastName: string;
   nickname?: string;
+  profileImage?: string;
   wins: number;
   losses: number;
   draws: number;
@@ -57,6 +58,16 @@ interface FightDisplayCardProps {
   showEvent?: boolean;
 }
 
+// Helper function to get fighter image (either from profileImage or placeholder)
+const getFighterImage = (fighter: Fighter) => {
+  // Only use profileImage if it's a valid absolute URL (starts with http)
+  if (fighter.profileImage && fighter.profileImage.startsWith('http')) {
+    return { uri: fighter.profileImage };
+  }
+
+  return require('../assets/fighters/fighter-5.jpg');
+};
+
 export default function FightDisplayCard({
   fight,
   onPress,
@@ -64,6 +75,10 @@ export default function FightDisplayCard({
 }: FightDisplayCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+
+  // State to track image loading errors
+  const [fighter1ImageError, setFighter1ImageError] = React.useState(false);
+  const [fighter2ImageError, setFighter2ImageError] = React.useState(false);
 
   // Animated value for pulsing dot
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -75,6 +90,21 @@ export default function FightDisplayCard({
   const getFighterName = (fighter: Fighter) => {
     const name = `${fighter.firstName} ${fighter.lastName}`;
     return fighter.nickname ? `${name} "${fighter.nickname}"` : name;
+  };
+
+  // Get fighter image source with error fallback
+  const getFighter1ImageSource = () => {
+    if (fighter1ImageError) {
+      return require('../assets/fighters/fighter-5.jpg');
+    }
+    return getFighterImage(fight.fighter1);
+  };
+
+  const getFighter2ImageSource = () => {
+    if (fighter2ImageError) {
+      return require('../assets/fighters/fighter-5.jpg');
+    }
+    return getFighterImage(fight.fighter2);
   };
 
   // Helper function to remove nicknames from fighter names
@@ -91,6 +121,12 @@ export default function FightDisplayCard({
       year: 'numeric',
     });
   };
+
+  // Reset image error states when fight changes
+  useEffect(() => {
+    setFighter1ImageError(false);
+    setFighter2ImageError(false);
+  }, [fight.id]);
 
   // Start pulsing animation for live fights
   useEffect(() => {
@@ -278,13 +314,18 @@ export default function FightDisplayCard({
           </Animated.View>
         </View>
 
-        {/* Weight Class / Status */}
-        <View style={styles.statusContainer}>
-          {fight.weightClass && (
-            <Text style={[styles.statusText, { color: status === 'in_progress' ? colors.textOnAccent : colors.textSecondary }]} numberOfLines={1}>
-              {fight.weightClass}
-            </Text>
-          )}
+        {/* Fighter Headshots */}
+        <View style={styles.headshotsContainer}>
+          <Image
+            source={getFighter1ImageSource()}
+            style={styles.fighterHeadshot}
+            onError={() => setFighter1ImageError(true)}
+          />
+          <Image
+            source={getFighter2ImageSource()}
+            style={styles.fighterHeadshot}
+            onError={() => setFighter2ImageError(true)}
+          />
         </View>
       </View>
     </TouchableOpacity>
@@ -313,6 +354,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+  },
+  headshotsContainer: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  fighterHeadshot: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
   horizontalInfoRow: {
     flexDirection: 'row',
@@ -369,20 +419,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
-  statusContainer: {
-    flex: 1,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    maxWidth: '40%',
-  },
-  statusText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
   liveContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   liveDot: {
     width: 8,
