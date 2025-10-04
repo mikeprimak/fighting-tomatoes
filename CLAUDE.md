@@ -98,68 +98,75 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 - **Component Updates**: EventCard and FighterCard now route to `/(tabs)/events/[id]` and `/(tabs)/fighters/[id]`
 - **Benefits**: 100% consistent tab bar, proper navigation stack per tab, better UX alignment with platform conventions
 
-## Live Event System (In Progress)
+## Live Event System
 
 **Goal**: Real-time fight engagement system with automated notifications and modal triggers during live UFC events.
 
-**Current Status**:
-- ✅ **UFC.com Scraper Built** (`packages/backend/src/services/ufcPuppeteerScraper.ts`, `scrapeUFC320Once.js`)
-  - Extracts complete fight card data: fighters, ranks, odds, countries, weight classes
-  - Captures card sections: Main Card (10pm EDT), Prelims (8pm EDT), Early Prelims (6pm EDT)
-  - Polls every 30s during events, takes screenshots, saves JSON snapshots
-  - Test event: UFC 320 (Oct 4, 2025) - Ankalaev vs Pereira 2
-- 🔄 **Next: Test on UFC 320** to confirm live round/timing data capture
+**Phase 1 - Backend Foundation (COMPLETED)**:
+- ✅ **Database Schema** - Added `currentRound` (Int?) and `completedRounds` (Int?) to Fight model
+- ✅ **Live Event Scraper** (`src/services/scrapeLiveEvent.js`)
+  - Puppeteer-based scraper accepts eventUrl and outputDir as CLI arguments
+  - Extracts event name, image, fight card (14 fights for UFC 320)
+  - Detects event status (hasStarted, isComplete) and fight status
+  - Detects current round, completed rounds, and fight results (winner/method/round/time)
+  - Saves timestamped JSON snapshots every scrape
+- ✅ **Live Data Parser** (`src/services/ufcLiveParser.ts`)
+  - Fuzzy event/fighter matching by name (handles "UFC 320" vs "UFC 320: Ankalaev vs Pereira")
+  - Change detection - only updates database when changes occur
+  - Tracks round progression and fight results
+  - Auto-completes events when all fights finish
+  - Detailed status logging for monitoring
+- ✅ **Live Event Tracker** (`src/services/liveEventTracker.ts`)
+  - Orchestrates scraping on 30-second intervals (configurable)
+  - Converts scraped data to parser format
+  - Updates database with detected changes
+  - Tracks scraping status, errors, total scrapes
+  - Graceful shutdown handling (SIGINT/SIGTERM)
+- ✅ **API Endpoints** (`src/routes/liveEvents.ts`)
+  - `POST /api/live-events/start` - Start tracking (eventUrl, eventName, intervalSeconds)
+  - `POST /api/live-events/stop` - Stop active tracking
+  - `GET /api/live-events/status` - Get current tracker status
+  - `GET /api/live-events/event-status/:eventName` - Get detailed event info
+  - `POST /api/live-events/quick-start-ufc320` - Quick start for UFC 320
+- ✅ **Tested on UFC 320** - Successfully scraped all 14 fights with correct data
 
-**Target User Experience**:
-1. **Event Start Alert**: Push notification when first fight goes live
-2. **Pre-Fight Predict Modal**: 3 minutes before fight starts, prediction wheel appears
-3. **Live Round Display**: UI shows current round number during fights
-4. **Round End Judge Modal**: After each round, "Who won that round?" modal pops up
-5. **Post-Fight Rate Modal**: When fight ends, rate fight modal appears with result
-6. **Real-time Updates**: Fight status, round changes, results update instantly
-
-**Architecture Plan**:
-
-**Backend Components**:
-- **Event State Manager**: Tracks fight states (scheduled/live/complete), detects transitions
-- **Live Scraper Orchestrator**: Runs during scheduled events, compares snapshots, emits events
-- **WebSocket/SSE Server**: Real-time bidirectional communication to mobile clients
-- **Push Notification Service**: Expo Notifications for background alerts
-- **Event Detection Logic**:
-  - Event Start: First fight status → "live"
-  - Fight Start: Fight status → "live" (trigger predict modal T-3min)
-  - Round Change: Round number increments (trigger round judge modal for previous round)
-  - Fight End: Status → "complete" with result (trigger rate fight modal)
-
-**Mobile Components**:
+**Phase 2 - Mobile & Notifications (PENDING)**:
 - **Live Event Context**: Global state for current event, fight, round
 - **Event Subscription Service**: WebSocket client, reconnection logic
 - **Modal Trigger System**: Shows modals based on event type and timing
 - **Push Notification Handler**: Foreground/background notification processing
-- **Live Fight UI Components**:
-  - Round indicator badge
-  - Fight status banner
-  - Real-time countdown timers
+- **Live Fight UI Components**: Round indicator badge, fight status banner, real-time countdown timers
 
-**Database Schema Additions** (Planned):
-- `event_states` table: Tracks current state of live events
-- `fight_states` table: Tracks individual fight progression
-- `scraper_snapshots` table: Stores historical scrape data for comparison
-- `event_notifications` table: Log of sent notifications per user
+**Usage** (Start tracking before UFC 320):
+```bash
+# Quick start for UFC 320
+curl -X POST http://localhost:3001/api/live-events/quick-start-ufc320
+
+# Or generic endpoint
+curl -X POST http://localhost:3001/api/live-events/start \
+  -H "Content-Type: application/json" \
+  -d '{"eventUrl": "https://www.ufc.com/event/ufc-320", "eventName": "UFC 320", "intervalSeconds": 30}'
+
+# Check status
+curl http://localhost:3001/api/live-events/status
+
+# Stop tracking
+curl -X POST http://localhost:3001/api/live-events/stop
+```
 
 **Data Flow**:
 ```
-UFC.com → Puppeteer Scraper (30s polling)
-       → Backend State Manager (detects changes)
-       → Event Emitter (fight start/end, round change)
-       → WebSocket Broadcast + Push Notifications
-       → Mobile App (triggers modals, updates UI)
+UFC.com → scrapeLiveEvent.js (Puppeteer, 30s polling)
+       → JSON snapshots (live-event-data/)
+       → ufcLiveParser.ts (change detection)
+       → Database (Event/Fight updates)
+       → [Future: WebSocket → Mobile App]
 ```
 
 **Files**:
-- Backend: `src/services/ufcPuppeteerScraper.ts`, `src/services/ufcLiveScraper.ts`, `src/services/scrapeUFC320Once.js`
-- Test Results: `test-results/ufc-320-fight-card.json`, `test-results/ufc-puppeteer/`
-- Debug Tools: `src/services/debugSelectors.js`
+- Backend: `src/services/scrapeLiveEvent.js`, `src/services/ufcLiveParser.ts`, `src/services/liveEventTracker.ts`, `src/routes/liveEvents.ts`
+- Data: `live-event-data/` (timestamped JSON snapshots)
+- Schema: `prisma/schema.prisma` (Fight.currentRound, Fight.completedRounds)
 
 ## TypeScript Quality (CRITICAL)
 

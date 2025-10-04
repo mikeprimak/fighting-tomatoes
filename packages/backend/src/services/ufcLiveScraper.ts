@@ -12,14 +12,17 @@ import * as path from 'path';
 
 interface FightData {
   fightId: string;
-  status: string;
+  status: 'upcoming' | 'live' | 'complete' | string;
   fighters: {
     red: string;
     blue: string;
   };
   weightClass: string;
-  round?: number;
-  time?: string;
+  // Live round tracking
+  currentRound?: number;      // Current round in progress (1-5)
+  completedRounds?: number;   // Last completed round (0-5)
+  isComplete: boolean;
+  // Result data (when fight completes)
   result?: {
     winner?: string;
     method?: string;
@@ -108,7 +111,7 @@ class UFCLiveScraper {
       const $fight = $(element);
 
       const fightId = $fight.attr('data-fmid') || '';
-      const status = $fight.attr('data-status') || '';
+      let status = $fight.attr('data-status') || 'upcoming';
 
       // Extract fighters
       const redCorner = $fight.find('.c-listing-fight__corner--red .c-listing-fight__corner-name').text().trim();
@@ -120,16 +123,69 @@ class UFCLiveScraper {
       // Extract result data (if fight is complete)
       const resultText = $fight.find('.c-listing-fight__outcome-wrapper').text().trim();
 
-      fights.push({
-        fightId,
-        status,
-        fighters: {
-          red: redCorner,
-          blue: blueCorner,
-        },
-        weightClass,
-        result: resultText ? this.parseResultText(resultText) : undefined,
-      });
+      let currentRound: number | undefined;
+      let completedRounds: number | undefined;
+      let isComplete = false;
+
+      // Check for live status indicators
+      const fightText = $fight.text().toLowerCase();
+      const hasLiveIndicator = $fight.find('.live-indicator, [class*="live"]').length > 0;
+
+      if (hasLiveIndicator || fightText.includes('live now') || status === 'live') {
+        status = 'live';
+
+        // Try to detect current round: "Round 1", "Round 2", "R1", "R2", etc.
+        const roundMatch = fightText.match(/(?:round\s+|r)(\d+)/i);
+        if (roundMatch) {
+          const detectedRound = parseInt(roundMatch[1], 10);
+
+          // Check if between rounds: "End of Round X", "Round X Complete"
+          if (fightText.includes('end') || fightText.includes('complete')) {
+            completedRounds = detectedRound;
+            currentRound = undefined; // Between rounds
+          } else {
+            currentRound = detectedRound;
+            completedRounds = detectedRound > 1 ? detectedRound - 1 : 0;
+          }
+        }
+      }
+
+      // If we have a result, fight is complete
+      if (resultText) {
+        status = 'complete';
+        isComplete = true;
+        const parsedResult = this.parseResultText(resultText);
+        if (parsedResult?.round) {
+          completedRounds = parsedResult.round;
+        }
+
+        fights.push({
+          fightId,
+          status,
+          fighters: {
+            red: redCorner,
+            blue: blueCorner,
+          },
+          weightClass,
+          currentRound,
+          completedRounds,
+          isComplete,
+          result: parsedResult,
+        });
+      } else {
+        fights.push({
+          fightId,
+          status,
+          fighters: {
+            red: redCorner,
+            blue: blueCorner,
+          },
+          weightClass,
+          currentRound,
+          completedRounds,
+          isComplete,
+        });
+      }
     });
 
     return fights;

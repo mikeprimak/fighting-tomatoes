@@ -262,7 +262,9 @@ model Fight {
   // Status
   hasStarted      Boolean   @default(false)
   isComplete      Boolean   @default(false)
-  
+  currentRound    Int?      // Current round in progress (1-5), null if not started or complete
+  completedRounds Int?      // Last completed round number (0-5), null if not started
+
   // Media
   highlightUrl    String?
   thumbnailUrl    String?
