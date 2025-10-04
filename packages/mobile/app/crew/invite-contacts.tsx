@@ -271,7 +271,7 @@ export default function InviteContactsScreen() {
       )}
 
       {/* Custom Alert */}
-      <CustomAlert {...alertState} onClose={hideAlert} />
+      <CustomAlert {...alertState} onDismiss={hideAlert} />
     </SafeAreaView>
   );
 }

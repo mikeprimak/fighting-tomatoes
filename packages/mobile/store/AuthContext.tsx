@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { Platform } from 'react-native';
 import { AnalyticsService } from '../services/analytics';
+import { notificationService } from '../services/notificationService';
+import type { Notification, NotificationResponse } from 'expo-notifications';
 
 interface User {
   id: string;
@@ -63,6 +65,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initializeAuth();
     // Initialize analytics service
     AnalyticsService.initialize();
+
+    // Setup notification response listener
+    const subscription = notificationService.addNotificationResponseListener(
+      handleNotificationResponse
+    );
+
+    return () => subscription.remove();
   }, []);
 
   const initializeAuth = async () => {
@@ -73,6 +82,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (token && userData) {
         setAccessToken(token);
         setUser(JSON.parse(userData));
+
+        // Register push token if user is logged in
+        await notificationService.registerPushToken();
       }
     } catch (error) {
       console.error('Error initializing auth:', error);
@@ -111,6 +123,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Track successful login
       await AnalyticsService.trackUserLogin();
 
+      // Register push token
+      await notificationService.registerPushToken();
+
       // Navigate to main app
       router.replace('/(tabs)');
     } catch (error) {
@@ -148,6 +163,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Track successful registration
       await AnalyticsService.trackUserRegistration();
+
+      // Register push token
+      await notificationService.registerPushToken();
 
       // Navigate to main app
       router.replace('/(tabs)');
@@ -194,7 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshToken = async () => {
     try {
       const storedRefreshToken = await AsyncStorage.getItem('refreshToken');
-      
+
       if (!storedRefreshToken) {
         throw new Error('No refresh token available');
       }
@@ -223,6 +241,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // If refresh fails, logout user
       await logout();
       throw error;
+    }
+  };
+
+  const handleNotificationResponse = (response: NotificationResponse) => {
+    const data = response.notification.request.content.data;
+
+    // Handle different notification types and navigate accordingly
+    if (data.eventId) {
+      router.push(`/(tabs)/events/${data.eventId}`);
+    } else if (data.fightId) {
+      router.push(`/(tabs)/fights`); // TODO: Add fight detail screen
+    } else if (data.crewId) {
+      router.push(`/crew/${data.crewId}`);
+    } else if (data.screen) {
+      // Handle generic screen navigation
+      router.push(data.screen as any);
     }
   };
 

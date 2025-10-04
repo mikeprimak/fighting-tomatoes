@@ -7,6 +7,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../store/AuthContext';
@@ -165,7 +166,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => showError('Settings will be available in a future update', 'Coming Soon')}
+            onPress={() => router.push('/settings')}
           >
             <Text style={[styles.actionButtonText, { color: colors.text }]}>Settings</Text>
           </TouchableOpacity>

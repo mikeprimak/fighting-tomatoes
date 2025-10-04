@@ -36,6 +36,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 **Fighters** (`/api/fighters/`): `GET /fighters` (page, limit=20), `GET /fighters/:id`
 **Events** (`/api/events/`): `GET /events` (page, limit), `GET /events/:id`
 **Crews** (`/api/crews/`): `GET /crews`, `POST /crews|/crews/join`, `GET /crews/:id|/crews/:id/messages`, `POST /crews/:id/messages`, `DELETE /crews/:id|/crews/:id/messages/:messageId|/crews/:crewId/members/:memberId` (owner only)
+**Notifications** (`/api/notifications/`): `POST /register-token`, `DELETE /register-token`, `GET /preferences`, `PUT /preferences`, `POST /test`
 **Other**: `GET /health|/api/status|/api/test`
 **Response**: Success `{ data, pagination? }`, Error `{ error, code, details? }`
 **Rate Limit**: Auth 5/15min, General 10/15min, headers: X-RateLimit-*
@@ -85,7 +86,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 - **Usage**: `showSuccess()`, `showError()`, `showInfo()`, `showConfirm()` - see `packages/mobile/CUSTOM_ALERTS.md`
 - **Files**: `components/CustomAlert.tsx`, `hooks/useCustomAlert.tsx`, `CUSTOM_ALERTS.md` (guide)
 
-**Stack-inside-Tabs Navigation** (Latest):
+**Stack-inside-Tabs Navigation**:
 - **Architecture**: Implemented industry-standard Stack-inside-Tabs pattern for consistent navigation
 - **Tab Stacks**: Events and Fighters tabs now contain stack navigators with index and detail screens
 - **Folder Structure**:
@@ -97,6 +98,26 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 - **Route Cleanup**: Removed old `app/event/` and `app/fighter/` folders, updated all navigation calls
 - **Component Updates**: EventCard and FighterCard now route to `/(tabs)/events/[id]` and `/(tabs)/fighters/[id]`
 - **Benefits**: 100% consistent tab bar, proper navigation stack per tab, better UX alignment with platform conventions
+
+**Contact Invitations**:
+- **WhatsApp-style UX**: Select multiple contacts, send SMS invites with crew invite code
+- **Components**: `app/crew/invite-contacts.tsx` with contact selection UI
+- **Native Integration**: Uses `expo-contacts` for contact access, `expo-sms` for SMS sending
+- **Selection Flow**: Checkbox selection → floating count banner → SMS composer with pre-filled message
+- **Message Template**: "Join my crew '[Crew Name]' on FightCrewApp! Use invite code: [CODE] [App URL]"
+
+**Push Notifications** (Latest):
+- **Backend**:
+  - **Database Schema**: 9 notification preference fields in User model (notificationsEnabled, notifyEventStart, notifyFightStart, notifyMainCardOnly, notifyUFCOnly, notifyCrewMessages, notifyCrewInvites, notifyRoundChanges, notifyFightResults)
+  - **Notification Service** (`src/services/notificationService.ts`): Expo server SDK integration, batch sending (100/chunk), user filtering by preferences
+  - **API Routes** (`src/routes/notifications.ts`): `POST /register-token`, `GET/PUT /preferences`, `POST /test`
+  - **Functions**: notifyEventStart, notifyFightStart, notifyRoundChange, notifyFightResult, notifyCrewMessage
+- **Mobile**:
+  - **Notification Service** (`services/notificationService.ts`): Permission handling, token registration, foreground/background listeners
+  - **Settings Screen** (`app/settings.tsx`): Master toggle, 3 sections (Events, Fights, Crews), optimistic UI updates, test notification button
+  - **AuthContext Integration**: Auto-register push token on login/register/app launch, notification tap deep linking
+  - **Deep Linking**: Handles eventId, fightId, crewId, generic screen navigation from notification data
+- **Files**: Backend: `routes/notifications.ts`, `services/notificationService.ts`; Mobile: `app/settings.tsx`, `services/notificationService.ts`, `store/AuthContext.tsx`
 
 ## Live Event System
 
