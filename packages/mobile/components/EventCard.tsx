@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,8 @@ interface Event {
   promotion: string;
   hasStarted: boolean;
   isComplete: boolean;
+  bannerImage?: string | null;
+  mainStartTime?: string | null;
 }
 
 interface EventCardProps {
@@ -27,7 +29,7 @@ interface EventCardProps {
   onPress?: (event: Event) => void;
 }
 
-const getEventImage = (eventId: string) => {
+const getPlaceholderImage = (eventId: string) => {
   const images = [
     require('../assets/events/event-banner-1.jpg'),
     require('../assets/events/event-banner-2.jpg'),
@@ -43,6 +45,7 @@ const getEventImage = (eventId: string) => {
 export default function EventCard({ event, showTime = false, onPress }: EventCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const [imageAspectRatio, setImageAspectRatio] = useState<number>(16 / 9);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -56,10 +59,23 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
+    const timeString = date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
+      timeZoneName: 'short',
     });
+
+    // Extract time and timezone acronym
+    // Format: "7:00 PM PST" or "10:00 AM EST"
+    return timeString;
+  };
+
+  const getDisplayTime = () => {
+    // Only show time if mainStartTime is available
+    if (event.mainStartTime) {
+      return formatTime(event.mainStartTime);
+    }
+    return null;
   };
 
   const handlePress = () => {
@@ -70,7 +86,14 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
     }
   };
 
-  const styles = createStyles(colors);
+  const handleImageLoad = (e: any) => {
+    const { width, height } = e.nativeEvent.source;
+    if (width && height) {
+      setImageAspectRatio(width / height);
+    }
+  };
+
+  const styles = createStyles(colors, imageAspectRatio);
 
   return (
     <TouchableOpacity
@@ -79,9 +102,10 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
     >
       {/* Event Image */}
       <Image
-        source={getEventImage(event.id)}
+        source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
         style={styles.eventImage}
         resizeMode="cover"
+        onLoad={handleImageLoad}
       />
 
       <View style={styles.eventContent}>
@@ -90,11 +114,18 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
             <Text style={[styles.eventName, { color: colors.text }]}>{event.name}</Text>
             <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
               {formatDate(event.date)}
-              {showTime && ` • ${formatTime(event.date)}`}
+              {showTime && getDisplayTime() && ` • Main @ ${getDisplayTime()}`}
             </Text>
-            {event.location && (
+            {(event.venue || event.location) && (
               <Text style={[styles.eventLocation, { color: colors.textSecondary }]}>
-                📍 {event.location}
+                {[event.venue, event.location]
+                  .filter(Boolean)
+                  .map(s => s.trim())
+                  .filter(s => s.length > 0)
+                  .join(', ')
+                  .replace(/,\s*,/g, ',')
+                  .replace(/^,\s*/, '')
+                  .replace(/\s*,$/, '')}
               </Text>
             )}
           </View>
@@ -104,27 +135,23 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
             </Text>
           </View>
         </View>
-
-        <View style={styles.eventFooter}>
-          <Text style={[styles.eventStatus, { color: colors.textSecondary }]}>
-            Tap to view fights
-          </Text>
-        </View>
       </View>
     </TouchableOpacity>
   );
 }
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: any, aspectRatio: number) => StyleSheet.create({
   eventCard: {
     marginBottom: 16,
     borderRadius: 12,
     borderWidth: 1,
     overflow: 'hidden',
+    width: '100%',
   },
   eventImage: {
     width: '100%',
-    height: 120,
+    height: undefined,
+    aspectRatio: aspectRatio,
   },
   eventContent: {
     padding: 16,

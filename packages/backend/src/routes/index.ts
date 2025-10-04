@@ -3,6 +3,7 @@ import { FastifyInstance } from 'fastify';
 import { fightRoutes } from './fights';
 import { authRoutes } from './auth.fastify';
 import { crewRoutes } from './crews';
+import importRoutes from './import';
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
 
 export async function registerRoutes(fastify: FastifyInstance) {
@@ -132,6 +133,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   location: { type: 'string' },
                   hasStarted: { type: 'boolean' },
                   isComplete: { type: 'boolean' },
+                  bannerImage: { type: ['string', 'null'] },
+                  mainStartTime: { type: ['string', 'null'] },
                 },
               },
             },
@@ -177,6 +180,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
             averageRating: true,
             totalRatings: true,
             greatFights: true,
+            bannerImage: true,
+            mainStartTime: true,
           },
         }),
         fastify.prisma.event.count(),
@@ -232,6 +237,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 averageRating: { type: 'number' },
                 totalRatings: { type: 'integer' },
                 greatFights: { type: 'integer' },
+                bannerImage: { type: ['string', 'null'] },
               },
             },
           },
@@ -270,6 +276,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
           averageRating: true,
           totalRatings: true,
           greatFights: true,
+          bannerImage: true,
         },
       });
 
@@ -489,6 +496,11 @@ export async function registerRoutes(fastify: FastifyInstance) {
   await fastify.register(async function(fastify) {
     await crewRoutes(fastify);
   }, { prefix: '/api' });
+
+  // Register import routes under /api prefix
+  await fastify.register(async function(fastify) {
+    await importRoutes(fastify);
+  }, { prefix: '/api/import' });
 
   // Register analytics routes under /api prefix - TEMPORARILY DISABLED
   // await fastify.register(async function(fastify) {

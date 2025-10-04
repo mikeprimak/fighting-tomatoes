@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -26,14 +27,18 @@ interface Event {
   promotion: string;
   hasStarted: boolean;
   isComplete: boolean;
+  bannerImage?: string | null;
+  mainStartTime?: string | null;
 }
 
 
 export default function EventsScreen() {
-  const [selectedTab, setSelectedTab] = useState<'upcoming' | 'past'>('upcoming');
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { accessToken } = useAuth();
+
+  // Animated value for pulsing dot
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Fetch events from API
   const { data: eventsData, isLoading, isRefetching, refetch } = useQuery({
@@ -44,11 +49,72 @@ export default function EventsScreen() {
 
   const allEvents = eventsData?.events || [];
 
-  // Filter events based on selected tab and current date
+  // Filter events based on current date and status
   const now = new Date();
+  const liveEvents = allEvents
+    .filter((e: any) => e.hasStarted && !e.isComplete)
+    .sort((a: any, b: any) => {
+      // Sort UFC events first, then by date
+      const aIsUFC = a.promotion?.toUpperCase() === 'UFC';
+      const bIsUFC = b.promotion?.toUpperCase() === 'UFC';
+      if (aIsUFC && !bIsUFC) return -1;
+      if (!aIsUFC && bIsUFC) return 1;
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+  const upcomingEvents = allEvents
+    .filter((e: any) => !e.hasStarted && !e.isComplete && new Date(e.date) >= now)
+    .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()); // Sort ascending (soonest first)
+  const pastEvents = allEvents
+    .filter((e: any) => {
+      // Exclude live events from past
+      if (e.hasStarted && !e.isComplete) return false;
+      // Include if complete OR past date
+      return e.isComplete || new Date(e.date) < now;
+    })
+    .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()); // Sort descending (most recent first)
+
+  const hasLiveEvents = liveEvents.length > 0;
+
+  // Set initial tab based on whether there are live events
+  const [selectedTab, setSelectedTab] = useState<'upcoming' | 'live' | 'past'>(
+    hasLiveEvents ? 'live' : 'upcoming'
+  );
+
+  // Start pulsing animation for live tab
+  useEffect(() => {
+    if (hasLiveEvents) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.3,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+  }, [hasLiveEvents, pulseAnim]);
+
+  // Update selected tab when live events appear/disappear
+  useEffect(() => {
+    if (hasLiveEvents && selectedTab === 'upcoming') {
+      setSelectedTab('live');
+    }
+  }, [hasLiveEvents]);
+
+  // Filter events based on selected tab
   const events = selectedTab === 'past'
-    ? allEvents.filter((e: any) => new Date(e.date) < now || e.isComplete)
-    : allEvents.filter((e: any) => new Date(e.date) >= now && !e.isComplete);
+    ? pastEvents
+    : selectedTab === 'live'
+    ? liveEvents
+    : upcomingEvents;
 
 
 
@@ -81,6 +147,33 @@ export default function EventsScreen() {
             Upcoming
           </Text>
         </TouchableOpacity>
+        {hasLiveEvents && (
+          <TouchableOpacity
+            style={[
+              styles.tab,
+              selectedTab === 'live' && styles.activeTab,
+              { borderColor: colors.border },
+              selectedTab === 'live' && { backgroundColor: colors.primary }
+            ]}
+            onPress={() => setSelectedTab('live')}
+          >
+            <View style={styles.liveTabContent}>
+              <Text style={[
+                styles.tabText,
+                { color: colors.danger }
+              ]}>
+                Live
+              </Text>
+              <Animated.View style={[
+                styles.liveDot,
+                {
+                  backgroundColor: colors.danger,
+                  opacity: pulseAnim
+                }
+              ]} />
+            </View>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={[
             styles.tab,
@@ -90,11 +183,14 @@ export default function EventsScreen() {
           ]}
           onPress={() => setSelectedTab('past')}
         >
-          <Text style={[
-            styles.tabText,
-            { color: selectedTab === 'past' ? colors.textOnAccent : colors.textSecondary }
-          ]}>
-            Past Events
+          <Text
+            style={[
+              styles.tabText,
+              { color: selectedTab === 'past' ? colors.textOnAccent : colors.textSecondary }
+            ]}
+            numberOfLines={1}
+          >
+            Past
           </Text>
         </TouchableOpacity>
       </View>
@@ -149,6 +245,16 @@ const createStyles = (colors: any) => StyleSheet.create({
   tabText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  liveTabContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   loadingContainer: {
     flex: 1,
