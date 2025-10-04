@@ -7,11 +7,35 @@
  * 3. Scrapes each unique athlete page for details
  * 4. Downloads event banners and athlete headshots
  * 5. Saves all data in structured JSON format
+ *
+ * Configuration via environment variables:
+ * - SCRAPER_MODE: 'manual' (default) or 'automated' (faster, for cron jobs)
+ * - SCRAPER_TIMEOUT: Overall timeout in milliseconds (default: 600000 = 10min)
  */
 
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
+
+// Configuration based on mode
+const SCRAPER_MODE = process.env.SCRAPER_MODE || 'manual';
+const OVERALL_TIMEOUT = parseInt(process.env.SCRAPER_TIMEOUT || '600000', 10); // 10 minutes default
+
+// Delays in milliseconds
+const DELAYS = {
+  manual: {
+    betweenEvents: 1000,
+    betweenAthletes: 500,
+    betweenImages: 400,
+  },
+  automated: {
+    betweenEvents: 300,      // Faster for cron
+    betweenAthletes: 200,    // Faster for cron
+    betweenImages: 100,      // Faster for cron
+  }
+};
+
+const delays = DELAYS[SCRAPER_MODE] || DELAYS.manual;
 
 // ========================================
 // STEP 1: Scrape Events List
@@ -398,62 +422,55 @@ async function scrapeAthletePage(browser, athleteUrl) {
 
       let headshotUrl = null;
 
-      // Try to find headshot from recent fight results
-      // We need to identify which corner (red or blue) belongs to this athlete
+      // Find headshot from "Athlete Record" section by matching fighter name in image URL
+      // Headshots appear in the fight result cards and have the fighter's name in the URL
       if (athleteName) {
         const fightCards = document.querySelectorAll('.c-card-event--athlete-results');
 
+        // Extract first and last name from full athlete name
+        const nameParts = athleteName.split(' ').filter(part => part.length > 0);
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts[nameParts.length - 1] || '';
+
         for (const card of fightCards) {
-          // Check red corner
-          const redNameEl = card.querySelector('.c-listing-fight__corner-name--red');
-          const redName = redNameEl ? redNameEl.textContent.trim().toLowerCase() : '';
+          // Collect all possible headshot images from both corners
+          const candidateImages = [];
 
-          // Check blue corner
-          const blueNameEl = card.querySelector('.c-listing-fight__corner-name--blue');
-          const blueName = blueNameEl ? blueNameEl.textContent.trim().toLowerCase() : '';
-
-          // Determine which corner matches our athlete
-          let matchingCorner = null;
-          if (redName && athleteName.includes(redName.split(' ').pop())) {
-            // Red corner last name matches athlete last name
-            matchingCorner = 'red';
-          } else if (blueName && athleteName.includes(blueName.split(' ').pop())) {
-            // Blue corner last name matches athlete last name
-            matchingCorner = 'blue';
+          // Red corner image
+          const redImg = card.querySelector('.c-card-event--athlete-results__red-image img');
+          if (redImg && redImg.src) {
+            candidateImages.push(redImg.src);
           }
 
-          // Get headshot from matching corner
-          if (matchingCorner === 'red') {
-            const redImg = card.querySelector('.c-card-event--athlete-results__red-image img');
-            if (redImg && redImg.src) {
-              headshotUrl = redImg.src;
-              break;
-            }
-          } else if (matchingCorner === 'blue') {
-            const blueImg = card.querySelector('.c-card-event--athlete-results__blue-image img');
-            if (blueImg && blueImg.src) {
-              headshotUrl = blueImg.src;
+          // Blue corner image
+          const blueImg = card.querySelector('.c-card-event--athlete-results__blue-image img');
+          if (blueImg && blueImg.src) {
+            candidateImages.push(blueImg.src);
+          }
+
+          // Check which image URL contains the fighter's name
+          for (const imgUrl of candidateImages) {
+            const urlUpper = imgUrl.toUpperCase();
+            const firstNameUpper = firstName.toUpperCase();
+            const lastNameUpper = lastName.toUpperCase();
+
+            // Only match headshot images (not full body images)
+            // Headshots are in path: event_results_athlete_headshot
+            const isHeadshot = urlUpper.includes('EVENT_RESULTS_ATHLETE_HEADSHOT');
+
+            // Match if it's a headshot AND URL contains the fighter's last name
+            if (isHeadshot && urlUpper.includes(lastNameUpper) && lastNameUpper.length > 2) {
+              headshotUrl = imgUrl;
               break;
             }
           }
+
+          if (headshotUrl) break;
         }
       }
 
-      // Fallback: try generic athlete result image
-      if (!headshotUrl) {
-        const athleteResultImage = document.querySelector('.c-card-event--athlete-results__image img');
-        if (athleteResultImage && athleteResultImage.src) {
-          headshotUrl = athleteResultImage.src;
-        }
-      }
-
-      // Final fallback: hero/bio image
-      if (!headshotUrl) {
-        const heroImage = document.querySelector('.hero-profile__image img, .c-bio__image img');
-        if (heroImage && heroImage.src) {
-          headshotUrl = heroImage.src;
-        }
-      }
+      // No fallbacks - if we can't find a headshot with the fighter's name, return null
+      // The frontend will use the default fighter-5.jpg placeholder
 
       return {
         record,
@@ -586,7 +603,7 @@ async function main() {
       }
 
       // Delay between requests
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, delays.betweenEvents));
     }
 
     // STEP 3: Scrape athlete pages
@@ -600,7 +617,7 @@ async function main() {
       uniqueAthletes.set(url, { ...athlete, ...athleteData });
 
       // Delay between requests
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, delays.betweenAthletes));
     }
 
     // STEP 4: Download images
@@ -631,7 +648,7 @@ async function main() {
             console.log(`      ✅ ${filename}`);
 
             // Add delay between event banner downloads
-            await new Promise(resolve => setTimeout(resolve, 400));
+            await new Promise(resolve => setTimeout(resolve, delays.betweenImages));
           } catch (error) {
             console.log(`      ❌ ${filename}: ${error.message}`);
           }
@@ -663,7 +680,7 @@ async function main() {
             console.log(`      ✅ ${filename} (${currentCount}/${totalToDownload})`);
 
             // Add delay between athlete downloads to prevent browser overload
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, delays.betweenImages));
           } catch (error) {
             console.log(`      ❌ ${filename}: ${error.message}`);
           }
@@ -717,12 +734,36 @@ async function main() {
   }
 }
 
-// Run if called directly
-if (require.main === module) {
-  main().catch(error => {
-    console.error('Error:', error);
-    process.exit(1);
-  });
+/**
+ * Run main scraper with timeout protection
+ */
+async function runWithTimeout() {
+  return Promise.race([
+    main(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Scraper timed out after ${OVERALL_TIMEOUT}ms`)), OVERALL_TIMEOUT)
+    )
+  ]);
 }
 
-module.exports = { main };
+// Run if called directly
+if (require.main === module) {
+  const startTime = Date.now();
+  console.log(`🚀 Starting UFC scraper in ${SCRAPER_MODE} mode...`);
+  console.log(`⏱️  Timeout: ${OVERALL_TIMEOUT}ms (${Math.floor(OVERALL_TIMEOUT / 60000)} minutes)\n`);
+
+  runWithTimeout()
+    .then(() => {
+      const duration = Math.floor((Date.now() - startTime) / 1000);
+      console.log(`✅ Scraper completed successfully in ${duration}s`);
+      process.exit(0);
+    })
+    .catch(error => {
+      const duration = Math.floor((Date.now() - startTime) / 1000);
+      console.error(`\n❌ Scraper failed after ${duration}s:`, error.message);
+      console.error('Stack trace:', error.stack);
+      process.exit(1);
+    });
+}
+
+module.exports = { main, runWithTimeout };

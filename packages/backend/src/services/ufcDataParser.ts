@@ -200,12 +200,17 @@ function parseEventTime(dateText: string, timeStr?: string, year: number = new D
  */
 async function importFighters(athletesData: ScrapedAthletesData): Promise<Map<string, string>> {
   const fighterNameToId = new Map<string, string>();
+  const baseUrl = process.env.BASE_URL || 'http://10.0.0.53:3001';
 
   console.log(`\n📦 Importing ${athletesData.athletes.length} fighters...`);
 
   for (const athlete of athletesData.athletes) {
     const { firstName, lastName, nickname } = parseFighterName(athlete.name);
     const recordParts = parseRecord(athlete.record);
+
+    // Use UFC.com hosted images (better quality, no white edge artifacts)
+    // Explicitly use null (not undefined) so Prisma updates the field even when there's no image
+    const profileImageUrl = athlete.headshotUrl || null;
 
     // Upsert fighter using firstName + lastName unique constraint
     const fighter = await prisma.fighter.upsert({
@@ -217,7 +222,7 @@ async function importFighters(athletesData: ScrapedAthletesData): Promise<Map<st
       },
       update: {
         ...recordParts,
-        profileImage: athlete.localHeadshotPath || athlete.headshotUrl || undefined,
+        profileImage: profileImageUrl,
         nickname: nickname || undefined,
       },
       create: {
@@ -225,7 +230,7 @@ async function importFighters(athletesData: ScrapedAthletesData): Promise<Map<st
         lastName,
         nickname,
         ...recordParts,
-        profileImage: athlete.localHeadshotPath || athlete.headshotUrl || undefined,
+        profileImage: profileImageUrl,
         gender: Gender.MALE, // Will be updated when we process fights
         isActive: true,
       }

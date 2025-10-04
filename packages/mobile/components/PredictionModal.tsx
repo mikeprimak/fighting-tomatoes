@@ -20,20 +20,24 @@ import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
 
 // Fighter image selection logic (same as other components)
-const getFighterImage = (fighterId: string) => {
-  const images = [
-    require('../assets/fighters/fighter-1.jpg'),
-    require('../assets/fighters/fighter-2.jpg'),
-    require('../assets/fighters/fighter-3.jpg'),
-    require('../assets/fighters/fighter-4.jpg'),
-    require('../assets/fighters/fighter-5.jpg'),
-    require('../assets/fighters/fighter-6.jpg'),
-  ];
+// Default fallback image when no profileImage is available
+const getFighterImage = () => {
+  return require('../assets/fighters/fighter-5.jpg');
+};
 
-  // Use charCodeAt to get a number from the last character
-  const lastCharCode = fighterId.charCodeAt(fighterId.length - 1);
-  const index = lastCharCode % images.length;
-  return images[index];
+// Get display last name (everything except first word)
+const getDisplayLastName = (fighter: Fighter | null | undefined): string => {
+  if (!fighter) return '';
+  const fullName = `${fighter.firstName} ${fighter.lastName}`.trim();
+  const words = fullName.split(' ').filter(w => w.length > 0);
+
+  // If only one word (single name like "Mizuki"), return that word
+  if (words.length === 1) {
+    return words[0];
+  }
+
+  // Return everything except the first word
+  return words.slice(1).join(' ') || fighter.lastName || '';
 };
 
 export type PredictionMethod = 'DECISION' | 'KO_TKO' | 'SUBMISSION';
@@ -43,6 +47,8 @@ export interface Fighter {
   firstName: string;
   lastName: string;
   nickname?: string;
+  profileImage?: string;
+  actionImage?: string;
 }
 
 export interface Fight {
@@ -317,8 +323,10 @@ export function PredictionModal({
   const handleRoundSelection = (round: number) => {
     if (predictedRound === round) {
       setPredictedRound(0);
-      // If round is deselected, also deselect method
-      setPredictedMethod('');
+      // Only deselect method if deselecting final round with Decision
+      if (fight && round === fight.scheduledRounds && predictedMethod === 'DECISION') {
+        setPredictedMethod('');
+      }
     } else {
       setPredictedRound(round);
       if (!fight) return;
@@ -454,7 +462,11 @@ export function PredictionModal({
                 }}
               >
                 <Image
-                  source={getFighterImage(fight.fighter1?.id || '')}
+                  source={
+                    fight.fighter1?.profileImage && fight.fighter1.profileImage.startsWith('http')
+                      ? { uri: fight.fighter1.profileImage }
+                      : getFighterImage()
+                  }
                   style={styles.fighterImage}
                 />
                 <Text style={[
@@ -463,7 +475,7 @@ export function PredictionModal({
                     color: predictedWinner === fight.fighter1?.id ? colors.textOnAccent : colors.text
                   }
                 ]}>
-                  {fight.fighter1?.lastName || 'Fighter 1'}
+                  {getDisplayLastName(fight.fighter1) || 'Fighter 1'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -480,7 +492,11 @@ export function PredictionModal({
                 }}
               >
                 <Image
-                  source={getFighterImage(fight.fighter2?.id || '')}
+                  source={
+                    fight.fighter2?.profileImage && fight.fighter2.profileImage.startsWith('http')
+                      ? { uri: fight.fighter2.profileImage }
+                      : getFighterImage()
+                  }
                   style={styles.fighterImage}
                 />
                 <Text style={[
@@ -489,7 +505,7 @@ export function PredictionModal({
                     color: predictedWinner === fight.fighter2?.id ? colors.textOnAccent : colors.text
                   }
                 ]}>
-                  {fight.fighter2?.lastName || 'Fighter 2'}
+                  {getDisplayLastName(fight.fighter2) || 'Fighter 2'}
                 </Text>
               </TouchableOpacity>
             </View>
