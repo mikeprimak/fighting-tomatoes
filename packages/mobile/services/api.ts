@@ -431,6 +431,30 @@ class ApiService {
   }> {
     return this.makeRequest(`/fights/${fightId}/predictions`);
   }
+  // Notification methods
+  async registerPushToken(pushToken: string): Promise<void> {
+    return this.makeRequest('/notifications/register-token', {
+      method: 'POST',
+      body: JSON.stringify({ pushToken }),
+    });
+  }
+
+  async getNotificationPreferences(): Promise<any> {
+    return this.makeRequest('/notifications/preferences');
+  }
+
+  async updateNotificationPreferences(preferences: any): Promise<void> {
+    return this.makeRequest('/notifications/preferences', {
+      method: 'PUT',
+      body: JSON.stringify(preferences),
+    });
+  }
+
+  async sendTestNotification(): Promise<void> {
+    return this.makeRequest('/notifications/test', {
+      method: 'POST',
+    });
+  }
 }
 
 export const apiService = new ApiService();
