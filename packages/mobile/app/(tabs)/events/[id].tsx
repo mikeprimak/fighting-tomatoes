@@ -19,6 +19,7 @@ import { apiService } from '../../../services/api';
 import { FightDisplayCard, RateFightModal, PredictionModal } from '../../../components';
 import { useAuth } from '../../../store/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
+import { useLiveEventPolling } from '../../../hooks/useLiveEventPolling';
 
 interface EventDetails {
   id: string;
@@ -122,6 +123,13 @@ export default function EventDetailScreen() {
   };
 
   const eventIsLive = isEventLive(event);
+
+  // Enable live polling when event is live
+  useLiveEventPolling({
+    eventId: id as string,
+    isLive: eventIsLive,
+    intervalMs: 10000, // Poll every 10 seconds
+  });
 
   // Start pulsing animation when event is live
   useEffect(() => {
