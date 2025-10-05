@@ -67,6 +67,7 @@ interface CrewDetails {
   allowPredictions: boolean;
   allowRoundVoting: boolean;
   allowReactions: boolean;
+  followOnlyUFC: boolean;
   userRole: string;
   isMuted: boolean;
   mutedUntil?: string | null;
@@ -125,6 +126,7 @@ export default function CrewChatScreen() {
   const [showCrewMenu, setShowCrewMenu] = useState(false);
   const [showMuteDialog, setShowMuteDialog] = useState(false);
   const [showCodeCopiedToast, setShowCodeCopiedToast] = useState(false);
+  const [eventBannerAspectRatio, setEventBannerAspectRatio] = useState<number>(16 / 9);
   const fightCardSlideAnim = useRef(new Animated.Value(-1000)).current;
   const [recentlyRatedFightId, setRecentlyRatedFightId] = useState<string | null>(null);
   const [recentlyPredictedFightId, setRecentlyPredictedFightId] = useState<string | null>(null);
@@ -134,7 +136,7 @@ export default function CrewChatScreen() {
     if (!showFightCard) return '';
 
     // Estimate lines based on text length (rough approximation)
-    const eventText = "UFC 307: Periera vs Roundtree";
+    const eventText = fightCardData?.event?.name || "UFC Event";
     const estimatedEventLines = Math.max(1, Math.ceil(eventText.length / 25)); // ~25 chars per line
     const currentLines = Math.max(1, Math.ceil(baseText.length / 25));
     const paddingNeeded = Math.max(0, estimatedEventLines - currentLines);
@@ -218,260 +220,65 @@ export default function CrewChatScreen() {
   }, []);
 
 
-  // Mock fight data for testing - using real fight ID from UFC 312 database
-  const mockFight: Fight = {
-    id: '84bc13be-9a50-49e6-b4f4-ad9e88b642f4', // Real fight ID - Israel Adesanya vs Sean Strickland (in-progress)
-    scheduledRounds: 5, // This will be fetched from API in real implementation
-    fighter1: {
-      id: '3dd03c89-d96d-420a-91fb-8312d42a5a7f',
-      firstName: 'Israel',
-      lastName: 'Adesanya',
-      nickname: 'The Last Stylebender'
-    },
-    fighter2: {
-      id: '170f0e7d-667d-448c-b065-4a01e0967d12',
-      firstName: 'Sean',
-      lastName: 'Strickland'
-    },
-    event: {
-      id: '9b7b4981-bf24-429a-9cef-723d2df09311', // Real event ID for UFC 312
-      name: 'UFC 312: Live Championship Night',
-      date: '2025-09-29T00:00:00.000Z',
-      promotion: 'UFC'
-    }
-  };
-
-  // Fetch real fight card data - prioritizes events with in-progress fights
-  const { data: fightCardData } = useQuery({
-    queryKey: ['eventFights', 'latest'],
+  // Fetch upcoming event data - runs independently of crew data
+  const { data: fightCardData, isLoading: eventLoading } = useQuery({
+    queryKey: ['upcomingEvent'],
     queryFn: async () => {
-      try {
-        // Get events sorted by date
-        const events = await apiService.getEvents({ page: 1, limit: 5 });
-        if (events.events && events.events.length > 0) {
-          // First, look for events with in-progress fights (UFC 312: Live Championship Night)
-          for (const event of events.events) {
-            const fights = await apiService.getFights({ eventId: event.id, limit: 20, includeUserData: true });
-            if (fights.fights) {
-              // Check if any fights are in progress
-              const hasInProgressFight = fights.fights.some(fight =>
-                fight.hasStarted && !fight.isComplete
-              );
-              if (hasInProgressFight) {
-                console.log(`Using LIVE event: ${event.name} with ${fights.fights.length} fights (has in-progress fights)`);
-                return { event, fights: fights.fights };
-              }
-            }
-          }
+      console.log('🔍 [EVENT QUERY] Starting fetch for upcoming UFC event...');
 
-          // If no live events, fall back to most recent by date
-          const sortedEvents = events.events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-          const latestEvent = sortedEvents[0];
-          const fights = await apiService.getFights({ eventId: latestEvent.id, limit: 20, includeUserData: true });
-          console.log(`Using latest event: ${latestEvent.name} with ${fights.fights?.length || 0} fights`);
-          return { event: latestEvent, fights: fights.fights };
-        }
-        return null;
-      } catch (error) {
-        console.error('Error fetching fight card data:', error);
+      // Get recent events
+      const events = await apiService.getEvents({ page: 1, limit: 20 });
+      console.log(`📅 [EVENT QUERY] Fetched ${events.events?.length || 0} events from API`);
+
+      if (!events.events || events.events.length === 0) {
+        console.log('❌ [EVENT QUERY] No events found');
         return null;
       }
+
+      // Filter to UFC events only
+      const ufcEvents = events.events.filter((event: any) => event.promotion === 'UFC');
+      console.log(`🎯 [EVENT QUERY] Filtered to ${ufcEvents.length} UFC events`);
+
+      // Find next upcoming event (including today)
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
+      const upcomingEvents = ufcEvents
+        .filter((event: any) => {
+          const eventDate = new Date(event.date);
+          return eventDate >= now && !event.isComplete;
+        })
+        .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+      console.log(`📅 [EVENT QUERY] Found ${upcomingEvents.length} upcoming UFC events`);
+
+      if (upcomingEvents.length === 0) {
+        console.log('❌ [EVENT QUERY] No upcoming events found');
+        return null;
+      }
+
+      const nextEvent = upcomingEvents[0];
+      console.log(`✅ [EVENT QUERY] Next event: ${nextEvent.name} (${nextEvent.date})`);
+
+      // Fetch fights for this event
+      const fights = await apiService.getFights({
+        eventId: nextEvent.id,
+        limit: 20,
+        includeUserData: true
+      });
+
+      console.log(`🥊 [EVENT QUERY] Fetched ${fights.fights?.length || 0} fights`);
+
+      return {
+        event: nextEvent,
+        fights: fights.fights || []
+      };
     },
     staleTime: 30 * 1000, // 30 seconds for live updates
+    retry: 1,
+    retryDelay: 1000,
   });
 
-  // Backup mock fight card data (in case API fails)
-  const mockFightCard = [
-    // MAIN CARD FIGHTS (5 total)
-    {
-      id: 'main-5-jones-miocic',
-      fighter1: 'Jon Jones',
-      fighter2: 'Stipe Miocic',
-      isMainEvent: true,
-      isMainCard: true,
-      cardPosition: 5, // Headliner
-      weightClass: 'Heavyweight Championship',
-      scheduledRounds: 5,
-      status: 'upcoming',
-      isComplete: false,
-      aggregateRating: null,
-      totalRatings: 0,
-      userRating: null,
-      startTime: '10:30 PM EST'
-    },
-    {
-      id: 'main-4-pereira-adesanya',
-      fighter1: 'Alex Pereira',
-      fighter2: 'Israel Adesanya',
-      isMainEvent: false,
-      isMainCard: true,
-      cardPosition: 4, // Co-main
-      weightClass: 'Middleweight Championship',
-      scheduledRounds: 5,
-      status: 'upcoming',
-      isComplete: false,
-      aggregateRating: null,
-      totalRatings: 0,
-      userRating: null,
-      startTime: '10:00 PM EST'
-    },
-    {
-      id: 'main-3-holloway-volkanovski',
-      fighter1: 'Max Holloway',
-      fighter2: 'Alexander Volkanovski',
-      isMainEvent: false,
-      isMainCard: true,
-      cardPosition: 3,
-      weightClass: 'Featherweight Championship',
-      scheduledRounds: 5,
-      status: 'in_progress', // Currently between rounds 2-3
-      currentRound: 3,
-      completedRounds: 2,
-      isComplete: false,
-      aggregateRating: null,
-      totalRatings: 0,
-      userRating: null,
-      startTime: '9:30 PM EST'
-    },
-    {
-      id: 'main-2-oliveira-chandler',
-      fighter1: 'Charles Oliveira',
-      fighter2: 'Michael Chandler',
-      isMainEvent: false,
-      isMainCard: true,
-      cardPosition: 2,
-      weightClass: 'Lightweight',
-      scheduledRounds: 3,
-      status: 'completed',
-      isComplete: true,
-      result: 'Oliveira wins via TKO (R2, 3:47)',
-      aggregateRating: 8.9,
-      totalRatings: 1247,
-      userRating: 9,
-      completedAt: '9:15 PM EST'
-    },
-    {
-      id: 'main-1-yan-omalley',
-      fighter1: 'Petr Yan',
-      fighter2: "Sean O'Malley",
-      isMainEvent: false,
-      isMainCard: true,
-      cardPosition: 1,
-      weightClass: 'Bantamweight Championship',
-      scheduledRounds: 5,
-      status: 'completed',
-      isComplete: true,
-      result: "O'Malley wins via Split Decision",
-      aggregateRating: 7.4,
-      totalRatings: 892,
-      userRating: 8,
-      completedAt: '8:45 PM EST'
-    },
-
-    // PRELIMINARY CARD FIGHTS (6 total - ALL COMPLETED)
-    {
-      id: 'prelim-6-burns-muhammad',
-      fighter1: 'Gilbert Burns',
-      fighter2: 'Belal Muhammad',
-      isMainEvent: false,
-      isMainCard: false,
-      cardPosition: 6,
-      weightClass: 'Welterweight',
-      scheduledRounds: 3,
-      status: 'completed',
-      isComplete: true,
-      result: 'Muhammad wins via Unanimous Decision',
-      aggregateRating: 6.8,
-      totalRatings: 456,
-      userRating: 7,
-      completedAt: '8:15 PM EST'
-    },
-    {
-      id: 'prelim-5-luque-neal',
-      fighter1: 'Vicente Luque',
-      fighter2: 'Geoff Neal',
-      isMainEvent: false,
-      isMainCard: false,
-      cardPosition: 5,
-      weightClass: 'Welterweight',
-      scheduledRounds: 3,
-      status: 'completed',
-      isComplete: true,
-      result: 'Luque wins via Submission (R1, 4:12)',
-      aggregateRating: 8.1,
-      totalRatings: 324,
-      userRating: null,
-      completedAt: '7:45 PM EST'
-    },
-    {
-      id: 'prelim-4-craig-jacoby',
-      fighter1: 'Paul Craig',
-      fighter2: 'Brendan Jacoby',
-      isMainEvent: false,
-      isMainCard: false,
-      cardPosition: 4,
-      weightClass: 'Light Heavyweight',
-      scheduledRounds: 3,
-      status: 'completed',
-      isComplete: true,
-      result: 'Craig wins via TKO (R2, 2:34)',
-      aggregateRating: 7.2,
-      totalRatings: 287,
-      userRating: 8,
-      completedAt: '7:15 PM EST'
-    },
-    {
-      id: 'prelim-3-araujo-silva',
-      fighter1: 'Viviane Araujo',
-      fighter2: 'Karine Silva',
-      isMainEvent: false,
-      isMainCard: false,
-      cardPosition: 3,
-      weightClass: "Women's Flyweight",
-      scheduledRounds: 3,
-      status: 'completed',
-      isComplete: true,
-      result: 'Silva wins via Unanimous Decision',
-      aggregateRating: 6.3,
-      totalRatings: 198,
-      userRating: null,
-      completedAt: '6:45 PM EST'
-    },
-    {
-      id: 'prelim-2-murphy-fremd',
-      fighter1: 'Lauren Murphy',
-      fighter2: 'Casey Fremd',
-      isMainEvent: false,
-      isMainCard: false,
-      cardPosition: 2,
-      weightClass: "Women's Flyweight",
-      scheduledRounds: 3,
-      status: 'completed',
-      isComplete: true,
-      result: 'Murphy wins via Split Decision',
-      aggregateRating: 5.9,
-      totalRatings: 145,
-      userRating: 6,
-      completedAt: '6:15 PM EST'
-    },
-    {
-      id: 'prelim-1-walker-hill',
-      fighter1: 'Johnny Walker',
-      fighter2: 'Jamahal Hill',
-      isMainEvent: false,
-      isMainCard: false,
-      cardPosition: 1,
-      weightClass: 'Light Heavyweight',
-      scheduledRounds: 3,
-      status: 'completed',
-      isComplete: true,
-      result: 'Hill wins via KO (R1, 1:47)',
-      aggregateRating: 8.7,
-      totalRatings: 567,
-      userRating: 9,
-      completedAt: '5:45 PM EST'
-    }
-  ];
 
 
   // Transform real fight data to expected format
@@ -504,9 +311,11 @@ export default function CrewChatScreen() {
     })).sort((a, b) => a.cardPosition - b.cardPosition); // Sort by card position
   };
 
-  // Get fight card data (prefer real data, fallback to mock)
-  const currentFightCard = fightCardData?.fights ? transformFightData(fightCardData.fights) : mockFightCard;
-  const currentEventName = fightCardData?.event?.name || 'UFC 307: Periera vs Roundtree';
+  // Get fight card data (only use real data from API)
+  const currentFightCard = fightCardData?.fights ? transformFightData(fightCardData.fights) : [];
+  const currentEventName = eventLoading
+    ? 'Loading event...'
+    : (fightCardData?.event?.name || 'No upcoming events');
 
   // Generate consistent color for each user
   const getUserColor = (userId: string): string => {
@@ -616,9 +425,9 @@ export default function CrewChatScreen() {
     data: actualFightData,
     isLoading: fightLoading,
   } = useQuery<{ fight: any }>({
-    queryKey: ['fight', mockFight.id, 'withUserData'],
-    queryFn: () => apiService.getFight(mockFight.id),
-    enabled: !!mockFight.id && (showPredictionModal || showFightRatingModal),
+    queryKey: ['fight', currentFight?.id, 'withUserData'],
+    queryFn: () => apiService.getFight(currentFight!.id),
+    enabled: !!currentFight?.id && (showPredictionModal || showFightRatingModal),
     staleTime: 30 * 1000, // 30 seconds
   });
 
@@ -709,27 +518,39 @@ export default function CrewChatScreen() {
 
   // Function to simulate a fight ending and show rating modal
   const simulateFightEnd = () => {
-    // Use actual fight data with user data if available, otherwise fallback to mock
-    const fightToUse = actualFightData?.fight || mockFight;
-    console.log('simulateFightEnd - Using fight data:', { hasActualData: !!actualFightData?.fight, fightId: fightToUse.id });
-    setCurrentFight(fightToUse);
+    // Use the first upcoming fight from the current event
+    const nextFight = currentFightCard.find(f => f.status === 'upcoming') || currentFightCard[0];
+    if (!nextFight) {
+      console.log('No fights available for simulation');
+      return;
+    }
+    console.log('simulateFightEnd - Using fight:', nextFight.id);
+    setCurrentFight(nextFight as any);
     setShowFightRatingModal(true);
   };
 
   // Function to simulate pre-fight and show prediction modal
   const simulatePreFight = () => {
-    // Use actual fight data with user data if available, otherwise fallback to mock
-    const fightToUse = actualFightData?.fight || mockFight;
-    console.log('simulatePreFight - Using fight data:', { hasActualData: !!actualFightData?.fight, fightId: fightToUse.id });
-    setCurrentFight(fightToUse);
+    // Use the first upcoming fight from the current event
+    const nextFight = currentFightCard.find(f => f.status === 'upcoming') || currentFightCard[0];
+    if (!nextFight) {
+      console.log('No fights available for simulation');
+      return;
+    }
+    console.log('simulatePreFight - Using fight:', nextFight.id);
+    setCurrentFight(nextFight as any);
     setShowPredictionModal(true);
   };
 
   // Function to simulate round ending and show round voting slideup
   const simulateRoundEnd = () => {
-    const fightToUse = actualFightData?.fight || mockFight;
-    console.log('simulateRoundEnd - Round', currentRound, 'ended for fight:', fightToUse.id);
-    setCurrentFight(fightToUse);
+    const nextFight = currentFightCard.find(f => f.status === 'upcoming') || currentFightCard[0];
+    if (!nextFight) {
+      console.log('No fights available for simulation');
+      return;
+    }
+    console.log('simulateRoundEnd - Round', currentRound, 'ended for fight:', nextFight.id);
+    setCurrentFight(nextFight as any);
     setShowRoundVoting(true);
   };
 
@@ -747,6 +568,13 @@ export default function CrewChatScreen() {
   const closeRoundVoting = () => {
     setShowRoundVoting(false);
     setCurrentFight(null);
+  };
+
+  const handleEventBannerLoad = (e: any) => {
+    const { width, height } = e.nativeEvent.source;
+    if (width && height) {
+      setEventBannerAspectRatio(width / height);
+    }
   };
 
   const handleRoundWinnerSelected = (fighterId: string, fighterName: string) => {
@@ -1005,7 +833,12 @@ export default function CrewChatScreen() {
         lastName: parseFighterName(fightData.fighter2).lastName,
         nickname: parseFighterName(fightData.fighter2).nickname
       },
-      event: mockFight.event
+      event: fightCardData?.event || {
+        id: 'unknown',
+        name: currentEventName,
+        date: new Date().toISOString(),
+        promotion: 'UFC'
+      }
     };
 
     setCurrentFight(fightForModal);
@@ -1374,26 +1207,30 @@ export default function CrewChatScreen() {
             ]}
           >
             <View style={styles.fightCardExpandedContent}>
-              {/* Event Banner Image */}
-              <View style={{ marginHorizontal: 20, marginBottom: 8 }}>
-                <Image
-                  source={require('../../assets/events/event-banner-2.jpg')}
-                  style={styles.eventBannerImage}
-                  resizeMode="cover"
-                />
-              </View>
-
               <ScrollView
                 style={styles.expandedFightsScrollView}
                 contentContainerStyle={{
-                  paddingHorizontal: 16,
-                  paddingTop: 16,
                   paddingBottom: keyboardHeight > 0 ? keyboardHeight + 120 : 90, // Extra padding for message input area
                 }}
                 showsVerticalScrollIndicator={true}
                 bounces={true}
               >
-                {currentFightCard.length > 0 ? (
+                {/* Event Banner Image */}
+                <View style={{ marginHorizontal: 20, marginBottom: 8, marginTop: 16 }}>
+                  <Image
+                    source={
+                      fightCardData?.event?.bannerImage
+                        ? { uri: fightCardData.event.bannerImage }
+                        : getEventImage(fightCardData?.event?.id || 'default')
+                    }
+                    style={[styles.eventBannerImage, { aspectRatio: eventBannerAspectRatio }]}
+                    resizeMode="contain"
+                    onLoad={handleEventBannerLoad}
+                  />
+                </View>
+
+                <View style={{ paddingHorizontal: 16 }}>
+                  {currentFightCard.length > 0 ? (
                   currentFightCard.map((fight, index) => {
                     // Check if this is the first prelim fight (after all main card fights)
                     const isFirstPrelimFight = !fight.isMainCard &&
@@ -1435,6 +1272,7 @@ export default function CrewChatScreen() {
                     No fights available
                   </Text>
                 )}
+                </View>
               </ScrollView>
             </View>
           </Animated.View>
@@ -1607,7 +1445,7 @@ export default function CrewChatScreen() {
         visible={showFightRatingModal}
         fight={currentFight}
         onClose={closeFightRatingModal}
-        queryKey={['fight', currentFight?.id || mockFight.id, 'withUserData']}
+        queryKey={['fight', currentFight?.id, 'withUserData']}
         crewId={id}
         onSuccess={(type, data) => {
           // Trigger animation if rating was saved - delay until after modal close animation
@@ -1619,9 +1457,11 @@ export default function CrewChatScreen() {
             }, 300); // Wait for modal close animation (typically 300ms)
           }
           // Invalidate fight data queries for fresh data on next modal open
-          queryClient.invalidateQueries({ queryKey: ['fight', currentFight?.id || mockFight.id, 'withUserData'] });
+          if (currentFight?.id) {
+            queryClient.invalidateQueries({ queryKey: ['fight', currentFight.id, 'withUserData'] });
+          }
           // Invalidate the event fights query to refresh the fight cards
-          queryClient.invalidateQueries({ queryKey: ['eventFights', 'latest'] });
+          queryClient.invalidateQueries({ queryKey: ['upcomingEvent'] });
           // Refresh crew messages to show the new message
           queryClient.invalidateQueries({ queryKey: ['crewMessages', id] });
         }}
@@ -1644,9 +1484,11 @@ export default function CrewChatScreen() {
             }, 300); // Wait for modal close animation
           }
           // Invalidate queries to refresh fight card data
-          queryClient.invalidateQueries({ queryKey: ['eventFights', 'latest'] });
-          queryClient.invalidateQueries({ queryKey: ['crewPredictions', id, mockFight.id] });
-          queryClient.invalidateQueries({ queryKey: ['fight', mockFight.id, 'withUserData'] });
+          queryClient.invalidateQueries({ queryKey: ['upcomingEvent'] });
+          if (currentFight?.id) {
+            queryClient.invalidateQueries({ queryKey: ['crewPredictions', id, currentFight.id] });
+            queryClient.invalidateQueries({ queryKey: ['fight', currentFight.id, 'withUserData'] });
+          }
           // Show success message
           console.log(`Prediction ${isUpdate ? 'updated' : 'created'} successfully`);
         }}
@@ -2572,7 +2414,7 @@ const styles = StyleSheet.create({
   },
   eventBannerImage: {
     width: '100%',
-    height: 140,
+    height: undefined,
     borderRadius: 8,
     alignSelf: 'stretch',
   },

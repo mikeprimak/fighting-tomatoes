@@ -69,7 +69,12 @@
       "Bash(then echo \"Running: $sqlfile\")",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(start \"\" http://localhost:3001/admin.html)"
+      "Bash(start \"\" http://localhost:3001/admin.html)",
+      "Bash(git restore:*)",
+      "Bash(tee:*)",
+      "Bash(xargs cat:*)",
+      "Bash(ping:*)",
+      "Bash(start \"\" http://localhost:8083)"
     ],
     "deny": [],
     "ask": []

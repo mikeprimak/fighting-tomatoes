@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Platform,
   Modal,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -75,6 +76,23 @@ export default function CrewInfoScreen() {
         error.error || 'Failed to delete crew. Please try again.',
         'Error'
       );
+    },
+  });
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: (settings: { followOnlyUFC?: boolean }) =>
+      apiService.updateCrewSettings(id!, settings),
+    onSuccess: () => {
+      // Invalidate crew data to refresh settings
+      queryClient.invalidateQueries({ queryKey: ['crew', id] });
+    },
+    onError: (error: any) => {
+      showError(
+        error.error || 'Failed to update settings. Please try again.',
+        'Error'
+      );
+      // Revert optimistic update by refetching
+      queryClient.invalidateQueries({ queryKey: ['crew', id] });
     },
   });
 
@@ -320,6 +338,30 @@ export default function CrewInfoScreen() {
             <Text style={[styles.featureText, { color: colors.text }]}>Reactions</Text>
           </View>
         </View>
+
+        {/* Crew Settings Section (Only for Owner) */}
+        {crew.userRole === 'OWNER' && (
+          <View style={[styles.section, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Crew Settings</Text>
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Follow Only UFC Events</Text>
+                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
+                  When enabled, this crew will only see UFC events in the event status bar
+                </Text>
+              </View>
+              <Switch
+                value={crew.followOnlyUFC || false}
+                onValueChange={(value) => {
+                  updateSettingsMutation.mutate({ followOnlyUFC: value });
+                }}
+                trackColor={{ false: colors.border, true: colors.tint }}
+                thumbColor={Platform.OS === 'ios' ? undefined : '#ffffff'}
+                ios_backgroundColor={colors.border}
+              />
+            </View>
+          </View>
+        )}
 
         {/* Delete Crew Section (Only for Owner) */}
         {crew.userRole === 'OWNER' && (
@@ -608,6 +650,24 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 16,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  settingInfo: {
+    flex: 1,
+  },
+  settingLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  settingDescription: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   deleteButton: {
     flexDirection: 'row',

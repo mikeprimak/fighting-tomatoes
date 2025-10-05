@@ -130,9 +130,9 @@ export default function FightDisplayCard({
     setFighter2ImageError(false);
   }, [fight.id]);
 
-  // Start pulsing animation for live fights (only if currentRound is set)
+  // Start pulsing animation for live fights
   useEffect(() => {
-    const isTrulyLive = fight.currentRound !== null && fight.currentRound !== undefined && !fight.isComplete;
+    const isTrulyLive = fight.hasStarted && !fight.isComplete;
     if (isTrulyLive) {
       const pulse = Animated.loop(
         Animated.sequence([
@@ -151,13 +151,13 @@ export default function FightDisplayCard({
       pulse.start();
       return () => pulse.stop();
     }
-  }, [fight.currentRound, fight.isComplete, pulseAnim]);
+  }, [fight.hasStarted, fight.isComplete, pulseAnim]);
 
   // Determine fight status
   const getStatus = () => {
     if (fight.isComplete) return 'completed';
-    // A fight is only "in progress" if it has a currentRound (meaning it's actively happening now)
-    if (fight.currentRound !== null && fight.currentRound !== undefined) return 'in_progress';
+    // A fight is "in progress" if it has started (even if we don't know the current round)
+    if (fight.hasStarted) return 'in_progress';
     return 'upcoming';
   };
 

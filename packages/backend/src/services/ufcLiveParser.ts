@@ -121,17 +121,39 @@ function getWinnerFighterId(winnerName: string, fighter1: any, fighter2: any): s
 
 /**
  * Parse and update database with live event data
+ * @param liveData - Live event data from scraper
+ * @param eventId - Optional UUID of event (if not provided, will search by name)
  */
-export async function parseLiveEventData(liveData: LiveEventUpdate): Promise<void> {
+export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: string): Promise<void> {
   console.log(`\n📊 [LIVE PARSER] Processing live data for: ${liveData.eventName}`);
 
   try {
-    // Find event in database
-    const event = await findEventByName(liveData.eventName);
+    // Find event in database - use UUID if provided, otherwise search by name
+    let event;
+    if (eventId) {
+      event = await prisma.event.findUnique({
+        where: { id: eventId },
+        include: {
+          fights: {
+            include: {
+              fighter1: true,
+              fighter2: true
+            }
+          }
+        }
+      });
 
-    if (!event) {
-      console.error(`  ❌ Event not found in database: ${liveData.eventName}`);
-      return;
+      if (!event) {
+        console.error(`  ❌ Event not found with ID: ${eventId}`);
+        return;
+      }
+    } else {
+      event = await findEventByName(liveData.eventName);
+
+      if (!event) {
+        console.error(`  ❌ Event not found in database: ${liveData.eventName}`);
+        return;
+      }
     }
 
     console.log(`  ✓ Found event: ${event.name} (ID: ${event.id})`);
@@ -140,9 +162,19 @@ export async function parseLiveEventData(liveData: LiveEventUpdate): Promise<voi
     let eventChanged = false;
     let fightsUpdated = 0;
 
+    // Calculate hasStarted based on time - event has started if current time is past the earliest start time
+    const now = new Date();
+    const earliestStartTime = [
+      event.earlyPrelimStartTime,
+      event.prelimStartTime,
+      event.mainStartTime
+    ].filter(t => t != null).sort((a, b) => a!.getTime() - b!.getTime())[0];
+
+    const calculatedHasStarted = earliestStartTime ? now >= earliestStartTime : false;
+
     // Update event status
-    if (liveData.hasStarted !== undefined && event.hasStarted !== liveData.hasStarted) {
-      console.log(`  🔴 Event status change: hasStarted ${event.hasStarted} → ${liveData.hasStarted}`);
+    if (calculatedHasStarted !== event.hasStarted) {
+      console.log(`  🔴 Event status change: hasStarted ${event.hasStarted} → ${calculatedHasStarted} (based on time)`);
       eventChanged = true;
     }
 
@@ -155,7 +187,7 @@ export async function parseLiveEventData(liveData: LiveEventUpdate): Promise<voi
       await prisma.event.update({
         where: { id: event.id },
         data: {
-          hasStarted: liveData.hasStarted ?? event.hasStarted,
+          hasStarted: calculatedHasStarted,
           isComplete: liveData.isComplete ?? event.isComplete,
         }
       });
@@ -163,7 +195,10 @@ export async function parseLiveEventData(liveData: LiveEventUpdate): Promise<voi
     }
 
     // Update fights
+    console.log(`  🔍 Processing ${liveData.fights.length} fight updates...`);
     for (const fightUpdate of liveData.fights) {
+      console.log(`  🔎 Looking for fight: ${fightUpdate.fighterAName} vs ${fightUpdate.fighterBName} (hasStarted: ${fightUpdate.hasStarted}, isComplete: ${fightUpdate.isComplete})`);
+
       const dbFight = findFightByFighters(
         event.fights,
         fightUpdate.fighterAName,
@@ -171,9 +206,12 @@ export async function parseLiveEventData(liveData: LiveEventUpdate): Promise<voi
       );
 
       if (!dbFight) {
-        console.warn(`  ⚠ Fight not found: ${fightUpdate.fighterAName} vs ${fightUpdate.fighterBName}`);
+        console.warn(`  ⚠ Fight not found in DB: ${fightUpdate.fighterAName} vs ${fightUpdate.fighterBName}`);
+        console.warn(`  Available fights in DB: ${event.fights.map(f => `${f.fighter1.lastName} vs ${f.fighter2.lastName}`).join(', ')}`);
         continue;
       }
+
+      console.log(`  ✓ Found DB fight: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (DB hasStarted: ${dbFight.hasStarted}, DB isComplete: ${dbFight.isComplete})`);
 
       const updateData: any = {};
       let changed = false;
@@ -234,11 +272,14 @@ export async function parseLiveEventData(liveData: LiveEventUpdate): Promise<voi
 
       // Apply updates
       if (changed) {
+        console.log(`  💾 Updating fight ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} with:`, updateData);
         await prisma.fight.update({
           where: { id: dbFight.id },
           data: updateData
         });
         fightsUpdated++;
+      } else {
+        console.log(`  ⏭️  No changes for ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
       }
     }
 
@@ -290,9 +331,26 @@ export async function autoCompleteEvent(eventId: string): Promise<boolean> {
 
 /**
  * Get current event status for logging/monitoring
+ * @param eventIdentifier - Event name or UUID
  */
-export async function getEventStatus(eventName: string) {
-  const event = await findEventByName(eventName);
+export async function getEventStatus(eventIdentifier: string) {
+  // Check if it's a UUID (contains hyphens)
+  let event;
+  if (eventIdentifier.includes('-')) {
+    event = await prisma.event.findUnique({
+      where: { id: eventIdentifier },
+      include: {
+        fights: {
+          include: {
+            fighter1: true,
+            fighter2: true
+          }
+        }
+      }
+    });
+  } else {
+    event = await findEventByName(eventIdentifier);
+  }
 
   if (!event) {
     return null;

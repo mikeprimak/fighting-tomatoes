@@ -4,7 +4,7 @@
   "description": "Node.js TypeScript backend API",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon src/server.ts",
+    "dev": "nodemon --ext ts --ignore 'live-event-data/**' --ignore 'scraped-data/**' --ignore 'test-results/**' src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest",

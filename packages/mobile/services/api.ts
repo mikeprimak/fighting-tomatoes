@@ -385,6 +385,13 @@ class ApiService {
     });
   }
 
+  async updateCrewSettings(crewId: string, settings: { followOnlyUFC?: boolean }): Promise<{ crew: any }> {
+    return this.makeRequest(`/crews/${crewId}/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    });
+  }
+
   async muteCrewChat(crewId: string, duration: '8hours' | 'forever'): Promise<{ message: string; mutedUntil: string | null }> {
     return this.makeRequest(`/crews/${crewId}/mute`, {
       method: 'POST',

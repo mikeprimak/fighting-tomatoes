@@ -5,6 +5,8 @@ import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import authPlugin from './middleware/auth.fastify';
 import { registerRoutes } from './routes';
+// import { startMetricsScheduler } from './services/metricsScheduler';
+// import type { ScheduledTask } from 'node-cron';
 
 // Initialize Prisma client
 const prisma = new PrismaClient();
@@ -13,6 +15,9 @@ const prisma = new PrismaClient();
 const fastify = Fastify({
   logger: true
 });
+
+// Metrics scheduler task
+// let metricsSchedulerTask: ScheduledTask | null = null;
 
 // Declare Prisma and Auth on Fastify instance
 declare module 'fastify' {
@@ -26,16 +31,22 @@ declare module 'fastify' {
 // Graceful shutdown handler
 const gracefulShutdown = async (signal: string) => {
   console.log(`Received ${signal}, shutting down gracefully`);
-  
+
   try {
+    // Stop metrics scheduler
+    // if (metricsSchedulerTask) {
+    //   metricsSchedulerTask.stop();
+    //   console.log('Metrics scheduler stopped');
+    // }
+
     // Close Prisma connection
     await prisma.$disconnect();
     console.log('Database connection closed');
-    
+
     // Close Fastify server
     await fastify.close();
     console.log('Server closed');
-    
+
     process.exit(0);
   } catch (err: any) {
     console.error('Error during shutdown:', err);
@@ -189,6 +200,9 @@ async function start() {
       console.error('Failed to connect to database:', err);
       throw err;
     }
+
+    // Start metrics scheduler
+    // metricsSchedulerTask = startMetricsScheduler();
 
     // Start the server
     const port = parseInt(process.env.PORT || '3001', 10);

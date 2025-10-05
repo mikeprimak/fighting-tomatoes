@@ -230,7 +230,13 @@ const getAvailableTagsForRating = (rating: number, selectedTags: string[]) => {
 };
 
 // Fighter image selection logic (same as FightDisplayCard)
-const getFighterImage = (fighterId: string) => {
+const getFighterImage = (fighter: any) => {
+  // Only use profileImage if it's a valid absolute URL (starts with http)
+  if (fighter?.profileImage && fighter.profileImage.startsWith('http')) {
+    return { uri: fighter.profileImage };
+  }
+
+  // Fallback to placeholder image based on fighter ID
   const images = [
     require('../assets/fighters/fighter-1.jpg'),
     require('../assets/fighters/fighter-2.jpg'),
@@ -240,8 +246,7 @@ const getFighterImage = (fighterId: string) => {
     require('../assets/fighters/fighter-6.jpg'),
   ];
 
-  // Use charCodeAt to get a number from the last character (works for letters and numbers)
-  const lastCharCode = fighterId.charCodeAt(fighterId.length - 1);
+  const lastCharCode = fighter?.id?.charCodeAt(fighter.id.length - 1) || 0;
   const index = lastCharCode % images.length;
   return images[index];
 };
@@ -559,7 +564,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
             <View style={styles.fightHeader}>
               <View style={styles.fighterContainer}>
                 <Image
-                  source={getFighterImage(fight.fighter1.id)}
+                  source={getFighterImage(fight.fighter1)}
                   style={styles.fighterImage}
                   resizeMode="cover"
                 />
@@ -574,7 +579,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
 
               <View style={styles.fighterContainer}>
                 <Image
-                  source={getFighterImage(fight.fighter2.id)}
+                  source={getFighterImage(fight.fighter2)}
                   style={styles.fighterImage}
                   resizeMode="cover"
                 />

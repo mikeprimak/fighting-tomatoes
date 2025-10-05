@@ -19,6 +19,8 @@ interface Fighter {
   firstName: string;
   lastName: string;
   nickname?: string;
+  profileImage?: string;
+  actionImage?: string;
 }
 
 interface RoundVotingSlideupProps {
@@ -43,6 +45,12 @@ export default function RoundVotingSlideup({
   const [slideAnim] = useState(new Animated.Value(0));
 
   const getFighterImage = (fighter: Fighter): any => {
+    // Only use profileImage if it's a valid absolute URL (starts with http)
+    if (fighter?.profileImage && fighter.profileImage.startsWith('http')) {
+      return { uri: fighter.profileImage };
+    }
+
+    // Fallback to placeholder image based on fighter name
     const fighterImages = [
       require('../assets/fighters/fighter-1.jpg'),
       require('../assets/fighters/fighter-2.jpg'),

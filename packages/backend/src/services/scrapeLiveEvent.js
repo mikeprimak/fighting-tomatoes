@@ -25,10 +25,13 @@ async function scrapeLiveEvent(eventUrl, outputDir) {
 
     await page.waitForSelector('.c-listing-fight', { timeout: 10000 });
 
+    // First, get basic event and fight data
     const eventData = await page.evaluate(() => {
       // Extract event name from page
       const eventNameEl = document.querySelector('.c-hero__headline-suffix, .c-hero__headline');
-      const eventName = eventNameEl?.textContent?.trim() || 'Unknown Event';
+      const eventName = (eventNameEl?.textContent || 'Unknown Event')
+        .replace(/\s+/g, ' ')  // Replace all whitespace (including newlines) with single space
+        .trim();
 
       // Extract event image
       let eventImageUrl = null;
@@ -74,58 +77,70 @@ async function scrapeLiveEvent(eventUrl, outputDir) {
           const isTitle = weightClass.toLowerCase().includes('title');
           weightClass = weightClass.replace(/\s*Title\s*/gi, '').replace(/\s*Bout\s*/gi, '').trim();
 
-          // Extract fighter names
-          const redName = element.querySelector('.c-listing-fight__corner-name--red')?.textContent?.replace(/\s+/g, ' ').trim() || '';
-          const blueName = element.querySelector('.c-listing-fight__corner-name--blue')?.textContent?.replace(/\s+/g, ' ').trim() || '';
+          // Find the details container where fighter names and live banner are located
+          const detailsContainer = element.querySelector('.c-listing-fight__details');
 
-          // Check for live status (be more careful - only if text actually says "live now")
-          const fightText = element.textContent.toLowerCase();
-          const isActuallyLive = fightText.includes('live now');
+          // Extract fighter names from within details container
+          const redName = detailsContainer?.querySelector('.c-listing-fight__corner-name--red')?.textContent?.replace(/\s+/g, ' ').trim() || '';
+          const blueName = detailsContainer?.querySelector('.c-listing-fight__corner-name--blue')?.textContent?.replace(/\s+/g, ' ').trim() || '';
+
+          // Fight status logic:
+          // 1. Live: .c-listing-fight__banner--live exists WITHIN the details container
+          // 2. Complete: .c-listing-fight__outcome--win exists (ONLY indicator)
+          // 3. Upcoming: neither exists
+
+          // Check if detailsContainer exists and if it contains a visible live banner
+          let liveBanner = null;
+          let isActuallyLive = false;
+          if (detailsContainer) {
+            liveBanner = detailsContainer.querySelector('.c-listing-fight__banner--live');
+            // Only consider it live if the banner exists AND doesn't have 'hidden' class
+            if (liveBanner) {
+              isActuallyLive = !liveBanner.classList.contains('hidden');
+            }
+          }
+          const winIndicator = element.querySelector('.c-listing-fight__outcome--win');
+
           let fightStatus = 'upcoming';
           let currentRound = null;
           let completedRounds = null;
-
-          if (isActuallyLive) {
-            fightStatus = 'live';
-
-            // Try to detect current round
-            const roundMatch = fightText.match(/(?:round\s+|r)(\d+)/i);
-            if (roundMatch) {
-              const detectedRound = parseInt(roundMatch[1], 10);
-              if (fightText.includes('end') || fightText.includes('complete')) {
-                completedRounds = detectedRound;
-                currentRound = null;
-              } else {
-                currentRound = detectedRound;
-                completedRounds = detectedRound > 1 ? detectedRound - 1 : 0;
-              }
-            }
-          }
-
-          // Check for result
-          const resultEl = element.querySelector('.c-listing-fight__outcome-wrapper');
-          const resultText = resultEl?.textContent?.trim() || '';
           let result = null;
 
-          if (resultText) {
+          // Check if fight is complete (ONLY based on winIndicator)
+          if (winIndicator) {
             fightStatus = 'complete';
 
-            // Parse result: "Crute defeats Erslan by Submission (Rear Naked Choke) at 3:19 of Round 1"
-            const winnerMatch = resultText.match(/^([^defeats]+)\s+defeats/i);
-            const methodMatch = resultText.match(/by\s+([^at]+)\s+at/i);
-            const timeMatch = resultText.match(/at\s+([\d:]+)\s+of/i);
-            const roundMatch = resultText.match(/Round\s+(\d+)/i);
+            // Determine winner by checking which corner has the win indicator
+            let winner = null;
+            const redCorner = element.querySelector('.c-listing-fight__corner--red');
+            const blueCorner = element.querySelector('.c-listing-fight__corner--blue');
+
+            if (redCorner?.contains(winIndicator)) {
+              winner = redName;
+            } else if (blueCorner?.contains(winIndicator)) {
+              winner = blueName;
+            }
+
+            // Extract result details (round/method) for informational purposes only
+            const roundResultEl = element.querySelector('.c-listing-fight__result-text.round');
+            const methodResultEl = element.querySelector('.c-listing-fight__result-text.method');
+            const roundNum = roundResultEl?.textContent?.trim();
+            const method = methodResultEl?.textContent?.trim();
 
             result = {
-              winner: winnerMatch ? winnerMatch[1].trim() : null,
-              method: methodMatch ? methodMatch[1].trim() : null,
-              time: timeMatch ? timeMatch[1].trim() : null,
-              round: roundMatch ? parseInt(roundMatch[1], 10) : null
+              winner: winner,
+              method: method || null,
+              time: null,
+              round: roundNum ? parseInt(roundNum, 10) : null
             };
 
             if (result.round) {
               completedRounds = result.round;
             }
+          }
+          // Check if fight is live (takes precedence over upcoming)
+          else if (isActuallyLive) {
+            fightStatus = 'live';
           }
 
           allFights.push({
@@ -156,6 +171,62 @@ async function scrapeLiveEvent(eventUrl, outputDir) {
         scrapedAt: new Date().toISOString()
       };
     });
+
+    // Now expand live fights to get round/time details
+    for (let i = 0; i < eventData.fights.length; i++) {
+      const fight = eventData.fights[i];
+
+      if (fight.status === 'live' && fight.fightId) {
+        try {
+          // Find the fight element by data-fmid
+          const fightSelector = `.c-listing-fight[data-fmid="${fight.fightId}"]`;
+          const expandButtonSelector = `${fightSelector} .c-listing-fight__expand-button`;
+
+          // Check if expand button exists
+          const expandButton = await page.$(expandButtonSelector);
+          if (expandButton) {
+            // Click to expand
+            await expandButton.click();
+
+            // Wait for content to load (give it a few seconds)
+            await page.waitForTimeout(2000);
+
+            // Extract round/time data from expanded content
+            const liveData = await page.evaluate((selector) => {
+              const fightEl = document.querySelector(selector);
+              if (!fightEl) return null;
+
+              const contentEl = fightEl.querySelector('.c-listing-fight__content');
+              if (!contentEl) return null;
+
+              const contentText = contentEl.textContent || '';
+
+              // Look for "Round X" and time patterns
+              const roundMatch = contentText.match(/Round\s+(\d+)/i);
+              const timeMatch = contentText.match(/(\d+:\d+)/);
+
+              return {
+                round: roundMatch ? parseInt(roundMatch[1], 10) : null,
+                time: timeMatch ? timeMatch[1] : null
+              };
+            }, fightSelector);
+
+            if (liveData) {
+              if (liveData.round) {
+                fight.currentRound = liveData.round;
+                fight.completedRounds = liveData.round > 1 ? liveData.round - 1 : 0;
+              }
+              if (liveData.time) {
+                fight.currentTime = liveData.time;
+              }
+            }
+          }
+        } catch (error) {
+          // Silently continue if we can't expand this fight
+          console.log(`  ⚠ Could not expand fight ${fight.fightId}: ${error.message}`);
+        }
+      }
+    }
 
     await browser.close();
 

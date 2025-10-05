@@ -1,0 +1,14 @@
+{
+  "watch": ["src"],
+  "ext": "ts",
+  "ignore": [
+    "live-event-data/**",
+    "scraped-data/**",
+    "test-results/**",
+    "dist/**",
+    "node_modules/**",
+    "*.json"
+  ],
+  "verbose": true,
+  "exec": "ts-node src/server.ts"
+}

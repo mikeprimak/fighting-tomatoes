@@ -140,6 +140,146 @@ const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
     return reply.send({ errors: [] });
   });
 
+  // ============= METRICS OVER TIME =============
+
+  /**
+   * Capture daily metrics snapshot
+   * POST /api/admin/metrics/capture
+   */
+  fastify.post('/metrics/capture', async (request, reply) => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Check if snapshot already exists for today
+      const existing = await prisma.dailyMetrics.findUnique({
+        where: { date: today },
+      });
+
+      if (existing) {
+        return reply.send({
+          message: 'Snapshot already exists for today',
+          snapshot: existing
+        });
+      }
+
+      // Calculate metrics
+      const now = new Date();
+      const todayStart = new Date(today);
+      const todayEnd = new Date(today);
+      todayEnd.setHours(23, 59, 59, 999);
+
+      const [
+        totalUsers,
+        newUsers,
+        activeUsers,
+        totalRatings,
+        totalReviews,
+        ratingsToday,
+        reviewsToday,
+        totalSessions,
+        totalEvents,
+        totalFights,
+        totalFighters,
+        fightsRated,
+      ] = await Promise.all([
+        prisma.user.count(),
+        prisma.user.count({
+          where: {
+            createdAt: { gte: todayStart, lte: todayEnd },
+          },
+        }),
+        prisma.user.count({
+          where: {
+            lastLoginAt: { gte: todayStart, lte: todayEnd },
+          },
+        }),
+        prisma.fightRating.count(),
+        prisma.fightReview.count(),
+        prisma.fightRating.count({
+          where: {
+            createdAt: { gte: todayStart, lte: todayEnd },
+          },
+        }),
+        prisma.fightReview.count({
+          where: {
+            createdAt: { gte: todayStart, lte: todayEnd },
+          },
+        }),
+        prisma.userSession.count({
+          where: {
+            startedAt: { gte: todayStart, lte: todayEnd },
+          },
+        }),
+        prisma.event.count(),
+        prisma.fight.count(),
+        prisma.fighter.count(),
+        prisma.fight.count({
+          where: {
+            totalRatings: { gt: 0 },
+          },
+        }),
+      ]);
+
+      // Calculate returning users
+      const returningUsers = activeUsers - newUsers;
+
+      // Create snapshot
+      const snapshot = await prisma.dailyMetrics.create({
+        data: {
+          date: today,
+          totalUsers,
+          newUsers,
+          activeUsers,
+          returningUsers: Math.max(0, returningUsers),
+          totalRatings,
+          totalReviews,
+          totalSessions,
+          fightsRated: ratingsToday,
+          totalTags: 0,  // TODO: implement if needed
+          avgSessionDuration: null,  // TODO: calculate from sessions
+          totalScreenViews: 0,  // TODO: implement if needed
+          avgRating: null,  // TODO: calculate from ratings
+          fightsViewed: 0,  // TODO: implement if needed
+        },
+      });
+
+      return reply.send({
+        message: 'Daily metrics captured successfully',
+        snapshot
+      });
+    } catch (error) {
+      console.error('Error capturing daily metrics:', error);
+      return reply.status(500).send({ error: 'Failed to capture metrics' });
+    }
+  });
+
+  /**
+   * Get historical metrics
+   * GET /api/admin/metrics/history
+   */
+  fastify.get('/metrics/history', async (request, reply) => {
+    try {
+      const { days = 30 } = request.query as { days?: number };
+
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - Number(days));
+      startDate.setHours(0, 0, 0, 0);
+
+      const metrics = await prisma.dailyMetrics.findMany({
+        where: {
+          date: { gte: startDate },
+        },
+        orderBy: { date: 'asc' },
+      });
+
+      return reply.send({ metrics, days: Number(days) });
+    } catch (error) {
+      console.error('Error fetching historical metrics:', error);
+      return reply.status(500).send({ error: 'Failed to fetch metrics history' });
+    }
+  });
+
   // ============= EVENTS CRUD =============
 
   /**

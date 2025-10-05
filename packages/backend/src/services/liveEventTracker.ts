@@ -15,6 +15,7 @@ const execAsync = promisify(exec);
 // ============== TYPE DEFINITIONS ==============
 
 interface LiveEventConfig {
+  eventId: string;          // UUID of event in database
   eventUrl: string;
   eventName: string;
   intervalSeconds?: number;  // Default: 30
@@ -23,6 +24,7 @@ interface LiveEventConfig {
 
 interface TrackerStatus {
   isRunning: boolean;
+  eventId?: string;
   eventName?: string;
   eventUrl?: string;
   startedAt?: string;
@@ -57,6 +59,7 @@ class LiveEventTracker {
 
     this.status = {
       isRunning: true,
+      eventId: config.eventId,
       eventName: config.eventName,
       eventUrl: config.eventUrl,
       startedAt: new Date().toISOString(),
@@ -64,7 +67,7 @@ class LiveEventTracker {
     };
 
     console.log('\n🚀 [LIVE TRACKER] Starting live event tracking');
-    console.log(`   Event: ${this.config.eventName}`);
+    console.log(`   Event: ${this.config.eventName} (ID: ${this.config.eventId})`);
     console.log(`   URL: ${this.config.eventUrl}`);
     console.log(`   Interval: ${this.config.intervalSeconds}s\n`);
 
@@ -152,11 +155,11 @@ class LiveEventTracker {
         // Convert scraped format to parser format
         const liveUpdate = this.convertScrapedToLiveUpdate(eventData);
 
-        // Parse and update database
-        await parseLiveEventData(liveUpdate);
+        // Parse and update database using UUID
+        await parseLiveEventData(liveUpdate, this.config.eventId);
 
         // Check if event should be marked complete
-        const eventStatus = await getEventStatus(this.config.eventName);
+        const eventStatus = await getEventStatus(this.config.eventId);
         if (eventStatus && !eventStatus.isComplete) {
           await autoCompleteEvent(eventStatus.eventId);
         }
@@ -195,13 +198,13 @@ class LiveEventTracker {
       let currentRound: number | null = null;
       let completedRounds: number | null = null;
 
-      // Check if fight has result (complete)
-      if (fight.winner || fight.result?.winner) {
+      // Check if fight is complete (based on status or having a winner)
+      if (fight.status === 'complete' || fight.isComplete || fight.winner || fight.result?.winner) {
         fightStatus = 'complete';
-        completedRounds = fight.result?.round || fight.round || null;
+        completedRounds = fight.completedRounds || fight.result?.round || fight.round || null;
       }
-      // Check if fight is live
-      else if (fight.status === 'live' || fight.isLive) {
+      // Check if fight is live (based on status or hasStarted flag)
+      else if (fight.status === 'live' || fight.isLive || fight.hasStarted) {
         fightStatus = 'live';
         currentRound = fight.currentRound || null;
         completedRounds = fight.completedRounds || (currentRound ? currentRound - 1 : null);
@@ -213,6 +216,7 @@ class LiveEventTracker {
         status: fightStatus,
         currentRound,
         completedRounds,
+        currentTime: fight.currentTime || null, // Live round time (e.g., "3:45")
         hasStarted: fightStatus !== 'upcoming',
         isComplete: fightStatus === 'complete',
         winner: fight.result?.winner || fight.winner || null,
@@ -254,8 +258,9 @@ export function getLiveTrackingStatus(): TrackerStatus {
 // ============== CLI USAGE ==============
 
 if (require.main === module) {
-  const eventUrl = process.argv[2] || 'https://www.ufc.com/event/ufc-320';
-  const eventName = process.argv[3] || 'UFC 320';
+  const eventId = process.argv[2] || 'c68b1e85-b3cf-499d-86e7-a413bee893f5'; // UFC 320 ID
+  const eventUrl = process.argv[3] || 'https://www.ufc.com/event/ufc-320';
+  const eventName = process.argv[4] || 'UFC 320';
 
   // Handle graceful shutdown
   process.on('SIGINT', async () => {
@@ -266,6 +271,7 @@ if (require.main === module) {
 
   // Start tracking
   startLiveTracking({
+    eventId,
     eventUrl,
     eventName,
     intervalSeconds: 30

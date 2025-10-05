@@ -6,6 +6,9 @@
 import { FastifyInstance } from 'fastify';
 import liveTracker, { startLiveTracking, stopLiveTracking, getLiveTrackingStatus } from '../services/liveEventTracker';
 import { getEventStatus } from '../services/ufcLiveParser';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export default async function liveEventsRoutes(fastify: FastifyInstance) {
   /**
@@ -14,17 +17,18 @@ export default async function liveEventsRoutes(fastify: FastifyInstance) {
    */
   fastify.post('/start', async (request, reply) => {
     try {
-      const { eventUrl, eventName, intervalSeconds } = request.body as {
+      const { eventId, eventUrl, eventName, intervalSeconds } = request.body as {
+        eventId: string;
         eventUrl: string;
         eventName: string;
         intervalSeconds?: number;
       };
 
-      if (!eventUrl || !eventName) {
+      if (!eventId || !eventUrl || !eventName) {
         return reply.status(400).send({
           error: 'Missing required fields',
           code: 'VALIDATION_ERROR',
-          details: 'eventUrl and eventName are required'
+          details: 'eventId, eventUrl and eventName are required'
         });
       }
 
@@ -40,6 +44,7 @@ export default async function liveEventsRoutes(fastify: FastifyInstance) {
 
       // Start tracking
       await startLiveTracking({
+        eventId,
         eventUrl,
         eventName,
         intervalSeconds: intervalSeconds || 30
@@ -148,6 +153,89 @@ export default async function liveEventsRoutes(fastify: FastifyInstance) {
   });
 
   /**
+   * POST /api/live-events/auto-start
+   * Automatically find and start tracking the currently live event
+   */
+  fastify.post('/auto-start', async (request, reply) => {
+    try {
+      const currentStatus = getLiveTrackingStatus();
+      if (currentStatus.isRunning) {
+        return reply.status(400).send({
+          error: 'Tracker already running',
+          code: 'TRACKER_RUNNING',
+          details: `Currently tracking: ${currentStatus.eventName}`
+        });
+      }
+
+      // Find the currently live event based on time
+      const now = new Date();
+
+      // Look for events that have started (earliest start time <= now) and not completed
+      const liveEvent = await prisma.event.findFirst({
+        where: {
+          isComplete: false,
+          promotion: 'UFC',
+          OR: [
+            { earlyPrelimStartTime: { lte: now } },
+            { prelimStartTime: { lte: now } },
+            { mainStartTime: { lte: now } }
+          ]
+        },
+        orderBy: {
+          date: 'desc' // Get the most recent one
+        }
+      });
+
+      if (!liveEvent) {
+        return reply.status(404).send({
+          error: 'No live event found',
+          code: 'NO_LIVE_EVENT',
+          details: 'No UFC event is currently live based on start times'
+        });
+      }
+
+      // Use the ufcUrl from database if available, otherwise generate it
+      let eventUrl: string;
+      if (liveEvent.ufcUrl) {
+        eventUrl = liveEvent.ufcUrl;
+      } else {
+        // Fallback: Extract event number/slug from name for URL
+        // e.g., "UFC 320: Ankalaev vs. Pereira" -> "ufc-320"
+        const eventSlug = liveEvent.name.toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '') // Remove special chars except spaces and hyphens
+          .trim()
+          .replace(/\s+/g, '-'); // Replace spaces with hyphens
+        eventUrl = `https://www.ufc.com/event/${eventSlug}`;
+      }
+
+      await startLiveTracking({
+        eventId: liveEvent.id,
+        eventUrl,
+        eventName: liveEvent.name,
+        intervalSeconds: 30
+      });
+
+      const status = getLiveTrackingStatus();
+
+      return reply.status(200).send({
+        data: {
+          message: `🔴 Auto-started tracking for ${liveEvent.name}`,
+          eventId: liveEvent.id,
+          eventUrl,
+          status
+        }
+      });
+    } catch (error: any) {
+      fastify.log.error(error);
+      return reply.status(500).send({
+        error: 'Failed to auto-start live tracking',
+        code: 'AUTO_START_ERROR',
+        details: error.message
+      });
+    }
+  });
+
+  /**
    * POST /api/live-events/quick-start-ufc320
    * Quick start for UFC 320 (convenience endpoint for tonight)
    */
@@ -162,7 +250,25 @@ export default async function liveEventsRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Find UFC 320 event ID
+      const ufc320Event = await prisma.event.findFirst({
+        where: {
+          name: {
+            contains: '320',
+            mode: 'insensitive'
+          }
+        }
+      });
+
+      if (!ufc320Event) {
+        return reply.status(404).send({
+          error: 'UFC 320 not found',
+          code: 'EVENT_NOT_FOUND'
+        });
+      }
+
       await startLiveTracking({
+        eventId: ufc320Event.id,
         eventUrl: 'https://www.ufc.com/event/ufc-320',
         eventName: 'UFC 320',
         intervalSeconds: 30

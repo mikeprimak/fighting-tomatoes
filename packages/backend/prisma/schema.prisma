@@ -194,8 +194,9 @@ model Event {
   location          String?
   
   // Timing
-  prelimStartTime   DateTime?
-  mainStartTime     DateTime?
+  earlyPrelimStartTime DateTime?
+  prelimStartTime      DateTime?
+  mainStartTime        DateTime?
   
   // Media
   bannerImage       String?
@@ -205,12 +206,15 @@ model Event {
   mainLink          String?
   prelimChannel     String?
   prelimLink        String?
-  
+
+  // UFC.com URL for live tracking
+  ufcUrl            String?   // e.g., "https://www.ufc.com/event/ufc-320"
+
   // Stats
   averageRating     Float     @default(0)
   totalRatings      Int       @default(0)
   greatFights       Int       @default(0) // fights rated 85+
-  
+
   // Status
   hasStarted        Boolean   @default(false)
   isComplete        Boolean   @default(false)
@@ -782,6 +786,7 @@ model Crew {
   allowPredictions Boolean  @default(true)
   allowRoundVoting Boolean  @default(true)
   allowReactions   Boolean  @default(true)
+  followOnlyUFC    Boolean  @default(false) // true = only UFC events, false = all events
 
   // Stats
   totalMembers    Int       @default(1)

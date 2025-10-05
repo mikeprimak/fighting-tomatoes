@@ -122,3 +122,11 @@ Thumbs.db
 # Prisma
 packages/backend/prisma/dev.db
 packages/backend/prisma/migrations/migration_lock.toml 
+
+# Scraped data and test artifacts
+packages/backend/live-event-data/
+packages/backend/scraped-data/
+packages/backend/test-results/
+packages/backend/backups/
+packages/backend/nul
+nul

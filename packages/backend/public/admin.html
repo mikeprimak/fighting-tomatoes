@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FightCrewApp Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -313,6 +314,58 @@
             width: 18px;
             height: 18px;
         }
+
+        /* Charts */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 32px;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 4px;
+        }
+
+        .btn-toggle {
+            padding: 8px 16px;
+            border: 1px solid #d1d5db;
+            background: white;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .btn-toggle:first-child {
+            border-radius: 6px 0 0 6px;
+        }
+
+        .btn-toggle:last-child {
+            border-radius: 0 6px 6px 0;
+        }
+
+        .btn-toggle:only-child {
+            border-radius: 6px;
+        }
+
+        .btn-toggle.active {
+            background: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+
+        .btn-toggle:hover:not(.active) {
+            background: #f3f4f6;
+        }
     </style>
 </head>
 <body>
@@ -322,6 +375,7 @@
         <!-- Tabs -->
         <div class="tabs">
             <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+            <button class="tab" onclick="switchTab('metrics')">Metrics Over Time</button>
             <button class="tab" onclick="switchTab('events')">Events</button>
             <button class="tab" onclick="switchTab('fighters')">Fighters</button>
             <button class="tab" onclick="switchTab('fights')">Fights</button>
@@ -396,6 +450,49 @@
                             <div class="stat-value" id="upcomingEvents">-</div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Over Time Tab -->
+        <div id="metrics-tab" class="tab-content">
+            <div class="chart-controls">
+                <button class="btn btn-primary" onclick="captureMetrics()">📸 Capture Today's Snapshot</button>
+                <div class="btn-group">
+                    <button class="btn-toggle active" onclick="changeTimeRange(7)">7 Days</button>
+                    <button class="btn-toggle" onclick="changeTimeRange(30)">30 Days</button>
+                    <button class="btn-toggle" onclick="changeTimeRange(90)">90 Days</button>
+                    <button class="btn-toggle" onclick="changeTimeRange(365)">1 Year</button>
+                </div>
+            </div>
+
+            <div id="metrics-message"></div>
+
+            <div class="section">
+                <h2 class="section-title">👥 User Growth</h2>
+                <div class="chart-container">
+                    <canvas id="usersChart"></canvas>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">📊 Daily Activity</h2>
+                <div class="chart-container">
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">⭐ Engagement</h2>
+                <div class="chart-container">
+                    <canvas id="engagementChart"></canvas>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">🎯 Sessions</h2>
+                <div class="chart-container">
+                    <canvas id="sessionsChart"></canvas>
                 </div>
             </div>
         </div>
@@ -593,6 +690,13 @@
     <script>
         const API_URL = 'http://localhost:3001/api/admin';
         let currentTab = 'dashboard';
+        let currentTimeRange = 7;
+        let charts = {
+            users: null,
+            activity: null,
+            engagement: null,
+            sessions: null
+        };
 
         // Tab switching
         function switchTab(tab) {
@@ -604,6 +708,7 @@
             document.getElementById(`${tab}-tab`).classList.add('active');
 
             if (tab === 'dashboard') fetchStats();
+            else if (tab === 'metrics') loadMetrics(currentTimeRange);
             else if (tab === 'events') loadEvents();
             else if (tab === 'fighters') loadFighters();
             else if (tab === 'fights') loadFights();
@@ -641,6 +746,179 @@
                 document.getElementById('error').style.display = 'block';
                 document.getElementById('error').textContent = `Error: ${error.message}`;
             }
+        }
+
+        // Metrics Over Time
+        async function captureMetrics() {
+            try {
+                const res = await fetch(`${API_URL}/metrics/capture`, { method: 'POST' });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showMessage('metrics', data.message, 'success');
+                    loadMetrics(currentTimeRange);
+                } else {
+                    showMessage('metrics', data.error || 'Failed to capture metrics', 'error');
+                }
+            } catch (error) {
+                showMessage('metrics', error.message, 'error');
+            }
+        }
+
+        function changeTimeRange(days) {
+            currentTimeRange = days;
+            document.querySelectorAll('.btn-toggle').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            loadMetrics(days);
+        }
+
+        async function loadMetrics(days) {
+            try {
+                const res = await fetch(`${API_URL}/metrics/history?days=${days}`);
+                const data = await res.json();
+
+                if (data.metrics.length === 0) {
+                    showMessage('metrics', 'No metrics data available. Click "Capture Today\'s Snapshot" to start tracking.', 'error');
+                    return;
+                }
+
+                updateCharts(data.metrics);
+            } catch (error) {
+                showMessage('metrics', error.message, 'error');
+            }
+        }
+
+        function updateCharts(metrics) {
+            const labels = metrics.map(m => new Date(m.date).toLocaleDateString());
+
+            // User Growth Chart
+            const usersData = {
+                labels,
+                datasets: [
+                    {
+                        label: 'Total Users',
+                        data: metrics.map(m => m.totalUsers),
+                        borderColor: '#dc2626',
+                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'New Users',
+                        data: metrics.map(m => m.newUsers),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            };
+
+            // Activity Chart
+            const activityData = {
+                labels,
+                datasets: [
+                    {
+                        label: 'Active Users',
+                        data: metrics.map(m => m.activeUsers),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Returning Users',
+                        data: metrics.map(m => m.returningUsers),
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            };
+
+            // Engagement Chart
+            const engagementData = {
+                labels,
+                datasets: [
+                    {
+                        label: 'Total Ratings',
+                        data: metrics.map(m => m.totalRatings),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Total Reviews',
+                        data: metrics.map(m => m.totalReviews),
+                        borderColor: '#ec4899',
+                        backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            };
+
+            // Sessions Chart
+            const sessionsData = {
+                labels,
+                datasets: [
+                    {
+                        label: 'Total Sessions',
+                        data: metrics.map(m => m.totalSessions),
+                        borderColor: '#06b6d4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            };
+
+            const chartConfig = {
+                type: 'line',
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            };
+
+            // Destroy existing charts
+            if (charts.users) charts.users.destroy();
+            if (charts.activity) charts.activity.destroy();
+            if (charts.engagement) charts.engagement.destroy();
+            if (charts.sessions) charts.sessions.destroy();
+
+            // Create new charts
+            charts.users = new Chart(document.getElementById('usersChart'), {
+                ...chartConfig,
+                data: usersData
+            });
+
+            charts.activity = new Chart(document.getElementById('activityChart'), {
+                ...chartConfig,
+                data: activityData
+            });
+
+            charts.engagement = new Chart(document.getElementById('engagementChart'), {
+                ...chartConfig,
+                data: engagementData
+            });
+
+            charts.sessions = new Chart(document.getElementById('sessionsChart'), {
+                ...chartConfig,
+                data: sessionsData
+            });
         }
 
         // Events CRUD

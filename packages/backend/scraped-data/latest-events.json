@@ -164,8 +164,52 @@
           "startTime": "12:30 AM"
         },
         {
-          "fightId": "12320",
+          "fightId": "12404",
           "order": 7,
+          "cardType": "Prelims",
+          "weightClass": "Catchweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Daniel Santos",
+            "rank": "",
+            "country": "Brazil",
+            "odds": "-142",
+            "athleteUrl": "https://www.ufc.com/athlete/daniel-santos"
+          },
+          "fighterB": {
+            "name": "JooSang Yoo",
+            "rank": "",
+            "country": "South Korea",
+            "odds": "+120",
+            "athleteUrl": "https://www.ufc.com/athlete/joo-sang-yoo"
+          },
+          "startTime": "1:00 AM"
+        },
+        {
+          "fightId": "12358",
+          "order": 8,
+          "cardType": "Prelims",
+          "weightClass": "Bantamweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Patchy Mix",
+            "rank": "",
+            "country": "United States",
+            "odds": "-305",
+            "athleteUrl": "https://www.ufc.com/athlete/patrick-mix"
+          },
+          "fighterB": {
+            "name": "Jakub Wiklacz",
+            "rank": "",
+            "country": "Poland",
+            "odds": "+245",
+            "athleteUrl": "https://www.ufc.com/athlete/jakub-wiklacz"
+          },
+          "startTime": "1:30 AM"
+        },
+        {
+          "fightId": "12320",
+          "order": 9,
           "cardType": "Prelims",
           "weightClass": "Middleweight",
           "isTitle": false,
@@ -183,55 +227,33 @@
             "odds": "+240",
             "athleteUrl": "https://www.ufc.com/athlete/andre-muniz"
           },
-          "startTime": "1:00 AM"
-        },
-        {
-          "fightId": "12322",
-          "order": 8,
-          "cardType": "Prelims",
-          "weightClass": "Bantamweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Chris Gutierrez",
-            "rank": "",
-            "country": "United States",
-            "odds": "+350",
-            "athleteUrl": "https://www.ufc.com/athlete/chris-gutierrez"
-          },
-          "fighterB": {
-            "name": "Farid Basharat",
-            "rank": "",
-            "country": "",
-            "odds": "-455",
-            "athleteUrl": "https://www.ufc.com/athlete/farid-basharat"
-          },
-          "startTime": "1:30 AM"
-        },
-        {
-          "fightId": "12404",
-          "order": 9,
-          "cardType": "Prelims",
-          "weightClass": "Featherweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Daniel Santos",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-142",
-            "athleteUrl": "https://www.ufc.com/athlete/daniel-santos"
-          },
-          "fighterB": {
-            "name": "JooSang Yoo",
-            "rank": "",
-            "country": "South Korea",
-            "odds": "+120",
-            "athleteUrl": "https://www.ufc.com/athlete/joo-sang-yoo"
-          },
           "startTime": "2:00 AM"
         },
         {
-          "fightId": "12323",
+          "fightId": "12434",
           "order": 10,
+          "cardType": "Early Prelims",
+          "weightClass": "Welterweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Punahele Soriano",
+            "rank": "",
+            "country": "United States",
+            "odds": "-290",
+            "athleteUrl": "https://www.ufc.com/athlete/punahele-soriano"
+          },
+          "fighterB": {
+            "name": "Nikolay Veretennikov",
+            "rank": "",
+            "country": "Kazakhstan",
+            "odds": "+235",
+            "athleteUrl": "https://www.ufc.com/athlete/nikolay-veretennikov"
+          },
+          "startTime": "2:30 AM"
+        },
+        {
+          "fightId": "12323",
+          "order": 11,
           "cardType": "Early Prelims",
           "weightClass": "Women's Bantamweight",
           "isTitle": false,
@@ -249,49 +271,27 @@
             "odds": "+164",
             "athleteUrl": "https://www.ufc.com/athlete/yana-kunitskaya"
           },
-          "startTime": "2:30 AM"
+          "startTime": "3:00 AM"
         },
         {
-          "fightId": "12358",
-          "order": 11,
+          "fightId": "12322",
+          "order": 12,
           "cardType": "Early Prelims",
           "weightClass": "Bantamweight",
           "isTitle": false,
           "fighterA": {
-            "name": "Patchy Mix",
+            "name": "Chris Gutierrez",
             "rank": "",
             "country": "United States",
-            "odds": "-305",
-            "athleteUrl": "https://www.ufc.com/athlete/patrick-mix"
+            "odds": "+350",
+            "athleteUrl": "https://www.ufc.com/athlete/chris-gutierrez"
           },
           "fighterB": {
-            "name": "Jakub Wiklacz",
+            "name": "Farid Basharat",
             "rank": "",
-            "country": "Poland",
-            "odds": "+245",
-            "athleteUrl": "https://www.ufc.com/athlete/jakub-wiklacz"
-          },
-          "startTime": "3:00 AM"
-        },
-        {
-          "fightId": "12434",
-          "order": 12,
-          "cardType": "Early Prelims",
-          "weightClass": "Welterweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Punahele Soriano",
-            "rank": "",
-            "country": "United States",
-            "odds": "-290",
-            "athleteUrl": "https://www.ufc.com/athlete/punahele-soriano"
-          },
-          "fighterB": {
-            "name": "Nikolay Veretennikov",
-            "rank": "",
-            "country": "Kazakhstan",
-            "odds": "+235",
-            "athleteUrl": "https://www.ufc.com/athlete/nikolay-veretennikov"
+            "country": "",
+            "odds": "-455",
+            "athleteUrl": "https://www.ufc.com/athlete/farid-basharat"
           },
           "startTime": "3:30 AM"
         },
@@ -638,7 +638,7 @@
           "startTime": "12:30 AM"
         },
         {
-          "fightId": "fight-13",
+          "fightId": "12449",
           "order": 13,
           "cardType": "Prelims",
           "weightClass": "Bantamweight",

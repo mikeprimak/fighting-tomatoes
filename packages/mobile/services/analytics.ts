@@ -1,7 +1,21 @@
 // packages/mobile/services/analytics.ts
 import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { API_BASE_URL } from './api'
+
+// Get API base URL
+const getApiBaseUrl = () => {
+  const isDevelopment = (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.NODE_ENV === 'development';
+  if (!isDevelopment) {
+    return 'https://your-production-api.com/api';
+  }
+  if (Platform.OS === 'web') {
+    return 'http://localhost:3001/api';
+  } else {
+    return 'http://10.0.0.53:3001/api';
+  }
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // ============== TYPES ==============
 
@@ -37,7 +51,7 @@ class AnalyticsServiceClass {
   private sessionId: string | null = null
   private userId: string | null = null
   private eventQueue: AnalyticsEvent[] = []
-  private batchTimer: NodeJS.Timeout | null = null
+  private batchTimer: ReturnType<typeof setTimeout> | null = null
   private readonly BATCH_SIZE = 10
   private readonly BATCH_TIMEOUT = 30000 // 30 seconds
 

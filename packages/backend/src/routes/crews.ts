@@ -28,6 +28,13 @@ const createPredictionSchema = z.object({
   predictedRound: z.number().int().min(1).max(5).optional(),
 });
 
+const updateCrewSettingsSchema = z.object({
+  followOnlyUFC: z.boolean().optional(),
+  allowPredictions: z.boolean().optional(),
+  allowRoundVoting: z.boolean().optional(),
+  allowReactions: z.boolean().optional(),
+});
+
 // Generate a random invite code
 function generateInviteCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -1193,6 +1200,69 @@ export async function crewRoutes(fastify: FastifyInstance) {
       });
     } catch (error: any) {
       request.log.error('Unmute crew error:', error);
+      return reply.status(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Update crew settings (Owner only)
+  fastify.put('/crews/:crewId/settings', {
+    preValidation: [fastify.authenticate],
+  }, async (request: any, reply: any) => {
+    const userId = request.user!.id;
+    const { crewId } = request.params;
+
+    const validation = updateCrewSettingsSchema.safeParse(request.body);
+    if (!validation.success) {
+      return reply.status(400).send({
+        error: 'Invalid input data',
+        code: 'VALIDATION_ERROR',
+        details: validation.error.errors,
+      });
+    }
+
+    try {
+      // Verify user is crew owner
+      const crew = await fastify.prisma.crew.findUnique({
+        where: { id: crewId },
+        select: { createdBy: true },
+      });
+
+      if (!crew) {
+        return reply.status(404).send({
+          error: 'Crew not found',
+          code: 'CREW_NOT_FOUND',
+        });
+      }
+
+      if (crew.createdBy !== userId) {
+        return reply.status(403).send({
+          error: 'Only crew owner can update settings',
+          code: 'FORBIDDEN',
+        });
+      }
+
+      // Update crew settings
+      const updatedCrew = await fastify.prisma.crew.update({
+        where: { id: crewId },
+        data: validation.data,
+        select: {
+          id: true,
+          name: true,
+          followOnlyUFC: true,
+          allowPredictions: true,
+          allowRoundVoting: true,
+          allowReactions: true,
+        },
+      });
+
+      return reply.status(200).send({
+        crew: updatedCrew,
+      });
+    } catch (error: any) {
+      request.log.error('Update crew settings error:', error);
       return reply.status(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
