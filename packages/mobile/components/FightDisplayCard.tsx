@@ -37,6 +37,8 @@ export interface FightData {
   totalReviews: number;
   hasStarted: boolean;
   isComplete: boolean;
+  currentRound?: number | null;
+  completedRounds?: number | null;
   watchPlatform?: string;
   watchUrl?: string;
   // User-specific data
@@ -128,9 +130,10 @@ export default function FightDisplayCard({
     setFighter2ImageError(false);
   }, [fight.id]);
 
-  // Start pulsing animation for live fights
+  // Start pulsing animation for live fights (only if currentRound is set)
   useEffect(() => {
-    if (fight.hasStarted && !fight.isComplete) {
+    const isTrulyLive = fight.currentRound !== null && fight.currentRound !== undefined && !fight.isComplete;
+    if (isTrulyLive) {
       const pulse = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
@@ -148,12 +151,13 @@ export default function FightDisplayCard({
       pulse.start();
       return () => pulse.stop();
     }
-  }, [fight.hasStarted, fight.isComplete, pulseAnim]);
+  }, [fight.currentRound, fight.isComplete, pulseAnim]);
 
   // Determine fight status
   const getStatus = () => {
     if (fight.isComplete) return 'completed';
-    if (fight.hasStarted) return 'in_progress';
+    // A fight is only "in progress" if it has a currentRound (meaning it's actively happening now)
+    if (fight.currentRound !== null && fight.currentRound !== undefined) return 'in_progress';
     return 'upcoming';
   };
 
@@ -222,7 +226,7 @@ export default function FightDisplayCard({
             </Text>
           </View>
         ) : (
-          fight.isComplete && fight.averageRating > 0 && (
+          fight.isComplete && (
             <View style={styles.ratingRow}>
               <View style={styles.partialStarContainer}>
                 <FontAwesome

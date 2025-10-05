@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Image,
+  Animated,
 } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
@@ -49,6 +50,9 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
   const colors = Colors[colorScheme ?? 'light'];
   const [imageAspectRatio, setImageAspectRatio] = useState<number>(16 / 9);
   const [countdown, setCountdown] = useState<{ time: string; label: string } | null>(null);
+
+  // Animated value for pulsing dot
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -122,6 +126,29 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
     return () => clearInterval(interval);
   }, [event.earlyPrelimStartTime, event.prelimStartTime, event.mainStartTime, event.date, event.hasStarted]);
 
+  // Start pulsing animation for live events
+  useEffect(() => {
+    const isLive = event.hasStarted && !event.isComplete;
+    if (isLive) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.3,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    }
+  }, [event.hasStarted, event.isComplete, pulseAnim]);
+
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     const timeString = date.toLocaleTimeString('en-US', {
@@ -177,10 +204,27 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
         <View style={styles.eventHeader}>
           <View style={styles.eventInfo}>
             <Text style={[styles.eventName, { color: colors.text }]}>{event.name}</Text>
-            <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-              {formatDate(event.date)}
-              {showTime && getDisplayTime() && ` • Main @ ${getDisplayTime()}`}
-            </Text>
+            <View style={styles.dateRow}>
+              <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
+                {formatDate(event.date)}
+                {showTime && !event.hasStarted && getDisplayTime() && ` • Main @ ${getDisplayTime()}`}
+              </Text>
+              {showTime && event.hasStarted && !event.isComplete && (
+                <View style={styles.liveContainer}>
+                  <Text style={[styles.eventDate, { color: colors.textSecondary }]}> • </Text>
+                  <Animated.View style={[
+                    styles.liveDot,
+                    {
+                      backgroundColor: colors.danger,
+                      opacity: pulseAnim
+                    }
+                  ]} />
+                  <Text style={[styles.liveText, { color: colors.danger }]}>
+                    Live
+                  </Text>
+                </View>
+              )}
+            </View>
             {(event.venue || event.location) && (
               <Text style={[styles.eventLocation, { color: colors.textSecondary }]}>
                 {[event.venue, event.location]
@@ -242,12 +286,30 @@ const createStyles = (colors: any, aspectRatio: number) => StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 4,
   },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
   eventDate: {
     fontSize: 14,
-    marginBottom: 2,
   },
   eventLocation: {
     fontSize: 14,
+  },
+  liveContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  liveText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   countdownContainer: {
     marginTop: 8,
