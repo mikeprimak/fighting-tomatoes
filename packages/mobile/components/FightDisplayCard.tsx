@@ -69,6 +69,7 @@ interface FightDisplayCardProps {
   hasLiveFight?: boolean; // Indicates if any fight is currently live
   lastCompletedFightTime?: string; // updatedAt timestamp of most recently completed fight
   animateRating?: boolean; // Trigger sparkle animation when rating is saved
+  animatePrediction?: boolean; // Trigger flame animation when prediction is saved
 }
 
 // Helper function to get fighter image (either from profileImage or placeholder)
@@ -89,6 +90,7 @@ export default function FightDisplayCard({
   hasLiveFight = false,
   lastCompletedFightTime,
   animateRating = false,
+  animatePrediction = false,
 }: FightDisplayCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -120,6 +122,18 @@ export default function FightDisplayCard({
   const sparkle6 = useRef(new Animated.Value(0)).current;
   const sparkle7 = useRef(new Animated.Value(0)).current;
   const sparkle8 = useRef(new Animated.Value(0)).current;
+
+  // Animated values for prediction save animation (flames)
+  const predictionScaleAnim = useRef(new Animated.Value(1)).current;
+  const predictionGlowAnim = useRef(new Animated.Value(0)).current;
+  const flame1 = useRef(new Animated.Value(0)).current;
+  const flame2 = useRef(new Animated.Value(0)).current;
+  const flame3 = useRef(new Animated.Value(0)).current;
+  const flame4 = useRef(new Animated.Value(0)).current;
+  const flame5 = useRef(new Animated.Value(0)).current;
+  const flame6 = useRef(new Animated.Value(0)).current;
+  const flame7 = useRef(new Animated.Value(0)).current;
+  const flame8 = useRef(new Animated.Value(0)).current;
 
   const getFighterName = (fighter: Fighter) => {
     const name = `${fighter.firstName} ${fighter.lastName}`;
@@ -387,6 +401,92 @@ export default function FightDisplayCard({
       ]).start();
     }
   }, [animateRating, fight.userRating, ratingScaleAnim, ratingGlowAnim, sparkle1, sparkle2, sparkle3, sparkle4, sparkle5, sparkle6, sparkle7, sparkle8]);
+
+  // Trigger flame animation when prediction is saved
+  useEffect(() => {
+    if (animatePrediction && fight.userHypePrediction) {
+      // Reset flames
+      flame1.setValue(0);
+      flame2.setValue(0);
+      flame3.setValue(0);
+      flame4.setValue(0);
+      flame5.setValue(0);
+      flame6.setValue(0);
+      flame7.setValue(0);
+      flame8.setValue(0);
+
+      // Scale pop animation with glow and flames
+      Animated.parallel([
+        // Main scale animation
+        Animated.sequence([
+          Animated.timing(predictionScaleAnim, {
+            toValue: 1.3,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+          Animated.spring(predictionScaleAnim, {
+            toValue: 1,
+            friction: 3,
+            useNativeDriver: true,
+          }),
+        ]),
+        // Glow effect
+        Animated.sequence([
+          Animated.timing(predictionGlowAnim, {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+          Animated.timing(predictionGlowAnim, {
+            toValue: 0,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ]),
+        // Flames
+        Animated.timing(flame1, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flame2, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flame3, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flame4, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flame5, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flame6, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flame7, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(flame8, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [animatePrediction, fight.userHypePrediction, predictionScaleAnim, predictionGlowAnim, flame1, flame2, flame3, flame4, flame5, flame6, flame7, flame8]);
 
   // Determine fight status
   const getStatus = () => {
@@ -660,6 +760,172 @@ export default function FightDisplayCard({
             </>
           )}
 
+          {/* Flame sparkles (for predictions) */}
+          {fight.userHypePrediction && (
+            <>
+              {/* Top-right flame */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  top: -10,
+                  right: -10,
+                  opacity: flame1.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: flame1.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateX: flame1.interpolate({ inputRange: [0, 1], outputRange: [0, 15] }) },
+                    { translateY: flame1.interpolate({ inputRange: [0, 1], outputRange: [0, -15] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome6 name="fire-flame-curved" size={12} color="#FF6B35" />
+              </Animated.View>
+
+              {/* Top-left flame */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  top: -10,
+                  left: -10,
+                  opacity: flame2.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: flame2.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateX: flame2.interpolate({ inputRange: [0, 1], outputRange: [0, -15] }) },
+                    { translateY: flame2.interpolate({ inputRange: [0, 1], outputRange: [0, -15] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome6 name="fire-flame-curved" size={12} color="#FF6B35" />
+              </Animated.View>
+
+              {/* Bottom-right flame */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  bottom: -10,
+                  right: -10,
+                  opacity: flame3.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: flame3.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateX: flame3.interpolate({ inputRange: [0, 1], outputRange: [0, 15] }) },
+                    { translateY: flame3.interpolate({ inputRange: [0, 1], outputRange: [0, 15] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome6 name="fire-flame-curved" size={12} color="#FF6B35" />
+              </Animated.View>
+
+              {/* Bottom-left flame */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  bottom: -10,
+                  left: -10,
+                  opacity: flame4.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: flame4.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateX: flame4.interpolate({ inputRange: [0, 1], outputRange: [0, -15] }) },
+                    { translateY: flame4.interpolate({ inputRange: [0, 1], outputRange: [0, 15] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome6 name="fire-flame-curved" size={12} color="#FF6B35" />
+              </Animated.View>
+
+              {/* Top center flame */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  top: -10,
+                  left: '50%',
+                  marginLeft: -6,
+                  opacity: flame5.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: flame5.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateY: flame5.interpolate({ inputRange: [0, 1], outputRange: [0, -20] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome6 name="fire-flame-curved" size={12} color="#FF6B35" />
+              </Animated.View>
+
+              {/* Right center flame */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  top: 2,
+                  right: -10,
+                  opacity: flame6.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { translateY: 0 },
+                    { translateX: flame6.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) },
+                    { scale: flame6.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome6 name="fire-flame-curved" size={12} color="#FF6B35" />
+              </Animated.View>
+
+              {/* Bottom center flame */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  bottom: -10,
+                  left: '50%',
+                  marginLeft: -6,
+                  opacity: flame7.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: flame7.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateY: flame7.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome6 name="fire-flame-curved" size={12} color="#FF6B35" />
+              </Animated.View>
+
+              {/* Left center flame */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  top: 2,
+                  left: -10,
+                  opacity: flame8.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { translateY: 0 },
+                    { translateX: flame8.interpolate({ inputRange: [0, 1], outputRange: [0, -20] }) },
+                    { scale: flame8.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome6 name="fire-flame-curved" size={12} color="#FF6B35" />
+              </Animated.View>
+            </>
+          )}
+
+          {/* Rating glow effect */}
           <Animated.View style={{
             position: 'absolute',
             top: 0,
@@ -675,8 +941,24 @@ export default function FightDisplayCard({
             transform: [{ scale: ratingGlowAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] }) }],
           }} />
 
+          {/* Prediction glow effect */}
           <Animated.View style={{
-            transform: [{ scale: ratingScaleAnim }],
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: '#FF6B35',
+            borderRadius: 20,
+            opacity: predictionGlowAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0.3],
+            }),
+            transform: [{ scale: predictionGlowAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] }) }],
+          }} />
+
+          <Animated.View style={{
+            transform: [{ scale: status === 'upcoming' ? predictionScaleAnim : ratingScaleAnim }],
           }}>
             <View style={styles.ratingRow}>
               {status === 'upcoming' ? (

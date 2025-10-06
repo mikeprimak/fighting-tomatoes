@@ -65,6 +65,7 @@ export default function EventDetailScreen() {
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [bannerAspectRatio, setBannerAspectRatio] = useState<number>(16 / 9);
   const [recentlyRatedFightId, setRecentlyRatedFightId] = useState<string | null>(null);
+  const [recentlyPredictedFightId, setRecentlyPredictedFightId] = useState<string | null>(null);
 
   // Pulsing animation for live indicator
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -402,6 +403,7 @@ export default function EventDetailScreen() {
                 hasLiveFight={hasLiveFight}
                 lastCompletedFightTime={lastCompletedFight?.updatedAt}
                 animateRating={fight.id === recentlyRatedFightId}
+                animatePrediction={fight.id === recentlyPredictedFightId}
               />
             ))}
           </View>
@@ -423,6 +425,7 @@ export default function EventDetailScreen() {
                 hasLiveFight={hasLiveFight}
                 lastCompletedFightTime={lastCompletedFight?.updatedAt}
                 animateRating={fight.id === recentlyRatedFightId}
+                animatePrediction={fight.id === recentlyPredictedFightId}
               />
             ))}
           </View>
@@ -444,6 +447,7 @@ export default function EventDetailScreen() {
                 hasLiveFight={hasLiveFight}
                 lastCompletedFightTime={lastCompletedFight?.updatedAt}
                 animateRating={fight.id === recentlyRatedFightId}
+                animatePrediction={fight.id === recentlyPredictedFightId}
               />
             ))}
           </View>
@@ -483,6 +487,15 @@ export default function EventDetailScreen() {
         onSuccess={(isUpdate, data) => {
           // Invalidate fights query to refresh data with user prediction
           queryClient.invalidateQueries({ queryKey: ['eventFights', id] });
+
+          // Trigger flame animation
+          if (data?.fightId && data?.hypeLevel) {
+            setTimeout(() => {
+              setRecentlyPredictedFightId(data.fightId || null);
+              setTimeout(() => setRecentlyPredictedFightId(null), 1000);
+            }, 300);
+          }
+
           console.log('Prediction submitted successfully', { isUpdate, data });
         }}
       />
