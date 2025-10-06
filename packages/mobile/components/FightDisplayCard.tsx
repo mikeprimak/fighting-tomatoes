@@ -601,9 +601,7 @@ export default function FightDisplayCard({
               <Animated.View style={[
                 styles.sparkle,
                 {
-                  top: '50%',
                   right: -10,
-                  marginTop: -6,
                   opacity: sparkle6.interpolate({
                     inputRange: [0, 0.5, 1],
                     outputRange: [0, 1, 0],
@@ -611,6 +609,7 @@ export default function FightDisplayCard({
                   transform: [
                     { scale: sparkle6.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
                     { translateX: sparkle6.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) },
+                    { translateY: -6 }, // Center it vertically
                   ],
                 }
               ]}>
@@ -641,9 +640,7 @@ export default function FightDisplayCard({
               <Animated.View style={[
                 styles.sparkle,
                 {
-                  top: '50%',
                   left: -10,
-                  marginTop: -6,
                   opacity: sparkle8.interpolate({
                     inputRange: [0, 0.5, 1],
                     outputRange: [0, 1, 0],
@@ -651,6 +648,7 @@ export default function FightDisplayCard({
                   transform: [
                     { scale: sparkle8.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
                     { translateX: sparkle8.interpolate({ inputRange: [0, 1], outputRange: [0, -20] }) },
+                    { translateY: -6 }, // Center it vertically
                   ],
                 }
               ]}>
