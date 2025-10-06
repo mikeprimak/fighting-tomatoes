@@ -55,6 +55,7 @@ export interface FightData {
     createdAt: string;
   };
   userTags?: string[];
+  userHypePrediction?: number | null; // For upcoming fights
 }
 
 interface FightDisplayCardProps {
@@ -687,7 +688,7 @@ export default function FightDisplayCard({
                     style={styles.ratingIcon}
                   />
                   <Text style={[styles.userRatingText, { color: '#83B4F3' }]}>
-                    Predict
+                    {fight.userHypePrediction ? `${fight.userHypePrediction}` : 'Predict'}
                   </Text>
                 </>
               ) : status === 'in_progress' ? (
