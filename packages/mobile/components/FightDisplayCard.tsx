@@ -67,6 +67,7 @@ interface FightDisplayCardProps {
   isNextFight?: boolean; // Indicates if this is the next fight to start
   hasLiveFight?: boolean; // Indicates if any fight is currently live
   lastCompletedFightTime?: string; // updatedAt timestamp of most recently completed fight
+  animateRating?: boolean; // Trigger sparkle animation when rating is saved
 }
 
 // Helper function to get fighter image (either from profileImage or placeholder)
@@ -86,6 +87,7 @@ export default function FightDisplayCard({
   isNextFight = false,
   hasLiveFight = false,
   lastCompletedFightTime,
+  animateRating = false,
 }: FightDisplayCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -103,9 +105,20 @@ export default function FightDisplayCard({
   // Animated value for "Starting soon..." text pulse
   const startingSoonPulseAnim = useRef(new Animated.Value(1)).current;
 
+  // Animated value for background color transition (0 = non-live, 1 = live)
+  const bgColorAnim = useRef(new Animated.Value(0)).current;
+
   // Animated values for rating save animation
   const ratingScaleAnim = useRef(new Animated.Value(1)).current;
   const ratingGlowAnim = useRef(new Animated.Value(0)).current;
+  const sparkle1 = useRef(new Animated.Value(0)).current;
+  const sparkle2 = useRef(new Animated.Value(0)).current;
+  const sparkle3 = useRef(new Animated.Value(0)).current;
+  const sparkle4 = useRef(new Animated.Value(0)).current;
+  const sparkle5 = useRef(new Animated.Value(0)).current;
+  const sparkle6 = useRef(new Animated.Value(0)).current;
+  const sparkle7 = useRef(new Animated.Value(0)).current;
+  const sparkle8 = useRef(new Animated.Value(0)).current;
 
   const getFighterName = (fighter: Fighter) => {
     const name = `${fighter.firstName} ${fighter.lastName}`;
@@ -278,6 +291,102 @@ export default function FightDisplayCard({
     }
   }, [getUpcomingStatusMessage(), startingSoonPulseAnim]);
 
+  // Animate background color transition between live and non-live states
+  useEffect(() => {
+    const isTrulyLive = fight.hasStarted && !fight.isComplete;
+    Animated.timing(bgColorAnim, {
+      toValue: isTrulyLive ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false, // Color animations require native driver to be false
+    }).start();
+  }, [fight.hasStarted, fight.isComplete, bgColorAnim]);
+
+  // Trigger sparkle animation when rating is saved
+  useEffect(() => {
+    if (animateRating && fight.userRating) {
+      // Reset sparkles
+      sparkle1.setValue(0);
+      sparkle2.setValue(0);
+      sparkle3.setValue(0);
+      sparkle4.setValue(0);
+      sparkle5.setValue(0);
+      sparkle6.setValue(0);
+      sparkle7.setValue(0);
+      sparkle8.setValue(0);
+
+      // Scale pop animation with glow and sparkles
+      Animated.parallel([
+        // Main scale animation
+        Animated.sequence([
+          Animated.timing(ratingScaleAnim, {
+            toValue: 1.3,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+          Animated.spring(ratingScaleAnim, {
+            toValue: 1,
+            friction: 3,
+            useNativeDriver: true,
+          }),
+        ]),
+        // Glow effect
+        Animated.sequence([
+          Animated.timing(ratingGlowAnim, {
+            toValue: 1,
+            duration: 150,
+            useNativeDriver: true,
+          }),
+          Animated.timing(ratingGlowAnim, {
+            toValue: 0,
+            duration: 400,
+            useNativeDriver: true,
+          }),
+        ]),
+        // Sparkles
+        Animated.timing(sparkle1, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sparkle2, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sparkle3, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sparkle4, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sparkle5, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sparkle6, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sparkle7, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sparkle8, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [animateRating, fight.userRating, ratingScaleAnim, ratingGlowAnim, sparkle1, sparkle2, sparkle3, sparkle4, sparkle5, sparkle6, sparkle7, sparkle8]);
+
   // Determine fight status
   const getStatus = () => {
     if (fight.isComplete) return 'completed';
@@ -288,11 +397,11 @@ export default function FightDisplayCard({
 
   const status = getStatus();
 
-  // Determine background color based on fight status
-  const getBackgroundColor = () => {
-    if (status === 'in_progress') return colors.primary;
-    return colors.card;
-  };
+  // Interpolate background color for smooth transition
+  const animatedBackgroundColor = bgColorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.card, colors.primary],
+  });
 
   // Determine text color based on fight status
   const getTextColor = () => {
@@ -301,10 +410,12 @@ export default function FightDisplayCard({
 
   return (
     <TouchableOpacity
-      style={[styles.container, { backgroundColor: getBackgroundColor() }]}
       onPress={() => onPress(fight)}
       activeOpacity={0.7}
     >
+      <Animated.View
+        style={[styles.container, { backgroundColor: animatedBackgroundColor }]}
+      >
       {fight.isTitle && (
         <Text style={[styles.mainEventLabel, { color: status === 'in_progress' ? colors.textOnAccent : colors.tint }]}>
           TITLE FIGHT
@@ -383,6 +494,171 @@ export default function FightDisplayCard({
 
         {/* User's Personal Rating */}
         <View style={{ position: 'relative' }}>
+          {/* Sparkles */}
+          {fight.userRating && (
+            <>
+              {/* Top-right sparkle */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  top: -10,
+                  right: -10,
+                  opacity: sparkle1.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: sparkle1.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateX: sparkle1.interpolate({ inputRange: [0, 1], outputRange: [0, 15] }) },
+                    { translateY: sparkle1.interpolate({ inputRange: [0, 1], outputRange: [0, -15] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome name="star" size={12} color="#F5C518" />
+              </Animated.View>
+
+              {/* Top-left sparkle */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  top: -10,
+                  left: -10,
+                  opacity: sparkle2.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: sparkle2.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateX: sparkle2.interpolate({ inputRange: [0, 1], outputRange: [0, -15] }) },
+                    { translateY: sparkle2.interpolate({ inputRange: [0, 1], outputRange: [0, -15] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome name="star" size={12} color="#F5C518" />
+              </Animated.View>
+
+              {/* Bottom-right sparkle */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  bottom: -10,
+                  right: -10,
+                  opacity: sparkle3.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: sparkle3.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateX: sparkle3.interpolate({ inputRange: [0, 1], outputRange: [0, 15] }) },
+                    { translateY: sparkle3.interpolate({ inputRange: [0, 1], outputRange: [0, 15] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome name="star" size={12} color="#F5C518" />
+              </Animated.View>
+
+              {/* Bottom-left sparkle */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  bottom: -10,
+                  left: -10,
+                  opacity: sparkle4.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: sparkle4.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateX: sparkle4.interpolate({ inputRange: [0, 1], outputRange: [0, -15] }) },
+                    { translateY: sparkle4.interpolate({ inputRange: [0, 1], outputRange: [0, 15] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome name="star" size={12} color="#F5C518" />
+              </Animated.View>
+
+              {/* Top center sparkle */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  top: -10,
+                  left: '50%',
+                  marginLeft: -6,
+                  opacity: sparkle5.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: sparkle5.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateY: sparkle5.interpolate({ inputRange: [0, 1], outputRange: [0, -20] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome name="star" size={12} color="#F5C518" />
+              </Animated.View>
+
+              {/* Right center sparkle */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  top: '50%',
+                  right: -10,
+                  marginTop: -6,
+                  opacity: sparkle6.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: sparkle6.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateX: sparkle6.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome name="star" size={12} color="#F5C518" />
+              </Animated.View>
+
+              {/* Bottom center sparkle */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  bottom: -10,
+                  left: '50%',
+                  marginLeft: -6,
+                  opacity: sparkle7.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: sparkle7.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateY: sparkle7.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome name="star" size={12} color="#F5C518" />
+              </Animated.View>
+
+              {/* Left center sparkle */}
+              <Animated.View style={[
+                styles.sparkle,
+                {
+                  top: '50%',
+                  left: -10,
+                  marginTop: -6,
+                  opacity: sparkle8.interpolate({
+                    inputRange: [0, 0.5, 1],
+                    outputRange: [0, 1, 0],
+                  }),
+                  transform: [
+                    { scale: sparkle8.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                    { translateX: sparkle8.interpolate({ inputRange: [0, 1], outputRange: [0, -20] }) },
+                  ],
+                }
+              ]}>
+                <FontAwesome name="star" size={12} color="#F5C518" />
+              </Animated.View>
+            </>
+          )}
+
           <Animated.View style={{
             position: 'absolute',
             top: 0,
@@ -484,6 +760,7 @@ export default function FightDisplayCard({
           </Animated.Text>
         </View>
       )}
+      </Animated.View>
     </TouchableOpacity>
   );
 }
@@ -599,5 +876,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontStyle: 'italic',
     textAlign: 'left',
+  },
+  sparkle: {
+    position: 'absolute',
+    zIndex: 10,
   },
 });
