@@ -63,6 +63,7 @@ export default function EventDetailScreen() {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [bannerAspectRatio, setBannerAspectRatio] = useState<number>(16 / 9);
+  const [recentlyRatedFightId, setRecentlyRatedFightId] = useState<string | null>(null);
 
   // Pulsing animation for live indicator
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -399,6 +400,7 @@ export default function EventDetailScreen() {
                 isNextFight={nextFight?.id === fight.id}
                 hasLiveFight={hasLiveFight}
                 lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                animateRating={fight.id === recentlyRatedFightId}
               />
             ))}
           </View>
@@ -419,6 +421,7 @@ export default function EventDetailScreen() {
                 isNextFight={nextFight?.id === fight.id}
                 hasLiveFight={hasLiveFight}
                 lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                animateRating={fight.id === recentlyRatedFightId}
               />
             ))}
           </View>
@@ -439,6 +442,7 @@ export default function EventDetailScreen() {
                 isNextFight={nextFight?.id === fight.id}
                 hasLiveFight={hasLiveFight}
                 lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                animateRating={fight.id === recentlyRatedFightId}
               />
             ))}
           </View>
@@ -461,6 +465,14 @@ export default function EventDetailScreen() {
         fight={selectedFight}
         onClose={closeModal}
         queryKey={['eventFights', id]}
+        onSuccess={(type, data) => {
+          if (type === 'rating' && data?.fightId && data?.rating) {
+            setTimeout(() => {
+              setRecentlyRatedFightId(data.fightId || null);
+              setTimeout(() => setRecentlyRatedFightId(null), 1000);
+            }, 300);
+          }
+        }}
       />
 
       <PredictionModal
