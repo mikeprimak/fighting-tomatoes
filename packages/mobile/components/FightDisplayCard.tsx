@@ -549,19 +549,20 @@ export default function FightDisplayCard({
       <View style={styles.horizontalInfoRow}>
         {/* Aggregate Score / Live Indicator */}
         {status === 'upcoming' ? (
-          predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
-            <View style={styles.ratingRow}>
-              <FontAwesome6
-                name="fire-flame-curved"
-                size={20}
-                color={colors.primary}
-                style={styles.ratingIcon}
-              />
-              <Text style={[styles.aggregateLabel, { color: colors.textSecondary }]}>
-                {predictionStats.averageHype % 1 === 0 ? predictionStats.averageHype.toString() : predictionStats.averageHype.toFixed(1)}
-              </Text>
-            </View>
-          ) : null
+          <View style={styles.ratingRow}>
+            <FontAwesome6
+              name="fire-flame-curved"
+              size={20}
+              color={colors.primary}
+              style={styles.ratingIcon}
+            />
+            <Text style={[styles.aggregateLabel, { color: colors.textSecondary }]}>
+              {predictionStats?.averageHype !== undefined
+                ? (predictionStats.averageHype % 1 === 0 ? predictionStats.averageHype.toString() : predictionStats.averageHype.toFixed(1))
+                : '0'
+              }
+            </Text>
+          </View>
         ) : status === 'in_progress' ? (
           <View style={styles.liveContainer}>
             <Animated.View style={[
