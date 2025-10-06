@@ -92,11 +92,15 @@ function RootLayoutNav() {
           <Stack
             screenOptions={{
               contentStyle: { backgroundColor: colors.background },
-              animation: 'fade',
+              animation: 'none',
+              headerStyle: {
+                backgroundColor: colors.card,
+              },
             }}
           >
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="activity" options={{ headerShown: false }} />
             <Stack.Screen name="crew/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="crew/info/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="fight" options={{ headerShown: false }} />

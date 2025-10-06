@@ -9,10 +9,11 @@ import {
   Image,
   useColorScheme,
   Animated,
+  FlatList,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
@@ -44,6 +45,7 @@ export default function FightDetailScreen() {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [animateMyRating, setAnimateMyRating] = useState(false);
+  const [spoilerRevealed, setSpoilerRevealed] = useState(false);
 
   // Animation values for My Rating
   const myRatingScaleAnim = useRef(new Animated.Value(1)).current;
@@ -77,6 +79,36 @@ export default function FightDetailScreen() {
     queryKey: ['fightTags', id],
     queryFn: () => apiService.getFightTags(id as string),
     enabled: !!id && !!isAuthenticated && fightData?.fight?.isComplete,
+  });
+
+  // Fetch reviews with infinite scroll
+  const {
+    data: reviewsData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['fightReviews', id],
+    queryFn: ({ pageParam = 1 }) =>
+      apiService.getFightReviews(id as string, { page: pageParam, limit: 10 }),
+    enabled: !!id && fightData?.fight?.isComplete,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.pagination.page < lastPage.pagination.totalPages) {
+        return lastPage.pagination.page + 1;
+      }
+      return undefined;
+    },
+    staleTime: 30 * 1000, // 30 seconds
+  });
+
+  // Upvote mutation
+  const upvoteMutation = useMutation({
+    mutationFn: ({ reviewId }: { reviewId: string }) =>
+      apiService.toggleReviewUpvote(id as string, reviewId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fightReviews', id] });
+      queryClient.invalidateQueries({ queryKey: ['fight', id] });
+    },
   });
 
   // Trigger animation when rating is submitted
@@ -175,10 +207,21 @@ export default function FightDetailScreen() {
   const isUpcoming = !fight.hasStarted && !fight.isComplete;
   const isComplete = fight.isComplete;
 
-  // Calculate rating distribution
-  const ratingDistribution = fight.ratingDistribution || {};
+  // Calculate rating distribution from individual rating fields
+  const ratingDistribution: Record<number, number> = {
+    1: fight.ratings1 || 0,
+    2: fight.ratings2 || 0,
+    3: fight.ratings3 || 0,
+    4: fight.ratings4 || 0,
+    5: fight.ratings5 || 0,
+    6: fight.ratings6 || 0,
+    7: fight.ratings7 || 0,
+    8: fight.ratings8 || 0,
+    9: fight.ratings9 || 0,
+    10: fight.ratings10 || 0,
+  };
   const totalRatings = fight.totalRatings || 0;
-  const maxCount = Math.max(...Object.values(ratingDistribution).map((v: any) => v || 0), 1);
+  const maxCount = Math.max(...Object.values(ratingDistribution), 1);
 
   // Calculate prediction distribution
   const predictionDistribution = predictionStats?.distribution || {};
@@ -188,6 +231,10 @@ export default function FightDetailScreen() {
   const handleRatingSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['fight', id] });
     queryClient.invalidateQueries({ queryKey: ['fightTags', id] });
+    queryClient.invalidateQueries({ queryKey: ['fightReviews', id] });
+
+    // Reveal spoiler when user rates
+    setSpoilerRevealed(true);
 
     // Trigger animation after a short delay
     setTimeout(() => {
@@ -208,6 +255,13 @@ export default function FightDetailScreen() {
       />
 
       <ScrollView style={styles.scrollView}>
+
+        {/* Weight Class / Championship */}
+        {fight.weightClass && (
+          <Text style={[styles.weightClassText, fight.isTitle && { color: '#FFD700' }]}>
+            {fight.isTitle ? `${fight.weightClass} Championship` : fight.weightClass}
+          </Text>
+        )}
 
         {/* Fighter Matchup - Clickable */}
         <View style={styles.matchupContainer}>
@@ -269,6 +323,40 @@ export default function FightDetailScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Outcome (if complete) */}
+        {isComplete && fight.winner && (
+          <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.outcomeContainer}>
+              {!fight.userRating && !spoilerRevealed ? (
+                // Spoiler protection - hidden view
+                <View style={styles.spoilerRow}>
+                  <Text style={[styles.winnerText, { color: colors.text }]}>
+                    Winner:
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.revealButton, { backgroundColor: '#83B4F3' }]}
+                    onPress={() => setSpoilerRevealed(true)}
+                  >
+                    <Text style={[styles.revealButtonText, { color: '#000' }]}>Reveal Winner</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                // Normal view (rated or revealed)
+                <Text style={[styles.winnerText, { color: colors.text }]}>
+                  Winner: {fight.winner === fight.fighter1.id
+                    ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
+                    : fight.winner === fight.fighter2.id
+                    ? `${fight.fighter2.firstName} ${fight.fighter2.lastName}`
+                    : fight.winner}
+                  {fight.method && ` by ${fight.method}`}
+                  {fight.round && ` in Round ${fight.round}`}
+                  {fight.time && ` (${fight.time})`}
+                </Text>
+              )}
+            </View>
+          </View>
+        )}
+
         {/* Score Section - Different layout for upcoming vs completed */}
         {isUpcoming ? (
           // Full width for upcoming fights
@@ -326,7 +414,7 @@ export default function FightDetailScreen() {
               >
                 <FontAwesome name={fight.userRating ? "star" : "star-o"} size={48} color="#83B4F3" />
                 <Text style={[styles.halfScoreValue, { color: colors.text }]}>
-                  {fight.userRating || '-'}
+                  {fight.userRating || ''}
                 </Text>
                 <Text style={[styles.halfScoreLabel, { color: colors.textSecondary }]}>
                   My Rating
@@ -550,69 +638,6 @@ export default function FightDetailScreen() {
           </View>
         </View>
 
-        {/* Event Info */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Event Information</Text>
-          <View style={styles.infoRow}>
-            <FontAwesome name="calendar" size={16} color={colors.textSecondary} />
-            <Text style={[styles.infoText, { color: colors.text }]}>{fight.event.name}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <FontAwesome name="calendar-o" size={16} color={colors.textSecondary} />
-            <Text style={[styles.infoText, { color: colors.text }]}>
-              {new Date(fight.event.date).toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </Text>
-          </View>
-          {fight.event.location && (
-            <View style={styles.infoRow}>
-              <FontAwesome name="map-marker" size={16} color={colors.textSecondary} />
-              <Text style={[styles.infoText, { color: colors.text }]}>{fight.event.location}</Text>
-            </View>
-          )}
-          {fight.weightClass && (
-            <View style={styles.infoRow}>
-              <FontAwesome name="balance-scale" size={16} color={colors.textSecondary} />
-              <Text style={[styles.infoText, { color: colors.text }]}>{fight.weightClass}</Text>
-            </View>
-          )}
-          {fight.isTitle && (
-            <View style={styles.infoRow}>
-              <FontAwesome name="trophy" size={16} color="#FFD700" />
-              <Text style={[styles.infoText, { color: '#FFD700' }]}>
-                {fight.titleName || 'Title Fight'}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Outcome (if complete) */}
-        {isComplete && fight.winner && (
-          <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Outcome</Text>
-            <View style={styles.outcomeContainer}>
-              <Text style={[styles.winnerText, { color: colors.text }]}>
-                Winner: {fight.winner}
-              </Text>
-              {fight.method && (
-                <Text style={[styles.methodText, { color: colors.textSecondary }]}>
-                  Method: {fight.method}
-                </Text>
-              )}
-              {fight.round && (
-                <Text style={[styles.roundText, { color: colors.textSecondary }]}>
-                  Round: {fight.round}
-                  {fight.time && ` (${fight.time})`}
-                </Text>
-              )}
-            </View>
-          </View>
-        )}
-
         {/* Tags (if complete) */}
         {isComplete && fight.topTags && fight.topTags.length > 0 && (
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -634,30 +659,131 @@ export default function FightDetailScreen() {
         )}
 
         {/* Reviews (if complete) */}
-        {isComplete && fight.topReviews && fight.topReviews.length > 0 && (
+        {isComplete && (
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Reviews</Text>
-            {fight.topReviews.slice(0, 10).map((review: any) => (
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Reviews</Text>
+
+            {/* User's review first (if exists) */}
+            {fight.userReview && (
               <View
-                key={review.id}
-                style={[styles.reviewCard, { backgroundColor: colors.background, borderColor: colors.border }]}
+                style={[styles.reviewCard, styles.myReviewCard, { backgroundColor: colors.background, borderColor: '#83B4F3' }]}
               >
-                <View style={styles.reviewHeader}>
-                  <Text style={[styles.reviewAuthor, { color: colors.text }]}>
-                    {review.user.displayName || `${review.user.firstName} ${review.user.lastName}`}
-                  </Text>
-                  <View style={styles.reviewRating}>
-                    <FontAwesome name="star" size={14} color="#F5C518" />
-                    <Text style={[styles.reviewRatingText, { color: colors.text }]}>
-                      {review.rating}
+                <View style={styles.reviewContainer}>
+                  {/* Left side: Upvote button (interactive) */}
+                  <TouchableOpacity
+                    style={styles.upvoteButton}
+                    onPress={() => upvoteMutation.mutate({ reviewId: fight.userReview.id })}
+                    disabled={upvoteMutation.isPending}
+                  >
+                    <FontAwesome
+                      name={fight.userReview.userHasUpvoted ? "thumbs-up" : "thumbs-o-up"}
+                      size={18}
+                      color={fight.userReview.userHasUpvoted ? colors.primary : colors.textSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.upvoteButtonText,
+                        { color: fight.userReview.userHasUpvoted ? colors.primary : colors.textSecondary }
+                      ]}
+                    >
+                      {fight.userReview.upvotes || 0}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Right side: Review content */}
+                  <View style={styles.reviewContentContainer}>
+                    <View style={styles.reviewHeader}>
+                      <Text style={[styles.reviewAuthor, { color: colors.text }]}>
+                        My Review
+                      </Text>
+                      <View style={styles.reviewRating}>
+                        <FontAwesome name="star" size={14} color="#F5C518" />
+                        <Text style={[styles.reviewRatingText, { color: colors.text }]}>
+                          {fight.userReview.rating}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
+                      {fight.userReview.content}
                     </Text>
                   </View>
                 </View>
-                <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
-                  {review.content}
-                </Text>
               </View>
-            ))}
+            )}
+
+            {/* Other reviews with infinite scroll */}
+            {reviewsData?.pages[0]?.reviews && reviewsData.pages[0].reviews.length > 0 ? (
+              <>
+                {reviewsData.pages.flatMap(page =>
+                  page.reviews.filter((review: any) => review.userId !== user?.id)
+                ).map((review: any) => (
+                  <View
+                    key={review.id}
+                    style={[styles.reviewCard, { backgroundColor: colors.background, borderColor: colors.border }]}
+                  >
+                    <View style={styles.reviewContainer}>
+                      {/* Left side: Upvote button */}
+                      <TouchableOpacity
+                        style={styles.upvoteButton}
+                        onPress={() => upvoteMutation.mutate({ reviewId: review.id })}
+                        disabled={!isAuthenticated || upvoteMutation.isPending}
+                      >
+                        <FontAwesome
+                          name={review.userHasUpvoted ? "thumbs-up" : "thumbs-o-up"}
+                          size={18}
+                          color={review.userHasUpvoted ? colors.primary : colors.textSecondary}
+                        />
+                        <Text
+                          style={[
+                            styles.upvoteButtonText,
+                            { color: review.userHasUpvoted ? colors.primary : colors.textSecondary }
+                          ]}
+                        >
+                          {review.upvotes || 0}
+                        </Text>
+                      </TouchableOpacity>
+
+                      {/* Right side: Review content */}
+                      <View style={styles.reviewContentContainer}>
+                        <View style={styles.reviewHeader}>
+                          <Text style={[styles.reviewAuthor, { color: colors.text }]}>
+                            {review.user.displayName || `${review.user.firstName} ${review.user.lastName}`}
+                          </Text>
+                          <View style={styles.reviewRating}>
+                            <FontAwesome name="star" size={14} color="#F5C518" />
+                            <Text style={[styles.reviewRatingText, { color: colors.text }]}>
+                              {review.rating}
+                            </Text>
+                          </View>
+                        </View>
+                        <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
+                          {review.content}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+
+                {/* Load more button */}
+                {hasNextPage && (
+                  <TouchableOpacity
+                    style={[styles.loadMoreButton, { backgroundColor: colors.primary }]}
+                    onPress={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                  >
+                    {isFetchingNextPage ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.loadMoreButtonText}>Load More</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </>
+            ) : !fight.userReview && (
+              <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
+                No reviews yet. Be the first to review this fight!
+              </Text>
+            )}
           </View>
         )}
       </ScrollView>
@@ -717,6 +843,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  weightClassText: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: 16,
+    marginBottom: 8,
+    color: '#999',
   },
   matchupContainer: {
     flexDirection: 'row',
@@ -866,6 +1002,21 @@ const styles = StyleSheet.create({
   outcomeContainer: {
     gap: 8,
   },
+  spoilerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  revealButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  revealButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   winnerText: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -902,6 +1053,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 12,
   },
+  reviewContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  reviewContentContainer: {
+    flex: 1,
+  },
   reviewHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -932,5 +1090,47 @@ const styles = StyleSheet.create({
   sparkle: {
     position: 'absolute',
     zIndex: 10,
+  },
+  myReviewCard: {
+    borderWidth: 2,
+  },
+  noReviewsText: {
+    fontSize: 14,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    paddingVertical: 20,
+  },
+  loadMoreButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  loadMoreButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  upvoteButton: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    minWidth: 50,
+  },
+  upvoteButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  upvoteCount: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  upvoteCountText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

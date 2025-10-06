@@ -258,6 +258,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
             content: fight.reviews[0].content,
             rating: fight.reviews[0].rating,
             createdAt: fight.reviews[0].createdAt,
+            upvotes: fight.reviews[0].upvotes,
           };
         }
 
@@ -347,6 +348,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
                   mediaOrganization: true,
                 },
               },
+              votes: {
+                where: {
+                  userId: currentUserId,
+                },
+              },
             },
           } : false, // Don't include reviews if no user
           tags: currentUserId ? {
@@ -380,10 +386,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
         // Transform user review (take the first/only review)
         if (fightWithRelations.reviews && fightWithRelations.reviews.length > 0) {
+          const review = fightWithRelations.reviews[0];
           transformedFight.userReview = {
-            content: fightWithRelations.reviews[0].content,
-            rating: fightWithRelations.reviews[0].rating,
-            createdAt: fightWithRelations.reviews[0].createdAt,
+            id: review.id,
+            content: review.content,
+            rating: review.rating,
+            createdAt: review.createdAt,
+            upvotes: review.upvotes,
+            userHasUpvoted: review.votes?.length > 0 && review.votes[0].isUpvote,
           };
           console.log('Found user review:', transformedFight.userReview);
         }
@@ -739,6 +749,16 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Check if review already exists
+      const existingReview = await prisma.fightReview.findUnique({
+        where: {
+          userId_fightId: {
+            userId: currentUserId,
+            fightId,
+          },
+        },
+      });
+
       // Update rating
       await prisma.fightRating.upsert({
         where: {
@@ -772,6 +792,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           rating,
           articleUrl,
           articleTitle,
+          upvotes: 1, // Auto-upvote on creation
         },
         update: {
           content,
@@ -780,6 +801,17 @@ export async function fightRoutes(fastify: FastifyInstance) {
           articleTitle,
         },
       });
+
+      // If this is a new review, create an auto-upvote
+      if (!existingReview) {
+        await prisma.reviewVote.create({
+          data: {
+            userId: currentUserId,
+            reviewId: review.id,
+            isUpvote: true,
+          },
+        });
+      }
 
       return reply.code(200).send({
         review,
@@ -910,6 +942,211 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
     } catch (error) {
       console.error('Get fight tags error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // GET /api/fights/:id/reviews - Get paginated reviews for a fight
+  fastify.get('/fights/:id/reviews', { preHandler: optionalAuth }, async (request, reply) => {
+    try {
+      const { id: fightId } = request.params as { id: string };
+      const queryParams = request.query as { page?: string | number; limit?: string | number };
+      const page = Number(queryParams.page) || 1;
+      const limit = Number(queryParams.limit) || 10;
+      const currentUserId = (request as any).user?.id;
+
+      // Check if fight exists
+      const fight = await prisma.fight.findUnique({ where: { id: fightId } });
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Get total count
+      const total = await prisma.fightReview.count({
+        where: {
+          fightId,
+          isHidden: false,
+        },
+      });
+
+      // Get reviews with pagination
+      const reviews = await prisma.fightReview.findMany({
+        where: {
+          fightId,
+          isHidden: false,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              displayName: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+              isMedia: true,
+              mediaOrganization: true,
+            },
+          },
+          votes: currentUserId ? {
+            where: {
+              userId: currentUserId,
+            },
+          } : false,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+
+      // Transform reviews to include userHasUpvoted flag
+      const transformedReviews = reviews.map((review: any) => ({
+        ...review,
+        userHasUpvoted: currentUserId && review.votes?.length > 0 && review.votes[0].isUpvote,
+        votes: undefined, // Remove votes array from response
+      }));
+
+      return reply.code(200).send({
+        reviews: transformedReviews,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    } catch (error) {
+      console.error('Get fight reviews error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // POST /api/fights/:fightId/reviews/:reviewId/upvote - Toggle upvote on a review
+  fastify.post('/fights/:fightId/reviews/:reviewId/upvote', {
+    preHandler: [authenticateUser],
+  }, async (request, reply) => {
+    try {
+      const { fightId, reviewId } = request.params as { fightId: string; reviewId: string };
+      const currentUserId = (request as any).user.id;
+
+      // Check if review exists
+      const review = await prisma.fightReview.findUnique({
+        where: { id: reviewId },
+        include: { user: true },
+      });
+
+      if (!review) {
+        return reply.code(404).send({
+          error: 'Review not found',
+          code: 'REVIEW_NOT_FOUND',
+        });
+      }
+
+      // Check if user already voted
+      const existingVote = await prisma.reviewVote.findUnique({
+        where: {
+          userId_reviewId: {
+            userId: currentUserId,
+            reviewId,
+          },
+        },
+      });
+
+      let isUpvoted = false;
+      let upvotesCount = review.upvotes;
+
+      if (existingVote) {
+        if (existingVote.isUpvote) {
+          // Remove upvote
+          await prisma.$transaction([
+            prisma.reviewVote.delete({
+              where: { id: existingVote.id },
+            }),
+            prisma.fightReview.update({
+              where: { id: reviewId },
+              data: { upvotes: { decrement: 1 } },
+            }),
+            prisma.user.update({
+              where: { id: review.userId },
+              data: { upvotesReceived: { decrement: 1 } },
+            }),
+          ]);
+          upvotesCount = review.upvotes - 1;
+          isUpvoted = false;
+        } else {
+          // Change downvote to upvote
+          await prisma.$transaction([
+            prisma.reviewVote.update({
+              where: { id: existingVote.id },
+              data: { isUpvote: true },
+            }),
+            prisma.fightReview.update({
+              where: { id: reviewId },
+              data: {
+                upvotes: { increment: 1 },
+                downvotes: { decrement: 1 },
+              },
+            }),
+            prisma.user.update({
+              where: { id: review.userId },
+              data: { upvotesReceived: { increment: 1 } },
+            }),
+          ]);
+          upvotesCount = review.upvotes + 1;
+          isUpvoted = true;
+        }
+      } else {
+        // Create new upvote
+        await prisma.$transaction([
+          prisma.reviewVote.create({
+            data: {
+              userId: currentUserId,
+              reviewId,
+              isUpvote: true,
+            },
+          }),
+          prisma.fightReview.update({
+            where: { id: reviewId },
+            data: { upvotes: { increment: 1 } },
+          }),
+          prisma.user.update({
+            where: { id: review.userId },
+            data: { upvotesReceived: { increment: 1 } },
+          }),
+        ]);
+        upvotesCount = review.upvotes + 1;
+        isUpvoted = true;
+
+        // Create activity for the review author (only if not self-upvoting)
+        if (review.userId !== currentUserId) {
+          await prisma.userActivity.create({
+            data: {
+              userId: review.userId,
+              activityType: 'REVIEW_UPVOTED',
+              points: 2,
+              reviewId,
+            },
+          });
+        }
+      }
+
+      return reply.code(200).send({
+        message: isUpvoted ? 'Review upvoted' : 'Upvote removed',
+        isUpvoted,
+        upvotesCount,
+      });
+    } catch (error) {
+      console.error('Toggle review upvote error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',

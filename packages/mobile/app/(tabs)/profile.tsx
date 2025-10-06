@@ -159,6 +159,13 @@ export default function ProfileScreen() {
         <View style={styles.actionsContainer}>
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+            onPress={() => router.push('/activity')}
+          >
+            <Text style={[styles.actionButtonText, { color: colors.text }]}>My Activity</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
             onPress={() => showError('Profile editing will be available in a future update', 'Coming Soon')}
           >
             <Text style={[styles.actionButtonText, { color: colors.text }]}>Edit Profile</Text>

@@ -231,6 +231,42 @@ class ApiService {
     return this.makeRequest(`/fights/${fightId}/tags`);
   }
 
+  async getFightReviews(fightId: string, params: {
+    page?: number;
+    limit?: number;
+  } = {}): Promise<{
+    reviews: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const queryParams = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const queryString = queryParams.toString();
+    const endpoint = `/fights/${fightId}/reviews${queryString ? `?${queryString}` : ''}`;
+
+    return this.makeRequest(endpoint);
+  }
+
+  async toggleReviewUpvote(fightId: string, reviewId: string): Promise<{
+    message: string;
+    isUpvoted: boolean;
+    upvotesCount: number;
+  }> {
+    return this.makeRequest(`/fights/${fightId}/reviews/${reviewId}/upvote`, {
+      method: 'POST',
+    });
+  }
+
   async updateFightUserData(fightId: string, data: {
     rating?: number | null;
     review?: string | null;

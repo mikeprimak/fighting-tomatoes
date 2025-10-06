@@ -74,6 +74,12 @@ export default function LoginScreen() {
     setStatus('Test credentials filled');
   };
 
+  const fillDerpCredentials = () => {
+    setEmail('derp@fightingtomatoes.com');
+    setPassword('password123');
+    setStatus('Derp credentials filled');
+  };
+
 
   const styles = createStyles(colors);
 
@@ -130,13 +136,22 @@ export default function LoginScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Development Login Button */}
+          {/* Development Login Buttons */}
           <TouchableOpacity
             style={styles.devButton}
             onPress={fillTestCredentials}
           >
             <Text style={styles.devButtonText}>
               🧪 Fill Test Credentials (Dev)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={fillDerpCredentials}
+          >
+            <Text style={styles.devButtonText}>
+              🧪 Fill Derp Credentials (Dev)
             </Text>
           </TouchableOpacity>
 
