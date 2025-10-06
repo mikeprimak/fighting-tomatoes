@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, Animated, Image } from 'react
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
+import { useQuery } from '@tanstack/react-query';
+import { apiService } from '../services/api';
 
 // Type definitions based on the existing API types
 interface Fighter {
@@ -135,10 +137,29 @@ export default function FightDisplayCard({
   const flame7 = useRef(new Animated.Value(0)).current;
   const flame8 = useRef(new Animated.Value(0)).current;
 
+  // Determine fight status
+  const status = getStatus();
+
+  // Fetch aggregate prediction stats for upcoming fights
+  const { data: predictionStats } = useQuery({
+    queryKey: ['fightPredictionStats', fight.id],
+    queryFn: () => apiService.getFightPredictionStats(fight.id),
+    enabled: status === 'upcoming',
+    staleTime: 30 * 1000, // 30 seconds - shorter than FightDisplayCardMinimal for faster updates
+  });
+
   const getFighterName = (fighter: Fighter) => {
     const name = `${fighter.firstName} ${fighter.lastName}`;
     return fighter.nickname ? `${name} "${fighter.nickname}"` : name;
   };
+
+  // Determine fight status
+  function getStatus() {
+    if (fight.isComplete) return 'completed';
+    // A fight is "in progress" if it has started (even if we don't know the current round)
+    if (fight.hasStarted) return 'in_progress';
+    return 'upcoming';
+  }
 
   // Get outcome text for completed fights
   const getOutcomeText = () => {
@@ -488,16 +509,6 @@ export default function FightDisplayCard({
     }
   }, [animatePrediction, fight.userHypePrediction, predictionScaleAnim, predictionGlowAnim, flame1, flame2, flame3, flame4, flame5, flame6, flame7, flame8]);
 
-  // Determine fight status
-  const getStatus = () => {
-    if (fight.isComplete) return 'completed';
-    // A fight is "in progress" if it has started (even if we don't know the current round)
-    if (fight.hasStarted) return 'in_progress';
-    return 'upcoming';
-  };
-
-  const status = getStatus();
-
   // Interpolate background color for smooth transition
   const animatedBackgroundColor = bgColorAnim.interpolate({
     inputRange: [0, 1],
@@ -538,17 +549,19 @@ export default function FightDisplayCard({
       <View style={styles.horizontalInfoRow}>
         {/* Aggregate Score / Live Indicator */}
         {status === 'upcoming' ? (
-          <View style={styles.ratingRow}>
-            <FontAwesome6
-              name="fire-flame-curved"
-              size={20}
-              color={colors.primary}
-              style={styles.ratingIcon}
-            />
-            <Text style={[styles.aggregateLabel, { color: colors.textSecondary }]}>
-              8.2
-            </Text>
-          </View>
+          predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
+            <View style={styles.ratingRow}>
+              <FontAwesome6
+                name="fire-flame-curved"
+                size={20}
+                color={colors.primary}
+                style={styles.ratingIcon}
+              />
+              <Text style={[styles.aggregateLabel, { color: colors.textSecondary }]}>
+                {predictionStats.averageHype.toFixed(1)}
+              </Text>
+            </View>
+          ) : null
         ) : status === 'in_progress' ? (
           <View style={styles.liveContainer}>
             <Animated.View style={[
