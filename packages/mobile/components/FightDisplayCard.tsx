@@ -558,7 +558,7 @@ export default function FightDisplayCard({
                 style={styles.ratingIcon}
               />
               <Text style={[styles.aggregateLabel, { color: colors.textSecondary }]}>
-                {predictionStats.averageHype.toFixed(1)}
+                {predictionStats.averageHype % 1 === 0 ? predictionStats.averageHype.toString() : predictionStats.averageHype.toFixed(1)}
               </Text>
             </View>
           ) : null
@@ -600,7 +600,7 @@ export default function FightDisplayCard({
                 </View>
               </View>
               <Text style={[styles.aggregateLabel, { color: colors.textSecondary }]}>
-                {fight.averageRating.toFixed(1)}
+                {fight.averageRating % 1 === 0 ? fight.averageRating.toString() : fight.averageRating.toFixed(1)}
               </Text>
             </View>
           )
