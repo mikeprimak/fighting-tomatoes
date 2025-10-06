@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
@@ -57,6 +57,7 @@ export default function EventDetailScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
   // Modal state
   const [selectedFight, setSelectedFight] = useState<Fight | null>(null);
@@ -479,9 +480,10 @@ export default function EventDetailScreen() {
         visible={showPredictionModal}
         fight={selectedFight}
         onClose={closeModal}
-        onSuccess={() => {
-          // Invalidate fights query to refresh data
-          console.log('Prediction submitted successfully');
+        onSuccess={(isUpdate, data) => {
+          // Invalidate fights query to refresh data with user prediction
+          queryClient.invalidateQueries({ queryKey: ['eventFights', id] });
+          console.log('Prediction submitted successfully', { isUpdate, data });
         }}
       />
     </View>
