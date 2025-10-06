@@ -1032,7 +1032,7 @@ export default function FightDisplayCard({
         </View>
       </View>
 
-      {/* Fight Outcome - Show below stars when fight is complete */}
+      {/* Fight Outcome / Status Container - Always show for consistent spacing */}
       {fight.isComplete && getOutcomeText() && (
         <View style={styles.outcomeContainer}>
           <Text style={[styles.outcomeText, { color: colors.text }]} numberOfLines={1}>
@@ -1056,6 +1056,15 @@ export default function FightDisplayCard({
           >
             {getUpcomingStatusMessage()}
           </Animated.Text>
+        </View>
+      )}
+
+      {/* Empty outcome container for upcoming/live fights without status messages */}
+      {!fight.isComplete && !getUpcomingStatusMessage() && (
+        <View style={styles.outcomeContainer}>
+          <Text style={[styles.outcomeText, { color: 'transparent' }]} numberOfLines={1}>
+            {' '}
+          </Text>
         </View>
       )}
 
