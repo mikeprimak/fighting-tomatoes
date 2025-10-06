@@ -601,17 +601,17 @@ export default function FightDisplayCard({
               <Animated.View style={[
                 styles.sparkle,
                 {
-                  top: '50%',
+                  top: 2,
                   right: -10,
-                  transform: [
-                    { translateY: -6 }, // Center it (star is 12px, so -6)
-                    { scale: sparkle6.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
-                    { translateX: sparkle6.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) },
-                  ],
                   opacity: sparkle6.interpolate({
                     inputRange: [0, 0.5, 1],
                     outputRange: [0, 1, 0],
                   }),
+                  transform: [
+                    { translateY: 0 },
+                    { translateX: sparkle6.interpolate({ inputRange: [0, 1], outputRange: [0, 20] }) },
+                    { scale: sparkle6.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                  ],
                 }
               ]}>
                 <FontAwesome name="star" size={12} color="#F5C518" />
@@ -641,17 +641,17 @@ export default function FightDisplayCard({
               <Animated.View style={[
                 styles.sparkle,
                 {
-                  top: '50%',
+                  top: 2,
                   left: -10,
-                  transform: [
-                    { translateY: -6 }, // Center it (star is 12px, so -6)
-                    { scale: sparkle8.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
-                    { translateX: sparkle8.interpolate({ inputRange: [0, 1], outputRange: [0, -20] }) },
-                  ],
                   opacity: sparkle8.interpolate({
                     inputRange: [0, 0.5, 1],
                     outputRange: [0, 1, 0],
                   }),
+                  transform: [
+                    { translateY: 0 },
+                    { translateX: sparkle8.interpolate({ inputRange: [0, 1], outputRange: [0, -20] }) },
+                    { scale: sparkle8.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                  ],
                 }
               ]}>
                 <FontAwesome name="star" size={12} color="#F5C518" />
