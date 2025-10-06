@@ -553,7 +553,7 @@ export default function FightDisplayCard({
             <FontAwesome6
               name="fire-flame-curved"
               size={20}
-              color={colors.primary}
+              color='#FF6B35'
               style={styles.ratingIcon}
             />
             <Text style={[styles.aggregateLabel, { color: colors.textSecondary }]}>
