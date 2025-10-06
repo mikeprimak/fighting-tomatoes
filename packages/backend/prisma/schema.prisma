@@ -218,7 +218,8 @@ model Event {
   // Status
   hasStarted        Boolean   @default(false)
   isComplete        Boolean   @default(false)
-  
+  completionMethod  String?   // "all_fights" | "timeout_12hr" | "timeout_smart" | "manual" | "scraper"
+
   // Timestamps
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt

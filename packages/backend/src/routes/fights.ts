@@ -123,8 +123,12 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const skip = (query.page - 1) * query.limit;
 
       // Build orderBy
+      // When filtering by eventId, default to orderOnCard ascending (main event first)
       const orderBy: any = {};
-      if (query.sortBy === 'event.date') {
+      if (query.eventId) {
+        // For event-specific queries, sort by card order (1 = main event at top)
+        orderBy.orderOnCard = 'asc';
+      } else if (query.sortBy === 'event.date') {
         orderBy.event = { date: query.sortOrder };
       } else {
         orderBy[query.sortBy] = query.sortOrder;

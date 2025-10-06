@@ -112,11 +112,13 @@ export default function EventDetailScreen() {
   const isEventLive = (event: EventDetails | undefined) => {
     if (!event || event.isComplete) return false;
 
-    const now = new Date();
+    // Primary check: if event has explicitly started and isn't complete, it's live
+    if (event.hasStarted && !event.isComplete) return true;
 
-    // Get the earliest start time (prelims or main card)
+    // Secondary time-based check for scheduled events
+    const now = new Date();
     const earliestTime = event.prelimStartTime || event.mainStartTime;
-    if (!earliestTime) return event.hasStarted; // Fallback to hasStarted flag
+    if (!earliestTime) return false;
 
     const startTime = new Date(earliestTime);
     return now >= startTime && !event.isComplete;
@@ -294,6 +296,24 @@ export default function EventDetailScreen() {
     );
   }
 
+  // Check if any fight is currently live
+  const hasLiveFight = fights.some((f: Fight) => f.hasStarted && !f.isComplete);
+
+  // Determine the next fight to start (highest orderOnCard that hasn't started)
+  // Fights execute in reverse order: early prelims (high numbers) → prelims → main card (low numbers)
+  const nextFight = fights
+    .filter((f: Fight) => !f.hasStarted && !f.isComplete)
+    .sort((a, b) => b.orderOnCard - a.orderOnCard)[0]; // Highest orderOnCard first
+
+  // Find the most recently completed fight (for timing "Up next..." messages)
+  const lastCompletedFight = fights
+    .filter((f: Fight) => f.isComplete)
+    .sort((a, b) => {
+      const aTime = new Date(a.updatedAt || 0).getTime();
+      const bTime = new Date(b.updatedAt || 0).getTime();
+      return bTime - aTime; // Most recent first
+    })[0];
+
   // Group fights by card section based on orderOnCard
   // Lower orderOnCard = main event (most important fights first)
   const mainCard = fights.filter((f: Fight) => f.orderOnCard <= 5);
@@ -376,6 +396,9 @@ export default function EventDetailScreen() {
                 fight={fight}
                 onPress={() => handleFightPress(fight)}
                 showEvent={false}
+                isNextFight={nextFight?.id === fight.id}
+                hasLiveFight={hasLiveFight}
+                lastCompletedFightTime={lastCompletedFight?.updatedAt}
               />
             ))}
           </View>
@@ -393,6 +416,9 @@ export default function EventDetailScreen() {
                 fight={fight}
                 onPress={() => handleFightPress(fight)}
                 showEvent={false}
+                isNextFight={nextFight?.id === fight.id}
+                hasLiveFight={hasLiveFight}
+                lastCompletedFightTime={lastCompletedFight?.updatedAt}
               />
             ))}
           </View>
@@ -410,6 +436,9 @@ export default function EventDetailScreen() {
                 fight={fight}
                 onPress={() => handleFightPress(fight)}
                 showEvent={false}
+                isNextFight={nextFight?.id === fight.id}
+                hasLiveFight={hasLiveFight}
+                lastCompletedFightTime={lastCompletedFight?.updatedAt}
               />
             ))}
           </View>

@@ -5,6 +5,7 @@ import { authRoutes } from './auth.fastify';
 import { crewRoutes } from './crews';
 import importRoutes from './import';
 import liveEventsRoutes from './liveEvents';
+import mockLiveEventsRoutes from './mockLiveEvents';
 import notificationsRoutes from './notifications';
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
 
@@ -526,6 +527,11 @@ export async function registerRoutes(fastify: FastifyInstance) {
   await fastify.register(async function(fastify) {
     await liveEventsRoutes(fastify);
   }, { prefix: '/api/live-events' });
+
+  // Register mock live events routes under /api prefix
+  await fastify.register(async function(fastify) {
+    await mockLiveEventsRoutes(fastify);
+  }, { prefix: '/api/mock-live-events' });
 
   // Register notifications routes under /api/notifications prefix
   await fastify.register(notificationsRoutes, { prefix: '/api/notifications' });

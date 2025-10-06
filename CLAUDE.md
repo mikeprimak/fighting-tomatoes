@@ -189,6 +189,164 @@ UFC.com → scrapeLiveEvent.js (Puppeteer, 30s polling)
 - Data: `live-event-data/` (timestamped JSON snapshots)
 - Schema: `prisma/schema.prisma` (Fight.currentRound, Fight.completedRounds)
 
+## Mock Live Event Testing System
+
+**Goal**: Simulate real-time UFC events with compressed timescales for rapid testing of live event workflows without waiting for actual events.
+
+**Architecture**:
+- **Mock Event Generator** (`src/services/mockEventGenerator.ts`): Creates fake UFC events with 1-20 fights, realistic fighter data
+- **Mock Outcome Generator** (`src/services/mockOutcomeGenerator.ts`): Generates realistic fight outcomes (KO/TKO/Sub/Decision) with weighted round selection
+- **Mock Live Simulator** (`src/services/mockLiveSimulator.ts`): State machine that simulates event progression (rounds, fights, outcomes) with configurable timescales
+- **API Routes** (`src/routes/mockLiveEvents.ts`): REST endpoints for controlling simulations
+
+**Default Timescales** (compressed for testing):
+- **Round Duration**: 90 seconds (vs real 5 minutes)
+- **Between Rounds**: 60 seconds (vs real 60 seconds)
+- **Between Fights**: 120 seconds / 2 minutes (vs real 5-10 minutes)
+- **Event Duration**: ~96 minutes for 10-fight card (vs real 3-4 hours)
+
+**Presets**:
+- `default`: 90s rounds, 60s breaks, 120s between fights (~1.6 hours for 10 fights)
+- `fast`: 45s rounds, 30s breaks, 60s between fights (~48 minutes)
+- `ultra-fast`: 20s rounds, 10s breaks, 30s between fights (~20 minutes)
+
+**API Endpoints** (Base: `/api/mock-live-events/`):
+```bash
+POST /generate            # Create mock event (fightCount, eventName, includeTitle)
+POST /start               # Start simulation (eventId, timeScale, autoGenerateOutcomes)
+POST /pause               # Pause active simulation
+POST /resume              # Resume paused simulation
+POST /skip-to-next        # Skip to next state (debugging)
+POST /stop                # Stop simulation
+GET  /status              # Get current status (state, progress, next transition)
+POST /reset               # Reset event to initial state (clearUserData options)
+POST /quick-start         # One-click: generate + start (preset: default|fast|ultra-fast)
+DELETE /events/:eventId   # Delete mock event
+```
+
+**State Machine Flow**:
+```
+EVENT_PENDING → EVENT_STARTED → FIGHT_STARTING → FIGHT_IN_PROGRESS (Round 1)
+→ ROUND_END → FIGHT_IN_PROGRESS (Round 2) → ... → FIGHT_COMPLETE
+→ BETWEEN_FIGHTS → FIGHT_STARTING → ... → EVENT_COMPLETE
+```
+
+**Reset Options**:
+- `clearUserData`: Wipe all user engagement (predictions, ratings, reviews, round scores)
+- `clearPredictions`: Only clear predictions (test prediction flow multiple times)
+- `clearRatings`: Only clear ratings (test rating flow)
+- `clearRoundScores`: Only clear round scoring
+- `clearReviews`: Only clear reviews
+
+**Usage Example**:
+```bash
+# Quick start with default timescale
+curl -X POST http://localhost:3001/api/mock-live-events/quick-start
+
+# Returns: { eventId, eventName, fightCount, simulation: {...} }
+
+# Check status
+curl http://localhost:3001/api/mock-live-events/status
+
+# Pause for testing
+curl -X POST http://localhost:3001/api/mock-live-events/pause
+
+# Resume
+curl -X POST http://localhost:3001/api/mock-live-events/resume
+
+# Reset event (keep predictions, clear ratings)
+curl -X POST http://localhost:3001/api/mock-live-events/reset \
+  -H "Content-Type: application/json" \
+  -d '{"eventId": "abc-123", "clearRatings": true}'
+
+# Restart from beginning
+curl -X POST http://localhost:3001/api/mock-live-events/start \
+  -H "Content-Type: application/json" \
+  -d '{"eventId": "abc-123"}'
+```
+
+**Database Updates** (same as real tracker):
+- `Event.hasStarted`, `Event.isComplete`
+- `Fight.hasStarted`, `Fight.currentRound`, `Fight.completedRounds`, `Fight.isComplete`
+- `Fight.winner`, `Fight.method`, `Fight.round`, `Fight.time`
+
+**Mobile App Integration**:
+- No changes required - polls `/api/events/{id}` and `/api/fights/{id}` as usual
+- React Query detects database changes automatically
+- Optional: Dev mode banner showing "🧪 Mock Event Active"
+
+**Files**:
+- Backend: `src/services/mockEventGenerator.ts`, `src/services/mockOutcomeGenerator.ts`, `src/services/mockLiveSimulator.ts`, `src/routes/mockLiveEvents.ts`
+- Shared: `packages/shared/src/types/mockEvent.ts`
+- Routes: Registered in `src/routes/index.ts` under `/api/mock-live-events`
+
+**Easy Removal** (when no longer needed):
+1. Delete 4 files: `src/services/mockEventGenerator.ts`, `src/services/mockOutcomeGenerator.ts`, `src/services/mockLiveSimulator.ts`, `src/routes/mockLiveEvents.ts`
+2. Delete shared types: `packages/shared/src/types/mockEvent.ts`
+3. Remove from `packages/shared/src/types/index.ts`: `export * from './mockEvent';`
+4. Remove from `src/routes/index.ts`:
+   - Import: `import mockLiveEventsRoutes from './mockLiveEvents';`
+   - Registration block (lines ~531-534)
+5. No database changes required (uses existing schema)
+
+## Engagement Strategies (Future Implementation)
+
+**Goal**: Balance discoverability of key features (predictions, ratings, round scoring, hype scores) with non-intrusive UX.
+
+**Notification Tiers** (User Settings):
+- **Minimal**: Badges only, no auto-modals/sounds
+- **Moderate** (DEFAULT): Context-aware modals, push for main events, subtle indicators
+- **Engaged**: Auto-modals, sounds, all notifications enabled
+
+**Pre-Fight Predictions** (Fighter pick, method, round, hype score):
+- **Timing**: 24-48hrs before event → gentle in-app banner; 15min before → push notification (if enabled)
+- **Modal Trigger**: Auto-show ONLY when user opens fight detail within 2hrs of start time
+- **Sound**: NO sound, just haptic feedback
+- **Indicator**: Pulse animation on "Predict" button (blue 🔮 badge) on FightDisplayCard
+
+**Round Scoring** ("Who won that round?"):
+- **Timing**: Between rounds (~60sec UFC breaks)
+- **Modal Trigger**: Auto-show ONLY if user is viewing fight detail page when round ends
+- **Otherwise**: Persistent badge "Score Round 1" on FightDisplayCard (dismissable, red 🥊 badge)
+- **Sound**: Subtle chime (default OFF, opt-in in settings)
+- **Batch Option**: "Score all 5 rounds for this fight" (single modal, multiple inputs)
+
+**Post-Fight Rating** (1-10 stars, review, tags):
+- **Timing**: Immediately after fight ends
+- **Modal Trigger**: Auto-show ONLY if user viewing that fight when it ends
+- **Otherwise**: Gold star badge (⭐) with sparkle animation on FightDisplayCard showing "Rate this fight"
+- **Sound**: Victory chime (opt-in only)
+- **Batch Prompt**: "You rated 8/12 fights on this card - rate the rest?"
+
+**Context-Aware Logic**:
+```
+User on Events tab → gentle in-app banner at top
+User on specific Fight detail → auto-show modal
+User elsewhere → push notification + persistent badge on cards
+```
+
+**Visual Indicators** (Non-Intrusive):
+- Color-coded badges on FightDisplayCard: 🔮 Predict (blue), ⭐ Rate (gold), 🥊 Score Rounds (red)
+- Sparkle animation when action available (already implemented)
+- Progress tracking on Event cards: "You've engaged with 5/12 fights"
+- Show crew engagement: "8 crew members predicted this fight"
+
+**Progressive Disclosure**:
+- First-time users: Onboarding explaining features
+- Badge indicators persist until action taken (like unread messages)
+- Long-press or swipe on fight cards for "Quick actions" menu
+
+**Community FOMO**:
+- Show aggregate hype scores: "Community hype: 8.5/10"
+- Display crew prediction counts to encourage participation
+
+**Implementation Priority** (When Ready):
+1. Badge system on FightDisplayCard (3 action types)
+2. Context-aware modal trigger service
+3. Notification preference tiers in settings
+4. Smart timing service (fight start detection, round breaks)
+5. Batch engagement prompts
+
 ## TypeScript Quality (CRITICAL)
 
 **Mandatory .tsx Generic Syntax**: ALWAYS use trailing comma `<T,>` not `<T>` (prevents JSX parse errors)

@@ -320,7 +320,10 @@ export async function autoCompleteEvent(eventId: string): Promise<boolean> {
   if (allComplete) {
     await prisma.event.update({
       where: { id: eventId },
-      data: { isComplete: true }
+      data: {
+        isComplete: true,
+        completionMethod: 'scraper' // Completed via live scraper
+      }
     });
     console.log(`  🎉 Event ${eventId} auto-marked as complete (all fights done)`);
     return true;
