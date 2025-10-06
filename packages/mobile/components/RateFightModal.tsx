@@ -484,8 +484,8 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
     }
 
     // Simple validation like PredictionModal
-    if (comment.trim() && comment.trim().length < 3) {
-      showError('Comments must be at least 3 characters long', 'Error');
+    if (comment.trim() && comment.trim().length < 2) {
+      showError('Comments must be at least 2 characters long', 'Error');
       return;
     }
 

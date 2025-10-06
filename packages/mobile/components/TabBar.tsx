@@ -145,7 +145,11 @@ export function FightCrewAppTabBar() {
               </Text>
             );
           },
-          headerShown: false,
+          headerShown: pathname === '/(tabs)/events' || pathname === '/events',
+          headerTitle: 'Events',
+          tabBarStyle: {
+            display: pathname.includes('/events/') ? 'none' : 'flex',
+          },
         }}
         listeners={{
           tabPress: (e) => {

@@ -16,7 +16,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
-import { FightDisplayCard, RateFightModal, PredictionModal } from '../../../components';
+import { FightDisplayCard, RateFightModal, PredictionModal, ScreenHeader } from '../../../components';
 import { useAuth } from '../../../store/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { useLiveEventPolling } from '../../../hooks/useLiveEventPolling';
@@ -335,38 +335,42 @@ export default function EventDetailScreen() {
   });
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <StatusBar translucent backgroundColor="transparent" barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
-      <View style={[styles.header, { borderBottomColor: colors.border, paddingTop: insets.top + 12 }]}>
+
+      {/* Custom Header */}
+      <View style={[styles.header, { backgroundColor: colors.card, paddingTop: insets.top + 12 }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backIcon}
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <FontAwesome name="arrow-left" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={[styles.eventName, { color: colors.text }]} numberOfLines={1}>
-            {event?.name || (eventLoading ? 'Loading...' : 'Event Details')}
+            {event?.name || 'Loading...'}
           </Text>
           <View style={styles.eventDateRow}>
-            <Text style={[styles.eventDate, { color: colors.textSecondary }]} numberOfLines={1}>
-              {event?.date && formatDate(event.date)}
-              {!eventIsLive && getDisplayTime(event) && ` • Main @ ${getDisplayTime(event)}`}
+            <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
+              {event ? formatDate(event.date) : ''}
             </Text>
-            {eventIsLive && (
-              <View style={styles.liveIndicator}>
-                <Animated.View
-                  style={[
-                    styles.liveDot,
-                    {
-                      backgroundColor: colors.danger,
-                      opacity: pulseAnim,
-                    },
-                  ]}
-                />
-                <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
-              </View>
+            {event && !event.isComplete && (
+              <>
+                {eventIsLive ? (
+                  <View style={styles.liveIndicator}>
+                    <Animated.View style={[
+                      styles.liveDot,
+                      { backgroundColor: colors.danger, opacity: pulseAnim }
+                    ]} />
+                    <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
+                  </View>
+                ) : (
+                  getDisplayTime(event) && (
+                    <Text style={[styles.eventDate, { color: colors.textSecondary }]}> • Main @ {getDisplayTime(event)}</Text>
+                  )
+                )}
+              </>
             )}
           </View>
         </View>
@@ -499,7 +503,7 @@ export default function EventDetailScreen() {
           console.log('Prediction submitted successfully', { isUpdate, data });
         }}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -515,12 +519,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingBottom: 12,
-    borderBottomWidth: 1,
   },
   backIcon: {
-    marginRight: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    padding: 8,
+    marginRight: 12,
   },
   headerContent: {
     flex: 1,
@@ -528,30 +530,29 @@ const styles = StyleSheet.create({
   eventName: {
     fontSize: 20,
     fontWeight: 'bold',
-  },
-  eventDate: {
-    fontSize: 14,
-    marginTop: 2,
+    marginBottom: 4,
   },
   eventDateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
+  },
+  eventDate: {
+    fontSize: 14,
   },
   liveIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 16,
-  },
-  liveText: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 6,
+    marginLeft: 8,
   },
   liveDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
+    marginRight: 6,
+  },
+  liveText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   scrollContainer: {
     paddingBottom: 20,

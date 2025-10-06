@@ -1,13 +1,11 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { useColorScheme, TouchableOpacity } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import { Colors } from '../../../constants/Colors';
-import { useQuery } from '@tanstack/react-query';
-import { apiService } from '../../../services/api';
+import { Colors } from '../../constants/Colors';
 
-export default function EventsStackLayout() {
+export default function FightStackLayout() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
@@ -26,13 +24,6 @@ export default function EventsStackLayout() {
         animation: 'none',
       }}
     >
-      <Stack.Screen
-        name="index"
-        options={{
-          headerTitle: 'Events',
-          headerShown: false,
-        }}
-      />
       <Stack.Screen
         name="[id]"
         options={{

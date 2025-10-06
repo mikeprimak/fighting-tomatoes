@@ -9,3 +9,5 @@ export { default as FighterCard } from './FighterCard';
 export { PredictionModal } from './PredictionModal';
 export type { PredictionData, PredictionMethod, Fighter, Fight } from './PredictionModal';
 export { default as RoundVotingSlideup } from './RoundVotingSlideup';
+export { ScreenHeader } from './ScreenHeader';
+export { DetailScreenHeader } from './DetailScreenHeader';

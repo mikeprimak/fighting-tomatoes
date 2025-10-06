@@ -174,7 +174,10 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
     if (onPress) {
       onPress(event);
     } else {
-      router.push(`/(tabs)/events/${event.id}`);
+      router.push({
+        pathname: `/(tabs)/events/${event.id}` as any,
+        params: { name: event.name }
+      });
     }
   };
 

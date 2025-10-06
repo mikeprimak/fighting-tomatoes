@@ -79,16 +79,30 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
   if (isSimpleAlert) {
     // Simple alert with just icon and message (auto-dismiss)
     return (
-      <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
-        <View style={styles.overlay}>
-          <View style={[styles.simpleContainer, { backgroundColor: colors.card }]}>
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={onDismiss}
+      >
+        <TouchableOpacity
+          style={styles.overlay}
+          activeOpacity={1}
+          onPress={onDismiss}
+        >
+          <TouchableOpacity
+            style={[styles.simpleContainer, { backgroundColor: colors.card }]}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
             <FontAwesome name={icon.name} size={64} color={icon.color} />
             {title && (
               <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
             )}
             <Text style={[styles.message, { color: colors.text }]}>{message}</Text>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
     );
   }
@@ -105,13 +119,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
       <TouchableOpacity
         style={styles.overlay}
         activeOpacity={1}
-        onPress={() => {
-          // Only dismiss on outside tap if there's a cancel button
-          const hasCancelButton = buttons?.some(b => b.style === 'cancel');
-          if (hasCancelButton) {
-            onDismiss?.();
-          }
-        }}
+        onPress={onDismiss}
       >
         <TouchableOpacity
           style={[styles.confirmContainer, { backgroundColor: colors.card }]}

@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../services/api';
+import { router } from 'expo-router';
 
 // Type definitions based on the existing API types
 interface Fighter {
@@ -1057,6 +1058,18 @@ export default function FightDisplayCard({
           </Animated.Text>
         </View>
       )}
+
+      {/* Three dots icon for fight details */}
+      <TouchableOpacity
+        style={styles.detailsButton}
+        onPress={(e) => {
+          e.stopPropagation();
+          router.push(`/fight/${fight.id}`);
+        }}
+        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+      >
+        <FontAwesome name="ellipsis-h" size={20} color={colors.textSecondary} />
+      </TouchableOpacity>
       </Animated.View>
     </TouchableOpacity>
   );
@@ -1177,5 +1190,12 @@ const styles = StyleSheet.create({
   sparkle: {
     position: 'absolute',
     zIndex: 10,
+  },
+  detailsButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 15,
+    padding: 8,
+    zIndex: 20,
   },
 });
