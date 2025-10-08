@@ -18,7 +18,9 @@ import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
-import { RateFightModal, PredictionModal, DetailScreenHeader } from '../../components';
+import { RateFightModal, PredictionModal, DetailScreenHeader, FlagReviewModal } from '../../components';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import { CustomAlert } from '../../components/CustomAlert';
 
 // Placeholder image selection for fighters
 const getFighterPlaceholderImage = (fighterId: string) => {
@@ -46,6 +48,9 @@ export default function FightDetailScreen() {
   const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [animateMyRating, setAnimateMyRating] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+  const [flagModalVisible, setFlagModalVisible] = useState(false);
+  const [reviewToFlag, setReviewToFlag] = useState<string | null>(null);
+  const { alertState, showConfirm, showSuccess, showError, hideAlert } = useCustomAlert();
 
   // Animation values for My Rating
   const myRatingScaleAnim = useRef(new Animated.Value(1)).current;
@@ -110,6 +115,31 @@ export default function FightDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['fight', id] });
     },
   });
+
+  // Flag review mutation
+  const flagReviewMutation = useMutation({
+    mutationFn: ({ reviewId, reason }: { reviewId: string; reason: string }) =>
+      apiService.flagReview(id as string, reviewId, reason),
+    onSuccess: () => {
+      showSuccess('Review has been flagged for moderation');
+      setFlagModalVisible(false);
+      setReviewToFlag(null);
+    },
+    onError: (error: any) => {
+      showError(error?.error || 'Failed to flag review');
+    },
+  });
+
+  const handleFlagReview = (reviewId: string) => {
+    setReviewToFlag(reviewId);
+    setFlagModalVisible(true);
+  };
+
+  const submitFlagReview = (reason: string) => {
+    if (reviewToFlag) {
+      flagReviewMutation.mutate({ reviewId: reviewToFlag, reason });
+    }
+  };
 
   // Trigger animation when rating is submitted
   useEffect(() => {
@@ -749,11 +779,24 @@ export default function FightDetailScreen() {
                           <Text style={[styles.reviewAuthor, { color: colors.text }]}>
                             {review.user.displayName || `${review.user.firstName} ${review.user.lastName}`}
                           </Text>
-                          <View style={styles.reviewRating}>
-                            <FontAwesome name="star" size={14} color="#F5C518" />
-                            <Text style={[styles.reviewRatingText, { color: colors.text }]}>
-                              {review.rating}
-                            </Text>
+                          <View style={styles.reviewHeaderRight}>
+                            <View style={styles.reviewRating}>
+                              <FontAwesome name="star" size={14} color="#F5C518" />
+                              <Text style={[styles.reviewRatingText, { color: colors.text }]}>
+                                {review.rating}
+                              </Text>
+                            </View>
+                            <TouchableOpacity
+                              onPress={() => handleFlagReview(review.id)}
+                              disabled={!isAuthenticated || flagReviewMutation.isPending}
+                              style={styles.flagButton}
+                            >
+                              <FontAwesome
+                                name="flag"
+                                size={14}
+                                color={review.userHasFlagged ? '#ef4444' : colors.textSecondary}
+                              />
+                            </TouchableOpacity>
                           </View>
                         </View>
                         <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
@@ -802,6 +845,16 @@ export default function FightDetailScreen() {
         onClose={() => setShowPredictionModal(false)}
         onSuccess={handlePredictionSuccess}
       />
+
+      <FlagReviewModal
+        visible={flagModalVisible}
+        onClose={() => setFlagModalVisible(false)}
+        onSubmit={submitFlagReview}
+        isLoading={flagReviewMutation.isPending}
+        colorScheme={colorScheme}
+      />
+
+      <CustomAlert {...alertState} onDismiss={hideAlert} />
     </SafeAreaView>
   );
 }
@@ -1066,6 +1119,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  reviewHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
   reviewAuthor: {
     fontSize: 14,
     fontWeight: '600',
@@ -1074,6 +1132,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  flagButton: {
+    padding: 4,
   },
   reviewRatingText: {
     fontSize: 14,

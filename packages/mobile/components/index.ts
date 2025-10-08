@@ -11,3 +11,4 @@ export type { PredictionData, PredictionMethod, Fighter, Fight } from './Predict
 export { default as RoundVotingSlideup } from './RoundVotingSlideup';
 export { ScreenHeader } from './ScreenHeader';
 export { DetailScreenHeader } from './DetailScreenHeader';
+export { FlagReviewModal } from './FlagReviewModal';

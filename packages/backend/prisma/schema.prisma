@@ -443,13 +443,15 @@ model ReviewReport {
   // Timestamps
   createdAt   DateTime  @default(now())
   resolvedAt  DateTime?
-  
+
+  @@unique([reporterId, reviewId])
   @@map("review_reports")
 }
 
 enum ReportReason {
   SPAM
   HARASSMENT
+  PRIVACY
   INAPPROPRIATE_CONTENT
   MISINFORMATION
   OTHER

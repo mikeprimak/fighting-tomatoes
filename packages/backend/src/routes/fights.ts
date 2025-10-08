@@ -998,6 +998,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
               userId: currentUserId,
             },
           } : false,
+          reports: currentUserId ? {
+            where: {
+              reporterId: currentUserId,
+            },
+          } : false,
         },
         orderBy: {
           createdAt: 'desc',
@@ -1006,11 +1011,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
         take: limit,
       });
 
-      // Transform reviews to include userHasUpvoted flag
+      // Transform reviews to include userHasUpvoted and userHasFlagged flags
       const transformedReviews = reviews.map((review: any) => ({
         ...review,
         userHasUpvoted: currentUserId && review.votes?.length > 0 && review.votes[0].isUpvote,
+        userHasFlagged: currentUserId && review.reports?.length > 0,
         votes: undefined, // Remove votes array from response
+        reports: undefined, // Remove reports array from response
       }));
 
       return reply.code(200).send({
@@ -1719,6 +1726,320 @@ export async function fightRoutes(fastify: FastifyInstance) {
       console.error('Aggregate predictions fetch error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // GET /api/fights/my-ratings - Get user's rated/reviewed/tagged fights
+  const MyRatingsQuerySchema = z.object({
+    page: z.string().transform(val => parseInt(val) || 1).pipe(z.number().int().min(1)).default('1'),
+    limit: z.string().transform(val => parseInt(val) || 20).pipe(z.number().int().min(1).max(50)).default('20'),
+    sortBy: z.enum(['newest', 'rating', 'aggregate', 'upvotes']).default('newest'),
+    tagFilter: z.string().optional(),
+  });
+
+  fastify.get('/fights/my-ratings', {
+    preHandler: [authenticateUser],
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const query = MyRatingsQuerySchema.parse(request.query);
+      const currentUserId = (request as any).user.id;
+
+      // Get all fight IDs where user has ratings, reviews, or tags
+      const [ratedFightIds, reviewedFightIds, taggedFightIds] = await Promise.all([
+        prisma.fightRating.findMany({
+          where: { userId: currentUserId },
+          select: { fightId: true },
+        }),
+        prisma.fightReview.findMany({
+          where: { userId: currentUserId },
+          select: { fightId: true },
+        }),
+        prisma.fightTag.findMany({
+          where: { userId: currentUserId },
+          select: { fightId: true },
+        }),
+      ]);
+
+      // Combine unique fight IDs
+      const allFightIds = Array.from(new Set([
+        ...ratedFightIds.map(r => r.fightId),
+        ...reviewedFightIds.map(r => r.fightId),
+        ...taggedFightIds.map(t => t.fightId),
+      ]));
+
+      if (allFightIds.length === 0) {
+        return reply.send({
+          fights: [],
+          pagination: {
+            page: query.page,
+            limit: query.limit,
+            total: 0,
+            totalPages: 0,
+          },
+        });
+      }
+
+      // Build where clause
+      const where: any = {
+        id: { in: allFightIds },
+      };
+
+      // Apply tag filter if provided
+      if (query.tagFilter) {
+        const tag = await prisma.tag.findUnique({
+          where: { name: query.tagFilter },
+        });
+
+        if (tag) {
+          const fightsWithTag = await prisma.fightTag.findMany({
+            where: {
+              userId: currentUserId,
+              tagId: tag.id,
+            },
+            select: { fightId: true },
+          });
+
+          const taggedIds = fightsWithTag.map(ft => ft.fightId);
+          where.id = { in: taggedIds };
+        } else {
+          // Tag doesn't exist, return empty
+          return reply.send({
+            fights: [],
+            pagination: {
+              page: query.page,
+              limit: query.limit,
+              total: 0,
+              totalPages: 0,
+            },
+          });
+        }
+      }
+
+      // Get fights with user data
+      const fights = await prisma.fight.findMany({
+        where,
+        include: {
+          event: {
+            select: {
+              id: true,
+              name: true,
+              date: true,
+              venue: true,
+              location: true,
+              promotion: true,
+            },
+          },
+          fighter1: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              nickname: true,
+              profileImage: true,
+              wins: true,
+              losses: true,
+              draws: true,
+            },
+          },
+          fighter2: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              nickname: true,
+              profileImage: true,
+              wins: true,
+              losses: true,
+              draws: true,
+            },
+          },
+          ratings: {
+            where: { userId: currentUserId },
+            select: {
+              id: true,
+              rating: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+          reviews: {
+            where: { userId: currentUserId },
+            select: {
+              id: true,
+              content: true,
+              rating: true,
+              upvotes: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+          tags: {
+            where: { userId: currentUserId },
+            include: {
+              tag: {
+                select: {
+                  id: true,
+                  name: true,
+                  category: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // Transform fights data
+      const transformedFights = fights.map((fight: any) => {
+        const transformed = { ...fight };
+
+        // Transform user rating
+        if (fight.ratings && fight.ratings.length > 0) {
+          transformed.userRating = fight.ratings[0].rating;
+          transformed.userRatingCreatedAt = fight.ratings[0].createdAt;
+        }
+
+        // Transform user review
+        if (fight.reviews && fight.reviews.length > 0) {
+          transformed.userReview = {
+            content: fight.reviews[0].content,
+            rating: fight.reviews[0].rating,
+            upvotes: fight.reviews[0].upvotes,
+            createdAt: fight.reviews[0].createdAt,
+          };
+        }
+
+        // Transform user tags
+        if (fight.tags && fight.tags.length > 0) {
+          transformed.userTags = fight.tags.map((fightTag: any) => fightTag.tag.name);
+        }
+
+        // Remove raw arrays
+        delete transformed.ratings;
+        delete transformed.reviews;
+        delete transformed.tags;
+
+        return transformed;
+      });
+
+      // Sort fights based on sortBy parameter
+      transformedFights.sort((a, b) => {
+        switch (query.sortBy) {
+          case 'newest':
+            const aDate = a.userRatingCreatedAt || a.userReview?.createdAt || new Date(0);
+            const bDate = b.userRatingCreatedAt || b.userReview?.createdAt || new Date(0);
+            return new Date(bDate).getTime() - new Date(aDate).getTime();
+          case 'rating':
+            return (b.userRating || 0) - (a.userRating || 0);
+          case 'aggregate':
+            return (b.averageRating || 0) - (a.averageRating || 0);
+          case 'upvotes':
+            return (b.userReview?.upvotes || 0) - (a.userReview?.upvotes || 0);
+          default:
+            return 0;
+        }
+      });
+
+      // Apply pagination
+      const skip = (query.page - 1) * query.limit;
+      const paginatedFights = transformedFights.slice(skip, skip + query.limit);
+
+      const pagination = {
+        page: query.page,
+        limit: query.limit,
+        total: transformedFights.length,
+        totalPages: Math.ceil(transformedFights.length / query.limit),
+      };
+
+      return reply.send({
+        fights: paginatedFights,
+        pagination,
+      });
+
+    } catch (error) {
+      console.error('Error in /fights/my-ratings route:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // POST /api/fights/:fightId/reviews/:reviewId/flag - Flag a review as inappropriate
+  fastify.post<{
+    Params: { fightId: string; reviewId: string };
+    Body: { reason: string };
+  }>('/fights/:fightId/reviews/:reviewId/flag', {
+    preHandler: [authenticateUser],
+  }, async (request: FastifyRequest<{
+    Params: { fightId: string; reviewId: string };
+    Body: { reason: string };
+  }>, reply: FastifyReply) => {
+    try {
+      const { fightId, reviewId } = request.params;
+      const { reason } = request.body;
+      const userId = request.user!.id;
+
+      // Validate reason
+      const validReasons = ['SPAM', 'HARASSMENT', 'PRIVACY', 'INAPPROPRIATE_CONTENT', 'MISINFORMATION', 'OTHER'];
+      if (!reason || !validReasons.includes(reason)) {
+        return reply.code(400).send({
+          error: 'Invalid or missing report reason',
+          code: 'INVALID_REASON',
+        });
+      }
+
+      // Check if fight exists
+      const fight = await prisma.fight.findUnique({
+        where: { id: fightId },
+      });
+
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Check if review exists
+      const review = await prisma.fightReview.findUnique({
+        where: { id: reviewId },
+      });
+
+      if (!review) {
+        return reply.code(404).send({
+          error: 'Review not found',
+          code: 'REVIEW_NOT_FOUND',
+        });
+      }
+
+      // Upsert report (create or update if exists)
+      await prisma.reviewReport.upsert({
+        where: {
+          reporterId_reviewId: {
+            reporterId: userId,
+            reviewId,
+          },
+        },
+        update: {
+          reason: reason as any,
+        },
+        create: {
+          reporterId: userId,
+          reviewId,
+          reason: reason as any,
+        },
+      });
+
+      return reply.send({
+        message: 'Review has been flagged for moderation',
+      });
+
+    } catch (error) {
+      console.error('Error flagging review:', error);
+      return reply.code(500).send({
+        error: 'Failed to flag review',
         code: 'INTERNAL_ERROR',
       });
     }

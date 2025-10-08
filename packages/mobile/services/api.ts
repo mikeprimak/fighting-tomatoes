@@ -267,6 +267,15 @@ class ApiService {
     });
   }
 
+  async flagReview(fightId: string, reviewId: string, reason: string): Promise<{
+    message: string;
+  }> {
+    return this.makeRequest(`/fights/${fightId}/reviews/${reviewId}/flag`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
   async updateFightUserData(fightId: string, data: {
     rating?: number | null;
     review?: string | null;
@@ -474,6 +483,27 @@ class ApiService {
   }> {
     return this.makeRequest(`/fights/${fightId}/predictions`);
   }
+
+  async getMyRatings(params: {
+    page?: string;
+    limit?: string;
+    sortBy?: string;
+    tagFilter?: string;
+  } = {}): Promise<FightsResponse> {
+    const queryParams = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const queryString = queryParams.toString();
+    const endpoint = `/fights/my-ratings${queryString ? `?${queryString}` : ''}`;
+
+    return this.makeRequest<FightsResponse>(endpoint);
+  }
+
   // Notification methods
   async registerPushToken(pushToken: string): Promise<void> {
     return this.makeRequest('/notifications/register-token', {
