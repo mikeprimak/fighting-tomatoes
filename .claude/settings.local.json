@@ -74,7 +74,9 @@
       "Bash(tee:*)",
       "Bash(xargs cat:*)",
       "Bash(ping:*)",
-      "Bash(start \"\" http://localhost:8083)"
+      "Bash(start \"\" http://localhost:8083)",
+      "Bash(dir:*)",
+      "Bash(pnpm docker:logs:*)"
     ],
     "deny": [],
     "ask": []

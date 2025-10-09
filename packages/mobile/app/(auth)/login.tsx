@@ -80,6 +80,17 @@ export default function LoginScreen() {
     setStatus('Derp credentials filled');
   };
 
+  const fillFartCredentials = () => {
+    setEmail('fart@fightingtomatoes.com');
+    setPassword('password123');
+    setStatus('Fart credentials filled');
+  };
+
+  const fillPoopCredentials = () => {
+    setEmail('poop@fightingtomatoes.com');
+    setPassword('password123');
+    setStatus('Poop credentials filled');
+  };
 
   const styles = createStyles(colors);
 
@@ -152,6 +163,24 @@ export default function LoginScreen() {
           >
             <Text style={styles.devButtonText}>
               🧪 Fill Derp Credentials (Dev)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={fillFartCredentials}
+          >
+            <Text style={styles.devButtonText}>
+              💨 Fill Fart Credentials (Dev)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={fillPoopCredentials}
+          >
+            <Text style={styles.devButtonText}>
+              💩 Fill Poop Credentials (Dev)
             </Text>
           </TouchableOpacity>
 

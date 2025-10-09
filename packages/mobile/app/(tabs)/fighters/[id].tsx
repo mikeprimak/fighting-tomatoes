@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -74,6 +74,15 @@ const getFighterImage = (fighterId: string) => {
   return images[index];
 };
 
+type SortOption = 'newest' | 'oldest' | 'highest-rating' | 'most-rated';
+
+const SORT_OPTIONS = [
+  { value: 'newest' as SortOption, label: 'Newest First' },
+  { value: 'oldest' as SortOption, label: 'Oldest First' },
+  { value: 'highest-rating' as SortOption, label: 'Highest Rating' },
+  { value: 'most-rated' as SortOption, label: 'Most Rated' },
+];
+
 export default function FighterDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user, isAuthenticated } = useAuth();
@@ -83,6 +92,9 @@ export default function FighterDetailScreen() {
   // Modal state
   const [selectedFight, setSelectedFight] = useState<Fight | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
+
+  // Sort state
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
 
   // Fetch fighter details
   const { data: fighterData, isLoading: fighterLoading, error: fighterError } = useQuery({
@@ -99,15 +111,41 @@ export default function FighterDetailScreen() {
       const response = await apiService.getFights({
         fighterId: id as string,
         includeUserData: isAuthenticated,
-        limit: 100,
+        limit: 50,
       });
-
-      // Sort fights by date descending (most recent first)
-      response.fights.sort((a: any, b: any) => new Date(b.event.date).getTime() - new Date(a.event.date).getTime());
       return response;
     },
     enabled: !!id,
   });
+
+  // Sort fights based on selected option
+  const sortedFights = useMemo(() => {
+    const fights = fightsData?.fights || [];
+    if (fights.length === 0) return fights;
+
+    const fightsCopy = [...fights];
+
+    switch (sortBy) {
+      case 'newest':
+        return fightsCopy.sort((a: Fight, b: Fight) =>
+          new Date(b.event.date).getTime() - new Date(a.event.date).getTime()
+        );
+      case 'oldest':
+        return fightsCopy.sort((a: Fight, b: Fight) =>
+          new Date(a.event.date).getTime() - new Date(b.event.date).getTime()
+        );
+      case 'highest-rating':
+        return fightsCopy.sort((a: Fight, b: Fight) =>
+          (b.averageRating || 0) - (a.averageRating || 0)
+        );
+      case 'most-rated':
+        return fightsCopy.sort((a: Fight, b: Fight) =>
+          (b.totalRatings || 0) - (a.totalRatings || 0)
+        );
+      default:
+        return fightsCopy;
+    }
+  }, [fightsData?.fights, sortBy]);
 
   const handleFightPress = async (fight: Fight) => {
     try {
@@ -194,7 +232,6 @@ export default function FighterDetailScreen() {
   }
 
   const fighter = fighterData?.fighter;
-  const fights = fightsData?.fights || [];
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -253,12 +290,50 @@ export default function FighterDetailScreen() {
 
         {/* Fight History Section */}
         <View style={styles.fightsSection}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            FIGHT HISTORY ({fights.length} fights)
-          </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              FIGHT HISTORY ({sortedFights.length} fights)
+            </Text>
+          </View>
 
-          {fights.length > 0 ? (
-            fights.map((fight: Fight) => (
+          {/* Sort Selector */}
+          {sortedFights.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.sortContainer}
+              contentContainerStyle={styles.sortContentContainer}
+            >
+              {SORT_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  onPress={() => setSortBy(option.value)}
+                  style={[
+                    styles.sortButton,
+                    {
+                      backgroundColor: sortBy === option.value ? colors.primary : colors.card,
+                      borderColor: sortBy === option.value ? colors.primary : colors.border,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.sortButtonText,
+                      {
+                        color: sortBy === option.value ? colors.textOnAccent : colors.text,
+                        fontWeight: sortBy === option.value ? '600' : '400',
+                      },
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {sortedFights.length > 0 ? (
+            sortedFights.map((fight: Fight) => (
               <View key={fight.id} style={styles.fightCard}>
                 <FightDisplayCard
                   fight={fight}
@@ -404,11 +479,30 @@ const styles = StyleSheet.create({
   fightsSection: {
     marginTop: 8,
   },
+  sectionHeader: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  sortContainer: {
     marginHorizontal: 16,
     marginBottom: 12,
+  },
+  sortContentContainer: {
+    paddingRight: 16,
+  },
+  sortButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  sortButtonText: {
+    fontSize: 14,
   },
   fightCard: {
     marginHorizontal: 16,
