@@ -18,10 +18,10 @@ export default function ActivityScreen() {
 
   const activityCategories = [
     {
-      title: 'Reviews',
-      description: 'All your fight reviews and ratings',
+      title: 'Ratings',
+      description: 'All your fight ratings, reviews, and tags',
       icon: 'star',
-      route: '/activity/reviews',
+      route: '/activity/ratings',
       color: '#F5C518',
     },
     {
@@ -30,20 +30,6 @@ export default function ActivityScreen() {
       icon: 'magic',
       route: '/activity/predictions',
       color: '#9333ea',
-    },
-    {
-      title: 'Tags',
-      description: 'Tags you\'ve applied to fights',
-      icon: 'tags',
-      route: '/activity/tags',
-      color: '#3b82f6',
-    },
-    {
-      title: 'Ratings',
-      description: 'All fights you\'ve rated',
-      icon: 'thumbs-up',
-      route: '/activity/ratings',
-      color: '#ef4444',
     },
   ];
 
@@ -97,15 +83,11 @@ export default function ActivityScreen() {
             <View style={styles.summaryStats}>
               <View style={styles.summaryStatItem}>
                 <Text style={[styles.summaryStatValue, { color: colors.primary }]}>0</Text>
-                <Text style={[styles.summaryStatLabel, { color: colors.textSecondary }]}>Total Reviews</Text>
+                <Text style={[styles.summaryStatLabel, { color: colors.textSecondary }]}>Total Ratings</Text>
               </View>
               <View style={styles.summaryStatItem}>
                 <Text style={[styles.summaryStatValue, { color: colors.primary }]}>0</Text>
                 <Text style={[styles.summaryStatLabel, { color: colors.textSecondary }]}>Total Predictions</Text>
-              </View>
-              <View style={styles.summaryStatItem}>
-                <Text style={[styles.summaryStatValue, { color: colors.primary }]}>0</Text>
-                <Text style={[styles.summaryStatLabel, { color: colors.textSecondary }]}>Total Tags</Text>
               </View>
             </View>
           </View>

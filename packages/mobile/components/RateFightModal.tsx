@@ -10,6 +10,8 @@ import {
   Image,
   Animated,
   Easing,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -483,12 +485,6 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
       return;
     }
 
-    // Simple validation like PredictionModal
-    if (comment.trim() && comment.trim().length < 2) {
-      showError('Comments must be at least 2 characters long', 'Error');
-      return;
-    }
-
     if (comment.trim() && rating === 0) {
       showError('Reviews require a rating.', 'Error');
       return;
@@ -542,7 +538,11 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
           activeOpacity={1}
           onPress={closeModal}
         />
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <KeyboardAvoidingView
+          behavior="position"
+          keyboardVerticalOffset={0}
+          style={[styles.modalContainer, { backgroundColor: colors.background }]}
+        >
           <ScrollView
             contentContainerStyle={styles.modalContent}
             showsVerticalScrollIndicator={false}
@@ -729,7 +729,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
             </TouchableOpacity>
           </View>
         </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
       </View>
       <CustomAlert {...alertState} onDismiss={hideAlert} />
     </Modal>

@@ -1,9 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { PrismaClient, WeightClass, Sport, Gender, ActivityType, PredictionMethod } from '@prisma/client';
+import { WeightClass, Sport, Gender, ActivityType, PredictionMethod } from '@prisma/client';
 import { authenticateUser, requireEmailVerification, optionalAuth } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 // Request/Response schemas using Zod for validation
 const CreateFightSchema = z.object({
@@ -40,17 +38,17 @@ const UpdateFightSchema = z.object({
 
 const FightQuerySchema = z.object({
   page: z.string().transform(val => parseInt(val) || 1).pipe(z.number().int().min(1)).default('1'),
-  limit: z.string().transform(val => parseInt(val) || 20).pipe(z.number().int().min(1).max(50)).default('20'),
+  limit: z.string().transform(val => parseInt(val) || 20).pipe(z.number().int().min(1).max(200)).default('20'),
   eventId: z.string().uuid().optional(),
   fighterId: z.string().uuid().optional(),
   weightClass: z.nativeEnum(WeightClass).optional(),
-  isTitle: z.string().transform(val => val === 'true').pipe(z.boolean()).optional(),
-  hasStarted: z.string().transform(val => val === 'true').pipe(z.boolean()).optional(),
-  isComplete: z.string().transform(val => val === 'true').pipe(z.boolean()).optional(),
-  minRating: z.string().transform(val => parseFloat(val)).pipe(z.number().min(0).max(10)).optional(),
+  isTitle: z.string().optional().transform(val => val === 'true' ? true : val === 'false' ? false : undefined),
+  hasStarted: z.string().optional().transform(val => val === 'true' ? true : val === 'false' ? false : undefined),
+  isComplete: z.string().optional().transform(val => val === 'true' ? true : val === 'false' ? false : undefined),
+  minRating: z.string().optional().transform(val => val ? parseFloat(val) : undefined),
   sortBy: z.enum(['event.date', 'averageRating', 'totalRatings', 'createdAt']).default('event.date'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
-  includeUserData: z.string().transform(val => val === 'true').pipe(z.boolean()).optional(),
+  includeUserData: z.string().optional().transform(val => val === 'true'),
 });
 
 const CreateRatingSchema = z.object({
@@ -58,14 +56,14 @@ const CreateRatingSchema = z.object({
 });
 
 const CreateReviewSchema = z.object({
-  content: z.string().min(3).max(5000),
+  content: z.string().min(1).max(5000),
   rating: z.number().int().min(1).max(10),
   articleUrl: z.string().url().optional(),
   articleTitle: z.string().max(200).optional(),
 });
 
 const UpdateReviewSchema = z.object({
-  content: z.string().min(3).max(5000),
+  content: z.string().min(1).max(5000),
   rating: z.number().int().min(1).max(10),
   articleUrl: z.string().url().optional(),
   articleTitle: z.string().max(200).optional(),
@@ -77,7 +75,7 @@ const FightTagsSchema = z.object({
 
 const UpdateUserDataSchema = z.object({
   rating: z.number().int().min(1).max(10).nullable().optional(),
-  review: z.string().min(3).max(5000).nullable().optional(),
+  review: z.string().min(1).max(5000).nullable().optional(),
   tags: z.array(z.string()).max(10).optional(),
 });
 
@@ -135,7 +133,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Get total count for pagination
-      const total = await prisma.fight.count({ where });
+      const total = await fastify.prisma.fight.count({ where });
 
       // Basic include object
       const include: any = {
@@ -235,7 +233,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Get fights with related data
-      const fights = await prisma.fight.findMany({
+      const fights = await fastify.prisma.fight.findMany({
         where,
         skip,
         take: query.limit,
@@ -309,7 +307,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       console.log('Getting single fight with ID:', id, 'User ID:', currentUserId);
 
-      const fight = await prisma.fight.findUnique({
+      const fight = await fastify.prisma.fight.findUnique({
         where: { id },
         include: {
           event: true,
@@ -438,7 +436,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const currentUserId = (request as any).user.id;
 
       // Check if fight exists
-      const fight = await prisma.fight.findUnique({ where: { id: fightId } });
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
       if (!fight) {
         return reply.code(404).send({
           error: 'Fight not found',
@@ -447,7 +445,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Get previous rating for proper statistics update
-      const previousRating = await prisma.fightRating.findUnique({
+      const previousRating = await fastify.prisma.fightRating.findUnique({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -457,7 +455,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       // Upsert rating (create or update)
-      const fightRating = await prisma.fightRating.upsert({
+      const fightRating = await fastify.prisma.fightRating.upsert({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -475,14 +473,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       // Update fight statistics
-      const ratingStats = await prisma.fightRating.aggregate({
+      const ratingStats = await fastify.prisma.fightRating.aggregate({
         where: { fightId },
         _avg: { rating: true },
         _count: { rating: true },
       });
 
       // Update rating distribution counters
-      const ratingCounts = await prisma.fightRating.groupBy({
+      const ratingCounts = await fastify.prisma.fightRating.groupBy({
         by: ['rating'],
         where: { fightId },
         _count: { rating: true },
@@ -494,7 +492,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         ratingDistribution[`ratings${i}`] = count;
       }
 
-      await prisma.fight.update({
+      await fastify.prisma.fight.update({
         where: { id: fightId },
         data: {
           averageRating: ratingStats._avg.rating || 0,
@@ -505,7 +503,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Add gamification points only for new ratings
       if (!previousRating) {
-        await prisma.userActivity.create({
+        await fastify.prisma.userActivity.create({
           data: {
             userId: currentUserId,
             activityType: ActivityType.FIGHT_RATED,
@@ -515,7 +513,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           },
         });
 
-        await prisma.user.update({
+        await fastify.prisma.user.update({
           where: { id: currentUserId },
           data: {
             points: { increment: 5 },
@@ -554,7 +552,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const currentUserId = (request as any).user.id;
 
       // Check if rating exists
-      const existingRating = await prisma.fightRating.findUnique({
+      const existingRating = await fastify.prisma.fightRating.findUnique({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -571,7 +569,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Delete the rating
-      await prisma.fightRating.delete({
+      await fastify.prisma.fightRating.delete({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -581,14 +579,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       // Also delete review and tags if they exist
-      await prisma.fightReview.deleteMany({
+      await fastify.prisma.fightReview.deleteMany({
         where: {
           userId: currentUserId,
           fightId,
         },
       });
 
-      await prisma.fightTag.deleteMany({
+      await fastify.prisma.fightTag.deleteMany({
         where: {
           userId: currentUserId,
           fightId,
@@ -596,18 +594,18 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       // Update fight statistics
-      const ratingStats = await prisma.fightRating.aggregate({
+      const ratingStats = await fastify.prisma.fightRating.aggregate({
         where: { fightId },
         _avg: { rating: true },
         _count: { rating: true },
       });
 
-      const reviewCount = await prisma.fightReview.count({
+      const reviewCount = await fastify.prisma.fightReview.count({
         where: { fightId, isHidden: false },
       });
 
       // Update rating distribution counters
-      const ratingCounts = await prisma.fightRating.groupBy({
+      const ratingCounts = await fastify.prisma.fightRating.groupBy({
         by: ['rating'],
         where: { fightId },
         _count: { rating: true },
@@ -619,7 +617,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         ratingDistribution[`ratings${i}`] = count;
       }
 
-      await prisma.fight.update({
+      await fastify.prisma.fight.update({
         where: { id: fightId },
         data: {
           averageRating: ratingStats._avg.rating || 0,
@@ -630,7 +628,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       // Remove gamification points
-      await prisma.user.update({
+      await fastify.prisma.user.update({
         where: { id: currentUserId },
         data: {
           points: { decrement: 5 },
@@ -660,7 +658,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const currentUserId = (request as any).user.id;
 
       // Check if fight exists
-      const fight = await prisma.fight.findUnique({ where: { id: fightId } });
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
       if (!fight) {
         return reply.code(404).send({
           error: 'Fight not found',
@@ -669,7 +667,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Create or update rating first
-      await prisma.fightRating.upsert({
+      await fastify.prisma.fightRating.upsert({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -687,7 +685,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       // Create or update review
-      const review = await prisma.fightReview.upsert({
+      const review = await fastify.prisma.fightReview.upsert({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -741,7 +739,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const currentUserId = (request as any).user.id;
 
       // Check if fight exists
-      const fight = await prisma.fight.findUnique({ where: { id: fightId } });
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
       if (!fight) {
         return reply.code(404).send({
           error: 'Fight not found',
@@ -750,7 +748,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Check if review already exists
-      const existingReview = await prisma.fightReview.findUnique({
+      const existingReview = await fastify.prisma.fightReview.findUnique({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -760,7 +758,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       // Update rating
-      await prisma.fightRating.upsert({
+      await fastify.prisma.fightRating.upsert({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -778,7 +776,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       // Update review
-      const review = await prisma.fightReview.upsert({
+      const review = await fastify.prisma.fightReview.upsert({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -804,7 +802,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // If this is a new review, create an auto-upvote
       if (!existingReview) {
-        await prisma.reviewVote.create({
+        await fastify.prisma.reviewVote.create({
           data: {
             userId: currentUserId,
             reviewId: review.id,
@@ -844,7 +842,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const currentUserId = (request as any).user.id;
 
       // Check if fight exists
-      const fight = await prisma.fight.findUnique({ where: { id: fightId } });
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
       if (!fight) {
         return reply.code(404).send({
           error: 'Fight not found',
@@ -853,7 +851,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Remove existing tags for this user and fight
-      await prisma.fightTag.deleteMany({
+      await fastify.prisma.fightTag.deleteMany({
         where: {
           userId: currentUserId,
           fightId,
@@ -864,7 +862,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const tagRecords = [];
       for (const tagName of tagNames) {
         // Find or create the tag
-        const tag = await prisma.tag.upsert({
+        const tag = await fastify.prisma.tag.upsert({
           where: { name: tagName },
           create: {
             name: tagName,
@@ -874,7 +872,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
 
         // Create the fight-tag association
-        const fightTag = await prisma.fightTag.create({
+        const fightTag = await fastify.prisma.fightTag.create({
           data: {
             userId: currentUserId,
             fightId,
@@ -918,7 +916,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const currentUserId = (request as any).user.id;
 
       // Check if fight exists
-      const fight = await prisma.fight.findUnique({ where: { id: fightId } });
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
       if (!fight) {
         return reply.code(404).send({
           error: 'Fight not found',
@@ -927,7 +925,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Get user's tags for this fight
-      const fightTags = await prisma.fightTag.findMany({
+      const fightTags = await fastify.prisma.fightTag.findMany({
         where: {
           userId: currentUserId,
           fightId,
@@ -959,7 +957,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const currentUserId = (request as any).user?.id;
 
       // Check if fight exists
-      const fight = await prisma.fight.findUnique({ where: { id: fightId } });
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
       if (!fight) {
         return reply.code(404).send({
           error: 'Fight not found',
@@ -968,7 +966,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Get total count
-      const total = await prisma.fightReview.count({
+      const total = await fastify.prisma.fightReview.count({
         where: {
           fightId,
           isHidden: false,
@@ -976,7 +974,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       // Get reviews with pagination
-      const reviews = await prisma.fightReview.findMany({
+      const reviews = await fastify.prisma.fightReview.findMany({
         where: {
           fightId,
           isHidden: false,
@@ -1047,7 +1045,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const currentUserId = (request as any).user.id;
 
       // Check if review exists
-      const review = await prisma.fightReview.findUnique({
+      const review = await fastify.prisma.fightReview.findUnique({
         where: { id: reviewId },
         include: { user: true },
       });
@@ -1060,7 +1058,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Check if user already voted
-      const existingVote = await prisma.reviewVote.findUnique({
+      const existingVote = await fastify.prisma.reviewVote.findUnique({
         where: {
           userId_reviewId: {
             userId: currentUserId,
@@ -1075,15 +1073,15 @@ export async function fightRoutes(fastify: FastifyInstance) {
       if (existingVote) {
         if (existingVote.isUpvote) {
           // Remove upvote
-          await prisma.$transaction([
-            prisma.reviewVote.delete({
+          await fastify.prisma.$transaction([
+            fastify.prisma.reviewVote.delete({
               where: { id: existingVote.id },
             }),
-            prisma.fightReview.update({
+            fastify.prisma.fightReview.update({
               where: { id: reviewId },
               data: { upvotes: { decrement: 1 } },
             }),
-            prisma.user.update({
+            fastify.prisma.user.update({
               where: { id: review.userId },
               data: { upvotesReceived: { decrement: 1 } },
             }),
@@ -1092,19 +1090,19 @@ export async function fightRoutes(fastify: FastifyInstance) {
           isUpvoted = false;
         } else {
           // Change downvote to upvote
-          await prisma.$transaction([
-            prisma.reviewVote.update({
+          await fastify.prisma.$transaction([
+            fastify.prisma.reviewVote.update({
               where: { id: existingVote.id },
               data: { isUpvote: true },
             }),
-            prisma.fightReview.update({
+            fastify.prisma.fightReview.update({
               where: { id: reviewId },
               data: {
                 upvotes: { increment: 1 },
                 downvotes: { decrement: 1 },
               },
             }),
-            prisma.user.update({
+            fastify.prisma.user.update({
               where: { id: review.userId },
               data: { upvotesReceived: { increment: 1 } },
             }),
@@ -1114,19 +1112,19 @@ export async function fightRoutes(fastify: FastifyInstance) {
         }
       } else {
         // Create new upvote
-        await prisma.$transaction([
-          prisma.reviewVote.create({
+        await fastify.prisma.$transaction([
+          fastify.prisma.reviewVote.create({
             data: {
               userId: currentUserId,
               reviewId,
               isUpvote: true,
             },
           }),
-          prisma.fightReview.update({
+          fastify.prisma.fightReview.update({
             where: { id: reviewId },
             data: { upvotes: { increment: 1 } },
           }),
-          prisma.user.update({
+          fastify.prisma.user.update({
             where: { id: review.userId },
             data: { upvotesReceived: { increment: 1 } },
           }),
@@ -1136,7 +1134,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
         // Create activity for the review author (only if not self-upvoting)
         if (review.userId !== currentUserId) {
-          await prisma.userActivity.create({
+          await fastify.prisma.userActivity.create({
             data: {
               userId: review.userId,
               activityType: 'REVIEW_UPVOTED',
@@ -1171,7 +1169,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const currentUserId = (request as any).user.id;
 
       // Check if fight exists
-      const fight = await prisma.fight.findUnique({ where: { id: fightId } });
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
       if (!fight) {
         return reply.code(404).send({
           error: 'Fight not found',
@@ -1180,7 +1178,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Get previous data for tracking changes
-      const previousRating = await prisma.fightRating.findUnique({
+      const previousRating = await fastify.prisma.fightRating.findUnique({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -1189,7 +1187,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         },
       });
 
-      const previousReview = await prisma.fightReview.findUnique({
+      const previousReview = await fastify.prisma.fightReview.findUnique({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -1204,7 +1202,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       if (rating !== undefined) {
         if (rating === null) {
           // Remove rating
-          await prisma.fightRating.deleteMany({
+          await fastify.prisma.fightRating.deleteMany({
             where: {
               userId: currentUserId,
               fightId,
@@ -1212,7 +1210,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           });
         } else {
           // Upsert rating
-          const fightRating = await prisma.fightRating.upsert({
+          const fightRating = await fastify.prisma.fightRating.upsert({
             where: {
               userId_fightId: {
                 userId: currentUserId,
@@ -1232,13 +1230,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
         }
 
         // Update fight statistics
-        const ratingStats = await prisma.fightRating.aggregate({
+        const ratingStats = await fastify.prisma.fightRating.aggregate({
           where: { fightId },
           _avg: { rating: true },
           _count: { rating: true },
         });
 
-        const ratingCounts = await prisma.fightRating.groupBy({
+        const ratingCounts = await fastify.prisma.fightRating.groupBy({
           by: ['rating'],
           where: { fightId },
           _count: { rating: true },
@@ -1250,7 +1248,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           ratingDistribution[`ratings${i}`] = count;
         }
 
-        await prisma.fight.update({
+        await fastify.prisma.fight.update({
           where: { id: fightId },
           data: {
             averageRating: ratingStats._avg.rating || 0,
@@ -1264,7 +1262,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       if (review !== undefined) {
         if (review === null) {
           // Remove review
-          await prisma.fightReview.deleteMany({
+          await fastify.prisma.fightReview.deleteMany({
             where: {
               userId: currentUserId,
               fightId,
@@ -1284,7 +1282,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           }
 
           // Upsert review
-          const fightReview = await prisma.fightReview.upsert({
+          const fightReview = await fastify.prisma.fightReview.upsert({
             where: {
               userId_fightId: {
                 userId: currentUserId,
@@ -1306,12 +1304,12 @@ export async function fightRoutes(fastify: FastifyInstance) {
         }
 
         // Update fight review statistics
-        const reviewStats = await prisma.fightReview.aggregate({
+        const reviewStats = await fastify.prisma.fightReview.aggregate({
           where: { fightId },
           _count: { id: true },
         });
 
-        await prisma.fight.update({
+        await fastify.prisma.fight.update({
           where: { id: fightId },
           data: {
             totalReviews: reviewStats._count.id || 0,
@@ -1322,7 +1320,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       // Handle tags
       if (tags !== undefined) {
         // Remove existing tags for this user and fight
-        await prisma.fightTag.deleteMany({
+        await fastify.prisma.fightTag.deleteMany({
           where: {
             userId: currentUserId,
             fightId,
@@ -1334,7 +1332,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           const tagRecords = [];
           for (const tagName of tags) {
             // Find or create the tag
-            const tag = await prisma.tag.upsert({
+            const tag = await fastify.prisma.tag.upsert({
               where: { name: tagName },
               create: {
                 name: tagName,
@@ -1344,7 +1342,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
             });
 
             // Create the fight-tag association
-            const fightTag = await prisma.fightTag.create({
+            const fightTag = await fastify.prisma.fightTag.create({
               data: {
                 userId: currentUserId,
                 fightId,
@@ -1365,7 +1363,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Add gamification points only for new ratings/reviews
       if (rating && rating > 0 && !previousRating) {
-        await prisma.userActivity.create({
+        await fastify.prisma.userActivity.create({
           data: {
             userId: currentUserId,
             activityType: ActivityType.FIGHT_RATED,
@@ -1375,7 +1373,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           },
         });
 
-        await prisma.user.update({
+        await fastify.prisma.user.update({
           where: { id: currentUserId },
           data: {
             points: { increment: 5 },
@@ -1385,7 +1383,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       if (review && review.length > 0 && !previousReview) {
-        await prisma.userActivity.create({
+        await fastify.prisma.userActivity.create({
           data: {
             userId: currentUserId,
             activityType: ActivityType.REVIEW_WRITTEN,
@@ -1395,7 +1393,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           },
         });
 
-        await prisma.user.update({
+        await fastify.prisma.user.update({
           where: { id: currentUserId },
           data: {
             points: { increment: 15 },
@@ -1463,7 +1461,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Check if fight exists
-      const fight = await prisma.fight.findUnique({
+      const fight = await fastify.prisma.fight.findUnique({
         where: { id: fightId },
         include: {
           fighter1: true,
@@ -1495,7 +1493,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Create or update prediction
-      const prediction = await prisma.fightPrediction.upsert({
+      const prediction = await fastify.prisma.fightPrediction.upsert({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -1530,7 +1528,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       // Add activity log for new predictions
-      const isNewPrediction = !await prisma.fightPrediction.findFirst({
+      const isNewPrediction = !await fastify.prisma.fightPrediction.findFirst({
         where: {
           userId: currentUserId,
           fightId,
@@ -1539,7 +1537,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       if (isNewPrediction) {
-        await prisma.userActivity.create({
+        await fastify.prisma.userActivity.create({
           data: {
             userId: currentUserId,
             activityType: ActivityType.PREDICTION_MADE,
@@ -1550,7 +1548,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           },
         });
 
-        await prisma.user.update({
+        await fastify.prisma.user.update({
           where: { id: currentUserId },
           data: {
             points: { increment: 5 },
@@ -1595,7 +1593,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const currentUserId = (request as any).user.id;
 
       // Check if fight exists
-      const fight = await prisma.fight.findUnique({
+      const fight = await fastify.prisma.fight.findUnique({
         where: { id: fightId },
       });
 
@@ -1607,7 +1605,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Get user's prediction
-      const prediction = await prisma.fightPrediction.findUnique({
+      const prediction = await fastify.prisma.fightPrediction.findUnique({
         where: {
           userId_fightId: {
             userId: currentUserId,
@@ -1666,7 +1664,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const fightId = request.params.id;
 
       // Check if fight exists
-      const fight = await prisma.fight.findUnique({
+      const fight = await fastify.prisma.fight.findUnique({
         where: { id: fightId },
         include: {
           fighter1: true,
@@ -1682,7 +1680,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Get aggregate prediction stats
-      const predictions = await prisma.fightPrediction.findMany({
+      const predictions = await fastify.prisma.fightPrediction.findMany({
         where: { fightId },
       });
 
@@ -1748,15 +1746,15 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Get all fight IDs where user has ratings, reviews, or tags
       const [ratedFightIds, reviewedFightIds, taggedFightIds] = await Promise.all([
-        prisma.fightRating.findMany({
+        fastify.prisma.fightRating.findMany({
           where: { userId: currentUserId },
           select: { fightId: true },
         }),
-        prisma.fightReview.findMany({
+        fastify.prisma.fightReview.findMany({
           where: { userId: currentUserId },
           select: { fightId: true },
         }),
-        prisma.fightTag.findMany({
+        fastify.prisma.fightTag.findMany({
           where: { userId: currentUserId },
           select: { fightId: true },
         }),
@@ -1788,12 +1786,12 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Apply tag filter if provided
       if (query.tagFilter) {
-        const tag = await prisma.tag.findUnique({
+        const tag = await fastify.prisma.tag.findUnique({
           where: { name: query.tagFilter },
         });
 
         if (tag) {
-          const fightsWithTag = await prisma.fightTag.findMany({
+          const fightsWithTag = await fastify.prisma.fightTag.findMany({
             where: {
               userId: currentUserId,
               tagId: tag.id,
@@ -1818,7 +1816,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Get fights with user data
-      const fights = await prisma.fight.findMany({
+      const fights = await fastify.prisma.fight.findMany({
         where,
         include: {
           event: {
@@ -1991,7 +1989,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Check if fight exists
-      const fight = await prisma.fight.findUnique({
+      const fight = await fastify.prisma.fight.findUnique({
         where: { id: fightId },
       });
 
@@ -2003,7 +2001,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Check if review exists
-      const review = await prisma.fightReview.findUnique({
+      const review = await fastify.prisma.fightReview.findUnique({
         where: { id: reviewId },
       });
 
@@ -2015,7 +2013,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Upsert report (create or update if exists)
-      await prisma.reviewReport.upsert({
+      await fastify.prisma.reviewReport.upsert({
         where: {
           reporterId_reviewId: {
             reporterId: userId,
