@@ -18,7 +18,7 @@ import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
-import { RateFightModal, PredictionModal, DetailScreenHeader, FlagReviewModal } from '../../components';
+import { RateFightModal, PredictionModal, DetailScreenHeader, FlagReviewModal, CommunityPredictionsCard } from '../../components';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { CustomAlert } from '../../components/CustomAlert';
 
@@ -387,21 +387,58 @@ export default function FightDetailScreen() {
           </View>
         )}
 
+        {/* Community Predictions - Only for upcoming fights with predictions */}
+        {isUpcoming && predictionStats && (
+          <CommunityPredictionsCard
+            predictionStats={predictionStats}
+            userPrediction={
+              fight.userPredictedWinner || fight.userPredictedMethod || fight.userPredictedRound
+                ? {
+                    predictedWinner: fight.userPredictedWinner,
+                    predictedMethod: fight.userPredictedMethod,
+                    predictedRound: fight.userPredictedRound,
+                  }
+                : undefined
+            }
+          />
+        )}
+
         {/* Score Section - Different layout for upcoming vs completed */}
         {isUpcoming ? (
-          // Full width for upcoming fights
-          <View style={[styles.largeScoreContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <FontAwesome6 name="fire-flame-curved" size={64} color="#FF6B35" />
-            <Text style={[styles.largeScoreValue, { color: colors.text }]}>
-              {predictionStats?.averageHype !== undefined
-                ? predictionStats.averageHype % 1 === 0
-                  ? predictionStats.averageHype.toString()
-                  : predictionStats.averageHype.toFixed(1)
-                : '0'}
-            </Text>
-            <Text style={[styles.largeScoreLabel, { color: colors.textSecondary }]}>
-              Average Hype ({totalPredictions} {totalPredictions === 1 ? 'prediction' : 'predictions'})
-            </Text>
+          // Split layout for upcoming fights
+          <View style={styles.splitScoreRow}>
+            {/* Aggregate Hype - Left */}
+            <View style={[styles.halfScoreContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <FontAwesome6 name="fire-flame-curved" size={48} color="#FF6B35" />
+              <Text style={[styles.halfScoreValue, { color: colors.text }]}>
+                {predictionStats?.averageHype !== undefined
+                  ? predictionStats.averageHype % 1 === 0
+                    ? predictionStats.averageHype.toString()
+                    : predictionStats.averageHype.toFixed(1)
+                  : '0'}
+              </Text>
+              <Text style={[styles.halfScoreLabel, { color: colors.textSecondary }]}>
+                Average Hype
+              </Text>
+              <Text style={[styles.halfScoreSubLabel, { color: colors.textSecondary }]}>
+                ({totalPredictions} {totalPredictions === 1 ? 'prediction' : 'predictions'})
+              </Text>
+            </View>
+
+            {/* My Hype - Right */}
+            <TouchableOpacity
+              style={[styles.halfScoreContainer, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => setShowPredictionModal(true)}
+              activeOpacity={0.7}
+            >
+              <FontAwesome6 name={fight.userHypePrediction ? "fire-flame-curved" : "fire-flame-curved"} size={48} color="#83B4F3" />
+              <Text style={[styles.halfScoreValue, { color: colors.text }]}>
+                {fight.userHypePrediction || ''}
+              </Text>
+              <Text style={[styles.halfScoreLabel, { color: colors.textSecondary }]}>
+                My Hype
+              </Text>
+            </TouchableOpacity>
           </View>
         ) : (
           // Split layout for completed fights

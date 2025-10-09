@@ -471,6 +471,7 @@ class ApiService {
     fightId: string;
     totalPredictions: number;
     averageHype: number;
+    distribution: Record<number, number>;
     winnerPredictions: {
       fighter1: { id: string; name: string; predictions: number; percentage: number };
       fighter2: { id: string; name: string; predictions: number; percentage: number };
@@ -480,6 +481,19 @@ class ApiService {
       KO_TKO: number;
       SUBMISSION: number;
     };
+    roundPredictions: Record<number, number>;
+    fighter1MethodPredictions: {
+      DECISION: number;
+      KO_TKO: number;
+      SUBMISSION: number;
+    };
+    fighter1RoundPredictions: Record<number, number>;
+    fighter2MethodPredictions: {
+      DECISION: number;
+      KO_TKO: number;
+      SUBMISSION: number;
+    };
+    fighter2RoundPredictions: Record<number, number>;
   }> {
     return this.makeRequest(`/fights/${fightId}/predictions`);
   }

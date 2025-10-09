@@ -361,6 +361,20 @@ export async function fightRoutes(fastify: FastifyInstance) {
               tag: true,
             },
           } : false, // Don't include tags if no user
+          predictions: currentUserId ? {
+            where: {
+              userId: currentUserId // Only get current user's predictions
+            },
+            select: {
+              id: true,
+              predictedRating: true,
+              predictedWinner: true,
+              predictedMethod: true,
+              predictedRound: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          } : false, // Don't include predictions if no user
         },
       });
 
@@ -402,10 +416,20 @@ export async function fightRoutes(fastify: FastifyInstance) {
           console.log('Found user tags:', transformedFight.userTags);
         }
 
+        // Transform user prediction (take the first/only prediction)
+        if (fightWithRelations.predictions && fightWithRelations.predictions.length > 0) {
+          transformedFight.userHypePrediction = fightWithRelations.predictions[0].predictedRating;
+          transformedFight.userPredictedWinner = fightWithRelations.predictions[0].predictedWinner;
+          transformedFight.userPredictedMethod = fightWithRelations.predictions[0].predictedMethod;
+          transformedFight.userPredictedRound = fightWithRelations.predictions[0].predictedRound;
+          console.log('Found user prediction:', transformedFight.userHypePrediction);
+        }
+
         // Remove the raw arrays to avoid confusion
         delete transformedFight.ratings;
         delete transformedFight.reviews;
         delete transformedFight.tags;
+        delete transformedFight.predictions;
       }
 
       // Final response logging
@@ -413,7 +437,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
         fightId: id,
         hasUserRating: !!transformedFight.userRating,
         hasUserReview: !!transformedFight.userReview,
-        hasUserTags: !!transformedFight.userTags
+        hasUserTags: !!transformedFight.userTags,
+        hasUserPrediction: !!transformedFight.userHypePrediction
       });
 
       return reply.code(200).send({ fight: transformedFight });
@@ -1699,10 +1724,47 @@ export async function fightRoutes(fastify: FastifyInstance) {
         SUBMISSION: predictions.filter(p => (p as any).predictedMethod === 'SUBMISSION').length,
       };
 
+      // Round prediction breakdown (rounds 1-5 are most common, but support up to 12 for boxing)
+      const roundBreakdown: Record<number, number> = {};
+      for (let round = 1; round <= 12; round++) {
+        roundBreakdown[round] = predictions.filter(p => (p as any).predictedRound === round).length;
+      }
+
+      // Hype distribution (1-10 scale)
+      const hypeDistribution: Record<number, number> = {};
+      for (let hype = 1; hype <= 10; hype++) {
+        hypeDistribution[hype] = predictions.filter(p => p.predictedRating === hype).length;
+      }
+
+      // Per-fighter method predictions
+      const fighter1MethodPredictions = predictions.filter(p => (p as any).predictedWinner === fight.fighter1Id);
+      const fighter2MethodPredictions = predictions.filter(p => (p as any).predictedWinner === fight.fighter2Id);
+
+      const fighter1Methods = {
+        DECISION: fighter1MethodPredictions.filter(p => (p as any).predictedMethod === 'DECISION').length,
+        KO_TKO: fighter1MethodPredictions.filter(p => (p as any).predictedMethod === 'KO_TKO').length,
+        SUBMISSION: fighter1MethodPredictions.filter(p => (p as any).predictedMethod === 'SUBMISSION').length,
+      };
+
+      const fighter2Methods = {
+        DECISION: fighter2MethodPredictions.filter(p => (p as any).predictedMethod === 'DECISION').length,
+        KO_TKO: fighter2MethodPredictions.filter(p => (p as any).predictedMethod === 'KO_TKO').length,
+        SUBMISSION: fighter2MethodPredictions.filter(p => (p as any).predictedMethod === 'SUBMISSION').length,
+      };
+
+      // Per-fighter round predictions
+      const fighter1Rounds: Record<number, number> = {};
+      const fighter2Rounds: Record<number, number> = {};
+      for (let round = 1; round <= 12; round++) {
+        fighter1Rounds[round] = fighter1MethodPredictions.filter(p => (p as any).predictedRound === round).length;
+        fighter2Rounds[round] = fighter2MethodPredictions.filter(p => (p as any).predictedRound === round).length;
+      }
+
       return reply.send({
         fightId,
         totalPredictions,
         averageHype: Math.round(averageHype * 10) / 10, // Round to 1 decimal
+        distribution: hypeDistribution, // Add distribution for frontend
         winnerPredictions: {
           fighter1: {
             id: fight.fighter1Id,
@@ -1718,6 +1780,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
           },
         },
         methodPredictions: methodBreakdown,
+        roundPredictions: roundBreakdown,
+        fighter1MethodPredictions: fighter1Methods,
+        fighter1RoundPredictions: fighter1Rounds,
+        fighter2MethodPredictions: fighter2Methods,
+        fighter2RoundPredictions: fighter2Rounds,
       });
 
     } catch (error) {
