@@ -357,8 +357,12 @@ export function PredictionModal({
   const handleSubmitPrediction = async () => {
     // Check if at least one field is filled (any prediction is valid)
     const hasAnyPrediction = hypeLevel > 0 || predictedWinner || predictedMethod || predictedRound > 0;
+    const currentPrediction = getCurrentUserPrediction();
+    const isUpdate = !!currentPrediction;
 
-    if (!hasAnyPrediction) {
+    // Only show error if trying to create a NEW prediction with no fields
+    // Allow clearing all fields if updating an existing prediction
+    if (!hasAnyPrediction && !isUpdate) {
       showError('Please make at least one prediction before submitting.', 'No Prediction');
       return;
     }
@@ -381,7 +385,6 @@ export function PredictionModal({
       if (onSubmit) {
         // Custom submit handler
         await onSubmit(predictionData);
-        const isUpdate = !!getCurrentUserPrediction();
         onSuccess?.(isUpdate, { fightId: fight?.id, hypeLevel: hypeLevel });
         onClose();
       } else {
@@ -415,6 +418,8 @@ export function PredictionModal({
   const currentPrediction = getCurrentUserPrediction();
   const isUpdate = !!currentPrediction;
   const isPending = createPredictionMutation.isPending || isSubmitting;
+  const hasAnyPrediction = hypeLevel > 0 || predictedWinner || predictedMethod || predictedRound > 0;
+  const showSubmitButton = hasAnyPrediction || isUpdate;
 
   return (
     <Modal
@@ -667,7 +672,7 @@ export function PredictionModal({
 
           {/* Submit/Cancel Buttons */}
           <View style={styles.predictionButtons}>
-            {(hypeLevel > 0 || predictedWinner || predictedMethod || predictedRound) ? (
+            {showSubmitButton ? (
               <TouchableOpacity
                 style={[styles.submitButton, { backgroundColor: colors.primary }]}
                 onPress={handleSubmitPrediction}

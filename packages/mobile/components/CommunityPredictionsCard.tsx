@@ -29,14 +29,9 @@ interface CommunityPredictionsCardProps {
     };
     fighter2RoundPredictions: Record<number, number>;
   };
-  userPrediction?: {
-    predictedWinner?: string;
-    predictedMethod?: string;
-    predictedRound?: number;
-  };
 }
 
-export function CommunityPredictionsCard({ predictionStats, userPrediction }: CommunityPredictionsCardProps) {
+export function CommunityPredictionsCard({ predictionStats }: CommunityPredictionsCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -109,55 +104,12 @@ export function CommunityPredictionsCard({ predictionStats, userPrediction }: Co
   const fighter2Method = getMostPopularMethod(fighter2MethodPredictions);
   const fighter2Round = getMostPopularRound(fighter2RoundPredictions);
 
-  // Helper function to get method label
-  const getMethodLabel = (method: string) => {
-    const labels: Record<string, string> = {
-      'DECISION': 'Decision',
-      'KO_TKO': 'KO/TKO',
-      'SUBMISSION': 'Submission',
-    };
-    return labels[method] || method;
-  };
-
-  // Get user's predicted fighter name
-  const userPredictedFighterName = userPrediction?.predictedWinner === winnerPredictions.fighter1.id
-    ? winnerPredictions.fighter1.name
-    : userPrediction?.predictedWinner === winnerPredictions.fighter2.id
-    ? winnerPredictions.fighter2.name
-    : null;
-
-  // Build user prediction text
-  const getUserPredictionText = () => {
-    if (!userPrediction) return null;
-
-    const parts: string[] = [];
-
-    if (userPredictedFighterName) {
-      parts.push(userPredictedFighterName);
-    }
-
-    if (userPrediction.predictedMethod) {
-      const prefix = userPredictedFighterName ? ' by ' : '';
-      parts.push(`${prefix}${getMethodLabel(userPrediction.predictedMethod)}`);
-    }
-
-    if (userPrediction.predictedRound) {
-      parts.push(` in Round ${userPrediction.predictedRound}`);
-    }
-
-    return parts.length > 0 ? parts.join('') : null;
-  };
-
-  const userPredictionText = getUserPredictionText();
-
   return (
-    <>
-      {/* Community Predictions Section */}
-      <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.title, { color: colors.text }]}>Community Predictions</Text>
+    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Community Predictions</Text>
 
-        {/* Winner Predictions */}
-        <View style={styles.section}>
+      {/* Winner Predictions */}
+      <View style={styles.section}>
         <View style={styles.splitBarContainer}>
           {/* Fighter names above bar */}
           <View style={styles.fighterNamesRow}>
@@ -171,64 +123,57 @@ export function CommunityPredictionsCard({ predictionStats, userPrediction }: Co
 
           {/* Single split bar */}
           <View style={styles.splitBar}>
-            <View
-              style={[
-                styles.splitBarLeft,
-                {
-                  width: `${winnerPredictions.fighter1.percentage}%`,
-                  backgroundColor: '#83B4F3'
-                }
-              ]}
-            >
-              <Text style={styles.splitBarPercentage}>
-                {winnerPredictions.fighter1.percentage}%
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.splitBarRight,
-                {
-                  width: `${winnerPredictions.fighter2.percentage}%`,
-                  backgroundColor: '#FF6B35'
-                }
-              ]}
-            >
-              <Text style={styles.splitBarPercentage}>
-                {winnerPredictions.fighter2.percentage}%
-              </Text>
-            </View>
+            {winnerPredictions.fighter1.percentage > 0 && (
+              <View
+                style={[
+                  styles.splitBarLeft,
+                  {
+                    width: winnerPredictions.fighter2.percentage === 0 ? '100%' : `${winnerPredictions.fighter1.percentage}%`,
+                    backgroundColor: '#83B4F3'
+                  }
+                ]}
+              >
+                <Text style={styles.splitBarPercentage}>
+                  {winnerPredictions.fighter2.percentage === 0 ? '100' : winnerPredictions.fighter1.percentage}%
+                </Text>
+              </View>
+            )}
+            {winnerPredictions.fighter2.percentage > 0 && (
+              <View
+                style={[
+                  styles.splitBarRight,
+                  {
+                    width: winnerPredictions.fighter1.percentage === 0 ? '100%' : `${winnerPredictions.fighter2.percentage}%`,
+                    backgroundColor: '#FF6B35'
+                  }
+                ]}
+              >
+                <Text style={styles.splitBarPercentage}>
+                  {winnerPredictions.fighter1.percentage === 0 ? '100' : winnerPredictions.fighter2.percentage}%
+                </Text>
+              </View>
+            )}
           </View>
         </View>
-      </View>
 
-      {/* Per-Fighter Predictions Row */}
-      <View style={styles.predictionTextRow}>
-        {/* Fighter 1 Prediction (Left) */}
-        {fighter1Method.count > 0 && fighter1Round && (
-          <Text style={[styles.predictionTextLeft, { color: '#83B4F3' }]}>
-            by {fighter1Method.label} in Round {fighter1Round.round}
-          </Text>
-        )}
+        {/* Per-Fighter Predictions Row */}
+        <View style={styles.predictionTextRow}>
+          {/* Fighter 1 Prediction (Left) */}
+          {fighter1Method.count > 0 && fighter1Round && (
+            <Text style={[styles.predictionTextLeft, { color: '#83B4F3' }]}>
+              by {fighter1Method.label} in Round {fighter1Round.round}
+            </Text>
+          )}
 
-        {/* Fighter 2 Prediction (Right) */}
-        {fighter2Method.count > 0 && fighter2Round && (
-          <Text style={[styles.predictionTextRight, { color: '#FF6B35' }]}>
-            {fighter2Method.label} in Round {fighter2Round.round}
-          </Text>
-        )}
-      </View>
-      </View>
-
-      {/* My Prediction Section */}
-      {userPrediction && userPredictionText && (
-        <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.title, { color: colors.text }]}>My Prediction</Text>
-          <Text style={[styles.myPredictionText, { color: colors.text }]}>
-            {userPredictionText}
-          </Text>
+          {/* Fighter 2 Prediction (Right) */}
+          {fighter2Method.count > 0 && fighter2Round && (
+            <Text style={[styles.predictionTextRight, { color: '#FF6B35' }]}>
+              {fighter2Method.label} in Round {fighter2Round.round}
+            </Text>
+          )}
         </View>
-      )}
-    </>
+      </View>
+    </View>
   );
 }
 
@@ -244,11 +189,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
-  },
-  myPredictionText: {
-    fontSize: 15,
-    fontWeight: '500',
-    lineHeight: 22,
   },
   section: {
     marginBottom: 16,

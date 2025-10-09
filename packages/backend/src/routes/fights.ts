@@ -1472,19 +1472,6 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       const { predictedRating, predictedWinner, predictedMethod, predictedRound } = validation.data;
 
-      // Ensure at least one prediction field is provided (check for undefined/null, not falsy)
-      const hasAnyPrediction =
-        predictedRating !== undefined ||
-        predictedWinner !== undefined ||
-        predictedMethod !== undefined ||
-        predictedRound !== undefined;
-      if (!hasAnyPrediction) {
-        return reply.code(400).send({
-          error: 'At least one prediction field must be provided',
-          code: 'NO_PREDICTION_DATA',
-        });
-      }
-
       // Check if fight exists
       const fight = await fastify.prisma.fight.findUnique({
         where: { id: fightId },

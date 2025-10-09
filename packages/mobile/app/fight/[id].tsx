@@ -50,7 +50,7 @@ export default function FightDetailScreen() {
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [reviewToFlag, setReviewToFlag] = useState<string | null>(null);
-  const { alertState, showConfirm, showSuccess, showError, hideAlert } = useCustomAlert();
+  const { alertState, showConfirm, showSuccess, showError, showInfo, hideAlert } = useCustomAlert();
 
   // Animation values for My Rating
   const myRatingScaleAnim = useRef(new Animated.Value(1)).current;
@@ -71,13 +71,15 @@ export default function FightDetailScreen() {
     enabled: !!id,
   });
 
-  // Fetch prediction stats for upcoming fights
-  const { data: predictionStats } = useQuery({
+  // Fetch prediction stats for all fights (upcoming and completed)
+  const { data: predictionStats, isLoading: predictionStatsLoading, error: predictionStatsError } = useQuery({
     queryKey: ['fightPredictionStats', id],
     queryFn: () => apiService.getFightPredictionStats(id as string),
-    enabled: !!id && fightData?.fight && !fightData.fight.isComplete && !fightData.fight.hasStarted,
+    enabled: !!id && !!fightData?.fight,
     staleTime: 30 * 1000,
+    refetchOnMount: 'always',
   });
+
 
   // Fetch tags
   const { data: tagsData } = useQuery({
@@ -387,20 +389,44 @@ export default function FightDetailScreen() {
           </View>
         )}
 
+        {/* My Prediction - Always show for upcoming fights */}
+        {isUpcoming && (
+          <TouchableOpacity
+            style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setShowPredictionModal(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>My Prediction</Text>
+
+            {fight.userPredictedWinner || fight.userPredictedMethod || fight.userPredictedRound ? (
+              // User has a prediction - show the prediction text
+              <Text style={[styles.myPredictionText, { color: colors.text }]}>
+                {fight.userPredictedWinner && (
+                  <>
+                    {fight.userPredictedWinner === fight.fighter1.id
+                      ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
+                      : `${fight.fighter2.firstName} ${fight.fighter2.lastName}`}
+                  </>
+                )}
+                {fight.userPredictedMethod && (
+                  <> by {fight.userPredictedMethod === 'DECISION' ? 'Decision' : fight.userPredictedMethod === 'KO_TKO' ? 'KO/TKO' : 'Submission'}</>
+                )}
+                {fight.userPredictedRound && (
+                  <> in Round {fight.userPredictedRound}</>
+                )}
+              </Text>
+            ) : (
+              // User has no prediction - show button text
+              <View style={[styles.predictButton, { backgroundColor: colors.tint }]}>
+                <Text style={[styles.predictButtonText, { color: '#000' }]}>Predict This Fight</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        )}
+
         {/* Community Predictions - Only for upcoming fights with predictions */}
         {isUpcoming && predictionStats && (
-          <CommunityPredictionsCard
-            predictionStats={predictionStats}
-            userPrediction={
-              fight.userPredictedWinner || fight.userPredictedMethod || fight.userPredictedRound
-                ? {
-                    predictedWinner: fight.userPredictedWinner,
-                    predictedMethod: fight.userPredictedMethod,
-                    predictedRound: fight.userPredictedRound,
-                  }
-                : undefined
-            }
-          />
+          <CommunityPredictionsCard predictionStats={predictionStats} />
         )}
 
         {/* Score Section - Different layout for upcoming vs completed */}
@@ -656,18 +682,6 @@ export default function FightDetailScreen() {
           </View>
         )}
 
-        {/* Large CTA Button - Only for upcoming fights */}
-        {isUpcoming && (
-          <TouchableOpacity
-            style={[styles.ctaButton, { backgroundColor: colors.tint }]}
-            onPress={() => setShowPredictionModal(true)}
-          >
-            <Text style={styles.ctaButtonText}>
-              Predict This Fight
-            </Text>
-          </TouchableOpacity>
-        )}
-
         {/* Distribution Chart */}
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -704,6 +718,163 @@ export default function FightDetailScreen() {
             })}
           </View>
         </View>
+
+        {/* Pre-Fight Predictions (for completed fights) - Read-only */}
+        {isComplete && (
+          <>
+            {/* My Pre-Fight Prediction - Always show */}
+            <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>My Prediction</Text>
+              {(fight.userPredictedWinner || fight.userPredictedMethod || fight.userPredictedRound || fight.userHypePrediction) ? (
+                <Text style={[styles.myPredictionText, { color: colors.text }]}>
+                  {fight.userPredictedWinner && (
+                    <>
+                      {fight.userPredictedWinner === fight.fighter1.id
+                        ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
+                        : `${fight.fighter2.firstName} ${fight.fighter2.lastName}`}
+                    </>
+                  )}
+                  {fight.userPredictedMethod && (
+                    <> by {fight.userPredictedMethod === 'DECISION' ? 'Decision' : fight.userPredictedMethod === 'KO_TKO' ? 'KO/TKO' : 'Submission'}</>
+                  )}
+                  {fight.userPredictedRound && (
+                    <> in Round {fight.userPredictedRound}</>
+                  )}
+                  {fight.userHypePrediction && (
+                    <> (Hype: {fight.userHypePrediction}/10)</>
+                  )}
+                </Text>
+              ) : (
+                <Text style={[styles.noPredictionText, { color: colors.textSecondary }]}>
+                  You did not make a prediction for this fight.
+                </Text>
+              )}
+            </View>
+
+            {/* Community Pre-Fight Predictions - Only show if there are predictions */}
+            {predictionStats && predictionStats.totalPredictions > 0 && (
+              <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Community Predictions</Text>
+
+                {/* Winner Predictions */}
+                <View style={styles.predictionSubSection}>
+                  <View style={styles.splitBarContainer}>
+                    {/* Fighter names above bar */}
+                    <View style={styles.fighterNamesRow}>
+                      <Text style={[styles.fighterNameLeft, { color: colors.text }]} numberOfLines={1}>
+                        {predictionStats.winnerPredictions.fighter1.name}
+                      </Text>
+                      <Text style={[styles.fighterNameRight, { color: colors.text }]} numberOfLines={1}>
+                        {predictionStats.winnerPredictions.fighter2.name}
+                      </Text>
+                    </View>
+
+                    {/* Single split bar */}
+                    <View style={styles.splitBar}>
+                      {predictionStats.winnerPredictions.fighter1.percentage > 0 && (
+                        <View
+                          style={[
+                            styles.splitBarLeft,
+                            {
+                              width: predictionStats.winnerPredictions.fighter2.percentage === 0 ? '100%' : `${predictionStats.winnerPredictions.fighter1.percentage}%`,
+                              backgroundColor: '#83B4F3'
+                            }
+                          ]}
+                        >
+                          <Text style={styles.splitBarPercentage}>
+                            {predictionStats.winnerPredictions.fighter2.percentage === 0 ? '100' : predictionStats.winnerPredictions.fighter1.percentage}%
+                          </Text>
+                        </View>
+                      )}
+                      {predictionStats.winnerPredictions.fighter2.percentage > 0 && (
+                        <View
+                          style={[
+                            styles.splitBarRight,
+                            {
+                              width: predictionStats.winnerPredictions.fighter1.percentage === 0 ? '100%' : `${predictionStats.winnerPredictions.fighter2.percentage}%`,
+                              backgroundColor: '#FF6B35'
+                            }
+                          ]}
+                        >
+                          <Text style={styles.splitBarPercentage}>
+                            {predictionStats.winnerPredictions.fighter1.percentage === 0 ? '100' : predictionStats.winnerPredictions.fighter2.percentage}%
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+
+                  {/* Per-Fighter Predictions Row */}
+                  <View style={styles.predictionTextRow}>
+                    {/* Fighter 1 Prediction (Left) */}
+                    {(() => {
+                      const fighter1Method = (() => {
+                        const methodEntries = Object.entries(predictionStats.fighter1MethodPredictions) as [string, number][];
+                        const mostPopular = methodEntries.reduce((max, curr) => curr[1] > max[1] ? curr : max, ['DECISION', 0] as [string, number]);
+                        return {
+                          count: mostPopular[1],
+                          label: {
+                            'DECISION': 'Decision',
+                            'KO_TKO': 'KO/TKO',
+                            'SUBMISSION': 'Submission',
+                          }[mostPopular[0]] || mostPopular[0],
+                        };
+                      })();
+                      const fighter1Round = (() => {
+                        const roundEntries = Object.entries(predictionStats.fighter1RoundPredictions)
+                          .map(([round, count]) => [parseInt(round), count] as [number, number])
+                          .filter(([_, count]) => count > 0);
+                        if (roundEntries.length === 0) return null;
+                        const mostPopular = roundEntries.reduce((max, curr) => curr[1] > max[1] ? curr : max, [1, 0] as [number, number]);
+                        return { round: mostPopular[0] };
+                      })();
+
+                      return fighter1Method.count > 0 && fighter1Round ? (
+                        <Text style={[styles.predictionTextLeft, { color: '#83B4F3' }]}>
+                          by {fighter1Method.label} in Round {fighter1Round.round}
+                        </Text>
+                      ) : null;
+                    })()}
+
+                    {/* Fighter 2 Prediction (Right) */}
+                    {(() => {
+                      const fighter2Method = (() => {
+                        const methodEntries = Object.entries(predictionStats.fighter2MethodPredictions) as [string, number][];
+                        const mostPopular = methodEntries.reduce((max, curr) => curr[1] > max[1] ? curr : max, ['DECISION', 0] as [string, number]);
+                        return {
+                          count: mostPopular[1],
+                          label: {
+                            'DECISION': 'Decision',
+                            'KO_TKO': 'KO/TKO',
+                            'SUBMISSION': 'Submission',
+                          }[mostPopular[0]] || mostPopular[0],
+                        };
+                      })();
+                      const fighter2Round = (() => {
+                        const roundEntries = Object.entries(predictionStats.fighter2RoundPredictions)
+                          .map(([round, count]) => [parseInt(round), count] as [number, number])
+                          .filter(([_, count]) => count > 0);
+                        if (roundEntries.length === 0) return null;
+                        const mostPopular = roundEntries.reduce((max, curr) => curr[1] > max[1] ? curr : max, [1, 0] as [number, number]);
+                        return { round: mostPopular[0] };
+                      })();
+
+                      return fighter2Method.count > 0 && fighter2Round ? (
+                        <Text style={[styles.predictionTextRight, { color: '#FF6B35' }]}>
+                          {fighter2Method.label} in Round {fighter2Round.round}
+                        </Text>
+                      ) : null;
+                    })()}
+                  </View>
+
+                  <Text style={[styles.predictionSubtext, { color: colors.textSecondary }]}>
+                    {predictionStats.totalPredictions} {predictionStats.totalPredictions === 1 ? 'prediction' : 'predictions'}
+                  </Text>
+                </View>
+              </View>
+            )}
+          </>
+        )}
 
         {/* Tags (if complete) */}
         {isComplete && fight.topTags && fight.topTags.length > 0 && (
@@ -1026,17 +1197,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
   },
-  ctaButton: {
-    marginHorizontal: 16,
-    marginBottom: 24,
-    paddingVertical: 16,
-    borderRadius: 12,
+  myPredictionText: {
+    fontSize: 15,
+    fontWeight: '500',
+    lineHeight: 22,
+  },
+  noPredictionText: {
+    fontSize: 15,
+    fontStyle: 'italic',
+  },
+  predictButton: {
+    paddingVertical: 12,
+    borderRadius: 8,
     alignItems: 'center',
   },
-  ctaButtonText: {
+  predictButtonText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '600',
   },
   section: {
     marginHorizontal: 16,
@@ -1230,5 +1408,73 @@ const styles = StyleSheet.create({
   upvoteCountText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  predictionSubSection: {
+    marginBottom: 8,
+  },
+  splitBarContainer: {
+    gap: 8,
+    marginBottom: 8,
+  },
+  fighterNamesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  fighterNameLeft: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'left',
+  },
+  fighterNameRight: {
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+  },
+  splitBar: {
+    flexDirection: 'row',
+    height: 32,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  splitBarLeft: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  splitBarRight: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  splitBarPercentage: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  predictionSubtext: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  predictionTextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginTop: -6,
+    paddingHorizontal: 4,
+  },
+  predictionTextLeft: {
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'left',
+    flex: 1,
+  },
+  predictionTextRight: {
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'right',
+    flex: 1,
   },
 });
