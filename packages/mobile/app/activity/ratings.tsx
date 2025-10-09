@@ -82,10 +82,13 @@ export default function RatingsActivityScreen() {
   const renderSortButton = () => {
     const currentSort = sortOptions.find(opt => opt.value === sortBy);
     return (
-      <View style={styles.filterContainer} pointerEvents={showSortMenu ? 'auto' : 'box-none'}>
+      <View style={styles.filterContainer}>
         <TouchableOpacity
           style={[styles.filterButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => setShowSortMenu(!showSortMenu)}
+          onPress={() => {
+            setShowSortMenu(!showSortMenu);
+            setShowTagMenu(false); // Close tag menu when opening sort menu
+          }}
         >
           <FontAwesome name={currentSort?.icon as any} size={14} color={colors.text} />
           <Text style={[styles.filterButtonText, { color: colors.text }]}>
@@ -93,32 +96,6 @@ export default function RatingsActivityScreen() {
           </Text>
           <FontAwesome name={showSortMenu ? 'chevron-up' : 'chevron-down'} size={12} color={colors.textSecondary} />
         </TouchableOpacity>
-
-        {showSortMenu && (
-          <View style={[styles.filterMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {sortOptions.map(option => (
-              <TouchableOpacity
-                key={option.value}
-                style={[
-                  styles.filterMenuItem,
-                  sortBy === option.value && { backgroundColor: colors.backgroundSecondary }
-                ]}
-                onPress={() => {
-                  setSortBy(option.value);
-                  setShowSortMenu(false);
-                }}
-              >
-                <FontAwesome name={option.icon as any} size={14} color={colors.text} />
-                <Text style={[styles.filterMenuItemText, { color: colors.text }]}>
-                  {option.label}
-                </Text>
-                {sortBy === option.value && (
-                  <FontAwesome name="check" size={14} color={colors.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
       </View>
     );
   };
@@ -127,10 +104,13 @@ export default function RatingsActivityScreen() {
     if (allTags.length === 0) return null;
 
     return (
-      <View style={styles.filterContainer} pointerEvents={showTagMenu ? 'auto' : 'box-none'}>
+      <View style={styles.filterContainer}>
         <TouchableOpacity
           style={[styles.filterButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => setShowTagMenu(!showTagMenu)}
+          onPress={() => {
+            setShowTagMenu(!showTagMenu);
+            setShowSortMenu(false); // Close sort menu when opening tag menu
+          }}
         >
           <FontAwesome name="tags" size={14} color={colors.text} />
           <Text style={[styles.filterButtonText, { color: colors.text }]}>
@@ -138,50 +118,6 @@ export default function RatingsActivityScreen() {
           </Text>
           <FontAwesome name={showTagMenu ? 'chevron-up' : 'chevron-down'} size={12} color={colors.textSecondary} />
         </TouchableOpacity>
-
-        {showTagMenu && (
-          <View style={[styles.filterMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <TouchableOpacity
-              style={[
-                styles.filterMenuItem,
-                !tagFilter && { backgroundColor: colors.backgroundSecondary }
-              ]}
-              onPress={() => {
-                setTagFilter(undefined);
-                setShowTagMenu(false);
-              }}
-            >
-              <FontAwesome name="times" size={14} color={colors.text} />
-              <Text style={[styles.filterMenuItemText, { color: colors.text }]}>
-                All Tags
-              </Text>
-              {!tagFilter && (
-                <FontAwesome name="check" size={14} color={colors.primary} />
-              )}
-            </TouchableOpacity>
-            {allTags.map(tag => (
-              <TouchableOpacity
-                key={tag}
-                style={[
-                  styles.filterMenuItem,
-                  tagFilter === tag && { backgroundColor: colors.backgroundSecondary }
-                ]}
-                onPress={() => {
-                  setTagFilter(tag);
-                  setShowTagMenu(false);
-                }}
-              >
-                <FontAwesome name="tag" size={14} color={colors.text} />
-                <Text style={[styles.filterMenuItemText, { color: colors.text }]}>
-                  {tag}
-                </Text>
-                {tagFilter === tag && (
-                  <FontAwesome name="check" size={14} color={colors.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
       </View>
     );
   };
@@ -301,6 +237,81 @@ export default function RatingsActivityScreen() {
                 </View>
               }
             />
+
+            {/* Dropdown Menus - Rendered on top */}
+            {showSortMenu && (
+              <View style={[styles.overlayMenu, styles.sortMenuPosition, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <ScrollView style={styles.menuScrollView}>
+                  {sortOptions.map(option => (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[
+                        styles.filterMenuItem,
+                        sortBy === option.value && { backgroundColor: colors.backgroundSecondary }
+                      ]}
+                      onPress={() => {
+                        setSortBy(option.value);
+                        setShowSortMenu(false);
+                      }}
+                    >
+                      <FontAwesome name={option.icon as any} size={14} color={colors.text} />
+                      <Text style={[styles.filterMenuItemText, { color: colors.text }]}>
+                        {option.label}
+                      </Text>
+                      {sortBy === option.value && (
+                        <FontAwesome name="check" size={14} color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {showTagMenu && allTags.length > 0 && (
+              <View style={[styles.overlayMenu, styles.tagMenuPosition, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <ScrollView style={styles.menuScrollView}>
+                  <TouchableOpacity
+                    style={[
+                      styles.filterMenuItem,
+                      !tagFilter && { backgroundColor: colors.backgroundSecondary }
+                    ]}
+                    onPress={() => {
+                      setTagFilter(undefined);
+                      setShowTagMenu(false);
+                    }}
+                  >
+                    <FontAwesome name="times" size={14} color={colors.text} />
+                    <Text style={[styles.filterMenuItemText, { color: colors.text }]}>
+                      All Tags
+                    </Text>
+                    {!tagFilter && (
+                      <FontAwesome name="check" size={14} color={colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                  {allTags.map(tag => (
+                    <TouchableOpacity
+                      key={tag}
+                      style={[
+                        styles.filterMenuItem,
+                        tagFilter === tag && { backgroundColor: colors.backgroundSecondary }
+                      ]}
+                      onPress={() => {
+                        setTagFilter(tag);
+                        setShowTagMenu(false);
+                      }}
+                    >
+                      <FontAwesome name="tag" size={14} color={colors.text} />
+                      <Text style={[styles.filterMenuItemText, { color: colors.text }]}>
+                        {tag}
+                      </Text>
+                      {tagFilter === tag && (
+                        <FontAwesome name="check" size={14} color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
           </View>
         )}
       </SafeAreaView>
@@ -400,8 +411,6 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   filterContainer: {
     flex: 1,
-    position: 'relative',
-    zIndex: 10,
   },
   filterButton: {
     flexDirection: 'row',
@@ -416,11 +425,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
-  filterMenu: {
+  overlayMenu: {
     position: 'absolute',
-    top: 45,
-    left: 0,
-    right: 0,
     borderRadius: 8,
     borderWidth: 1,
     maxHeight: 300,
@@ -428,8 +434,23 @@ const createStyles = (colors: any) => StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
-    elevation: 1000,
-    zIndex: 1000,
+    elevation: 10,
+    zIndex: 10,
+  },
+  sortMenuPosition: {
+    top: 165,
+    left: 16,
+    right: '50%',
+    marginRight: 4,
+  },
+  tagMenuPosition: {
+    top: 165,
+    left: '50%',
+    right: 16,
+    marginLeft: 4,
+  },
+  menuScrollView: {
+    maxHeight: 300,
   },
   filterMenuItem: {
     flexDirection: 'row',

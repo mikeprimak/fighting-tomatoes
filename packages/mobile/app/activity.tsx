@@ -11,8 +11,10 @@ import { router, Stack } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { FontAwesome } from '@expo/vector-icons';
+import { useAuth } from '../store/AuthContext';
 
 export default function ActivityScreen() {
+  const { user } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -82,12 +84,12 @@ export default function ActivityScreen() {
             <Text style={[styles.summaryTitle, { color: colors.text }]}>Activity Summary</Text>
             <View style={styles.summaryStats}>
               <View style={styles.summaryStatItem}>
-                <Text style={[styles.summaryStatValue, { color: colors.primary }]}>0</Text>
+                <Text style={[styles.summaryStatValue, { color: colors.primary }]}>{user?.totalRatings || 0}</Text>
                 <Text style={[styles.summaryStatLabel, { color: colors.textSecondary }]}>Total Ratings</Text>
               </View>
               <View style={styles.summaryStatItem}>
-                <Text style={[styles.summaryStatValue, { color: colors.primary }]}>0</Text>
-                <Text style={[styles.summaryStatLabel, { color: colors.textSecondary }]}>Total Predictions</Text>
+                <Text style={[styles.summaryStatValue, { color: colors.primary }]}>{user?.totalReviews || 0}</Text>
+                <Text style={[styles.summaryStatLabel, { color: colors.textSecondary }]}>Total Reviews</Text>
               </View>
             </View>
           </View>

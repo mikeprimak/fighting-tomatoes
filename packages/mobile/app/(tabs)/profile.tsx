@@ -98,12 +98,12 @@ export default function ProfileScreen() {
         {/* Profile Stats */}
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>0</Text>
+            <Text style={[styles.statValue, { color: colors.primary }]}>{user?.totalRatings || 0}</Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Fights Rated</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>0</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Avg Rating</Text>
+            <Text style={[styles.statValue, { color: colors.primary }]}>{user?.totalReviews || 0}</Text>
+            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Reviews Written</Text>
           </View>
         </View>
 

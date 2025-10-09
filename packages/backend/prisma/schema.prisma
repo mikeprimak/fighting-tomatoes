@@ -128,6 +128,7 @@ model Fighter {
   profileImage    String?   // headshot
   actionImage     String?   // action shot
   weightClass     WeightClass?
+  rank            String?   // UFC ranking (e.g., "#1", "#5", "C" for champion)
   sport           Sport     @default(MMA)
   gender          Gender
   isActive        Boolean   @default(true)
@@ -252,7 +253,11 @@ model Fight {
   scheduledRounds Int       @default(3)   // 3 for MMA, 5 for title fights, 8/10/12 for boxing
   orderOnCard     Int       // 1 = main event, higher numbers = earlier fights
   startTime       String?   // Calculated fight start time (e.g., "10:00 PM")
-  
+
+  // Betting odds
+  fighter1Odds    String?   // "-350", "+250", etc.
+  fighter2Odds    String?   // "-350", "+250", etc.
+
   // Result
   winner          String?   // fighter1Id, fighter2Id, or "draw"/"nc"
   method          String?   // "KO", "TKO", "Submission", "Decision"

@@ -277,7 +277,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
 
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { user } = useAuth();
+  const { user, refreshUserData } = useAuth();
   const queryClient = useQueryClient();
   const { alertState, showError, hideAlert } = useCustomAlert();
 
@@ -451,6 +451,9 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
       // Refresh data
       queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: ['fight', fight?.id, 'withUserData'] });
+
+      // Refresh user stats in real-time
+      await refreshUserData();
 
       // Pass the updated rating to parent for animation (use current form state)
       onSuccess?.('rating', { fightId: fight?.id, rating: rating });

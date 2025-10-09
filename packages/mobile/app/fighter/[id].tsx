@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,49 +8,24 @@ import {
   Image,
   useColorScheme,
   TouchableOpacity,
+  Modal,
+  Animated,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Colors } from '../../constants/Colors';
-import { apiService } from '../../services/api';
+import { apiService, Fight } from '../../services/api';
 import { DetailScreenHeader, FightDisplayCard, RateFightModal } from '../../components';
 import { useAuth } from '../../store/AuthContext';
-
-interface Fight {
-  id: string;
-  fighter1: any;
-  fighter2: any;
-  event: {
-    id: string;
-    name: string;
-    date: string;
-    promotion: string;
-  };
-  weightClass?: string;
-  isTitle: boolean;
-  titleName?: string;
-  hasStarted: boolean;
-  isComplete: boolean;
-  winner?: string;
-  method?: string;
-  round?: number;
-  time?: string;
-  averageRating: number;
-  totalRatings: number;
-  totalReviews: number;
-  userRating?: number;
-  userReview?: any;
-  userTags?: any[];
-}
+import { FontAwesome } from '@expo/vector-icons';
 
 type SortOption = 'newest' | 'oldest' | 'highest-rating' | 'most-rated';
 
 const SORT_OPTIONS = [
-  { value: 'newest' as SortOption, label: 'Newest First' },
-  { value: 'oldest' as SortOption, label: 'Oldest First' },
-  { value: 'highest-rating' as SortOption, label: 'Highest Rating' },
-  { value: 'most-rated' as SortOption, label: 'Most Rated' },
+  { value: 'newest' as SortOption, label: 'Date' },
+  { value: 'highest-rating' as SortOption, label: 'Rating' },
+  { value: 'most-rated' as SortOption, label: 'Number of Ratings' },
 ];
 
 // Placeholder image selection for fighters
@@ -73,11 +48,21 @@ export default function FighterDetailScreen() {
   const { isAuthenticated } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const queryClient = useQueryClient();
 
   // State
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [selectedFight, setSelectedFight] = useState<Fight | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string>('');
+
+  // Animation for bell ringing
+  const bellRotation = useRef(new Animated.Value(0)).current;
+
+  // Animation for toast notification
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTranslateY = useRef(new Animated.Value(50)).current;
 
   // Fetch fighter details
   const { data: fighterData, isLoading, error } = useQuery({
@@ -99,6 +84,100 @@ export default function FighterDetailScreen() {
     },
     enabled: !!id,
   });
+
+  // Bell ringing animation
+  const animateBellRing = () => {
+    bellRotation.setValue(0);
+    Animated.sequence([
+      Animated.timing(bellRotation, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bellRotation, {
+        toValue: -1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bellRotation, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bellRotation, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  // Toast notification animation
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    toastOpacity.setValue(0);
+    toastTranslateY.setValue(50);
+
+    Animated.parallel([
+      Animated.timing(toastOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(toastTranslateY, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Auto-dismiss after 2 seconds
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(toastOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(toastTranslateY, {
+          toValue: 50,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setToastMessage('');
+      });
+    }, 2000);
+  };
+
+  // Follow/Unfollow mutation
+  const followMutation = useMutation({
+    mutationFn: async (isCurrentlyFollowing: boolean) => {
+      if (isCurrentlyFollowing) {
+        return await apiService.unfollowFighter(id as string);
+      } else {
+        return await apiService.followFighter(id as string);
+      }
+    },
+    onSuccess: async (data) => {
+      // Animate bell ring and show toast when following
+      if (data.isFollowing && fighter) {
+        animateBellRing();
+        showToast(`You will be notified on days ${fighter.firstName} ${fighter.lastName} fights!`);
+      }
+
+      // Force an immediate refetch of the fighter data
+      await queryClient.refetchQueries({ queryKey: ['fighter', id] });
+    },
+  });
+
+  const handleFollowPress = () => {
+    if (!isAuthenticated) {
+      return;
+    }
+    const isCurrentlyFollowing = fighter?.isFollowing || false;
+    followMutation.mutate(isCurrentlyFollowing);
+  };
 
   // Sort fights based on selected option
   const sortedFights = useMemo(() => {
@@ -205,9 +284,75 @@ export default function FighterDetailScreen() {
           />
         </View>
 
-        {/* Fighter Info */}
+        {/* Follow Button */}
+        {isAuthenticated && (
+          <View style={styles.followButtonContainer}>
+            <TouchableOpacity
+              onPress={handleFollowPress}
+              disabled={followMutation.isPending}
+              style={[
+                styles.followButton,
+                fighter.isFollowing
+                  ? { backgroundColor: colors.card, borderColor: colors.border }
+                  : { backgroundColor: colors.primary }
+              ]}
+            >
+              {followMutation.isPending ? (
+                <ActivityIndicator size="small" color={colors.text} />
+              ) : (
+                <>
+                  <Animated.View
+                    style={{
+                      transform: [
+                        {
+                          rotate: bellRotation.interpolate({
+                            inputRange: [-1, 0, 1],
+                            outputRange: ['-15deg', '0deg', '15deg'],
+                          }),
+                        },
+                      ],
+                    }}
+                  >
+                    <FontAwesome
+                      name={fighter.isFollowing ? "bell" : "bell-o"}
+                      size={16}
+                      color={fighter.isFollowing ? '#ef4444' : '#1a1a1a'}
+                    />
+                  </Animated.View>
+                  <Text
+                    style={[
+                      styles.followButtonText,
+                      { color: fighter.isFollowing ? '#fff' : '#1a1a1a' }
+                    ]}
+                  >
+                    {fighter.isFollowing
+                      ? `Following ${fighter.firstName} ${fighter.lastName}`
+                      : `Follow ${fighter.firstName} ${fighter.lastName}`
+                    }
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Fighter Details */}
         <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fighter Information</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fighter Details</Text>
+
+          {fighter.nickname && (
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Nickname:</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>"{fighter.nickname}"</Text>
+            </View>
+          )}
+
+          {fighter.rank && (
+            <View style={styles.infoRow}>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Rank:</Text>
+              <Text style={[styles.infoValue, { color: colors.text }]}>{fighter.rank}</Text>
+            </View>
+          )}
 
           {fighter.weightClass && (
             <View style={styles.infoRow}>
@@ -216,69 +361,77 @@ export default function FighterDetailScreen() {
             </View>
           )}
 
-          {fighter.record && (
-            <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Record:</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{fighter.record}</Text>
-            </View>
-          )}
-
-          {fighter.country && (
-            <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Country:</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{fighter.country}</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Placeholder for future stats */}
-        <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Career Stats</Text>
-          <Text style={[styles.comingSoonText, { color: colors.textSecondary }]}>
-            Detailed statistics coming soon...
-          </Text>
+          <View style={styles.infoRow}>
+            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Record:</Text>
+            <Text style={[styles.infoValue, { color: colors.primary, fontWeight: '600' }]}>
+              {fighter.wins}-{fighter.losses}-{fighter.draws}
+            </Text>
+          </View>
         </View>
 
         {/* Fight History */}
         <View style={styles.fightHistorySection}>
           <Text style={[styles.sectionTitle, styles.fightHistoryTitle, { color: colors.text }]}>
-            Fight History ({sortedFights.length} fights)
+            Fight History
           </Text>
 
-          {/* Sort Selector */}
+          {/* Sort Dropdown */}
           {sortedFights.length > 0 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.sortContainer}
-              contentContainerStyle={styles.sortContentContainer}
-            >
-              {SORT_OPTIONS.map((option) => (
+            <View style={styles.sortContainer}>
+              <TouchableOpacity
+                onPress={() => setShowSortDropdown(true)}
+                style={[styles.dropdownButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+              >
+                <Text style={[styles.dropdownButtonText, { color: colors.text }]}>
+                  Sort by: {SORT_OPTIONS.find(opt => opt.value === sortBy)?.label}
+                </Text>
+                <FontAwesome name="chevron-down" size={14} color={colors.textSecondary} />
+              </TouchableOpacity>
+
+              {/* Dropdown Modal */}
+              <Modal
+                visible={showSortDropdown}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowSortDropdown(false)}
+              >
                 <TouchableOpacity
-                  key={option.value}
-                  onPress={() => setSortBy(option.value)}
-                  style={[
-                    styles.sortButton,
-                    {
-                      backgroundColor: sortBy === option.value ? colors.primary : colors.card,
-                      borderColor: sortBy === option.value ? colors.primary : colors.border,
-                    },
-                  ]}
+                  style={styles.dropdownOverlay}
+                  activeOpacity={1}
+                  onPress={() => setShowSortDropdown(false)}
                 >
-                  <Text
-                    style={[
-                      styles.sortButtonText,
-                      {
-                        color: sortBy === option.value ? colors.textOnAccent : colors.text,
-                        fontWeight: sortBy === option.value ? '600' : '400',
-                      },
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
+                  <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    {SORT_OPTIONS.map((option) => (
+                      <TouchableOpacity
+                        key={option.value}
+                        onPress={() => {
+                          setSortBy(option.value);
+                          setShowSortDropdown(false);
+                        }}
+                        style={[
+                          styles.dropdownItem,
+                          { borderBottomColor: colors.border },
+                          sortBy === option.value && { backgroundColor: colors.primary + '20' }
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.dropdownItemText,
+                            { color: colors.text },
+                            sortBy === option.value && { fontWeight: '600', color: colors.primary }
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                        {sortBy === option.value && (
+                          <FontAwesome name="check" size={16} color={colors.primary} />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              </Modal>
+            </View>
           )}
 
           {/* Fight List */}
@@ -315,6 +468,23 @@ export default function FighterDetailScreen() {
         onClose={closeModal}
         queryKey={['fighterFights', id]}
       />
+
+      {/* Toast Notification */}
+      {toastMessage !== '' && (
+        <Animated.View
+          style={[
+            styles.toastContainer,
+            {
+              backgroundColor: colors.primary,
+              opacity: toastOpacity,
+              transform: [{ translateY: toastTranslateY }],
+            },
+          ]}
+        >
+          <FontAwesome name="bell" size={16} color="#1a1a1a" />
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
@@ -394,18 +564,42 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 16,
   },
-  sortContentContainer: {
-    paddingRight: 16,
-  },
-  sortButton: {
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
     borderWidth: 1,
-    marginRight: 8,
   },
-  sortButtonText: {
+  dropdownButtonText: {
     fontSize: 14,
+    fontWeight: '500',
+  },
+  dropdownOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dropdownMenu: {
+    width: '80%',
+    maxWidth: 300,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+  },
+  dropdownItemText: {
+    fontSize: 16,
   },
   fightsContainer: {
     gap: 12,
@@ -414,5 +608,48 @@ const styles = StyleSheet.create({
   noFightsContainer: {
     padding: 20,
     alignItems: 'center',
+  },
+  followButtonContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  followButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+  },
+  followButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  toastContainer: {
+    position: 'absolute',
+    bottom: 80,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  toastText: {
+    color: '#1a1a1a',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    flex: 1,
   },
 });

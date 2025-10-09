@@ -34,6 +34,10 @@ export async function authRoutes(fastify: FastifyInstance) {
                 displayName: { type: 'string' },
                 isEmailVerified: { type: 'boolean' },
                 createdAt: { type: 'string' },
+                totalRatings: { type: 'integer' },
+                totalReviews: { type: 'integer' },
+                points: { type: 'integer' },
+                level: { type: 'integer' },
               },
             },
             accessToken: { type: 'string' },
@@ -102,6 +106,10 @@ export async function authRoutes(fastify: FastifyInstance) {
           displayName: true,
           isEmailVerified: true,
           createdAt: true,
+          totalRatings: true,
+          totalReviews: true,
+          points: true,
+          level: true,
         }
       });
 
@@ -175,6 +183,10 @@ export async function authRoutes(fastify: FastifyInstance) {
                 displayName: { type: 'string' },
                 isEmailVerified: { type: 'boolean' },
                 createdAt: { type: 'string' },
+                totalRatings: { type: 'integer' },
+                totalReviews: { type: 'integer' },
+                points: { type: 'integer' },
+                level: { type: 'integer' },
               },
             },
             accessToken: { type: 'string' },
@@ -214,6 +226,10 @@ export async function authRoutes(fastify: FastifyInstance) {
           isEmailVerified: true,
           isActive: true,
           createdAt: true,
+          totalRatings: true,
+          totalReviews: true,
+          points: true,
+          level: true,
         }
       });
 
@@ -471,6 +487,10 @@ export async function authRoutes(fastify: FastifyInstance) {
                 isEmailVerified: { type: 'boolean' },
                 createdAt: { type: 'string' },
                 lastLoginAt: { type: 'string' },
+                totalRatings: { type: 'integer' },
+                totalReviews: { type: 'integer' },
+                points: { type: 'integer' },
+                level: { type: 'integer' },
               },
             },
           },
@@ -511,6 +531,10 @@ export async function authRoutes(fastify: FastifyInstance) {
           isEmailVerified: true,
           createdAt: true,
           lastLoginAt: true,
+          totalRatings: true,
+          totalReviews: true,
+          points: true,
+          level: true,
         }
       });
 

@@ -1,11 +1,12 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Image } from 'react-native';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../services/api';
 import { router } from 'expo-router';
+import { useAuth } from '../store/AuthContext';
 
 // Type definitions based on the existing API types
 interface Fighter {
@@ -59,6 +60,7 @@ export interface FightData {
   };
   userTags?: string[];
   userHypePrediction?: number | null; // For upcoming fights
+  isFollowing?: boolean; // Whether user is following this fight
 }
 
 interface FightDisplayCardProps {
@@ -97,10 +99,18 @@ export default function FightDisplayCard({
 }: FightDisplayCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
 
   // State to track image loading errors
   const [fighter1ImageError, setFighter1ImageError] = React.useState(false);
   const [fighter2ImageError, setFighter2ImageError] = React.useState(false);
+
+  // Bell notification state
+  const [toastMessage, setToastMessage] = useState<string>('');
+  const bellRotation = useRef(new Animated.Value(0)).current;
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTranslateY = useRef(new Animated.Value(50)).current;
 
   // Track when "Up next..." first appeared for this fight - use ref to persist across renders
   const upNextStartTimeRef = useRef<number | null>(null);
@@ -137,6 +147,106 @@ export default function FightDisplayCard({
   const flame6 = useRef(new Animated.Value(0)).current;
   const flame7 = useRef(new Animated.Value(0)).current;
   const flame8 = useRef(new Animated.Value(0)).current;
+
+  // Bell ringing animation (same as fighter follow)
+  const animateBellRing = () => {
+    bellRotation.setValue(0);
+    Animated.sequence([
+      Animated.timing(bellRotation, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bellRotation, {
+        toValue: -1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bellRotation, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(bellRotation, {
+        toValue: 0,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  // Toast notification animation
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    toastOpacity.setValue(0);
+    toastTranslateY.setValue(50);
+
+    Animated.parallel([
+      Animated.timing(toastOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(toastTranslateY, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(toastOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(toastTranslateY, {
+          toValue: 50,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setToastMessage('');
+      });
+    }, 2000);
+  };
+
+  // Follow/Unfollow fight mutation
+  const followMutation = useMutation({
+    mutationFn: async (isCurrentlyFollowing: boolean) => {
+      if (isCurrentlyFollowing) {
+        return await apiService.unfollowFight(fight.id);
+      } else {
+        return await apiService.followFight(fight.id);
+      }
+    },
+    onSuccess: async (data) => {
+      // Always animate bell
+      animateBellRing();
+
+      // Only show toast when following, not when unfollowing
+      if (data.isFollowing) {
+        showToast('You will be notified right before this fight!');
+      }
+
+      // Invalidate all queries that might contain this fight data
+      // This is more comprehensive than refetchQueries and catches all contexts
+      await queryClient.invalidateQueries({ queryKey: ['fights'] });
+      await queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      await queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      await queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+    },
+  });
+
+  const handleBellPress = (e: any) => {
+    e.stopPropagation(); // Prevent triggering the card's onPress
+    if (!isAuthenticated) {
+      return;
+    }
+    const isCurrentlyFollowing = fight.isFollowing || false;
+    followMutation.mutate(isCurrentlyFollowing);
+  };
 
   // Determine fight status
   const status = getStatus();
@@ -1068,6 +1178,34 @@ export default function FightDisplayCard({
         </View>
       )}
 
+      {/* Bell icon for fight notifications - Top right (only for upcoming fights) */}
+      {isAuthenticated && status === 'upcoming' && (
+        <TouchableOpacity
+          style={styles.bellButton}
+          onPress={handleBellPress}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
+          <Animated.View
+            style={{
+              transform: [
+                {
+                  rotate: bellRotation.interpolate({
+                    inputRange: [-1, 0, 1],
+                    outputRange: ['-15deg', '0deg', '15deg'],
+                  }),
+                },
+              ],
+            }}
+          >
+            <FontAwesome
+              name={fight.isFollowing ? "bell" : "bell-o"}
+              size={18}
+              color={fight.isFollowing ? '#ef4444' : colors.textSecondary}
+            />
+          </Animated.View>
+        </TouchableOpacity>
+      )}
+
       {/* Three dots icon for fight details */}
       <TouchableOpacity
         style={styles.detailsButton}
@@ -1079,6 +1217,23 @@ export default function FightDisplayCard({
       >
         <FontAwesome name="ellipsis-h" size={20} color={colors.textSecondary} />
       </TouchableOpacity>
+
+      {/* Toast Notification */}
+      {toastMessage !== '' && (
+        <Animated.View
+          style={[
+            styles.toastContainer,
+            {
+              backgroundColor: colors.primary,
+              opacity: toastOpacity,
+              transform: [{ translateY: toastTranslateY }],
+            },
+          ]}
+        >
+          <FontAwesome name="bell" size={16} color="#1a1a1a" />
+          <Text style={styles.toastText}>{toastMessage}</Text>
+        </Animated.View>
+      )}
       </Animated.View>
     </TouchableOpacity>
   );
@@ -1206,5 +1361,38 @@ const styles = StyleSheet.create({
     right: 15,
     padding: 8,
     zIndex: 20,
+  },
+  bellButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    padding: 8,
+    zIndex: 20,
+  },
+  toastContainer: {
+    position: 'absolute',
+    bottom: 80,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 100,
+  },
+  toastText: {
+    color: '#1a1a1a',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    flex: 1,
   },
 });

@@ -7,6 +7,7 @@ import importRoutes from './import';
 import liveEventsRoutes from './liveEvents';
 import mockLiveEventsRoutes from './mockLiveEvents';
 import notificationsRoutes from './notifications';
+import { authenticateUser } from '../middleware/auth';
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
 
 export async function registerRoutes(fastify: FastifyInstance) {
@@ -437,6 +438,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 losses: { type: 'integer' },
                 draws: { type: 'integer' },
                 weightClass: { type: 'string' },
+                rank: { type: 'string' },
                 team: { type: 'string' },
                 birthDate: { type: 'string' },
                 nationality: { type: 'string' },
@@ -445,6 +447,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 createdAt: { type: 'string' },
                 profileImage: { type: 'string' },
                 actionImage: { type: 'string' },
+                isFollowing: { type: 'boolean' },
               },
             },
           },
@@ -465,6 +468,14 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       },
     },
+    preValidation: async (request, reply) => {
+      // Try to authenticate if token is present, but don't fail if it's not
+      try {
+        await authenticateUser(request, reply);
+      } catch (error) {
+        // Ignore authentication errors - endpoint works for both authenticated and unauthenticated users
+      }
+    },
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
@@ -480,6 +491,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
           losses: true,
           draws: true,
           weightClass: true,
+          rank: true,
           createdAt: true,
           profileImage: true,
           actionImage: true,
@@ -493,9 +505,363 @@ export async function registerRoutes(fastify: FastifyInstance) {
         });
       }
 
-      return reply.code(200).send({ fighter });
+      // Check if user is following this fighter (if authenticated)
+      let isFollowing = false;
+      const user = (request as any).user;
+      if (user) {
+        const follow = await fastify.prisma.userFighterFollow.findUnique({
+          where: {
+            userId_fighterId: {
+              userId: user.id,
+              fighterId: id,
+            },
+          },
+        });
+        isFollowing = !!follow;
+      }
+
+      return reply.code(200).send({
+        fighter: {
+          ...fighter,
+          isFollowing,
+        },
+      });
     } catch (error: any) {
       request.log.error('Fighter fetch error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Follow fighter endpoint
+  fastify.post('/api/fighters/:id/follow', {
+    schema: {
+      description: 'Follow a fighter to get notifications',
+      tags: ['fighters'],
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+        },
+        required: ['id'],
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+            isFollowing: { type: 'boolean' },
+          },
+        },
+        401: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        404: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        500: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+    preHandler: authenticateUser,
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = (request as any).user;
+
+    try {
+      // Check if fighter exists
+      const fighter = await fastify.prisma.fighter.findUnique({
+        where: { id },
+        select: { id: true, firstName: true, lastName: true },
+      });
+
+      if (!fighter) {
+        return reply.code(404).send({
+          error: 'Fighter not found',
+          code: 'FIGHTER_NOT_FOUND',
+        });
+      }
+
+      // Check if already following
+      const existingFollow = await fastify.prisma.userFighterFollow.findUnique({
+        where: {
+          userId_fighterId: {
+            userId: user.id,
+            fighterId: id,
+          },
+        },
+      });
+
+      if (existingFollow) {
+        return reply.code(200).send({
+          message: 'Already following this fighter',
+          isFollowing: true,
+        });
+      }
+
+      // Create follow
+      await fastify.prisma.userFighterFollow.create({
+        data: {
+          userId: user.id,
+          fighterId: id,
+          dayBeforeNotification: true,
+          startOfFightNotification: false,
+        },
+      });
+
+      return reply.code(200).send({
+        message: `Now following ${fighter.firstName} ${fighter.lastName}`,
+        isFollowing: true,
+      });
+    } catch (error: any) {
+      request.log.error('Follow fighter error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Unfollow fighter endpoint
+  fastify.delete('/api/fighters/:id/unfollow', {
+    schema: {
+      description: 'Unfollow a fighter',
+      tags: ['fighters'],
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+        },
+        required: ['id'],
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+            isFollowing: { type: 'boolean' },
+          },
+        },
+        401: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        500: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+    preHandler: authenticateUser,
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = (request as any).user;
+
+    try {
+      // Delete follow if it exists
+      await fastify.prisma.userFighterFollow.deleteMany({
+        where: {
+          userId: user.id,
+          fighterId: id,
+        },
+      });
+
+      return reply.code(200).send({
+        message: 'Unfollowed fighter',
+        isFollowing: false,
+      });
+    } catch (error: any) {
+      request.log.error('Unfollow fighter error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Follow fight (create alert) endpoint
+  fastify.post('/api/fights/:id/follow', {
+    schema: {
+      description: 'Follow a fight to get notifications when it starts',
+      tags: ['fights'],
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+        },
+        required: ['id'],
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+            isFollowing: { type: 'boolean' },
+          },
+        },
+        401: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        404: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        500: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+    preHandler: authenticateUser,
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = (request as any).user;
+
+    try {
+      // Check if fight exists
+      const fight = await fastify.prisma.fight.findUnique({
+        where: { id },
+        select: { id: true, event: { select: { date: true } } },
+      });
+
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Check if already following
+      const existingAlert = await fastify.prisma.fightAlert.findUnique({
+        where: {
+          userId_fightId: {
+            userId: user.id,
+            fightId: id,
+          },
+        },
+      });
+
+      if (existingAlert) {
+        return reply.code(200).send({
+          message: 'Already following this fight',
+          isFollowing: true,
+        });
+      }
+
+      // Create alert - set alert time to 15 minutes before event date
+      const alertTime = new Date(fight.event.date);
+      alertTime.setMinutes(alertTime.getMinutes() - 15);
+
+      await fastify.prisma.fightAlert.create({
+        data: {
+          userId: user.id,
+          fightId: id,
+          alertTime,
+          isSent: false,
+          isActive: true,
+        },
+      });
+
+      return reply.code(200).send({
+        message: 'Now following this fight',
+        isFollowing: true,
+      });
+    } catch (error: any) {
+      request.log.error('Follow fight error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Unfollow fight (delete alert) endpoint
+  fastify.delete('/api/fights/:id/unfollow', {
+    schema: {
+      description: 'Unfollow a fight',
+      tags: ['fights'],
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+        },
+        required: ['id'],
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+            isFollowing: { type: 'boolean' },
+          },
+        },
+        401: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        500: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+    preHandler: authenticateUser,
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const user = (request as any).user;
+
+    try {
+      // Delete alert if it exists
+      await fastify.prisma.fightAlert.deleteMany({
+        where: {
+          userId: user.id,
+          fightId: id,
+        },
+      });
+
+      return reply.code(200).send({
+        message: 'Unfollowed fight',
+        isFollowing: false,
+      });
+    } catch (error: any) {
+      request.log.error('Unfollow fight error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',

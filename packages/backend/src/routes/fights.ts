@@ -241,6 +241,23 @@ export async function fightRoutes(fastify: FastifyInstance) {
         include,
       });
 
+      // Check which fights the user is following (if authenticated)
+      let fightAlerts: any[] = [];
+      if (currentUserId) {
+        const fightIds = fights.map((f: any) => f.id);
+        fightAlerts = await fastify.prisma.fightAlert.findMany({
+          where: {
+            userId: currentUserId,
+            fightId: { in: fightIds },
+          },
+          select: {
+            fightId: true,
+          },
+        });
+      }
+
+      const followedFightIds = new Set(fightAlerts.map(fa => fa.fightId));
+
       // Transform fights data to include user-specific data in the expected format
       const transformedFights = fights.map((fight: any) => {
         const transformed = { ...fight };
@@ -268,6 +285,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
         // Transform user prediction (take the first/only prediction)
         if (fight.predictions && fight.predictions.length > 0) {
           transformed.userHypePrediction = fight.predictions[0].predictedRating;
+        }
+
+        // Add isFollowing field
+        if (currentUserId) {
+          transformed.isFollowing = followedFightIds.has(fight.id);
         }
 
         // Remove the raw arrays to avoid confusion
@@ -424,6 +446,18 @@ export async function fightRoutes(fastify: FastifyInstance) {
           transformedFight.userPredictedRound = fightWithRelations.predictions[0].predictedRound;
           console.log('Found user prediction:', transformedFight.userHypePrediction);
         }
+
+        // Check if user is following this fight
+        const fightAlert = await fastify.prisma.fightAlert.findUnique({
+          where: {
+            userId_fightId: {
+              userId: currentUserId,
+              fightId: id,
+            },
+          },
+        });
+        transformedFight.isFollowing = !!fightAlert;
+        console.log('User is following this fight:', transformedFight.isFollowing);
 
         // Remove the raw arrays to avoid confusion
         delete transformedFight.ratings;

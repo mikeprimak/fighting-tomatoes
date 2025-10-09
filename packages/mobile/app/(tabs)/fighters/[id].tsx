@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../../constants/Colors';
-import { apiService } from '../../../services/api';
+import { apiService, Fight } from '../../../services/api';
 import { FightDisplayCard, RateFightModal } from '../../../components';
 import { useAuth } from '../../../store/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
@@ -27,34 +27,8 @@ interface Fighter {
   losses: number;
   draws: number;
   weightClass?: string;
+  rank?: string;
   createdAt: string;
-}
-
-interface Fight {
-  id: string;
-  fighter1: Fighter;
-  fighter2: Fighter;
-  event: {
-    id: string;
-    name: string;
-    date: string;
-    promotion: string;
-  };
-  weightClass?: string;
-  isTitle: boolean;
-  titleName?: string;
-  hasStarted: boolean;
-  isComplete: boolean;
-  winner?: string;
-  method?: string;
-  round?: number;
-  time?: string;
-  averageRating: number;
-  totalRatings: number;
-  totalReviews: number;
-  userRating?: number;
-  userReview?: any;
-  userTags?: any[];
 }
 
 // Fighter image selection logic (same as other components)
@@ -272,17 +246,18 @@ export default function FighterDetailScreen() {
 
               {/* Fighter Stats */}
               <View style={styles.statsContainer}>
+                {fighter.rank && (
+                  <View style={styles.statItem}>
+                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Rank</Text>
+                    <Text style={[styles.statValue, { color: colors.text }]}>{fighter.rank}</Text>
+                  </View>
+                )}
                 {fighter.weightClass && (
                   <View style={styles.statItem}>
                     <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Weight Class</Text>
                     <Text style={[styles.statValue, { color: colors.text }]}>{fighter.weightClass}</Text>
                   </View>
                 )}
-
-
-
-
-
               </View>
             </View>
           </View>

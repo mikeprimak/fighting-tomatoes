@@ -14,6 +14,10 @@ interface User {
   displayName?: string;
   isEmailVerified: boolean;
   createdAt: string;
+  totalRatings?: number;
+  totalReviews?: number;
+  points?: number;
+  level?: number;
 }
 
 interface AuthContextType {
@@ -25,6 +29,7 @@ interface AuthContextType {
   register: (userData: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
+  refreshUserData: () => Promise<void>;
 }
 
 interface RegisterData {
@@ -244,6 +249,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const refreshUserData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+
+      if (!token) {
+        console.error('No access token available');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Failed to refresh user data:', data.error);
+        return;
+      }
+
+      // Update user data in state and storage
+      setUser(data.user);
+      await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
   const handleNotificationResponse = (response: NotificationResponse) => {
     const data = response.notification.request.content.data;
 
@@ -269,6 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     logout,
     refreshToken,
+    refreshUserData,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

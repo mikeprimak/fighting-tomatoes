@@ -53,6 +53,8 @@ interface Fight {
   weightClass?: string;
   isTitle: boolean;
   titleName?: string;
+  fighter1Odds?: string;
+  fighter2Odds?: string;
   averageRating: number;
   totalRatings: number;
   totalReviews: number;
@@ -156,6 +158,7 @@ class ApiService {
     limit?: number;
     includeUserData?: boolean;
     eventId?: string;
+    fighterId?: string;
   } = {}): Promise<FightsResponse> {
     const queryParams = new URLSearchParams();
 
@@ -335,6 +338,30 @@ class ApiService {
     const endpoint = `/fighters${queryString ? `?${queryString}` : ''}`;
 
     return this.makeRequest(endpoint);
+  }
+
+  async followFighter(fighterId: string): Promise<{ message: string; isFollowing: boolean }> {
+    return this.makeRequest(`/fighters/${fighterId}/follow`, {
+      method: 'POST',
+    });
+  }
+
+  async unfollowFighter(fighterId: string): Promise<{ message: string; isFollowing: boolean }> {
+    return this.makeRequest(`/fighters/${fighterId}/unfollow`, {
+      method: 'DELETE',
+    });
+  }
+
+  async followFight(fightId: string): Promise<{ message: string; isFollowing: boolean }> {
+    return this.makeRequest(`/fights/${fightId}/follow`, {
+      method: 'POST',
+    });
+  }
+
+  async unfollowFight(fightId: string): Promise<{ message: string; isFollowing: boolean }> {
+    return this.makeRequest(`/fights/${fightId}/unfollow`, {
+      method: 'DELETE',
+    });
   }
 
   // Crew-related API methods

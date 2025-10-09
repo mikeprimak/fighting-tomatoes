@@ -5,8 +5,9 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 interface JwtPayload {
-  userId: string;
-  email: string;
+  userId?: string;
+  id?: string; // Backwards compatibility
+  email?: string;
   iat: number;
   exp: number;
 }
@@ -32,10 +33,20 @@ export async function authenticateUser(request: FastifyRequest, reply: FastifyRe
     }
 
     const decoded = jwt.verify(token, secret) as JwtPayload;
-    
+
+    // Support both userId and id for backwards compatibility
+    const userId = decoded.userId || decoded.id;
+
+    if (!userId) {
+      return reply.code(401).send({
+        error: 'Invalid token - missing user ID',
+        code: 'INVALID_TOKEN',
+      });
+    }
+
     // Get user from database to ensure they still exist and are active
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
+      where: { id: userId },
       select: {
         id: true,
         email: true,
@@ -144,9 +155,17 @@ export async function optionalAuth(request: FastifyRequest, reply: FastifyReply)
     }
 
     const decoded = jwt.verify(token, secret) as JwtPayload;
-    
+
+    // Support both userId and id for backwards compatibility
+    const userId = decoded.userId || decoded.id;
+
+    if (!userId) {
+      // For optional auth, just continue without user
+      return;
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
+      where: { id: userId },
       select: {
         id: true,
         email: true,

@@ -321,6 +321,11 @@ export default function FightDetailScreen() {
             <Text style={[styles.fighterRecord, { color: colors.textSecondary }]}>
               {fight.fighter1.wins}-{fight.fighter1.losses}-{fight.fighter1.draws}
             </Text>
+            {fight.fighter1Odds && (
+              <Text style={[styles.fighterOdds, { color: colors.text }]}>
+                {fight.fighter1Odds}
+              </Text>
+            )}
           </TouchableOpacity>
 
           {/* VS Divider */}
@@ -352,6 +357,11 @@ export default function FightDetailScreen() {
             <Text style={[styles.fighterRecord, { color: colors.textSecondary }]}>
               {fight.fighter2.wins}-{fight.fighter2.losses}-{fight.fighter2.draws}
             </Text>
+            {fight.fighter2Odds && (
+              <Text style={[styles.fighterOdds, { color: colors.text }]}>
+                {fight.fighter2Odds}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -1144,6 +1154,11 @@ const styles = StyleSheet.create({
   },
   fighterRecord: {
     fontSize: 14,
+    marginTop: 4,
+  },
+  fighterOdds: {
+    fontSize: 15,
+    fontWeight: '600',
     marginTop: 4,
   },
   vsContainer: {
