@@ -24,6 +24,13 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required')
 })
 
+const updateProfileSchema = z.object({
+  displayName: z.string().min(3, 'Display name must be at least 3 characters').optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  avatar: z.string().optional()
+})
+
 export class AuthController {
   static async register(req: AuthRequest, res: Response) {
     try {
@@ -497,6 +504,81 @@ export class AuthController {
       res.status(500).json({
         error: 'Internal server error',
         code: 'PROFILE_FETCH_FAILED'
+      })
+    }
+  }
+
+  static async updateProfile(req: AuthRequest, res: Response) {
+    try {
+      const validatedData = updateProfileSchema.parse(req.body)
+      const { displayName, firstName, lastName, avatar } = validatedData
+
+      // Check if displayName is already taken by another user
+      if (displayName) {
+        const existingUser = await prisma.user.findFirst({
+          where: {
+            displayName: displayName,
+            id: { not: req.user!.userId }
+          }
+        })
+
+        if (existingUser) {
+          return res.status(409).json({
+            error: 'Display name is already taken',
+            code: 'DISPLAY_NAME_TAKEN'
+          })
+        }
+      }
+
+      // Update user profile
+      const updatedUser = await prisma.user.update({
+        where: { id: req.user!.userId },
+        data: {
+          ...(displayName !== undefined && { displayName }),
+          ...(firstName !== undefined && { firstName }),
+          ...(lastName !== undefined && { lastName }),
+          ...(avatar !== undefined && { avatar })
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          displayName: true,
+          avatar: true,
+          isEmailVerified: true,
+          isMedia: true,
+          mediaOrganization: true,
+          mediaWebsite: true,
+          points: true,
+          level: true,
+          totalRatings: true,
+          totalReviews: true,
+          upvotesReceived: true,
+          downvotesReceived: true,
+          accuracyScore: true,
+          createdAt: true,
+          lastLoginAt: true
+        }
+      })
+
+      res.json({
+        message: 'Profile updated successfully',
+        user: updatedUser
+      })
+
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: error.errors
+        })
+      }
+
+      console.error('Update profile error:', error)
+      res.status(500).json({
+        error: 'Internal server error',
+        code: 'PROFILE_UPDATE_FAILED'
       })
     }
   }

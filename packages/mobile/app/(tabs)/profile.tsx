@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -13,6 +14,7 @@ import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../store/AuthContext';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { CustomAlert } from '../../components/CustomAlert';
+import { api } from '../../services/api';
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -75,11 +77,18 @@ export default function ProfileScreen() {
         {/* Profile Header */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            <Text style={[styles.avatarText, { color: colors.textOnAccent }]}>
-              {user?.firstName ? user.firstName.charAt(0).toUpperCase() :
-               user?.displayName ? user.displayName.charAt(0).toUpperCase() :
-               user?.email ? user.email.charAt(0).toUpperCase() : '?'}
-            </Text>
+            {user?.avatar ? (
+              <Image
+                source={{ uri: `${api.baseURL}${user.avatar}` }}
+                style={styles.avatarImage}
+              />
+            ) : (
+              <Text style={[styles.avatarText, { color: colors.textOnAccent }]}>
+                {user?.firstName ? user.firstName.charAt(0).toUpperCase() :
+                 user?.displayName ? user.displayName.charAt(0).toUpperCase() :
+                 user?.email ? user.email.charAt(0).toUpperCase() : '?'}
+              </Text>
+            )}
           </View>
           <Text style={[styles.name, { color: colors.text }]}>
             {user?.firstName && user?.lastName
@@ -166,7 +175,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => showError('Profile editing will be available in a future update', 'Coming Soon')}
+            onPress={() => router.push('/edit-profile')}
           >
             <Text style={[styles.actionButtonText, { color: colors.text }]}>Edit Profile</Text>
           </TouchableOpacity>
@@ -212,6 +221,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
   },
   avatarText: {
     fontSize: 32,

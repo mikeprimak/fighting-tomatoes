@@ -780,6 +780,7 @@ model Crew {
   id              String    @id @default(uuid())
   name            String
   description     String?
+  imageUrl        String?   // Crew profile image URL
 
   // Access control
   inviteCode      String    @unique  // 6-8 char code for joining

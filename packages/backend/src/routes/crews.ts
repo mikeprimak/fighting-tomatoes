@@ -35,6 +35,11 @@ const updateCrewSettingsSchema = z.object({
   allowReactions: z.boolean().optional(),
 });
 
+const updateCrewDetailsSchema = z.object({
+  description: z.string().max(500).optional(),
+  imageUrl: z.string().url().optional(),
+});
+
 // Generate a random invite code
 function generateInviteCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -137,6 +142,7 @@ export async function crewRoutes(fastify: FastifyInstance) {
               id: true,
               name: true,
               description: true,
+              imageUrl: true,
               totalMembers: true,
               totalMessages: true,
               updatedAt: true,
@@ -173,6 +179,7 @@ export async function crewRoutes(fastify: FastifyInstance) {
           id: membership.crew.id,
           name: membership.crew.name,
           description: membership.crew.description,
+          imageUrl: membership.crew.imageUrl,
           totalMembers: membership.crew.totalMembers,
           totalMessages: membership.crew.totalMessages,
           lastMessageAt: membership.crew.updatedAt.toISOString(),
@@ -340,12 +347,14 @@ export async function crewRoutes(fastify: FastifyInstance) {
           id: crew.id,
           name: crew.name,
           description: crew.description,
+          imageUrl: crew.imageUrl,
           inviteCode: crew.inviteCode,
           totalMembers: crew.totalMembers,
           totalMessages: crew.totalMessages,
           allowPredictions: crew.allowPredictions,
           allowRoundVoting: crew.allowRoundVoting,
           allowReactions: crew.allowReactions,
+          followOnlyUFC: crew.followOnlyUFC,
           userRole: membership.role,
           isMuted: isCurrentlyMuted,
           mutedUntil: membership.mutedUntil,
@@ -1263,6 +1272,67 @@ export async function crewRoutes(fastify: FastifyInstance) {
       });
     } catch (error: any) {
       request.log.error('Update crew settings error:', error);
+      return reply.status(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Update crew details (Owner only)
+  fastify.put('/crews/:crewId/details', {
+    preValidation: [fastify.authenticate],
+  }, async (request: any, reply: any) => {
+    const userId = request.user!.id;
+    const { crewId } = request.params;
+
+    const validation = updateCrewDetailsSchema.safeParse(request.body);
+    if (!validation.success) {
+      return reply.status(400).send({
+        error: 'Invalid input data',
+        code: 'VALIDATION_ERROR',
+        details: validation.error.errors,
+      });
+    }
+
+    try {
+      // Verify user is crew owner
+      const crew = await fastify.prisma.crew.findUnique({
+        where: { id: crewId },
+        select: { createdBy: true },
+      });
+
+      if (!crew) {
+        return reply.status(404).send({
+          error: 'Crew not found',
+          code: 'CREW_NOT_FOUND',
+        });
+      }
+
+      if (crew.createdBy !== userId) {
+        return reply.status(403).send({
+          error: 'Only crew owner can update details',
+          code: 'FORBIDDEN',
+        });
+      }
+
+      // Update crew details
+      const updatedCrew = await fastify.prisma.crew.update({
+        where: { id: crewId },
+        data: validation.data,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          imageUrl: true,
+        },
+      });
+
+      return reply.status(200).send({
+        crew: updatedCrew,
+      });
+    } catch (error: any) {
+      request.log.error('Update crew details error:', error);
       return reply.status(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',

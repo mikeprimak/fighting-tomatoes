@@ -209,7 +209,7 @@ export default function FightDisplayCard({
       ]).start(() => {
         setToastMessage('');
       });
-    }, 2000);
+    }, 1400);
   };
 
   // Follow/Unfollow fight mutation

@@ -62,6 +62,9 @@ importers:
       '@fastify/cors':
         specifier: ^11.1.0
         version: 11.1.0
+      '@fastify/multipart':
+        specifier: ^9.2.1
+        version: 9.2.1
       '@fastify/session':
         specifier: ^11.1.0
         version: 11.1.0
@@ -234,6 +237,9 @@ importers:
       expo-font:
         specifier: ~14.0.8
         version: 14.0.8(expo@54.0.9)(react-native@0.81.4)(react@19.1.0)
+      expo-image-picker:
+        specifier: ^17.0.8
+        version: 17.0.8(expo@54.0.9)
       expo-linear-gradient:
         specifier: ^15.0.7
         version: 15.0.7(expo@54.0.9)(react-native@0.81.4)(react@19.1.0)
@@ -10430,6 +10436,23 @@ packages:
       fontfaceobserver: 2.3.0
       react: 19.1.0
       react-native: 0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0)
+
+  /expo-image-loader@6.0.0(expo@54.0.9):
+    resolution: {integrity: sha512-nKs/xnOGw6ACb4g26xceBD57FKLFkSwEUTDXEDF3Gtcu3MqF3ZIYd3YM+sSb1/z9AKV1dYT7rMSGVNgsveXLIQ==}
+    peerDependencies:
+      expo: '*'
+    dependencies:
+      expo: 54.0.9(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.7)(react-native@0.81.4)(react@19.1.0)
+    dev: false
+
+  /expo-image-picker@17.0.8(expo@54.0.9):
+    resolution: {integrity: sha512-489ByhVs2XPoAu9zodivAKLv7hG4S/FOe8hO/C2U6jVxmRjpAKakKNjMml0IwWjf1+c/RYBqm1XxKaZ+vq/fDQ==}
+    peerDependencies:
+      expo: '*'
+    dependencies:
+      expo: 54.0.9(@babel/core@7.28.4)(@expo/metro-runtime@6.1.2)(expo-router@6.0.7)(react-native@0.81.4)(react@19.1.0)
+      expo-image-loader: 6.0.0(expo@54.0.9)
+    dev: false
 
   /expo-json-utils@0.15.0:
     resolution: {integrity: sha512-duRT6oGl80IDzH2LD2yEFWNwGIC2WkozsB6HF3cDYNoNNdUvFk6uN3YiwsTsqVM/D0z6LEAQ01/SlYvN+Fw0JQ==}

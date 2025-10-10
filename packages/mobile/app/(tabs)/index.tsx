@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Modal,
   TextInput,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +26,7 @@ interface Crew {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   totalMembers: number;
   totalMessages: number;
   lastMessageAt: string;
@@ -168,14 +170,22 @@ export default function CrewsScreen() {
 
     return (
       <TouchableOpacity
-        style={[styles.crewCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+        style={[styles.crewCard, { backgroundColor: colors.card }]}
         onPress={() => {
           router.push(`/crew/${item.id}`);
         }}
       >
-        <View style={[styles.crewIcon, { backgroundColor: colors.tint }]}>
-          <FontAwesome name="users" size={20} color={colors.textOnAccent} />
-        </View>
+        {item.imageUrl ? (
+          <Image
+            source={{ uri: item.imageUrl }}
+            style={styles.crewImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.crewIcon, { backgroundColor: colors.tint }]}>
+            <FontAwesome name="users" size={20} color={colors.textOnAccent} />
+          </View>
+        )}
         <View style={styles.crewContent}>
           <View style={styles.crewTopRow}>
             <Text style={[styles.crewName, { color: colors.text }]} numberOfLines={1}>
@@ -235,28 +245,6 @@ export default function CrewsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>My Crews</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={[styles.headerButton, { backgroundColor: colors.tint }]}
-            onPress={showJoinCrewDialog}
-            disabled={joinCrewMutation.isPending}
-          >
-            <FontAwesome name="plus" size={16} color={colors.textOnAccent} />
-            <Text style={[styles.headerButtonText, { color: colors.textOnAccent }]}>Join</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.headerButton, { backgroundColor: colors.tint }]}
-            onPress={showCreateCrewDialog}
-            disabled={createCrewMutation.isPending}
-          >
-            <FontAwesome name="group" size={16} color={colors.textOnAccent} />
-            <Text style={[styles.headerButtonText, { color: colors.textOnAccent }]}>Create</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
       <FlatList
         data={crews}
         renderItem={renderCrewItem}
@@ -380,6 +368,27 @@ export default function CrewsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Floating action buttons at bottom */}
+      <View style={styles.floatingButtons}>
+        <TouchableOpacity
+          style={[styles.floatingButton, { backgroundColor: colors.tint }]}
+          onPress={showJoinCrewDialog}
+          disabled={joinCrewMutation.isPending}
+        >
+          <FontAwesome name="plus" size={16} color={colors.textOnAccent} />
+          <Text style={[styles.floatingButtonText, { color: colors.textOnAccent }]}>Join</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.floatingButton, { backgroundColor: colors.tint }]}
+          onPress={showCreateCrewDialog}
+          disabled={createCrewMutation.isPending}
+        >
+          <FontAwesome name="group" size={16} color={colors.textOnAccent} />
+          <Text style={[styles.floatingButtonText, { color: colors.textOnAccent }]}>Create</Text>
+        </TouchableOpacity>
+      </View>
+
       <CustomAlert {...alertState} onDismiss={hideAlert} />
     </SafeAreaView>
   );
@@ -389,36 +398,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  headerButtons: {
+  floatingButtons: {
+    position: 'absolute',
+    bottom: 25,
+    right: 16,
     flexDirection: 'row',
     gap: 8,
+    zIndex: 100,
   },
-  headerButton: {
+  floatingButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  headerButtonText: {
-    color: 'white',
+  floatingButtonText: {
     fontSize: 14,
     fontWeight: '600',
   },
   listContainer: {
-    padding: 16,
+    paddingVertical: 0,
+    paddingBottom: 0,
   },
   emptyListContainer: {
     flex: 1,
@@ -476,10 +483,9 @@ const styles = StyleSheet.create({
   crewCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    marginBottom: 8,
-    borderRadius: 12,
-    borderWidth: 1,
+    padding: 16,
+    marginBottom: 0,
+    borderRadius: 0,
     gap: 12,
   },
   crewIcon: {
@@ -488,6 +494,11 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  crewImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
   crewContent: {
     flex: 1,

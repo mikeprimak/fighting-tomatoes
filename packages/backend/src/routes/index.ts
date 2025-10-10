@@ -7,6 +7,7 @@ import importRoutes from './import';
 import liveEventsRoutes from './liveEvents';
 import mockLiveEventsRoutes from './mockLiveEvents';
 import notificationsRoutes from './notifications';
+import { uploadRoutes } from './upload';
 import { authenticateUser } from '../middleware/auth';
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
 
@@ -901,6 +902,11 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Register notifications routes under /api/notifications prefix
   await fastify.register(notificationsRoutes, { prefix: '/api/notifications' });
+
+  // Register upload routes under /api prefix
+  await fastify.register(async function(fastify) {
+    await uploadRoutes(fastify);
+  }, { prefix: '/api' });
 
   // Register admin stats routes under /api/admin prefix
   const adminStatsRoutes = (await import('./adminStats')).default;

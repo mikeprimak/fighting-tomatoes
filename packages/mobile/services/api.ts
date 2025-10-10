@@ -89,6 +89,10 @@ interface ApiError {
 }
 
 class ApiService {
+  get baseURL() {
+    return API_BASE_URL.replace('/api', '');
+  }
+
   private async getAuthToken(): Promise<string | null> {
     try {
       return await AsyncStorage.getItem('accessToken');
@@ -464,6 +468,56 @@ class ApiService {
     });
   }
 
+  async updateCrewDetails(crewId: string, details: { description?: string; imageUrl?: string }): Promise<{ crew: any }> {
+    return this.makeRequest(`/crews/${crewId}/details`, {
+      method: 'PUT',
+      body: JSON.stringify(details),
+    });
+  }
+
+  async uploadCrewImage(imageUri: string): Promise<{ imageUrl: string; message: string }> {
+    const token = await this.getAuthToken();
+    const url = `${API_BASE_URL}/upload/crew-image`;
+
+    // Create form data
+    const formData = new FormData();
+
+    // Get file extension from URI
+    const uriParts = imageUri.split('.');
+    const fileType = uriParts[uriParts.length - 1];
+
+    formData.append('file', {
+      uri: imageUri,
+      name: `crew-image.${fileType}`,
+      type: `image/${fileType}`,
+    } as any);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw data;
+      }
+
+      // Return the full URL including the base URL
+      return {
+        ...data,
+        imageUrl: `${API_BASE_URL.replace('/api', '')}${data.imageUrl}`,
+      };
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      throw error;
+    }
+  }
+
   async muteCrewChat(crewId: string, duration: '8hours' | 'forever'): Promise<{ message: string; mutedUntil: string | null }> {
     return this.makeRequest(`/crews/${crewId}/mute`, {
       method: 'POST',
@@ -569,7 +623,47 @@ class ApiService {
       method: 'POST',
     });
   }
+
+  // Profile methods
+  async updateProfile(data: {
+    displayName?: string;
+    firstName?: string;
+    lastName?: string;
+    avatar?: string;
+  }): Promise<{ user: any; message: string }> {
+    return this.makeRequest('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async uploadProfileImage(formData: FormData): Promise<{ imageUrl: string; message: string }> {
+    const token = await this.getAuthToken();
+    const url = `${API_BASE_URL}/upload/profile-image`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw data;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Profile image upload failed:', error);
+      throw error;
+    }
+  }
 }
 
 export const apiService = new ApiService();
+export const api = apiService; // Alias for convenience
 export type { Fight, FightsResponse, ApiError };

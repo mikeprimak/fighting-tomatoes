@@ -1,6 +1,7 @@
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
+import fastifyMultipart from '@fastify/multipart';
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
 import authPlugin from './middleware/auth.fastify';
@@ -93,6 +94,13 @@ async function start() {
       allowedHeaders: ['Content-Type', 'Authorization'],
       preflightContinue: false,
       optionsSuccessStatus: 200,
+    });
+
+    // Register multipart plugin for file uploads
+    await fastify.register(fastifyMultipart, {
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB max file size
+      },
     });
 
     // Add Prisma to Fastify context for easy access in routes

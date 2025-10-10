@@ -8,6 +8,9 @@ import {
   Platform,
   Modal,
   Switch,
+  Image,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -15,6 +18,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../../constants/Colors';
 import { FontAwesome } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { apiService } from '../../../services/api';
 import { useCustomAlert } from '../../../hooks/useCustomAlert';
 import { CustomAlert } from '../../../components/CustomAlert';
@@ -28,6 +32,12 @@ export default function CrewInfoScreen() {
   const [showRemoveMemberDialog, setShowRemoveMemberDialog] = useState(false);
   const [showMemberRemovedDialog, setShowMemberRemovedDialog] = useState(false);
   const [removedMemberName, setRemovedMemberName] = useState<string>('');
+  const [showEditDescriptionModal, setShowEditDescriptionModal] = useState(false);
+  const [showEditImageModal, setShowEditImageModal] = useState(false);
+  const [showImageOptionsModal, setShowImageOptionsModal] = useState(false);
+  const [editDescription, setEditDescription] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const queryClient = useQueryClient();
   const { alertState, showError, hideAlert } = useCustomAlert();
 
@@ -120,6 +130,68 @@ export default function CrewInfoScreen() {
     },
   });
 
+  const updateDetailsMutation = useMutation({
+    mutationFn: (details: { description?: string; imageUrl?: string }) =>
+      apiService.updateCrewDetails(id!, details),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['crew', id] });
+      setShowEditDescriptionModal(false);
+      setShowEditImageModal(false);
+      setIsUploadingImage(false);
+    },
+    onError: (error: any) => {
+      showError(
+        error.error || 'Failed to update crew details. Please try again.',
+        'Error'
+      );
+      setIsUploadingImage(false);
+    },
+  });
+
+  const pickImageFromDevice = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== 'granted') {
+        showError('Sorry, we need camera roll permissions to upload images.', 'Error');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setShowImageOptionsModal(false);
+        setIsUploadingImage(true);
+
+        try {
+          // Upload image
+          const uploadResult = await apiService.uploadCrewImage(result.assets[0].uri);
+
+          // Update crew with new image URL
+          await updateDetailsMutation.mutateAsync({ imageUrl: uploadResult.imageUrl });
+        } catch (error: any) {
+          showError(error.error || 'Failed to upload image', 'Error');
+          setIsUploadingImage(false);
+        }
+      }
+    } catch (error: any) {
+      console.error('Image picker error:', error);
+      showError('Failed to pick image', 'Error');
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleEditImage = () => {
+    setShowImageOptionsModal(true);
+  };
+
   const crew = crewData?.crew;
 
   const formatDate = (dateString: string) => {
@@ -180,14 +252,68 @@ export default function CrewInfoScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Crew Name & Description */}
+        {/* Crew Name, Image & Description */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.crewName, { color: colors.text }]}>{crew.name}</Text>
-          {crew.description && (
-            <Text style={[styles.crewDescription, { color: colors.textSecondary }]}>
-              {crew.description}
-            </Text>
-          )}
+
+          {/* Crew Image */}
+          {isUploadingImage ? (
+            <View style={[styles.uploadingContainer, { backgroundColor: colors.background }]}>
+              <ActivityIndicator size="large" color={colors.tint} />
+              <Text style={[styles.uploadingText, { color: colors.text }]}>Uploading image...</Text>
+            </View>
+          ) : crew.imageUrl ? (
+            <View style={styles.imageContainer}>
+              <Image
+                source={{ uri: crew.imageUrl }}
+                style={styles.crewImage}
+                resizeMode="cover"
+              />
+              {crew.userRole === 'OWNER' && (
+                <TouchableOpacity
+                  style={[styles.editImageButton, { backgroundColor: colors.tint }]}
+                  onPress={handleEditImage}
+                >
+                  <FontAwesome name="pencil" size={14} color={colors.textOnAccent} />
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : crew.userRole === 'OWNER' ? (
+            <TouchableOpacity
+              style={[styles.addImageButton, { borderColor: colors.border, backgroundColor: colors.background }]}
+              onPress={handleEditImage}
+            >
+              <FontAwesome name="camera" size={32} color={colors.textSecondary} />
+              <Text style={[styles.addImageText, { color: colors.textSecondary }]}>Add Crew Image</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {/* Description */}
+          <View style={styles.descriptionContainer}>
+            {crew.description ? (
+              <Text style={[styles.crewDescription, { color: colors.textSecondary }]}>
+                {crew.description}
+              </Text>
+            ) : crew.userRole === 'OWNER' ? (
+              <Text style={[styles.noDescription, { color: colors.textSecondary }]}>
+                No description yet
+              </Text>
+            ) : null}
+            {crew.userRole === 'OWNER' && (
+              <TouchableOpacity
+                style={[styles.editDescriptionButton, { borderColor: colors.border }]}
+                onPress={() => {
+                  setEditDescription(crew.description || '');
+                  setShowEditDescriptionModal(true);
+                }}
+              >
+                <FontAwesome name="pencil" size={14} color={colors.text} />
+                <Text style={[styles.editDescriptionButtonText, { color: colors.text }]}>
+                  {crew.description ? 'Edit Description' : 'Add Description'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         {/* Stats Section */}
@@ -536,6 +662,151 @@ export default function CrewInfoScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Edit Description Modal */}
+      <Modal
+        visible={showEditDescriptionModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowEditDescriptionModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Edit Description</Text>
+            <TextInput
+              style={[styles.modalTextInput, {
+                backgroundColor: colors.background,
+                color: colors.text,
+                borderColor: colors.border
+              }]}
+              placeholder="Enter crew description"
+              placeholderTextColor={colors.textSecondary}
+              value={editDescription}
+              onChangeText={setEditDescription}
+              multiline
+              numberOfLines={4}
+              maxLength={500}
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton, { borderColor: colors.border }]}
+                onPress={() => setShowEditDescriptionModal(false)}
+              >
+                <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton, { backgroundColor: colors.tint }]}
+                onPress={() => {
+                  updateDetailsMutation.mutate({ description: editDescription });
+                }}
+                disabled={updateDetailsMutation.isPending}
+              >
+                <Text style={[styles.saveButtonText, { color: colors.textOnAccent }]}>
+                  {updateDetailsMutation.isPending ? 'Saving...' : 'Save'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Image Options Modal */}
+      <Modal
+        visible={showImageOptionsModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowImageOptionsModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.deleteDialogOverlay}
+          activeOpacity={1}
+          onPress={() => setShowImageOptionsModal(false)}
+        >
+          <TouchableOpacity
+            style={[styles.imageOptionsContainer, { backgroundColor: colors.card }]}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={[styles.imageOptionsTitle, { color: colors.text }]}>Choose Image Source</Text>
+
+            <TouchableOpacity
+              style={[styles.imageOptionButton, { borderBottomColor: colors.border }]}
+              onPress={pickImageFromDevice}
+            >
+              <FontAwesome name="image" size={24} color={colors.tint} />
+              <Text style={[styles.imageOptionText, { color: colors.text }]}>Upload from Device</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.imageOptionButton, { borderBottomColor: colors.border }]}
+              onPress={() => {
+                setShowImageOptionsModal(false);
+                setEditImageUrl(crew?.imageUrl || '');
+                setShowEditImageModal(true);
+              }}
+            >
+              <FontAwesome name="link" size={24} color={colors.tint} />
+              <Text style={[styles.imageOptionText, { color: colors.text }]}>Enter Image URL</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.imageOptionButton, { borderBottomWidth: 0 }]}
+              onPress={() => setShowImageOptionsModal(false)}
+            >
+              <FontAwesome name="times" size={24} color={colors.textSecondary} />
+              <Text style={[styles.imageOptionText, { color: colors.textSecondary }]}>Cancel</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Edit Image URL Modal */}
+      <Modal
+        visible={showEditImageModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowEditImageModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Enter Image URL</Text>
+            <TextInput
+              style={[styles.modalInput, {
+                backgroundColor: colors.background,
+                color: colors.text,
+                borderColor: colors.border
+              }]}
+              placeholder="https://example.com/image.jpg"
+              placeholderTextColor={colors.textSecondary}
+              value={editImageUrl}
+              onChangeText={setEditImageUrl}
+              autoCapitalize="none"
+              autoFocus
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton, { borderColor: colors.border }]}
+                onPress={() => setShowEditImageModal(false)}
+              >
+                <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton, { backgroundColor: colors.tint }]}
+                onPress={() => {
+                  updateDetailsMutation.mutate({ imageUrl: editImageUrl });
+                }}
+                disabled={updateDetailsMutation.isPending}
+              >
+                <Text style={[styles.saveButtonText, { color: colors.textOnAccent }]}>
+                  {updateDetailsMutation.isPending ? 'Saving...' : 'Save'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <CustomAlert {...alertState} onDismiss={hideAlert} />
     </SafeAreaView>
   );
@@ -583,6 +854,177 @@ const styles = StyleSheet.create({
   crewDescription: {
     fontSize: 14,
     lineHeight: 20,
+  },
+  imageContainer: {
+    marginTop: 16,
+    marginBottom: 16,
+    position: 'relative',
+    alignItems: 'center',
+  },
+  crewImage: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+  },
+  editImageButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: '30%',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  addImageButton: {
+    marginTop: 16,
+    marginBottom: 16,
+    height: 120,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  addImageText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  uploadingContainer: {
+    marginTop: 16,
+    marginBottom: 16,
+    height: 120,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  uploadingText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  imageOptionsContainer: {
+    borderRadius: 12,
+    width: '90%',
+    maxWidth: 400,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  imageOptionsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+  },
+  imageOptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    gap: 16,
+    borderBottomWidth: 1,
+  },
+  imageOptionText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  descriptionContainer: {
+    marginTop: 8,
+  },
+  noDescription: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    marginBottom: 12,
+  },
+  editDescriptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+    marginTop: 8,
+  },
+  editDescriptionButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '90%',
+    maxWidth: 400,
+    padding: 24,
+    borderRadius: 16,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  modalTextInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 20,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    borderWidth: 1,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButton: {
+    // backgroundColor set dynamically
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
   sectionTitle: {
     fontSize: 16,

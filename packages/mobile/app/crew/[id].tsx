@@ -61,6 +61,7 @@ interface CrewDetails {
   id: string;
   name: string;
   description?: string;
+  imageUrl?: string;
   inviteCode: string;
   totalMembers: number;
   totalMessages: number;
@@ -1060,6 +1061,17 @@ export default function CrewChatScreen() {
         >
           <FontAwesome name="arrow-left" size={20} color={colors.text} />
         </TouchableOpacity>
+        {crew.imageUrl ? (
+          <Image
+            source={{ uri: crew.imageUrl }}
+            style={styles.headerCrewImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.headerCrewIcon, { backgroundColor: colors.tint }]}>
+            <FontAwesome name="users" size={18} color={colors.textOnAccent} />
+          </View>
+        )}
         <View style={styles.headerInfo}>
           <Text style={[styles.crewName, { color: colors.text }]} numberOfLines={1}>
             {crew.name}
@@ -1665,6 +1677,7 @@ export default function CrewChatScreen() {
         visible={showCrewMenu}
         transparent={true}
         animationType="fade"
+        statusBarTranslucent={true}
         onRequestClose={() => setShowCrewMenu(false)}
       >
         <TouchableOpacity
@@ -1763,6 +1776,20 @@ const styles = StyleSheet.create({
   },
   headerInfo: {
     flex: 1,
+  },
+  headerCrewImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  headerCrewIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   crewName: {
     fontSize: 18,

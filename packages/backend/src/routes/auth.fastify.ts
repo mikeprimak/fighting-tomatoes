@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 // Fastify-compatible auth routes
+// Fixed nullable fields in schema
+//
 export async function authRoutes(fastify: FastifyInstance) {
   // Register endpoint
   fastify.post('/register', {
@@ -481,12 +483,13 @@ export async function authRoutes(fastify: FastifyInstance) {
               properties: {
                 id: { type: 'string' },
                 email: { type: 'string' },
-                firstName: { type: 'string' },
-                lastName: { type: 'string' },
-                displayName: { type: 'string' },
+                firstName: { type: ['string', 'null'] },
+                lastName: { type: ['string', 'null'] },
+                displayName: { type: ['string', 'null'] },
+                avatar: { type: ['string', 'null'] },
                 isEmailVerified: { type: 'boolean' },
                 createdAt: { type: 'string' },
-                lastLoginAt: { type: 'string' },
+                lastLoginAt: { type: ['string', 'null'] },
                 totalRatings: { type: 'integer' },
                 totalReviews: { type: 'integer' },
                 points: { type: 'integer' },
@@ -528,6 +531,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           firstName: true,
           lastName: true,
           displayName: true,
+          avatar: true,
           isEmailVerified: true,
           createdAt: true,
           lastLoginAt: true,
@@ -545,6 +549,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
+      request.log.info('[GET /profile] Returning user avatar: ' + user.avatar);
       return reply.code(200).send({ user });
 
     } catch (error: any) {
@@ -552,6 +557,158 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.code(401).send({
         error: 'Invalid token',
         code: 'INVALID_TOKEN',
+      });
+    }
+  });
+
+  // Update profile endpoint (protected)
+  fastify.put('/profile', {
+    schema: {
+      description: 'Update user profile',
+      tags: ['auth'],
+      headers: {
+        type: 'object',
+        properties: {
+          authorization: { type: 'string' },
+        },
+        required: ['authorization'],
+      },
+      body: {
+        type: 'object',
+        properties: {
+          displayName: { type: 'string', minLength: 3 },
+          firstName: { type: 'string' },
+          lastName: { type: 'string' },
+          avatar: { type: 'string' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+            user: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                email: { type: 'string' },
+                firstName: { type: ['string', 'null'] },
+                lastName: { type: ['string', 'null'] },
+                displayName: { type: ['string', 'null'] },
+                avatar: { type: ['string', 'null'] },
+                isEmailVerified: { type: 'boolean' },
+                createdAt: { type: 'string' },
+                lastLoginAt: { type: ['string', 'null'] },
+                totalRatings: { type: 'integer' },
+                totalReviews: { type: 'integer' },
+                points: { type: 'integer' },
+                level: { type: 'integer' },
+              },
+            },
+          },
+        },
+        400: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        401: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        409: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const authorization = request.headers.authorization;
+
+      if (!authorization || !authorization.startsWith('Bearer ')) {
+        return reply.code(401).send({
+          error: 'Authorization token required',
+          code: 'MISSING_TOKEN',
+        });
+      }
+
+      const token = authorization.substring(7);
+      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+
+      const { displayName, firstName, lastName, avatar } = request.body as any;
+
+      // Check if displayName is already taken by another user
+      if (displayName) {
+        const existingUser = await fastify.prisma.user.findFirst({
+          where: {
+            displayName: displayName,
+            id: { not: decoded.userId }
+          }
+        });
+
+        if (existingUser) {
+          return reply.code(409).send({
+            error: 'Display name is already taken',
+            code: 'DISPLAY_NAME_TAKEN',
+          });
+        }
+      }
+
+      // Update user profile
+      request.log.info('[PUT /profile] Received avatar value: ' + avatar);
+      const updatedUser = await fastify.prisma.user.update({
+        where: { id: decoded.userId },
+        data: {
+          ...(displayName !== undefined && { displayName }),
+          ...(firstName !== undefined && { firstName }),
+          ...(lastName !== undefined && { lastName }),
+          ...(avatar !== undefined && { avatar }),
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          displayName: true,
+          avatar: true,
+          isEmailVerified: true,
+          createdAt: true,
+          lastLoginAt: true,
+          totalRatings: true,
+          totalReviews: true,
+          points: true,
+          level: true,
+        }
+      });
+
+      request.log.info('[PUT /profile] Saved and returning avatar: ' + updatedUser.avatar);
+      return reply.code(200).send({
+        message: 'Profile updated successfully',
+        user: updatedUser,
+      });
+
+    } catch (error: any) {
+      request.log.error('Update profile error:', error);
+      if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+        return reply.code(401).send({
+          error: 'Invalid token',
+          code: 'INVALID_TOKEN',
+        });
+      }
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
       });
     }
   });

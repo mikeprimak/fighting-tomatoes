@@ -118,7 +118,7 @@ export function FightCrewAppTabBar() {
         options={{
           title: 'Crews',
           tabBarIcon: ({ color }) => <TabBarIcon name="comments" color={color} />,
-          headerTitle: '🥊 FightCrewApp',
+          headerTitle: 'Fight Crew',
         }}
       />
       <Tabs.Screen
