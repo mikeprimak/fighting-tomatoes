@@ -72,9 +72,29 @@ export class MMANewsScraper {
 
   private generateFilename(url: string, source: string): string {
     const timestamp = Date.now();
-    const ext = path.extname(url).split('?')[0] || '.jpg';
-    const safeName = source.toLowerCase().replace(/\s+/g, '-');
-    return `${safeName}-${timestamp}${ext}`;
+
+    // Extract clean extension from URL (handle query params and special chars)
+    try {
+      const urlObj = new URL(url);
+      const pathname = urlObj.pathname;
+      let ext = path.extname(pathname);
+
+      // Remove any remaining query params or special chars from extension
+      ext = ext.split('?')[0].split('&')[0].split('#')[0];
+
+      // Validate extension (only allow common image formats)
+      const validExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+      if (!validExts.includes(ext.toLowerCase())) {
+        ext = '.jpg'; // Default to jpg
+      }
+
+      const safeName = source.toLowerCase().replace(/\s+/g, '-');
+      return `${safeName}-${timestamp}${ext}`;
+    } catch (err) {
+      // Fallback if URL parsing fails
+      const safeName = source.toLowerCase().replace(/\s+/g, '-');
+      return `${safeName}-${timestamp}.jpg`;
+    }
   }
 
   async scrapeMMAfighting(): Promise<NewsArticle[]> {
@@ -88,27 +108,29 @@ export class MMANewsScraper {
         timeout: 30000,
       });
 
-      // Wait for articles to load
-      await page.waitForSelector('article, .c-entry-box', { timeout: 10000 });
+      // Wait for articles to load - updated selector for new structure
+      await page.waitForSelector('[class*="content-card"]', { timeout: 10000 });
 
       const scrapedArticles = await page.evaluate(() => {
         const items: any[] = [];
 
-        // Try multiple selectors for MMA Fighting's structure
+        // Updated selectors for MMA Fighting's new structure
         // @ts-ignore - document is available in browser context
-        const articleElements = document.querySelectorAll('article.c-entry-box--compact, .c-entry-box--compact');
+        const articleElements = document.querySelectorAll('div.duet--content-cards--content-card, [class*="content-card"]');
 
         articleElements.forEach((article: any) => {
           try {
-            const linkElement = article.querySelector('a.c-entry-box--compact__image-wrapper, h2 a, .c-entry-box--compact__title a');
-            const titleElement = article.querySelector('h2, .c-entry-box--compact__title');
-            const descElement = article.querySelector('.c-entry-box--compact__dek, p.c-entry-box--compact__dek');
-            const imageElement = article.querySelector('img, picture img');
+            // The title link is the second <a> tag with class _1ngvuhm0
+            const linkElement = article.querySelector('a._1ngvuhm0');
+            // Title can be in the link text or in a div with specific classes
+            const titleElement = linkElement || article.querySelector('div.ls9zuh9');
+            const imageElement = article.querySelector('img');
 
             if (linkElement && titleElement) {
-              const url = (linkElement as any).href;
+              const url = linkElement.href;
               const headline = titleElement.textContent?.trim() || '';
-              const description = descElement?.textContent?.trim() || '';
+              // MMA Fighting doesn't show descriptions on listing page
+              const description = '';
 
               let imageUrl = '';
               if (imageElement) {
@@ -116,7 +138,7 @@ export class MMANewsScraper {
                           (imageElement as any).dataset?.src || '';
               }
 
-              if (headline && url) {
+              if (headline && url && !items.some(i => i.url === url)) {
                 items.push({ headline, description, url, imageUrl });
               }
             }
@@ -125,7 +147,7 @@ export class MMANewsScraper {
           }
         });
 
-        return items;
+        return items.slice(0, 15); // Limit to 15 articles
       });
 
       // Download images and create article objects
@@ -254,27 +276,25 @@ export class MMANewsScraper {
         timeout: 30000,
       });
 
-      // Wait for content to load
-      await page.waitForSelector('.view-news-landing, article, .l-listing__item', { timeout: 10000 });
+      // Wait for content to load - updated selector
+      await page.waitForSelector('.c-card--grid-card-trending', { timeout: 10000 });
 
       const scrapedArticles = await page.evaluate(() => {
         const items: any[] = [];
 
-        // Try multiple selectors for UFC's structure
+        // Updated selector: The card itself IS the link
         // @ts-ignore - document is available in browser context
-        const articleElements = document.querySelectorAll(
-          '.l-listing__item, .view-news-landing article, .c-card-event--news, article'
-        );
+        const articleElements = document.querySelectorAll('a.c-card--grid-card-trending');
 
         articleElements.forEach((article: any) => {
           try {
-            const linkElement = article.querySelector('a');
-            const titleElement = article.querySelector('h3, .c-card-event--news__headline, .field--name-title');
-            const descElement = article.querySelector('.c-card-event--news__description, .field--name-body, p');
+            // The article element IS the link
+            const linkElement = article;
+            const titleElement = article.querySelector('h3.c-card--grid-card-trending__headline, h3');
             const imageElement = article.querySelector('img');
 
             if (linkElement && titleElement) {
-              let url = (linkElement as any).href;
+              let url = linkElement.href;
 
               // Fix relative URLs
               if (url.startsWith('/')) {
@@ -282,7 +302,8 @@ export class MMANewsScraper {
               }
 
               const headline = titleElement.textContent?.trim() || '';
-              const description = descElement?.textContent?.trim() || '';
+              // UFC doesn't show descriptions on listing page
+              const description = '';
 
               let imageUrl = '';
               if (imageElement) {
@@ -352,43 +373,76 @@ export class MMANewsScraper {
         timeout: 30000,
       });
 
-      // Wait for articles to load
-      await page.waitForSelector('article, .contentStream, [data-testid="contentStream"]', { timeout: 10000 });
+      // Wait for MUI cards to load
+      await page.waitForSelector('a.MuiCardActionArea-root', { timeout: 10000 });
+
+      // Wait a bit more for JS-rendered content
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       const scrapedArticles = await page.evaluate(() => {
         const items: any[] = [];
 
+        // Updated selector: Find all links with /articles/ in href
         // @ts-ignore - document is available in browser context
-        const articleElements = document.querySelectorAll(
-          'article, .contentStream article, [class*="ContentCard"], [class*="articleCard"]'
-        );
+        const allLinks = document.querySelectorAll('a[href*="/articles/"]');
 
-        articleElements.forEach((article: any) => {
+        allLinks.forEach((link: any) => {
           try {
-            const linkElement = article.querySelector('a[href*="/articles/"]');
-            const titleElement = article.querySelector('h3, h2, [class*="title"], [class*="headline"]');
-            const descElement = article.querySelector('p, [class*="excerpt"], [class*="description"]');
-            const imageElement = article.querySelector('img');
+            const url = link.href;
 
-            if (linkElement && titleElement) {
-              let url = (linkElement as any).href;
+            // Extract title from link text
+            // Bleacher Report embeds title in link text like "Bleacher Report•2dConor Accepts Anti-Doping Ban..."
+            const fullText = link.textContent?.trim() || '';
 
-              if (url.startsWith('/')) {
-                url = 'https://bleacherreport.com' + url;
+            // Try to extract the headline (usually after a date marker like "2d", "19h", etc.)
+            let headline = '';
+
+            // Split by common patterns and take the meaningful part
+            const parts = fullText.split(/\d+[dh]|Bleacher Report•/i);
+            if (parts.length > 1) {
+              // Take the part after the date
+              headline = parts[parts.length - 1].split(/Full details|📲/)[0].trim();
+            }
+
+            // Fallback: just clean up the full text
+            if (!headline || headline.length < 10) {
+              headline = fullText.replace(/Bleacher Report•\d+[dh]/i, '').split(/📲/)[0].trim();
+            }
+
+            // Find image - Bleacher Report stores images at Level 2 (card's parent container)
+            let imageUrl = '';
+
+            const card = link.closest('.MuiCard-root');
+            if (card) {
+              const cardParent = card.parentElement;
+              if (cardParent) {
+                const allImages = cardParent.querySelectorAll('img');
+
+                // Find first valid article image (skip logos)
+                for (const img of allImages) {
+                  const src = (img as any).src || '';
+                  const alt = (img as any).alt || '';
+
+                  // Skip logos and profile images
+                  if (src &&
+                      !src.includes('/mma.png') &&
+                      !src.includes('profile_images') &&
+                      alt !== 'tag-logo') {
+                    imageUrl = src;
+                    break;
+                  }
+                }
               }
+            }
 
-              const headline = titleElement.textContent?.trim() || '';
-              const description = descElement?.textContent?.trim() || '';
-
-              let imageUrl = '';
-              if (imageElement) {
-                imageUrl = (imageElement as any).src ||
-                          (imageElement as any).dataset?.src || '';
-              }
-
-              if (headline && url && !items.some(i => i.url === url)) {
-                items.push({ headline, description, url, imageUrl });
-              }
+            // Only add if we have a valid headline and it's a unique URL
+            if (headline && headline.length > 10 && url && !items.some(i => i.url === url)) {
+              items.push({
+                headline: headline,
+                description: '', // Bleacher Report doesn't show descriptions
+                url: url,
+                imageUrl: imageUrl,
+              });
             }
           } catch (err) {
             console.error('Error parsing B/R article:', err);
@@ -470,6 +524,11 @@ export class MMANewsScraper {
         console.error('Bleacher Report scraping failed:', bleacherreport.reason);
       }
 
+      // Randomize article order for this scrape session to create variety
+      // This shuffles articles from all sources together, but only for this batch
+      // Previously scraped articles in the database remain in their original order
+      this.shuffleArray(allArticles);
+
       console.log(`\n✓ Total articles scraped: ${allArticles.length}`);
       console.log('Scraping complete!\n');
     } finally {
@@ -477,5 +536,13 @@ export class MMANewsScraper {
     }
 
     return allArticles;
+  }
+
+  // Fisher-Yates shuffle algorithm for randomizing array order
+  private shuffleArray<T>(array: T[]): void {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -31,12 +31,58 @@ export default function NewsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [page, setPage] = useState(1);
+  const [allArticles, setAllArticles] = useState<NewsArticle[]>([]);
 
-  const { data, isLoading, error, refetch, isRefetching } = useQuery({
+  const { data, isLoading, error, refetch, isRefetching, isFetchingNextPage } = useQuery({
     queryKey: ['news', page],
     queryFn: () => api.getNews({ page, limit: 20 }),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Append new articles when data changes
+  React.useEffect(() => {
+    if (data?.articles) {
+      if (page === 1) {
+        // Reset articles on refresh (page 1)
+        setAllArticles(data.articles);
+      } else {
+        // Append new articles for pagination
+        setAllArticles(prev => {
+          // Avoid duplicates
+          const existingIds = new Set(prev.map(a => a.id));
+          const newArticles = data.articles.filter(a => !existingIds.has(a.id));
+          return [...prev, ...newArticles];
+        });
+      }
+    }
+  }, [data, page]);
+
+  // Prefetch images for better UX
+  React.useEffect(() => {
+    if (allArticles.length > 0) {
+      // Prefetch images for all articles
+      allArticles.forEach(article => {
+        const imageUrl = article.imageUrl || (article.localImagePath ? `${api.baseURL}${article.localImagePath}` : null);
+        if (imageUrl) {
+          Image.prefetch(imageUrl).catch(() => {
+            // Silently fail - image will still try to load when rendered
+          });
+        }
+      });
+    }
+  }, [allArticles]);
+
+  const handleLoadMore = () => {
+    if (data?.pagination && page < data.pagination.totalPages && !isLoading && !isFetchingNextPage) {
+      setPage(prev => prev + 1);
+    }
+  };
+
+  const handleRefresh = () => {
+    setPage(1);
+    setAllArticles([]);
+    refetch();
+  };
 
   const handleArticlePress = async (url: string) => {
     try {
@@ -50,9 +96,8 @@ export default function NewsScreen() {
   };
 
   const renderArticle = ({ item }: { item: NewsArticle }) => {
-    const imageUrl = item.localImagePath
-      ? `${api.baseURL}${item.localImagePath}`
-      : item.imageUrl;
+    // Prefer remote imageUrl for reliability, fallback to local if needed
+    const imageUrl = item.imageUrl || (item.localImagePath ? `${api.baseURL}${item.localImagePath}` : null);
 
     return (
       <TouchableOpacity
@@ -62,9 +107,14 @@ export default function NewsScreen() {
       >
         {imageUrl && (
           <Image
-            source={{ uri: imageUrl }}
+            source={{
+              uri: imageUrl,
+              cache: 'force-cache', // Use cached version if available
+            }}
             style={styles.articleImage}
             resizeMode="cover"
+            onError={(e) => console.log('Image load error:', e.nativeEvent.error)}
+            fadeDuration={200}
           />
         )}
         <View style={styles.articleContent}>
@@ -91,7 +141,7 @@ export default function NewsScreen() {
     );
   };
 
-  if (isLoading && !data) {
+  if (isLoading && !data && allArticles.length === 0) {
     return (
       <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.tint} />
@@ -99,7 +149,7 @@ export default function NewsScreen() {
     );
   }
 
-  if (error) {
+  if (error && allArticles.length === 0) {
     return (
       <View style={[styles.centerContainer, { backgroundColor: colors.background }]}>
         <Text style={[styles.errorText, { color: colors.text }]}>
@@ -107,7 +157,7 @@ export default function NewsScreen() {
         </Text>
         <TouchableOpacity
           style={[styles.retryButton, { backgroundColor: colors.tint }]}
-          onPress={() => refetch()}
+          onPress={handleRefresh}
         >
           <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
@@ -115,20 +165,36 @@ export default function NewsScreen() {
     );
   }
 
+  const renderFooter = () => {
+    if (!isLoading || allArticles.length === 0) return null;
+
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={colors.tint} />
+        <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
+          Loading more articles...
+        </Text>
+      </View>
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
-        data={data?.articles || []}
+        data={allArticles}
         renderItem={renderArticle}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
+            refreshing={isRefetching && page === 1}
+            onRefresh={handleRefresh}
             tintColor={colors.tint}
           />
         }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
@@ -136,6 +202,16 @@ export default function NewsScreen() {
             </Text>
           </View>
         }
+        // Performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        initialNumToRender={10}
+        windowSize={11}
+        // Image loading optimization - items are prepared 5 screens ahead
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+        }}
       />
     </View>
   );
@@ -214,5 +290,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 14,
   },
 });

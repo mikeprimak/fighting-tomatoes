@@ -68,7 +68,7 @@ export default async function newsRoutes(fastify: FastifyInstance) {
           where,
           skip,
           take: limit,
-          orderBy: { scrapedAt: 'desc' },
+          orderBy: { createdAt: 'desc' },
         }),
         fastify.prisma.newsArticle.count({ where }),
       ]);
@@ -212,26 +212,37 @@ export default async function newsRoutes(fastify: FastifyInstance) {
         'Bleacher Report': 0,
       };
 
-      for (const article of articles) {
-        const existing = await fastify.prisma.newsArticle.findUnique({
-          where: { url: article.url },
+      // Filter out existing articles first
+      const existingUrls = await fastify.prisma.newsArticle.findMany({
+        where: { url: { in: articles.map(a => a.url) } },
+        select: { url: true },
+      });
+      const existingUrlSet = new Set(existingUrls.map(a => a.url));
+      const newArticles = articles.filter(a => !existingUrlSet.has(a.url));
+
+      // Create all new articles in bulk (preserves randomized order)
+      if (newArticles.length > 0) {
+        // Use the same base timestamp for all articles in this scrape session
+        const baseTime = new Date();
+
+        await fastify.prisma.newsArticle.createMany({
+          data: newArticles.map((article, index) => ({
+            headline: article.headline,
+            description: article.description || '',
+            url: article.url,
+            source: article.source,
+            imageUrl: article.imageUrl,
+            localImagePath: article.localImagePath,
+            scrapedAt: article.scrapedAt,
+            // Add milliseconds to preserve order while keeping them close together
+            createdAt: new Date(baseTime.getTime() + index),
+          })),
         });
 
-        if (!existing) {
-          await fastify.prisma.newsArticle.create({
-            data: {
-              headline: article.headline,
-              description: article.description || '',
-              url: article.url,
-              source: article.source,
-              imageUrl: article.imageUrl,
-              localImagePath: article.localImagePath,
-              scrapedAt: article.scrapedAt,
-            },
-          });
-          newArticlesCount++;
+        newArticlesCount = newArticles.length;
+        newArticles.forEach(article => {
           sourceCounts[article.source] = (sourceCounts[article.source] || 0) + 1;
-        }
+        });
       }
 
       return reply.code(200).send({
