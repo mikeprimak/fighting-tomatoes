@@ -712,6 +712,60 @@ class ApiService {
       throw error;
     }
   }
+
+  // News methods
+  async getNews(params: {
+    page?: number;
+    limit?: number;
+    source?: string;
+  } = {}): Promise<{
+    articles: Array<{
+      id: string;
+      headline: string;
+      description: string;
+      url: string;
+      source: string;
+      imageUrl: string | null;
+      localImagePath: string | null;
+      scrapedAt: string;
+      createdAt: string;
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const queryParams = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const queryString = queryParams.toString();
+    const endpoint = `/news${queryString ? `?${queryString}` : ''}`;
+
+    return this.makeRequest(endpoint);
+  }
+
+  async getNewsArticle(articleId: string): Promise<{
+    article: {
+      id: string;
+      headline: string;
+      description: string;
+      url: string;
+      source: string;
+      imageUrl: string | null;
+      localImagePath: string | null;
+      scrapedAt: string;
+      createdAt: string;
+    };
+  }> {
+    return this.makeRequest(`/news/${articleId}`);
+  }
 }
 
 export const apiService = new ApiService();

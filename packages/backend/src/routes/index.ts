@@ -7,6 +7,7 @@ import importRoutes from './import';
 import liveEventsRoutes from './liveEvents';
 import mockLiveEventsRoutes from './mockLiveEvents';
 import notificationsRoutes from './notifications';
+import newsRoutes from './news';
 import { uploadRoutes } from './upload';
 import { authenticateUser } from '../middleware/auth';
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
@@ -1122,6 +1123,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Register notifications routes under /api/notifications prefix
   await fastify.register(notificationsRoutes, { prefix: '/api/notifications' });
+
+  // Register news routes under /api prefix
+  await fastify.register(newsRoutes, { prefix: '/api' });
 
   // Register upload routes under /api prefix
   await fastify.register(async function(fastify) {

@@ -988,3 +988,30 @@ model CrewReaction {
 
   @@map("crew_reactions")
 }
+
+// ============== MMA NEWS ==============
+model NewsArticle {
+  id              String    @id @default(uuid())
+
+  // Article content
+  headline        String
+  description     String    @default("")
+  url             String    @unique
+  source          String    // "MMA Fighting", "Bloody Elbow", "UFC", "Bleacher Report"
+
+  // Images
+  imageUrl        String?
+  localImagePath  String?   // Path to downloaded image (e.g., "/news-images/bloodyelbow-123456.jpg")
+
+  // Status
+  isActive        Boolean   @default(true)
+
+  // Timestamps
+  scrapedAt       DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([source, createdAt])
+  @@index([createdAt])
+  @@map("news_articles")
+}
