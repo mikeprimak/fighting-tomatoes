@@ -210,6 +210,8 @@ export default async function newsRoutes(fastify: FastifyInstance) {
         'Bloody Elbow': 0,
         'UFC': 0,
         'Bleacher Report': 0,
+        'Sherdog': 0,
+        'ESPN Boxing': 0,
       };
 
       // Filter out existing articles first

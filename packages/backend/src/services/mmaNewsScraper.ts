@@ -409,31 +409,8 @@ export class MMANewsScraper {
               headline = fullText.replace(/Bleacher Report•\d+[dh]/i, '').split(/📲/)[0].trim();
             }
 
-            // Find image - Bleacher Report stores images at Level 2 (card's parent container)
-            let imageUrl = '';
-
-            const card = link.closest('.MuiCard-root');
-            if (card) {
-              const cardParent = card.parentElement;
-              if (cardParent) {
-                const allImages = cardParent.querySelectorAll('img');
-
-                // Find first valid article image (skip logos)
-                for (const img of allImages) {
-                  const src = (img as any).src || '';
-                  const alt = (img as any).alt || '';
-
-                  // Skip logos and profile images
-                  if (src &&
-                      !src.includes('/mma.png') &&
-                      !src.includes('profile_images') &&
-                      alt !== 'tag-logo') {
-                    imageUrl = src;
-                    break;
-                  }
-                }
-              }
-            }
+            // Note: Bleacher Report MMA page doesn't have individual article images
+            // Images are shared across the feed or loaded separately, so we leave imageUrl empty
 
             // Only add if we have a valid headline and it's a unique URL
             if (headline && headline.length > 10 && url && !items.some(i => i.url === url)) {
@@ -441,7 +418,7 @@ export class MMANewsScraper {
                 headline: headline,
                 description: '', // Bleacher Report doesn't show descriptions
                 url: url,
-                imageUrl: imageUrl,
+                imageUrl: '', // No images available on listing page
               });
             }
           } catch (err) {
@@ -453,11 +430,160 @@ export class MMANewsScraper {
       });
 
       for (const item of scrapedArticles) {
+        // No images to download for Bleacher Report articles
+        articles.push({
+          headline: item.headline,
+          description: item.description,
+          url: item.url,
+          source: 'Bleacher Report',
+          imageUrl: '', // No images available
+          localImagePath: undefined,
+          scrapedAt: new Date(),
+        });
+      }
+
+      console.log(`✓ Bleacher Report: ${articles.length} articles scraped`);
+    } catch (error) {
+      console.error('Error scraping Bleacher Report:', error);
+    } finally {
+      await page.close();
+    }
+
+    return articles;
+  }
+
+  async scrapeSherdog(): Promise<NewsArticle[]> {
+    console.log('Scraping Sherdog...');
+    const page = await this.browser!.newPage();
+    const articles: NewsArticle[] = [];
+
+    try {
+      await page.goto('https://www.sherdog.com/news/news/list', {
+        waitUntil: 'networkidle2',
+        timeout: 30000,
+      });
+
+      // Wait for news list to load
+      await page.waitForSelector('.module_list_generic.latest_articles', { timeout: 10000 });
+
+      const scrapedArticles = await page.evaluate(() => {
+        const items: any[] = [];
+        // @ts-ignore - document is available in browser context
+        const linkElements = document.querySelectorAll('.module_list_generic.latest_articles ul li a');
+
+        linkElements.forEach((link: any) => {
+          try {
+            let url = link.href;
+            const headline = link.textContent?.trim() || '';
+
+            // Fix relative URLs
+            if (url.startsWith('/')) {
+              url = 'https://www.sherdog.com' + url;
+            }
+
+            if (headline && url && !items.some(i => i.url === url)) {
+              items.push({
+                headline,
+                description: '', // Sherdog doesn't show descriptions on listing page
+                url,
+                imageUrl: '', // Sherdog list doesn't have images
+              });
+            }
+          } catch (err) {
+            console.error('Error parsing Sherdog article:', err);
+          }
+        });
+
+        return items.slice(0, 15); // Limit to 15 articles
+      });
+
+      for (const item of scrapedArticles) {
+        articles.push({
+          headline: item.headline,
+          description: item.description,
+          url: item.url,
+          source: 'Sherdog',
+          imageUrl: item.imageUrl,
+          localImagePath: undefined,
+          scrapedAt: new Date(),
+        });
+      }
+
+      console.log(`✓ Sherdog: ${articles.length} articles scraped`);
+    } catch (error) {
+      console.error('Error scraping Sherdog:', error);
+    } finally {
+      await page.close();
+    }
+
+    return articles;
+  }
+
+  async scrapeESPNBoxing(): Promise<NewsArticle[]> {
+    console.log('Scraping ESPN Boxing...');
+    const page = await this.browser!.newPage();
+    const articles: NewsArticle[] = [];
+
+    try {
+      await page.goto('https://www.espn.com/boxing/', {
+        waitUntil: 'networkidle2',
+        timeout: 30000,
+      });
+
+      // Wait for content items to load
+      await page.waitForSelector('.contentItem__content', { timeout: 10000 });
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const scrapedArticles = await page.evaluate(() => {
+        const items: any[] = [];
+        // @ts-ignore - document is available in browser context
+        const contentItems = document.querySelectorAll('.contentItem__content--story');
+
+        contentItems.forEach((item: any) => {
+          try {
+            const linkElement = item.querySelector('a');
+            const titleElement = item.querySelector('h2.contentItem__title');
+            const imageElement = item.querySelector('img.media-wrapper_image');
+
+            if (linkElement && titleElement) {
+              let url = linkElement.href;
+              const headline = titleElement.textContent?.trim() || '';
+
+              // Fix relative URLs
+              if (url.startsWith('/')) {
+                url = 'https://www.espn.com' + url;
+              }
+
+              let imageUrl = '';
+              if (imageElement) {
+                // ESPN uses lazy loading - check src first, then data-default-src attribute
+                imageUrl = (imageElement as any).src ||
+                          (imageElement as any).getAttribute('data-default-src') || '';
+              }
+
+              if (headline && url && !items.some(i => i.url === url)) {
+                items.push({
+                  headline,
+                  description: '', // ESPN doesn't show descriptions on listing page
+                  url,
+                  imageUrl,
+                });
+              }
+            }
+          } catch (err) {
+            console.error('Error parsing ESPN article:', err);
+          }
+        });
+
+        return items.slice(0, 15); // Limit to 15 articles
+      });
+
+      for (const item of scrapedArticles) {
         let localImagePath: string | undefined;
 
         if (item.imageUrl) {
           try {
-            const filename = this.generateFilename(item.imageUrl, 'bleacherreport');
+            const filename = this.generateFilename(item.imageUrl, 'espn-boxing');
             localImagePath = await this.downloadImage(item.imageUrl, filename);
           } catch (err) {
             console.error(`Failed to download image: ${item.imageUrl}`, err);
@@ -468,16 +594,16 @@ export class MMANewsScraper {
           headline: item.headline,
           description: item.description,
           url: item.url,
-          source: 'Bleacher Report',
+          source: 'ESPN Boxing',
           imageUrl: item.imageUrl,
           localImagePath,
           scrapedAt: new Date(),
         });
       }
 
-      console.log(`✓ Bleacher Report: ${articles.length} articles scraped`);
+      console.log(`✓ ESPN Boxing: ${articles.length} articles scraped`);
     } catch (error) {
-      console.error('Error scraping Bleacher Report:', error);
+      console.error('Error scraping ESPN Boxing:', error);
     } finally {
       await page.close();
     }
@@ -493,11 +619,13 @@ export class MMANewsScraper {
 
     try {
       // Run scrapers in parallel for better performance
-      const [mmafighting, bloodyelbow, ufc, bleacherreport] = await Promise.allSettled([
+      const [mmafighting, bloodyelbow, ufc, bleacherreport, sherdog, espnboxing] = await Promise.allSettled([
         this.scrapeMMAfighting(),
         this.scrapeBloodyElbow(),
         this.scrapeUFC(),
         this.scrapeBleacherReport(),
+        this.scrapeSherdog(),
+        this.scrapeESPNBoxing(),
       ]);
 
       if (mmafighting.status === 'fulfilled') {
@@ -522,6 +650,18 @@ export class MMANewsScraper {
         allArticles.push(...bleacherreport.value);
       } else {
         console.error('Bleacher Report scraping failed:', bleacherreport.reason);
+      }
+
+      if (sherdog.status === 'fulfilled') {
+        allArticles.push(...sherdog.value);
+      } else {
+        console.error('Sherdog scraping failed:', sherdog.reason);
+      }
+
+      if (espnboxing.status === 'fulfilled') {
+        allArticles.push(...espnboxing.value);
+      } else {
+        console.error('ESPN Boxing scraping failed:', espnboxing.reason);
       }
 
       // Randomize article order for this scrape session to create variety

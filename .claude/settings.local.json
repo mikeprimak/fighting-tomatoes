@@ -77,7 +77,14 @@
       "Bash(start \"\" http://localhost:8083)",
       "Bash(dir:*)",
       "Bash(pnpm docker:logs:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "WebFetch(domain:www.mmafighting.com)",
+      "WebFetch(domain:bloodyelbow.com)",
+      "WebFetch(domain:bleacherreport.com)",
+      "WebFetch(domain:www.sherdog.com)",
+      "WebFetch(domain:www.espn.com)",
+      "WebFetch(domain:sherdog.com)",
+      "WebFetch(domain:espn.com)"
     ],
     "deny": [],
     "ask": []
