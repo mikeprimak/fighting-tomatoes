@@ -97,6 +97,32 @@ export class MMANewsScraper {
     }
   }
 
+  // Fetch Open Graph image from article URL
+  private async fetchOGImage(articleUrl: string): Promise<string> {
+    const page = await this.browser!.newPage();
+    try {
+      await page.goto(articleUrl, {
+        waitUntil: 'domcontentloaded',
+        timeout: 10000,
+      });
+
+      const ogImage = await page.evaluate(() => {
+        // @ts-ignore - document is available in browser context
+        const ogMeta = document.querySelector('meta[property="og:image"]');
+        // @ts-ignore - document is available in browser context
+        const twitterMeta = document.querySelector('meta[name="twitter:image"]');
+        return ogMeta?.getAttribute('content') || twitterMeta?.getAttribute('content') || '';
+      });
+
+      return ogImage;
+    } catch (error) {
+      console.error(`Failed to fetch OG image for ${articleUrl}:`, error);
+      return '';
+    } finally {
+      await page.close();
+    }
+  }
+
   async scrapeMMAfighting(): Promise<NewsArticle[]> {
     console.log('Scraping MMA Fighting...');
     const page = await this.browser!.newPage();
@@ -429,20 +455,54 @@ export class MMANewsScraper {
         return items.slice(0, 15);
       });
 
-      for (const item of scrapedArticles) {
-        // No images to download for Bleacher Report articles
+      // Filter for combat sports articles only
+      const combatSportsKeywords = [
+        'ufc', 'mma', 'fight', 'pereira', 'ankalaev', 'mcgregor', 'jones', 'adesanya',
+        'boxing', 'boxer', 'knockout', 'submission', 'octagon', 'cage', 'combat',
+        'bellator', 'pfl', 'strikeforce', 'pride', 'wrestling', 'grappling',
+        'heavyweight', 'lightweight', 'welterweight', 'bantamweight', 'featherweight',
+        'flyweight', 'middleweight', 'championship', 'title fight', 'martial arts',
+        'jackson', 'rampage', 'dana white', 'ko', 'tko', 'decision'
+      ];
+
+      const filteredArticles = scrapedArticles.filter((item) => {
+        const textToCheck = (item.headline + ' ' + item.url).toLowerCase();
+        return combatSportsKeywords.some(keyword => textToCheck.includes(keyword));
+      });
+
+      console.log(`Filtered ${scrapedArticles.length} articles to ${filteredArticles.length} combat sports articles`);
+
+      // Fetch Open Graph images for Bleacher Report articles (second pass)
+      console.log('Fetching images for Bleacher Report articles...');
+      for (const item of filteredArticles) {
+        let imageUrl = '';
+        let localImagePath: string | undefined;
+
+        // Fetch OG image from article page
+        imageUrl = await this.fetchOGImage(item.url);
+
+        // Download image if found
+        if (imageUrl) {
+          try {
+            const filename = this.generateFilename(imageUrl, 'bleacherreport');
+            localImagePath = await this.downloadImage(imageUrl, filename);
+          } catch (err) {
+            console.error(`Failed to download image: ${imageUrl}`, err);
+          }
+        }
+
         articles.push({
           headline: item.headline,
           description: item.description,
           url: item.url,
           source: 'Bleacher Report',
-          imageUrl: '', // No images available
-          localImagePath: undefined,
+          imageUrl,
+          localImagePath,
           scrapedAt: new Date(),
         });
       }
 
-      console.log(`✓ Bleacher Report: ${articles.length} articles scraped`);
+      console.log(`✓ Bleacher Report: ${articles.length} articles scraped (with images)`);
     } catch (error) {
       console.error('Error scraping Bleacher Report:', error);
     } finally {
