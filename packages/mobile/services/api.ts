@@ -468,7 +468,7 @@ class ApiService {
     });
   }
 
-  async updateCrewDetails(crewId: string, details: { description?: string; imageUrl?: string }): Promise<{ crew: any }> {
+  async updateCrewDetails(crewId: string, details: { name?: string; description?: string; imageUrl?: string }): Promise<{ crew: any }> {
     return this.makeRequest(`/crews/${crewId}/details`, {
       method: 'PUT',
       body: JSON.stringify(details),
@@ -765,6 +765,55 @@ class ApiService {
     };
   }> {
     return this.makeRequest(`/news/${articleId}`);
+  }
+
+  // Community methods
+  async getTopComments(): Promise<{
+    data: Array<{
+      id: string;
+      content: string;
+      rating: number;
+      upvotes: number;
+      createdAt: string;
+      userHasUpvoted: boolean;
+      user: {
+        id: string;
+        displayName: string;
+      };
+      fight: {
+        id: string;
+        fighter1Name: string;
+        fighter2Name: string;
+        eventName: string;
+        eventDate: string;
+      };
+    }>;
+  }> {
+    return this.makeRequest('/community/top-comments');
+  }
+
+  async getComments(sortBy: 'top-recent' | 'top-all-time' | 'new' = 'top-recent'): Promise<{
+    data: Array<{
+      id: string;
+      content: string;
+      rating: number;
+      upvotes: number;
+      createdAt: string;
+      userHasUpvoted: boolean;
+      user: {
+        id: string;
+        displayName: string;
+      };
+      fight: {
+        id: string;
+        fighter1Name: string;
+        fighter2Name: string;
+        eventName: string;
+        eventDate: string;
+      };
+    }>;
+  }> {
+    return this.makeRequest(`/community/comments?sortBy=${sortBy}`);
   }
 }
 
