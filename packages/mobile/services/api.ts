@@ -579,6 +579,56 @@ class ApiService {
     return this.makeRequest(`/fights/${fightId}/predictions`);
   }
 
+  async getEventPredictionStats(eventId: string): Promise<{
+    eventId: string;
+    eventName: string;
+    hasStarted: boolean;
+    totalPredictions: number;
+    averageEventHype: number;
+    mostHypedFights: Array<{
+      fightId: string;
+      fighter1: {
+        id: string;
+        name: string;
+        nickname?: string;
+        profileImage?: string;
+      };
+      fighter2: {
+        id: string;
+        name: string;
+        nickname?: string;
+        profileImage?: string;
+      };
+      isTitle: boolean;
+      weightClass?: string;
+      averageHype: number;
+      totalPredictions: number;
+    }>;
+    topFighters: Array<{
+      fightId: string;
+      fighterId: string;
+      name: string;
+      nickname?: string;
+      profileImage?: string;
+      winPredictions: number;
+      totalFightPredictions: number;
+      methodBreakdown: {
+        DECISION: number;
+        KO_TKO: number;
+        SUBMISSION: number;
+      };
+      roundBreakdown: Record<number, number>;
+      opponent: {
+        id: string;
+        name: string;
+        nickname?: string;
+        profileImage?: string;
+      };
+    }>;
+  }> {
+    return this.makeRequest(`/events/${eventId}/predictions`);
+  }
+
   async getMyRatings(params: {
     page?: string;
     limit?: string;

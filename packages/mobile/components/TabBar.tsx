@@ -151,59 +151,13 @@ export function FightCrewAppTabBar() {
             display: pathname.includes('/events/') ? 'none' : 'flex',
           },
         }}
-        listeners={{
-          tabPress: (e) => {
-            // If already in events tab (anywhere in the stack), navigate to index
-            if (pathname.startsWith('/(tabs)/events')) {
-              e.preventDefault();
-              router.push('/(tabs)/events');
-            }
-          },
-        }}
       />
       <Tabs.Screen
-        name="fights"
+        name="community"
         options={{
-          title: 'Fights',
-          tabBarIcon: ({ color }) => <TabBarIcon name="star" color={color} />,
-          headerTitle: 'Fights',
-        }}
-      />
-      <Tabs.Screen
-        name="fighters"
-        options={{
-          title: 'Fighters',
-          tabBarIcon: ({ color, focused }) => {
-            // Only show as focused if on the fighters index page
-            const isOnFightersIndex = pathname === '/(tabs)/fighters' || pathname === '/fighters';
-            const iconColor = isOnFightersIndex ? color : colors.tabIconDefault;
-            return <TabBarIcon name="users" color={iconColor} />;
-          },
-          tabBarLabel: ({ color, focused }) => {
-            // Only show as focused if on the fighters index page
-            const isOnFightersIndex = pathname === '/(tabs)/fighters' || pathname === '/fighters';
-            return (
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: isOnFightersIndex ? color : colors.tabIconDefault,
-                }}
-              >
-                Fighters
-              </Text>
-            );
-          },
-          headerShown: true,
-          headerTitle: 'Fighters',
-        }}
-        listeners={{
-          tabPress: (e) => {
-            // If already in fighters tab (anywhere in the stack), navigate to index
-            if (pathname.startsWith('/(tabs)/fighters')) {
-              e.preventDefault();
-              router.push('/(tabs)/fighters');
-            }
-          },
+          title: 'Community',
+          tabBarIcon: ({ color }) => <TabBarIcon name="globe" color={color} />,
+          headerTitle: 'Community',
         }}
       />
       <Tabs.Screen

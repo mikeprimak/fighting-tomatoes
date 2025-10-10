@@ -312,6 +312,226 @@ export async function registerRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Event predictions endpoint - Get aggregate predictions for an event
+  fastify.get('/api/events/:id/predictions', async (request, reply) => {
+    const { id: eventId } = request.params as { id: string };
+
+    try {
+      // Check if event exists
+      const event = await fastify.prisma.event.findUnique({
+        where: { id: eventId },
+        select: {
+          id: true,
+          name: true,
+          hasStarted: true,
+        },
+      });
+
+      if (!event) {
+        return reply.code(404).send({
+          error: 'Event not found',
+          code: 'EVENT_NOT_FOUND',
+        });
+      }
+
+      // Get all fights for this event
+      const fights = await fastify.prisma.fight.findMany({
+        where: { eventId },
+        include: {
+          fighter1: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              nickname: true,
+              profileImage: true,
+            },
+          },
+          fighter2: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              nickname: true,
+              profileImage: true,
+            },
+          },
+          predictions: {
+            select: {
+              id: true,
+              predictedRating: true,
+              predictedWinner: true,
+              predictedMethod: true,
+              predictedRound: true,
+            },
+          },
+        },
+        orderBy: {
+          orderOnCard: 'asc', // Main event first
+        },
+      });
+
+      // Calculate hype level for each fight (average predicted rating)
+      const fightsWithHype = fights.map((fight: any) => {
+        const predictionsWithRating = fight.predictions.filter((p: any) => p.predictedRating !== null);
+        const averageHype = predictionsWithRating.length > 0
+          ? predictionsWithRating.reduce((sum: number, p: any) => sum + p.predictedRating, 0) / predictionsWithRating.length
+          : 0;
+
+        const totalPredictions = fight.predictions.length;
+        const fighter1Predictions = fight.predictions.filter((p: any) => p.predictedWinner === fight.fighter1Id).length;
+        const fighter2Predictions = fight.predictions.filter((p: any) => p.predictedWinner === fight.fighter2Id).length;
+
+        return {
+          id: fight.id,
+          fighter1: fight.fighter1,
+          fighter2: fight.fighter2,
+          isTitle: fight.isTitle,
+          weightClass: fight.weightClass,
+          orderOnCard: fight.orderOnCard,
+          totalPredictions,
+          averageHype: Math.round(averageHype * 10) / 10,
+          fighter1Predictions,
+          fighter2Predictions,
+          predictions: fight.predictions,
+        };
+      });
+
+      // Get top 3 most hyped fights
+      const mostHypedFights = [...fightsWithHype]
+        .filter(f => f.averageHype > 0)
+        .sort((a, b) => b.averageHype - a.averageHype)
+        .slice(0, 3)
+        .map(f => ({
+          fightId: f.id,
+          fighter1: {
+            id: f.fighter1.id,
+            name: `${f.fighter1.firstName} ${f.fighter1.lastName}`,
+            nickname: f.fighter1.nickname,
+            profileImage: f.fighter1.profileImage,
+          },
+          fighter2: {
+            id: f.fighter2.id,
+            name: `${f.fighter2.firstName} ${f.fighter2.lastName}`,
+            nickname: f.fighter2.nickname,
+            profileImage: f.fighter2.profileImage,
+          },
+          isTitle: f.isTitle,
+          weightClass: f.weightClass,
+          averageHype: f.averageHype,
+          totalPredictions: f.totalPredictions,
+        }));
+
+      // Aggregate all fighter win predictions across all fights
+      const fighterWinCounts: Record<string, { fighter: any; opponent: any; fightId: string; count: number; totalFightPredictions: number; methods: Record<string, number>; rounds: Record<number, number> }> = {};
+
+      fightsWithHype.forEach((fight: any) => {
+        // Process fighter1 predictions
+        if (fight.fighter1Predictions > 0) {
+          if (!fighterWinCounts[fight.fighter1.id]) {
+            fighterWinCounts[fight.fighter1.id] = {
+              fighter: fight.fighter1,
+              opponent: fight.fighter2,
+              fightId: fight.id,
+              count: 0,
+              totalFightPredictions: fight.totalPredictions,
+              methods: { DECISION: 0, KO_TKO: 0, SUBMISSION: 0 },
+              rounds: {},
+            };
+          }
+          fighterWinCounts[fight.fighter1.id].count += fight.fighter1Predictions;
+
+          // Count methods and rounds for fighter1
+          fight.predictions.forEach((p: any) => {
+            if (p.predictedWinner === fight.fighter1.id) {
+              if (p.predictedMethod) {
+                fighterWinCounts[fight.fighter1.id].methods[p.predictedMethod]++;
+              }
+              if (p.predictedRound) {
+                fighterWinCounts[fight.fighter1.id].rounds[p.predictedRound] =
+                  (fighterWinCounts[fight.fighter1.id].rounds[p.predictedRound] || 0) + 1;
+              }
+            }
+          });
+        }
+
+        // Process fighter2 predictions
+        if (fight.fighter2Predictions > 0) {
+          if (!fighterWinCounts[fight.fighter2.id]) {
+            fighterWinCounts[fight.fighter2.id] = {
+              fighter: fight.fighter2,
+              opponent: fight.fighter1,
+              fightId: fight.id,
+              count: 0,
+              totalFightPredictions: fight.totalPredictions,
+              methods: { DECISION: 0, KO_TKO: 0, SUBMISSION: 0 },
+              rounds: {},
+            };
+          }
+          fighterWinCounts[fight.fighter2.id].count += fight.fighter2Predictions;
+
+          // Count methods and rounds for fighter2
+          fight.predictions.forEach((p: any) => {
+            if (p.predictedWinner === fight.fighter2.id) {
+              if (p.predictedMethod) {
+                fighterWinCounts[fight.fighter2.id].methods[p.predictedMethod]++;
+              }
+              if (p.predictedRound) {
+                fighterWinCounts[fight.fighter2.id].rounds[p.predictedRound] =
+                  (fighterWinCounts[fight.fighter2.id].rounds[p.predictedRound] || 0) + 1;
+              }
+            }
+          });
+        }
+      });
+
+      // Sort fighters by prediction count and get top fighters
+      const topFighters = Object.values(fighterWinCounts)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10) // Top 10 fighters
+        .map(f => ({
+          fightId: f.fightId,
+          fighterId: f.fighter.id,
+          name: `${f.fighter.firstName} ${f.fighter.lastName}`,
+          nickname: f.fighter.nickname,
+          profileImage: f.fighter.profileImage,
+          winPredictions: f.count,
+          totalFightPredictions: f.totalFightPredictions,
+          methodBreakdown: f.methods,
+          roundBreakdown: f.rounds,
+          opponent: {
+            id: f.opponent.id,
+            name: `${f.opponent.firstName} ${f.opponent.lastName}`,
+            nickname: f.opponent.nickname,
+            profileImage: f.opponent.profileImage,
+          },
+        }));
+
+      // Overall stats
+      const totalPredictions = fightsWithHype.reduce((sum, f) => sum + f.totalPredictions, 0);
+      const averageEventHype = fightsWithHype.length > 0
+        ? fightsWithHype.reduce((sum, f) => sum + f.averageHype, 0) / fightsWithHype.length
+        : 0;
+
+      return reply.send({
+        eventId,
+        eventName: event.name,
+        hasStarted: event.hasStarted,
+        totalPredictions,
+        averageEventHype: Math.round(averageEventHype * 10) / 10,
+        mostHypedFights,
+        topFighters,
+      });
+
+    } catch (error: any) {
+      request.log.error('Event predictions fetch error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
   // Fighters endpoint
   fastify.get('/api/fighters', {
     schema: {

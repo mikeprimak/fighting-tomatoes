@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import { AnalyticsService } from '../services/analytics';
 import { notificationService } from '../services/notificationService';
 import type { Notification, NotificationResponse } from 'expo-notifications';
+import { queryClient } from '../app/_layout';
 
 interface User {
   id: string;
@@ -123,6 +124,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessToken(data.accessToken);
       setUser(data.user);
 
+      // Clear query cache to ensure fresh data for the new user
+      queryClient.clear();
+      console.log('Query cache cleared on login');
+
       // Set user ID for analytics - TEMPORARILY DISABLED
       // await AnalyticsService.setUserId(data.user.id);
 
@@ -205,6 +210,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAccessToken(null);
       setUser(null);
+
+      // Clear all React Query cache to prevent data from previous user showing
+      queryClient.clear();
+      console.log('Query cache cleared on logout');
 
       // Clear analytics user ID and end session - TEMPORARILY DISABLED
       // await AnalyticsService.clearUserId();
@@ -292,7 +301,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (data.eventId) {
       router.push(`/(tabs)/events/${data.eventId}`);
     } else if (data.fightId) {
-      router.push(`/(tabs)/fights`); // TODO: Add fight detail screen
+      router.push(`/fight/${data.fightId}`);
     } else if (data.crewId) {
       router.push(`/crew/${data.crewId}`);
     } else if (data.screen) {
