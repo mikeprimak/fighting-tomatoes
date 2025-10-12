@@ -193,7 +193,8 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
       timeout: 30000
     });
 
-    await page.waitForSelector('.c-listing-fight', { timeout: 10000 });
+    // Don't wait for fight card - it may not be published yet
+    // We still want to extract the banner image
 
     const eventData = await page.evaluate(() => {
       // Extract event image
@@ -232,13 +233,105 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
 
       // Extract fight card
       const fightCard = document.querySelector('.fight-card');
-      if (!fightCard) return { error: 'No fight card found' };
 
       const sections = [];
       const allFights = [];
       let globalOrder = 1;
       let eventStartTime = null;
 
+      // Try new structure: check if fights exist directly without fight-card container
+      if (!fightCard) {
+        const allFightElements = document.querySelectorAll('.c-listing-fight');
+
+        if (allFightElements.length === 0) {
+          return {
+            eventImageUrl,
+            eventStartTime,
+            sections,
+            fights: []
+          };
+        }
+
+        // Process fights without section structure
+        allFightElements.forEach((element) => {
+          const fightId = element.getAttribute('data-fmid') || '';
+
+          const weightClassEl = element.querySelector('.c-listing-fight__class-text');
+          let weightClass = weightClassEl?.textContent?.trim() || '';
+          const isTitle = weightClass.toLowerCase().includes('title');
+          weightClass = weightClass.replace(/\s*Title\s*/gi, '').replace(/\s*Bout\s*/gi, '').trim();
+
+          const redName = element.querySelector('.c-listing-fight__corner-name--red')?.textContent?.replace(/\s+/g, ' ').trim() || '';
+
+          let redAthleteUrl = '';
+          const redImageLink = element.querySelector('.c-listing-fight__corner-image--red a');
+          const redNameLink = element.querySelector('.c-listing-fight__corner-name--red a');
+          if (redImageLink && redImageLink.href) {
+            redAthleteUrl = redImageLink.href;
+          } else if (redNameLink && redNameLink.href) {
+            redAthleteUrl = redNameLink.href;
+          }
+
+          const blueName = element.querySelector('.c-listing-fight__corner-name--blue')?.textContent?.replace(/\s+/g, ' ').trim() || '';
+
+          let blueAthleteUrl = '';
+          const blueImageLink = element.querySelector('.c-listing-fight__corner-image--blue a');
+          const blueNameLink = element.querySelector('.c-listing-fight__corner-name--blue a');
+          if (blueImageLink && blueImageLink.href) {
+            blueAthleteUrl = blueImageLink.href;
+          } else if (blueNameLink && blueNameLink.href) {
+            blueAthleteUrl = blueNameLink.href;
+          }
+
+          const ranksRow = element.querySelector('.c-listing-fight__ranks-row');
+          const redRankEl = ranksRow ? ranksRow.querySelector('.js-listing-fight__corner-rank:first-child span') : null;
+          const blueRankEl = ranksRow ? ranksRow.querySelector('.js-listing-fight__corner-rank:last-child span') : null;
+          const redRank = redRankEl?.textContent?.trim() || '';
+          const blueRank = blueRankEl?.textContent?.trim() || '';
+
+          const redCountryEl = element.querySelector('.c-listing-fight__country--red .c-listing-fight__country-text');
+          const redCountry = redCountryEl?.textContent?.trim() || '';
+          const blueCountryEl = element.querySelector('.c-listing-fight__country--blue .c-listing-fight__country-text');
+          const blueCountry = blueCountryEl?.textContent?.trim() || '';
+
+          const oddsElements = element.querySelectorAll('.c-listing-fight__odds-amount');
+          const redOdds = oddsElements[0]?.textContent?.trim() || '';
+          const blueOdds = oddsElements[1]?.textContent?.trim() || '';
+
+          const fightData = {
+            fightId: fightId || `fight-${globalOrder}`,
+            order: globalOrder++,
+            cardType: 'Main Card', // Default when no sections
+            weightClass,
+            isTitle,
+            fighterA: {
+              name: redName,
+              rank: redRank,
+              country: redCountry,
+              odds: redOdds,
+              athleteUrl: redAthleteUrl
+            },
+            fighterB: {
+              name: blueName,
+              rank: blueRank,
+              country: blueCountry,
+              odds: blueOdds,
+              athleteUrl: blueAthleteUrl
+            }
+          };
+
+          allFights.push(fightData);
+        });
+
+        return {
+          eventImageUrl,
+          eventStartTime,
+          sections,
+          fights: allFights
+        };
+      }
+
+      // Old structure with fight-card sections
       Array.from(fightCard.children).forEach(section => {
         const sectionClass = section.className;
         if (sectionClass === 'anchors-bar') return;

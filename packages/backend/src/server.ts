@@ -81,12 +81,16 @@ async function start() {
       origin: [
         'http://localhost:3000',      // Web development
         'http://localhost:8081',      // Expo development
+        'http://localhost:8083',      // Expo development (current port)
         'http://localhost:8087',      // Expo development client
         'exp://localhost:8081',       // Expo development
+        'exp://localhost:8083',       // Expo development (current port)
         'exp://localhost:8087',       // Expo development client
         'http://10.0.0.53:8081',      // Mobile network access
+        'http://10.0.0.53:8083',      // Mobile network access (current port)
         'http://10.0.0.53:8087',      // Mobile network access
         'exp://10.0.0.53:8081',       // Expo mobile development
+        'exp://10.0.0.53:8083',       // Expo mobile development (current port)
         'exp://10.0.0.53:8087',       // Expo mobile development
       ],
       credentials: true,
