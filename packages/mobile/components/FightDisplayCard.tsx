@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Image } from 'react-native';
-import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -111,6 +111,9 @@ export default function FightDisplayCard({
   const bellRotation = useRef(new Animated.Value(0)).current;
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const toastTranslateY = useRef(new Animated.Value(50)).current;
+
+  // Rating star press state
+  const [isRatingPressed, setIsRatingPressed] = useState(false);
 
   // Track when "Up next..." first appeared for this fight - use ref to persist across renders
   const upNextStartTimeRef = useRef<number | null>(null);
@@ -291,9 +294,9 @@ export default function FightDisplayCard({
     } else if (fight.winner === 'nc') {
       winnerName = 'No Contest';
     } else if (fight.winner === fight.fighter1.id) {
-      winnerName = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
+      winnerName = fight.fighter1.lastName;
     } else if (fight.winner === fight.fighter2.id) {
-      winnerName = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+      winnerName = fight.fighter2.lastName;
     } else {
       return null;
     }
@@ -307,7 +310,7 @@ export default function FightDisplayCard({
       return `${winnerName}${roundTimeText}`;
     }
 
-    return `${winnerName} via ${fight.method}${roundTimeText}`;
+    return `${winnerName} by ${fight.method}${roundTimeText}`;
   };
 
   // Force re-render every second when this is the next fight and not live
@@ -382,6 +385,13 @@ export default function FightDisplayCard({
     return nicknameMatch ? nicknameMatch[1].trim() : displayName;
   };
 
+  // Helper function to extract last name from full name
+  const getLastName = (fullName: string) => {
+    if (!fullName) return fullName;
+    const parts = fullName.trim().split(' ');
+    return parts[parts.length - 1];
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -389,6 +399,14 @@ export default function FightDisplayCard({
       day: 'numeric',
       year: 'numeric',
     });
+  };
+
+  const formatMethod = (method: string | null | undefined) => {
+    if (!method) return '';
+    if (method === 'KO_TKO') return 'KO/TKO';
+    if (method === 'DECISION') return 'Decision';
+    if (method === 'SUBMISSION') return 'Submission';
+    return method;
   };
 
   // Reset image error states when fight changes
@@ -683,6 +701,7 @@ export default function FightDisplayCard({
         {/* Ratings Container - wraps both aggregate and user ratings */}
         <View style={styles.ratingsWrapper}>
         {/* Aggregate Score / Live Indicator */}
+        <View style={{ width: 100 }}>
         {status === 'upcoming' ? (
           <View style={styles.ratingRow}>
             <FontAwesome6
@@ -728,7 +747,7 @@ export default function FightDisplayCard({
               <View style={styles.countsColumn}>
                 <View style={styles.countRow}>
                   <FontAwesome
-                    name="user-o"
+                    name="group"
                     size={12}
                     color={colors.textSecondary}
                     style={styles.countIcon}
@@ -752,6 +771,7 @@ export default function FightDisplayCard({
             </View>
           )
         )}
+        </View>
 
         {/* User's Personal Rating */}
         <TouchableOpacity
@@ -759,9 +779,22 @@ export default function FightDisplayCard({
             e.stopPropagation();
             onPress(fight);
           }}
-          activeOpacity={0.7}
+          onPressIn={() => setIsRatingPressed(true)}
+          onPressOut={() => setIsRatingPressed(false)}
+          activeOpacity={1}
+          style={{
+            borderRadius: 20,
+            overflow: 'hidden',
+          }}
         >
-        <View style={{ position: 'relative' }}>
+        <View style={{
+          position: 'relative',
+          backgroundColor: isRatingPressed
+            ? (status === 'in_progress' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(131, 180, 243, 0.15)')
+            : 'transparent',
+          paddingVertical: 8,
+          paddingHorizontal: 12,
+        }}>
           {/* Sparkles */}
           {fight.userRating && (
             <>
@@ -1204,7 +1237,7 @@ export default function FightDisplayCard({
                       </Text>
                     ) : (
                       <Text style={[styles.unratedText, { color: '#83B4F3' }]}>
-                        My{'\n'}Rating
+                        Rate{'\n'}This
                       </Text>
                     )}
                     {false && fight.userRating && fight.userTags && fight.userTags.length > 0 && (
@@ -1226,23 +1259,70 @@ export default function FightDisplayCard({
         </View>
       </View>
 
-      {/* Fight Outcome / Status Container - Always show for consistent spacing */}
+      {/* Fight Outcome / Status Container */}
       {fight.isComplete && getOutcomeText() && (
         <View style={styles.outcomeContainer}>
+          {/* Pre-Fight Hype */}
+          <View style={styles.outcomeLineRow}>
+            <View style={styles.iconContainer}>
+              <FontAwesome6
+                name="fire-flame-curved"
+                size={12}
+                color="#FF6B35"
+              />
+            </View>
+            <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
+              How Hyped Was I?
+            </Text>
+            <View style={styles.hypeScoresRow}>
+              {aggregateStats?.userHypeScore ? (
+                <Text style={[styles.hypeScoreText, { color: colors.text }]}>
+                  {aggregateStats.userHypeScore}
+                </Text>
+              ) : (
+                <Text style={[styles.hypeScoreText, { color: colors.textSecondary }]}>N/A</Text>
+              )}
+              {aggregateStats?.communityAverageHype && (
+                <>
+                  <Text style={[styles.communityLabel, { color: colors.textSecondary }]}>
+                    Community:
+                  </Text>
+                  <Text style={[styles.hypeScoreText, { color: colors.text }]}>
+                    {aggregateStats.communityAverageHype}
+                  </Text>
+                </>
+              )}
+            </View>
+          </View>
+
           {/* My Prediction */}
           {aggregateStats?.userPrediction ? (
             <View style={styles.outcomeLineRow}>
+              <View style={styles.iconContainer}>
+                <FontAwesome
+                  name="eye"
+                  size={12}
+                  color="#83B4F3"
+                />
+              </View>
               <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
                 My Prediction:
               </Text>
               <Text style={[styles.outcomeLineText, { color: colors.text }]} numberOfLines={1}>
-                {aggregateStats.userPrediction.winner || 'N/A'}
-                {aggregateStats.userPrediction.method && ` via ${aggregateStats.userPrediction.method}`}
+                {getLastName(aggregateStats.userPrediction.winner) || 'N/A'}
+                {aggregateStats.userPrediction.method && ` by ${formatMethod(aggregateStats.userPrediction.method)}`}
                 {aggregateStats.userPrediction.round && ` R${aggregateStats.userPrediction.round}`}
               </Text>
             </View>
           ) : (
             <View style={styles.outcomeLineRow}>
+              <View style={styles.iconContainer}>
+                <FontAwesome
+                  name="eye"
+                  size={12}
+                  color="#83B4F3"
+                />
+              </View>
               <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
                 My Prediction:
               </Text>
@@ -1255,17 +1335,31 @@ export default function FightDisplayCard({
           {/* Community Prediction */}
           {aggregateStats?.communityPrediction?.winner ? (
             <View style={styles.outcomeLineRow}>
+              <View style={styles.iconContainer}>
+                <FontAwesome
+                  name="bar-chart"
+                  size={12}
+                  color="#F5C518"
+                />
+              </View>
               <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
                 Community Prediction:
               </Text>
               <Text style={[styles.outcomeLineText, { color: colors.text }]} numberOfLines={1}>
-                {aggregateStats.communityPrediction.winner}
-                {aggregateStats.communityPrediction.method && ` via ${aggregateStats.communityPrediction.method}`}
+                {getLastName(aggregateStats.communityPrediction.winner)}
+                {aggregateStats.communityPrediction.method && ` by ${formatMethod(aggregateStats.communityPrediction.method)}`}
                 {aggregateStats.communityPrediction.round && ` R${aggregateStats.communityPrediction.round}`}
               </Text>
             </View>
           ) : (
             <View style={styles.outcomeLineRow}>
+              <View style={styles.iconContainer}>
+                <FontAwesome
+                  name="bar-chart"
+                  size={12}
+                  color="#F5C518"
+                />
+              </View>
               <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
                 Community Prediction:
               </Text>
@@ -1275,22 +1369,42 @@ export default function FightDisplayCard({
             </View>
           )}
 
-          {/* Outcome */}
+          {/* Outcome and tags */}
           <View style={styles.outcomeWithTagsContainer}>
             <View style={styles.outcomeLineRow}>
+              <View style={styles.iconContainer}>
+                <FontAwesome
+                  name="trophy"
+                  size={12}
+                  color="#22c55e"
+                />
+              </View>
               <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
                 Outcome:
               </Text>
-              <Text style={[styles.outcomeLineText, { color: colors.text }]} numberOfLines={1}>
-                {getOutcomeText()}
-              </Text>
+              {fight.userRating ? (
+                <Text style={[styles.outcomeLineText, { color: colors.text }]} numberOfLines={1}>
+                  {getOutcomeText()}
+                </Text>
+              ) : (
+                <Text style={[styles.outcomeLineText, { color: colors.textSecondary, fontStyle: 'italic' }]} numberOfLines={1}>
+                  Rate this to show winner.
+                </Text>
+              )}
             </View>
-            {/* Tags inline with outcome */}
-            {aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
+            {/* Tags inline with outcome - only show when user has rated */}
+            {fight.userRating && aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
               <View style={styles.tagsInlineContainer}>
-                {aggregateStats.topTags.map((tag, index) => (
+                <View style={styles.iconContainer}>
+                  <FontAwesome
+                    name="hashtag"
+                    size={11}
+                    color="#F5C518"
+                  />
+                </View>
+                {aggregateStats.topTags.slice(0, 3).map((tag, index) => (
                   <Text key={index} style={[styles.tagText, { color: colors.textSecondary }]}>
-                    #{tag.name}{index < aggregateStats.topTags.length - 1 ? ' ' : ''}
+                    #{tag.name}{index < 2 ? ' ' : ''}
                   </Text>
                 ))}
               </View>
@@ -1532,6 +1646,7 @@ const styles = StyleSheet.create({
   countsColumn: {
     flexDirection: 'column',
     gap: 2,
+    marginTop: 5,
   },
   countRow: {
     flexDirection: 'row',
@@ -1596,9 +1711,15 @@ const styles = StyleSheet.create({
   tagsInlineContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginLeft: 0,
+    flexWrap: 'nowrap',
+    gap: 6,
+    overflow: 'hidden',
+  },
+  iconContainer: {
+    width: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 4,
   },
   sparkle: {
     position: 'absolute',
@@ -1671,7 +1792,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   tagText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
   },
   moreTagsText: {
@@ -1691,5 +1812,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     flex: 1,
+  },
+  hypeScoresRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  hypeScoreItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  hypeScoreText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  communityLabel: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
