@@ -313,6 +313,30 @@ export default function FightDisplayCard({
     return `${winnerName} by ${fight.method}${roundTimeText}`;
   };
 
+  // Determine which rings to show for each fighter (for completed fights)
+  const getFighterRings = (fighterId: string, fighterName: string) => {
+    if (status !== 'completed') return [];
+
+    const rings = [];
+
+    // Check if this fighter was the actual winner (green ring - outermost)
+    if (fight.winner === fighterId) {
+      rings.push('winner');
+    }
+
+    // Check if this fighter was the community prediction (yellow ring - middle)
+    if (aggregateStats?.communityPrediction?.winner === fighterName) {
+      rings.push('community');
+    }
+
+    // Check if this fighter was the user's prediction (blue ring - innermost)
+    if (aggregateStats?.userPrediction?.winner === fighterName) {
+      rings.push('user');
+    }
+
+    return rings;
+  };
+
   // Force re-render every second when this is the next fight and not live
   const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
 
@@ -686,16 +710,99 @@ export default function FightDisplayCard({
       <View style={styles.horizontalInfoRow}>
         {/* Fighter Headshots */}
         <View style={styles.headshotsContainer}>
-          <Image
-            source={getFighter1ImageSource()}
-            style={styles.fighterHeadshot}
-            onError={() => setFighter1ImageError(true)}
-          />
-          <Image
-            source={getFighter2ImageSource()}
-            style={styles.fighterHeadshot}
-            onError={() => setFighter2ImageError(true)}
-          />
+          {/* Fighter 1 with concentric rings */}
+          {(() => {
+            const fighter1Name = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
+            const fighter1Rings = getFighterRings(fight.fighter1.id, fighter1Name);
+            const ringCount = fighter1Rings.length;
+
+            // Calculate sizes based on number of rings (3px per ring + 1px gap between)
+            const baseSize = 75;
+            const borderWidth = 3;
+            const gap = 1;
+            const totalBorderSpace = ringCount * (borderWidth + gap);
+            const imageSize = baseSize - (totalBorderSpace * 2);
+
+            let content = (
+              <Image
+                source={getFighter1ImageSource()}
+                style={{
+                  width: imageSize,
+                  height: imageSize,
+                  borderRadius: imageSize / 2,
+                }}
+                onError={() => setFighter1ImageError(true)}
+              />
+            );
+
+            // Wrap in rings from innermost to outermost
+            fighter1Rings.reverse().forEach((ring) => {
+              const ringColor = ring === 'winner' ? '#22c55e' : ring === 'community' ? '#F5C518' : '#83B4F3';
+              content = (
+                <View style={{
+                  borderWidth: borderWidth,
+                  borderColor: ringColor,
+                  borderRadius: 37.5,
+                  padding: gap,
+                }}>
+                  {content}
+                </View>
+              );
+            });
+
+            return (
+              <View style={styles.fighterHeadshotWrapper}>
+                {content}
+              </View>
+            );
+          })()}
+
+          {/* Fighter 2 with concentric rings */}
+          {(() => {
+            const fighter2Name = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+            const fighter2Rings = getFighterRings(fight.fighter2.id, fighter2Name);
+            const ringCount = fighter2Rings.length;
+
+            // Calculate sizes based on number of rings (3px per ring + 1px gap between)
+            const baseSize = 75;
+            const borderWidth = 3;
+            const gap = 1;
+            const totalBorderSpace = ringCount * (borderWidth + gap);
+            const imageSize = baseSize - (totalBorderSpace * 2);
+
+            let content = (
+              <Image
+                source={getFighter2ImageSource()}
+                style={{
+                  width: imageSize,
+                  height: imageSize,
+                  borderRadius: imageSize / 2,
+                }}
+                onError={() => setFighter2ImageError(true)}
+              />
+            );
+
+            // Wrap in rings from innermost to outermost
+            fighter2Rings.reverse().forEach((ring) => {
+              const ringColor = ring === 'winner' ? '#22c55e' : ring === 'community' ? '#F5C518' : '#83B4F3';
+              content = (
+                <View style={{
+                  borderWidth: borderWidth,
+                  borderColor: ringColor,
+                  borderRadius: 37.5,
+                  padding: gap,
+                }}>
+                  {content}
+                </View>
+              );
+            });
+
+            return (
+              <View style={styles.fighterHeadshotWrapper}>
+                {content}
+              </View>
+            );
+          })()}
         </View>
 
         {/* Ratings Container - wraps both aggregate and user ratings */}
@@ -1517,10 +1624,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 6,
   },
+  fighterHeadshotWrapper: {
+    position: 'relative',
+    width: 75,
+    height: 75,
+    borderRadius: 37.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   fighterHeadshot: {
     width: 75,
     height: 75,
     borderRadius: 37.5,
+  },
+  fighterHeadshotWithRing: {
+    width: 69,
+    height: 69,
+    borderRadius: 34.5,
+  },
+  predictedWinnerRing: {
+    borderWidth: 3,
+    borderColor: '#83B4F3',
+    padding: 0,
   },
   horizontalInfoRow: {
     flexDirection: 'row',
