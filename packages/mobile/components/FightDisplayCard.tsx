@@ -79,12 +79,28 @@ interface FightDisplayCardProps {
 
 // Helper function to get fighter image (either from profileImage or placeholder)
 const getFighterImage = (fighter: Fighter) => {
-  // Only use profileImage if it's a valid absolute URL (starts with http)
+  // Check if profileImage exists and is a valid URL
   if (fighter.profileImage && fighter.profileImage.startsWith('http')) {
+    // Check if the URL points to a known default/placeholder image
+    const isDefaultImage =
+      fighter.profileImage.includes('silhouette') ||
+      fighter.profileImage.includes('default-fighter') ||
+      fighter.profileImage.includes('placeholder') ||
+      fighter.profileImage.includes('avatar-default') ||
+      fighter.profileImage.includes('no-image') ||
+      // UFC's default fighter image URL pattern
+      fighter.profileImage.includes('_headshot_default') ||
+      fighter.profileImage.includes('default_headshot');
+
+    // If it's a default image from the source, use our transparent placeholder
+    if (isDefaultImage) {
+      return require('../assets/fighters/fighter-default-alpha.png');
+    }
+
     return { uri: fighter.profileImage };
   }
 
-  return require('../assets/fighters/fighter-5.jpg');
+  return require('../assets/fighters/fighter-default-alpha.png');
 };
 
 export default function FightDisplayCard({
@@ -391,14 +407,14 @@ export default function FightDisplayCard({
   // Get fighter image source with error fallback
   const getFighter1ImageSource = () => {
     if (fighter1ImageError) {
-      return require('../assets/fighters/fighter-5.jpg');
+      return require('../assets/fighters/fighter-default-alpha.png');
     }
     return getFighterImage(fight.fighter1);
   };
 
   const getFighter2ImageSource = () => {
     if (fighter2ImageError) {
-      return require('../assets/fighters/fighter-5.jpg');
+      return require('../assets/fighters/fighter-default-alpha.png');
     }
     return getFighterImage(fight.fighter2);
   };
