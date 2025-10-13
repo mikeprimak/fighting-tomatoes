@@ -259,6 +259,14 @@ export default function FightDisplayCard({
     staleTime: 30 * 1000, // 30 seconds - shorter than FightDisplayCardMinimal for faster updates
   });
 
+  // Fetch aggregate stats for completed fights (reviews, predictions, tags)
+  const { data: aggregateStats } = useQuery({
+    queryKey: ['fightAggregateStats', fight.id],
+    queryFn: () => apiService.getFightAggregateStats(fight.id),
+    enabled: status === 'completed',
+    staleTime: 60 * 1000, // 60 seconds - data doesn't change as frequently for completed fights
+  });
+
   const getFighterName = (fighter: Fighter) => {
     const name = `${fighter.firstName} ${fighter.lastName}`;
     return fighter.nickname ? `${name} "${fighter.nickname}"` : name;
@@ -633,7 +641,7 @@ export default function FightDisplayCard({
 
   return (
     <TouchableOpacity
-      onPress={() => onPress(fight)}
+      onPress={() => router.push(`/fight/${fight.id}`)}
       activeOpacity={0.7}
     >
       <Animated.View
@@ -656,8 +664,24 @@ export default function FightDisplayCard({
         {cleanFighterName(getFighterName(fight.fighter1))} vs {cleanFighterName(getFighterName(fight.fighter2))}
       </Text>
 
-      {/* Horizontal Info Row - Aggregate Rating, My Rating, Fight Status */}
+      {/* Horizontal Info Row - Fighter Images, Aggregate Rating, My Rating */}
       <View style={styles.horizontalInfoRow}>
+        {/* Fighter Headshots */}
+        <View style={styles.headshotsContainer}>
+          <Image
+            source={getFighter1ImageSource()}
+            style={styles.fighterHeadshot}
+            onError={() => setFighter1ImageError(true)}
+          />
+          <Image
+            source={getFighter2ImageSource()}
+            style={styles.fighterHeadshot}
+            onError={() => setFighter2ImageError(true)}
+          />
+        </View>
+
+        {/* Ratings Container - wraps both aggregate and user ratings */}
+        <View style={styles.ratingsWrapper}>
         {/* Aggregate Score / Live Indicator */}
         {status === 'upcoming' ? (
           <View style={styles.ratingRow}>
@@ -689,36 +713,54 @@ export default function FightDisplayCard({
           </View>
         ) : (
           fight.isComplete && (
-            <View style={styles.ratingRow}>
-              <View style={styles.partialStarContainer}>
+            <View style={styles.aggregateRatingContainer}>
+              <View style={styles.ratingRow}>
                 <FontAwesome
-                  name="star-o"
-                  size={20}
+                  name="star"
+                  size={30}
                   color="#F5C518"
-                  style={styles.starBase}
+                  style={styles.ratingIcon}
                 />
-                <View style={[
-                  styles.filledStarContainer,
-                  {
-                    height: `${Math.min(100, Math.max(0, fight.averageRating === 10 ? 100 : fight.averageRating * 8.5))}%`,
-                  }
-                ]}>
+                <Text style={[styles.aggregateLabel, { color: colors.text }]}>
+                  {fight.averageRating % 1 === 0 ? fight.averageRating.toString() : fight.averageRating.toFixed(1)}
+                </Text>
+              </View>
+              <View style={styles.countsColumn}>
+                <View style={styles.countRow}>
                   <FontAwesome
-                    name="star"
-                    size={20}
-                    color="#F5C518"
-                    style={styles.starFilled}
+                    name="user-o"
+                    size={12}
+                    color={colors.textSecondary}
+                    style={styles.countIcon}
                   />
+                  <Text style={[styles.countText, { color: colors.textSecondary }]}>
+                    {aggregateStats?.totalRatings || 0}
+                  </Text>
+                </View>
+                <View style={styles.countRow}>
+                  <FontAwesome
+                    name="comment-o"
+                    size={12}
+                    color={colors.textSecondary}
+                    style={styles.countIcon}
+                  />
+                  <Text style={[styles.countText, { color: colors.textSecondary }]}>
+                    {aggregateStats?.reviewCount || 0}
+                  </Text>
                 </View>
               </View>
-              <Text style={[styles.aggregateLabel, { color: colors.textSecondary }]}>
-                {fight.averageRating % 1 === 0 ? fight.averageRating.toString() : fight.averageRating.toFixed(1)}
-              </Text>
             </View>
           )
         )}
 
         {/* User's Personal Rating */}
+        <TouchableOpacity
+          onPress={(e) => {
+            e.stopPropagation();
+            onPress(fight);
+          }}
+          activeOpacity={0.7}
+        >
         <View style={{ position: 'relative' }}>
           {/* Sparkles */}
           {fight.userRating && (
@@ -1100,56 +1142,163 @@ export default function FightDisplayCard({
                 </>
               ) : status === 'in_progress' ? (
                 <>
-                  <FontAwesome
-                    name={fight.userRating ? "star" : "star-o"}
-                    size={20}
-                    color={colors.textOnAccent}
-                    style={styles.ratingIcon}
-                  />
-                  <Text style={[styles.userRatingText, { color: colors.textOnAccent }]}>
-                    {fight.userRating ? `${fight.userRating}` : 'Rate'}
-                  </Text>
+                  <View style={styles.starWithCommentContainer}>
+                    <FontAwesome
+                      name={fight.userRating ? "star" : "star-o"}
+                      size={30}
+                      color={colors.textOnAccent}
+                      style={styles.ratingIcon}
+                    />
+                    {false && fight.userRating && fight.userReview && (
+                      <FontAwesome
+                        name="comment"
+                        size={10}
+                        color="#6b7280"
+                        style={styles.commentInsideStarIcon}
+                      />
+                    )}
+                  </View>
+                  <View style={styles.ratingColumnWrapper}>
+                    {fight.userRating ? (
+                      <Text style={[styles.userRatingText, { color: colors.textOnAccent }]}>
+                        {fight.userRating}
+                      </Text>
+                    ) : (
+                      <Text style={[styles.unratedText, { color: colors.textOnAccent }]}>
+                        My{'\n'}Rating
+                      </Text>
+                    )}
+                    {false && fight.userRating && fight.userTags && fight.userTags.length > 0 && (
+                      <View style={styles.userTagsColumn}>
+                        {fight.userTags.slice(0, 3).map((tag, index) => (
+                          <Text key={index} style={[styles.userTagText, { color: '#83B4F3' }]} numberOfLines={1}>
+                            #{tag}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
+                  </View>
                 </>
               ) : (
                 <>
-                  <FontAwesome
-                    name={fight.userRating ? "star" : "star-o"}
-                    size={20}
-                    color="#83B4F3"
-                    style={styles.ratingIcon}
-                  />
-                  <Text style={[styles.userRatingText, { color: '#83B4F3' }]}>
-                    {fight.userRating ? `${fight.userRating}` : 'Rate'}
-                  </Text>
+                  <View style={styles.starWithCommentContainer}>
+                    <FontAwesome
+                      name={fight.userRating ? "star" : "star-o"}
+                      size={30}
+                      color="#83B4F3"
+                      style={styles.ratingIcon}
+                    />
+                    {false && fight.userRating && fight.userReview && (
+                      <FontAwesome
+                        name="comment"
+                        size={10}
+                        color="#6b7280"
+                        style={styles.commentInsideStarIcon}
+                      />
+                    )}
+                  </View>
+                  <View style={styles.ratingColumnWrapper}>
+                    {fight.userRating ? (
+                      <Text style={[styles.userRatingText, { color: '#83B4F3' }]}>
+                        {fight.userRating}
+                      </Text>
+                    ) : (
+                      <Text style={[styles.unratedText, { color: '#83B4F3' }]}>
+                        My{'\n'}Rating
+                      </Text>
+                    )}
+                    {false && fight.userRating && fight.userTags && fight.userTags.length > 0 && (
+                      <View style={styles.userTagsColumn}>
+                        {fight.userTags.slice(0, 3).map((tag, index) => (
+                          <Text key={index} style={[styles.userTagText, { color: '#83B4F3' }]} numberOfLines={1}>
+                            #{tag}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
+                  </View>
                 </>
               )}
             </View>
           </Animated.View>
         </View>
-
-        {/* Fighter Headshots */}
-        <View style={styles.headshotsContainer}>
-          <Image
-            source={getFighter1ImageSource()}
-            style={styles.fighterHeadshot}
-            onError={() => setFighter1ImageError(true)}
-          />
-          <Image
-            source={getFighter2ImageSource()}
-            style={styles.fighterHeadshot}
-            onError={() => setFighter2ImageError(true)}
-          />
+        </TouchableOpacity>
         </View>
       </View>
 
       {/* Fight Outcome / Status Container - Always show for consistent spacing */}
       {fight.isComplete && getOutcomeText() && (
         <View style={styles.outcomeContainer}>
-          <Text style={[styles.outcomeText, { color: colors.text }]} numberOfLines={1}>
-            {getOutcomeText()}
-          </Text>
+          {/* My Prediction */}
+          {aggregateStats?.userPrediction ? (
+            <View style={styles.outcomeLineRow}>
+              <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
+                My Prediction:
+              </Text>
+              <Text style={[styles.outcomeLineText, { color: colors.text }]} numberOfLines={1}>
+                {aggregateStats.userPrediction.winner || 'N/A'}
+                {aggregateStats.userPrediction.method && ` via ${aggregateStats.userPrediction.method}`}
+                {aggregateStats.userPrediction.round && ` R${aggregateStats.userPrediction.round}`}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.outcomeLineRow}>
+              <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
+                My Prediction:
+              </Text>
+              <Text style={[styles.outcomeLineText, { color: colors.textSecondary }]}>
+                N/A
+              </Text>
+            </View>
+          )}
+
+          {/* Community Prediction */}
+          {aggregateStats?.communityPrediction?.winner ? (
+            <View style={styles.outcomeLineRow}>
+              <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
+                Community Prediction:
+              </Text>
+              <Text style={[styles.outcomeLineText, { color: colors.text }]} numberOfLines={1}>
+                {aggregateStats.communityPrediction.winner}
+                {aggregateStats.communityPrediction.method && ` via ${aggregateStats.communityPrediction.method}`}
+                {aggregateStats.communityPrediction.round && ` R${aggregateStats.communityPrediction.round}`}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.outcomeLineRow}>
+              <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
+                Community Prediction:
+              </Text>
+              <Text style={[styles.outcomeLineText, { color: colors.textSecondary }]}>
+                N/A
+              </Text>
+            </View>
+          )}
+
+          {/* Outcome */}
+          <View style={styles.outcomeWithTagsContainer}>
+            <View style={styles.outcomeLineRow}>
+              <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
+                Outcome:
+              </Text>
+              <Text style={[styles.outcomeLineText, { color: colors.text }]} numberOfLines={1}>
+                {getOutcomeText()}
+              </Text>
+            </View>
+            {/* Tags inline with outcome */}
+            {aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
+              <View style={styles.tagsInlineContainer}>
+                {aggregateStats.topTags.map((tag, index) => (
+                  <Text key={index} style={[styles.tagText, { color: colors.textSecondary }]}>
+                    #{tag.name}{index < aggregateStats.topTags.length - 1 ? ' ' : ''}
+                  </Text>
+                ))}
+              </View>
+            )}
+          </View>
         </View>
       )}
+
 
       {/* Upcoming Fight Status - Show "Up next..." or "Starting soon..." for next fight */}
       {!fight.isComplete && !fight.hasStarted && getUpcomingStatusMessage() && (
@@ -1206,18 +1355,6 @@ export default function FightDisplayCard({
         </TouchableOpacity>
       )}
 
-      {/* Three dots icon for fight details */}
-      <TouchableOpacity
-        style={styles.detailsButton}
-        onPress={(e) => {
-          e.stopPropagation();
-          router.push(`/fight/${fight.id}`);
-        }}
-        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-      >
-        <FontAwesome name="ellipsis-h" size={20} color={colors.textSecondary} />
-      </TouchableOpacity>
-
       {/* Toast Notification */}
       {toastMessage !== '' && (
         <Animated.View
@@ -1267,9 +1404,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   fighterHeadshot: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 75,
+    height: 75,
+    borderRadius: 37.5,
   },
   horizontalInfoRow: {
     flexDirection: 'row',
@@ -1279,13 +1416,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     gap: 16,
   },
+  ratingsWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 24,
+    marginRight: 12,
+  },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
   ratingIcon: {
-    width: 24,
+    width: 36,
     textAlign: 'center',
     marginRight: 6,
   },
@@ -1319,12 +1462,93 @@ const styles = StyleSheet.create({
     right: 0,
   },
   userRatingText: {
-    fontSize: 16,
+    fontSize: 28,
     fontWeight: '500',
   },
-  aggregateLabel: {
-    fontSize: 16,
+  starWithCommentContainer: {
+    position: 'relative',
+    width: 36,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  commentInsideStarIcon: {
+    position: 'absolute',
+    top: 10,
+    left: 13,
+  },
+  ratingColumnWrapper: {
+    position: 'relative',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  userRatingColumn: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 2,
+  },
+  ratingWithCommentContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  commentBubbleIcon: {
+    marginBottom: 2,
+  },
+  userTagsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 2,
+  },
+  userTagsColumn: {
+    position: 'absolute',
+    top: 36,
+    left: -42,
+    width: 120,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 1,
+  },
+  userTagText: {
+    fontSize: 9,
     fontWeight: '500',
+  },
+  unratedText: {
+    fontSize: 11,
+    fontWeight: '500',
+    textAlign: 'center',
+    lineHeight: 14,
+  },
+  aggregateLabel: {
+    fontSize: 28,
+    fontWeight: '500',
+  },
+  aggregateRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  countsColumn: {
+    flexDirection: 'column',
+    gap: 2,
+  },
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  countIcon: {
+    width: 12,
+    textAlign: 'center',
+  },
+  countText: {
+    fontSize: 11,
+    fontWeight: '400',
+  },
+  commentIcon: {
+    marginLeft: 12,
+    marginRight: 4,
   },
   liveContainer: {
     display: 'flex',
@@ -1343,7 +1567,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   outcomeContainer: {
-    marginTop: 8,
+    marginTop: 13,
+    gap: 4,
   },
   outcomeText: {
     fontSize: 13,
@@ -1351,16 +1576,33 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'left',
   },
+  outcomeLineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  outcomeLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  outcomeLineText: {
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
+  },
+  outcomeWithTagsContainer: {
+    gap: 4,
+  },
+  tagsInlineContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginLeft: 0,
+  },
   sparkle: {
     position: 'absolute',
     zIndex: 10,
-  },
-  detailsButton: {
-    position: 'absolute',
-    bottom: 0,
-    right: 15,
-    padding: 8,
-    zIndex: 20,
   },
   bellButton: {
     position: 'absolute',
@@ -1393,6 +1635,61 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
+    flex: 1,
+  },
+  completedStatsContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    gap: 6,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
+    flex: 1,
+  },
+  tagChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  tagText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  moreTagsText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  predictionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  predictionLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  predictionValue: {
+    fontSize: 12,
+    fontWeight: '600',
     flex: 1,
   },
 });

@@ -1817,6 +1817,160 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // GET /api/fights/:id/aggregate-stats - Get aggregate stats for completed fights (reviews count, top tags, community predictions)
+  fastify.get('/fights/:id/aggregate-stats', { preHandler: optionalAuth }, async (request, reply) => {
+    try {
+      const { id: fightId } = request.params as { id: string };
+      const currentUserId = (request as any).user?.id;
+
+      // Check if fight exists
+      const fight = await fastify.prisma.fight.findUnique({
+        where: { id: fightId },
+        include: {
+          fighter1: true,
+          fighter2: true,
+        },
+      });
+
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // 1. Get review/comment count
+      const reviewCount = await fastify.prisma.fightReview.count({
+        where: {
+          fightId,
+          isHidden: false,
+        },
+      });
+
+      // 2. Get user's prediction (if authenticated)
+      let userPrediction = null;
+      if (currentUserId) {
+        const prediction = await fastify.prisma.fightPrediction.findUnique({
+          where: {
+            userId_fightId: {
+              userId: currentUserId,
+              fightId,
+            },
+          },
+        });
+
+        if (prediction) {
+          let winnerName = null;
+          if (prediction.predictedWinner === fight.fighter1Id) {
+            winnerName = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
+          } else if (prediction.predictedWinner === fight.fighter2Id) {
+            winnerName = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+          }
+
+          userPrediction = {
+            winner: winnerName,
+            method: (prediction as any).predictedMethod,
+            round: (prediction as any).predictedRound,
+          };
+        }
+      }
+
+      // 3. Get community's most common prediction
+      const predictions = await fastify.prisma.fightPrediction.findMany({
+        where: { fightId },
+      });
+
+      let communityPrediction = null;
+      if (predictions.length > 0) {
+        // Most predicted winner
+        const fighter1Predictions = predictions.filter(p => (p as any).predictedWinner === fight.fighter1Id).length;
+        const fighter2Predictions = predictions.filter(p => (p as any).predictedWinner === fight.fighter2Id).length;
+
+        let mostPredictedWinner = null;
+        if (fighter1Predictions > fighter2Predictions) {
+          mostPredictedWinner = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
+        } else if (fighter2Predictions > fighter1Predictions) {
+          mostPredictedWinner = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+        }
+
+        // Most predicted method
+        const methodCounts: Record<string, number> = {
+          DECISION: predictions.filter(p => (p as any).predictedMethod === 'DECISION').length,
+          KO_TKO: predictions.filter(p => (p as any).predictedMethod === 'KO_TKO').length,
+          SUBMISSION: predictions.filter(p => (p as any).predictedMethod === 'SUBMISSION').length,
+        };
+        const mostPredictedMethod = Object.entries(methodCounts).reduce((a, b) => (methodCounts[a[0]] || 0) > (methodCounts[b[0]] || 0) ? a : b)[0];
+
+        // Most predicted round
+        const roundCounts: Record<number, number> = {};
+        for (let round = 1; round <= 12; round++) {
+          roundCounts[round] = predictions.filter(p => (p as any).predictedRound === round).length;
+        }
+        const mostPredictedRound = Object.entries(roundCounts).reduce((a, b) => (roundCounts[Number(a[0])] > roundCounts[Number(b[0])] ? a : b), ['1', 0])[0];
+
+        communityPrediction = {
+          winner: mostPredictedWinner,
+          method: mostPredictedMethod === 'KO_TKO' ? 'KO/TKO' : mostPredictedMethod,
+          round: mostPredictedRound !== '0' && roundCounts[Number(mostPredictedRound)] > 0 ? Number(mostPredictedRound) : null,
+        };
+      }
+
+      // 4. Get number of people who rated the fight
+      const totalRatings = fight.totalRatings;
+
+      // 5. Get top 5 most common tags for this fight
+      const tagStats = await fastify.prisma.fightTag.groupBy({
+        by: ['tagId'],
+        where: { fightId },
+        _count: {
+          tagId: true,
+        },
+        orderBy: {
+          _count: {
+            tagId: 'desc',
+          },
+        },
+        take: 5,
+      });
+
+      // Get tag names for the top tags
+      const topTagIds = tagStats.map(t => t.tagId);
+      const tags = await fastify.prisma.tag.findMany({
+        where: {
+          id: { in: topTagIds },
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
+
+      const topTags = tagStats.map(stat => {
+        const tag = tags.find(t => t.id === stat.tagId);
+        return {
+          name: tag?.name || 'Unknown',
+          count: stat._count.tagId,
+        };
+      });
+
+      return reply.send({
+        fightId,
+        reviewCount,
+        totalRatings,
+        userPrediction,
+        communityPrediction,
+        topTags,
+      });
+
+    } catch (error) {
+      console.error('Aggregate stats fetch error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
   // GET /api/fights/my-ratings - Get user's rated/reviewed/tagged fights
   const MyRatingsQuerySchema = z.object({
     page: z.string().transform(val => parseInt(val) || 1).pipe(z.number().int().min(1)).default('1'),

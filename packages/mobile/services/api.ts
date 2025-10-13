@@ -579,6 +579,28 @@ class ApiService {
     return this.makeRequest(`/fights/${fightId}/predictions`);
   }
 
+  async getFightAggregateStats(fightId: string): Promise<{
+    fightId: string;
+    reviewCount: number;
+    totalRatings: number;
+    userPrediction: {
+      winner: string | null;
+      method: string | null;
+      round: number | null;
+    } | null;
+    communityPrediction: {
+      winner: string | null;
+      method: string | null;
+      round: number | null;
+    } | null;
+    topTags: Array<{
+      name: string;
+      count: number;
+    }>;
+  }> {
+    return this.makeRequest(`/fights/${fightId}/aggregate-stats`);
+  }
+
   async getEventPredictionStats(eventId: string): Promise<{
     eventId: string;
     eventName: string;
