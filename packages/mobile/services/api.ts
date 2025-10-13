@@ -597,6 +597,8 @@ class ApiService {
       name: string;
       count: number;
     }>;
+    userHypeScore: number | null;
+    communityAverageHype: number | null;
   }> {
     return this.makeRequest(`/fights/${fightId}/aggregate-stats`);
   }

@@ -1887,26 +1887,34 @@ export async function fightRoutes(fastify: FastifyInstance) {
         const fighter2Predictions = predictions.filter(p => (p as any).predictedWinner === fight.fighter2Id).length;
 
         let mostPredictedWinner = null;
+        let winnerFighterId = null;
         if (fighter1Predictions > fighter2Predictions) {
           mostPredictedWinner = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
+          winnerFighterId = fight.fighter1Id;
         } else if (fighter2Predictions > fighter1Predictions) {
           mostPredictedWinner = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+          winnerFighterId = fight.fighter2Id;
         }
 
-        // Most predicted method
+        // Filter predictions to only those for the most predicted winner
+        const winnerPredictions = winnerFighterId
+          ? predictions.filter(p => (p as any).predictedWinner === winnerFighterId)
+          : predictions;
+
+        // Most predicted method (from winner's predictions only)
         const methodCounts: Record<string, number> = {
-          DECISION: predictions.filter(p => (p as any).predictedMethod === 'DECISION').length,
-          KO_TKO: predictions.filter(p => (p as any).predictedMethod === 'KO_TKO').length,
-          SUBMISSION: predictions.filter(p => (p as any).predictedMethod === 'SUBMISSION').length,
+          DECISION: winnerPredictions.filter(p => (p as any).predictedMethod === 'DECISION').length,
+          KO_TKO: winnerPredictions.filter(p => (p as any).predictedMethod === 'KO_TKO').length,
+          SUBMISSION: winnerPredictions.filter(p => (p as any).predictedMethod === 'SUBMISSION').length,
         };
         const mostPredictedMethod = Object.entries(methodCounts).reduce((a, b) => (methodCounts[a[0]] || 0) > (methodCounts[b[0]] || 0) ? a : b)[0];
 
-        // Most predicted round
+        // Most predicted round (from winner's predictions only)
         const roundCounts: Record<number, number> = {};
         for (let round = 1; round <= 12; round++) {
-          roundCounts[round] = predictions.filter(p => (p as any).predictedRound === round).length;
+          roundCounts[round] = winnerPredictions.filter(p => (p as any).predictedRound === round).length;
         }
-        const mostPredictedRound = Object.entries(roundCounts).reduce((a, b) => (roundCounts[Number(a[0])] > roundCounts[Number(b[0])] ? a : b), ['1', 0])[0];
+        const mostPredictedRound = Object.entries(roundCounts).reduce((a, b) => (roundCounts[Number(a[0])] >= roundCounts[Number(b[0])] ? a : b), ['1', 0])[0];
 
         communityPrediction = {
           winner: mostPredictedWinner,
@@ -1953,6 +1961,37 @@ export async function fightRoutes(fastify: FastifyInstance) {
         };
       });
 
+      // 6. Get user's hype score (if authenticated and they made a prediction)
+      let userHypeScore = null;
+      if (currentUserId) {
+        const userPredictionWithHype = await fastify.prisma.fightPrediction.findUnique({
+          where: {
+            userId_fightId: {
+              userId: currentUserId,
+              fightId,
+            },
+          },
+          select: {
+            predictedRating: true,
+          },
+        });
+        userHypeScore = userPredictionWithHype?.predictedRating || null;
+      }
+
+      // 7. Get community average hype score
+      const hypeScoresAggregate = await fastify.prisma.fightPrediction.aggregate({
+        where: {
+          fightId,
+          predictedRating: { not: null },
+        },
+        _avg: {
+          predictedRating: true,
+        },
+      });
+      const communityAverageHype = hypeScoresAggregate._avg.predictedRating
+        ? Math.round(hypeScoresAggregate._avg.predictedRating * 10) / 10 // Round to 1 decimal
+        : null;
+
       return reply.send({
         fightId,
         reviewCount,
@@ -1960,6 +1999,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
         userPrediction,
         communityPrediction,
         topTags,
+        userHypeScore,
+        communityAverageHype,
       });
 
     } catch (error) {
