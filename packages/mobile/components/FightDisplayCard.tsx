@@ -710,96 +710,100 @@ export default function FightDisplayCard({
       <View style={styles.horizontalInfoRow}>
         {/* Fighter Headshots */}
         <View style={styles.headshotsContainer}>
-          {/* Fighter 1 with concentric rings */}
+          {/* Fighter 1 with layered rings */}
           {(() => {
             const fighter1Name = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
             const fighter1Rings = getFighterRings(fight.fighter1.id, fighter1Name);
-            const ringCount = fighter1Rings.length;
-
-            // Calculate sizes based on number of rings (3px per ring + 1px gap between)
             const baseSize = 75;
             const borderWidth = 3;
             const gap = 1;
-            const totalBorderSpace = ringCount * (borderWidth + gap);
-            const imageSize = baseSize - (totalBorderSpace * 2);
-
-            let content = (
-              <Image
-                source={getFighter1ImageSource()}
-                style={{
-                  width: imageSize,
-                  height: imageSize,
-                  borderRadius: imageSize / 2,
-                }}
-                onError={() => setFighter1ImageError(true)}
-              />
-            );
-
-            // Wrap in rings from innermost to outermost
-            fighter1Rings.reverse().forEach((ring) => {
-              const ringColor = ring === 'winner' ? '#22c55e' : ring === 'community' ? '#F5C518' : '#83B4F3';
-              content = (
-                <View style={{
-                  borderWidth: borderWidth,
-                  borderColor: ringColor,
-                  borderRadius: 37.5,
-                  padding: gap,
-                }}>
-                  {content}
-                </View>
-              );
-            });
 
             return (
-              <View style={styles.fighterHeadshotWrapper}>
-                {content}
+              <View style={[styles.fighterHeadshotWrapper, { position: 'relative' }]}>
+                {/* Render rings as background layers (from outermost to innermost) */}
+                {fighter1Rings.map((ring, index) => {
+                  const ringColor = ring === 'winner' ? '#22c55e' : ring === 'community' ? '#F5C518' : '#83B4F3';
+                  // Calculate inset for each ring (outermost ring has smallest inset)
+                  const inset = index * (borderWidth + gap);
+
+                  return (
+                    <View
+                      key={`${ring}-${index}`}
+                      style={{
+                        position: 'absolute',
+                        top: inset,
+                        left: inset,
+                        right: inset,
+                        bottom: inset,
+                        borderWidth: borderWidth,
+                        borderColor: ringColor,
+                        borderRadius: 37.5,
+                        zIndex: index,
+                      }}
+                    />
+                  );
+                })}
+
+                {/* Fighter image on top layer */}
+                <Image
+                  source={getFighter1ImageSource()}
+                  style={{
+                    width: baseSize,
+                    height: baseSize,
+                    borderRadius: baseSize / 2,
+                    zIndex: 100,
+                  }}
+                  onError={() => setFighter1ImageError(true)}
+                />
               </View>
             );
           })()}
 
-          {/* Fighter 2 with concentric rings */}
+          {/* Fighter 2 with layered rings */}
           {(() => {
             const fighter2Name = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
             const fighter2Rings = getFighterRings(fight.fighter2.id, fighter2Name);
-            const ringCount = fighter2Rings.length;
-
-            // Calculate sizes based on number of rings (3px per ring + 1px gap between)
             const baseSize = 75;
             const borderWidth = 3;
             const gap = 1;
-            const totalBorderSpace = ringCount * (borderWidth + gap);
-            const imageSize = baseSize - (totalBorderSpace * 2);
-
-            let content = (
-              <Image
-                source={getFighter2ImageSource()}
-                style={{
-                  width: imageSize,
-                  height: imageSize,
-                  borderRadius: imageSize / 2,
-                }}
-                onError={() => setFighter2ImageError(true)}
-              />
-            );
-
-            // Wrap in rings from innermost to outermost
-            fighter2Rings.reverse().forEach((ring) => {
-              const ringColor = ring === 'winner' ? '#22c55e' : ring === 'community' ? '#F5C518' : '#83B4F3';
-              content = (
-                <View style={{
-                  borderWidth: borderWidth,
-                  borderColor: ringColor,
-                  borderRadius: 37.5,
-                  padding: gap,
-                }}>
-                  {content}
-                </View>
-              );
-            });
 
             return (
-              <View style={styles.fighterHeadshotWrapper}>
-                {content}
+              <View style={[styles.fighterHeadshotWrapper, { position: 'relative' }]}>
+                {/* Render rings as background layers (from outermost to innermost) */}
+                {fighter2Rings.map((ring, index) => {
+                  const ringColor = ring === 'winner' ? '#22c55e' : ring === 'community' ? '#F5C518' : '#83B4F3';
+                  // Calculate inset for each ring (outermost ring has smallest inset)
+                  const inset = index * (borderWidth + gap);
+
+                  return (
+                    <View
+                      key={`${ring}-${index}`}
+                      style={{
+                        position: 'absolute',
+                        top: inset,
+                        left: inset,
+                        right: inset,
+                        bottom: inset,
+                        borderWidth: borderWidth,
+                        borderColor: ringColor,
+                        borderRadius: 37.5,
+                        zIndex: index,
+                      }}
+                    />
+                  );
+                })}
+
+                {/* Fighter image on top layer */}
+                <Image
+                  source={getFighter2ImageSource()}
+                  style={{
+                    width: baseSize,
+                    height: baseSize,
+                    borderRadius: baseSize / 2,
+                    zIndex: 100,
+                  }}
+                  onError={() => setFighter2ImageError(true)}
+                />
               </View>
             );
           })()}
