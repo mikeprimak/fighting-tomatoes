@@ -279,21 +279,21 @@ export default function FightDetailScreen() {
     queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', id] });
   };
 
+  // Helper function to format weight class
+  const formatWeightClass = (weightClass: string) => {
+    return weightClass
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <DetailScreenHeader
         title={fight ? `${fight.fighter1.lastName} vs ${fight.fighter2.lastName}` : 'Fight Details'}
-        subtitle={fight?.event?.name}
       />
 
       <ScrollView style={styles.scrollView}>
-
-        {/* Weight Class / Championship */}
-        {fight.weightClass && (
-          <Text style={[styles.weightClassText, fight.isTitle && { color: '#FFD700' }]}>
-            {fight.isTitle ? `${fight.weightClass} Championship` : fight.weightClass}
-          </Text>
-        )}
 
         {/* Fighter Matchup - Clickable */}
         <View style={styles.matchupContainer}>
@@ -318,12 +318,18 @@ export default function FightDetailScreen() {
                 "{fight.fighter1.nickname}"
               </Text>
             )}
-            <Text style={[styles.fighterRecord, { color: colors.textSecondary }]}>
-              {fight.fighter1.wins}-{fight.fighter1.losses}-{fight.fighter1.draws}
-            </Text>
-            {fight.fighter1Odds && (
-              <Text style={[styles.fighterOdds, { color: colors.text }]}>
-                {fight.fighter1Odds}
+{fight.fighter1Odds && (
+              <Text style={[styles.fighterRecord, { color: colors.textSecondary }]} numberOfLines={1}>
+                {fight.fighter1Odds} ({(() => {
+                  const odds = parseInt(fight.fighter1Odds);
+                  if (odds <= -400) return 'Massive Favorite';
+                  if (odds <= -200) return 'Heavy Favorite';
+                  if (odds < -110) return 'Favorite';
+                  if (odds <= 110) return 'Even';
+                  if (odds <= 200) return 'Minor Underdog';
+                  if (odds <= 400) return 'Underdog';
+                  return 'Major Underdog';
+                })()})
               </Text>
             )}
           </TouchableOpacity>
@@ -354,12 +360,18 @@ export default function FightDetailScreen() {
                 "{fight.fighter2.nickname}"
               </Text>
             )}
-            <Text style={[styles.fighterRecord, { color: colors.textSecondary }]}>
-              {fight.fighter2.wins}-{fight.fighter2.losses}-{fight.fighter2.draws}
-            </Text>
-            {fight.fighter2Odds && (
-              <Text style={[styles.fighterOdds, { color: colors.text }]}>
-                {fight.fighter2Odds}
+{fight.fighter2Odds && (
+              <Text style={[styles.fighterRecord, { color: colors.textSecondary }]} numberOfLines={1}>
+                {fight.fighter2Odds} ({(() => {
+                  const odds = parseInt(fight.fighter2Odds);
+                  if (odds <= -400) return 'Massive Favorite';
+                  if (odds <= -200) return 'Heavy Favorite';
+                  if (odds < -110) return 'Favorite';
+                  if (odds <= 110) return 'Even';
+                  if (odds <= 200) return 'Minor Underdog';
+                  if (odds <= 400) return 'Underdog';
+                  return 'Major Underdog';
+                })()})
               </Text>
             )}
           </TouchableOpacity>
@@ -399,65 +411,24 @@ export default function FightDetailScreen() {
           </View>
         )}
 
-        {/* My Prediction - Always show for upcoming fights */}
-        {isUpcoming && (
-          <TouchableOpacity
-            style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => setShowPredictionModal(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>My Prediction</Text>
-
-            {fight.userPredictedWinner || fight.userPredictedMethod || fight.userPredictedRound ? (
-              // User has a prediction - show the prediction text
-              <Text style={[styles.myPredictionText, { color: colors.text }]}>
-                {fight.userPredictedWinner && (
-                  <>
-                    {fight.userPredictedWinner === fight.fighter1.id
-                      ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
-                      : `${fight.fighter2.firstName} ${fight.fighter2.lastName}`}
-                  </>
-                )}
-                {fight.userPredictedMethod && (
-                  <> by {fight.userPredictedMethod === 'DECISION' ? 'Decision' : fight.userPredictedMethod === 'KO_TKO' ? 'KO/TKO' : 'Submission'}</>
-                )}
-                {fight.userPredictedRound && (
-                  <> in Round {fight.userPredictedRound}</>
-                )}
-              </Text>
-            ) : (
-              // User has no prediction - show button text
-              <View style={[styles.predictButton, { backgroundColor: colors.tint }]}>
-                <Text style={[styles.predictButtonText, { color: '#000' }]}>Predict This Fight</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        )}
-
-        {/* Community Predictions - Only for upcoming fights with predictions */}
-        {isUpcoming && predictionStats && (
-          <CommunityPredictionsCard predictionStats={predictionStats} />
-        )}
-
         {/* Score Section - Different layout for upcoming vs completed */}
         {isUpcoming ? (
           // Split layout for upcoming fights
           <View style={styles.splitScoreRow}>
             {/* Aggregate Hype - Left */}
             <View style={[styles.halfScoreContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <FontAwesome6 name="fire-flame-curved" size={48} color="#FF6B35" />
-              <Text style={[styles.halfScoreValue, { color: colors.text }]}>
-                {predictionStats?.averageHype !== undefined
-                  ? predictionStats.averageHype % 1 === 0
-                    ? predictionStats.averageHype.toString()
-                    : predictionStats.averageHype.toFixed(1)
-                  : '0'}
-              </Text>
+              <View style={styles.scoreRow}>
+                <FontAwesome6 name="fire-flame-curved" size={28} color="#FF6B35" />
+                <Text style={[styles.halfScoreValue, { color: colors.text }]}>
+                  {predictionStats?.averageHype !== undefined
+                    ? predictionStats.averageHype % 1 === 0
+                      ? predictionStats.averageHype.toString()
+                      : predictionStats.averageHype.toFixed(1)
+                    : '0'}
+                </Text>
+              </View>
               <Text style={[styles.halfScoreLabel, { color: colors.textSecondary }]}>
-                Average Hype
-              </Text>
-              <Text style={[styles.halfScoreSubLabel, { color: colors.textSecondary }]}>
-                ({totalPredictions} {totalPredictions === 1 ? 'prediction' : 'predictions'})
+                Community Hype
               </Text>
             </View>
 
@@ -467,12 +438,14 @@ export default function FightDetailScreen() {
               onPress={() => setShowPredictionModal(true)}
               activeOpacity={0.7}
             >
-              <FontAwesome6 name={fight.userHypePrediction ? "fire-flame-curved" : "fire-flame-curved"} size={48} color="#83B4F3" />
-              <Text style={[styles.halfScoreValue, { color: colors.text }]}>
-                {fight.userHypePrediction || ''}
-              </Text>
+              <View style={styles.scoreRow}>
+                <FontAwesome6 name={fight.userHypePrediction ? "fire-flame-curved" : "fire-flame-curved"} size={28} color="#83B4F3" />
+                <Text style={[styles.halfScoreValue, { color: colors.text }]}>
+                  {fight.userHypePrediction || ''}
+                </Text>
+              </View>
               <Text style={[styles.halfScoreLabel, { color: colors.textSecondary }]}>
-                My Hype
+                You
               </Text>
             </TouchableOpacity>
           </View>
@@ -692,11 +665,129 @@ export default function FightDetailScreen() {
           </View>
         )}
 
-        {/* Distribution Chart */}
+        {/* Community Predictions - Only for upcoming fights with predictions */}
+        {isUpcoming && predictionStats && (
+          <CommunityPredictionsCard
+            predictionStats={predictionStats}
+            userPrediction={fight.userPredictedWinner ? {
+              winner: fight.userPredictedWinner === fight.fighter1.id
+                ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
+                : `${fight.fighter2.firstName} ${fight.fighter2.lastName}`,
+              method: fight.userPredictedMethod
+            } : null}
+            onPress={() => setShowPredictionModal(true)}
+          />
+        )}
+
+        {/* Fight Details */}
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            {isUpcoming ? 'Hype Distribution' : 'Rating Distribution'}
-          </Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fight Details</Text>
+
+          {/* Event Name */}
+          {fight.event?.name && (
+            <View style={styles.infoRow}>
+              <FontAwesome name="calendar" size={16} color={colors.textSecondary} />
+              <Text style={[styles.infoText, { color: colors.text }]}>
+                {fight.event.name}
+              </Text>
+            </View>
+          )}
+
+          {/* Event Date */}
+          {fight.event?.date && (
+            <View style={styles.infoRow}>
+              <FontAwesome name="calendar-o" size={16} color={colors.textSecondary} />
+              <Text style={[styles.infoText, { color: colors.text }]}>
+                {new Date(fight.event.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}
+              </Text>
+            </View>
+          )}
+
+          {/* Main Card Start Time */}
+          {fight.event?.mainStartTime && (
+            <View style={styles.infoRow}>
+              <FontAwesome name="clock-o" size={16} color={colors.textSecondary} />
+              <Text style={[styles.infoText, { color: colors.text }]}>
+                Main Card: {new Date(fight.event.mainStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}
+              </Text>
+            </View>
+          )}
+
+          {/* Prelim Start Time */}
+          {fight.event?.prelimStartTime && (
+            <View style={styles.infoRow}>
+              <FontAwesome name="clock-o" size={16} color={colors.textSecondary} />
+              <Text style={[styles.infoText, { color: colors.text }]}>
+                Prelims: {new Date(fight.event.prelimStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}
+              </Text>
+            </View>
+          )}
+
+          {/* Early Prelim Start Time */}
+          {fight.event?.earlyPrelimStartTime && (
+            <View style={styles.infoRow}>
+              <FontAwesome name="clock-o" size={16} color={colors.textSecondary} />
+              <Text style={[styles.infoText, { color: colors.text }]}>
+                Early Prelims: {new Date(fight.event.earlyPrelimStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZoneName: 'short' })}
+              </Text>
+            </View>
+          )}
+
+          {/* Fighter 1 Stats */}
+          <View style={styles.infoRow}>
+            <FontAwesome name="user" size={16} color={colors.textSecondary} />
+            <Text style={[styles.infoText, { color: colors.text }]}>
+              {fight.fighter1.firstName} {fight.fighter1.lastName}: {fight.fighter1.wins}-{fight.fighter1.losses}-{fight.fighter1.draws}
+              {fight.fighter1Ranking && fight.weightClass && ` (#${fight.fighter1Ranking} ${formatWeightClass(fight.weightClass)})`}
+            </Text>
+          </View>
+
+          {/* Fighter 2 Stats */}
+          <View style={styles.infoRow}>
+            <FontAwesome name="user" size={16} color={colors.textSecondary} />
+            <Text style={[styles.infoText, { color: colors.text }]}>
+              {fight.fighter2.firstName} {fight.fighter2.lastName}: {fight.fighter2.wins}-{fight.fighter2.losses}-{fight.fighter2.draws}
+              {fight.fighter2Ranking && fight.weightClass && ` (#${fight.fighter2Ranking} ${formatWeightClass(fight.weightClass)})`}
+            </Text>
+          </View>
+
+          {/* Weight Class */}
+          {fight.weightClass && (
+            <View style={styles.infoRow}>
+              <FontAwesome name="trophy" size={16} color={colors.textSecondary} />
+              <Text style={[styles.infoText, { color: colors.text }]}>
+                {fight.isTitle ? `${formatWeightClass(fight.weightClass)} Championship` : formatWeightClass(fight.weightClass)}
+              </Text>
+            </View>
+          )}
+
+          {/* Event Location */}
+          {fight.event?.location && (
+            <View style={styles.infoRow}>
+              <FontAwesome name="map-marker" size={16} color={colors.textSecondary} />
+              <Text style={[styles.infoText, { color: colors.text }]}>
+                {fight.event.location}
+              </Text>
+            </View>
+          )}
+
+          {/* Arena/Venue */}
+          {fight.event?.venue && (
+            <View style={styles.infoRow}>
+              <FontAwesome name="building-o" size={16} color={colors.textSecondary} />
+              <Text style={[styles.infoText, { color: colors.text }]}>
+                {fight.event.venue}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Distribution Chart - Only for completed fights */}
+        {!isUpcoming && (
+          <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Rating Distribution
+            </Text>
           <View style={styles.distributionContainer}>
             {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((score) => {
               const count = isUpcoming
@@ -728,6 +819,7 @@ export default function FightDetailScreen() {
             })}
           </View>
         </View>
+        )}
 
         {/* Pre-Fight Predictions (for completed fights) - Read-only */}
         {isComplete && (
@@ -1136,9 +1228,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fighterImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 125,
+    height: 125,
+    borderRadius: 62.5,
     marginBottom: 12,
   },
   fighterName: {
@@ -1162,10 +1254,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   vsContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
   },
   vsText: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   largeScoreContainer: {
@@ -1187,20 +1279,25 @@ const styles = StyleSheet.create({
   },
   splitScoreRow: {
     flexDirection: 'row',
-    marginHorizontal: 16,
+    marginHorizontal: 4,
     marginBottom: 16,
     gap: 12,
   },
   halfScoreContainer: {
     flex: 1,
-    padding: 24,
+    padding: 16,
     borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   halfScoreValue: {
-    fontSize: 48,
+    fontSize: 36,
     fontWeight: 'bold',
   },
   halfScoreLabel: {
@@ -1232,7 +1329,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   section: {
-    marginHorizontal: 16,
+    marginHorizontal: 4,
     marginBottom: 16,
     padding: 16,
     borderRadius: 12,

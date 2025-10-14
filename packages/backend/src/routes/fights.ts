@@ -411,6 +411,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const fightWithRelations = fight as any;
       const transformedFight: any = { ...fight };
 
+
       if (currentUserId) {
         // Transform user rating (take the first/only rating)
         if (fightWithRelations.ratings && fightWithRelations.ratings.length > 0) {

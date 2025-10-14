@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { View, Text, StyleSheet, useColorScheme, TouchableOpacity } from 'react-native';
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 
 interface CommunityPredictionsCardProps {
@@ -29,9 +29,14 @@ interface CommunityPredictionsCardProps {
     };
     fighter2RoundPredictions: Record<number, number>;
   };
+  userPrediction?: {
+    winner: string | null;
+    method: string | null;
+  } | null;
+  onPress?: () => void;
 }
 
-export function CommunityPredictionsCard({ predictionStats }: CommunityPredictionsCardProps) {
+export function CommunityPredictionsCard({ predictionStats, userPrediction, onPress }: CommunityPredictionsCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -44,69 +49,112 @@ export function CommunityPredictionsCard({ predictionStats }: CommunityPredictio
     fighter2RoundPredictions
   } = predictionStats;
 
+  // Helper function to format method
+  const formatMethod = (method: string | null | undefined) => {
+    if (!method) return '';
+    if (method === 'KO_TKO') return 'KO/TKO';
+    if (method === 'DECISION') return 'Decision';
+    if (method === 'SUBMISSION') return 'Submission';
+    return method;
+  };
+
+  // Helper function to get last name (everything except first name)
+  const getLastName = (fullName: string) => {
+    if (!fullName) return fullName;
+    const parts = fullName.trim().split(' ');
+    if (parts.length === 1) return parts[0];
+    return parts.slice(1).join(' ');
+  };
+
   // If no predictions, don't render anything
   if (totalPredictions === 0) {
     return null;
   }
 
-  // Helper function to find most popular method
-  const getMostPopularMethod = (methods: { DECISION: number; KO_TKO: number; SUBMISSION: number }) => {
+  // Helper function to find top methods with their percentages
+  const getTopMethods = (methods: { DECISION: number; KO_TKO: number; SUBMISSION: number }) => {
     const methodEntries = Object.entries(methods) as [string, number][];
-    const mostPopular = methodEntries.reduce((max, curr) =>
-      curr[1] > max[1] ? curr : max
-    , ['DECISION', 0] as [string, number]);
-
     const total = methodEntries.reduce((sum, [_, count]) => sum + count, 0);
 
-    return {
-      method: mostPopular[0],
-      count: mostPopular[1],
-      percentage: total > 0 ? Math.round((mostPopular[1] / total) * 100) : 0,
-      label: {
-        'DECISION': 'Decision',
-        'KO_TKO': 'KO/TKO',
-        'SUBMISSION': 'Submission',
-      }[mostPopular[0]] || mostPopular[0],
-      icon: {
-        'DECISION': 'gavel',
-        'KO_TKO': 'fist-raised',
-        'SUBMISSION': 'hands',
-      }[mostPopular[0]] || 'question',
-    };
-  };
+    if (total === 0) return [];
 
-  // Helper function to find most popular round
-  const getMostPopularRound = (rounds: Record<number, number>) => {
-    const roundEntries = Object.entries(rounds)
-      .map(([round, count]) => [parseInt(round), count] as [number, number])
-      .filter(([_, count]) => count > 0);
+    // Sort by count descending
+    const sorted = methodEntries
+      .map(([method, count]) => ({
+        method,
+        count,
+        percentage: Math.round((count / total) * 100),
+        label: {
+          'DECISION': 'Decision',
+          'KO_TKO': 'KO/TKO',
+          'SUBMISSION': 'Submission',
+        }[method] || method,
+      }))
+      .filter(m => m.count > 0)
+      .sort((a, b) => b.count - a.count);
 
-    if (roundEntries.length === 0) return null;
+    // Return top method, plus second if it's 33% or more
+    const result = [sorted[0]];
+    if (sorted[1] && sorted[1].percentage >= 33) {
+      result.push(sorted[1]);
+    }
 
-    const mostPopular = roundEntries.reduce((max, curr) =>
-      curr[1] > max[1] ? curr : max,
-      [1, 0] as [number, number]
-    );
-
-    const total = roundEntries.reduce((sum, [_, count]) => sum + count, 0);
-
-    return {
-      round: mostPopular[0],
-      count: mostPopular[1],
-      percentage: total > 0 ? Math.round((mostPopular[1] / total) * 100) : 0,
-    };
+    return result;
   };
 
   // Get per-fighter stats
-  const fighter1Method = getMostPopularMethod(fighter1MethodPredictions);
-  const fighter1Round = getMostPopularRound(fighter1RoundPredictions);
-
-  const fighter2Method = getMostPopularMethod(fighter2MethodPredictions);
-  const fighter2Round = getMostPopularRound(fighter2RoundPredictions);
+  const fighter1Methods = getTopMethods(fighter1MethodPredictions);
+  const fighter2Methods = getTopMethods(fighter2MethodPredictions);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <Text style={[styles.title, { color: colors.text }]}>Community Predictions</Text>
+    <TouchableOpacity
+      style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      {/* My Prediction */}
+      {userPrediction ? (
+        <View style={styles.myPredictionRow}>
+          <View style={styles.iconContainer}>
+            <FontAwesome name="eye" size={12} color="#83B4F3" />
+          </View>
+          <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
+            My Prediction:
+          </Text>
+          <Text style={[styles.outcomeLineText, { flex: 1 }]} numberOfLines={1}>
+            <Text style={{ color: colors.text }}>
+              {getLastName(userPrediction.winner) || 'N/A'}
+            </Text>
+            {userPrediction.method && (
+              <Text style={{ color: colors.textSecondary }}>
+                {' by '}{formatMethod(userPrediction.method)}
+              </Text>
+            )}
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.myPredictionRow}>
+          <View style={styles.iconContainer}>
+            <FontAwesome name="eye" size={12} color="#83B4F3" />
+          </View>
+          <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
+            My Prediction:
+          </Text>
+          <Text style={[styles.outcomeLineText, { color: colors.textSecondary }]}>
+            N/A
+          </Text>
+        </View>
+      )}
+
+      {/* Community Predictions Label */}
+      <View style={styles.communityLabelRow}>
+        <View style={styles.iconContainer}>
+          <FontAwesome name="bar-chart" size={12} color="#F5C518" />
+        </View>
+        <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
+          Community Predictions
+        </Text>
+      </View>
 
       {/* Winner Predictions */}
       <View style={styles.section}>
@@ -114,10 +162,10 @@ export function CommunityPredictionsCard({ predictionStats }: CommunityPredictio
           {/* Fighter names above bar */}
           <View style={styles.fighterNamesRow}>
             <Text style={[styles.fighterNameLeft, { color: colors.text }]} numberOfLines={1}>
-              {winnerPredictions.fighter1.name}
+              {getLastName(winnerPredictions.fighter1.name)}
             </Text>
             <Text style={[styles.fighterNameRight, { color: colors.text }]} numberOfLines={1}>
-              {winnerPredictions.fighter2.name}
+              {getLastName(winnerPredictions.fighter2.name)}
             </Text>
           </View>
 
@@ -129,7 +177,7 @@ export function CommunityPredictionsCard({ predictionStats }: CommunityPredictio
                   styles.splitBarLeft,
                   {
                     width: winnerPredictions.fighter2.percentage === 0 ? '100%' : `${winnerPredictions.fighter1.percentage}%`,
-                    backgroundColor: '#83B4F3'
+                    backgroundColor: '#F5C518'
                   }
                 ]}
               >
@@ -144,11 +192,11 @@ export function CommunityPredictionsCard({ predictionStats }: CommunityPredictio
                   styles.splitBarRight,
                   {
                     width: winnerPredictions.fighter1.percentage === 0 ? '100%' : `${winnerPredictions.fighter2.percentage}%`,
-                    backgroundColor: '#FF6B35'
+                    backgroundColor: '#8A7014'
                   }
                 ]}
               >
-                <Text style={styles.splitBarPercentage}>
+                <Text style={[styles.splitBarPercentage, { color: '#fff' }]}>
                   {winnerPredictions.fighter1.percentage === 0 ? '100' : winnerPredictions.fighter2.percentage}%
                 </Text>
               </View>
@@ -159,36 +207,60 @@ export function CommunityPredictionsCard({ predictionStats }: CommunityPredictio
         {/* Per-Fighter Predictions Row */}
         <View style={styles.predictionTextRow}>
           {/* Fighter 1 Prediction (Left) */}
-          {fighter1Method.count > 0 && fighter1Round && (
-            <Text style={[styles.predictionTextLeft, { color: '#83B4F3' }]}>
-              by {fighter1Method.label} in Round {fighter1Round.round}
+          {fighter1Methods.length > 0 && (
+            <Text style={[styles.predictionTextLeft, { color: '#F5C518' }]}>
+              {fighter1Methods.map(m => m.label).join(' or ')}
             </Text>
           )}
 
           {/* Fighter 2 Prediction (Right) */}
-          {fighter2Method.count > 0 && fighter2Round && (
-            <Text style={[styles.predictionTextRight, { color: '#FF6B35' }]}>
-              {fighter2Method.label} in Round {fighter2Round.round}
+          {fighter2Methods.length > 0 && (
+            <Text style={[styles.predictionTextRight, { color: '#8A7014' }]}>
+              {fighter2Methods.map(m => m.label).join(' or ')}
             </Text>
           )}
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: 16,
+    marginHorizontal: 4,
     marginBottom: 16,
-    padding: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 6,
     borderRadius: 12,
     borderWidth: 1,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  myPredictionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: 12,
+  },
+  communityLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  iconContainer: {
+    width: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 4,
+  },
+  outcomeLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  outcomeLineText: {
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
   },
   section: {
     marginBottom: 16,
@@ -238,7 +310,7 @@ const styles = StyleSheet.create({
   splitBarPercentage: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#000',
   },
   predictionTextRow: {
     flexDirection: 'row',
