@@ -447,6 +447,59 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
     mutationFn: async (data: { rating: number | null; review: string | null; tags: string[]; }) => {
       return await apiService.updateFightUserData(fight!.id, data);
     },
+    onMutate: async (submissionData) => {
+      // Cancel outgoing queries to avoid overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['fightAggregateStats', fight?.id] });
+
+      // Get current aggregate stats
+      const previousStats = queryClient.getQueryData(['fightAggregateStats', fight?.id]);
+
+      // Check if user had a rating/review before
+      const hadRatingBefore = originalData.hasAnyData && originalData.rating > 0;
+      const hasRatingNow = submissionData.rating !== null;
+      const hadReviewBefore = originalData.hasAnyData && originalData.comment.trim().length > 0;
+      const hasReviewNow = submissionData.review !== null && submissionData.review.trim().length > 0;
+
+      // Optimistically update the counters
+      if (previousStats) {
+        queryClient.setQueryData(['fightAggregateStats', fight?.id], (old: any) => {
+          if (!old) return old;
+
+          let newTotalRatings = old.totalRatings || 0;
+          let newReviewCount = old.reviewCount || 0;
+
+          // Update ratings counter
+          // Increment counter if user is adding a new rating (didn't have one before)
+          if (!hadRatingBefore && hasRatingNow) {
+            newTotalRatings = newTotalRatings + 1;
+          }
+          // Decrement counter if user is removing their rating (had one before, doesn't now)
+          else if (hadRatingBefore && !hasRatingNow) {
+            newTotalRatings = Math.max(0, newTotalRatings - 1);
+          }
+          // If user is updating their rating (had one before, still has one), no change
+
+          // Update review counter
+          // Increment counter if user is adding a new review (didn't have one before)
+          if (!hadReviewBefore && hasReviewNow) {
+            newReviewCount = newReviewCount + 1;
+          }
+          // Decrement counter if user is removing their review (had one before, doesn't now)
+          else if (hadReviewBefore && !hasReviewNow) {
+            newReviewCount = Math.max(0, newReviewCount - 1);
+          }
+          // If user is updating their review (had one before, still has one), no change
+
+          return {
+            ...old,
+            totalRatings: newTotalRatings,
+            reviewCount: newReviewCount,
+          };
+        });
+      }
+
+      return { previousStats };
+    },
     onSuccess: async () => {
       // Refresh data
       queryClient.invalidateQueries({ queryKey });
@@ -459,7 +512,11 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
       onSuccess?.('rating', { fightId: fight?.id, rating: rating });
       closeModal();
     },
-    onError: (error: any) => {
+    onError: (error: any, variables, context: any) => {
+      // Rollback optimistic update on error
+      if (context?.previousStats) {
+        queryClient.setQueryData(['fightAggregateStats', fight?.id], context.previousStats);
+      }
       console.error('Update error:', error);
       showError(error?.error || 'Failed to save data', 'Error');
     },

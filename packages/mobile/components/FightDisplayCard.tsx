@@ -329,6 +329,37 @@ export default function FightDisplayCard({
     return `${winnerName} by ${fight.method}${roundTimeText}`;
   };
 
+  // Get outcome parts for split color rendering
+  const getOutcomeParts = () => {
+    if (!fight.isComplete || !fight.winner || !fight.method) return null;
+
+    // Determine winner name
+    let winnerName = '';
+    if (fight.winner === 'draw') {
+      winnerName = 'Draw';
+    } else if (fight.winner === 'nc') {
+      winnerName = 'No Contest';
+    } else if (fight.winner === fight.fighter1.id) {
+      winnerName = fight.fighter1.lastName;
+    } else if (fight.winner === fight.fighter2.id) {
+      winnerName = fight.fighter2.lastName;
+    } else {
+      return null;
+    }
+
+    // Build method/round text
+    const methodText = fight.method ? ` by ${fight.method}` : '';
+    const roundText = fight.round ? `R${fight.round}` : '';
+    const timeText = fight.time ? ` ${fight.time}` : '';
+    const roundTimeText = roundText || timeText ? ` - ${roundText}${timeText}` : '';
+
+    if (fight.winner === 'draw' || fight.winner === 'nc') {
+      return { winnerName, methodAndRound: roundTimeText };
+    }
+
+    return { winnerName, methodAndRound: `${methodText}${roundTimeText}` };
+  };
+
   // Determine which rings to show for each fighter (for completed fights)
   const getFighterRings = (fighterId: string, fighterName: string) => {
     if (status !== 'completed') return [];
@@ -336,7 +367,8 @@ export default function FightDisplayCard({
     const rings = [];
 
     // Check if this fighter was the actual winner (green ring - outermost)
-    if (fight.winner === fighterId) {
+    // Only show winner ring if user has rated the fight
+    if (fight.winner === fighterId && fight.userRating) {
       rings.push('winner');
     }
 
@@ -874,7 +906,7 @@ export default function FightDisplayCard({
               <View style={styles.countsColumn}>
                 <View style={styles.countRow}>
                   <FontAwesome
-                    name="group"
+                    name="user-o"
                     size={12}
                     color={colors.textSecondary}
                     style={styles.countIcon}
@@ -1389,39 +1421,6 @@ export default function FightDisplayCard({
       {/* Fight Outcome / Status Container */}
       {fight.isComplete && getOutcomeText() && (
         <View style={styles.outcomeContainer}>
-          {/* Pre-Fight Hype */}
-          <View style={styles.outcomeLineRow}>
-            <View style={styles.iconContainer}>
-              <FontAwesome6
-                name="fire-flame-curved"
-                size={12}
-                color="#FF6B35"
-              />
-            </View>
-            <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
-              How Hyped Was I?
-            </Text>
-            <View style={styles.hypeScoresRow}>
-              {aggregateStats?.userHypeScore ? (
-                <Text style={[styles.hypeScoreText, { color: colors.text }]}>
-                  {aggregateStats.userHypeScore}
-                </Text>
-              ) : (
-                <Text style={[styles.hypeScoreText, { color: colors.textSecondary }]}>N/A</Text>
-              )}
-              {aggregateStats?.communityAverageHype && (
-                <>
-                  <Text style={[styles.communityLabel, { color: colors.textSecondary }]}>
-                    Community:
-                  </Text>
-                  <Text style={[styles.hypeScoreText, { color: colors.text }]}>
-                    {aggregateStats.communityAverageHype}
-                  </Text>
-                </>
-              )}
-            </View>
-          </View>
-
           {/* My Prediction */}
           {aggregateStats?.userPrediction ? (
             <View style={styles.outcomeLineRow}>
@@ -1435,10 +1434,16 @@ export default function FightDisplayCard({
               <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
                 My Prediction:
               </Text>
-              <Text style={[styles.outcomeLineText, { color: colors.text }]} numberOfLines={1}>
-                {getLastName(aggregateStats.userPrediction.winner) || 'N/A'}
-                {aggregateStats.userPrediction.method && ` by ${formatMethod(aggregateStats.userPrediction.method)}`}
-                {aggregateStats.userPrediction.round && ` R${aggregateStats.userPrediction.round}`}
+              <Text style={[styles.outcomeLineText, { flex: 1 }]} numberOfLines={1}>
+                <Text style={{ color: colors.text }}>
+                  {getLastName(aggregateStats.userPrediction.winner) || 'N/A'}
+                </Text>
+                {(aggregateStats.userPrediction.method || aggregateStats.userPrediction.round) && (
+                  <Text style={{ color: colors.textSecondary }}>
+                    {aggregateStats.userPrediction.method && ` by ${formatMethod(aggregateStats.userPrediction.method)}`}
+                    {aggregateStats.userPrediction.round && ` R${aggregateStats.userPrediction.round}`}
+                  </Text>
+                )}
               </Text>
             </View>
           ) : (
@@ -1472,10 +1477,16 @@ export default function FightDisplayCard({
               <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
                 Community Prediction:
               </Text>
-              <Text style={[styles.outcomeLineText, { color: colors.text }]} numberOfLines={1}>
-                {getLastName(aggregateStats.communityPrediction.winner)}
-                {aggregateStats.communityPrediction.method && ` by ${formatMethod(aggregateStats.communityPrediction.method)}`}
-                {aggregateStats.communityPrediction.round && ` R${aggregateStats.communityPrediction.round}`}
+              <Text style={[styles.outcomeLineText, { flex: 1 }]} numberOfLines={1}>
+                <Text style={{ color: colors.text }}>
+                  {getLastName(aggregateStats.communityPrediction.winner)}
+                </Text>
+                {(aggregateStats.communityPrediction.method || aggregateStats.communityPrediction.round) && (
+                  <Text style={{ color: colors.textSecondary }}>
+                    {aggregateStats.communityPrediction.method && ` by ${formatMethod(aggregateStats.communityPrediction.method)}`}
+                    {aggregateStats.communityPrediction.round && ` R${aggregateStats.communityPrediction.round}`}
+                  </Text>
+                )}
               </Text>
             </View>
           ) : (
@@ -1510,15 +1521,62 @@ export default function FightDisplayCard({
                 Outcome:
               </Text>
               {fight.userRating ? (
-                <Text style={[styles.outcomeLineText, { color: colors.text }]} numberOfLines={1}>
-                  {getOutcomeText()}
-                </Text>
+                (() => {
+                  const outcomeParts = getOutcomeParts();
+                  if (!outcomeParts) return null;
+                  return (
+                    <Text style={[styles.outcomeLineText, { flex: 1 }]} numberOfLines={1}>
+                      <Text style={{ color: colors.text }}>
+                        {outcomeParts.winnerName}
+                      </Text>
+                      {outcomeParts.methodAndRound && (
+                        <Text style={{ color: colors.textSecondary }}>
+                          {outcomeParts.methodAndRound}
+                        </Text>
+                      )}
+                    </Text>
+                  );
+                })()
               ) : (
                 <Text style={[styles.outcomeLineText, { color: colors.textSecondary, fontStyle: 'italic' }]} numberOfLines={1}>
                   Rate this to show winner.
                 </Text>
               )}
             </View>
+
+            {/* Pre-Fight Hype */}
+            <View style={styles.outcomeLineRow}>
+              <View style={styles.iconContainer}>
+                <FontAwesome6
+                  name="fire-flame-curved"
+                  size={12}
+                  color="#FF6B35"
+                />
+              </View>
+              <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
+                How Hyped Was I?
+              </Text>
+              <View style={styles.hypeScoresRow}>
+                {aggregateStats?.userHypeScore ? (
+                  <Text style={[styles.hypeScoreText, { color: colors.text }]}>
+                    {aggregateStats.userHypeScore}
+                  </Text>
+                ) : (
+                  <Text style={[styles.hypeScoreText, { color: colors.textSecondary }]}>N/A</Text>
+                )}
+                {aggregateStats?.communityAverageHype && (
+                  <>
+                    <Text style={[styles.communityLabel, { color: colors.textSecondary }]}>
+                      Community:
+                    </Text>
+                    <Text style={[styles.hypeScoreText, { color: colors.text }]}>
+                      {aggregateStats.communityAverageHype}
+                    </Text>
+                  </>
+                )}
+              </View>
+            </View>
+
             {/* Tags inline with outcome - only show when user has rated */}
             {fight.userRating && aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
               <View style={styles.tagsInlineContainer}>
