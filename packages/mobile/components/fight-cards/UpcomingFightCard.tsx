@@ -314,12 +314,12 @@ export default function UpcomingFightCard({
                         { top: -10, left: -10, tx: -15, ty: -15 },
                         { bottom: -10, right: -10, tx: 15, ty: 15 },
                         { bottom: -10, left: -10, tx: -15, ty: 15 },
-                        { top: -10, left: '50%', marginLeft: -6, tx: 0, ty: -20 },
+                        { top: -10, left: 0, right: 0, tx: 0, ty: -20 },
                         { top: 2, right: -10, tx: 20, ty: 0 },
-                        { bottom: -10, left: '50%', marginLeft: -6, tx: 0, ty: 20 },
+                        { bottom: -10, left: 0, right: 0, tx: 0, ty: 20 },
                         { top: 2, left: -10, tx: -20, ty: 0 },
                       ];
-                      const pos = positions[index];
+                      const pos = positions[index] as any;
 
                       return (
                         <Animated.View

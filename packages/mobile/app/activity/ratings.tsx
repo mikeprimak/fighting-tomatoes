@@ -14,7 +14,7 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
-import FightDisplayCard, { FightData } from '../../components/FightDisplayCard';
+import FightDisplayCard, { FightData } from '../../components/FightDisplayCardNew';
 import RateFightModal from '../../components/RateFightModal';
 import { FontAwesome } from '@expo/vector-icons';
 
