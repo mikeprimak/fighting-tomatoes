@@ -159,6 +159,7 @@ export function PredictionModal({
       // Invalidate individual prediction queries
       queryClient.invalidateQueries({ queryKey: ['fightPrediction', fight?.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight?.id] });
+      queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight?.id] });
       queryClient.invalidateQueries({ queryKey: ['fight', fight?.id, 'withUserData'] });
 
       // If opened from crew context, also invalidate crew queries

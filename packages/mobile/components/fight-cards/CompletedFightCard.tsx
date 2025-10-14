@@ -433,10 +433,9 @@ export default function CompletedFightCard({
                   <Text style={{ color: colors.text }}>
                     {getLastName(aggregateStats.userPrediction.winner) || 'N/A'}
                   </Text>
-                  {(aggregateStats.userPrediction.method || aggregateStats.userPrediction.round) && (
+                  {aggregateStats.userPrediction.method && (
                     <Text style={{ color: colors.textSecondary }}>
-                      {aggregateStats.userPrediction.method && ` by ${formatMethod(aggregateStats.userPrediction.method)}`}
-                      {aggregateStats.userPrediction.round && ` R${aggregateStats.userPrediction.round}`}
+                      {' by '}{formatMethod(aggregateStats.userPrediction.method)}
                     </Text>
                   )}
                 </Text>
@@ -456,7 +455,7 @@ export default function CompletedFightCard({
             )}
 
             {/* Community Prediction */}
-            {aggregateStats?.communityPrediction?.winner ? (
+            {aggregateStats?.communityPrediction?.fighter1Name && aggregateStats?.communityPrediction?.fighter2Name ? (
               <View style={sharedStyles.outcomeLineRow}>
                 <View style={sharedStyles.iconContainer}>
                   <FontAwesome name="bar-chart" size={12} color="#F5C518" />
@@ -465,14 +464,29 @@ export default function CompletedFightCard({
                   Community Prediction:
                 </Text>
                 <Text style={[sharedStyles.outcomeLineText, { flex: 1 }]} numberOfLines={1}>
-                  <Text style={{ color: colors.text }}>
-                    {getLastName(aggregateStats.communityPrediction.winner)}
-                  </Text>
-                  {(aggregateStats.communityPrediction.method || aggregateStats.communityPrediction.round) && (
-                    <Text style={{ color: colors.textSecondary }}>
-                      {aggregateStats.communityPrediction.method && ` by ${formatMethod(aggregateStats.communityPrediction.method)}`}
-                      {aggregateStats.communityPrediction.round && ` R${aggregateStats.communityPrediction.round}`}
-                    </Text>
+                  {/* Determine which fighter had more predictions */}
+                  {aggregateStats.communityPrediction.fighter1Percentage >= aggregateStats.communityPrediction.fighter2Percentage ? (
+                    <>
+                      <Text style={{ color: colors.text }}>
+                        {getLastName(aggregateStats.communityPrediction.fighter1Name)} ({aggregateStats.communityPrediction.fighter1Percentage}%)
+                      </Text>
+                      {aggregateStats.communityPrediction.method && (
+                        <Text style={{ color: colors.textSecondary }}>
+                          {' by '}{formatMethod(aggregateStats.communityPrediction.method)}
+                        </Text>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Text style={{ color: colors.text }}>
+                        {getLastName(aggregateStats.communityPrediction.fighter2Name)} ({aggregateStats.communityPrediction.fighter2Percentage}%)
+                      </Text>
+                      {aggregateStats.communityPrediction.method && (
+                        <Text style={{ color: colors.textSecondary }}>
+                          {' by '}{formatMethod(aggregateStats.communityPrediction.method)}
+                        </Text>
+                      )}
+                    </>
                   )}
                 </Text>
               </View>

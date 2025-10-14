@@ -1885,6 +1885,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
         // Most predicted winner
         const fighter1Predictions = predictions.filter(p => (p as any).predictedWinner === fight.fighter1Id).length;
         const fighter2Predictions = predictions.filter(p => (p as any).predictedWinner === fight.fighter2Id).length;
+        const totalPredictions = predictions.length;
+
+        // Calculate percentages
+        const fighter1Percentage = totalPredictions > 0 ? Math.round((fighter1Predictions / totalPredictions) * 100) : 0;
+        const fighter2Percentage = totalPredictions > 0 ? Math.round((fighter2Predictions / totalPredictions) * 100) : 0;
 
         let mostPredictedWinner = null;
         let winnerFighterId = null;
@@ -1909,17 +1914,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
         };
         const mostPredictedMethod = Object.entries(methodCounts).reduce((a, b) => (methodCounts[a[0]] || 0) > (methodCounts[b[0]] || 0) ? a : b)[0];
 
-        // Most predicted round (from winner's predictions only)
-        const roundCounts: Record<number, number> = {};
-        for (let round = 1; round <= 12; round++) {
-          roundCounts[round] = winnerPredictions.filter(p => (p as any).predictedRound === round).length;
-        }
-        const mostPredictedRound = Object.entries(roundCounts).reduce((a, b) => (roundCounts[Number(a[0])] >= roundCounts[Number(b[0])] ? a : b), ['1', 0])[0];
-
         communityPrediction = {
           winner: mostPredictedWinner,
           method: mostPredictedMethod === 'KO_TKO' ? 'KO/TKO' : mostPredictedMethod,
-          round: mostPredictedRound !== '0' && roundCounts[Number(mostPredictedRound)] > 0 ? Number(mostPredictedRound) : null,
+          fighter1Name: `${fight.fighter1.firstName} ${fight.fighter1.lastName}`,
+          fighter1Percentage,
+          fighter2Name: `${fight.fighter2.firstName} ${fight.fighter2.lastName}`,
+          fighter2Percentage,
         };
       }
 
