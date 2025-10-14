@@ -80,6 +80,13 @@ export default function FightDetailScreen() {
     refetchOnMount: 'always',
   });
 
+  // Fetch aggregate stats (includes user prediction and community prediction)
+  const { data: aggregateStats } = useQuery({
+    queryKey: ['fightAggregateStats', id],
+    queryFn: () => apiService.getFightAggregateStats(id as string),
+    enabled: !!id,
+    staleTime: 60 * 1000,
+  });
 
   // Fetch tags
   const { data: tagsData } = useQuery({
@@ -239,6 +246,28 @@ export default function FightDetailScreen() {
   const isUpcoming = !fight.hasStarted && !fight.isComplete;
   const isComplete = fight.isComplete;
 
+  // Determine which rings to show for each fighter
+  const getFighterRings = (fighterId: string, fighterName: string, isFighter2: boolean) => {
+    const rings = [];
+
+    // Green ring - actual winner (only show if user has rated OR revealed the winner)
+    if (fight.winner === fighterId && (fight.userRating || spoilerRevealed)) {
+      rings.push('winner');
+    }
+
+    // Community prediction ring - yellow for fighter1, gold for fighter2
+    if (aggregateStats?.communityPrediction?.winner === fighterName) {
+      rings.push(isFighter2 ? 'community-gold' : 'community');
+    }
+
+    // Blue ring - user's prediction
+    if (aggregateStats?.userPrediction?.winner === fighterName) {
+      rings.push('user');
+    }
+
+    return rings;
+  };
+
   // Calculate rating distribution from individual rating fields
   const ratingDistribution: Record<number, number> = {
     1: fight.ratings1 || 0,
@@ -302,14 +331,56 @@ export default function FightDetailScreen() {
             style={styles.fighterContainer}
             onPress={() => router.push(`/fighter/${fight.fighter1.id}`)}
           >
-            <Image
-              source={
-                fight.fighter1.profileImage
-                  ? { uri: fight.fighter1.profileImage }
-                  : getFighterPlaceholderImage(fight.fighter1.id)
-              }
-              style={styles.fighterImage}
-            />
+            {(() => {
+              const fighter1Rings = getFighterRings(
+                fight.fighter1.id,
+                `${fight.fighter1.firstName} ${fight.fighter1.lastName}`,
+                false
+              );
+              const borderWidth = 3;
+              const gap = 2;
+              const baseSize = 125;
+
+              return (
+                <View style={{ width: baseSize, height: baseSize, marginBottom: 12, position: 'relative' }}>
+                  {fighter1Rings.map((ring, index) => {
+                    const ringColor = ring === 'winner' ? '#22c55e' : ring === 'community' ? '#F5C518' : ring === 'community-gold' ? '#8A7014' : '#83B4F3';
+                    const inset = index * (borderWidth + gap);
+
+                    return (
+                      <View
+                        key={`${ring}-${index}`}
+                        style={{
+                          position: 'absolute',
+                          top: inset,
+                          left: inset,
+                          right: inset,
+                          bottom: inset,
+                          borderWidth: borderWidth,
+                          borderColor: ringColor,
+                          borderRadius: baseSize / 2,
+                          zIndex: index,
+                        }}
+                      />
+                    );
+                  })}
+
+                  <Image
+                    source={
+                      fight.fighter1.profileImage
+                        ? { uri: fight.fighter1.profileImage }
+                        : getFighterPlaceholderImage(fight.fighter1.id)
+                    }
+                    style={{
+                      width: baseSize,
+                      height: baseSize,
+                      borderRadius: baseSize / 2,
+                      zIndex: 100,
+                    }}
+                  />
+                </View>
+              );
+            })()}
             <Text style={[styles.fighterName, { color: colors.text }]}>
               {fight.fighter1.firstName} {fight.fighter1.lastName}
             </Text>
@@ -344,14 +415,56 @@ export default function FightDetailScreen() {
             style={styles.fighterContainer}
             onPress={() => router.push(`/fighter/${fight.fighter2.id}`)}
           >
-            <Image
-              source={
-                fight.fighter2.profileImage
-                  ? { uri: fight.fighter2.profileImage }
-                  : getFighterPlaceholderImage(fight.fighter2.id)
-              }
-              style={styles.fighterImage}
-            />
+            {(() => {
+              const fighter2Rings = getFighterRings(
+                fight.fighter2.id,
+                `${fight.fighter2.firstName} ${fight.fighter2.lastName}`,
+                true
+              );
+              const borderWidth = 3;
+              const gap = 2;
+              const baseSize = 125;
+
+              return (
+                <View style={{ width: baseSize, height: baseSize, marginBottom: 12, position: 'relative' }}>
+                  {fighter2Rings.map((ring, index) => {
+                    const ringColor = ring === 'winner' ? '#22c55e' : ring === 'community' ? '#F5C518' : ring === 'community-gold' ? '#8A7014' : '#83B4F3';
+                    const inset = index * (borderWidth + gap);
+
+                    return (
+                      <View
+                        key={`${ring}-${index}`}
+                        style={{
+                          position: 'absolute',
+                          top: inset,
+                          left: inset,
+                          right: inset,
+                          bottom: inset,
+                          borderWidth: borderWidth,
+                          borderColor: ringColor,
+                          borderRadius: baseSize / 2,
+                          zIndex: index,
+                        }}
+                      />
+                    );
+                  })}
+
+                  <Image
+                    source={
+                      fight.fighter2.profileImage
+                        ? { uri: fight.fighter2.profileImage }
+                        : getFighterPlaceholderImage(fight.fighter2.id)
+                    }
+                    style={{
+                      width: baseSize,
+                      height: baseSize,
+                      borderRadius: baseSize / 2,
+                      zIndex: 100,
+                    }}
+                  />
+                </View>
+              );
+            })()}
             <Text style={[styles.fighterName, { color: colors.text }]}>
               {fight.fighter2.firstName} {fight.fighter2.lastName}
             </Text>
