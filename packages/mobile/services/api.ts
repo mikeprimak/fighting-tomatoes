@@ -321,6 +321,22 @@ class ApiService {
     return this.makeRequest(`/events/${eventId}/fights`);
   }
 
+  async getEventEngagement(eventId: string): Promise<{
+    totalFights: number;
+    predictionsCount: number;
+    ratingsCount: number;
+    alertsCount: number;
+    averageHype: number | null;
+    topHypedFights: Array<{
+      fightId: string;
+      hype: number;
+      fighter1: string;
+      fighter2: string;
+    }>;
+  }> {
+    return this.makeRequest(`/events/${eventId}/engagement`);
+  }
+
   // Fighter-related API methods
   async getFighter(fighterId: string): Promise<{ fighter: any }> {
     return this.makeRequest(`/fighters/${fighterId}`);
@@ -592,6 +608,10 @@ class ApiService {
       winner: string | null;
       method: string | null;
       round: number | null;
+      fighter1Name?: string;
+      fighter2Name?: string;
+      fighter1Percentage?: number;
+      fighter2Percentage?: number;
     } | null;
     topTags: Array<{
       name: string;
@@ -600,7 +620,9 @@ class ApiService {
     userHypeScore: number | null;
     communityAverageHype: number | null;
   }> {
-    return this.makeRequest(`/fights/${fightId}/aggregate-stats`);
+    const result = await this.makeRequest<any>(`/fights/${fightId}/aggregate-stats`);
+
+    return result;
   }
 
   async getEventPredictionStats(eventId: string): Promise<{

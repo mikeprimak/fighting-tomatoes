@@ -8,7 +8,7 @@ import { apiService } from '../../services/api';
 import { router } from 'expo-router';
 import { useAuth } from '../../store/AuthContext';
 import { BaseFightCardProps } from './shared/types';
-import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName, formatMethod } from './shared/utils';
+import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -32,6 +32,15 @@ export default function UpcomingFightCard({
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+
+  // Local formatMethod function for this component - shows "KO" instead of "KO/TKO"
+  const formatMethod = (method: string | null | undefined) => {
+    if (!method) return '';
+    if (method === 'KO_TKO') return 'KO';
+    if (method === 'DECISION') return 'Decision';
+    if (method === 'SUBMISSION') return 'Submission';
+    return method;
+  };
 
   // Image error states
   const [fighter1ImageError, setFighter1ImageError] = useState(false);
@@ -276,7 +285,7 @@ export default function UpcomingFightCard({
         percentage: Math.round((count / total) * 100),
         label: {
           'DECISION': 'Decision',
-          'KO_TKO': 'KO/TKO',
+          'KO_TKO': 'KO',
           'SUBMISSION': 'Submission',
         }[method] || method,
       }))
@@ -312,8 +321,8 @@ export default function UpcomingFightCard({
         </Text>
 
         <View style={sharedStyles.horizontalInfoRow}>
-          {/* Fighter Headshots with Rings */}
-          <View style={sharedStyles.headshotsContainer}>
+          {/* Fighter Headshots with Rings and Odds */}
+          <View style={styles.headshotsWithOddsContainer}>
             {/* Fighter 1 with rings */}
             {(() => {
               const fighter1Name = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
@@ -323,39 +332,46 @@ export default function UpcomingFightCard({
               const gap = 1;
 
               return (
-                <View style={sharedStyles.fighterHeadshotWrapper}>
-                  {fighter1Rings.map((ring, index) => {
-                    const ringColor = ring === 'community' ? '#F5C518' : ring === 'community-gold' ? '#8A7014' : '#83B4F3';
-                    const inset = index * (borderWidth + gap);
+                <View style={styles.fighterColumn}>
+                  <View style={sharedStyles.fighterHeadshotWrapper}>
+                    {fighter1Rings.map((ring, index) => {
+                      const ringColor = ring === 'community' ? '#F5C518' : ring === 'community-gold' ? '#8A7014' : '#83B4F3';
+                      const inset = index * (borderWidth + gap);
 
-                    return (
-                      <View
-                        key={`${ring}-${index}`}
-                        style={{
-                          position: 'absolute',
-                          top: inset,
-                          left: inset,
-                          right: inset,
-                          bottom: inset,
-                          borderWidth: borderWidth,
-                          borderColor: ringColor,
-                          borderRadius: 37.5,
-                          zIndex: index,
-                        }}
-                      />
-                    );
-                  })}
+                      return (
+                        <View
+                          key={`${ring}-${index}`}
+                          style={{
+                            position: 'absolute',
+                            top: inset,
+                            left: inset,
+                            right: inset,
+                            bottom: inset,
+                            borderWidth: borderWidth,
+                            borderColor: ringColor,
+                            borderRadius: 37.5,
+                            zIndex: index,
+                          }}
+                        />
+                      );
+                    })}
 
-                  <Image
-                    source={getFighter1ImageSource()}
-                    style={{
-                      width: baseSize,
-                      height: baseSize,
-                      borderRadius: baseSize / 2,
-                      zIndex: 100,
-                    }}
-                    onError={() => setFighter1ImageError(true)}
-                  />
+                    <Image
+                      source={getFighter1ImageSource()}
+                      style={{
+                        width: baseSize,
+                        height: baseSize,
+                        borderRadius: baseSize / 2,
+                        zIndex: 100,
+                      }}
+                      onError={() => setFighter1ImageError(true)}
+                    />
+                  </View>
+                  {fight.fighter1Odds && (
+                    <Text style={[styles.oddsText, { color: colors.textSecondary }]}>
+                      {fight.fighter1Odds}
+                    </Text>
+                  )}
                 </View>
               );
             })()}
@@ -369,39 +385,46 @@ export default function UpcomingFightCard({
               const gap = 1;
 
               return (
-                <View style={sharedStyles.fighterHeadshotWrapper}>
-                  {fighter2Rings.map((ring, index) => {
-                    const ringColor = ring === 'community' ? '#F5C518' : ring === 'community-gold' ? '#8A7014' : '#83B4F3';
-                    const inset = index * (borderWidth + gap);
+                <View style={styles.fighterColumn}>
+                  <View style={sharedStyles.fighterHeadshotWrapper}>
+                    {fighter2Rings.map((ring, index) => {
+                      const ringColor = ring === 'community' ? '#F5C518' : ring === 'community-gold' ? '#8A7014' : '#83B4F3';
+                      const inset = index * (borderWidth + gap);
 
-                    return (
-                      <View
-                        key={`${ring}-${index}`}
-                        style={{
-                          position: 'absolute',
-                          top: inset,
-                          left: inset,
-                          right: inset,
-                          bottom: inset,
-                          borderWidth: borderWidth,
-                          borderColor: ringColor,
-                          borderRadius: 37.5,
-                          zIndex: index,
-                        }}
-                      />
-                    );
-                  })}
+                      return (
+                        <View
+                          key={`${ring}-${index}`}
+                          style={{
+                            position: 'absolute',
+                            top: inset,
+                            left: inset,
+                            right: inset,
+                            bottom: inset,
+                            borderWidth: borderWidth,
+                            borderColor: ringColor,
+                            borderRadius: 37.5,
+                            zIndex: index,
+                          }}
+                        />
+                      );
+                    })}
 
-                  <Image
-                    source={getFighter2ImageSource()}
-                    style={{
-                      width: baseSize,
-                      height: baseSize,
-                      borderRadius: baseSize / 2,
-                      zIndex: 100,
-                    }}
-                    onError={() => setFighter2ImageError(true)}
-                  />
+                    <Image
+                      source={getFighter2ImageSource()}
+                      style={{
+                        width: baseSize,
+                        height: baseSize,
+                        borderRadius: baseSize / 2,
+                        zIndex: 100,
+                      }}
+                      onError={() => setFighter2ImageError(true)}
+                    />
+                  </View>
+                  {fight.fighter2Odds && (
+                    <Text style={[styles.oddsText, { color: colors.textSecondary }]}>
+                      {fight.fighter2Odds}
+                    </Text>
+                  )}
                 </View>
               );
             })()}
@@ -499,10 +522,10 @@ export default function UpcomingFightCard({
                     <FontAwesome6
                       name="fire-flame-curved"
                       size={20}
-                      color="#83B4F3"
+                      color={fight.userHypePrediction ? "#83B4F3" : colors.textSecondary}
                       style={sharedStyles.ratingIcon}
                     />
-                    <Text style={[sharedStyles.userRatingText, { color: '#83B4F3', fontSize: fight.userHypePrediction ? 28 : 12 }]}>
+                    <Text style={[sharedStyles.userRatingText, { color: fight.userHypePrediction ? '#83B4F3' : colors.textSecondary, fontSize: fight.userHypePrediction ? 28 : 12 }]}>
                       {fight.userHypePrediction ? `${fight.userHypePrediction}` : 'Predict'}
                     </Text>
                   </View>
@@ -562,16 +585,6 @@ export default function UpcomingFightCard({
 
               {/* Horizontal Prediction Bar */}
               <View style={styles.predictionBarContainer}>
-                {/* Fighter names above bar */}
-                <View style={styles.fighterNamesRow}>
-                  <Text style={[styles.fighterNameLeft, { color: colors.text }]} numberOfLines={1}>
-                    {getLastName(aggregateStats.communityPrediction.fighter1Name)}
-                  </Text>
-                  <Text style={[styles.fighterNameRight, { color: colors.text }]} numberOfLines={1}>
-                    {getLastName(aggregateStats.communityPrediction.fighter2Name)}
-                  </Text>
-                </View>
-
                 {/* Single split bar */}
                 <View style={styles.splitBar}>
                   {aggregateStats.communityPrediction.fighter1Percentage > 0 && (
@@ -584,10 +597,11 @@ export default function UpcomingFightCard({
                         }
                       ]}
                     >
-                      <Text style={styles.splitBarPercentage}>
-                        {aggregateStats.communityPrediction.fighter2Percentage === 0 ? '100' : aggregateStats.communityPrediction.fighter1Percentage}%
-                        {aggregateStats.communityPrediction.fighter1Percentage > 75 && ` ${getLastName(aggregateStats.communityPrediction.fighter1Name)}`}
-                      </Text>
+                      {aggregateStats.communityPrediction.fighter1Percentage >= 5 && (
+                        <Text style={styles.splitBarPercentage} numberOfLines={1}>
+                          {aggregateStats.communityPrediction.fighter2Percentage === 0 ? '100' : aggregateStats.communityPrediction.fighter1Percentage}%{aggregateStats.communityPrediction.fighter1Percentage > 20 && ` ${getLastName(aggregateStats.communityPrediction.fighter1Name)}`}
+                        </Text>
+                      )}
                     </View>
                   )}
                   {aggregateStats.communityPrediction.fighter2Percentage > 0 && (
@@ -600,10 +614,11 @@ export default function UpcomingFightCard({
                         }
                       ]}
                     >
-                      <Text style={[styles.splitBarPercentage, { color: '#fff' }]}>
-                        {aggregateStats.communityPrediction.fighter1Percentage === 0 ? '100' : aggregateStats.communityPrediction.fighter2Percentage}%
-                        {aggregateStats.communityPrediction.fighter2Percentage > 75 && ` ${getLastName(aggregateStats.communityPrediction.fighter2Name)}`}
-                      </Text>
+                      {aggregateStats.communityPrediction.fighter2Percentage >= 5 && (
+                        <Text style={[styles.splitBarPercentage, { color: '#fff' }]} numberOfLines={1}>
+                          {aggregateStats.communityPrediction.fighter1Percentage === 0 ? '100' : aggregateStats.communityPrediction.fighter2Percentage}%{aggregateStats.communityPrediction.fighter2Percentage > 20 && ` ${getLastName(aggregateStats.communityPrediction.fighter2Name)}`}
+                        </Text>
+                      )}
                     </View>
                   )}
                 </View>
@@ -723,6 +738,18 @@ export default function UpcomingFightCard({
 }
 
 const styles = StyleSheet.create({
+  headshotsWithOddsContainer: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  fighterColumn: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  oddsText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
   aggregateScoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -778,7 +805,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   predictionBarContainer: {
-    marginTop: 0,
+    marginTop: 3,
     gap: 4,
   },
   fighterNamesRow: {

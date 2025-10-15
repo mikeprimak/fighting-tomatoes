@@ -17,7 +17,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
-import { FightDisplayCard, RateFightModal, PredictionModal } from '../../../components';
+import { FightDisplayCard, RateFightModal, PredictionModal, EventEngagementSummary } from '../../../components';
 import { useAuth } from '../../../store/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { useLiveEventPolling } from '../../../hooks/useLiveEventPolling';
@@ -191,6 +191,30 @@ export default function EventsScreen() {
   });
 
   const fights = fightsData?.fights || [];
+
+  // Fetch engagement data for current event (only if authenticated)
+  const { data: engagementData, isLoading: engagementLoading, error: engagementError } = useQuery({
+    queryKey: ['eventEngagement', currentEvent?.id],
+    queryFn: async () => {
+      if (!currentEvent?.id || !isAuthenticated) return null;
+      console.log('Fetching engagement for event:', currentEvent.id);
+      const result = await apiService.getEventEngagement(currentEvent.id);
+      console.log('Engagement data received:', result);
+      return result;
+    },
+    enabled: !!currentEvent?.id && isAuthenticated,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+
+  // Debug logging
+  React.useEffect(() => {
+    if (engagementData) {
+      console.log('Engagement data in component:', engagementData);
+    }
+    if (engagementError) {
+      console.error('Engagement fetch error:', engagementError);
+    }
+  }, [engagementData, engagementError]);
 
   // Helper to check if event is currently live
   const isEventLive = (event: Event | undefined) => {
@@ -550,6 +574,18 @@ export default function EventsScreen() {
             />
           )}
 
+          {/* User Engagement Summary */}
+          {isAuthenticated && engagementData && (
+            <EventEngagementSummary
+              totalFights={engagementData.totalFights}
+              predictionsCount={engagementData.predictionsCount}
+              ratingsCount={engagementData.ratingsCount}
+              alertsCount={engagementData.alertsCount}
+              averageHype={engagementData.averageHype}
+              topHypedFights={engagementData.topHypedFights || []}
+            />
+          )}
+
           {/* Main Card */}
           {mainCard.length > 0 && (
             <View style={styles.cardSection}>
@@ -724,6 +760,7 @@ export default function EventsScreen() {
         queryKey={['eventFights', currentEvent?.id]}
         onSuccess={(type, data) => {
           if (type === 'rating' && data?.fightId && data?.rating) {
+            queryClient.invalidateQueries({ queryKey: ['eventEngagement', currentEvent?.id] });
             setTimeout(() => {
               setRecentlyRatedFightId(data.fightId || null);
               setTimeout(() => setRecentlyRatedFightId(null), 1000);
@@ -738,6 +775,7 @@ export default function EventsScreen() {
         onClose={closeModal}
         onSuccess={(isUpdate, data) => {
           queryClient.invalidateQueries({ queryKey: ['eventFights', currentEvent?.id] });
+          queryClient.invalidateQueries({ queryKey: ['eventEngagement', currentEvent?.id] });
 
           if (data?.fightId && data?.hypeLevel) {
             setTimeout(() => {

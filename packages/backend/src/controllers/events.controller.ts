@@ -136,8 +136,8 @@ export const getEventById = async (req: Request, res: Response) => {
     // Calculate average ratings for each fight
     const fightsWithRatings = event.fights.map(fight => {
       const totalRatings = fight.ratings.length;
-      const averageRating = totalRatings > 0 
-        ? fight.ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings 
+      const averageRating = totalRatings > 0
+        ? fight.ratings.reduce((sum, r) => sum + r.rating, 0) / totalRatings
         : null;
 
       return {
@@ -154,6 +154,145 @@ export const getEventById = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Get event by ID error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getEventEngagement = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).userId;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Get event with all fights
+    const event = await prisma.event.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        fights: {
+          select: {
+            id: true,
+          }
+        }
+      }
+    });
+
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    const fightIds = event.fights.map(f => f.id);
+
+    // Get user's individual predictions for this event
+    const individualPredictions = await prisma.fightPrediction.findMany({
+      where: {
+        userId,
+        fightId: { in: fightIds }
+      },
+      select: {
+        id: true,
+        fightId: true,
+        predictedRating: true,
+      }
+    });
+
+    // Get user's crew predictions for this event
+    const crewPredictions = await prisma.crewPrediction.findMany({
+      where: {
+        userId,
+        fightId: { in: fightIds }
+      },
+      select: {
+        id: true,
+        fightId: true,
+        hypeLevel: true,
+      }
+    });
+
+    // Combine both prediction types (deduplicate by fightId)
+    const allPredictionsByFight = new Map<string, number | null>();
+
+    // Add individual predictions
+    individualPredictions.forEach(p => {
+      if (!allPredictionsByFight.has(p.fightId)) {
+        allPredictionsByFight.set(p.fightId, p.predictedRating);
+      }
+    });
+
+    // Add crew predictions
+    crewPredictions.forEach(p => {
+      if (!allPredictionsByFight.has(p.fightId)) {
+        allPredictionsByFight.set(p.fightId, p.hypeLevel);
+      }
+    });
+
+    const predictions = Array.from(allPredictionsByFight.entries()).map(([fightId, rating]) => ({
+      fightId,
+      rating
+    }));
+
+    // Get user's ratings for this event
+    const ratings = await prisma.fightRating.findMany({
+      where: {
+        userId,
+        fightId: { in: fightIds }
+      },
+      select: {
+        id: true,
+        fightId: true,
+        rating: true,
+      }
+    });
+
+    // Get user's fight alerts for this event
+    const alerts = await prisma.fightAlert.findMany({
+      where: {
+        userId,
+        fightId: { in: fightIds },
+        isActive: true,
+      },
+      select: {
+        id: true,
+        fightId: true,
+      }
+    });
+
+    // Calculate average hype level from predictions
+    const hypeLevels = predictions
+      .map(p => p.rating)
+      .filter((rating): rating is number => rating !== null && rating > 0);
+
+    const avgHype = hypeLevels.length > 0
+      ? hypeLevels.reduce((sum, rating) => sum + rating, 0) / hypeLevels.length
+      : null;
+
+    console.log('Event engagement calculated:', {
+      eventId: id,
+      userId,
+      totalFights: event.fights.length,
+      individualPredictions: individualPredictions.length,
+      crewPredictions: crewPredictions.length,
+      totalPredictions: predictions.length,
+      ratingsCount: ratings.length,
+      alertsCount: alerts.length,
+      avgHype
+    });
+
+    const engagement = {
+      totalFights: event.fights.length,
+      predictionsCount: predictions.length,
+      ratingsCount: ratings.length,
+      alertsCount: alerts.length,
+      averageHype: avgHype ? Number(avgHype.toFixed(1)) : null,
+    };
+
+    res.json(engagement);
+  } catch (error) {
+    console.error('Get event engagement error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

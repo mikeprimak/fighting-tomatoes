@@ -52,7 +52,7 @@ export function CommunityPredictionsCard({ predictionStats, userPrediction, onPr
   // Helper function to format method
   const formatMethod = (method: string | null | undefined) => {
     if (!method) return '';
-    if (method === 'KO_TKO') return 'KO/TKO';
+    if (method === 'KO_TKO') return 'KO';
     if (method === 'DECISION') return 'Decision';
     if (method === 'SUBMISSION') return 'Submission';
     return method;

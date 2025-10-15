@@ -313,6 +313,165 @@ export async function registerRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Event engagement endpoint - Get user's engagement stats for an event
+  fastify.get('/api/events/:id/engagement', {
+    schema: {
+      description: 'Get user engagement summary for an event',
+      tags: ['events'],
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+        },
+        required: ['id'],
+      },
+    },
+    preHandler: authenticateUser,
+  }, async (request, reply) => {
+    const { id: eventId } = request.params as { id: string };
+    const user = (request as any).user;
+
+    try {
+      // Get event with all fights
+      const event = await fastify.prisma.event.findUnique({
+        where: { id: eventId },
+        select: {
+          id: true,
+          name: true,
+          fights: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+
+      if (!event) {
+        return reply.code(404).send({
+          error: 'Event not found',
+          code: 'EVENT_NOT_FOUND',
+        });
+      }
+
+      const fightIds = event.fights.map((f: any) => f.id);
+
+      // Get fights with fighter details
+      const fightsWithDetails = await fastify.prisma.fight.findMany({
+        where: { id: { in: fightIds } },
+        select: {
+          id: true,
+          fighter1: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+          fighter2: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
+        },
+      });
+
+      // Get user's individual predictions
+      const individualPredictions = await fastify.prisma.fightPrediction.findMany({
+        where: {
+          userId: user.id,
+          fightId: { in: fightIds },
+        },
+        select: {
+          fightId: true,
+          predictedRating: true,
+        },
+      });
+
+      // Get user's crew predictions
+      const crewPredictions = await fastify.prisma.crewPrediction.findMany({
+        where: {
+          userId: user.id,
+          fightId: { in: fightIds },
+        },
+        select: {
+          fightId: true,
+          hypeLevel: true,
+        },
+      });
+
+      // Combine predictions (deduplicate by fightId, keep hype level)
+      const allPredictionsByFight = new Map<string, number | null>();
+      individualPredictions.forEach((p: any) => {
+        if (!allPredictionsByFight.has(p.fightId)) {
+          allPredictionsByFight.set(p.fightId, p.predictedRating);
+        }
+      });
+      crewPredictions.forEach((p: any) => {
+        if (!allPredictionsByFight.has(p.fightId)) {
+          allPredictionsByFight.set(p.fightId, p.hypeLevel);
+        }
+      });
+
+      // Get user's ratings
+      const ratings = await fastify.prisma.fightRating.findMany({
+        where: {
+          userId: user.id,
+          fightId: { in: fightIds },
+        },
+      });
+
+      // Get user's alerts
+      const alerts = await fastify.prisma.fightAlert.findMany({
+        where: {
+          userId: user.id,
+          fightId: { in: fightIds },
+          isActive: true,
+        },
+      });
+
+      // Calculate average hype
+      const hypeLevels = Array.from(allPredictionsByFight.values())
+        .filter((rating): rating is number => rating !== null && rating > 0);
+      const avgHype = hypeLevels.length > 0
+        ? hypeLevels.reduce((sum, rating) => sum + rating, 0) / hypeLevels.length
+        : null;
+
+      // Get top 3 most hyped fights
+      const predictionsWithFights = Array.from(allPredictionsByFight.entries())
+        .filter(([_, hype]) => hype !== null && hype > 0)
+        .map(([fightId, hype]) => {
+          const fight = fightsWithDetails.find((f: any) => f.id === fightId);
+          return {
+            fightId,
+            hype: hype as number,
+            fighter1: fight ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}` : '',
+            fighter2: fight ? `${fight.fighter2.firstName} ${fight.fighter2.lastName}` : '',
+          };
+        })
+        .sort((a, b) => b.hype - a.hype)
+        .slice(0, 3);
+
+      const engagement = {
+        totalFights: event.fights.length,
+        predictionsCount: allPredictionsByFight.size,
+        ratingsCount: ratings.length,
+        alertsCount: alerts.length,
+        averageHype: avgHype ? Number(avgHype.toFixed(1)) : null,
+        topHypedFights: predictionsWithFights,
+      };
+
+      console.log('Event engagement:', engagement);
+
+      return reply.send(engagement);
+    } catch (error: any) {
+      request.log.error('Event engagement fetch error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
   // Event predictions endpoint - Get aggregate predictions for an event
   fastify.get('/api/events/:id/predictions', async (request, reply) => {
     const { id: eventId } = request.params as { id: string };
