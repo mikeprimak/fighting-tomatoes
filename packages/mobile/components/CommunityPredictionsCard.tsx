@@ -123,7 +123,7 @@ export function CommunityPredictionsCard({ predictionStats, userPrediction, onPr
           </Text>
           <Text style={[styles.outcomeLineText, { flex: 1 }]} numberOfLines={1}>
             <Text style={{ color: colors.text }}>
-              {getLastName(userPrediction.winner) || 'N/A'}
+              {getLastName(userPrediction.winner) || ''}
             </Text>
             {userPrediction.method && (
               <Text style={{ color: colors.textSecondary }}>
@@ -135,13 +135,13 @@ export function CommunityPredictionsCard({ predictionStats, userPrediction, onPr
       ) : (
         <View style={styles.myPredictionRow}>
           <View style={styles.iconContainer}>
-            <FontAwesome name="eye" size={12} color="#83B4F3" />
+            <FontAwesome name="eye" size={12} color={colors.textSecondary} />
           </View>
           <Text style={[styles.outcomeLabel, { color: colors.textSecondary }]}>
             My Prediction:
           </Text>
           <Text style={[styles.outcomeLineText, { color: colors.textSecondary }]}>
-            N/A
+
           </Text>
         </View>
       )}

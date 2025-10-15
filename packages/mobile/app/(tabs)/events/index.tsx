@@ -750,6 +750,8 @@ export default function EventsScreen() {
             flatListRef.current?.scrollToIndex({ index: info.index, animated: false });
           });
         }}
+        directionalLockEnabled={true}
+        scrollEventThrottle={16}
       />
 
       {/* Rating Modal */}

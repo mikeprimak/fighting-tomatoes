@@ -233,16 +233,9 @@ export function PredictionModal({
         const round = userPrediction.predictedRound || 0;
         const method = userPrediction.predictedMethod || '';
 
-        // Validate Decision method with round selection
-        if (method === 'DECISION' && round !== fight.scheduledRounds) {
-          console.log('PredictionModal: Invalid combination - Decision with non-final round, fixing...');
-          // If Decision is selected but round is not final, deselect Decision
-          setPredictedMethod('');
-          setPredictedRound(round);
-        } else {
-          setPredictedMethod(method);
-          setPredictedRound(round);
-        }
+        // No validation needed - all methods are independent of rounds
+        setPredictedMethod(method);
+        setPredictedRound(round);
       } else {
         console.log('PredictionModal: No existing prediction found, resetting form');
         // Reset to blank state for new predictions
@@ -340,18 +333,12 @@ export function PredictionModal({
     }
   };
 
-  // Handle method selection with round logic
+  // Handle method selection (no round logic)
   const handleMethodSelection = (method: PredictionMethod) => {
     if (predictedMethod === method) {
       setPredictedMethod('');
     } else {
       setPredictedMethod(method);
-      if (!fight) return;
-
-      // If Decision is selected, automatically set round to final round
-      if (method === 'DECISION') {
-        setPredictedRound(fight.scheduledRounds);
-      }
     }
   };
 
@@ -517,8 +504,8 @@ export function PredictionModal({
             </View>
           </View>
 
-          {/* Predicted Round */}
-          <View style={styles.predictionSection}>
+          {/* Predicted Round - HIDDEN */}
+          {/* <View style={styles.predictionSection}>
             <Text style={[styles.sectionLabel, { color: colors.text }]}>
               What round will it end in?
             </Text>
@@ -546,7 +533,7 @@ export function PredictionModal({
                 </TouchableOpacity>
               ))}
             </View>
-          </View>
+          </View> */}
 
           {/* Predicted Method */}
           <View style={styles.predictionSection}>
@@ -555,9 +542,6 @@ export function PredictionModal({
             </Text>
             <View style={styles.methodButtons}>
               {(['KO_TKO', 'SUBMISSION', 'DECISION'] as const).map((method) => {
-                // Decision only available for final round
-                const isDecisionDisabled = method === 'DECISION' && predictedRound !== fight.scheduledRounds;
-
                 return (
                   <TouchableOpacity
                     key={method}
@@ -566,11 +550,9 @@ export function PredictionModal({
                       {
                         backgroundColor: predictedMethod === method ? colors.tint : colors.background,
                         borderColor: colors.border,
-                        opacity: isDecisionDisabled ? 0.5 : 1,
                       }
                     ]}
-                    onPress={() => !isDecisionDisabled && handleMethodSelection(method)}
-                    disabled={isDecisionDisabled}
+                    onPress={() => handleMethodSelection(method)}
                   >
                     <Text style={[
                       styles.methodButtonText,
