@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FontAwesome } from '@expo/vector-icons';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
@@ -226,7 +227,7 @@ const getAvailableTagsForRating = (rating: number, selectedTags: string[]) => {
   // Conservative approach: Just use a fixed count based on typical tag lengths
   // This prevents the glitchy 4th row from ever appearing
   // Better to show slightly fewer tags than to have layout glitches
-  const CONSERVATIVE_MAX_TAGS = 8; // Safe number that usually fits in 3 rows
+  const CONSERVATIVE_MAX_TAGS = 7; // Safe number that usually fits in 3 rows
 
   return allTags.slice(0, CONSERVATIVE_MAX_TAGS);
 };
@@ -656,9 +657,9 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
             {/* Large display star with wheel animation */}
             <View style={styles.displayStarContainer}>
               <View style={styles.animatedStarContainer}>
-                <View style={{ position: 'relative' }}>
+                <View style={{ position: 'relative', marginTop: 24 }}>
                   {/* Grey star (base layer) */}
-                  <Text style={[styles.displayStar, { color: '#666666' }]}>★</Text>
+                  <FontAwesome name="star" size={80} color="#666666" />
                   {/* Primary color star (overlay) */}
                   <Animated.View
                     style={{
@@ -668,7 +669,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
                       opacity: starColorAnimation
                     }}
                   >
-                    <Text style={[styles.displayStar, { color: colors.primary }]}>★</Text>
+                    <FontAwesome name="star" size={80} color={colors.primary} />
                   </Animated.View>
                 </View>
                 <View style={styles.wheelContainer}>
@@ -700,7 +701,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
                   {/* Smooth bottom gradient fade - moved down for better centering */}
                   <LinearGradient
                     colors={['transparent', `${colors.background}44`, `${colors.background}99`, `${colors.background}DD`, colors.background, colors.background]}
-                    style={[styles.fadeOverlay, { bottom: -8, height: 25 }]}
+                    style={[styles.fadeOverlay, { bottom: -12, height: 25 }]}
                     pointerEvents="none"
                   />
                 </View>
@@ -714,10 +715,11 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
                   onPress={() => handleSetRating(level)}
                   style={styles.starButton}
                 >
-                  <Text style={[
-                    styles.star,
-                    { color: level <= rating ? colors.primary : '#666666' }
-                  ]}>★</Text>
+                  <FontAwesome
+                    name="star"
+                    size={32}
+                    color={level <= rating ? colors.primary : '#666666'}
+                  />
                 </TouchableOpacity>
               ))}
             </View>
@@ -893,20 +895,19 @@ const styles = StyleSheet.create({
   },
   displayStarContainer: {
     alignItems: 'center',
-    marginBottom: 4,
-    marginTop: -28,
+    marginBottom: 16,
+    marginTop: -24,
   },
   animatedStarContainer: {
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  displayStar: {
-    fontSize: 80,
+    paddingTop: 20,
+    paddingBottom: 4,
   },
   wheelContainer: {
     position: 'absolute',
-    top: 0,
+    top: 20,
     left: 0,
     right: 0,
     bottom: 0,
@@ -928,7 +929,7 @@ const styles = StyleSheet.create({
     color: 'white',
     textShadowColor: 'black',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 24,
+    textShadowRadius: 12,
     minWidth: 120,
   },
   fadeOverlay: {
@@ -944,9 +945,6 @@ const styles = StyleSheet.create({
   },
   starButton: {
     padding: 3,
-  },
-  star: {
-    fontSize: 32,
   },
   ratingText: {
     textAlign: 'center',

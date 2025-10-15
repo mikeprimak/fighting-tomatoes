@@ -391,21 +391,23 @@ export default function CompletedFightCard({
 
                 <Animated.View style={{ transform: [{ scale: ratingScaleAnim }] }}>
                   <View style={sharedStyles.ratingRow}>
-                    <View style={styles.starWithCommentContainer}>
-                      <FontAwesome
-                        name={fight.userRating ? "star" : "star-o"}
-                        size={30}
-                        color="#83B4F3"
-                        style={sharedStyles.ratingIcon}
-                      />
-                    </View>
+                    {fight.userRating && (
+                      <View style={styles.starWithCommentContainer}>
+                        <FontAwesome
+                          name="star"
+                          size={30}
+                          color="#83B4F3"
+                          style={sharedStyles.ratingIcon}
+                        />
+                      </View>
+                    )}
                     <View style={styles.ratingColumnWrapper}>
                       {fight.userRating ? (
                         <Text style={[sharedStyles.userRatingText, { color: '#83B4F3' }]}>
                           {fight.userRating}
                         </Text>
                       ) : (
-                        <Text style={[sharedStyles.unratedText, { color: '#83B4F3' }]}>
+                        <Text style={[sharedStyles.unratedText, { color: colors.textSecondary }]}>
                           Rate{'\n'}This
                         </Text>
                       )}
@@ -431,7 +433,7 @@ export default function CompletedFightCard({
                 </Text>
                 <Text style={[sharedStyles.outcomeLineText, { flex: 1 }]} numberOfLines={1}>
                   <Text style={{ color: colors.text }}>
-                    {getLastName(aggregateStats.userPrediction.winner) || 'N/A'}
+                    {getLastName(aggregateStats.userPrediction.winner) || ''}
                   </Text>
                   {aggregateStats.userPrediction.method && (
                     <Text style={{ color: colors.textSecondary }}>
@@ -449,7 +451,7 @@ export default function CompletedFightCard({
                   My Prediction:
                 </Text>
                 <Text style={[sharedStyles.outcomeLineText, { color: colors.textSecondary }]}>
-                  N/A
+
                 </Text>
               </View>
             )}
@@ -468,7 +470,7 @@ export default function CompletedFightCard({
                   {aggregateStats.communityPrediction.fighter1Percentage >= aggregateStats.communityPrediction.fighter2Percentage ? (
                     <>
                       <Text style={{ color: colors.text }}>
-                        {getLastName(aggregateStats.communityPrediction.fighter1Name)} ({aggregateStats.communityPrediction.fighter1Percentage}%)
+                        {getLastName(aggregateStats.communityPrediction.fighter1Name)}
                       </Text>
                       {aggregateStats.communityPrediction.method && (
                         <Text style={{ color: colors.textSecondary }}>
@@ -479,7 +481,7 @@ export default function CompletedFightCard({
                   ) : (
                     <>
                       <Text style={{ color: colors.text }}>
-                        {getLastName(aggregateStats.communityPrediction.fighter2Name)} ({aggregateStats.communityPrediction.fighter2Percentage}%)
+                        {getLastName(aggregateStats.communityPrediction.fighter2Name)}
                       </Text>
                       {aggregateStats.communityPrediction.method && (
                         <Text style={{ color: colors.textSecondary }}>
@@ -551,7 +553,7 @@ export default function CompletedFightCard({
                       {aggregateStats.userHypeScore}
                     </Text>
                   ) : (
-                    <Text style={[styles.hypeScoreText, { color: colors.textSecondary }]}>N/A</Text>
+                    <Text style={[styles.hypeScoreText, { color: colors.text }]}>-</Text>
                   )}
                   {aggregateStats?.communityAverageHype && (
                     <>
