@@ -28,6 +28,9 @@ export class MMANewsScraper {
 
   async init(): Promise<void> {
     if (!this.browser) {
+      // Render/production-friendly Puppeteer config
+      const isProduction = process.env.NODE_ENV === 'production';
+
       this.browser = await puppeteer.launch({
         headless: true,
         args: [
@@ -37,8 +40,16 @@ export class MMANewsScraper {
           '--disable-accelerated-2d-canvas',
           '--disable-gpu',
           '--window-size=1920x1080',
-          '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          // Additional Render-specific args
+          ...(isProduction ? [
+            '--disable-extensions',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+          ] : [])
         ],
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
       });
     }
   }

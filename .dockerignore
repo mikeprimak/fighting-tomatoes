@@ -1,0 +1,61 @@
+# Node modules
+node_modules
+**/node_modules
+
+# Build output
+dist
+**/dist
+build
+**/build
+
+# Logs
+*.log
+npm-debug.log*
+logs
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+*.test.ts
+*.spec.ts
+test
+tests
+__tests__
+
+# Documentation
+*.md
+!README.md
+docs
+
+# Mobile packages (not needed for backend)
+packages/mobile
+
+# Scraped data (will be generated on server)
+packages/backend/scraped-data
+packages/backend/live-event-data
+packages/backend/public/uploads
+packages/backend/public/news-images
+
+# Prisma migrations (will run on server)
+.env
+prisma/migrations
+
+# Render
+render.yaml
