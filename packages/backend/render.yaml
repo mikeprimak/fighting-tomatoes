@@ -15,8 +15,9 @@ services:
     plan: free
     region: oregon
     branch: main
-    buildCommand: cd packages/backend && pnpm install && pnpm run db:generate && pnpm run build
-    startCommand: cd packages/backend && pnpm run db:migrate:deploy && pnpm start
+    rootDir: ./
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @yourapp/shared build && pnpm --filter @yourapp/backend db:generate && pnpm --filter @yourapp/backend build
+    startCommand: cd packages/backend && pnpm db:migrate:deploy && pnpm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
