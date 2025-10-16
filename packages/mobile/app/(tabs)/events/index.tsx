@@ -358,6 +358,20 @@ export default function EventsScreen() {
     });
   };
 
+  const formatEventStatus = (event: Event) => {
+    const eventDate = new Date(event.date);
+    const now = new Date();
+    const isPast = eventDate < now;
+
+    const formattedDate = formatDate(event.date);
+
+    if (isPast) {
+      return `Complete: ${formattedDate}`;
+    } else {
+      return `Upcoming: ${formattedDate}`;
+    }
+  };
+
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     const timeString = date.toLocaleTimeString('en-US', {
@@ -496,7 +510,7 @@ export default function EventsScreen() {
                   </View>
                 )}
                 <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-                  {formatDate(event.date)}
+                  {formatEventStatus(event)}
                 </Text>
               </View>
 
@@ -548,7 +562,7 @@ export default function EventsScreen() {
                 </View>
               )}
               <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-                {formatDate(event.date)}
+                {formatEventStatus(event)}
               </Text>
             </View>
 

@@ -142,7 +142,25 @@ export default function CrewsScreen() {
 
   const renderCrewItem = ({ item }: { item: Crew }) => {
     // Parse the last message preview to check if it's from the current user
-    const lastMessagePreview = item.lastMessagePreview || 'No messages yet';
+    let lastMessagePreview = item.lastMessagePreview || 'No messages yet';
+
+    // Check if the message contains a GIF URL (ends with .gif or contains giphy.com/tenor.com)
+    const isGif = lastMessagePreview.match(/\.(gif)(\?|$)/i) ||
+                  lastMessagePreview.includes('giphy.com') ||
+                  lastMessagePreview.includes('tenor.com');
+
+    // If it's a GIF, replace the URL portion with "GIF"
+    if (isGif && lastMessagePreview !== 'No messages yet') {
+      // Extract the username prefix if it exists (e.g., "John: https://...")
+      const colonIndex = lastMessagePreview.indexOf(':');
+      if (colonIndex !== -1) {
+        const username = lastMessagePreview.substring(0, colonIndex);
+        lastMessagePreview = `${username}: GIF`;
+      } else {
+        lastMessagePreview = 'GIF';
+      }
+    }
+
     const displayMessage = lastMessagePreview.startsWith(`${user?.firstName}:`)
       ? lastMessagePreview.replace(`${user?.firstName}:`, 'You:')
       : lastMessagePreview;
