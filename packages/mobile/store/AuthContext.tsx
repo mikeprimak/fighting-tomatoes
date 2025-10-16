@@ -43,10 +43,14 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// ⚙️ DEVELOPMENT CONFIG: Set to true to test production API while developing
+const USE_PRODUCTION_API = false;
+
 const getApiBaseUrl = () => {
   const isDevelopment = (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.NODE_ENV === 'development';
 
-  if (!isDevelopment) {
+  // Allow forcing production API during development for testing
+  if (USE_PRODUCTION_API || !isDevelopment) {
     return 'https://fightcrewapp-backend.onrender.com/api';
   }
 

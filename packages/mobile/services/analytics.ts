@@ -2,12 +2,18 @@
 import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
+// ⚙️ DEVELOPMENT CONFIG: Set to true to test production API while developing
+const USE_PRODUCTION_API = false;
+
 // Get API base URL
 const getApiBaseUrl = () => {
   const isDevelopment = (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.NODE_ENV === 'development';
-  if (!isDevelopment) {
+
+  // Allow forcing production API during development for testing
+  if (USE_PRODUCTION_API || !isDevelopment) {
     return 'https://fightcrewapp-backend.onrender.com/api';
   }
+
   if (Platform.OS === 'web') {
     return 'http://localhost:3001/api';
   } else {
