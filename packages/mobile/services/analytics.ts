@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 const getApiBaseUrl = () => {
   const isDevelopment = (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.NODE_ENV === 'development';
   if (!isDevelopment) {
-    return 'https://your-production-api.com/api';
+    return 'https://fightcrewapp-backend.onrender.com/api';
   }
   if (Platform.OS === 'web') {
     return 'http://localhost:3001/api';

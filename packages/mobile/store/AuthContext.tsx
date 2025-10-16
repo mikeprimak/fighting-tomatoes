@@ -47,7 +47,7 @@ const getApiBaseUrl = () => {
   const isDevelopment = (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.NODE_ENV === 'development';
 
   if (!isDevelopment) {
-    return 'https://your-production-api.com/api';
+    return 'https://fightcrewapp-backend.onrender.com/api';
   }
 
   // In development, use localhost for web and network IP for mobile
