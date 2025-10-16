@@ -3,12 +3,9 @@ services:
     name: fightcrewapp-backend
     runtime: docker
     dockerfilePath: ./Dockerfile
-    dockerContext: .
     plan: starter
     region: oregon
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
@@ -19,6 +16,8 @@ services:
         sync: false
       - key: CORS_ORIGINS
         sync: false
+      - key: NODE_ENV
+        value: production
       - key: PORT
         value: "10000"
       - key: SKIP_EMAIL_VERIFICATION
