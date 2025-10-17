@@ -36,10 +36,23 @@ export class MMANewsScraper {
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
+          '--disable-dev-shm-usage', // Important: Use /tmp instead of /dev/shm (Render has limited shared memory)
           '--disable-accelerated-2d-canvas',
           '--disable-gpu',
-          '--window-size=1920x1080',
+          '--disable-software-rasterizer',
+          '--window-size=1280x720', // Reduced from 1920x1080 to save memory
+          '--single-process', // Run in single process mode (saves 50-100MB)
+          '--no-zygote', // Don't use zygote process (saves memory)
+          '--disable-features=AudioServiceOutOfProcess', // Disable audio processing
+          '--disable-background-networking', // Prevent background network requests
+          '--disable-default-apps',
+          '--disable-sync',
+          '--disable-translate',
+          '--hide-scrollbars',
+          '--metrics-recording-only',
+          '--mute-audio',
+          '--no-first-run',
+          '--safebrowsing-disable-auto-update',
           '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           // Additional Render-specific args
           ...(isProduction ? [
@@ -483,37 +496,24 @@ export class MMANewsScraper {
 
       console.log(`Filtered ${scrapedArticles.length} articles to ${filteredArticles.length} combat sports articles`);
 
-      // Fetch Open Graph images for Bleacher Report articles (second pass)
-      console.log('Fetching images for Bleacher Report articles...');
+      // MEMORY OPTIMIZATION: Skip OG image fetching for Bleacher Report
+      // This was causing 600MB+ memory spikes (15 articles × 40MB per page)
+      // Images are not critical for article display - we can add them later if needed
+      console.log('Skipping image fetch to conserve memory (Render 512MB limit)');
+
       for (const item of filteredArticles) {
-        let imageUrl = '';
-        let localImagePath: string | undefined;
-
-        // Fetch OG image from article page
-        imageUrl = await this.fetchOGImage(item.url);
-
-        // Download image if found
-        if (imageUrl) {
-          try {
-            const filename = this.generateFilename(imageUrl, 'bleacherreport');
-            localImagePath = await this.downloadImage(imageUrl, filename);
-          } catch (err) {
-            console.error(`Failed to download image: ${imageUrl}`, err);
-          }
-        }
-
         articles.push({
           headline: item.headline,
           description: item.description,
           url: item.url,
           source: 'Bleacher Report',
-          imageUrl,
-          localImagePath,
+          imageUrl: '', // Skip images to save memory
+          localImagePath: undefined,
           scrapedAt: new Date(),
         });
       }
 
-      console.log(`✓ Bleacher Report: ${articles.length} articles scraped (with images)`);
+      console.log(`✓ Bleacher Report: ${articles.length} articles scraped (no images - memory optimization)`);
     } catch (error) {
       console.error('Error scraping Bleacher Report:', error);
     } finally {
@@ -684,55 +684,38 @@ export class MMANewsScraper {
 
   async scrapeAll(): Promise<NewsArticle[]> {
     console.log('Starting MMA news scraping...');
+    console.log('Running in SEQUENTIAL mode for memory optimization (Render 512MB limit)');
     await this.init();
 
     const allArticles: NewsArticle[] = [];
+    const scrapers = [
+      { name: 'MMA Fighting', fn: () => this.scrapeMMAfighting() },
+      { name: 'Bloody Elbow', fn: () => this.scrapeBloodyElbow() },
+      { name: 'UFC', fn: () => this.scrapeUFC() },
+      { name: 'Bleacher Report', fn: () => this.scrapeBleacherReport() },
+      { name: 'Sherdog', fn: () => this.scrapeSherdog() },
+      { name: 'ESPN Boxing', fn: () => this.scrapeESPNBoxing() },
+    ];
 
     try {
-      // Run scrapers in parallel for better performance
-      const [mmafighting, bloodyelbow, ufc, bleacherreport, sherdog, espnboxing] = await Promise.allSettled([
-        this.scrapeMMAfighting(),
-        this.scrapeBloodyElbow(),
-        this.scrapeUFC(),
-        this.scrapeBleacherReport(),
-        this.scrapeSherdog(),
-        this.scrapeESPNBoxing(),
-      ]);
+      // Run scrapers SEQUENTIALLY to minimize memory usage
+      // This avoids having multiple browser pages open simultaneously
+      for (const scraper of scrapers) {
+        try {
+          console.log(`[Memory Optimization] Scraping ${scraper.name}...`);
+          const articles = await scraper.fn();
+          allArticles.push(...articles);
 
-      if (mmafighting.status === 'fulfilled') {
-        allArticles.push(...mmafighting.value);
-      } else {
-        console.error('MMA Fighting scraping failed:', mmafighting.reason);
-      }
+          // Log memory usage if available
+          if (global.gc) {
+            global.gc(); // Force garbage collection if --expose-gc flag is set
+          }
 
-      if (bloodyelbow.status === 'fulfilled') {
-        allArticles.push(...bloodyelbow.value);
-      } else {
-        console.error('Bloody Elbow scraping failed:', bloodyelbow.reason);
-      }
-
-      if (ufc.status === 'fulfilled') {
-        allArticles.push(...ufc.value);
-      } else {
-        console.error('UFC scraping failed:', ufc.reason);
-      }
-
-      if (bleacherreport.status === 'fulfilled') {
-        allArticles.push(...bleacherreport.value);
-      } else {
-        console.error('Bleacher Report scraping failed:', bleacherreport.reason);
-      }
-
-      if (sherdog.status === 'fulfilled') {
-        allArticles.push(...sherdog.value);
-      } else {
-        console.error('Sherdog scraping failed:', sherdog.reason);
-      }
-
-      if (espnboxing.status === 'fulfilled') {
-        allArticles.push(...espnboxing.value);
-      } else {
-        console.error('ESPN Boxing scraping failed:', espnboxing.reason);
+          // Small cooldown between scrapers to allow memory cleanup
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+          console.error(`${scraper.name} scraping failed:`, error);
+        }
       }
 
       // Randomize article order for this scrape session to create variety
