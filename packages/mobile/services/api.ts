@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 // ⚙️ DEVELOPMENT CONFIG: Set to true to test production API while developing
-const USE_PRODUCTION_API = false;
+const USE_PRODUCTION_API = true;
 
 const getApiBaseUrl = () => {
   const isDevelopment = (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.NODE_ENV === 'development';
