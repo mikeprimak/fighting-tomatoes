@@ -347,6 +347,91 @@ User elsewhere → push notification + persistent badge on cards
 4. Smart timing service (fight start detection, round breaks)
 5. Batch engagement prompts
 
+## News Scraper Cron System (IN PROGRESS)
+
+**Goal**: Automated MMA news scraping 5x daily using Puppeteer on Render with Docker support.
+
+**Status**: Docker deployment to Render is IN PROGRESS - awaiting user to complete Render dashboard configuration.
+
+### What's Been Built:
+
+1. **News Scraper Service** (`packages/backend/src/services/mmaNewsScraper.ts`):
+   - Scrapes 6 MMA news sources: MMA Fighting, UFC.com, Bloody Elbow, Bleacher Report, Sherdog, ESPN Boxing
+   - Uses Puppeteer for JavaScript-heavy sites
+   - Downloads article images to `public/news-images/`
+   - Production-friendly config with Chromium path detection
+
+2. **Cron Scheduler** (`packages/backend/src/services/backgroundJobs.ts`):
+   - 5 daily scrapes: 6am, 9:30am, 1pm, 4pm, 7pm EDT (10:00, 13:30, 17:00, 20:00, 23:00 UTC)
+   - Auto-runs when server awake
+   - Saves to database with deduplication
+
+3. **API Endpoints** (`packages/backend/src/routes/news.ts`):
+   - `POST /api/news/scrape` - Manual trigger
+   - `GET /api/news` - Paginated articles (page, limit, source filter)
+   - `GET /api/news/sources` - Source statistics
+   - `GET /api/news/:id` - Single article
+
+4. **Docker Support** (for Puppeteer/Chromium on Render):
+   - `Dockerfile` - Node 20 + Chromium + all dependencies
+   - `.dockerignore` - Optimized build exclusions
+   - `DOCKER_RENDER_SETUP.md` - Complete deployment guide
+
+### Current Problem: Render Not Detecting Docker
+
+**Issue**: Render keeps using Node.js mode instead of Docker mode, causing Puppeteer to fail (no Chromium installed).
+
+**Root Cause**: Render sees `.nvmrc` file and forces Node.js runtime, ignoring Dockerfile.
+
+**Solution Applied**:
+- ✅ Renamed `.nvmrc` to `.nvmrc.bak` (commit dd3d0f7)
+- ✅ Created `Dockerfile` with full Chromium support
+- ✅ Created `.dockerignore` for optimal builds
+
+### Next Steps (User Must Complete):
+
+1. **In Render Dashboard** (https://dashboard.render.com):
+   - Go to `fightcrewapp-backend` service
+   - Settings → Build Command: Change to `echo "Dockerfile build"`
+   - Settings → Start Command: Change to `echo "Docker run"`
+   - Click "Save Changes"
+
+2. **Trigger Docker Build**:
+   - Click "Manual Deploy" → "Clear build cache & deploy"
+   - Watch logs for "Building with Docker" message
+   - First build takes 5-10 minutes (installs Chromium)
+
+3. **Verify Success**:
+   ```bash
+   # Test news scraper
+   curl -X POST https://fightcrewapp-backend.onrender.com/api/news/scrape
+
+   # Check results
+   curl https://fightcrewapp-backend.onrender.com/api/news?limit=5
+   ```
+
+### Files Created:
+- `Dockerfile` - Docker image with Chromium
+- `.dockerignore` - Build optimization
+- `DOCKER_RENDER_SETUP.md` - Complete guide
+- `RENDER_CRON_SETUP.md` - Cron documentation
+- `packages/backend/src/services/newsScraperService.ts` - Scraper wrapper (created but unused)
+
+### Commits:
+- `9db5d99` - feat: Add automated news scraper with cron scheduling
+- `f8b74d2` - feat: Add Docker support for Puppeteer on Render
+- `47bd48a` - feat: Add render.yaml to force Docker runtime
+- `dd3d0f7` - temp: Rename .nvmrc to force Docker detection on Render
+
+### Deployment Notes:
+- **Render Plan**: Upgraded to $7/month Starter (no spin-down, reliable cron)
+- **Environment Variables**: All preserved (DATABASE_URL, JWT_SECRET, etc.)
+- **Production URL**: https://fightcrewapp-backend.onrender.com
+- **Docker Benefits**: Works for ANY future JS-heavy scraping (live events, etc.)
+
+### If Docker Still Won't Work:
+**Alternative**: Delete service and recreate from scratch using "New +" → "Blueprint" (will auto-detect Dockerfile).
+
 ## TypeScript Quality (CRITICAL)
 
 **Mandatory .tsx Generic Syntax**: ALWAYS use trailing comma `<T,>` not `<T>` (prevents JSX parse errors)
@@ -354,9 +439,97 @@ User elsewhere → push notification + persistent badge on cards
 **Recovery**: If cascade errors, check `<T>` patterns → add commas → check git history if needed
 **Practices**: Complex utils in `.ts` files, prefer interface over type in `.tsx`
 
+## Debugging Protocol (CRITICAL)
+
+**When encountering bugs, ALWAYS follow this systematic approach FIRST before guessing:**
+
+### 1. Configuration Audit (Check FIRST)
+```bash
+# IMMEDIATELY check ALL files that set API URLs or environment configs
+grep -r "USE_PRODUCTION_API\|API_BASE_URL\|DATABASE_URL" packages/mobile packages/backend
+```
+
+**Common config files to verify:**
+- `packages/mobile/services/api.ts` → `USE_PRODUCTION_API` flag
+- `packages/mobile/store/AuthContext.tsx` → `USE_PRODUCTION_API` flag
+- `packages/backend/.env` → Database connection strings
+- Render dashboard → Environment variables
+
+**Rule**: If mobile has MULTIPLE files with API config, they MUST match. Inconsistent configs cause "user not found" errors.
+
+### 2. Request Flow Tracing
+When auth/API calls fail, trace ENTIRE request path:
+
+```
+Mobile App → Check what URL it's calling (add console.log)
+    ↓
+Backend → Add logging to middleware (EVERY step)
+    ↓
+Database → Verify which DB it's querying
+```
+
+**Add detailed logging to auth middleware:**
+```typescript
+console.log('[AUTH] Token received:', !!token);
+console.log('[AUTH] JWT_SECRET exists:', !!JWT_SECRET);
+console.log('[AUTH] Decoded userId:', decoded.userId);
+console.log('[AUTH] User found in DB:', !!user);
+```
+
+### 3. Database Connection Verification
+**CRITICAL**: Check if code creates MULTIPLE Prisma instances pointing to different databases.
+
+**Bad pattern** (causes "user not found"):
+```typescript
+// File 1: Uses request.server.prisma (production DB)
+const user = await request.server.prisma.user.create(...)
+
+// File 2: Creates own instance (might use local DB)
+const prisma = new PrismaClient();
+const user = await prisma.user.findUnique(...)
+```
+
+**Search for duplicate Prisma instances:**
+```bash
+grep -r "new PrismaClient()" packages/backend/src
+```
+
+### 4. Evidence-Based Debugging
+**NEVER guess**. Always:
+1. Add logging at EVERY step
+2. Check actual Render/server logs
+3. Verify exact error messages
+4. Test with curl to isolate frontend vs backend
+
+**Example systematic test:**
+```bash
+# 1. Test registration directly
+curl -X POST https://backend.com/api/auth/register -d '{"email":"test@test.com"...}'
+
+# 2. Extract token from response
+# 3. Test protected endpoint with token
+curl https://backend.com/api/crews -H "Authorization: Bearer <token>"
+
+# 4. Check logs for exact error
+```
+
+### 5. Common Gotchas Checklist
+Before investigating complex issues, check:
+- [ ] Are there MULTIPLE auth middleware files? (auth.ts vs auth.fastify.ts)
+- [ ] Do mobile config files have matching `USE_PRODUCTION_API` settings?
+- [ ] Is there more than one `new PrismaClient()` instance?
+- [ ] Are environment variables set correctly in Render dashboard?
+- [ ] Is the mobile app's Metro cache stale? (restart with `--clear`)
+- [ ] Did Render redeploy after code changes? (check deployment logs)
+
+### When to Stop Guessing
+If you've tried 3+ different "fixes" without systematic investigation:
+**STOP. Go back to step 1. Audit ALL configuration files.**
+
 # Important Reminders
 - Do exactly what's asked, nothing more
 - NEVER create files unnecessarily
 - ALWAYS prefer editing existing files
 - NEVER proactively create docs unless explicitly requested
+- **FOLLOW DEBUGGING PROTOCOL ABOVE - Don't skip to random fixes**
 
