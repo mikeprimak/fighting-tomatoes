@@ -78,6 +78,21 @@ process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
 
 async function start() {
   try {
+    // Add custom JSON parser with better error handling for reverse proxy compatibility
+    fastify.addContentTypeParser('application/json', { parseAs: 'string' }, function (req, body, done) {
+      try {
+        if (!body || body.length === 0) {
+          done(new Error('Empty body'), {});
+          return;
+        }
+        const json = JSON.parse(body as string);
+        done(null, json);
+      } catch (err: any) {
+        err.statusCode = 400;
+        done(err, undefined);
+      }
+    });
+
     // Register CORS plugin
     await fastify.register(cors, {
       origin: [
