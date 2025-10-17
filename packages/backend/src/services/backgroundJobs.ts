@@ -17,20 +17,21 @@ let newsScraperJobs: cron.ScheduledTask[] = [];
 export function startBackgroundJobs(): void {
   console.log('[Background Jobs] Starting background jobs...');
 
-  // Event completion checker - runs every 10 minutes
-  eventCompletionJob = cron.schedule('*/10 * * * *', async () => {
-    console.log('[Background Jobs] Running event completion check...');
-    try {
-      const results = await checkEventCompletion();
-      if (results.length > 0) {
-        console.log(`[Background Jobs] Completed ${results.length} events:`, results);
-      }
-    } catch (error) {
-      console.error('[Background Jobs] Event completion check failed:', error);
-    }
-  });
+  // DISABLED: Event completion checker to reduce memory usage on Render
+  // Re-enable when needed or after upgrading to a larger instance
+  // eventCompletionJob = cron.schedule('*/10 * * * *', async () => {
+  //   console.log('[Background Jobs] Running event completion check...');
+  //   try {
+  //     const results = await checkEventCompletion();
+  //     if (results.length > 0) {
+  //       console.log(`[Background Jobs] Completed ${results.length} events:`, results);
+  //     }
+  //   } catch (error) {
+  //     console.error('[Background Jobs] Event completion check failed:', error);
+  //   }
+  // });
 
-  console.log('[Background Jobs] Event completion checker started (runs every 10 minutes)');
+  console.log('[Background Jobs] Event completion checker DISABLED (memory constraints)');
 
   // News scraper - runs at 6am, 9:30am, 1pm, 4pm, and 7pm EDT (10am, 1:30pm, 5pm, 8pm, 11pm UTC)
   // Note: node-cron uses server time, so we need to convert EDT to UTC
@@ -60,20 +61,20 @@ export function startBackgroundJobs(): void {
 
   console.log('[Background Jobs] News scraper DISABLED (memory constraints on Render)');
 
-  // Run initial check immediately on startup
-  setTimeout(async () => {
-    console.log('[Background Jobs] Running initial event completion check...');
-    try {
-      const results = await checkEventCompletion();
-      if (results.length > 0) {
-        console.log(`[Background Jobs] Initial check completed ${results.length} events:`, results);
-      } else {
-        console.log('[Background Jobs] Initial check: no events to complete');
-      }
-    } catch (error) {
-      console.error('[Background Jobs] Initial event completion check failed:', error);
-    }
-  }, 5000); // Wait 5 seconds after server starts
+  // DISABLED: Initial startup check (also disabled for memory constraints)
+  // setTimeout(async () => {
+  //   console.log('[Background Jobs] Running initial event completion check...');
+  //   try {
+  //     const results = await checkEventCompletion();
+  //     if (results.length > 0) {
+  //       console.log(`[Background Jobs] Initial check completed ${results.length} events:`, results);
+  //     } else {
+  //       console.log('[Background Jobs] Initial check: no events to complete');
+  //     }
+  //   } catch (error) {
+  //     console.error('[Background Jobs] Initial event completion check failed:', error);
+  //   }
+  // }, 5000); // Wait 5 seconds after server starts
 }
 
 /**
