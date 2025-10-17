@@ -13,9 +13,11 @@ import { startBackgroundJobs, stopBackgroundJobs } from './services/backgroundJo
 // Initialize Prisma client
 const prisma = new PrismaClient();
 
-// Create Fastify instance with simplified logging
+// Create Fastify instance with simplified logging and increased body limit
 const fastify = Fastify({
-  logger: true
+  logger: true,
+  bodyLimit: 10485760, // 10MB body limit (10 * 1024 * 1024)
+  ignoreTrailingSlash: true,
 });
 
 // Metrics scheduler task
