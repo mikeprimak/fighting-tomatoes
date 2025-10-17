@@ -1,8 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 interface JwtPayload {
   userId?: string;
@@ -45,7 +42,7 @@ export async function authenticateUser(request: FastifyRequest, reply: FastifyRe
     }
 
     // Get user from database to ensure they still exist and are active
-    const user = await prisma.user.findUnique({
+    const user = await request.server.prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -78,9 +75,9 @@ export async function authenticateUser(request: FastifyRequest, reply: FastifyRe
 
     // Attach user to request for use in route handlers
     (request as any).user = user;
-    
+
     // Update last login time
-    await prisma.user.update({
+    await request.server.prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
@@ -164,7 +161,7 @@ export async function optionalAuth(request: FastifyRequest, reply: FastifyReply)
       return;
     }
 
-    const user = await prisma.user.findUnique({
+    const user = await request.server.prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
