@@ -44,19 +44,21 @@ export function startBackgroundJobs(): void {
     '0 23 * * *',   // 7pm EDT = 11pm UTC (Note: during EST, this will be off by 1 hour)
   ];
 
-  newsScraperTimes.forEach((cronTime, index) => {
-    const job = cron.schedule(cronTime, async () => {
-      console.log(`[Background Jobs] Running news scraper (schedule ${index + 1}/5)...`);
-      try {
-        await runNewsScraper();
-      } catch (error) {
-        console.error('[Background Jobs] News scraper failed:', error);
-      }
-    });
-    newsScraperJobs.push(job);
-  });
+  // DISABLED: News scraper causes memory issues on Render (Chromium uses too much RAM)
+  // Re-enable after upgrading to a larger instance or optimizing memory usage
+  // newsScraperTimes.forEach((cronTime, index) => {
+  //   const job = cron.schedule(cronTime, async () => {
+  //     console.log(`[Background Jobs] Running news scraper (schedule ${index + 1}/5)...`);
+  //     try {
+  //       await runNewsScraper();
+  //     } catch (error) {
+  //       console.error('[Background Jobs] News scraper failed:', error);
+  //     }
+  //   });
+  //   newsScraperJobs.push(job);
+  // });
 
-  console.log('[Background Jobs] News scraper scheduled (5 times daily: 6am, 9:30am, 1pm, 4pm, 7pm EDT)');
+  console.log('[Background Jobs] News scraper DISABLED (memory constraints on Render)');
 
   // Run initial check immediately on startup
   setTimeout(async () => {
