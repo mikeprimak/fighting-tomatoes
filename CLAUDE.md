@@ -432,6 +432,36 @@ User elsewhere → push notification + persistent badge on cards
 ### If Docker Still Won't Work:
 **Alternative**: Delete service and recreate from scratch using "New +" → "Blueprint" (will auto-detect Dockerfile).
 
+## TODO: Scraper RAM Optimization (NEXT SESSION)
+
+**CRITICAL ISSUE**: All Puppeteer-based scrapers currently exceed Render's 512MB RAM limit, causing crashes.
+
+**Scrapers That Need Optimization**:
+1. **UFC Event Scraper** (`src/services/scrapeAllUFCData.js`) - Scrapes upcoming events, fight cards, fighter data
+2. **News Scraper** (`src/services/mmaNewsScraper.ts`) - Scrapes 6 MMA news sources
+3. **Live Event Tracker** (`src/services/liveEventTracker.ts`) - Real-time fight tracking with 30s intervals
+
+**Current Workflow** (Temporary):
+- Scrape locally on development machine
+- Import to production via `npx ts-node src/scripts/importToProduction.ts`
+- Images deployed via git commits to Render
+
+**Target for Next Session**:
+Optimize ALL scrapers to work within 512MB RAM by:
+- Processing one item at a time (never multiple pages open)
+- Adding aggressive delays between operations (10-30 seconds)
+- Closing and recreating browser periodically
+- Forcing garbage collection after heavy operations
+- Using smaller viewport (800x600 instead of 1920x1080)
+- Disabling unnecessary Chromium features
+- Processing in smaller batches with cleanup between batches
+- **User preference**: "I don't care about speed - scraping can take an hour if needed"
+
+**Success Criteria**:
+- All scrapers run successfully on Render without memory crashes
+- Can schedule scrapers as cron jobs without manual intervention
+- Memory usage stays under 400MB throughout scraping process
+
 ## TypeScript Quality (CRITICAL)
 
 **Mandatory .tsx Generic Syntax**: ALWAYS use trailing comma `<T,>` not `<T>` (prevents JSX parse errors)
