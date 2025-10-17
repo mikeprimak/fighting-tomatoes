@@ -457,10 +457,16 @@ Optimize ALL scrapers to work within 512MB RAM by:
 - Processing in smaller batches with cleanup between batches
 - **User preference**: "I don't care about speed - scraping can take an hour if needed"
 
+**Goal for Next Session**:
+- Optimize all 3 scrapers to work within 512MB RAM limit
+- Set up automated cron schedules on Render for each scraper
+- Test and verify scrapers run successfully without manual intervention
+
 **Success Criteria**:
 - All scrapers run successfully on Render without memory crashes
-- Can schedule scrapers as cron jobs without manual intervention
+- Scrapers scheduled as cron jobs: UFC events (weekly), News (5x daily), Live tracker (on-demand)
 - Memory usage stays under 400MB throughout scraping process
+- No more manual scraping from local machine required
 
 ## TypeScript Quality (CRITICAL)
 
