@@ -8,13 +8,16 @@ async function authenticateMiddleware(request: FastifyRequest, reply: FastifyRep
     const authorization = request.headers.authorization;
 
     if (!authorization || !authorization.startsWith('Bearer ')) {
+      console.log('[AUTH] No authorization header or wrong format');
       throw new Error('Authorization token required');
     }
 
     const token = authorization.substring(7);
     const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
+    console.log('[AUTH] Verifying token, JWT_SECRET exists:', !!JWT_SECRET);
     const decoded = jwt.verify(token, JWT_SECRET) as any;
+    console.log('[AUTH] Token decoded, userId:', decoded.userId);
 
     // Get user from database
     const user = await request.server.prisma.user.findUnique({
@@ -34,14 +37,19 @@ async function authenticateMiddleware(request: FastifyRequest, reply: FastifyRep
       }
     });
 
+    console.log('[AUTH] User lookup result:', user ? `Found user ${user.email}` : 'User not found');
+
     if (!user || !user.isActive) {
+      console.log('[AUTH] User not found or inactive');
       throw new Error('User not found or inactive');
     }
 
     // Add user to request object
     request.user = user;
+    console.log('[AUTH] Authentication successful for user:', user.email);
 
   } catch (error: any) {
+    console.error('[AUTH] Authentication failed:', error.message);
     return reply.code(401).send({
       error: 'Invalid or expired token',
       code: 'UNAUTHORIZED',
