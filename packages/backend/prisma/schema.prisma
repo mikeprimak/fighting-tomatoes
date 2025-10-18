@@ -252,6 +252,7 @@ model Fight {
   titleName       String?   // "UFC Heavyweight Championship"
   scheduledRounds Int       @default(3)   // 3 for MMA, 5 for title fights, 8/10/12 for boxing
   orderOnCard     Int       // 1 = main event, higher numbers = earlier fights
+  cardType        String?   // "Main Card", "Prelims", "Early Prelims" - from UFC.com scraper
   startTime       String?   // Calculated fight start time (e.g., "10:00 PM")
 
   // Betting odds

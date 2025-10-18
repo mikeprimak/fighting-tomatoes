@@ -81,28 +81,26 @@ export default function EventDetailScreen() {
   const { data: fightsData, isLoading: fightsLoading, error: fightsError } = useQuery({
     queryKey: ['eventFights', id, isAuthenticated],
     queryFn: async () => {
-      console.log('Fetching fights for event:', id, 'with user data:', isAuthenticated);
+      console.log('[FIGHT ORDER] Fetching fights for event:', id);
       const response = await apiService.getFights({
         eventId: id as string,
         includeUserData: isAuthenticated,
         limit: 50
       });
 
-      console.log('Received fights response:', {
-        fightsCount: response.fights.length,
-        firstFightUserData: response.fights[0] ? {
-          id: response.fights[0].id,
-          hasUserRating: !!response.fights[0].userRating,
-          hasUserReview: !!response.fights[0].userReview,
-          hasUserTags: !!response.fights[0].userTags,
-          userRating: response.fights[0].userRating,
-          userReview: response.fights[0].userReview,
-          userTags: response.fights[0].userTags
-        } : null
-      });
+      console.log('[FIGHT ORDER] API returned fights:', response.fights.map((f: any) => ({
+        fighters: `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName}`,
+        orderOnCard: f.orderOnCard
+      })));
 
       // Sort fights by orderOnCard descending (main event first)
       response.fights.sort((a: any, b: any) => b.orderOnCard - a.orderOnCard);
+
+      console.log('[FIGHT ORDER] After sorting (descending):', response.fights.map((f: any) => ({
+        fighters: `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName}`,
+        orderOnCard: f.orderOnCard
+      })));
+
       return response;
     },
     enabled: !!id,
@@ -317,22 +315,31 @@ export default function EventDetailScreen() {
       return bTime - aTime; // Most recent first
     })[0];
 
-  // Group fights by card section based on orderOnCard
-  // Lower orderOnCard = main event (most important fights first)
-  const mainCard = fights.filter((f: Fight) => f.orderOnCard <= 5);
-  const prelimCard = fights.filter((f: Fight) => f.orderOnCard > 5 && f.orderOnCard <= 9);
-  const earlyPrelims = fights.filter((f: Fight) => f.orderOnCard > 9);
-
-  // Debug: log fight ordering
-  console.log('Fight ordering debug:', {
-    totalFights: fights.length,
-    mainCardCount: mainCard.length,
-    prelimCardCount: prelimCard.length,
-    earlyPrelimsCount: earlyPrelims.length,
-    mainCardOrders: mainCard.map(f => f.orderOnCard),
-    prelimCardOrders: prelimCard.map(f => f.orderOnCard),
-    earlyPrelimsOrders: earlyPrelims.map(f => f.orderOnCard),
+  // Group fights by card section using cardType from UFC.com scraper (dynamic, no hardcoded thresholds!)
+  // Fallback to orderOnCard if cardType is missing (legacy events)
+  const mainCard = fights.filter((f: Fight) => {
+    if (f.cardType) return f.cardType === 'Main Card';
+    // Legacy fallback
+    return f.orderOnCard <= 6;
   });
+
+  const prelimCard = fights.filter((f: Fight) => {
+    if (f.cardType) return f.cardType === 'Prelims';
+    // Legacy fallback
+    return f.orderOnCard > 6 && f.orderOnCard <= 13;
+  });
+
+  const earlyPrelims = fights.filter((f: Fight) => {
+    if (f.cardType) return f.cardType === 'Early Prelims';
+    // Legacy fallback
+    return f.orderOnCard > 13;
+  });
+
+  // Debug: log fight grouping
+  console.log('[FIGHT ORDER] Grouped fights (using cardType from UFC.com):');
+  console.log('  Main Card:', mainCard.map((f: any) => `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName} (order: ${f.orderOnCard}, cardType: ${f.cardType || 'legacy'})`));
+  console.log('  Prelims:', prelimCard.map((f: any) => `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName} (order: ${f.orderOnCard}, cardType: ${f.cardType || 'legacy'})`));
+  console.log('  Early Prelims:', earlyPrelims.map((f: any) => `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName} (order: ${f.orderOnCard}, cardType: ${f.cardType || 'legacy'})`));
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
