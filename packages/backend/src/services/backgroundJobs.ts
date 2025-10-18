@@ -1,15 +1,17 @@
 // Background Jobs Scheduler
-// Runs periodic tasks like event completion checking and news scraping
+// Runs periodic tasks like event completion checking, news scraping, and live event tracking
 
 import * as cron from 'node-cron';
 import { checkEventCompletion } from './eventCompletionChecker';
 import { MMANewsScraper } from './mmaNewsScraper';
+import { checkAndStartLiveEvents } from './liveEventScheduler';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 let eventCompletionJob: cron.ScheduledTask | null = null;
 let newsScraperJobs: cron.ScheduledTask[] = [];
+let liveEventSchedulerJob: cron.ScheduledTask | null = null;
 
 /**
  * Start all background jobs
@@ -61,6 +63,18 @@ export function startBackgroundJobs(): void {
 
   console.log(`[Background Jobs] News scraper ENABLED - ${newsScraperTimes.length} daily schedules (${newsScraperTimes.join(', ')})`);
 
+  // ENABLED: Live event scheduler - checks every 5 minutes for events to track
+  liveEventSchedulerJob = cron.schedule('*/5 * * * *', async () => {
+    console.log('[Background Jobs] Running live event scheduler check...');
+    try {
+      await checkAndStartLiveEvents();
+    } catch (error) {
+      console.error('[Background Jobs] Live event scheduler failed:', error);
+    }
+  });
+
+  console.log('[Background Jobs] Live event scheduler ENABLED - checks every 5 minutes');
+
   // DISABLED: Initial startup check (also disabled for memory constraints)
   // setTimeout(async () => {
   //   console.log('[Background Jobs] Running initial event completion check...');
@@ -93,6 +107,11 @@ export function stopBackgroundJobs(): void {
   });
   if (newsScraperJobs.length > 0) {
     console.log(`[Background Jobs] ${newsScraperJobs.length} news scraper jobs stopped`);
+  }
+
+  if (liveEventSchedulerJob) {
+    liveEventSchedulerJob.stop();
+    console.log('[Background Jobs] Live event scheduler stopped');
   }
 
   console.log('[Background Jobs] All background jobs stopped');
@@ -168,4 +187,12 @@ async function runNewsScraper(): Promise<void> {
 export async function triggerNewsScraper(): Promise<void> {
   console.log('[Background Jobs] Manual trigger: news scraper');
   await runNewsScraper();
+}
+
+/**
+ * Trigger live event scheduler check manually (for testing/admin)
+ */
+export async function triggerLiveEventScheduler(): Promise<void> {
+  console.log('[Background Jobs] Manual trigger: live event scheduler');
+  await checkAndStartLiveEvents();
 }
