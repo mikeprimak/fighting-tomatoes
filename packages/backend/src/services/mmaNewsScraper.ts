@@ -476,16 +476,23 @@ export class MMANewsScraper {
     const articles: NewsArticle[] = [];
 
     try {
+      // RENDER OPTIMIZATION: Use domcontentloaded instead of networkidle2 (much faster on slow servers)
+      console.log('  Loading page (60s timeout for Render)...');
       await page.goto('https://bleacherreport.com/mma', {
-        waitUntil: 'networkidle2',
-        timeout: 30000,
+        waitUntil: 'domcontentloaded', // Changed from networkidle2 to avoid timeout
+        timeout: 60000, // Increased from 30s to 60s for Render
       });
 
-      // Wait for MUI cards to load
-      await page.waitForSelector('a.MuiCardActionArea-root', { timeout: 10000 });
+      // Wait longer for JS to render on slow Render servers
+      console.log('  Waiting for content to render...');
+      await this.sleep(5000); // Increased from 2s to 5s
 
-      // Wait a bit more for JS-rendered content
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Try to wait for content, but don't fail if it doesn't appear
+      try {
+        await page.waitForSelector('a[href*="/articles/"]', { timeout: 10000 });
+      } catch (err) {
+        console.log('  Warning: Selector timeout, trying anyway...');
+      }
 
       const scrapedArticles = await page.evaluate(() => {
         const items: any[] = [];
