@@ -114,7 +114,12 @@ class LiveEventTracker {
       console.log(`\n⏰ [${new Date().toISOString()}] Running scrape ${this.status.totalScrapes + 1}...`);
 
       // Run the live event scraper
-      const scraperPath = path.join(__dirname, 'scrapeLiveEvent.js');
+      // In production (dist/), go up to find src/services/scrapeLiveEvent.js
+      // In dev (src/), it's in the same directory
+      const isProduction = process.env.NODE_ENV === 'production';
+      const scraperPath = isProduction
+        ? path.join(__dirname, '../../src/services/scrapeLiveEvent.js')  // From dist/services/ to src/services/
+        : path.join(__dirname, 'scrapeLiveEvent.js');                    // Same directory in dev
       const outputDir = path.join(__dirname, '../../live-event-data');
 
       // Ensure output directory exists
