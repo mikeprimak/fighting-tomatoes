@@ -35,15 +35,15 @@ export function startBackgroundJobs(): void {
 
   console.log('[Background Jobs] Event completion checker DISABLED (memory constraints)');
 
-  // News scraper - runs at 6am, 9:30am, 1pm, 3:18pm, 4pm, and 7pm EDT
+  // News scraper - runs at 6am, 9:30am, 1pm, 3:30pm, 4pm, and 7pm EDT
   // Note: node-cron uses server time, so we need to convert EDT to UTC
-  // EDT is UTC-4, so: 6am EDT = 10am UTC, 3:18pm EDT = 7:18pm UTC (19:18 UTC), etc.
+  // EDT is UTC-4, so: 6am EDT = 10am UTC, 3:30pm EDT = 7:30pm UTC (19:30 UTC), etc.
 
   const newsScraperTimes = [
     '0 10 * * *',   // 6am EDT = 10am UTC
     '30 13 * * *',  // 9:30am EDT = 1:30pm UTC
     '0 17 * * *',   // 1pm EDT = 5pm UTC
-    '18 19 * * *',  // 3:18pm EDT = 7:18pm UTC (19:18 UTC) - TESTING (far from deployment)
+    '30 19 * * *',  // 3:30pm EDT = 7:30pm UTC (19:30 UTC) - TESTING (far from deployment)
     '0 20 * * *',   // 4pm EDT = 8pm UTC
     '0 23 * * *',   // 7pm EDT = 11pm UTC (Note: during EST, this will be off by 1 hour)
   ];
