@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE "Fight" ADD COLUMN     "cardType" TEXT;
+ALTER TABLE "fights" ADD COLUMN IF NOT EXISTS "cardType" TEXT;
