@@ -663,19 +663,54 @@ export class MMANewsScraper {
         return items.slice(0, 10); // Limit to 10 articles (memory optimization)
       });
 
-      for (const item of scrapedArticles) {
+      // Fetch OG images with heavy delays (like Bleacher Report)
+      console.log('Fetching OG images in batches (slow but memory-safe)...');
+
+      for (let i = 0; i < scrapedArticles.length; i++) {
+        const item = scrapedArticles[i];
+        let localImagePath: string | undefined;
+        let imageUrl = '';
+
+        try {
+          // Fetch OG image for this article
+          console.log(`  [${i + 1}/${scrapedArticles.length}] Fetching image for: ${item.headline.substring(0, 50)}...`);
+          imageUrl = await this.fetchOGImage(item.url);
+
+          // Download image if found
+          if (imageUrl) {
+            const filename = this.generateFilename(imageUrl, 'sherdog');
+            localImagePath = await this.downloadImage(imageUrl, filename);
+            console.log(`    ✓ Image downloaded`);
+          } else {
+            console.log(`    ⚠ No OG image found`);
+          }
+
+          // CRITICAL: Delay between each article to prevent memory spikes
+          await this.sleep(3000);
+
+          // Extra cleanup every 3 articles
+          if ((i + 1) % 3 === 0 && i < scrapedArticles.length - 1) {
+            console.log(`    [Memory] Processed ${i + 1} articles, pausing for cleanup...`);
+            this.forceGC();
+            await this.sleep(5000);
+          }
+
+        } catch (error) {
+          console.error(`    ✗ Failed to fetch/download image:`, error);
+        }
+
         articles.push({
           headline: item.headline,
           description: item.description,
           url: item.url,
           source: 'Sherdog',
-          imageUrl: item.imageUrl,
-          localImagePath: undefined,
+          imageUrl,
+          localImagePath,
           scrapedAt: new Date(),
         });
       }
 
-      console.log(`✓ Sherdog: ${articles.length} articles scraped`);
+      console.log(`✓ Sherdog: ${articles.length} articles scraped with images`);
     } catch (error) {
       console.error('Error scraping Sherdog:', error);
     } finally {
