@@ -27,51 +27,119 @@ export class MMANewsScraper {
   }
 
   async init(): Promise<void> {
-    if (!this.browser) {
-      // Render/production-friendly Puppeteer config
-      const isProduction = process.env.NODE_ENV === 'production';
+    // ULTRA-AGGRESSIVE MEMORY OPTIMIZATION MODE
+    // Close and reopen browser frequently to prevent memory accumulation
+    // This function is called multiple times throughout scraping
 
-      this.browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage', // Important: Use /tmp instead of /dev/shm (Render has limited shared memory)
-          '--disable-accelerated-2d-canvas',
-          '--disable-gpu',
-          '--disable-software-rasterizer',
-          '--window-size=1280x720', // Reduced from 1920x1080 to save memory
-          '--single-process', // Run in single process mode (saves 50-100MB)
-          '--no-zygote', // Don't use zygote process (saves memory)
-          '--disable-features=AudioServiceOutOfProcess', // Disable audio processing
-          '--disable-background-networking', // Prevent background network requests
-          '--disable-default-apps',
-          '--disable-sync',
-          '--disable-translate',
-          '--hide-scrollbars',
-          '--metrics-recording-only',
-          '--mute-audio',
-          '--no-first-run',
-          '--safebrowsing-disable-auto-update',
-          '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          // Additional Render-specific args
-          ...(isProduction ? [
-            '--disable-extensions',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-          ] : [])
-        ],
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-      });
+    // Always close existing browser before creating new one
+    if (this.browser) {
+      await this.browser.close();
+      this.browser = null;
     }
+
+    // Render/production-friendly Puppeteer config
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    this.browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage', // Important: Use /tmp instead of /dev/shm (Render has limited shared memory)
+        '--disable-accelerated-2d-canvas',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--window-size=640x480', // ULTRA-SMALL viewport to minimize memory (was 1280x720)
+        '--single-process', // Run in single process mode (saves 50-100MB)
+        '--no-zygote', // Don't use zygote process (saves memory)
+        '--disable-features=AudioServiceOutOfProcess', // Disable audio processing
+        '--disable-background-networking', // Prevent background network requests
+        '--disable-default-apps',
+        '--disable-sync',
+        '--disable-translate',
+        '--hide-scrollbars',
+        '--metrics-recording-only',
+        '--mute-audio',
+        '--no-first-run',
+        '--safebrowsing-disable-auto-update',
+        '--disable-images', // CRITICAL: Disable auto-loading images in browser (we download specific ones manually)
+        '--blink-settings=imagesEnabled=false', // Extra image blocking
+        '--disable-javascript-harmony-shipping', // Disable experimental JS features
+        '--disable-web-security', // Reduce security overhead (we're just scraping)
+        '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        // Additional Render-specific args
+        ...(isProduction ? [
+          '--disable-extensions',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+        ] : [])
+      ],
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
+    });
+
+    console.log('[Memory] Browser initialized with ultra-low memory config (640x480, images disabled)');
   }
 
   async close(): Promise<void> {
     if (this.browser) {
       await this.browser.close();
       this.browser = null;
+      console.log('[Memory] Browser closed and cleaned up');
     }
+  }
+
+  // Helper: Sleep function for aggressive delays
+  private async sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // Helper: Force garbage collection if available
+  private forceGC(): void {
+    if (global.gc) {
+      global.gc();
+      console.log('[Memory] Forced garbage collection');
+    }
+  }
+
+  // Helper: Download images in batches with aggressive delays
+  private async downloadImagesInBatches(
+    items: Array<{ imageUrl: string; headline: string }>,
+    source: string
+  ): Promise<Array<{ filename: string; localPath: string } | null>> {
+    const results: Array<{ filename: string; localPath: string } | null> = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+
+      if (!item.imageUrl) {
+        results.push(null);
+        continue;
+      }
+
+      try {
+        const filename = this.generateFilename(item.imageUrl, source);
+        const localPath = await this.downloadImage(item.imageUrl, filename);
+        results.push({ filename, localPath });
+
+        // Small delay between downloads
+        if (i < items.length - 1) {
+          await this.sleep(1000);
+        }
+
+        // Extra cleanup every 3 images
+        if ((i + 1) % 3 === 0 && i < items.length - 1) {
+          this.forceGC();
+          await this.sleep(2000);
+        }
+
+      } catch (error) {
+        console.error(`Failed to download image ${i + 1}:`, error);
+        results.push(null);
+      }
+    }
+
+    return results;
   }
 
   private async downloadImage(imageUrl: string, filename: string): Promise<string> {
@@ -197,21 +265,17 @@ export class MMANewsScraper {
           }
         });
 
-        return items.slice(0, 15); // Limit to 15 articles
+        return items.slice(0, 10); // Limit to 10 articles (memory optimization)
       });
 
-      // Download images and create article objects
-      for (const item of scrapedArticles) {
-        let localImagePath: string | undefined;
+      // Download images in batches with delays
+      console.log('Downloading images with delays...');
+      const imageResults = await this.downloadImagesInBatches(scrapedArticles, 'mmafighting');
 
-        if (item.imageUrl) {
-          try {
-            const filename = this.generateFilename(item.imageUrl, 'mmafighting');
-            localImagePath = await this.downloadImage(item.imageUrl, filename);
-          } catch (err) {
-            console.error(`Failed to download image: ${item.imageUrl}`, err);
-          }
-        }
+      // Create article objects
+      for (let i = 0; i < scrapedArticles.length; i++) {
+        const item = scrapedArticles[i];
+        const imageResult = imageResults[i];
 
         articles.push({
           headline: item.headline,
@@ -219,7 +283,7 @@ export class MMANewsScraper {
           url: item.url,
           source: 'MMA Fighting',
           imageUrl: item.imageUrl,
-          localImagePath,
+          localImagePath: imageResult?.localPath,
           scrapedAt: new Date(),
         });
       }
@@ -279,20 +343,17 @@ export class MMANewsScraper {
           }
         });
 
-        return items.slice(0, 15); // Limit to 15 articles
+        return items.slice(0, 10); // Limit to 10 articles (memory optimization)
       });
 
-      for (const item of scrapedArticles) {
-        let localImagePath: string | undefined;
+      // Download images in batches with delays
+      console.log('Downloading images with delays...');
+      const imageResults = await this.downloadImagesInBatches(scrapedArticles, 'bloodyelbow');
 
-        if (item.imageUrl) {
-          try {
-            const filename = this.generateFilename(item.imageUrl, 'bloodyelbow');
-            localImagePath = await this.downloadImage(item.imageUrl, filename);
-          } catch (err) {
-            console.error(`Failed to download image: ${item.imageUrl}`, err);
-          }
-        }
+      // Create article objects
+      for (let i = 0; i < scrapedArticles.length; i++) {
+        const item = scrapedArticles[i];
+        const imageResult = imageResults[i];
 
         articles.push({
           headline: item.headline,
@@ -300,7 +361,7 @@ export class MMANewsScraper {
           url: item.url,
           source: 'Bloody Elbow',
           imageUrl: item.imageUrl,
-          localImagePath,
+          localImagePath: imageResult?.localPath,
           scrapedAt: new Date(),
         });
       }
@@ -376,20 +437,17 @@ export class MMANewsScraper {
           }
         });
 
-        return items.slice(0, 15);
+        return items.slice(0, 10); // Limit to 10 articles (memory optimization)
       });
 
-      for (const item of scrapedArticles) {
-        let localImagePath: string | undefined;
+      // Download images in batches with delays
+      console.log('Downloading images with delays...');
+      const imageResults = await this.downloadImagesInBatches(scrapedArticles, 'ufc');
 
-        if (item.imageUrl) {
-          try {
-            const filename = this.generateFilename(item.imageUrl, 'ufc');
-            localImagePath = await this.downloadImage(item.imageUrl, filename);
-          } catch (err) {
-            console.error(`Failed to download image: ${item.imageUrl}`, err);
-          }
-        }
+      // Create article objects
+      for (let i = 0; i < scrapedArticles.length; i++) {
+        const item = scrapedArticles[i];
+        const imageResult = imageResults[i];
 
         articles.push({
           headline: item.headline,
@@ -397,7 +455,7 @@ export class MMANewsScraper {
           url: item.url,
           source: 'UFC',
           imageUrl: item.imageUrl,
-          localImagePath,
+          localImagePath: imageResult?.localPath,
           scrapedAt: new Date(),
         });
       }
@@ -476,7 +534,7 @@ export class MMANewsScraper {
           }
         });
 
-        return items.slice(0, 15);
+        return items.slice(0, 10); // Limit to 10 articles (memory optimization)
       });
 
       // Filter for combat sports articles only
@@ -496,24 +554,54 @@ export class MMANewsScraper {
 
       console.log(`Filtered ${scrapedArticles.length} articles to ${filteredArticles.length} combat sports articles`);
 
-      // MEMORY OPTIMIZATION: Skip OG image fetching for Bleacher Report
-      // This was causing 600MB+ memory spikes (15 articles × 40MB per page)
-      // Images are not critical for article display - we can add them later if needed
-      console.log('Skipping image fetch to conserve memory (Render 512MB limit)');
+      // ULTRA-AGGRESSIVE: Fetch OG images with heavy delays and batching
+      console.log('Fetching OG images in batches (slow but memory-safe)...');
 
-      for (const item of filteredArticles) {
+      for (let i = 0; i < filteredArticles.length; i++) {
+        const item = filteredArticles[i];
+        let localImagePath: string | undefined;
+        let imageUrl = '';
+
+        try {
+          // Fetch OG image for this article
+          console.log(`  [${i + 1}/${filteredArticles.length}] Fetching image for: ${item.headline.substring(0, 50)}...`);
+          imageUrl = await this.fetchOGImage(item.url);
+
+          // Download image if found
+          if (imageUrl) {
+            const filename = this.generateFilename(imageUrl, 'bleacherreport');
+            localImagePath = await this.downloadImage(imageUrl, filename);
+            console.log(`    ✓ Image downloaded`);
+          } else {
+            console.log(`    ⚠ No OG image found`);
+          }
+
+          // CRITICAL: Delay between each article to prevent memory spikes
+          await this.sleep(3000);
+
+          // Extra cleanup every 3 articles
+          if ((i + 1) % 3 === 0 && i < filteredArticles.length - 1) {
+            console.log(`    [Memory] Processed ${i + 1} articles, pausing for cleanup...`);
+            this.forceGC();
+            await this.sleep(5000);
+          }
+
+        } catch (error) {
+          console.error(`    ✗ Failed to fetch/download image:`, error);
+        }
+
         articles.push({
           headline: item.headline,
           description: item.description,
           url: item.url,
           source: 'Bleacher Report',
-          imageUrl: '', // Skip images to save memory
-          localImagePath: undefined,
+          imageUrl,
+          localImagePath,
           scrapedAt: new Date(),
         });
       }
 
-      console.log(`✓ Bleacher Report: ${articles.length} articles scraped (no images - memory optimization)`);
+      console.log(`✓ Bleacher Report: ${articles.length} articles scraped with images`);
     } catch (error) {
       console.error('Error scraping Bleacher Report:', error);
     } finally {
@@ -565,7 +653,7 @@ export class MMANewsScraper {
           }
         });
 
-        return items.slice(0, 15); // Limit to 15 articles
+        return items.slice(0, 10); // Limit to 10 articles (memory optimization)
       });
 
       for (const item of scrapedArticles) {
@@ -646,20 +734,17 @@ export class MMANewsScraper {
           }
         });
 
-        return items.slice(0, 15); // Limit to 15 articles
+        return items.slice(0, 10); // Limit to 10 articles (memory optimization)
       });
 
-      for (const item of scrapedArticles) {
-        let localImagePath: string | undefined;
+      // Download images in batches with delays
+      console.log('Downloading images with delays...');
+      const imageResults = await this.downloadImagesInBatches(scrapedArticles, 'espn-boxing');
 
-        if (item.imageUrl) {
-          try {
-            const filename = this.generateFilename(item.imageUrl, 'espn-boxing');
-            localImagePath = await this.downloadImage(item.imageUrl, filename);
-          } catch (err) {
-            console.error(`Failed to download image: ${item.imageUrl}`, err);
-          }
-        }
+      // Create article objects
+      for (let i = 0; i < scrapedArticles.length; i++) {
+        const item = scrapedArticles[i];
+        const imageResult = imageResults[i];
 
         articles.push({
           headline: item.headline,
@@ -667,7 +752,7 @@ export class MMANewsScraper {
           url: item.url,
           source: 'ESPN Boxing',
           imageUrl: item.imageUrl,
-          localImagePath,
+          localImagePath: imageResult?.localPath,
           scrapedAt: new Date(),
         });
       }
@@ -684,8 +769,11 @@ export class MMANewsScraper {
 
   async scrapeAll(): Promise<NewsArticle[]> {
     console.log('Starting MMA news scraping...');
-    console.log('Running in SEQUENTIAL mode for memory optimization (Render 512MB limit)');
-    await this.init();
+    console.log('🐌 ULTRA-AGGRESSIVE MEMORY MODE: Scraping will take 15-20 minutes');
+    console.log('   - Browser closes/reopens after each source');
+    console.log('   - 10-second delays between sources');
+    console.log('   - Images downloaded in batches with cleanup');
+    console.log('   - Target: Stay under 300MB RAM (Render limit: 512MB)\n');
 
     const allArticles: NewsArticle[] = [];
     const scrapers = [
@@ -698,34 +786,50 @@ export class MMANewsScraper {
     ];
 
     try {
-      // Run scrapers SEQUENTIALLY to minimize memory usage
-      // This avoids having multiple browser pages open simultaneously
-      for (const scraper of scrapers) {
+      // Run scrapers SEQUENTIALLY with AGGRESSIVE memory management
+      for (let i = 0; i < scrapers.length; i++) {
+        const scraper = scrapers[i];
         try {
-          console.log(`[Memory Optimization] Scraping ${scraper.name}...`);
+          console.log(`\n[${i + 1}/${scrapers.length}] Scraping ${scraper.name}...`);
+
+          // Initialize fresh browser for this source
+          await this.init();
+          console.log('[Memory] Fresh browser instance created');
+
+          // Wait for browser to stabilize
+          await this.sleep(2000);
+
+          // Scrape this source
           const articles = await scraper.fn();
           allArticles.push(...articles);
 
-          // Log memory usage if available
-          if (global.gc) {
-            global.gc(); // Force garbage collection if --expose-gc flag is set
+          // CRITICAL: Close browser immediately after this source
+          await this.close();
+          console.log(`✓ ${scraper.name}: ${articles.length} articles scraped`);
+
+          // Force garbage collection
+          this.forceGC();
+
+          // AGGRESSIVE DELAY between sources (10 seconds)
+          if (i < scrapers.length - 1) {
+            console.log('[Memory] Waiting 10 seconds before next source...');
+            await this.sleep(10000);
           }
 
-          // Small cooldown between scrapers to allow memory cleanup
-          await new Promise(resolve => setTimeout(resolve, 1000));
         } catch (error) {
           console.error(`${scraper.name} scraping failed:`, error);
+          // Ensure browser is closed even if scraping fails
+          await this.close();
         }
       }
 
-      // Randomize article order for this scrape session to create variety
-      // This shuffles articles from all sources together, but only for this batch
-      // Previously scraped articles in the database remain in their original order
+      // Randomize article order for variety
       this.shuffleArray(allArticles);
 
       console.log(`\n✓ Total articles scraped: ${allArticles.length}`);
       console.log('Scraping complete!\n');
     } finally {
+      // Final cleanup
       await this.close();
     }
 
