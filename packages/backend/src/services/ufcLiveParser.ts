@@ -13,6 +13,7 @@ const prisma = new PrismaClient();
 interface LiveFightUpdate {
   fighterAName: string;
   fighterBName: string;
+  order?: number | null;  // Fight order on card (UFC may change this)
   status?: 'upcoming' | 'live' | 'complete';
   currentRound?: number | null;
   completedRounds?: number | null;
@@ -227,6 +228,13 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         updateData.isComplete = fightUpdate.isComplete;
         changed = true;
         console.log(`    ✅ ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: isComplete → ${fightUpdate.isComplete}`);
+      }
+
+      // Check order changes (UFC sometimes reorders fights)
+      if (fightUpdate.order !== undefined && fightUpdate.order !== null && dbFight.orderOnCard !== fightUpdate.order) {
+        updateData.orderOnCard = fightUpdate.order;
+        changed = true;
+        console.log(`    🔀 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: orderOnCard ${dbFight.orderOnCard} → ${fightUpdate.order}`);
       }
 
       // Check round changes

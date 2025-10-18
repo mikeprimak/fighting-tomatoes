@@ -352,23 +352,23 @@ export default function EventDetailScreen() {
             {event?.name || 'Loading...'}
           </Text>
           <View style={styles.eventDateRow}>
-            <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-              {event ? formatDate(event.date) : ''}
-            </Text>
-            {event && !event.isComplete && (
+            {event && !event.isComplete && eventIsLive ? (
+              // When live, only show Live indicator (no date)
+              <View style={styles.liveIndicator}>
+                <Animated.View style={[
+                  styles.liveDot,
+                  { backgroundColor: colors.danger, opacity: pulseAnim }
+                ]} />
+                <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
+              </View>
+            ) : (
+              // When not live, show date and optional time
               <>
-                {eventIsLive ? (
-                  <View style={styles.liveIndicator}>
-                    <Animated.View style={[
-                      styles.liveDot,
-                      { backgroundColor: colors.danger, opacity: pulseAnim }
-                    ]} />
-                    <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
-                  </View>
-                ) : (
-                  getDisplayTime(event) && (
-                    <Text style={[styles.eventDate, { color: colors.textSecondary }]}> • Main @ {getDisplayTime(event)}</Text>
-                  )
+                <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
+                  {event ? formatDate(event.date) : ''}
+                </Text>
+                {event && !event.isComplete && getDisplayTime(event) && (
+                  <Text style={[styles.eventDate, { color: colors.textSecondary }]}> • Main @ {getDisplayTime(event)}</Text>
                 )}
               </>
             )}

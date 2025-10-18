@@ -30,6 +30,9 @@ export default function CompletedFightCard({
   // Rating button press state
   const [isRatingPressed, setIsRatingPressed] = useState(false);
 
+  // Show winner state (revealed when user taps or has rated)
+  const [showWinner, setShowWinner] = useState(false);
+
   // Animated values for rating save animation (sparkles)
   const ratingScaleAnim = useRef(new Animated.Value(1)).current;
   const ratingGlowAnim = useRef(new Animated.Value(0)).current;
@@ -93,8 +96,8 @@ export default function CompletedFightCard({
   const getFighterRings = (fighterId: string, fighterName: string) => {
     const rings = [];
 
-    // Green ring - actual winner (only show if user has rated)
-    if (fight.winner === fighterId && fight.userRating) {
+    // Green ring - actual winner (show if user has rated OR tapped to reveal)
+    if (fight.winner === fighterId && (fight.userRating || showWinner)) {
       rings.push('winner');
     }
 
@@ -515,7 +518,7 @@ export default function CompletedFightCard({
                 <Text style={[sharedStyles.outcomeLabel, { color: colors.textSecondary }]}>
                   Outcome:
                 </Text>
-                {fight.userRating ? (
+                {fight.userRating || showWinner ? (
                   (() => {
                     const parts = getOutcomeParts();
                     if (!parts) return null;
@@ -533,9 +536,18 @@ export default function CompletedFightCard({
                     );
                   })()
                 ) : (
-                  <Text style={[sharedStyles.outcomeLineText, { color: colors.textSecondary, fontStyle: 'italic' }]} numberOfLines={1}>
-                    Rate this to show winner.
-                  </Text>
+                  <TouchableOpacity
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      setShowWinner(true);
+                    }}
+                    activeOpacity={0.6}
+                    style={{ flex: 1 }}
+                  >
+                    <Text style={[sharedStyles.outcomeLineText, { color: colors.tint, fontStyle: 'italic', textDecorationLine: 'underline' }]} numberOfLines={1}>
+                      Tap here to show winner
+                    </Text>
+                  </TouchableOpacity>
                 )}
               </View>
 

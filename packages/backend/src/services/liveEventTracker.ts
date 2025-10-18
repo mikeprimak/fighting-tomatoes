@@ -218,6 +218,7 @@ class LiveEventTracker {
       return {
         fighterAName: fight.fighterA?.name || fight.fighter1Name || '',
         fighterBName: fight.fighterB?.name || fight.fighter2Name || '',
+        order: fight.order || null, // Fight order on card (1 = first fight, higher = later fights)
         status: fightStatus,
         currentRound,
         completedRounds,

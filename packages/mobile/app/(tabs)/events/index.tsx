@@ -500,7 +500,7 @@ export default function EventsScreen() {
                     {line2}
                   </Text>
                 )}
-                {isLive && (
+                {isLive ? (
                   <View style={styles.liveIndicator}>
                     <Animated.View style={[
                       styles.liveDot,
@@ -508,10 +508,11 @@ export default function EventsScreen() {
                     ]} />
                     <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
                   </View>
+                ) : (
+                  <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
+                    {formatEventStatus(event)}
+                  </Text>
                 )}
-                <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-                  {formatEventStatus(event)}
-                </Text>
               </View>
 
               {/* Next Event Indicator */}
@@ -552,7 +553,7 @@ export default function EventsScreen() {
                   {line2}
                 </Text>
               )}
-              {isLive && (
+              {isLive ? (
                 <View style={styles.liveIndicator}>
                   <Animated.View style={[
                     styles.liveDot,
@@ -560,10 +561,11 @@ export default function EventsScreen() {
                   ]} />
                   <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
                 </View>
+              ) : (
+                <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
+                  {formatEventStatus(event)}
+                </Text>
               )}
-              <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-                {formatEventStatus(event)}
-              </Text>
             </View>
 
             {/* Next Event Indicator */}
