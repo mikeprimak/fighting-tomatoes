@@ -1,1 +1,1 @@
-# Trigger Render redeploy after releasing advisory locks
+# Force Render to regenerate Prisma Client with cardType field
