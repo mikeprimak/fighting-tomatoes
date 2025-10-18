@@ -678,12 +678,24 @@ export class MMANewsScraper {
       // Fetch OG images with heavy delays (like Bleacher Report)
       console.log('Fetching OG images in batches (slow but memory-safe)...');
 
+      // CRITICAL: Close main listing page before fetching OG images
+      await page.close();
+
       for (let i = 0; i < scrapedArticles.length; i++) {
         const item = scrapedArticles[i];
         let localImagePath: string | undefined;
         let imageUrl = '';
 
         try {
+          // CRITICAL MEMORY FIX: Close and reopen browser EVERY image to prevent accumulation
+          if (i > 0) {
+            console.log(`    [Memory] Restarting browser before image ${i + 1}...`);
+            await this.close();
+            await this.sleep(2000);
+            await this.init();
+            await this.sleep(1000);
+          }
+
           // Fetch OG image for this article
           console.log(`  [${i + 1}/${scrapedArticles.length}] Fetching image for: ${item.headline.substring(0, 50)}...`);
           imageUrl = await this.fetchOGImage(item.url);
