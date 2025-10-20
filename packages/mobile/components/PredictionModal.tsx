@@ -76,7 +76,7 @@ interface PredictionModalProps {
   onClose: () => void;
   fight: Fight | null;
   crewId?: string;
-  onSuccess?: (isUpdate: boolean, data?: { fightId?: string; hypeLevel?: number }) => void;
+  onSuccess?: (isUpdate: boolean, data?: { fightId?: string; hypeLevel?: number; winner?: string; method?: string }) => void;
   onSubmit?: (data: PredictionData) => Promise<void>;
   existingPrediction?: PredictionData | null;
   title?: string;
@@ -170,7 +170,12 @@ export function PredictionModal({
 
       const isUpdate = !!getCurrentUserPrediction();
 
-      onSuccess?.(isUpdate, { fightId: fight?.id, hypeLevel: hypeLevel });
+      onSuccess?.(isUpdate, {
+        fightId: fight?.id,
+        hypeLevel: hypeLevel,
+        winner: predictedWinner || undefined,
+        method: predictedMethod || undefined
+      });
       onClose();
     },
     onError: (error: any) => {
@@ -373,7 +378,12 @@ export function PredictionModal({
       if (onSubmit) {
         // Custom submit handler
         await onSubmit(predictionData);
-        onSuccess?.(isUpdate, { fightId: fight?.id, hypeLevel: hypeLevel });
+        onSuccess?.(isUpdate, {
+          fightId: fight?.id,
+          hypeLevel: hypeLevel,
+          winner: predictedWinner || undefined,
+          method: predictedMethod || undefined
+        });
         onClose();
       } else {
         // Default prediction submission (crew or individual)

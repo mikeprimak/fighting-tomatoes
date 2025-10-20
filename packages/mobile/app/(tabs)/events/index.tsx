@@ -361,15 +361,40 @@ export default function EventsScreen() {
   const formatEventStatus = (event: Event) => {
     const eventDate = new Date(event.date);
     const now = new Date();
-    const isPast = eventDate < now;
 
+    // Reset time to start of day for accurate day comparison
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const eventStart = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+
+    const isPast = eventDate < now;
     const formattedDate = formatDate(event.date);
 
     if (isPast) {
       return `Complete: ${formattedDate}`;
-    } else {
-      return `Upcoming: ${formattedDate}`;
     }
+
+    // Calculate days difference
+    const diffTime = eventStart.getTime() - todayStart.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // Today
+    if (diffDays === 0) {
+      const startTime = event.prelims?.startTime || event.mainStartTime || event.date;
+      return `Today at: ${formatTime(startTime)}`;
+    }
+
+    // Tomorrow
+    if (diffDays === 1) {
+      return `Tomorrow: ${formattedDate}`;
+    }
+
+    // This weekend (Saturday or Sunday within the next 7 days)
+    const eventDayOfWeek = eventDate.getDay(); // 0 = Sunday, 6 = Saturday
+    if (diffDays <= 7 && (eventDayOfWeek === 0 || eventDayOfWeek === 6)) {
+      return `This Weekend: ${formattedDate}`;
+    }
+
+    return `Upcoming: ${formattedDate}`;
   };
 
   const formatTime = (dateString: string) => {
@@ -795,7 +820,14 @@ export default function EventsScreen() {
           queryClient.invalidateQueries({ queryKey: ['eventFights', currentEvent?.id] });
           queryClient.invalidateQueries({ queryKey: ['eventEngagement', currentEvent?.id] });
 
-          if (data?.fightId && data?.hypeLevel) {
+          // Invalidate aggregate stats for the specific fight
+          if (data?.fightId) {
+            queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', data.fightId] });
+            queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', data.fightId] });
+          }
+
+          // Trigger animation if any prediction data exists (fighter, method, or hype)
+          if (data?.fightId && (data?.hypeLevel || data?.winner || data?.method)) {
             setTimeout(() => {
               setRecentlyPredictedFightId(data.fightId || null);
               setTimeout(() => setRecentlyPredictedFightId(null), 1000);

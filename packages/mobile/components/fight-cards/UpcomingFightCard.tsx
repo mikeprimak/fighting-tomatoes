@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert } from 'react-native';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
@@ -220,9 +220,10 @@ export default function UpcomingFightCard({
     }
   }, [getUpcomingStatusMessage(), startingSoonPulseAnim]);
 
-  // Trigger flame animation when prediction is saved
+
+  // Trigger animation when prediction is saved (fighter, method, or hype)
   useEffect(() => {
-    if (animatePrediction && fight.userHypePrediction) {
+    if (animatePrediction && (fight.userHypePrediction || aggregateStats?.userPrediction?.winner)) {
       // Reset all sparkles
       flame1.setValue(0);
       flame2.setValue(0);
@@ -241,25 +242,30 @@ export default function UpcomingFightCard({
       methodSparkle3.setValue(0);
       methodSparkle4.setValue(0);
 
-      const animations = [
-        Animated.sequence([
-          Animated.timing(predictionScaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
-          Animated.spring(predictionScaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }),
-        ]),
-        Animated.sequence([
-          Animated.timing(predictionGlowAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-          Animated.timing(predictionGlowAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
-        ]),
-        // Flame sparkles
-        Animated.timing(flame1, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(flame2, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(flame3, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(flame4, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(flame5, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(flame6, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(flame7, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(flame8, { toValue: 1, duration: 500, useNativeDriver: true }),
-      ];
+      const animations = [];
+
+      // Add hype animations if hype rating exists
+      if (fight.userHypePrediction) {
+        animations.push(
+          Animated.sequence([
+            Animated.timing(predictionScaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
+            Animated.spring(predictionScaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }),
+          ]),
+          Animated.sequence([
+            Animated.timing(predictionGlowAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+            Animated.timing(predictionGlowAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+          ]),
+          // Flame sparkles
+          Animated.timing(flame1, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame2, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame3, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame4, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame5, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame6, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame7, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame8, { toValue: 1, duration: 500, useNativeDriver: true })
+        );
+      }
 
       // Add fighter sparkles if user predicted a fighter
       if (aggregateStats?.userPrediction?.winner) {
@@ -281,7 +287,9 @@ export default function UpcomingFightCard({
         );
       }
 
-      Animated.parallel(animations).start();
+      if (animations.length > 0) {
+        Animated.parallel(animations).start();
+      }
     }
   }, [animatePrediction, fight.userHypePrediction, aggregateStats?.userPrediction?.winner, aggregateStats?.userPrediction?.method, predictionScaleAnim, predictionGlowAnim, flame1, flame2, flame3, flame4, flame5, flame6, flame7, flame8, fighterSparkle1, fighterSparkle2, fighterSparkle3, fighterSparkle4, methodSparkle1, methodSparkle2, methodSparkle3, methodSparkle4]);
 
@@ -482,55 +490,6 @@ export default function UpcomingFightCard({
                       {fight.fighter1Odds}
                     </Text>
                   )}
-                  {/* User prediction method - blue with sparkles */}
-                  {aggregateStats?.userPrediction?.winner === fighter1Name && aggregateStats?.userPrediction?.method && (
-                    <View style={{ position: 'relative' }}>
-                      {/* Method sparkles */}
-                      {[methodSparkle1, methodSparkle2, methodSparkle3, methodSparkle4].map((sparkle, index) => {
-                        const positions = [
-                          { top: -3, right: -3, tx: 8, ty: -8 },
-                          { top: -3, left: -3, tx: -8, ty: -8 },
-                          { bottom: -3, right: -3, tx: 8, ty: 8 },
-                          { bottom: -3, left: -3, tx: -8, ty: 8 },
-                        ];
-                        const pos = positions[index] as any;
-
-                        return (
-                          <Animated.View
-                            key={index}
-                            style={[
-                              sharedStyles.sparkle,
-                              pos,
-                              {
-                                opacity: sparkle.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 0] }),
-                                transform: [
-                                  { scale: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
-                                  { translateX: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.tx] }) },
-                                  { translateY: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.ty] }) },
-                                ],
-                              },
-                            ]}
-                          >
-                            <FontAwesome name="star" size={8} color="#83B4F3" />
-                          </Animated.View>
-                        );
-                      })}
-                      <Text style={[styles.methodText, { color: '#83B4F3' }]}>
-                        by {formatMethod(aggregateStats.userPrediction.method)}
-                      </Text>
-                    </View>
-                  )}
-                  {/* Community prediction method - yellow */}
-                  {aggregateStats?.communityPrediction?.winner === fighter1Name && (() => {
-                    if (!predictionStats) return null;
-                    const topMethods = getTopMethods(predictionStats.fighter1MethodPredictions);
-                    if (topMethods.length === 0) return null;
-                    return (
-                      <Text style={[styles.methodText, { color: '#F5C518' }]} numberOfLines={1}>
-                        by {topMethods.map(m => m.label).join(' or ')}
-                      </Text>
-                    );
-                  })()}
                 </View>
               );
             })()}
@@ -716,58 +675,276 @@ export default function UpcomingFightCard({
                       {fight.fighter2Odds}
                     </Text>
                   )}
-                  {/* User prediction method - blue with sparkles */}
-                  {aggregateStats?.userPrediction?.winner === fighter2Name && aggregateStats?.userPrediction?.method && (
-                    <View style={{ position: 'relative' }}>
-                      {/* Method sparkles */}
-                      {[methodSparkle1, methodSparkle2, methodSparkle3, methodSparkle4].map((sparkle, index) => {
-                        const positions = [
-                          { top: -3, right: -3, tx: 8, ty: -8 },
-                          { top: -3, left: -3, tx: -8, ty: -8 },
-                          { bottom: -3, right: -3, tx: 8, ty: 8 },
-                          { bottom: -3, left: -3, tx: -8, ty: 8 },
-                        ];
-                        const pos = positions[index] as any;
-
-                        return (
-                          <Animated.View
-                            key={index}
-                            style={[
-                              sharedStyles.sparkle,
-                              pos,
-                              {
-                                opacity: sparkle.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 0] }),
-                                transform: [
-                                  { scale: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
-                                  { translateX: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.tx] }) },
-                                  { translateY: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.ty] }) },
-                                ],
-                              },
-                            ]}
-                          >
-                            <FontAwesome name="star" size={8} color="#83B4F3" />
-                          </Animated.View>
-                        );
-                      })}
-                      <Text style={[styles.methodText, { color: '#83B4F3' }]}>
-                        by {formatMethod(aggregateStats.userPrediction.method)}
-                      </Text>
-                    </View>
-                  )}
-                  {/* Community prediction method - yellow */}
-                  {aggregateStats?.communityPrediction?.winner === fighter2Name && (() => {
-                    if (!predictionStats) return null;
-                    const topMethods = getTopMethods(predictionStats.fighter2MethodPredictions);
-                    if (topMethods.length === 0) return null;
-                    return (
-                      <Text style={[styles.methodText, { color: '#F5C518' }]} numberOfLines={1}>
-                        by {topMethods.map(m => m.label).join(' or ')}
-                      </Text>
-                    );
-                  })()}
                 </View>
               );
             })()}
+        </View>
+
+        {/* Prediction Methods Section - Positioned below headshots */}
+        <View
+          key={`predictions-${aggregateStats?.userPrediction?.winner}-${aggregateStats?.communityPrediction?.winner}`}
+          style={styles.predictionMethodsContainer}
+        >
+          {(() => {
+            const fighter1Name = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
+            const fighter2Name = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+
+            // Fighter 1 predictions (left column) - MUST be boolean for layout logic
+            const fighter1UserPrediction = aggregateStats?.userPrediction?.winner === fighter1Name;
+            const fighter1CommunityPrediction = aggregateStats?.communityPrediction?.winner === fighter1Name && !!predictionStats;
+
+            // Fighter 2 predictions (right column) - MUST be boolean for layout logic
+            const fighter2UserPrediction = aggregateStats?.userPrediction?.winner === fighter2Name;
+            const fighter2CommunityPrediction = aggregateStats?.communityPrediction?.winner === fighter2Name && !!predictionStats;
+
+            // Check if predictions are on opposite fighters
+            const hasFighter1Prediction = fighter1UserPrediction || fighter1CommunityPrediction;
+            const hasFighter2Prediction = fighter2UserPrediction || fighter2CommunityPrediction;
+            const areOnOppositeSides = hasFighter1Prediction && hasFighter2Prediction;
+
+            if (areOnOppositeSides) {
+              // Predictions on opposite fighters - use 50/50 split
+              return (
+                <View style={styles.predictionMethodsRow}>
+                  {/* Left column - Fighter 1 predictions (always rendered for spacing) */}
+                  <View style={styles.predictionMethodColumn}>
+                    {/* User prediction method - blue with sparkles */}
+                    {fighter1UserPrediction && (
+                      <View style={styles.methodTextContainer}>
+                        {/* Method sparkles */}
+                        {[methodSparkle1, methodSparkle2, methodSparkle3, methodSparkle4].map((sparkle, index) => {
+                          const positions = [
+                            { top: -3, right: -3, tx: 8, ty: -8 },
+                            { top: -3, left: -3, tx: -8, ty: -8 },
+                            { bottom: -3, right: -3, tx: 8, ty: 8 },
+                            { bottom: -3, left: -3, tx: -8, ty: 8 },
+                          ];
+                          const pos = positions[index] as any;
+
+                          return (
+                            <Animated.View
+                              key={index}
+                              style={[
+                                sharedStyles.sparkle,
+                                pos,
+                                {
+                                  opacity: sparkle.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 0] }),
+                                  transform: [
+                                    { scale: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                                    { translateX: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.tx] }) },
+                                    { translateY: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.ty] }) },
+                                  ],
+                                },
+                              ]}
+                            >
+                              <FontAwesome name="star" size={8} color="#83B4F3" />
+                            </Animated.View>
+                          );
+                        })}
+                        <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'left' }]} numberOfLines={2}>
+                          My Prediction: {fight.fighter1.lastName}{aggregateStats?.userPrediction?.method ? ` by ${formatMethod(aggregateStats.userPrediction.method)}` : ''}
+                        </Text>
+                      </View>
+                    )}
+                    {/* Community prediction method - yellow */}
+                    {fighter1CommunityPrediction && (() => {
+                      const topMethods = getTopMethods(predictionStats!.fighter1MethodPredictions);
+                      if (topMethods.length > 0) {
+                        return (
+                          <View style={styles.methodTextContainer}>
+                            <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'left' }]} numberOfLines={2}>
+                              Community Prediction: {fight.fighter1.lastName} by {topMethods.map(m => m.label).join(' or ')}
+                            </Text>
+                          </View>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </View>
+
+                  {/* Right column - Fighter 2 predictions (always rendered for spacing) */}
+                  <View style={styles.predictionMethodColumn}>
+                    {/* User prediction method - blue with sparkles */}
+                    {fighter2UserPrediction && (
+                      <View style={styles.methodTextContainer}>
+                        {/* Method sparkles */}
+                        {[methodSparkle1, methodSparkle2, methodSparkle3, methodSparkle4].map((sparkle, index) => {
+                          const positions = [
+                            { top: -3, right: -3, tx: 8, ty: -8 },
+                            { top: -3, left: -3, tx: -8, ty: -8 },
+                            { bottom: -3, right: -3, tx: 8, ty: 8 },
+                            { bottom: -3, left: -3, tx: -8, ty: 8 },
+                          ];
+                          const pos = positions[index] as any;
+
+                          return (
+                            <Animated.View
+                              key={index}
+                              style={[
+                                sharedStyles.sparkle,
+                                pos,
+                                {
+                                  opacity: sparkle.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 0] }),
+                                  transform: [
+                                    { scale: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                                    { translateX: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.tx] }) },
+                                    { translateY: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.ty] }) },
+                                  ],
+                                },
+                              ]}
+                            >
+                              <FontAwesome name="star" size={8} color="#83B4F3" />
+                            </Animated.View>
+                          );
+                        })}
+                        <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'right' }]} numberOfLines={2}>
+                          My Prediction: {fight.fighter2.lastName}{aggregateStats?.userPrediction?.method ? ` by ${formatMethod(aggregateStats.userPrediction.method)}` : ''}
+                        </Text>
+                      </View>
+                    )}
+                    {/* Community prediction method - yellow */}
+                    {fighter2CommunityPrediction && (() => {
+                      const topMethods = getTopMethods(predictionStats!.fighter2MethodPredictions);
+                      if (topMethods.length > 0) {
+                        return (
+                          <View style={styles.methodTextContainer}>
+                            <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'right' }]} numberOfLines={2}>
+                              Community Prediction: {fight.fighter2.lastName} by {topMethods.map(m => m.label).join(' or ')}
+                            </Text>
+                          </View>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </View>
+                </View>
+              );
+            } else {
+              // Predictions on same fighter - use full width
+              return (
+                <View style={[
+                  styles.predictionMethodsFullWidth,
+                  { justifyContent: hasFighter1Prediction ? 'flex-start' : 'flex-end' }
+                ]}>
+                  {/* Left column - Fighter 1 predictions */}
+                  {hasFighter1Prediction && (
+                    <View style={styles.predictionMethodColumnFull}>
+                      {/* User prediction method - blue with sparkles */}
+                      {fighter1UserPrediction && (
+                        <View style={styles.methodTextContainer}>
+                          {/* Method sparkles */}
+                          {[methodSparkle1, methodSparkle2, methodSparkle3, methodSparkle4].map((sparkle, index) => {
+                            const positions = [
+                              { top: -3, right: -3, tx: 8, ty: -8 },
+                              { top: -3, left: -3, tx: -8, ty: -8 },
+                              { bottom: -3, right: -3, tx: 8, ty: 8 },
+                              { bottom: -3, left: -3, tx: -8, ty: 8 },
+                            ];
+                            const pos = positions[index] as any;
+
+                            return (
+                              <Animated.View
+                                key={index}
+                                style={[
+                                  sharedStyles.sparkle,
+                                  pos,
+                                  {
+                                    opacity: sparkle.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 0] }),
+                                    transform: [
+                                      { scale: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                                      { translateX: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.tx] }) },
+                                      { translateY: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.ty] }) },
+                                    ],
+                                  },
+                                ]}
+                              >
+                                <FontAwesome name="star" size={8} color="#83B4F3" />
+                              </Animated.View>
+                            );
+                          })}
+                          <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'left' }]} numberOfLines={2}>
+                            My Prediction: {fight.fighter1.lastName}{aggregateStats?.userPrediction?.method ? ` by ${formatMethod(aggregateStats.userPrediction.method)}` : ''}
+                          </Text>
+                        </View>
+                      )}
+                      {/* Community prediction method - yellow */}
+                      {fighter1CommunityPrediction && (() => {
+                        const topMethods = getTopMethods(predictionStats!.fighter1MethodPredictions);
+                        if (topMethods.length > 0) {
+                          return (
+                            <View style={styles.methodTextContainer}>
+                              <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'left' }]} numberOfLines={2}>
+                                Community Prediction: {fight.fighter1.lastName} by {topMethods.map(m => m.label).join(' or ')}
+                              </Text>
+                            </View>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </View>
+                  )}
+
+                  {/* Right column - Fighter 2 predictions */}
+                  {hasFighter2Prediction && (
+                    <View style={styles.predictionMethodColumnFull}>
+                      {/* User prediction method - blue with sparkles */}
+                      {fighter2UserPrediction && (
+                        <View style={styles.methodTextContainer}>
+                          {/* Method sparkles */}
+                          {[methodSparkle1, methodSparkle2, methodSparkle3, methodSparkle4].map((sparkle, index) => {
+                            const positions = [
+                              { top: -3, right: -3, tx: 8, ty: -8 },
+                              { top: -3, left: -3, tx: -8, ty: -8 },
+                              { bottom: -3, right: -3, tx: 8, ty: 8 },
+                              { bottom: -3, left: -3, tx: -8, ty: 8 },
+                            ];
+                            const pos = positions[index] as any;
+
+                            return (
+                              <Animated.View
+                                key={index}
+                                style={[
+                                  sharedStyles.sparkle,
+                                  pos,
+                                  {
+                                    opacity: sparkle.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 0] }),
+                                    transform: [
+                                      { scale: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                                      { translateX: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.tx] }) },
+                                      { translateY: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.ty] }) },
+                                    ],
+                                  },
+                                ]}
+                              >
+                                <FontAwesome name="star" size={8} color="#83B4F3" />
+                              </Animated.View>
+                            );
+                          })}
+                          <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'right' }]} numberOfLines={2}>
+                            My Prediction: {fight.fighter2.lastName}{aggregateStats?.userPrediction?.method ? ` by ${formatMethod(aggregateStats.userPrediction.method)}` : ''}
+                          </Text>
+                        </View>
+                      )}
+                      {/* Community prediction method - yellow */}
+                      {fighter2CommunityPrediction && (() => {
+                        const topMethods = getTopMethods(predictionStats!.fighter2MethodPredictions);
+                        if (topMethods.length > 0) {
+                          return (
+                            <View style={styles.methodTextContainer}>
+                              <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'right' }]} numberOfLines={2}>
+                                Community Prediction: {fight.fighter2.lastName} by {topMethods.map(m => m.label).join(' or ')}
+                              </Text>
+                            </View>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </View>
+                  )}
+                </View>
+              );
+            }
+          })()}
         </View>
 
 
@@ -869,7 +1046,7 @@ const styles = StyleSheet.create({
   headshotsWithOddsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 8,
     paddingHorizontal: 20,
   },
   fighterColumn: {
@@ -880,11 +1057,35 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '500',
   },
+  predictionMethodsContainer: {
+    marginBottom: 12,
+    paddingHorizontal: 0,
+  },
+  predictionMethodsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  predictionMethodsFullWidth: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  predictionMethodColumn: {
+    flex: 1,
+    gap: 2,
+  },
+  predictionMethodColumnFull: {
+    gap: 2,
+    width: '100%',
+  },
+  methodTextContainer: {
+    position: 'relative',
+    paddingHorizontal: 4,
+  },
   methodText: {
     fontSize: 10,
     fontWeight: '500',
-    marginTop: 2,
-    textAlign: 'center',
   },
   predictionStatsColumn: {
     alignItems: 'center',
@@ -903,8 +1104,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
-    marginTop: -22,
-    marginLeft: -20,
   },
   aggregateScoreContainer: {
     flexDirection: 'row',
