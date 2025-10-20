@@ -445,7 +445,7 @@ export function PredictionModal({
                 style={[
                   styles.fighterButton,
                   {
-                    backgroundColor: predictedWinner === fight.fighter1?.id ? colors.tint : colors.background,
+                    backgroundColor: predictedWinner === fight.fighter1?.id ? '#83B4F3' : colors.background,
                     borderColor: colors.border,
                   }
                 ]}
@@ -465,7 +465,7 @@ export function PredictionModal({
                 <Text style={[
                   styles.fighterButtonText,
                   {
-                    color: predictedWinner === fight.fighter1?.id ? colors.textOnAccent : colors.text
+                    color: predictedWinner === fight.fighter1?.id ? '#1a1a1a' : colors.text
                   }
                 ]}>
                   {getDisplayLastName(fight.fighter1) || 'Fighter 1'}
@@ -475,7 +475,7 @@ export function PredictionModal({
                 style={[
                   styles.fighterButton,
                   {
-                    backgroundColor: predictedWinner === fight.fighter2?.id ? colors.tint : colors.background,
+                    backgroundColor: predictedWinner === fight.fighter2?.id ? '#83B4F3' : colors.background,
                     borderColor: colors.border,
                   }
                 ]}
@@ -495,7 +495,7 @@ export function PredictionModal({
                 <Text style={[
                   styles.fighterButtonText,
                   {
-                    color: predictedWinner === fight.fighter2?.id ? colors.textOnAccent : colors.text
+                    color: predictedWinner === fight.fighter2?.id ? '#1a1a1a' : colors.text
                   }
                 ]}>
                   {getDisplayLastName(fight.fighter2) || 'Fighter 2'}
@@ -548,7 +548,7 @@ export function PredictionModal({
                     style={[
                       styles.methodButton,
                       {
-                        backgroundColor: predictedMethod === method ? colors.tint : colors.background,
+                        backgroundColor: predictedMethod === method ? '#83B4F3' : colors.background,
                         borderColor: colors.border,
                       }
                     ]}
@@ -557,7 +557,7 @@ export function PredictionModal({
                     <Text style={[
                       styles.methodButtonText,
                       {
-                        color: predictedMethod === method ? colors.textOnAccent : colors.text
+                        color: predictedMethod === method ? '#1a1a1a' : colors.text
                       }
                     ]}>
                       {method === 'KO_TKO' ? 'KO/TKO' : method}
@@ -596,7 +596,7 @@ export function PredictionModal({
                     <FontAwesome6
                       name="fire-flame-curved"
                       size={80}
-                      color={colors.primary}
+                      color="#83B4F3"
                     />
                   </Animated.View>
                 </View>
@@ -629,7 +629,7 @@ export function PredictionModal({
                   {/* Smooth bottom gradient fade - moved down for better centering */}
                   <LinearGradient
                     colors={['transparent', `${colors.card}44`, `${colors.card}99`, `${colors.card}DD`, colors.card, colors.card]}
-                    style={[styles.fadeOverlay, { bottom: 0, height: 25 }]}
+                    style={[styles.fadeOverlay, { bottom: -6, height: 31 }]}
                     pointerEvents="none"
                   />
                 </View>
@@ -646,7 +646,7 @@ export function PredictionModal({
                   <FontAwesome6
                     name="fire-flame-curved"
                     size={39}
-                    color={level <= hypeLevel ? colors.primary : '#666666'}
+                    color={level <= hypeLevel ? '#83B4F3' : '#666666'}
                   />
                 </TouchableOpacity>
               ))}
@@ -657,11 +657,12 @@ export function PredictionModal({
           <View style={styles.predictionButtons}>
             {showSubmitButton ? (
               <TouchableOpacity
-                style={[styles.submitButton, { backgroundColor: colors.primary }]}
+                style={[styles.submitButton, { backgroundColor: '#83B4F3' }]}
                 onPress={handleSubmitPrediction}
                 disabled={isPending}
               >
-                <Text style={[styles.submitButtonText, { color: colors.textOnAccent }]}>
+                <Text style={[styles.submitButtonText, { color: '#1a1a1a' }]}>
+
                   {isPending
                     ? (isUpdate ? 'Updating...' : 'Submitting...')
                     : (isUpdate ? updateButtonText : submitButtonText)}
