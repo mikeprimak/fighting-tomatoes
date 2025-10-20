@@ -551,6 +551,11 @@ export default function UpcomingFightCard({
                     : '0'
                   }
                 </Text>
+                {predictionStats?.totalPredictions !== undefined && predictionStats.totalPredictions > 0 && (
+                  <Text style={[styles.hypeCountText, { color: colors.textSecondary }]}>
+                    ({predictionStats.totalPredictions})
+                  </Text>
+                )}
               </View>
 
               {/* User's Personal Hype Score with Flame Sparkles */}
@@ -899,12 +904,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 2,
     marginTop: -22,
+    marginLeft: -20,
   },
   aggregateScoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
     width: 75,
+  },
+  hypeCountText: {
+    fontSize: 10,
+    fontWeight: '400',
+    marginLeft: 6,
   },
   userHypeContainer: {
     position: 'relative',
