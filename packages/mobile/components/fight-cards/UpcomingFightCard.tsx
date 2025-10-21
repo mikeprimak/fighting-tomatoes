@@ -376,16 +376,16 @@ export default function UpcomingFightCard({
     <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
       <View style={[sharedStyles.container, { backgroundColor: colors.card, position: 'relative', minHeight: 200 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4, minHeight: 30 }}>
+          {predictionStats?.averageHype && predictionStats.averageHype >= 8 && (
+            <View style={styles.hotFightBadge}>
+              <Text style={styles.hotFightText}>🔥 Hot</Text>
+            </View>
+          )}
+
           {fight.weightClass && (
             <Text style={[sharedStyles.titleLabel, { color: fight.isTitle ? colors.tint : colors.textSecondary, marginBottom: 0 }]}>
               {fight.weightClass.toUpperCase().replace(/_/g, ' ')}{fight.isTitle ? ' TITLE FIGHT' : ''}
             </Text>
-          )}
-
-          {predictionStats?.averageHype && predictionStats.averageHype >= 8 && (
-            <View style={styles.hotFightBadge}>
-              <Text style={styles.hotFightText}>🔥 Hype</Text>
-            </View>
           )}
         </View>
 
@@ -741,7 +741,7 @@ export default function UpcomingFightCard({
                             </Animated.View>
                           );
                         })}
-                        <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'left' }]} numberOfLines={2}>
+                        <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'left' }]} numberOfLines={3}>
                           My Prediction: {fight.fighter1.lastName}{aggregateStats?.userPrediction?.method ? ` by ${formatMethod(aggregateStats.userPrediction.method)}` : ''}
                         </Text>
                       </View>
@@ -752,7 +752,7 @@ export default function UpcomingFightCard({
                       if (topMethods.length > 0) {
                         return (
                           <View style={styles.methodTextContainer}>
-                            <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'left' }]} numberOfLines={2}>
+                            <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'left' }]} numberOfLines={3}>
                               Community Prediction: {fight.fighter1.lastName} by {topMethods.map(m => m.label).join(' or ')}
                             </Text>
                           </View>
@@ -797,7 +797,7 @@ export default function UpcomingFightCard({
                             </Animated.View>
                           );
                         })}
-                        <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'right' }]} numberOfLines={2}>
+                        <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'right' }]} numberOfLines={3}>
                           My Prediction: {fight.fighter2.lastName}{aggregateStats?.userPrediction?.method ? ` by ${formatMethod(aggregateStats.userPrediction.method)}` : ''}
                         </Text>
                       </View>
@@ -808,7 +808,7 @@ export default function UpcomingFightCard({
                       if (topMethods.length > 0) {
                         return (
                           <View style={styles.methodTextContainer}>
-                            <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'right' }]} numberOfLines={2}>
+                            <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'right' }]} numberOfLines={3}>
                               Community Prediction: {fight.fighter2.lastName} by {topMethods.map(m => m.label).join(' or ')}
                             </Text>
                           </View>
@@ -862,7 +862,7 @@ export default function UpcomingFightCard({
                               </Animated.View>
                             );
                           })}
-                          <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'left' }]} numberOfLines={2}>
+                          <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'left' }]} numberOfLines={3}>
                             My Prediction: {fight.fighter1.lastName}{aggregateStats?.userPrediction?.method ? ` by ${formatMethod(aggregateStats.userPrediction.method)}` : ''}
                           </Text>
                         </View>
@@ -873,7 +873,7 @@ export default function UpcomingFightCard({
                         if (topMethods.length > 0) {
                           return (
                             <View style={styles.methodTextContainer}>
-                              <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'left' }]} numberOfLines={2}>
+                              <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'left' }]} numberOfLines={3}>
                                 Community Prediction: {fight.fighter1.lastName} by {topMethods.map(m => m.label).join(' or ')}
                               </Text>
                             </View>
@@ -920,7 +920,7 @@ export default function UpcomingFightCard({
                               </Animated.View>
                             );
                           })}
-                          <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'right' }]} numberOfLines={2}>
+                          <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'right' }]} numberOfLines={3}>
                             My Prediction: {fight.fighter2.lastName}{aggregateStats?.userPrediction?.method ? ` by ${formatMethod(aggregateStats.userPrediction.method)}` : ''}
                           </Text>
                         </View>
@@ -931,7 +931,7 @@ export default function UpcomingFightCard({
                         if (topMethods.length > 0) {
                           return (
                             <View style={styles.methodTextContainer}>
-                              <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'right' }]} numberOfLines={2}>
+                              <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'right' }]} numberOfLines={3}>
                                 Community Prediction: {fight.fighter2.lastName} by {topMethods.map(m => m.label).join(' or ')}
                               </Text>
                             </View>

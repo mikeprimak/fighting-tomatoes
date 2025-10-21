@@ -558,54 +558,54 @@ export default function EventsScreen() {
 
     return (
       <View style={[styles.eventContainer, { width: SCREEN_WIDTH }]}>
-        {/* Event Header */}
-        <View style={[styles.header, { backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border }]}>
-          <View style={styles.headerRow}>
-            {/* Previous Event Indicator */}
-            {prevEvent && (
-              <Animated.View style={[styles.swipeIndicator, { opacity: chevronOpacity }]}>
-                <FontAwesome name="chevron-left" size={16} color={colors.textSecondary} />
-              </Animated.View>
-            )}
-
-            {/* Current Event */}
-            <View style={styles.centerEventContainer}>
-              <Text style={[styles.eventName, { color: colors.text }]} numberOfLines={1}>
-                {line1 || 'Loading...'}
-              </Text>
-              {line2 && (
-                <Text style={[styles.eventSubtitle, { color: colors.text }]} numberOfLines={1}>
-                  {line2}
-                </Text>
-              )}
-              {isLive ? (
-                <View style={styles.liveIndicator}>
-                  <Animated.View style={[
-                    styles.liveDot,
-                    { backgroundColor: colors.danger, opacity: pulseAnim }
-                  ]} />
-                  <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
-                </View>
-              ) : (
-                <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-                  {formatEventStatus(event)}
-                </Text>
-              )}
-            </View>
-
-            {/* Next Event Indicator */}
-            {nextEvent && (
-              <Animated.View style={[styles.swipeIndicator, { opacity: chevronOpacity }]}>
-                <FontAwesome name="chevron-right" size={16} color={colors.textSecondary} />
-              </Animated.View>
-            )}
-          </View>
-        </View>
-
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
         >
+          {/* Event Header */}
+          <View style={[styles.header, { backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border }]}>
+            <View style={styles.headerRow}>
+              {/* Previous Event Indicator */}
+              {prevEvent && (
+                <Animated.View style={[styles.swipeIndicator, { opacity: chevronOpacity }]}>
+                  <FontAwesome name="chevron-left" size={16} color={colors.textSecondary} />
+                </Animated.View>
+              )}
+
+              {/* Current Event */}
+              <View style={styles.centerEventContainer}>
+                <Text style={[styles.eventName, { color: colors.text }]} numberOfLines={1}>
+                  {line1 || 'Loading...'}
+                </Text>
+                {line2 && (
+                  <Text style={[styles.eventSubtitle, { color: colors.text }]} numberOfLines={1}>
+                    {line2}
+                  </Text>
+                )}
+                {isLive ? (
+                  <View style={styles.liveIndicator}>
+                    <Animated.View style={[
+                      styles.liveDot,
+                      { backgroundColor: colors.danger, opacity: pulseAnim }
+                    ]} />
+                    <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
+                  </View>
+                ) : (
+                  <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
+                    {formatEventStatus(event)}
+                  </Text>
+                )}
+              </View>
+
+              {/* Next Event Indicator */}
+              {nextEvent && (
+                <Animated.View style={[styles.swipeIndicator, { opacity: chevronOpacity }]}>
+                  <FontAwesome name="chevron-right" size={16} color={colors.textSecondary} />
+                </Animated.View>
+              )}
+            </View>
+          </View>
+
           {/* Event Banner Image */}
           {event?.id && (
             <Image
@@ -624,6 +624,12 @@ export default function EventsScreen() {
               alertsCount={engagementData.alertsCount}
               averageHype={engagementData.averageHype}
               topHypedFights={engagementData.topHypedFights || []}
+              userAvatar={user?.avatar}
+              userInitial={
+                user?.firstName ? user.firstName.charAt(0).toUpperCase() :
+                user?.displayName ? user.displayName.charAt(0).toUpperCase() :
+                user?.email ? user.email.charAt(0).toUpperCase() : '?'
+              }
             />
           )}
 

@@ -361,6 +361,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
         where: { id: { in: fightIds } },
         select: {
           id: true,
+          fighter1Id: true,
+          fighter2Id: true,
           fighter1: {
             select: {
               firstName: true,
@@ -385,6 +387,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         select: {
           fightId: true,
           predictedRating: true,
+          predictedWinner: true,
         },
       });
 
@@ -400,16 +403,21 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Combine predictions (deduplicate by fightId, keep hype level)
-      const allPredictionsByFight = new Map<string, number | null>();
+      // Combine predictions (deduplicate by fightId, keep hype level and predicted winner)
+      const allPredictionsByFight = new Map<string, { hype: number | null; predictedWinner?: string }>();
       individualPredictions.forEach((p: any) => {
         if (!allPredictionsByFight.has(p.fightId)) {
-          allPredictionsByFight.set(p.fightId, p.predictedRating);
+          allPredictionsByFight.set(p.fightId, {
+            hype: p.predictedRating,
+            predictedWinner: p.predictedWinner,
+          });
         }
       });
       crewPredictions.forEach((p: any) => {
         if (!allPredictionsByFight.has(p.fightId)) {
-          allPredictionsByFight.set(p.fightId, p.hypeLevel);
+          allPredictionsByFight.set(p.fightId, {
+            hype: p.hypeLevel,
+          });
         }
       });
 
@@ -432,21 +440,25 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
       // Calculate average hype
       const hypeLevels = Array.from(allPredictionsByFight.values())
+        .map(p => p.hype)
         .filter((rating): rating is number => rating !== null && rating > 0);
       const avgHype = hypeLevels.length > 0
         ? hypeLevels.reduce((sum, rating) => sum + rating, 0) / hypeLevels.length
         : null;
 
-      // Get top 3 most hyped fights
+      // Get top 3 most hyped fights (hype score 7 or higher)
       const predictionsWithFights = Array.from(allPredictionsByFight.entries())
-        .filter(([_, hype]) => hype !== null && hype > 0)
-        .map(([fightId, hype]) => {
+        .filter(([_, predData]) => predData.hype !== null && predData.hype >= 7)
+        .map(([fightId, predData]) => {
           const fight = fightsWithDetails.find((f: any) => f.id === fightId);
           return {
             fightId,
-            hype: hype as number,
+            hype: predData.hype as number,
             fighter1: fight ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}` : '',
             fighter2: fight ? `${fight.fighter2.firstName} ${fight.fighter2.lastName}` : '',
+            fighter1Id: fight?.fighter1Id,
+            fighter2Id: fight?.fighter2Id,
+            predictedWinner: predData.predictedWinner,
           };
         })
         .sort((a, b) => b.hype - a.hype)
