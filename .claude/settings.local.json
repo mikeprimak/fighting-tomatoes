@@ -99,7 +99,8 @@
       "Bash(DATABASE_URL=\"postgresql://fightcrewapp_user:WjU2ZdAJESuMaMumbyRGgIV1HXJWg8KU@dpg-d3oee81r0fns73c59610-a.oregon-postgres.render.com/fightcrewapp-db\" pnpm run db:seed:*)",
       "Bash(export DATABASE_URL:*)",
       "Bash(pnpm run db:seed:*)",
-      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJiYTY2MjgzYi0yYjE3LTQwMWMtYjIxNy0wMzkxMTAyZGE0YjQiLCJpYXQiOjE3NjA2NzE5NTQsImV4cCI6MTc2MDY3NTU1NH0.tiwFbN2z9-Y_wgop_pNEZtAvCrw_RY5HvT7P9LVG1IY\":*)"
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJiYTY2MjgzYi0yYjE3LTQwMWMtYjIxNy0wMzkxMTAyZGE0YjQiLCJpYXQiOjE3NjA2NzE5NTQsImV4cCI6MTc2MDY3NTU1NH0.tiwFbN2z9-Y_wgop_pNEZtAvCrw_RY5HvT7P9LVG1IY\":*)",
+      "Bash(PGPASSWORD=devpassword psql:*)"
     ],
     "deny": [],
     "ask": []

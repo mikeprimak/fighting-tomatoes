@@ -547,7 +547,7 @@ export function PredictionModal({
 
           {/* Predicted Method */}
           <View style={styles.predictionSection}>
-            <Text style={[styles.sectionLabel, { color: colors.text }]}>
+            <Text style={[styles.sectionLabel, { color: colors.text, marginTop: 12 }]}>
               How will it end?
             </Text>
             <View style={styles.methodButtons}>
@@ -580,7 +580,7 @@ export function PredictionModal({
 
           {/* Hype Level */}
           <View style={styles.predictionSection}>
-            <Text style={[styles.sectionLabel, { color: colors.text }]}>
+            <Text style={[styles.sectionLabel, { color: colors.text, marginTop: 12, marginBottom: -3 }]}>
               How hyped are you?
             </Text>
 
@@ -588,27 +588,32 @@ export function PredictionModal({
             <View style={styles.displayStarContainer}>
               <View style={styles.animatedStarContainer}>
                 <View style={{ position: 'relative' }}>
-                  {/* Grey flame (base layer) */}
-                  <FontAwesome6
-                    name="fire-flame-curved"
-                    size={80}
-                    color="#666666"
-                  />
-                  {/* Primary color flame (overlay) */}
-                  <Animated.View
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      opacity: flameColorAnimation
-                    }}
-                  >
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={80}
-                      color="#83B4F3"
-                    />
-                  </Animated.View>
+                  {/* Flame icon changes based on selected hype level */}
+                  {(() => {
+                    let flameIcon;
+
+                    if (!hypeLevel || hypeLevel === 0) {
+                      // No hype selected - grey hollow flame (160px)
+                      flameIcon = require('../assets/grey-hollow-160.png');
+                    } else if (hypeLevel >= 9) {
+                      // High hype (9-10) - blue flame with sparkle (160px)
+                      flameIcon = require('../assets/blue-full-sparkle-160.png');
+                    } else if (hypeLevel >= 7) {
+                      // Medium hype (7-8) - full blue flame (160px)
+                      flameIcon = require('../assets/blue-full-160.png');
+                    } else {
+                      // Low hype (1-6) - hollow blue flame (160px)
+                      flameIcon = require('../assets/blue-hollow-160.png');
+                    }
+
+                    return (
+                      <Image
+                        source={flameIcon}
+                        style={{ width: 80, height: 80 }}
+                        resizeMode="contain"
+                      />
+                    );
+                  })()}
                 </View>
                 <View style={styles.wheelContainer}>
                   <Animated.View style={[
@@ -647,19 +652,27 @@ export function PredictionModal({
             </View>
 
             <View style={styles.starContainer}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
-                <TouchableOpacity
-                  key={level}
-                  onPress={() => handleHypeLevelSelection(level)}
-                  style={styles.starButton}
-                >
-                  <FontAwesome6
-                    name="fire-flame-curved"
-                    size={39}
-                    color={level <= hypeLevel ? '#83B4F3' : '#666666'}
-                  />
-                </TouchableOpacity>
-              ))}
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
+                // Simple logic: selected = blue full (no sparkle), unselected = grey hollow
+                const isSelected = level <= hypeLevel;
+                const flameIcon = isSelected
+                  ? require('../assets/blue-full-no-sparkle-160.png')
+                  : require('../assets/grey-hollow-160.png');
+
+                return (
+                  <TouchableOpacity
+                    key={level}
+                    onPress={() => handleHypeLevelSelection(level)}
+                    style={styles.starButton}
+                  >
+                    <Image
+                      source={flameIcon}
+                      style={{ width: 30, height: 30 }}
+                      resizeMode="contain"
+                    />
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
 
@@ -746,16 +759,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: 8,
+    gap: 1,
   },
   starButton: {
-    padding: 3,
+    padding: 1,
   },
   star: {
     fontSize: 32,
   },
   displayStarContainer: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 1,
     paddingTop: 10,
     paddingBottom: 10,
   },

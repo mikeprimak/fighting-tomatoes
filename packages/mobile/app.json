@@ -4,6 +4,12 @@
     "slug": "fightcrewapp",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/Fight-Crew-Logo.png",
+    "splash": {
+      "image": "./assets/Fight-Crew-Logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#181818"
+    },
     "userInterfaceStyle": "automatic",
     "assetBundlePatterns": [
       "**/*"
@@ -14,6 +20,7 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/Fight-Crew-Logo.png",
         "backgroundColor": "#1a1a1a"
       },
       "package": "com.fightcrewapp.mobile",

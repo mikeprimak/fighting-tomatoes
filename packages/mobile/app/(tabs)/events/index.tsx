@@ -70,6 +70,7 @@ export default function EventsScreen() {
   const [recentlyPredictedFightId, setRecentlyPredictedFightId] = useState<string | null>(null);
   const [currentEventIndex, setCurrentEventIndex] = useState<number | null>(null);
   const [hasBlinkAnimated, setHasBlinkAnimated] = useState(false);
+  const [bannerHeight, setBannerHeight] = useState<number>(200);
 
   // Pulsing animation for live indicator
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -608,11 +609,20 @@ export default function EventsScreen() {
 
           {/* Event Banner Image */}
           {event?.id && (
-            <Image
-              source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
-              style={styles.eventBanner}
-              resizeMode="cover"
-            />
+            <View style={{ height: bannerHeight, marginBottom: 16 }}>
+              <Image
+                source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
+                style={{ position: 'absolute', left: 0, right: 0, width: SCREEN_WIDTH, height: bannerHeight }}
+                resizeMode="cover"
+                onLoad={(e) => {
+                  const { width, height } = e.nativeEvent.source;
+                  if (width && height) {
+                    const calculatedHeight = (SCREEN_WIDTH / width) * height;
+                    setBannerHeight(calculatedHeight);
+                  }
+                }}
+              />
+            </View>
           )}
 
           {/* User Engagement Summary */}
@@ -913,9 +923,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingBottom: 20,
   },
   eventBanner: {
-    width: '100%',
-    height: 200,
+    width: SCREEN_WIDTH,
+    aspectRatio: 16 / 9,
     marginBottom: 16,
+    alignSelf: 'center',
   },
   cardSection: {
     marginTop: 20,

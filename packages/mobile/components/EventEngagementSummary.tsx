@@ -72,7 +72,11 @@ export default function EventEngagementSummary({
             <View style={styles.hypedSection}>
           <View style={styles.row}>
             <View style={styles.iconContainer}>
-              <FontAwesome6 name="fire-flame-curved" size={14} color="#FF6B35" />
+              <Image
+                source={require('../assets/flame-sparkle-3.png')}
+                style={{ width: 14, height: 14 }}
+                resizeMode="contain"
+              />
             </View>
             <Text style={[styles.text, { color: colors.textSecondary }]}>
               I'm hyped for:

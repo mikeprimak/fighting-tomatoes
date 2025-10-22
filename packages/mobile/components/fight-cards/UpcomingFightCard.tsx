@@ -376,14 +376,8 @@ export default function UpcomingFightCard({
     <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
       <View style={[sharedStyles.container, { backgroundColor: colors.card, position: 'relative', minHeight: 200 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4, minHeight: 30 }}>
-          {predictionStats?.averageHype && predictionStats.averageHype >= 8 && (
-            <View style={styles.hotFightBadge}>
-              <Text style={styles.hotFightText}>🔥 Hot</Text>
-            </View>
-          )}
-
           {fight.weightClass && (
-            <Text style={[sharedStyles.titleLabel, { color: fight.isTitle ? colors.tint : colors.textSecondary, marginBottom: 0 }]}>
+            <Text style={[sharedStyles.titleLabel, { color: colors.textSecondary, marginBottom: 0 }]}>
               {fight.weightClass.toUpperCase().replace(/_/g, ' ')}{fight.isTitle ? ' TITLE FIGHT' : ''}
             </Text>
           )}
@@ -498,12 +492,33 @@ export default function UpcomingFightCard({
             <View style={styles.centeredHypeScores}>
               {/* Community Hype Score */}
               <View style={styles.aggregateScoreContainer}>
-                <FontAwesome6
-                  name="fire-flame-curved"
-                  size={20}
-                  color={predictionStats?.averageHype ? "#FF6B35" : colors.textSecondary}
-                  style={sharedStyles.ratingIcon}
-                />
+                {/* Flame icon changes based on hype level */}
+                {(() => {
+                  const hypeScore = predictionStats?.averageHype || 0;
+                  let flameIcon;
+
+                  if (hypeScore >= 8.5) {
+                    // Hot fight (8.5+) - flame with sparkle
+                    flameIcon = require('../../assets/flame-sparkle-3.png');
+                  } else if (hypeScore >= 7) {
+                    // Warm fight (7-8.4) - full flame
+                    flameIcon = require('../../assets/flame-full-2.png');
+                  } else if (hypeScore > 0) {
+                    // Cool fight (<7) - hollow flame
+                    flameIcon = require('../../assets/flame-hollow-1.png');
+                  } else {
+                    // No hype data (0) - grey hollow flame
+                    flameIcon = require('../../assets/flame-hollow-grey-0.png');
+                  }
+
+                  return (
+                    <Image
+                      source={flameIcon}
+                      style={{ width: 20, height: 20, marginRight: 6 }}
+                      resizeMode="contain"
+                    />
+                  );
+                })()}
                 <Text style={[sharedStyles.aggregateLabel, { color: predictionStats?.averageHype ? '#fff' : colors.textSecondary }]}>
                   {predictionStats?.averageHype !== undefined
                     ? (predictionStats.averageHype % 1 === 0 ? predictionStats.averageHype.toString() : predictionStats.averageHype.toFixed(1))
@@ -576,13 +591,31 @@ export default function UpcomingFightCard({
                 <Animated.View style={{ transform: [{ scale: predictionScaleAnim }] }}>
                   {fight.userHypePrediction && (
                     <View style={sharedStyles.ratingRow}>
-                      <FontAwesome6
-                        name="fire-flame-curved"
-                        size={20}
-                        color="#83B4F3"
-                        style={sharedStyles.ratingIcon}
-                      />
-                      <Text style={[sharedStyles.userRatingText, { color: '#83B4F3', fontSize: 28 }]}>
+                      {/* User hype flame icon changes based on score */}
+                      {(() => {
+                        const userHype = fight.userHypePrediction;
+                        let userFlameIcon;
+
+                        if (userHype >= 9) {
+                          // High hype (9-10) - blue flame with sparkle
+                          userFlameIcon = require('../../assets/flame-sparkle-blue-7.png');
+                        } else if (userHype >= 7) {
+                          // Medium hype (7-8) - full blue flame
+                          userFlameIcon = require('../../assets/flame-full-blue-6.png');
+                        } else {
+                          // Low hype (1-6) - hollow blue flame
+                          userFlameIcon = require('../../assets/flame-hollow-blue-8.png');
+                        }
+
+                        return (
+                          <Image
+                            source={userFlameIcon}
+                            style={{ width: 20, height: 20, marginRight: 6 }}
+                            resizeMode="contain"
+                          />
+                        );
+                      })()}
+                      <Text style={[sharedStyles.userRatingText, { color: '#83B4F3' }]}>
                         {fight.userHypePrediction}
                       </Text>
                     </View>

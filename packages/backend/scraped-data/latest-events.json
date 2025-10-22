@@ -1,326 +1,6 @@
 {
   "events": [
     {
-      "eventName": "UFC Fight Night Ridder vs. Allen",
-      "eventType": "Fight Night",
-      "headline": "de Ridder vs Allen",
-      "eventUrl": "https://www.ufc.com/event/ufc-fight-night-october-18-2025",
-      "venue": "Rogers Arena",
-      "city": "Vancouver",
-      "state": "BC",
-      "country": "Canada",
-      "dateText": "Sat, Oct 18 / 7:00 PM EDT / Main Card",
-      "status": "Upcoming",
-      "eventImageUrl": "https://dmxg5wxfqgb4u.cloudfront.net/styles/background_image_sm/s3/2025-09/101825-ufc-fight-night-de-ridder-vs-allen-EVENT-ART.jpg?h=d1cb525d&itok=yu6TlGWU",
-      "eventStartTime": "7:00 PM",
-      "sections": [
-        {
-          "cardType": "Main Card",
-          "startTime": "Sat, Oct 18 / 7:00 PM EDT",
-          "fightCount": 6
-        },
-        {
-          "cardType": "Prelims",
-          "startTime": "Sat, Oct 18 / 4:00 PM EDT",
-          "fightCount": 7
-        },
-        {
-          "cardType": "Early Prelims",
-          "startTime": "",
-          "fightCount": 0
-        }
-      ],
-      "fights": [
-        {
-          "fightId": "12413",
-          "order": 1,
-          "cardType": "Main Card",
-          "weightClass": "Middleweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Reinier de Ridder",
-            "rank": "#4",
-            "country": "Netherlands",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/reinier-de-ridder"
-          },
-          "fighterB": {
-            "name": "Brendan Allen",
-            "rank": "#9",
-            "country": "Canada",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/brendan-allen"
-          },
-          "startTime": "7:00 PM"
-        },
-        {
-          "fightId": "12360",
-          "order": 2,
-          "cardType": "Main Card",
-          "weightClass": "Welterweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Kevin Holland",
-            "rank": "#15",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/kevin-holland"
-          },
-          "fighterB": {
-            "name": "Mike Malott",
-            "rank": "",
-            "country": "Canada",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/kristof-dzhotko"
-          },
-          "startTime": "7:30 PM"
-        },
-        {
-          "fightId": "12337",
-          "order": 3,
-          "cardType": "Main Card",
-          "weightClass": "Bantamweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Marlon Vera",
-            "rank": "#7",
-            "country": "Ecuador",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/marlon-vera"
-          },
-          "fighterB": {
-            "name": "Aiemann Zahabi",
-            "rank": "#9",
-            "country": "Canada",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/aiemann-zahabi"
-          },
-          "startTime": "8:00 PM"
-        },
-        {
-          "fightId": "12289",
-          "order": 4,
-          "cardType": "Main Card",
-          "weightClass": "Women's Flyweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Manon Fiorot",
-            "rank": "#2",
-            "country": "France",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/manon-fiorot"
-          },
-          "fighterB": {
-            "name": "Jasmine Jasudavicius",
-            "rank": "#5",
-            "country": "Canada",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/kori-makkenna-6"
-          },
-          "startTime": "8:30 PM"
-        },
-        {
-          "fightId": "12407",
-          "order": 5,
-          "cardType": "Main Card",
-          "weightClass": "Bantamweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Cody Gibson",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/cody-gibson"
-          },
-          "fighterB": {
-            "name": "Aoriqileng",
-            "rank": "",
-            "country": "China",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/aoriqileng"
-          },
-          "startTime": "9:00 PM"
-        },
-        {
-          "fightId": "12408",
-          "order": 6,
-          "cardType": "Main Card",
-          "weightClass": "Lightweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Kyle Nelson",
-            "rank": "",
-            "country": "Canada",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/kyle-nelson"
-          },
-          "fighterB": {
-            "name": "Matt Frevola",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/matt-frevola"
-          },
-          "startTime": "9:30 PM"
-        },
-        {
-          "fightId": "12376",
-          "order": 7,
-          "cardType": "Prelims",
-          "weightClass": "Bantamweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Charles Jourdain",
-            "rank": "",
-            "country": "Canada",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/charles-jourdain"
-          },
-          "fighterB": {
-            "name": "Davey Grant",
-            "rank": "",
-            "country": "England",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/davey-grant"
-          },
-          "startTime": "10:00 PM"
-        },
-        {
-          "fightId": "12362",
-          "order": 8,
-          "cardType": "Prelims",
-          "weightClass": "Flyweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Bruno Silva",
-            "rank": "#14",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/bruno-silva"
-          },
-          "fighterB": {
-            "name": "HyunSung Park",
-            "rank": "",
-            "country": "South Korea",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/hyunsung-park"
-          },
-          "startTime": "10:30 PM"
-        },
-        {
-          "fightId": "12363",
-          "order": 9,
-          "cardType": "Prelims",
-          "weightClass": "Middleweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Danny Barlow",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/danny-barlow"
-          },
-          "fighterB": {
-            "name": "Djorden Santos",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/djorden-santos"
-          },
-          "startTime": "11:00 PM"
-        },
-        {
-          "fightId": "12377",
-          "order": 10,
-          "cardType": "Prelims",
-          "weightClass": "Lightweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Kyle Prepolec",
-            "rank": "",
-            "country": "Canada",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/kyle-prepolec"
-          },
-          "fighterB": {
-            "name": "Drew Dober",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/drew-dober"
-          },
-          "startTime": "11:30 PM"
-        },
-        {
-          "fightId": "12364",
-          "order": 11,
-          "cardType": "Prelims",
-          "weightClass": "Women's Strawweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Stephanie Luciano",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/stephanie-bruna-luciano"
-          },
-          "fighterB": {
-            "name": "Ravena Oliveira",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/ravena-oliveira"
-          },
-          "startTime": "12:00 AM"
-        },
-        {
-          "fightId": "12300",
-          "order": 12,
-          "cardType": "Prelims",
-          "weightClass": "Middleweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Azamat Bekoev",
-            "rank": "",
-            "country": "Russia",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/azamat-bekoev"
-          },
-          "fighterB": {
-            "name": "Yousri Belgaroui",
-            "rank": "",
-            "country": "Netherlands",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/yousri-belgaroui"
-          },
-          "startTime": "12:30 AM"
-        },
-        {
-          "fightId": "12423",
-          "order": 13,
-          "cardType": "Prelims",
-          "weightClass": "Women's Bantamweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Melissa Croden",
-            "rank": "",
-            "country": "Canada",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/melissa-croden"
-          },
-          "fighterB": {
-            "name": "Tainara Lisboa",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/tainara-lisboa"
-          },
-          "startTime": "1:00 AM"
-        }
-      ],
-      "localImagePath": "/images/events/ufc-fight-night-october-18-2025.jpg"
-    },
-    {
       "eventName": "UFC 321: Aspinall vs. Gane",
       "eventType": "Numbered",
       "headline": "Aspinall vs Gane",
@@ -331,7 +11,7 @@
       "country": "United Arab Emirates",
       "dateText": "Sat, Oct 25 / 2:00 PM EDT / Main Card",
       "status": "Upcoming",
-      "eventImageUrl": "https://dmxg5wxfqgb4u.cloudfront.net/styles/background_image_sm/s3/2025-09/102525-ufc-321-aspinall-vs-gane-EVENT-ART.jpg?h=d1cb525d&itok=o2srA5y9",
+      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-09/102525-ufc-321-aspinall-vs-gane-EVENT-ART.jpg?h=d1cb525d&itok=o2srA5y9",
       "eventStartTime": "2:00 PM",
       "sections": [
         {
@@ -342,7 +22,7 @@
         {
           "cardType": "Prelims",
           "startTime": "Sat, Oct 25 / 10:00 AM EDT",
-          "fightCount": 7
+          "fightCount": 9
         },
         {
           "cardType": "Early Prelims",
@@ -361,14 +41,14 @@
             "name": "Tom Aspinall",
             "rank": "C",
             "country": "England",
-            "odds": "-",
+            "odds": "-355",
             "athleteUrl": "https://www.ufc.com/athlete/tom-aspinall"
           },
           "fighterB": {
             "name": "Ciryl Gane",
             "rank": "#1",
             "country": "France",
-            "odds": "-",
+            "odds": "+280",
             "athleteUrl": "https://www.ufc.com/athlete/ciryl-gane"
           },
           "startTime": "2:00 PM"
@@ -383,14 +63,14 @@
             "name": "Virna Jandiroba",
             "rank": "#1",
             "country": "Brazil",
-            "odds": "-",
+            "odds": "+130",
             "athleteUrl": "https://www.ufc.com/athlete/virna-jandiroba"
           },
           "fighterB": {
             "name": "Mackenzie Dern",
             "rank": "#5",
             "country": "Brazil",
-            "odds": "-",
+            "odds": "-155",
             "athleteUrl": "https://www.ufc.com/athlete/mackenzie-dern"
           },
           "startTime": "2:30 PM"
@@ -405,14 +85,14 @@
             "name": "Umar Nurmagomedov",
             "rank": "#2",
             "country": "Russia",
-            "odds": "-",
+            "odds": "-625",
             "athleteUrl": "https://www.ufc.com/athlete/umar-nurmagomedov"
           },
           "fighterB": {
             "name": "Mario Bautista",
-            "rank": "#8",
+            "rank": "#9",
             "country": "United States",
-            "odds": "-",
+            "odds": "+455",
             "athleteUrl": "https://www.ufc.com/athlete/mario-bautista"
           },
           "startTime": "3:00 PM"
@@ -427,14 +107,14 @@
             "name": "Alexander Volkov",
             "rank": "#2",
             "country": "Russia",
-            "odds": "-",
+            "odds": "+185",
             "athleteUrl": "https://www.ufc.com/athlete/alexander-volkov"
           },
           "fighterB": {
             "name": "Jailton Almeida",
             "rank": "#5",
             "country": "Brazil",
-            "odds": "-",
+            "odds": "-225",
             "athleteUrl": "https://www.ufc.com/athlete/jailton-almeida"
           },
           "startTime": "3:30 PM"
@@ -449,43 +129,65 @@
             "name": "Aleksandar Rakić",
             "rank": "#7",
             "country": "Serbia",
-            "odds": "-",
+            "odds": "-105",
             "athleteUrl": "https://www.ufc.com/athlete/aleksandar-rakic"
           },
           "fighterB": {
             "name": "Azamat Murzakanov",
             "rank": "#10",
             "country": "Russia",
-            "odds": "-",
+            "odds": "-115",
             "athleteUrl": "https://www.ufc.com/athlete/azamat-murzakanov"
           },
           "startTime": "4:00 PM"
         },
         {
-          "fightId": "12293",
+          "fightId": "12490",
           "order": 6,
+          "cardType": "Prelims",
+          "weightClass": "Lightweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Nasrat Haqparast",
+            "rank": "",
+            "country": "Morocco",
+            "odds": "-115",
+            "athleteUrl": "https://www.ufc.com/athlete/nasrat-haqparast"
+          },
+          "fighterB": {
+            "name": "Quillan Salkilld",
+            "rank": "",
+            "country": "Australia",
+            "odds": "-105",
+            "athleteUrl": "https://www.ufc.com/athlete/quillan-salkilld"
+          },
+          "startTime": "4:30 PM"
+        },
+        {
+          "fightId": "12293",
+          "order": 7,
           "cardType": "Prelims",
           "weightClass": "Middleweight",
           "isTitle": false,
           "fighterA": {
             "name": "Ikram Aliskerov",
-            "rank": "#15",
+            "rank": "",
             "country": "Russia",
-            "odds": "-",
+            "odds": "-258",
             "athleteUrl": "https://www.ufc.com/athlete/ikram-aliskerov"
           },
           "fighterB": {
             "name": "JunYong Park",
             "rank": "",
             "country": "South Korea",
-            "odds": "-",
+            "odds": "+210",
             "athleteUrl": "https://www.ufc.com/athlete/jun-yong-park"
           },
-          "startTime": "4:30 PM"
+          "startTime": "5:00 PM"
         },
         {
           "fightId": "12470",
-          "order": 7,
+          "order": 8,
           "cardType": "Prelims",
           "weightClass": "Lightweight",
           "isTitle": false,
@@ -493,43 +195,65 @@
             "name": "Ludovit Klein",
             "rank": "",
             "country": "Slovakia",
-            "odds": "-",
+            "odds": "-142",
             "athleteUrl": "https://www.ufc.com/athlete/rutohito-kurain"
           },
           "fighterB": {
             "name": "Mateusz Rębecki",
             "rank": "",
             "country": "Poland",
-            "odds": "-",
+            "odds": "+120",
             "athleteUrl": "https://www.ufc.com/athlete/mateusz-rebecki"
           },
-          "startTime": "5:00 PM"
+          "startTime": "5:30 PM"
         },
         {
           "fightId": "12431",
-          "order": 8,
+          "order": 9,
           "cardType": "Prelims",
           "weightClass": "Lightweight",
           "isTitle": false,
           "fighterA": {
             "name": "Abdul-Kareem Al-Selwady",
             "rank": "",
-            "country": "United States",
-            "odds": "-",
+            "country": "Palestine",
+            "odds": "-108",
             "athleteUrl": "https://www.ufc.com/athlete/abdul-kareem-al-selwady"
           },
           "fighterB": {
             "name": "Matheus Camilo",
             "rank": "",
             "country": "Brazil",
-            "odds": "-",
+            "odds": "-112",
             "athleteUrl": "https://www.ufc.com/athlete/matheus-camilo"
           },
-          "startTime": "5:30 PM"
+          "startTime": "6:00 PM"
+        },
+        {
+          "fightId": "12491",
+          "order": 10,
+          "cardType": "Prelims",
+          "weightClass": "Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Valter Walker",
+            "rank": "#15",
+            "country": "Brazil",
+            "odds": "-360",
+            "athleteUrl": "https://www.ufc.com/athlete/valter-walker"
+          },
+          "fighterB": {
+            "name": "Louie Sutherland",
+            "rank": "",
+            "country": "England",
+            "odds": "+285",
+            "athleteUrl": "https://www.ufc.com/athlete/louie-sutherland"
+          },
+          "startTime": "6:30 PM"
         },
         {
           "fightId": "12471",
-          "order": 9,
+          "order": 11,
           "cardType": "Prelims",
           "weightClass": "Featherweight",
           "isTitle": false,
@@ -537,21 +261,21 @@
             "name": "Nathaniel Wood",
             "rank": "",
             "country": "England",
-            "odds": "-",
+            "odds": "+124",
             "athleteUrl": "https://www.ufc.com/athlete/nathaniel-wood"
           },
           "fighterB": {
             "name": "Jose Miguel Delgado",
             "rank": "",
-            "country": "United States",
-            "odds": "-",
+            "country": "Mexico",
+            "odds": "-148",
             "athleteUrl": "https://www.ufc.com/athlete/jose-delgado"
           },
-          "startTime": "6:00 PM"
+          "startTime": "7:00 PM"
         },
         {
           "fightId": "12292",
-          "order": 10,
+          "order": 12,
           "cardType": "Prelims",
           "weightClass": "Heavyweight",
           "isTitle": false,
@@ -559,21 +283,21 @@
             "name": "Hamdy Abdelwahab",
             "rank": "",
             "country": "Egypt",
-            "odds": "-",
+            "odds": "-425",
             "athleteUrl": "https://www.ufc.com/athlete/hamdy-abdelwahab"
           },
           "fighterB": {
             "name": "Chris Barnett",
             "rank": "",
             "country": "Spain",
-            "odds": "-",
+            "odds": "+330",
             "athleteUrl": "https://www.ufc.com/athlete/chris-barnett"
           },
-          "startTime": "6:30 PM"
+          "startTime": "7:30 PM"
         },
         {
           "fightId": "12294",
-          "order": 11,
+          "order": 13,
           "cardType": "Prelims",
           "weightClass": "Flyweight",
           "isTitle": false,
@@ -581,21 +305,21 @@
             "name": "Azat Maksum",
             "rank": "",
             "country": "Kazakhstan",
-            "odds": "-",
+            "odds": "-380",
             "athleteUrl": "https://www.ufc.com/athlete/azat-maksum"
           },
           "fighterB": {
             "name": "Mitch Raposo",
             "rank": "",
             "country": "United States",
-            "odds": "-",
+            "odds": "+300",
             "athleteUrl": "https://www.ufc.com/athlete/aleks-oliveyra-2"
           },
-          "startTime": "7:00 PM"
+          "startTime": "8:00 PM"
         },
         {
           "fightId": "12378",
-          "order": 12,
+          "order": 14,
           "cardType": "Prelims",
           "weightClass": "Women's Strawweight",
           "isTitle": false,
@@ -603,17 +327,17 @@
             "name": "Jaqueline Amorim",
             "rank": "",
             "country": "Brazil",
-            "odds": "-",
+            "odds": "-425",
             "athleteUrl": "https://www.ufc.com/athlete/jaqueline-amorim"
           },
           "fighterB": {
             "name": "Mizuki",
             "rank": "",
             "country": "Japan",
-            "odds": "-",
+            "odds": "+330",
             "athleteUrl": "https://www.ufc.com/athlete/mizuki-inoue"
           },
-          "startTime": "7:30 PM"
+          "startTime": "8:30 PM"
         }
       ],
       "localImagePath": "/images/events/ufc-321.jpg"
@@ -629,9 +353,25 @@
       "country": "United States",
       "dateText": "Sat, Nov 1 / 7:00 PM EDT / Main Card",
       "status": "Upcoming",
-      "eventImageUrl": "https://dmxg5wxfqgb4u.cloudfront.net/styles/background_image_sm/s3/2025-09/110125-ufc-fight-night-garcia-vs-onama-TEMP-HERO.jpg?h=d1cb525d&itok=HRG6mwvb",
-      "eventStartTime": null,
-      "sections": [],
+      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-10/110125-ufc-fight-night-garcia-vs-onana-EVENT-ART.jpg?h=d1cb525d&itok=GrqjDSpr",
+      "eventStartTime": "7:00 PM",
+      "sections": [
+        {
+          "cardType": "Main Card",
+          "startTime": "Sat, Nov 1 / 7:00 PM EDT",
+          "fightCount": 6
+        },
+        {
+          "cardType": "Prelims",
+          "startTime": "Sat, Nov 1 / 4:00 PM EDT",
+          "fightCount": 6
+        },
+        {
+          "cardType": "Early Prelims",
+          "startTime": "",
+          "fightCount": 0
+        }
+      ],
       "fights": [
         {
           "fightId": "12441",
@@ -652,32 +392,12 @@
             "country": "Uganda",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/david-onama"
-          }
-        },
-        {
-          "fightId": "fight-2",
-          "order": 2,
-          "cardType": "Main Card",
-          "weightClass": "Welterweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Jeremiah Wells",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/jeremiah-wells"
           },
-          "fighterB": {
-            "name": "Themba Gorimbo",
-            "rank": "",
-            "country": "Zimbabwe",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/themba-gorimbo"
-          }
+          "startTime": "7:00 PM"
         },
         {
           "fightId": "12432",
-          "order": 3,
+          "order": 2,
           "cardType": "Main Card",
           "weightClass": "Heavyweight",
           "isTitle": false,
@@ -694,179 +414,34 @@
             "country": "Croatia",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/ante-delija"
-          }
+          },
+          "startTime": "7:30 PM"
         },
         {
-          "fightId": "12472",
-          "order": 4,
+          "fightId": "12475",
+          "order": 3,
           "cardType": "Main Card",
           "weightClass": "Welterweight",
           "isTitle": false,
           "fighterA": {
-            "name": "Phil Rowe",
+            "name": "Jeremiah Wells",
             "rank": "",
             "country": "United States",
             "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/philip-rowe"
+            "athleteUrl": "https://www.ufc.com/athlete/jeremiah-wells"
           },
           "fighterB": {
-            "name": "Seokhyeon Ko",
+            "name": "Themba Gorimbo",
             "rank": "",
-            "country": "South Korea",
+            "country": "Zimbabwe",
             "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/seokhyeon-ko"
-          }
-        },
-        {
-          "fightId": "fight-5",
-          "order": 5,
-          "cardType": "Main Card",
-          "weightClass": "Flyweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Allan Nascimento",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/allan-nascimento"
+            "athleteUrl": "https://www.ufc.com/athlete/themba-gorimbo"
           },
-          "fighterB": {
-            "name": "Rafael Estevam",
-            "rank": "#15",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/rafael-estevam"
-          }
-        },
-        {
-          "fightId": "fight-6",
-          "order": 6,
-          "cardType": "Main Card",
-          "weightClass": "Women's Strawweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Alice Ardelean",
-            "rank": "",
-            "country": "Romania",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/alice-ardelean"
-          },
-          "fighterB": {
-            "name": "Montserrat Ruiz",
-            "rank": "",
-            "country": "Mexico",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/montserrat-ruiz"
-          }
-        },
-        {
-          "fightId": "12442",
-          "order": 7,
-          "cardType": "Main Card",
-          "weightClass": "Middleweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Donte Johnson",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/donte-johnson"
-          },
-          "fighterB": {
-            "name": "Nick Klein",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/nick-klein"
-          }
-        },
-        {
-          "fightId": "fight-8",
-          "order": 8,
-          "cardType": "Main Card",
-          "weightClass": "Welterweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Charles Radtke",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/charles-radtke"
-          },
-          "fighterB": {
-            "name": "Daniel Frunza",
-            "rank": "",
-            "country": "Romania",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/daniel-frunza"
-          }
-        },
-        {
-          "fightId": "fight-9",
-          "order": 9,
-          "cardType": "Main Card",
-          "weightClass": "Light Heavyweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Billy Elekana",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/billy-elekana"
-          },
-          "fighterB": {
-            "name": "Kevin Christian",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/kevin-christian"
-          }
-        },
-        {
-          "fightId": "12473",
-          "order": 10,
-          "cardType": "Main Card",
-          "weightClass": "Bantamweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Timmy Cuamba",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/timothy-cuamba"
-          },
-          "fighterB": {
-            "name": "ChangHo Lee",
-            "rank": "",
-            "country": "South Korea",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/chang-ho-lee"
-          }
-        },
-        {
-          "fightId": "fight-11",
-          "order": 11,
-          "cardType": "Main Card",
-          "weightClass": "Women's Bantamweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Ketlen Vieira",
-            "rank": "#3",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/ketlen-vieira"
-          },
-          "fighterB": {
-            "name": "Norma Dumont",
-            "rank": "#4",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/norma-dumont"
-          }
+          "startTime": "8:00 PM"
         },
         {
           "fightId": "12443",
-          "order": 12,
+          "order": 4,
           "cardType": "Main Card",
           "weightClass": "Featherweight",
           "isTitle": false,
@@ -883,28 +458,184 @@
             "country": "Cuba",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/yadier-del-valle"
-          }
+          },
+          "startTime": "8:30 PM"
         },
         {
-          "fightId": "fight-13",
-          "order": 13,
+          "fightId": "12476",
+          "order": 5,
           "cardType": "Main Card",
+          "weightClass": "Welterweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Charles Radtke",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/charles-radtke"
+          },
+          "fighterB": {
+            "name": "Daniel Frunza",
+            "rank": "",
+            "country": "Romania",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/daniel-frunza"
+          },
+          "startTime": "9:00 PM"
+        },
+        {
+          "fightId": "12477",
+          "order": 6,
+          "cardType": "Main Card",
+          "weightClass": "Flyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Allan Nascimento",
+            "rank": "",
+            "country": "Brazil",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/allan-nascimento"
+          },
+          "fighterB": {
+            "name": "Rafael Estevam",
+            "rank": "#15",
+            "country": "Brazil",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/rafael-estevam"
+          },
+          "startTime": "9:30 PM"
+        },
+        {
+          "fightId": "12478",
+          "order": 7,
+          "cardType": "Prelims",
+          "weightClass": "Light Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Billy Elekana",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/billy-elekana"
+          },
+          "fighterB": {
+            "name": "Kevin Christian",
+            "rank": "",
+            "country": "Brazil",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/kevin-christian"
+          },
+          "startTime": "10:00 PM"
+        },
+        {
+          "fightId": "12473",
+          "order": 8,
+          "cardType": "Prelims",
+          "weightClass": "Bantamweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Timmy Cuamba",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/timothy-cuamba"
+          },
+          "fighterB": {
+            "name": "ChangHo Lee",
+            "rank": "",
+            "country": "South Korea",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/chang-ho-lee"
+          },
+          "startTime": "10:30 PM"
+        },
+        {
+          "fightId": "12442",
+          "order": 9,
+          "cardType": "Prelims",
+          "weightClass": "Middleweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Donte Johnson",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/donte-johnson"
+          },
+          "fighterB": {
+            "name": "Nick Klein",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/nick-klein"
+          },
+          "startTime": "11:00 PM"
+        },
+        {
+          "fightId": "12480",
+          "order": 10,
+          "cardType": "Prelims",
+          "weightClass": "Women's Bantamweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Ketlen Vieira",
+            "rank": "#3",
+            "country": "Brazil",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/ketlen-vieira"
+          },
+          "fighterB": {
+            "name": "Norma Dumont",
+            "rank": "#4",
+            "country": "Brazil",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/norma-dumont"
+          },
+          "startTime": "11:30 PM"
+        },
+        {
+          "fightId": "12479",
+          "order": 11,
+          "cardType": "Prelims",
           "weightClass": "Women's Strawweight",
           "isTitle": false,
           "fighterA": {
-            "name": "Talita Alencar",
+            "name": "Alice Ardelean",
             "rank": "",
-            "country": "Brazil",
+            "country": "Romania",
             "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/talita-alencar"
+            "athleteUrl": "https://www.ufc.com/athlete/alice-ardelean"
           },
           "fighterB": {
-            "name": "Ariane Carnelossi",
+            "name": "Montserrat Ruiz",
             "rank": "",
-            "country": "Brazil",
+            "country": "Mexico",
             "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/ariane-carnelossi"
-          }
+            "athleteUrl": "https://www.ufc.com/athlete/montserrat-ruiz"
+          },
+          "startTime": "12:00 AM"
+        },
+        {
+          "fightId": "12472",
+          "order": 12,
+          "cardType": "Prelims",
+          "weightClass": "Welterweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Phil Rowe",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/philip-rowe"
+          },
+          "fighterB": {
+            "name": "Seokhyeon Ko",
+            "rank": "",
+            "country": "South Korea",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/seokhyeon-ko"
+          },
+          "startTime": "12:30 AM"
         }
       ],
       "localImagePath": "/images/events/ufc-fight-night-november-01-2025.jpg"
@@ -920,9 +651,25 @@
       "country": "United States",
       "dateText": "Sat, Nov 8 / 7:00 PM EDT / Main Card",
       "status": "Upcoming",
-      "eventImageUrl": "https://dmxg5wxfqgb4u.cloudfront.net/styles/background_image_sm/s3/2025-09/110825-ufc-fight-night-bonfim-vs-brown-TEMP-HERO.jpg?h=d1cb525d&itok=5hikeqV0",
-      "eventStartTime": null,
-      "sections": [],
+      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-09/110825-ufc-fight-night-bonfim-vs-brown-TEMP-HERO.jpg?h=d1cb525d&itok=5hikeqV0",
+      "eventStartTime": "7:00 PM",
+      "sections": [
+        {
+          "cardType": "Main Card",
+          "startTime": "Sat, Nov 8 / 7:00 PM EDT",
+          "fightCount": 1
+        },
+        {
+          "cardType": "Prelims",
+          "startTime": "Sat, Nov 8 / 4:00 PM EDT",
+          "fightCount": 4
+        },
+        {
+          "cardType": "Early Prelims",
+          "startTime": "",
+          "fightCount": 0
+        }
+      ],
       "fights": [
         {
           "fightId": "12447",
@@ -943,12 +690,13 @@
             "country": "Jamaica",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/randy-brown"
-          }
+          },
+          "startTime": "7:00 PM"
         },
         {
           "fightId": "12445",
           "order": 2,
-          "cardType": "Main Card",
+          "cardType": "Prelims",
           "weightClass": "Bantamweight",
           "isTitle": false,
           "fighterA": {
@@ -964,33 +712,13 @@
             "country": "Mexico",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/trevin-dzhayls-6"
-          }
-        },
-        {
-          "fightId": "12488",
-          "order": 3,
-          "cardType": "Main Card",
-          "weightClass": "Heavyweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Josh Hokit",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/josh-hokit"
           },
-          "fighterB": {
-            "name": "Max Gimenis",
-            "rank": "",
-            "country": "",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/max-gimenis"
-          }
+          "startTime": "7:30 PM"
         },
         {
           "fightId": "12446",
-          "order": 4,
-          "cardType": "Main Card",
+          "order": 3,
+          "cardType": "Prelims",
           "weightClass": "Women's Bantamweight",
           "isTitle": false,
           "fighterA": {
@@ -1006,12 +734,35 @@
             "country": "Portugal",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/jacqueline-cavalcanti"
-          }
+          },
+          "startTime": "8:00 PM"
+        },
+        {
+          "fightId": "12488",
+          "order": 4,
+          "cardType": "Prelims",
+          "weightClass": "Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Josh Hokit",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/josh-hokit"
+          },
+          "fighterB": {
+            "name": "Max Gimenis",
+            "rank": "",
+            "country": "",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/max-gimenis"
+          },
+          "startTime": "8:30 PM"
         },
         {
           "fightId": "12444",
           "order": 5,
-          "cardType": "Main Card",
+          "cardType": "Prelims",
           "weightClass": "Women's Strawweight",
           "isTitle": false,
           "fighterA": {
@@ -1027,7 +778,8 @@
             "country": "Brazil",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/denise-gomes"
-          }
+          },
+          "startTime": "9:00 PM"
         }
       ],
       "localImagePath": "/images/events/ufc-fight-night-november-08-2025.jpg"
@@ -1043,7 +795,7 @@
       "country": "United States",
       "dateText": "Sat, Nov 15 / 10:00 PM EDT / Main Card",
       "status": "Upcoming",
-      "eventImageUrl": "https://dmxg5wxfqgb4u.cloudfront.net/styles/background_image_sm/s3/2025-10/111525-ufc-322-della-maddalena-vs-makhachev-EVENT-ART.jpg?h=d1cb525d&itok=FR6l8q96",
+      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-10/111525-ufc-322-della-maddalena-vs-makhachev-EVENT-ART.jpg?h=d1cb525d&itok=FR6l8q96",
       "eventStartTime": null,
       "sections": [],
       "fights": [
@@ -1292,7 +1044,7 @@
       "country": "Qatar",
       "dateText": "Sat, Nov 22 / 1:00 PM EDT / Main Card",
       "status": "Upcoming",
-      "eventImageUrl": "https://dmxg5wxfqgb4u.cloudfront.net/styles/background_image_sm/s3/2025-10/112225-ufc-fight-night-tsarukyan-vs-hooker-TEMP-HERO.jpg?h=d1cb525d&itok=uc8H3GdY",
+      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-10/112225-ufc-fight-night-tsarukyan-vs-hooker-EVENT-ART.jpg?h=d1cb525d&itok=GxYvHH7I",
       "eventStartTime": null,
       "sections": [],
       "fights": [
@@ -1360,29 +1112,8 @@
           }
         },
         {
-          "fightId": "12461",
-          "order": 4,
-          "cardType": "Main Card",
-          "weightClass": "Bantamweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Felipe Lima",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/felipe-lima"
-          },
-          "fighterB": {
-            "name": "Daniel Marcos",
-            "rank": "",
-            "country": "Peru",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/daniel-marcos"
-          }
-        },
-        {
           "fightId": "12474",
-          "order": 5,
+          "order": 4,
           "cardType": "Main Card",
           "weightClass": "Welterweight",
           "isTitle": false,
@@ -1399,6 +1130,27 @@
             "country": "Kyrgyzstan",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/myktybek-orolbai"
+          }
+        },
+        {
+          "fightId": "12464",
+          "order": 5,
+          "cardType": "Main Card",
+          "weightClass": "Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Serghei Spivac",
+            "rank": "#7",
+            "country": "Moldova",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/sergey-spivak-0"
+          },
+          "fighterB": {
+            "name": "Shamil Gaziev",
+            "rank": "#12",
+            "country": "Bahrain",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/shamil-gaziev"
           }
         },
         {
@@ -1423,8 +1175,29 @@
           }
         },
         {
-          "fightId": "12463",
+          "fightId": "12468",
           "order": 7,
+          "cardType": "Main Card",
+          "weightClass": "Flyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Tagir Ulanbekov",
+            "rank": "#12",
+            "country": "Russia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/tagir-ulanbekov"
+          },
+          "fighterB": {
+            "name": "Kyoji Horiguchi",
+            "rank": "",
+            "country": "Japan",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/kyoji-horiguchi"
+          }
+        },
+        {
+          "fightId": "12463",
+          "order": 8,
           "cardType": "Main Card",
           "weightClass": "Flyweight",
           "isTitle": false,
@@ -1444,71 +1217,29 @@
           }
         },
         {
-          "fightId": "12464",
-          "order": 8,
-          "cardType": "Main Card",
-          "weightClass": "Heavyweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Serghei Spivac",
-            "rank": "#7",
-            "country": "Moldova",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/sergey-spivak-0"
-          },
-          "fighterB": {
-            "name": "Shamil Gaziev",
-            "rank": "#12",
-            "country": "Bahrain",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/shamil-gaziev"
-          }
-        },
-        {
-          "fightId": "12465",
+          "fightId": "12461",
           "order": 9,
           "cardType": "Main Card",
-          "weightClass": "Light Heavyweight",
+          "weightClass": "Bantamweight",
           "isTitle": false,
           "fighterA": {
-            "name": "Abdulrakhman Yakhyaev",
-            "rank": "",
-            "country": "",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/abdulrakhman-yakhyaev"
-          },
-          "fighterB": {
-            "name": "Rafael Cerqueira",
+            "name": "Felipe Lima",
             "rank": "",
             "country": "Brazil",
             "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/rafael-cerqueira"
-          }
-        },
-        {
-          "fightId": "12466",
-          "order": 10,
-          "cardType": "Main Card",
-          "weightClass": "Featherweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Bogdan Grad",
-            "rank": "",
-            "country": "Austria",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/bogdan-grad"
+            "athleteUrl": "https://www.ufc.com/athlete/felipe-lima"
           },
           "fighterB": {
-            "name": "Luke Riley",
+            "name": "Daniel Marcos",
             "rank": "",
-            "country": "",
+            "country": "Peru",
             "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/luke-riley"
+            "athleteUrl": "https://www.ufc.com/athlete/daniel-marcos"
           }
         },
         {
           "fightId": "12467",
-          "order": 11,
+          "order": 10,
           "cardType": "Main Card",
           "weightClass": "Middleweight",
           "isTitle": false,
@@ -1528,24 +1259,45 @@
           }
         },
         {
-          "fightId": "12468",
-          "order": 12,
+          "fightId": "12466",
+          "order": 11,
           "cardType": "Main Card",
-          "weightClass": "Flyweight",
+          "weightClass": "Featherweight",
           "isTitle": false,
           "fighterA": {
-            "name": "Tagir Ulanbekov",
-            "rank": "#12",
-            "country": "Russia",
+            "name": "Bogdan Grad",
+            "rank": "",
+            "country": "Austria",
             "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/tagir-ulanbekov"
+            "athleteUrl": "https://www.ufc.com/athlete/bogdan-grad"
           },
           "fighterB": {
-            "name": "Kyoji Horiguchi",
+            "name": "Luke Riley",
             "rank": "",
-            "country": "Japan",
+            "country": "",
             "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/kyoji-horiguchi"
+            "athleteUrl": "https://www.ufc.com/athlete/luke-riley"
+          }
+        },
+        {
+          "fightId": "12465",
+          "order": 12,
+          "cardType": "Main Card",
+          "weightClass": "Light Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Abdulrakhman Yakhyaev",
+            "rank": "",
+            "country": "",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/abdulrakhman-yakhyaev"
+          },
+          "fighterB": {
+            "name": "Rafael Cerqueira",
+            "rank": "",
+            "country": "Brazil",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/rafael-cerqueira"
           }
         }
       ],
@@ -1562,7 +1314,7 @@
       "country": "United States",
       "dateText": "Sat, Dec 6 / 10:00 PM EDT / Main Card",
       "status": "Upcoming",
-      "eventImageUrl": "https://dmxg5wxfqgb4u.cloudfront.net/styles/background_image_sm/s3/2025-10/120625-ufc-323-dvalishvili-vs-yan-2-TEMP-HERO.jpg?h=d1cb525d&itok=Va5EaxI8",
+      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-10/120625-ufc-323-dvalishvili-vs-yan-2-TEMP-HERO.jpg?h=d1cb525d&itok=Va5EaxI8",
       "eventStartTime": null,
       "sections": [],
       "fights": [
@@ -1685,7 +1437,7 @@
       "country": "United States",
       "dateText": "Sat, Dec 13 / 10:00 PM EDT / Main Card",
       "status": "Upcoming",
-      "eventImageUrl": "https://dmxg5wxfqgb4u.cloudfront.net/styles/background_image_sm/s3/2025-10/121325-ufc-fight-night-royval-vs-kape-TEMP-HERO.jpg?h=d1cb525d&itok=sXQZZAzg",
+      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-10/121325-ufc-fight-night-royval-vs-kape-TEMP-HERO.jpg?h=d1cb525d&itok=sXQZZAzg",
       "eventStartTime": "10:00 PM",
       "sections": [
         {

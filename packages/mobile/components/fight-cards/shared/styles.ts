@@ -61,11 +61,11 @@ export const sharedStyles = StyleSheet.create({
     marginRight: 6,
   },
   aggregateLabel: {
-    fontSize: 28,
+    fontSize: 16,
     fontWeight: '500',
   },
   userRatingText: {
-    fontSize: 28,
+    fontSize: 16,
     fontWeight: '500',
   },
   unratedText: {
