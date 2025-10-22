@@ -202,7 +202,7 @@ export default function CompletedFightCard({
               const fighter1Rings = getFighterRings(fight.fighter1.id, fighter1Name);
               const baseSize = 75;
               const borderWidth = 3;
-              const gap = 2;
+              const gap = 3;
 
               return (
                 <View style={styles.fighterColumn}>
@@ -223,7 +223,7 @@ export default function CompletedFightCard({
                             borderWidth: borderWidth,
                             borderColor: ringColor,
                             borderRadius: 37.5,
-                            zIndex: index,
+                            zIndex: fighter1Rings.length - index,
                           }}
                         />
                       );
@@ -277,7 +277,7 @@ export default function CompletedFightCard({
                     />
                   );
                 })()}
-                <Text style={[sharedStyles.aggregateLabel, { color: predictionStats?.averageHype ? '#fff' : colors.textSecondary }]}>
+                <Text style={[sharedStyles.aggregateLabel, { color: colors.textSecondary }]}>
                   {predictionStats?.averageHype !== undefined
                     ? (predictionStats.averageHype % 1 === 0 ? predictionStats.averageHype.toString() : predictionStats.averageHype.toFixed(1))
                     : '0'
@@ -331,12 +331,47 @@ export default function CompletedFightCard({
             <View style={styles.centeredRatings}>
             {/* Aggregate Rating */}
             <View style={styles.aggregateScoreContainer}>
-              <FontAwesome
-                name="star"
-                size={20}
-                color="#F5C518"
-                style={{ marginRight: 6 }}
-              />
+              {(() => {
+                const rating = fight.averageRating || 0;
+
+                if (rating >= 8.5) {
+                  // 8.5+ - star with sparkles image
+                  return (
+                    <Image
+                      source={require('../../assets/star-stars-2.png')}
+                      style={{ width: 20, height: 20, marginRight: 6 }}
+                      resizeMode="contain"
+                    />
+                  );
+                }
+
+                // For ratings below 8.5, use FontAwesome icons
+                let starName: 'star' | 'star-o' = 'star';
+                let starColor = '#F5C518';
+
+                if (rating === 0) {
+                  // No ratings yet - grey hollow star
+                  starName = 'star-o';
+                  starColor = colors.textSecondary;
+                } else if (rating < 7) {
+                  // Under 7 - hollow yellow star
+                  starName = 'star-o';
+                  starColor = '#F5C518';
+                } else {
+                  // 7 to 8.4 - filled yellow star
+                  starName = 'star';
+                  starColor = '#F5C518';
+                }
+
+                return (
+                  <FontAwesome
+                    name={starName}
+                    size={20}
+                    color={starColor}
+                    style={{ marginRight: 6 }}
+                  />
+                );
+              })()}
               <Text style={[sharedStyles.aggregateLabel, { color: colors.text }]}>
                 {fight.averageRating % 1 === 0 ? fight.averageRating.toString() : fight.averageRating.toFixed(1)}
               </Text>
@@ -405,12 +440,47 @@ export default function CompletedFightCard({
 
               <Animated.View style={{ transform: [{ scale: ratingScaleAnim }] }}>
                 <View style={sharedStyles.ratingRow}>
-                  <FontAwesome
-                    name={fight.userRating ? "star" : "star-o"}
-                    size={20}
-                    color={fight.userRating ? "#83B4F3" : colors.textSecondary}
-                    style={{ marginRight: 6 }}
-                  />
+                  {(() => {
+                    const userRating = fight.userRating || 0;
+
+                    if (userRating >= 9) {
+                      // 9-10 - star with sparkles image
+                      return (
+                        <Image
+                          source={require('../../assets/star-stars-blue.png')}
+                          style={{ width: 20, height: 20, marginRight: 6 }}
+                          resizeMode="contain"
+                        />
+                      );
+                    }
+
+                    // For ratings below 9, use FontAwesome icons
+                    let starName: 'star' | 'star-o' = 'star';
+                    let starColor = '#83B4F3';
+
+                    if (userRating === 0) {
+                      // No rating - grey hollow star
+                      starName = 'star-o';
+                      starColor = colors.textSecondary;
+                    } else if (userRating <= 6) {
+                      // 6 or lower - hollow blue star
+                      starName = 'star-o';
+                      starColor = '#83B4F3';
+                    } else {
+                      // 7-8 - filled blue star
+                      starName = 'star';
+                      starColor = '#83B4F3';
+                    }
+
+                    return (
+                      <FontAwesome
+                        name={starName}
+                        size={20}
+                        color={starColor}
+                        style={{ marginRight: 6 }}
+                      />
+                    );
+                  })()}
                   <Text style={[sharedStyles.userRatingText, { color: fight.userRating ? '#83B4F3' : colors.textSecondary }]}>
                     {fight.userRating || '0'}
                   </Text>
@@ -426,7 +496,7 @@ export default function CompletedFightCard({
               const fighter2Rings = getFighterRings(fight.fighter2.id, fighter2Name);
               const baseSize = 75;
               const borderWidth = 3;
-              const gap = 2;
+              const gap = 3;
 
               return (
                 <View style={styles.fighterColumn}>
@@ -447,7 +517,7 @@ export default function CompletedFightCard({
                             borderWidth: borderWidth,
                             borderColor: ringColor,
                             borderRadius: 37.5,
-                            zIndex: index,
+                            zIndex: fighter2Rings.length - index,
                           }}
                         />
                       );

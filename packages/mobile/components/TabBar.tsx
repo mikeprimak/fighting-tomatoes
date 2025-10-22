@@ -21,7 +21,7 @@ function HeaderLogo() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <Image
-        source={require('../assets/Fight-Crew-Logo.png')}
+        source={require('../assets/Fight-Crew-Logo-No-Background.png')}
         style={{ width: 32, height: 32, marginRight: 8 }}
         resizeMode="contain"
       />

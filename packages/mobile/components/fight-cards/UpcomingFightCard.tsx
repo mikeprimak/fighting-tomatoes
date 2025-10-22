@@ -1137,6 +1137,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
+    marginLeft: 10,
   },
   aggregateScoreContainer: {
     flexDirection: 'row',
