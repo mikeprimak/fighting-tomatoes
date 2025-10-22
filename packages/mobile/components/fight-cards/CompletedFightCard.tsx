@@ -45,6 +45,13 @@ export default function CompletedFightCard({
   const sparkle7 = useRef(new Animated.Value(0)).current;
   const sparkle8 = useRef(new Animated.Value(0)).current;
 
+  // Fetch aggregate prediction stats
+  const { data: predictionStats } = useQuery({
+    queryKey: ['fightPredictionStats', fight.id],
+    queryFn: () => apiService.getFightPredictionStats(fight.id),
+    staleTime: 30 * 1000,
+  });
+
   // Fetch aggregate stats for completed fights
   const { data: aggregateStats } = useQuery({
     queryKey: ['fightAggregateStats', fight.id],
@@ -235,7 +242,90 @@ export default function CompletedFightCard({
               );
             })()}
 
-            {/* Centered Ratings - Between fighters */}
+            {/* Hype and Ratings Container - Between fighters */}
+            <View style={styles.centeredScoresContainer}>
+            {/* Hype Scores Section */}
+            <View style={styles.centeredHypeScores}>
+              {/* Community Hype Score */}
+              <View style={styles.aggregateScoreContainer}>
+                {/* Flame icon changes based on hype level */}
+                {(() => {
+                  const hypeScore = predictionStats?.averageHype || 0;
+                  let flameIcon;
+
+                  if (hypeScore >= 8.5) {
+                    // Hot fight (8.5+) - flame with sparkle
+                    flameIcon = require('../../assets/flame-sparkle-3.png');
+                  } else if (hypeScore >= 7) {
+                    // Warm fight (7-8.4) - full flame
+                    flameIcon = require('../../assets/flame-full-2.png');
+                  } else if (hypeScore > 0) {
+                    // Cool fight (<7) - hollow flame
+                    flameIcon = require('../../assets/flame-hollow-1.png');
+                  } else {
+                    // No hype data (0) - grey hollow flame
+                    flameIcon = require('../../assets/flame-hollow-grey-0.png');
+                  }
+
+                  return (
+                    <Image
+                      source={flameIcon}
+                      style={{ width: 20, height: 20, marginRight: 6 }}
+                      resizeMode="contain"
+                    />
+                  );
+                })()}
+                <Text style={[sharedStyles.aggregateLabel, { color: predictionStats?.averageHype ? '#fff' : colors.textSecondary }]}>
+                  {predictionStats?.averageHype !== undefined
+                    ? (predictionStats.averageHype % 1 === 0 ? predictionStats.averageHype.toString() : predictionStats.averageHype.toFixed(1))
+                    : '0'
+                  }
+                </Text>
+              </View>
+
+              {/* User's Personal Hype Score */}
+              <View style={styles.userHypeContainer}>
+                <View style={sharedStyles.ratingRow}>
+                  {/* User hype flame icon changes based on score */}
+                  {(() => {
+                    const userHype = fight.userHypePrediction;
+                    let userFlameIcon;
+                    let flameColor;
+
+                    if (!userHype) {
+                      // No hype - grey hollow flame
+                      userFlameIcon = require('../../assets/flame-hollow-grey-0.png');
+                      flameColor = colors.textSecondary;
+                    } else if (userHype >= 9) {
+                      // High hype (9-10) - blue flame with sparkle
+                      userFlameIcon = require('../../assets/flame-sparkle-blue-7.png');
+                      flameColor = '#83B4F3';
+                    } else if (userHype >= 7) {
+                      // Medium hype (7-8) - full blue flame
+                      userFlameIcon = require('../../assets/flame-full-blue-6.png');
+                      flameColor = '#83B4F3';
+                    } else {
+                      // Low hype (1-6) - hollow blue flame
+                      userFlameIcon = require('../../assets/flame-hollow-blue-8.png');
+                      flameColor = '#83B4F3';
+                    }
+
+                    return (
+                      <Image
+                        source={userFlameIcon}
+                        style={{ width: 20, height: 20, marginRight: 6 }}
+                        resizeMode="contain"
+                      />
+                    );
+                  })()}
+                  <Text style={[sharedStyles.userRatingText, { color: fight.userHypePrediction ? '#83B4F3' : colors.textSecondary }]}>
+                    {fight.userHypePrediction || '0'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Ratings Section */}
             <View style={styles.centeredRatings}>
             {/* Aggregate Rating */}
             <View style={styles.aggregateScoreContainer}>
@@ -332,26 +422,21 @@ export default function CompletedFightCard({
                 />
 
                 <Animated.View style={{ transform: [{ scale: ratingScaleAnim }] }}>
-                  {fight.userRating ? (
-                    <View style={sharedStyles.ratingRow}>
-                      <FontAwesome
-                        name="star"
-                        size={20}
-                        color="#83B4F3"
-                        style={{ marginRight: 6 }}
-                      />
-                      <Text style={[sharedStyles.userRatingText, { color: '#83B4F3' }]}>
-                        {fight.userRating}
-                      </Text>
-                    </View>
-                  ) : (
-                    <Text style={[sharedStyles.unratedText, { color: colors.textSecondary }]}>
-                      Rate{'\n'}This
+                  <View style={sharedStyles.ratingRow}>
+                    <FontAwesome
+                      name="star"
+                      size={20}
+                      color={fight.userRating ? "#83B4F3" : colors.textSecondary}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text style={[sharedStyles.userRatingText, { color: fight.userRating ? '#83B4F3' : colors.textSecondary }]}>
+                      {fight.userRating || '0'}
                     </Text>
-                  )}
+                  </View>
                 </Animated.View>
               </View>
             </TouchableOpacity>
+            </View>
             </View>
             </View>
 
@@ -670,7 +755,7 @@ const styles = StyleSheet.create({
   },
   ratingContainer: {
     position: 'relative',
-    paddingVertical: 8,
+    paddingVertical: 0,
     paddingHorizontal: 0,
   },
   outcomeWithTagsContainer: {
@@ -731,10 +816,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
+  centeredScoresContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  centeredHypeScores: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
   centeredRatings: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 2,
+  },
+  userHypeContainer: {
+    position: 'relative',
+    width: 75,
+    paddingVertical: 8,
+    alignItems: 'flex-start',
   },
   threeDotsButton: {
     position: 'absolute',
