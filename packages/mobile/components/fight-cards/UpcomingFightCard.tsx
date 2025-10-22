@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert } from 'react-native';
-import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6, Entypo } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1034,7 +1034,7 @@ export default function UpcomingFightCard({
           }}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
-          <FontAwesome name="ellipsis-h" size={27} color={colors.textSecondary} />
+          <Entypo name="dots-three-horizontal" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
 
         {/* Toast Notification */}

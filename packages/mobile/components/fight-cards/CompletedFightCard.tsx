@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Image } from 'react-native';
-import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6, Entypo } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useQuery } from '@tanstack/react-query';
@@ -32,6 +32,7 @@ export default function CompletedFightCard({
 
   // Show winner state (revealed when user taps or has rated)
   const [showWinner, setShowWinner] = useState(false);
+
 
   // Animated values for rating save animation (sparkles)
   const ratingScaleAnim = useRef(new Animated.Value(1)).current;
@@ -167,7 +168,8 @@ export default function CompletedFightCard({
   const outcomeParts = getOutcomeParts();
 
   return (
-    <TouchableOpacity onPress={() => router.push(`/fight/${fight.id}`)} activeOpacity={0.7}>
+    <>
+    <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
       <View style={[sharedStyles.container, { backgroundColor: colors.card, position: 'relative', minHeight: 200 }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4, minHeight: 30 }}>
           {fight.weightClass && (
@@ -347,95 +349,73 @@ export default function CompletedFightCard({
 
             {/* User's Personal Rating */}
             <View style={styles.userRatingContainer}>
-              <TouchableOpacity
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onPress(fight);
+              {/* Star sparkles */}
+              {fight.userRating && (
+                <>
+                  {[sparkle1, sparkle2, sparkle3, sparkle4, sparkle5, sparkle6, sparkle7, sparkle8].map((sparkle, index) => {
+                    const positions = [
+                      { top: -10, right: -10, tx: 15, ty: -15 },
+                      { top: -10, left: -10, tx: -15, ty: -15 },
+                      { bottom: -10, right: -10, tx: 15, ty: 15 },
+                      { bottom: -10, left: -10, tx: -15, ty: 15 },
+                      { top: -10, left: 0, right: 0, tx: 0, ty: -20 },
+                      { top: 2, right: -10, tx: 20, ty: 0 },
+                      { bottom: -10, left: 0, right: 0, tx: 0, ty: 20 },
+                      { top: 2, left: -10, tx: -20, ty: 0 },
+                    ];
+                    const pos = positions[index] as any;
+
+                    return (
+                      <Animated.View
+                        key={index}
+                        style={[
+                          sharedStyles.sparkle,
+                          pos,
+                          {
+                            opacity: sparkle.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 0] }),
+                            transform: [
+                              { scale: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
+                              { translateX: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.tx] }) },
+                              { translateY: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.ty] }) },
+                            ],
+                          },
+                        ]}
+                      >
+                        <FontAwesome name="star" size={12} color="#F5C518" />
+                      </Animated.View>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Glow effect */}
+              <Animated.View
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: '#83B4F3',
+                  borderRadius: 20,
+                  opacity: ratingGlowAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.3] }),
+                  transform: [{ scale: ratingGlowAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] }) }],
                 }}
-                onPressIn={() => setIsRatingPressed(true)}
-                onPressOut={() => setIsRatingPressed(false)}
-                activeOpacity={1}
-                style={styles.ratingButton}
-              >
-                <View
-                  style={[
-                    styles.ratingContainer,
-                    {
-                      backgroundColor: isRatingPressed
-                        ? 'rgba(131, 180, 243, 0.15)'
-                        : 'transparent',
-                    },
-                  ]}
-                >
-                {/* Sparkles */}
-                {fight.userRating && (
-                  <>
-                    {[sparkle1, sparkle2, sparkle3, sparkle4, sparkle5, sparkle6, sparkle7, sparkle8].map((sparkle, index) => {
-                      const positions = [
-                        { top: -10, right: -10, tx: 15, ty: -15 },
-                        { top: -10, left: -10, tx: -15, ty: -15 },
-                        { bottom: -10, right: -10, tx: 15, ty: 15 },
-                        { bottom: -10, left: -10, tx: -15, ty: 15 },
-                        { top: -10, left: 0, right: 0, tx: 0, ty: -20 },
-                        { top: 2, right: -10, tx: 20, ty: 0 },
-                        { bottom: -10, left: 0, right: 0, tx: 0, ty: 20 },
-                        { top: 2, left: -10, tx: -20, ty: 0 },
-                      ];
-                      const pos = positions[index] as any;
+              />
 
-                      return (
-                        <Animated.View
-                          key={index}
-                          style={[
-                            sharedStyles.sparkle,
-                            pos,
-                            {
-                              opacity: sparkle.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 0] }),
-                              transform: [
-                                { scale: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
-                                { translateX: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.tx] }) },
-                                { translateY: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.ty] }) },
-                              ],
-                            },
-                          ]}
-                        >
-                          <FontAwesome name="star" size={12} color="#F5C518" />
-                        </Animated.View>
-                      );
-                    })}
-                  </>
-                )}
-
-                {/* Glow effect */}
-                <Animated.View
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: '#83B4F3',
-                    borderRadius: 20,
-                    opacity: ratingGlowAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.3] }),
-                    transform: [{ scale: ratingGlowAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] }) }],
-                  }}
-                />
-
-                <Animated.View style={{ transform: [{ scale: ratingScaleAnim }] }}>
-                  <View style={sharedStyles.ratingRow}>
-                    <FontAwesome
-                      name="star"
-                      size={20}
-                      color={fight.userRating ? "#83B4F3" : colors.textSecondary}
-                      style={{ marginRight: 6 }}
-                    />
-                    <Text style={[sharedStyles.userRatingText, { color: fight.userRating ? '#83B4F3' : colors.textSecondary }]}>
-                      {fight.userRating || '0'}
-                    </Text>
-                  </View>
-                </Animated.View>
-              </View>
-            </TouchableOpacity>
+              <Animated.View style={{ transform: [{ scale: ratingScaleAnim }] }}>
+                <View style={sharedStyles.ratingRow}>
+                  <FontAwesome
+                    name={fight.userRating ? "star" : "star-o"}
+                    size={20}
+                    color={fight.userRating ? "#83B4F3" : colors.textSecondary}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={[sharedStyles.userRatingText, { color: fight.userRating ? '#83B4F3' : colors.textSecondary }]}>
+                    {fight.userRating || '0'}
+                  </Text>
+                </View>
+              </Animated.View>
             </View>
             </View>
             </View>
@@ -669,41 +649,9 @@ export default function CompletedFightCard({
             {/* Outcome and tags */}
             <View style={styles.outcomeWithTagsContainer}>
 
-              {/* Pre-Fight Hype */}
-              <View style={sharedStyles.outcomeLineRow}>
-                <View style={sharedStyles.iconContainer}>
-                  <FontAwesome6 name="fire-flame-curved" size={12} color="#FF6B35" />
-                </View>
-                <Text style={[sharedStyles.outcomeLabel, { color: colors.textSecondary }]}>
-                  How Hyped Was I?
-                </Text>
-                <View style={styles.hypeScoresRow}>
-                  {aggregateStats?.userHypeScore ? (
-                    <Text style={[styles.hypeScoreText, { color: colors.text }]}>
-                      {aggregateStats.userHypeScore}
-                    </Text>
-                  ) : (
-                    <Text style={[styles.hypeScoreText, { color: colors.text }]}>-</Text>
-                  )}
-                  {aggregateStats?.communityAverageHype && (
-                    <>
-                      <Text style={[styles.communityLabel, { color: colors.textSecondary }]}>
-                        Community:
-                      </Text>
-                      <Text style={[styles.hypeScoreText, { color: colors.text }]}>
-                        {aggregateStats.communityAverageHype}
-                      </Text>
-                    </>
-                  )}
-                </View>
-              </View>
-
               {/* Tags - only show when user has rated */}
               {fight.userRating && aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
-                <View style={styles.tagsInlineContainer}>
-                  <View style={sharedStyles.iconContainer}>
-                    <FontAwesome name="hashtag" size={11} color="#F5C518" />
-                  </View>
+                <View style={[styles.tagsInlineContainer, { justifyContent: 'center' }]}>
                   {aggregateStats.topTags.slice(0, 3).map((tag, index) => (
                     <Text key={index} style={[styles.tagText, { color: colors.textSecondary }]}>
                       #{tag.name}{index < 2 ? ' ' : ''}
@@ -724,10 +672,11 @@ export default function CompletedFightCard({
           }}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
-          <FontAwesome name="ellipsis-h" size={27} color={colors.textSecondary} />
+          <Entypo name="dots-three-horizontal" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
+    </>
   );
 }
 
@@ -745,9 +694,10 @@ const styles = StyleSheet.create({
   },
   userRatingContainer: {
     position: 'relative',
-    width: 75,
+    width: 50,
     paddingVertical: 8,
     alignItems: 'flex-start',
+    marginLeft: -25,
   },
   ratingButton: {
     borderRadius: 20,
@@ -820,7 +770,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 2,
+    marginLeft: 20,
   },
   centeredHypeScores: {
     alignItems: 'center',
