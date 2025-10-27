@@ -132,9 +132,15 @@ export function FightCrewAppTabBar() {
       }}
     >
       <Tabs.Screen
+        name="index"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
         name="events"
         options={{
-          title: 'Upcoming',
+          title: 'Upcoming Events',
           tabBarIcon: ({ color, focused }) => {
             // Only show as focused if on the events index page
             const isOnEventsIndex = pathname === '/(tabs)/events' || pathname === '/events';
@@ -147,11 +153,12 @@ export function FightCrewAppTabBar() {
             return (
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 10,
                   color: isOnEventsIndex ? color : colors.tabIconDefault,
+                  textAlign: 'center',
                 }}
               >
-                Upcoming
+                Upcoming Events
               </Text>
             );
           },
@@ -166,6 +173,11 @@ export function FightCrewAppTabBar() {
         name="past-events"
         options={{
           title: 'Past Events',
+          tabBarLabel: ({ color }) => (
+            <Text style={{ fontSize: 10, color, textAlign: 'center' }}>
+              Past Events
+            </Text>
+          ),
           tabBarIcon: ({ color }) => <TabBarIcon name="history" color={color} />,
           headerTitle: () => <HeaderLogo />,
         }}
@@ -173,8 +185,13 @@ export function FightCrewAppTabBar() {
       <Tabs.Screen
         name="community"
         options={{
-          title: 'Community',
-          tabBarIcon: ({ color }) => <TabBarIcon name="globe" color={color} />,
+          title: 'Good Fights',
+          tabBarLabel: ({ color }) => (
+            <Text style={{ fontSize: 10, color, textAlign: 'center' }}>
+              Good Fights
+            </Text>
+          ),
+          tabBarIcon: ({ color }) => <TabBarIcon name="fire" color={color} />,
           headerTitle: () => <HeaderLogo />,
         }}
       />

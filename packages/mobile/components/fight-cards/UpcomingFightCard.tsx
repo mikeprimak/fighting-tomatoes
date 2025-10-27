@@ -791,18 +791,17 @@ export default function UpcomingFightCard({
           </Animated.View>
         )}
 
-        {/* Gradient hype underline - fades in from 50% (0-10%), pure color (10-20%), fades out (20-40%) */}
-        <LinearGradient
-          colors={[halfHypeColor, hypeBorderColor, hypeBorderColor, grayColor, grayColor]}
-          locations={[0, 0.10, 0.20, 0.40, 1]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
+        {/* Left border with full heatmap color */}
+        <View
           style={{
             position: 'absolute',
+            top: 0,
             bottom: 0,
             left: 0,
-            right: 0,
-            height: 2,
+            width: 3,
+            backgroundColor: hypeBorderColor,
+            borderTopLeftRadius: 8,
+            borderBottomLeftRadius: 8,
           }}
         />
       </View>
