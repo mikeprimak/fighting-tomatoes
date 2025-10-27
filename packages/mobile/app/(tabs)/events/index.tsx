@@ -98,6 +98,50 @@ export default function UpcomingEventsScreen() {
     });
   };
 
+  const formatTimeUntil = (dateString: string) => {
+    const eventDate = new Date(dateString);
+    const now = new Date();
+    const diffTime = eventDate.getTime() - now.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return 'TODAY';
+    }
+
+    if (diffDays === 1) {
+      return 'TOMORROW';
+    }
+
+    if (diffDays < 7) {
+      return `IN ${diffDays} DAYS`;
+    }
+
+    const diffWeeks = Math.round(diffDays / 7);
+    if (diffWeeks === 1) {
+      return 'IN 1 WEEK';
+    }
+
+    if (diffWeeks < 4) {
+      return `IN ${diffWeeks} WEEKS`;
+    }
+
+    const diffMonths = Math.round(diffDays / 30);
+    if (diffMonths === 1) {
+      return 'IN 1 MONTH';
+    }
+
+    if (diffMonths < 12) {
+      return `IN ${diffMonths} MONTHS`;
+    }
+
+    const diffYears = Math.round(diffDays / 365);
+    if (diffYears === 1) {
+      return 'IN 1 YEAR';
+    }
+
+    return `IN ${diffYears} YEARS`;
+  };
+
   const parseEventName = (eventName: string) => {
     const colonMatch = eventName.match(/^([^:]+):\s*(.+)$/);
     if (colonMatch) {
@@ -190,6 +234,7 @@ export default function UpcomingEventsScreen() {
             parseEventName={parseEventName}
             formatDate={formatDate}
             formatTime={formatTime}
+            formatTimeUntil={formatTimeUntil}
             recentlyRatedFightId={recentlyRatedFightId}
             recentlyPredictedFightId={recentlyPredictedFightId}
             isFirstEvent={index === 0}
@@ -246,6 +291,7 @@ function EventSection({
   parseEventName,
   formatDate,
   formatTime,
+  formatTimeUntil,
   recentlyRatedFightId,
   recentlyPredictedFightId,
   isFirstEvent,
@@ -257,6 +303,7 @@ function EventSection({
   parseEventName: (name: string) => { line1: string; line2: string };
   formatDate: (date: string) => string;
   formatTime: (date: string) => string;
+  formatTimeUntil: (date: string) => string;
   recentlyRatedFightId: string | null;
   recentlyPredictedFightId: string | null;
   isFirstEvent: boolean;
@@ -308,35 +355,32 @@ function EventSection({
   return (
     <View style={styles.eventSection}>
       {/* Event Banner and Info */}
-      <View style={[styles.eventHeader, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <View style={styles.eventHeader}>
         <Image
           source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
           style={styles.eventBanner}
           resizeMode="cover"
         />
 
-        <View style={styles.eventInfo}>
-          <Text style={[styles.eventName, { color: colors.text }]}>{line1}</Text>
-          {line2 && (
-            <Text style={[styles.eventSubtitle, { color: colors.text }]}>{line2}</Text>
-          )}
+        <View style={[styles.eventInfo, { backgroundColor: colors.card }]}>
+          <Text style={[styles.eventName, { color: colors.text }]}>
+            {line2 ? `${line1}: ${line2}` : line1}
+          </Text>
 
           <View style={styles.eventMeta}>
-            {isLive && (
+            {isLive ? (
               <View style={[styles.statusBadge, { backgroundColor: colors.danger }]}>
                 <Text style={styles.statusBadgeText}>LIVE NOW</Text>
+              </View>
+            ) : (
+              <View style={[styles.statusBadge, { backgroundColor: '#F5C518' }]}>
+                <Text style={[styles.statusBadgeText, { color: '#000000' }]}>{formatTimeUntil(event.date)}</Text>
               </View>
             )}
             <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
               {formatDate(event.date)}
             </Text>
           </View>
-
-          {event.location && (
-            <Text style={[styles.eventLocation, { color: colors.textSecondary }]}>
-              {event.location}
-            </Text>
-          )}
         </View>
       </View>
 
@@ -487,28 +531,28 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: 32,
   },
   eventHeader: {
-    borderRadius: 12,
     overflow: 'hidden',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderWidth: 1,
   },
   eventBanner: {
     width: '100%',
     height: 200,
   },
   eventInfo: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
   },
   eventName: {
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 4,
+    flexShrink: 1,
   },
   eventSubtitle: {
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 12,
+    flexShrink: 1,
   },
   eventMeta: {
     flexDirection: 'row',
