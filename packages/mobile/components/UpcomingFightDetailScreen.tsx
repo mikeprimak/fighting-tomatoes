@@ -264,7 +264,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             style={[
               styles.fighterButton,
               {
-                backgroundColor: selectedWinner === fight.fighter1.id ? '#83B4F3' : colors.background,
+                backgroundColor: selectedWinner === fight.fighter1.id ? '#F5C518' : colors.background,
                 borderColor: colors.border,
               }
             ]}
@@ -281,7 +281,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             <Text style={[
               styles.fighterButtonText,
               {
-                color: selectedWinner === fight.fighter1.id ? '#1a1a1a' : colors.text
+                color: selectedWinner === fight.fighter1.id ? '#000' : colors.text
               }
             ]}>
               {fight.fighter1.lastName}
@@ -292,7 +292,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             style={[
               styles.fighterButton,
               {
-                backgroundColor: selectedWinner === fight.fighter2.id ? '#83B4F3' : colors.background,
+                backgroundColor: selectedWinner === fight.fighter2.id ? '#F5C518' : colors.background,
                 borderColor: colors.border,
               }
             ]}
@@ -309,7 +309,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             <Text style={[
               styles.fighterButtonText,
               {
-                color: selectedWinner === fight.fighter2.id ? '#1a1a1a' : colors.text
+                color: selectedWinner === fight.fighter2.id ? '#000' : colors.text
               }
             ]}>
               {fight.fighter2.lastName}
@@ -331,7 +331,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 style={[
                   styles.methodButton,
                   {
-                    backgroundColor: selectedMethod === method ? '#83B4F3' : colors.background,
+                    backgroundColor: selectedMethod === method ? '#F5C518' : colors.background,
                     borderColor: colors.border,
                   }
                 ]}
@@ -340,7 +340,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 <Text style={[
                   styles.methodButtonText,
                   {
-                    color: selectedMethod === method ? '#1a1a1a' : colors.text
+                    color: selectedMethod === method ? '#000' : colors.text
                   }
                 ]}>
                   {method === 'KO_TKO' ? 'KO/TKO' : method}
@@ -363,23 +363,41 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             <View style={{ position: 'relative' }}>
               {/* Flame icon changes based on selected hype level */}
               {(() => {
-                let flameIcon;
                 if (!selectedHype || selectedHype === 0) {
-                  flameIcon = require('../assets/grey-hollow-160.png');
+                  return (
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={80}
+                      color="#808080"
+                    />
+                  );
                 } else if (selectedHype >= 9) {
-                  flameIcon = require('../assets/blue-full-sparkle-160.png');
+                  return (
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={80}
+                      color="#F5C518"
+                      style={{ textShadowColor: '#F5C518', textShadowRadius: 10 }}
+                    />
+                  );
                 } else if (selectedHype >= 7) {
-                  flameIcon = require('../assets/blue-full-160.png');
+                  return (
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={80}
+                      color="#F5C518"
+                    />
+                  );
                 } else {
-                  flameIcon = require('../assets/blue-hollow-160.png');
+                  return (
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={80}
+                      color="#F5C518"
+                      style={{ opacity: 0.6 }}
+                    />
+                  );
                 }
-                return (
-                  <Image
-                    source={flameIcon}
-                    style={{ width: 80, height: 80 }}
-                    resizeMode="contain"
-                  />
-                );
               })()}
             </View>
             <View style={styles.wheelContainer}>
@@ -422,9 +440,6 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         <View style={styles.flameContainer}>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
             const isSelected = level <= (selectedHype || 0);
-            const flameIcon = isSelected
-              ? require('../assets/blue-full-no-sparkle-160.png')
-              : require('../assets/grey-hollow-160.png');
 
             return (
               <TouchableOpacity
@@ -433,10 +448,10 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 style={styles.flameButton}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Image
-                  source={flameIcon}
-                  style={{ width: 30, height: 30 }}
-                  resizeMode="contain"
+                <FontAwesome6
+                  name="fire-flame-curved"
+                  size={30}
+                  color={isSelected ? '#F5C518' : '#808080'}
                 />
               </TouchableOpacity>
             );

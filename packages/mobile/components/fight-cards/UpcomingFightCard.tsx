@@ -43,43 +43,62 @@ export default function UpcomingFightCard({
   };
 
   // Heatmap function - returns border color based on hype score (0-10)
-  // Fine gradient: ≤7 grey, 7-8.4 orange (#eb8600), 8.5+ red
+  // Uses same logic as flame icon for consistency
   const getHypeBackgroundColor = (hypeScore: number) => {
-    const isDark = colorScheme === 'dark';
+    if (hypeScore === 0) return '#808080'; // Grey for 0
 
-    // Unremarkable tier (≤7.0)
+    // Gradient from grey (1) to orange (7)
     if (hypeScore < 7.0) {
-      return colors.card; // Default grey
+      const score = Math.max(hypeScore, 1);
+      const linear = (score - 1) / 6;
+      const t = linear * linear; // Quadratic curve
+      const r = Math.round(128 + (235 - 128) * t);
+      const g = Math.round(128 + (134 - 128) * t);
+      const b = Math.round(128 + (0 - 128) * t);
+      return `rgb(${r}, ${g}, ${b})`;
     }
 
-    // 7.0-8.4: Orange gradient (#eb8600 = rgb(235, 134, 0))
+    // Gradient from orange (7) to red (8.5) - very gradual, mostly orange
     if (hypeScore < 8.5) {
-      const range = hypeScore - 7.0; // 0.0 to 1.4
-      const baseOpacity = isDark ? 0.25 : 0.18;
-      const maxOpacity = isDark ? 0.85 : 0.75;
-      const opacity = baseOpacity + (range / 1.5) * (maxOpacity - baseOpacity);
-      return `rgba(235, 134, 0, ${opacity.toFixed(2)})`; // Orange
+      const linear = (hypeScore - 7.0) / 1.5; // 0 at 7.0, 1 at 8.5
+      const t = Math.pow(linear, 5); // Quintic curve - stays orange much longer
+      // Interpolate from orange rgb(235, 134, 0) to red rgb(255, 0, 0)
+      const r = Math.round(235 + (255 - 235) * t);
+      const g = Math.round(134 + (0 - 134) * t);
+      const b = Math.round(0 + (0 - 0) * t);
+      return `rgb(${r}, ${g}, ${b})`;
     }
 
-    // 8.5+: Red gradient (rgb(255, 0, 0))
-    if (hypeScore < 9.0) {
-      // 8.5-8.9: Bright red
-      const range = hypeScore - 8.5; // 0.0 to 0.4
-      const baseOpacity = isDark ? 0.75 : 0.65;
-      const maxOpacity = isDark ? 0.85 : 0.75;
-      const opacity = baseOpacity + (range / 0.5) * (maxOpacity - baseOpacity);
-      return `rgba(255, 0, 0, ${opacity.toFixed(2)})`;
-    } else if (hypeScore < 9.5) {
-      // 9.0-9.4: Very bright red
-      const range = hypeScore - 9.0; // 0.0 to 0.4
-      const baseOpacity = isDark ? 0.85 : 0.75;
-      const maxOpacity = isDark ? 0.92 : 0.85;
-      const opacity = baseOpacity + (range / 0.5) * (maxOpacity - baseOpacity);
-      return `rgba(255, 0, 0, ${opacity.toFixed(2)})`;
-    } else {
-      // 9.5-10.0: Pure red
-      return isDark ? '#ff0000' : 'rgba(255, 0, 0, 0.90)';
+    return '#ff0000'; // Red for 8.5+
+  };
+
+  // Heatmap flame icon color - solid colors for icon display
+  const getHypeFlameColor = (hypeScore: number) => {
+    if (hypeScore === 0) return '#808080'; // Grey for 0
+
+    // Gradient from grey (1) to orange (7) - aggressive curve
+    if (hypeScore < 7.0) {
+      const score = Math.max(hypeScore, 1);
+      const linear = (score - 1) / 6;
+      const t = linear * linear; // Quadratic curve
+      const r = Math.round(128 + (235 - 128) * t);
+      const g = Math.round(128 + (134 - 128) * t);
+      const b = Math.round(128 + (0 - 128) * t);
+      return `rgb(${r}, ${g}, ${b})`;
     }
+
+    // Gradient from orange (7) to red (8.5) - very gradual, mostly orange
+    if (hypeScore < 8.5) {
+      const linear = (hypeScore - 7.0) / 1.5; // 0 at 7.0, 1 at 8.5
+      const t = Math.pow(linear, 5); // Quintic curve - stays orange much longer
+      // Interpolate from orange rgb(235, 134, 0) to red rgb(255, 0, 0)
+      const r = Math.round(235 + (255 - 235) * t);
+      const g = Math.round(134 + (0 - 134) * t);
+      const b = Math.round(0 + (0 - 0) * t);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    return '#ff0000'; // Red for 8.5+
   };
 
   // Image error states
@@ -453,28 +472,12 @@ export default function UpcomingFightCard({
             <View style={styles.hypeScoresInline}>
               {/* Community Hype Score */}
               <View style={styles.aggregateScoreContainer}>
-                {(() => {
-                  const hypeScore = predictionStats?.averageHype || 0;
-                  let flameIcon;
-
-                  if (hypeScore >= 8.5) {
-                    flameIcon = require('../../assets/flame-sparkle-3.png');
-                  } else if (hypeScore >= 7) {
-                    flameIcon = require('../../assets/flame-full-2.png');
-                  } else if (hypeScore > 0) {
-                    flameIcon = require('../../assets/flame-hollow-1.png');
-                  } else {
-                    flameIcon = require('../../assets/flame-hollow-grey-0.png');
-                  }
-
-                  return (
-                    <Image
-                      source={flameIcon}
-                      style={{ width: 18, height: 18, marginRight: 4 }}
-                      resizeMode="contain"
-                    />
-                  );
-                })()}
+                <FontAwesome6
+                  name="fire-flame-curved"
+                  size={18}
+                  color={getHypeFlameColor(predictionStats?.averageHype || 0)}
+                  style={{ marginRight: 4 }}
+                />
                 <Text style={[sharedStyles.aggregateLabel, { color: predictionStats?.averageHype ? '#fff' : colors.textSecondary, fontSize: 13 }]}>
                   {predictionStats?.averageHype !== undefined
                     ? predictionStats.averageHype.toFixed(1)
@@ -513,7 +516,7 @@ export default function UpcomingFightCard({
                           },
                         ]}
                       >
-                        <FontAwesome6 name="fire-flame-curved" size={8} color="#83B4F3" />
+                        <FontAwesome6 name="fire-flame-curved" size={8} color="#F5C518" />
                       </Animated.View>
                     );
                   })}
@@ -526,7 +529,7 @@ export default function UpcomingFightCard({
                       left: -2,
                       right: -2,
                       bottom: -2,
-                      backgroundColor: '#83B4F3',
+                      backgroundColor: '#F5C518',
                       borderRadius: 12,
                       opacity: predictionGlowAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.3] }),
                       transform: [{ scale: predictionGlowAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }],
@@ -534,27 +537,13 @@ export default function UpcomingFightCard({
                   />
 
                     <Animated.View style={{ transform: [{ scale: predictionScaleAnim }], flexDirection: 'row', alignItems: 'center' }}>
-                      {(() => {
-                        const userHype = fight.userHypePrediction;
-                        let userFlameIcon;
-
-                        if (userHype >= 9) {
-                          userFlameIcon = require('../../assets/flame-sparkle-blue-7.png');
-                        } else if (userHype >= 7) {
-                          userFlameIcon = require('../../assets/flame-full-blue-6.png');
-                        } else {
-                          userFlameIcon = require('../../assets/flame-hollow-blue-8.png');
-                        }
-
-                        return (
-                          <Image
-                            source={userFlameIcon}
-                            style={{ width: 18, height: 18, marginRight: 4 }}
-                            resizeMode="contain"
-                          />
-                        );
-                      })()}
-                      <Text style={[sharedStyles.userRatingText, { color: '#83B4F3', fontSize: 13 }]}>
+                      <FontAwesome6
+                        name="fire-flame-curved"
+                        size={18}
+                        color="#F5C518"
+                        style={{ marginRight: 4 }}
+                      />
+                      <Text style={[sharedStyles.userRatingText, { color: '#FFFFFF', fontSize: 13 }]}>
                         {fight.userHypePrediction}
                       </Text>
                     </Animated.View>
@@ -564,10 +553,11 @@ export default function UpcomingFightCard({
                 {/* Show placeholder when no prediction */}
                 {!fight.userHypePrediction && (
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Image
-                      source={require('../../assets/flame-hollow-grey-0.png')}
-                      style={{ width: 18, height: 18, marginRight: 4 }}
-                      resizeMode="contain"
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={18}
+                      color="#808080"
+                      style={{ marginRight: 4 }}
                     />
                     <Text style={[sharedStyles.userRatingText, { color: colors.textSecondary, fontSize: 13 }]}>
                       0
