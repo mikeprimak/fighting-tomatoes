@@ -554,10 +554,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginLeft: 'auto', // Push to the right when no left content
   },
   sectionTitle: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   sectionTime: {
     fontSize: 12,

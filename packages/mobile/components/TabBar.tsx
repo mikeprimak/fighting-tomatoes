@@ -163,7 +163,7 @@ export function FightCrewAppTabBar() {
             );
           },
           headerShown: pathname === '/(tabs)/events' || pathname === '/events',
-          headerTitle: () => <HeaderLogo />,
+          headerTitle: 'Upcoming Events',
           tabBarStyle: {
             display: pathname.includes('/events/') ? 'none' : 'flex',
           },
@@ -179,7 +179,7 @@ export function FightCrewAppTabBar() {
             </Text>
           ),
           tabBarIcon: ({ color }) => <TabBarIcon name="history" color={color} />,
-          headerTitle: () => <HeaderLogo />,
+          headerTitle: 'Past Events',
         }}
       />
       <Tabs.Screen
@@ -192,7 +192,7 @@ export function FightCrewAppTabBar() {
             </Text>
           ),
           tabBarIcon: ({ color }) => <TabBarIcon name="fire" color={color} />,
-          headerTitle: () => <HeaderLogo />,
+          headerTitle: 'Good Fights',
         }}
       />
       <Tabs.Screen
@@ -200,7 +200,7 @@ export function FightCrewAppTabBar() {
         options={{
           title: 'News',
           tabBarIcon: ({ color }) => <TabBarIcon name="newspaper-o" color={color} />,
-          headerTitle: () => <HeaderLogo />,
+          headerTitle: 'News',
         }}
       />
       <Tabs.Screen
@@ -208,7 +208,7 @@ export function FightCrewAppTabBar() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
-          headerTitle: () => <HeaderLogo />,
+          headerTitle: 'Profile',
         }}
       />
     </Tabs>
