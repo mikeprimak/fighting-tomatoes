@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,10 @@ import {
   StyleSheet,
   Image,
   useColorScheme,
+  Animated,
+  Easing,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
@@ -68,6 +71,9 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   // Local state for selections (will be saved immediately on change)
   const [selectedWinner, setSelectedWinner] = useState<string | null>(fight.userPredictedWinner || null);
   const [selectedHype, setSelectedHype] = useState<number | null>(fight.userHypePrediction || null);
+
+  // Wheel animation for number display
+  const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 120 : 1200)).current;
 
   // Fetch prediction stats
   const { data: predictionStats } = useQuery({
@@ -132,6 +138,29 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
     },
   });
 
+  // Animated wheel effect for number display
+  const animateToNumber = (targetNumber: number) => {
+    const currentNumber = selectedHype || 0;
+    if (currentNumber === targetNumber) return;
+
+    // Stop any existing animation to prevent conflicts
+    wheelAnimation.stopAnimation();
+
+    // Calculate target position
+    // Numbers are arranged 10,9,8,7,6,5,4,3,2,1 (10 at top, 1 at bottom)
+    // Position 0 = number 10, position 120 = number 9, ... position 1080 = number 1
+    // Position 1200 = blank (below "1")
+    const targetPosition = targetNumber === 0 ? 1200 : (10 - targetNumber) * 120;
+
+    // Simple, smooth animation
+    Animated.timing(wheelAnimation, {
+      toValue: targetPosition,
+      duration: 800,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  };
+
   const handleWinnerSelection = (fighterId: string) => {
     const newWinner = selectedWinner === fighterId ? null : fighterId;
     setSelectedWinner(newWinner);
@@ -141,6 +170,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const handleHypeSelection = (level: number) => {
     const newHype = selectedHype === level ? level : level;
     setSelectedHype(newHype);
+    animateToNumber(newHype);
     saveHypeMutation.mutate(newHype);
   };
 
@@ -226,32 +256,65 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
           How hyped are you?
         </Text>
 
-        {/* Large display flame */}
+        {/* Large display flame with wheel animation */}
         <View style={styles.displayFlameContainer}>
-          {(() => {
-            let flameIcon;
-            if (!selectedHype || selectedHype === 0) {
-              flameIcon = require('../assets/grey-hollow-160.png');
-            } else if (selectedHype >= 9) {
-              flameIcon = require('../assets/blue-full-sparkle-160.png');
-            } else if (selectedHype >= 7) {
-              flameIcon = require('../assets/blue-full-160.png');
-            } else {
-              flameIcon = require('../assets/blue-hollow-160.png');
-            }
-            return (
-              <View style={styles.flameWithNumber}>
-                <Image
-                  source={flameIcon}
-                  style={{ width: 80, height: 80 }}
-                  resizeMode="contain"
-                />
-                {selectedHype ? (
-                  <Text style={[styles.flameNumber, { color: colors.text }]}>{selectedHype}</Text>
-                ) : null}
-              </View>
-            );
-          })()}
+          <View style={styles.animatedFlameContainer}>
+            <View style={{ position: 'relative' }}>
+              {/* Flame icon changes based on selected hype level */}
+              {(() => {
+                let flameIcon;
+                if (!selectedHype || selectedHype === 0) {
+                  flameIcon = require('../assets/grey-hollow-160.png');
+                } else if (selectedHype >= 9) {
+                  flameIcon = require('../assets/blue-full-sparkle-160.png');
+                } else if (selectedHype >= 7) {
+                  flameIcon = require('../assets/blue-full-160.png');
+                } else {
+                  flameIcon = require('../assets/blue-hollow-160.png');
+                }
+                return (
+                  <Image
+                    source={flameIcon}
+                    style={{ width: 80, height: 80 }}
+                    resizeMode="contain"
+                  />
+                );
+              })()}
+            </View>
+            <View style={styles.wheelContainer}>
+              <Animated.View style={[
+                styles.wheelNumbers,
+                {
+                  transform: [{
+                    translateY: wheelAnimation.interpolate({
+                      inputRange: [0, 1200],
+                      outputRange: [475, -725],
+                    })
+                  }]
+                }
+              ]}>
+                {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => (
+                  <Text key={number} style={[styles.wheelNumber, { color: colors.text }]}>
+                    {number}
+                  </Text>
+                ))}
+              </Animated.View>
+
+              {/* Smooth top gradient fade */}
+              <LinearGradient
+                colors={[colors.card, `${colors.card}DD`, `${colors.card}99`, `${colors.card}44`, 'transparent']}
+                style={[styles.fadeOverlay, { top: -8, height: 38 }]}
+                pointerEvents="none"
+              />
+
+              {/* Smooth bottom gradient fade */}
+              <LinearGradient
+                colors={['transparent', `${colors.card}44`, `${colors.card}99`, `${colors.card}DD`, colors.card, colors.card]}
+                style={[styles.fadeOverlay, { bottom: -6, height: 31 }]}
+                pointerEvents="none"
+              />
+            </View>
+          </View>
         </View>
 
         {/* Row of selectable flames (1-10) */}
@@ -471,17 +534,39 @@ const styles = StyleSheet.create({
   },
   displayFlameContainer: {
     alignItems: 'center',
-    marginVertical: 16,
+    marginBottom: 1,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
-  flameWithNumber: {
+  animatedFlameContainer: {
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  flameNumber: {
+  wheelContainer: {
     position: 'absolute',
-    fontSize: 32,
+    top: 0,
+    left: 0,
+    width: 80,
+    height: 80,
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  wheelNumbers: {
+    alignItems: 'center',
+    paddingTop: 150,
+  },
+  wheelNumber: {
+    fontSize: 52,
     fontWeight: 'bold',
+    height: 120,
+    textAlign: 'center',
+    lineHeight: 120,
+  },
+  fadeOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
   },
   flameContainer: {
     flexDirection: 'row',
