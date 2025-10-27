@@ -413,13 +413,34 @@ export default function UpcomingFightCard({
   };
 
   const hypeBorderColor = getHypeBackgroundColor(predictionStats?.averageHype || 0);
+  const grayColor = colors.border || '#888888';
+
+  // Create a 50% opacity version of the hype color for the fade-in start
+  const getHalfOpacityColor = (color: string) => {
+    // If it's already an rgba color, halve the alpha
+    const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    if (rgbaMatch) {
+      const [, r, g, b, a] = rgbaMatch;
+      const alpha = a ? parseFloat(a) * 0.5 : 0.5;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    // If it's a hex color, convert to rgba with 0.5 opacity
+    const hexMatch = color.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+    if (hexMatch) {
+      const [, r, g, b] = hexMatch;
+      return `rgba(${parseInt(r, 16)}, ${parseInt(g, 16)}, ${parseInt(b, 16)}, 0.5)`;
+    }
+    // Fallback to the original color
+    return color;
+  };
+
+  const halfHypeColor = getHalfOpacityColor(hypeBorderColor);
 
   return (
     <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
       <View style={[sharedStyles.container, {
-        borderBottomWidth: 3,
-        borderBottomColor: hypeBorderColor,
-        position: 'relative'
+        position: 'relative',
+        overflow: 'hidden'
       }]}>
           {showEvent && (
             <Text style={[sharedStyles.eventText, { color: colors.textSecondary }]}>
@@ -753,6 +774,21 @@ export default function UpcomingFightCard({
             </View>
           </Animated.View>
         )}
+
+        {/* Gradient hype underline - fades in from 50% (0-10%), pure color (10-20%), fades out (20-40%) */}
+        <LinearGradient
+          colors={[halfHypeColor, hypeBorderColor, hypeBorderColor, grayColor, grayColor]}
+          locations={[0, 0.10, 0.20, 0.40, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 2,
+          }}
+        />
       </View>
     </TouchableOpacity>
   );
