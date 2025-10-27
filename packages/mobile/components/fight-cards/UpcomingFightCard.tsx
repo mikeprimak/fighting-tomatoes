@@ -477,17 +477,18 @@ export default function UpcomingFightCard({
                 })()}
                 <Text style={[sharedStyles.aggregateLabel, { color: predictionStats?.averageHype ? '#fff' : colors.textSecondary, fontSize: 13 }]}>
                   {predictionStats?.averageHype !== undefined
-                    ? (predictionStats.averageHype % 1 === 0 ? predictionStats.averageHype.toString() : predictionStats.averageHype.toFixed(1))
-                    : '0'
+                    ? predictionStats.averageHype.toFixed(1)
+                    : '0.0'
                   }
                 </Text>
               </View>
 
               {/* User's Personal Hype Score */}
-              {fight.userHypePrediction && (
-                <View style={styles.userHypeInline}>
-                  {/* Flame sparkles */}
-                  {[flame1, flame2, flame3, flame4].map((flame, index) => {
+              <View style={styles.userHypeInline}>
+                {fight.userHypePrediction && (
+                  <>
+                    {/* Flame sparkles */}
+                    {[flame1, flame2, flame3, flame4].map((flame, index) => {
                     const positions = [
                       { top: -3, right: -3, tx: 8, ty: -8 },
                       { top: -3, left: -3, tx: -8, ty: -8 },
@@ -532,33 +533,48 @@ export default function UpcomingFightCard({
                     }}
                   />
 
-                  <Animated.View style={{ transform: [{ scale: predictionScaleAnim }], flexDirection: 'row', alignItems: 'center' }}>
-                    {(() => {
-                      const userHype = fight.userHypePrediction;
-                      let userFlameIcon;
+                    <Animated.View style={{ transform: [{ scale: predictionScaleAnim }], flexDirection: 'row', alignItems: 'center' }}>
+                      {(() => {
+                        const userHype = fight.userHypePrediction;
+                        let userFlameIcon;
 
-                      if (userHype >= 9) {
-                        userFlameIcon = require('../../assets/flame-sparkle-blue-7.png');
-                      } else if (userHype >= 7) {
-                        userFlameIcon = require('../../assets/flame-full-blue-6.png');
-                      } else {
-                        userFlameIcon = require('../../assets/flame-hollow-blue-8.png');
-                      }
+                        if (userHype >= 9) {
+                          userFlameIcon = require('../../assets/flame-sparkle-blue-7.png');
+                        } else if (userHype >= 7) {
+                          userFlameIcon = require('../../assets/flame-full-blue-6.png');
+                        } else {
+                          userFlameIcon = require('../../assets/flame-hollow-blue-8.png');
+                        }
 
-                      return (
-                        <Image
-                          source={userFlameIcon}
-                          style={{ width: 18, height: 18, marginRight: 4 }}
-                          resizeMode="contain"
-                        />
-                      );
-                    })()}
-                    <Text style={[sharedStyles.userRatingText, { color: '#83B4F3', fontSize: 13 }]}>
-                      {fight.userHypePrediction}
+                        return (
+                          <Image
+                            source={userFlameIcon}
+                            style={{ width: 18, height: 18, marginRight: 4 }}
+                            resizeMode="contain"
+                          />
+                        );
+                      })()}
+                      <Text style={[sharedStyles.userRatingText, { color: '#83B4F3', fontSize: 13 }]}>
+                        {fight.userHypePrediction}
+                      </Text>
+                    </Animated.View>
+                  </>
+                )}
+
+                {/* Show placeholder when no prediction */}
+                {!fight.userHypePrediction && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Image
+                      source={require('../../assets/flame-hollow-grey-0.png')}
+                      style={{ width: 18, height: 18, marginRight: 4 }}
+                      resizeMode="contain"
+                    />
+                    <Text style={[sharedStyles.userRatingText, { color: colors.textSecondary, fontSize: 13 }]}>
+                      0
                     </Text>
-                  </Animated.View>
-                </View>
-              )}
+                  </View>
+                )}
+              </View>
             </View>
 
             {/* Fighter names together with "vs" */}
