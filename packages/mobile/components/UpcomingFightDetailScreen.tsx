@@ -62,6 +62,11 @@ interface UpcomingFightDetailScreenProps {
   onPredictionSuccess?: () => void;
 }
 
+// Placeholder image for fighters
+const getFighterPlaceholderImage = (fighterId: string) => {
+  return require('../assets/fighters/fighter-default-alpha.png');
+};
+
 export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }: UpcomingFightDetailScreenProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];

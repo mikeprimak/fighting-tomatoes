@@ -579,54 +579,25 @@ export default function UpcomingFightCard({
 
             {/* Fighter names together with "vs" */}
             <View style={styles.fighterNamesVs}>
-              {/* Fighter 1 with method badges above */}
+              {/* Fighter 1 with method badges below */}
               <View style={styles.fighterWithBadge}>
-                {/* Badges - absolutely positioned above */}
-                {false && (() => {
+                <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
+                  {cleanFighterName(getFighterName(fight.fighter1))}
+                </Text>
+                {/* Badges - below fighter name */}
+                {(() => {
                   const fighter1Name = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
                   const fighter1UserPrediction = aggregateStats?.userPrediction?.winner === fighter1Name;
                   const fighter1CommunityPrediction = aggregateStats?.communityPrediction?.winner === fighter1Name && !!predictionStats;
 
                   return (
-                    <View style={styles.badgesAbsolute}>
-                      {/* User prediction badge - blue with sparkles */}
+                    <View style={styles.badgesBelow}>
+                      {/* User prediction badge - blue */}
                       {fighter1UserPrediction && aggregateStats?.userPrediction?.method && (
-                        <View style={styles.methodTextContainer}>
-                          {/* Method sparkles */}
-                          {[methodSparkle1, methodSparkle2, methodSparkle3, methodSparkle4].map((sparkle, index) => {
-                            const positions = [
-                              { top: -3, right: -3, tx: 8, ty: -8 },
-                              { top: -3, left: -3, tx: -8, ty: -8 },
-                              { bottom: -3, right: -3, tx: 8, ty: 8 },
-                              { bottom: -3, left: -3, tx: -8, ty: 8 },
-                            ];
-                            const pos = positions[index] as any;
-
-                            return (
-                              <Animated.View
-                                key={index}
-                                style={[
-                                  sharedStyles.sparkle,
-                                  pos,
-                                  {
-                                    opacity: sparkle.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 0] }),
-                                    transform: [
-                                      { scale: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
-                                      { translateX: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.tx] }) },
-                                      { translateY: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.ty] }) },
-                                    ],
-                                  },
-                                ]}
-                              >
-                                <FontAwesome name="star" size={8} color="#83B4F3" />
-                              </Animated.View>
-                            );
-                          })}
-                          <View style={styles.methodBadge}>
-                            <Text style={styles.methodBadgeText}>
-                              {formatMethod(aggregateStats.userPrediction.method)}
-                            </Text>
-                          </View>
+                        <View style={styles.methodBadgeSmall}>
+                          <Text style={styles.methodBadgeSmallText}>
+                            {formatMethod(aggregateStats.userPrediction.method)}
+                          </Text>
                         </View>
                       )}
                       {/* Community prediction badge - yellow */}
@@ -634,8 +605,8 @@ export default function UpcomingFightCard({
                         const topMethods = getTopMethods(predictionStats!.fighter1MethodPredictions);
                         if (topMethods.length > 0) {
                           return (
-                            <View style={[styles.methodBadge, { backgroundColor: '#F5C518' }]}>
-                              <Text style={[styles.methodBadgeText, { color: '#000' }]}>
+                            <View style={[styles.methodBadgeSmall, { backgroundColor: '#F5C518' }]}>
+                              <Text style={[styles.methodBadgeSmallText, { color: '#000' }]}>
                                 {topMethods.map(m => m.label).join('/')}
                               </Text>
                             </View>
@@ -646,61 +617,29 @@ export default function UpcomingFightCard({
                     </View>
                   );
                 })()}
-                <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
-                  {cleanFighterName(getFighterName(fight.fighter1))}
-                </Text>
               </View>
 
               <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
 
-              {/* Fighter 2 with method badges above */}
+              {/* Fighter 2 with method badges below */}
               <View style={styles.fighterWithBadge}>
-                {/* Badges - absolutely positioned above */}
-                {false && (() => {
+                <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
+                  {cleanFighterName(getFighterName(fight.fighter2))}
+                </Text>
+                {/* Badges - below fighter name */}
+                {(() => {
                   const fighter2Name = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
                   const fighter2UserPrediction = aggregateStats?.userPrediction?.winner === fighter2Name;
                   const fighter2CommunityPrediction = aggregateStats?.communityPrediction?.winner === fighter2Name && !!predictionStats;
 
                   return (
-                    <View style={styles.badgesAbsolute}>
-                      {/* User prediction badge - blue with sparkles */}
+                    <View style={styles.badgesBelow}>
+                      {/* User prediction badge - blue */}
                       {fighter2UserPrediction && aggregateStats?.userPrediction?.method && (
-                        <View style={styles.methodTextContainer}>
-                          {/* Method sparkles */}
-                          {[methodSparkle1, methodSparkle2, methodSparkle3, methodSparkle4].map((sparkle, index) => {
-                            const positions = [
-                              { top: -3, right: -3, tx: 8, ty: -8 },
-                              { top: -3, left: -3, tx: -8, ty: -8 },
-                              { bottom: -3, right: -3, tx: 8, ty: 8 },
-                              { bottom: -3, left: -3, tx: -8, ty: 8 },
-                            ];
-                            const pos = positions[index] as any;
-
-                            return (
-                              <Animated.View
-                                key={index}
-                                style={[
-                                  sharedStyles.sparkle,
-                                  pos,
-                                  {
-                                    opacity: sparkle.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 0] }),
-                                    transform: [
-                                      { scale: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
-                                      { translateX: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.tx] }) },
-                                      { translateY: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.ty] }) },
-                                    ],
-                                  },
-                                ]}
-                              >
-                                <FontAwesome name="star" size={8} color="#83B4F3" />
-                              </Animated.View>
-                            );
-                          })}
-                          <View style={styles.methodBadge}>
-                            <Text style={styles.methodBadgeText}>
-                              {formatMethod(aggregateStats.userPrediction.method)}
-                            </Text>
-                          </View>
+                        <View style={styles.methodBadgeSmall}>
+                          <Text style={styles.methodBadgeSmallText}>
+                            {formatMethod(aggregateStats.userPrediction.method)}
+                          </Text>
                         </View>
                       )}
                       {/* Community prediction badge - yellow */}
@@ -708,8 +647,8 @@ export default function UpcomingFightCard({
                         const topMethods = getTopMethods(predictionStats!.fighter2MethodPredictions);
                         if (topMethods.length > 0) {
                           return (
-                            <View style={[styles.methodBadge, { backgroundColor: '#F5C518' }]}>
-                              <Text style={[styles.methodBadgeText, { color: '#000' }]}>
+                            <View style={[styles.methodBadgeSmall, { backgroundColor: '#F5C518' }]}>
+                              <Text style={[styles.methodBadgeSmallText, { color: '#000' }]}>
                                 {topMethods.map(m => m.label).join('/')}
                               </Text>
                             </View>
@@ -720,9 +659,6 @@ export default function UpcomingFightCard({
                     </View>
                   );
                 })()}
-                <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
-                  {cleanFighterName(getFighterName(fight.fighter2))}
-                </Text>
               </View>
             </View>
           </View>
@@ -1022,6 +958,26 @@ const styles = StyleSheet.create({
   methodBadgeText: {
     color: '#FFFFFF',
     fontSize: 8,
+    fontWeight: '600',
+  },
+  badgesBelow: {
+    position: 'absolute',
+    bottom: -14,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  methodBadgeSmall: {
+    backgroundColor: '#83B4F3',
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    borderRadius: 2,
+  },
+  methodBadgeSmallText: {
+    color: '#000000',
+    fontSize: 7,
     fontWeight: '600',
     textTransform: 'uppercase',
   },
