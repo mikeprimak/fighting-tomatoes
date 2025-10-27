@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { FightDisplayCard, RateFightModal, PredictionModal } from '../../../components';
@@ -51,6 +52,7 @@ export default function UpcomingEventsScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Modal state
   const [selectedFight, setSelectedFight] = useState<Fight | null>(null);
@@ -174,13 +176,8 @@ export default function UpcomingEventsScreen() {
   };
 
   const handleFightPress = (fight: Fight) => {
-    if (fight.hasStarted || fight.isComplete) {
-      setSelectedFight(fight);
-      setShowRatingModal(true);
-    } else {
-      setSelectedFight(fight);
-      setShowPredictionModal(true);
-    }
+    // Navigate to fight detail screen
+    router.push(`/fight/${fight.id}`);
   };
 
   const closeModal = () => {
