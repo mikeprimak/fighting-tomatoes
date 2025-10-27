@@ -394,7 +394,7 @@ function EventSection({
               <View style={styles.sectionHeader}>
                 {/* Column Headers - On the left */}
                 <View style={styles.columnHeaders}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary, borderBottomWidth: 1, borderBottomColor: '#dc2626' }]}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary, borderBottomWidth: 1, borderBottomColor: '#ff0000' }]}>
                       HYPE
                     </Text>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
