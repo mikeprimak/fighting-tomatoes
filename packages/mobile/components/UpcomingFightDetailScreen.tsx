@@ -179,6 +179,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
       onPredictionSuccess?.();
     },
   });
@@ -201,6 +202,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
       onPredictionSuccess?.();
     },
   });
@@ -223,6 +225,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
       onPredictionSuccess?.();
     },
   });
