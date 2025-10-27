@@ -67,6 +67,35 @@ const getFighterPlaceholderImage = (fighterId: string) => {
   return require('../assets/fighters/fighter-default-alpha.png');
 };
 
+// Heatmap flame icon color - solid colors for icon display
+const getHypeFlameColor = (hypeScore: number) => {
+  if (hypeScore === 0) return '#808080'; // Grey for 0
+
+  // Gradient from grey (1) to orange (7) - aggressive curve
+  if (hypeScore < 7.0) {
+    const score = Math.max(hypeScore, 1);
+    const linear = (score - 1) / 6;
+    const t = linear * linear; // Quadratic curve
+    const r = Math.round(128 + (235 - 128) * t);
+    const g = Math.round(128 + (134 - 128) * t);
+    const b = Math.round(128 + (0 - 128) * t);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  // Gradient from orange (7) to red (8.5) - very gradual, mostly orange
+  if (hypeScore < 8.5) {
+    const linear = (hypeScore - 7.0) / 1.5; // 0 at 7.0, 1 at 8.5
+    const t = Math.pow(linear, 5); // Quintic curve - stays orange much longer
+    // Interpolate from orange rgb(235, 134, 0) to red rgb(255, 0, 0)
+    const r = Math.round(235 + (255 - 235) * t);
+    const g = Math.round(134 + (0 - 134) * t);
+    const b = Math.round(0 + (0 - 0) * t);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  return '#ff0000'; // Red for 8.5+
+};
+
 export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }: UpcomingFightDetailScreenProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -616,7 +645,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 Hype
               </Text>
               <View style={styles.barContainer}>
-                <FontAwesome6 name="fire-flame-curved" size={20} color="#FF6B35" />
+                <FontAwesome6 name="fire-flame-curved" size={20} color={getHypeFlameColor(displayPredictionStats?.averageHype || 0)} />
                 <Text style={[styles.hypeChartValue, { color: colors.text }]}>
                   {displayPredictionStats?.averageHype !== undefined
                     ? displayPredictionStats.averageHype % 1 === 0
