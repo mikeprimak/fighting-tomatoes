@@ -4,9 +4,9 @@
     "slug": "fightcrewapp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/Fight-Crew-Logo-No-Background.png",
+    "icon": "./assets/Fight-Crew-Logo-No-Background-fills-space.png",
     "splash": {
-      "image": "./assets/Fight-Crew-Logo-No-Background.png",
+      "image": "./assets/Fight-Crew-Logo-No-Background-fills-space.png",
       "resizeMode": "contain",
       "backgroundColor": "#181818"
     },
@@ -20,7 +20,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/Fight-Crew-Logo-No-Background.png",
+        "foregroundImage": "./assets/Fight-Crew-Logo-No-Background-fills-space.png",
         "backgroundColor": "#1a1a1a"
       },
       "package": "com.fightcrewapp.mobile",

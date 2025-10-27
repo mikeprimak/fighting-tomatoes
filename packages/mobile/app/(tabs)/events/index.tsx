@@ -506,49 +506,64 @@ export default function EventsScreen() {
       // Don't render fights for non-current events to save memory
       return (
         <View style={[styles.eventContainer, { width: SCREEN_WIDTH }]}>
-          {/* Event Header - always render */}
-          <View style={[styles.header, { backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border }]}>
-            <View style={styles.headerRow}>
-              {/* Previous Event Indicator */}
-              {prevEvent && (
-                <Animated.View style={[styles.swipeIndicator, { opacity: chevronOpacity }]}>
-                  <FontAwesome name="chevron-left" size={16} color={colors.textSecondary} />
-                </Animated.View>
-              )}
-
-              {/* Current Event */}
-              <View style={styles.centerEventContainer}>
-                <Text style={[styles.eventName, { color: colors.text }]} numberOfLines={1}>
-                  {line1 || 'Loading...'}
-                </Text>
-                {line2 && (
-                  <Text style={[styles.eventSubtitle, { color: colors.text }]} numberOfLines={1}>
-                    {line2}
-                  </Text>
-                )}
-                {isLive ? (
-                  <View style={styles.liveIndicator}>
-                    <Animated.View style={[
-                      styles.liveDot,
-                      { backgroundColor: colors.danger, opacity: pulseAnim }
-                    ]} />
-                    <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
-                  </View>
-                ) : (
-                  <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-                    {formatEventStatus(event)}
-                  </Text>
-                )}
+          {/* Event Header with Banner and Info Side by Side */}
+          {event?.id && (
+            <View style={[styles.compactHeader, { backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border }]}>
+              {/* Left: Banner Image (50%) */}
+              <View style={styles.bannerContainer}>
+                <Image
+                  source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
+                  style={styles.compactBannerImage}
+                  resizeMode="cover"
+                />
               </View>
 
-              {/* Next Event Indicator */}
-              {nextEvent && (
-                <Animated.View style={[styles.swipeIndicator, { opacity: chevronOpacity }]}>
-                  <FontAwesome name="chevron-right" size={16} color={colors.textSecondary} />
-                </Animated.View>
-              )}
+              {/* Right: Event Info (50%) */}
+              <View style={styles.eventInfoContainer}>
+                <View style={styles.swipeIndicatorsRow}>
+                  {/* Previous Event Indicator */}
+                  {prevEvent && (
+                    <Animated.View style={[styles.swipeIndicatorCompact, { opacity: chevronOpacity }]}>
+                      <FontAwesome name="chevron-left" size={12} color={colors.textSecondary} />
+                    </Animated.View>
+                  )}
+
+                  <View style={{ flex: 1 }} />
+
+                  {/* Next Event Indicator */}
+                  {nextEvent && (
+                    <Animated.View style={[styles.swipeIndicatorCompact, { opacity: chevronOpacity }]}>
+                      <FontAwesome name="chevron-right" size={12} color={colors.textSecondary} />
+                    </Animated.View>
+                  )}
+                </View>
+
+                <View style={styles.eventTextContent}>
+                  <Text style={[styles.eventNameCompact, { color: colors.text }]}>
+                    {line1 || 'Loading...'}
+                  </Text>
+                  {line2 && (
+                    <Text style={[styles.eventSubtitleCompact, { color: colors.text }]}>
+                      {line2}
+                    </Text>
+                  )}
+                  {isLive ? (
+                    <View style={styles.liveIndicatorCompact}>
+                      <Animated.View style={[
+                        styles.liveDot,
+                        { backgroundColor: colors.danger, opacity: pulseAnim }
+                      ]} />
+                      <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
+                    </View>
+                  ) : (
+                    <Text style={[styles.eventDateCompact, { color: colors.textSecondary }]}>
+                      {formatEventStatus(event)}
+                    </Text>
+                  )}
+                </View>
+              </View>
             </View>
-          </View>
+          )}
 
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
@@ -563,95 +578,74 @@ export default function EventsScreen() {
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
         >
-          {/* Event Header */}
-          <View style={[styles.header, { backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border }]}>
-            <View style={styles.headerRow}>
-              {/* Previous Event Indicator */}
-              {prevEvent && (
-                <Animated.View style={[styles.swipeIndicator, { opacity: chevronOpacity }]}>
-                  <FontAwesome name="chevron-left" size={16} color={colors.textSecondary} />
-                </Animated.View>
-              )}
-
-              {/* Current Event */}
-              <View style={styles.centerEventContainer}>
-                <Text style={[styles.eventName, { color: colors.text }]} numberOfLines={1}>
-                  {line1 || 'Loading...'}
-                </Text>
-                {line2 && (
-                  <Text style={[styles.eventSubtitle, { color: colors.text }]} numberOfLines={1}>
-                    {line2}
-                  </Text>
-                )}
-                {isLive ? (
-                  <View style={styles.liveIndicator}>
-                    <Animated.View style={[
-                      styles.liveDot,
-                      { backgroundColor: colors.danger, opacity: pulseAnim }
-                    ]} />
-                    <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
-                  </View>
-                ) : (
-                  <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-                    {formatEventStatus(event)}
-                  </Text>
-                )}
+          {/* Event Header with Banner and Info Side by Side */}
+          {event?.id && (
+            <View style={[styles.compactHeader, { backgroundColor: colors.card, borderBottomWidth: 1, borderBottomColor: colors.border }]}>
+              {/* Left: Banner Image (50%) */}
+              <View style={styles.bannerContainer}>
+                <Image
+                  source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
+                  style={styles.compactBannerImage}
+                  resizeMode="cover"
+                />
               </View>
 
-              {/* Next Event Indicator */}
-              {nextEvent && (
-                <Animated.View style={[styles.swipeIndicator, { opacity: chevronOpacity }]}>
-                  <FontAwesome name="chevron-right" size={16} color={colors.textSecondary} />
-                </Animated.View>
-              )}
-            </View>
-          </View>
+              {/* Right: Event Info (50%) */}
+              <View style={styles.eventInfoContainer}>
+                <View style={styles.swipeIndicatorsRow}>
+                  {/* Previous Event Indicator */}
+                  {prevEvent && (
+                    <Animated.View style={[styles.swipeIndicatorCompact, { opacity: chevronOpacity }]}>
+                      <FontAwesome name="chevron-left" size={12} color={colors.textSecondary} />
+                    </Animated.View>
+                  )}
 
-          {/* Event Banner Image */}
-          {event?.id && (
-            <View style={{ height: bannerHeight, marginBottom: 16 }}>
-              <Image
-                source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
-                style={{ position: 'absolute', left: 0, right: 0, width: SCREEN_WIDTH, height: bannerHeight }}
-                resizeMode="cover"
-                onLoad={(e) => {
-                  const { width, height } = e.nativeEvent.source;
-                  if (width && height) {
-                    const calculatedHeight = (SCREEN_WIDTH / width) * height;
-                    setBannerHeight(calculatedHeight);
-                  }
-                }}
-              />
-            </View>
-          )}
+                  <View style={{ flex: 1 }} />
 
-          {/* User Engagement Summary */}
-          {isAuthenticated && engagementData && (
-            <EventEngagementSummary
-              totalFights={engagementData.totalFights}
-              predictionsCount={engagementData.predictionsCount}
-              ratingsCount={engagementData.ratingsCount}
-              alertsCount={engagementData.alertsCount}
-              averageHype={engagementData.averageHype}
-              topHypedFights={engagementData.topHypedFights || []}
-              userAvatar={user?.avatar}
-              userInitial={
-                user?.firstName ? user.firstName.charAt(0).toUpperCase() :
-                user?.displayName ? user.displayName.charAt(0).toUpperCase() :
-                user?.email ? user.email.charAt(0).toUpperCase() : '?'
-              }
-            />
+                  {/* Next Event Indicator */}
+                  {nextEvent && (
+                    <Animated.View style={[styles.swipeIndicatorCompact, { opacity: chevronOpacity }]}>
+                      <FontAwesome name="chevron-right" size={12} color={colors.textSecondary} />
+                    </Animated.View>
+                  )}
+                </View>
+
+                <View style={styles.eventTextContent}>
+                  <Text style={[styles.eventNameCompact, { color: colors.text }]}>
+                    {line1 || 'Loading...'}
+                  </Text>
+                  {line2 && (
+                    <Text style={[styles.eventSubtitleCompact, { color: colors.text }]}>
+                      {line2}
+                    </Text>
+                  )}
+                  {isLive ? (
+                    <View style={styles.liveIndicatorCompact}>
+                      <Animated.View style={[
+                        styles.liveDot,
+                        { backgroundColor: colors.danger, opacity: pulseAnim }
+                      ]} />
+                      <Text style={[styles.liveText, { color: colors.danger }]}>Live</Text>
+                    </View>
+                  ) : (
+                    <Text style={[styles.eventDateCompact, { color: colors.textSecondary }]}>
+                      {formatEventStatus(event)}
+                    </Text>
+                  )}
+                </View>
+              </View>
+            </View>
           )}
 
           {/* Main Card */}
           {mainCard.length > 0 && (
             <View style={styles.cardSection}>
               <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary, fontSize: 12, fontWeight: '500' }]}>
                   MAIN CARD
                 </Text>
                 {event.mainStartTime && (
-                  <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
+                  <Text style={[styles.sectionTime, { color: colors.textSecondary, fontSize: 12 }]}>
                     {formatTime(event.mainStartTime)}
                   </Text>
                 )}
@@ -676,11 +670,11 @@ export default function EventsScreen() {
           {prelimCard.length > 0 && (
             <View style={styles.cardSection}>
               <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary, fontSize: 12, fontWeight: '500' }]}>
                   PRELIMINARY CARD
                 </Text>
                 {event.prelimStartTime && (
-                  <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
+                  <Text style={[styles.sectionTime, { color: colors.textSecondary, fontSize: 12 }]}>
                     {formatTime(event.prelimStartTime)}
                   </Text>
                 )}
@@ -705,11 +699,11 @@ export default function EventsScreen() {
           {earlyPrelims.length > 0 && (
             <View style={styles.cardSection}>
               <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary, fontSize: 12, fontWeight: '500' }]}>
                   EARLY PRELIMS
                 </Text>
                 {event.earlyPrelimStartTime && (
-                  <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
+                  <Text style={[styles.sectionTime, { color: colors.textSecondary, fontSize: 12 }]}>
                     {formatTime(event.earlyPrelimStartTime)}
                   </Text>
                 )}
@@ -928,8 +922,62 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: 16,
     alignSelf: 'center',
   },
+  compactHeader: {
+    flexDirection: 'row',
+    height: 140,
+    marginBottom: 16,
+  },
+  bannerContainer: {
+    width: '50%',
+    height: '100%',
+  },
+  compactBannerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  eventInfoContainer: {
+    width: '50%',
+    height: '100%',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    justifyContent: 'flex-start',
+  },
+  swipeIndicatorsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  swipeIndicatorCompact: {
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eventTextContent: {
+    flex: 1,
+    justifyContent: 'flex-start',
+  },
+  eventNameCompact: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  eventSubtitleCompact: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  eventDateCompact: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  liveIndicatorCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
   cardSection: {
-    marginTop: 20,
+    marginTop: 8,
   },
   sectionHeader: {
     flexDirection: 'row',

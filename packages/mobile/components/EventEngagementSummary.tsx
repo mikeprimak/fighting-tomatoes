@@ -67,43 +67,7 @@ export default function EventEngagementSummary({
 
         {/* Content */}
         <View style={styles.content}>
-          {/* Most Hyped Fights Row */}
-          {topHypedFights.length > 0 && (
-            <View style={styles.hypedSection}>
-          <View style={styles.row}>
-            <View style={styles.iconContainer}>
-              <Image
-                source={require('../assets/flame-sparkle-3.png')}
-                style={{ width: 14, height: 14 }}
-                resizeMode="contain"
-              />
-            </View>
-            <Text style={[styles.text, { color: colors.textSecondary }]}>
-              I'm hyped for:
-            </Text>
-          </View>
-          {topHypedFights.map((fight) => {
-            const fighter1LastName = getLastName(fight.fighter1);
-            const fighter2LastName = getLastName(fight.fighter2);
-            const predictedFighter1 = fight.predictedWinner === fight.fighter1Id;
-            const predictedFighter2 = fight.predictedWinner === fight.fighter2Id;
-
-            return (
-              <Text key={fight.fightId} style={[styles.fightText, { color: colors.text }]}>
-                <Text style={predictedFighter1 ? { color: '#83B4F3' } : undefined}>
-                  {fighter1LastName}
-                </Text>
-                {' vs '}
-                <Text style={predictedFighter2 ? { color: '#83B4F3' } : undefined}>
-                  {fighter2LastName}
-                </Text>
-              </Text>
-            );
-          })}
-        </View>
-      )}
-
-          {/* Ratings Row (Optional - if you want to show this) */}
+          {/* Ratings Row */}
           {ratingsCount > 0 && (
             <View style={styles.row}>
               <View style={styles.iconContainer}>
