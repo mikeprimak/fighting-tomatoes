@@ -392,20 +392,19 @@ function EventSection({
           {mainCard.length > 0 && (
             <View style={styles.cardSection}>
               <View style={styles.sectionHeader}>
-                {/* Column Headers - Only for first event, on the left */}
-                {isFirstEvent && (
-                  <View style={styles.columnHeaders}>
+                {/* Column Headers - On the left */}
+                <View style={styles.columnHeaders}>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary, borderBottomWidth: 1, borderBottomColor: '#dc2626' }]}>
                       HYPE
                     </Text>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
                       /
                     </Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary, borderBottomWidth: 1, borderBottomColor: '#83B4F3' }]}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary, borderBottomWidth: 1, borderBottomColor: '#F5C518' }]}>
                       MY HYPE
                     </Text>
                   </View>
-                )}
+                
 
                 {/* Right side - Title and Time grouped together */}
                 <View style={styles.sectionHeaderRight}>
@@ -609,7 +608,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4, // Space between HYPE, /, and MY HYPE
-    marginLeft: 7, // Push away from left edge to align with score columns (moved 8px left total)
+    marginLeft: 4, // Push away from left edge to align with score columns
   },
   columnHeaderText: {
     fontSize: 10,
