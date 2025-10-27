@@ -132,17 +132,9 @@ export function FightCrewAppTabBar() {
       }}
     >
       <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Crews',
-          tabBarIcon: ({ color }) => <TabBarIcon name="comments" color={color} />,
-          headerTitle: () => <HeaderLogo />,
-        }}
-      />
-      <Tabs.Screen
         name="events"
         options={{
-          title: 'Events',
+          title: 'Upcoming',
           tabBarIcon: ({ color, focused }) => {
             // Only show as focused if on the events index page
             const isOnEventsIndex = pathname === '/(tabs)/events' || pathname === '/events';
@@ -159,7 +151,7 @@ export function FightCrewAppTabBar() {
                   color: isOnEventsIndex ? color : colors.tabIconDefault,
                 }}
               >
-                Events
+                Upcoming
               </Text>
             );
           },
@@ -168,6 +160,14 @@ export function FightCrewAppTabBar() {
           tabBarStyle: {
             display: pathname.includes('/events/') ? 'none' : 'flex',
           },
+        }}
+      />
+      <Tabs.Screen
+        name="past-events"
+        options={{
+          title: 'Past Events',
+          tabBarIcon: ({ color }) => <TabBarIcon name="history" color={color} />,
+          headerTitle: () => <HeaderLogo />,
         }}
       />
       <Tabs.Screen
