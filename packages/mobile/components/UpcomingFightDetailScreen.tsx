@@ -371,30 +371,12 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                       color="#808080"
                     />
                   );
-                } else if (selectedHype >= 9) {
-                  return (
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={80}
-                      color="#F5C518"
-                      style={{ textShadowColor: '#F5C518', textShadowRadius: 10 }}
-                    />
-                  );
-                } else if (selectedHype >= 7) {
-                  return (
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={80}
-                      color="#F5C518"
-                    />
-                  );
                 } else {
                   return (
                     <FontAwesome6
                       name="fire-flame-curved"
                       size={80}
                       color="#F5C518"
-                      style={{ opacity: 0.6 }}
                     />
                   );
                 }
@@ -450,7 +432,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
               >
                 <FontAwesome6
                   name="fire-flame-curved"
-                  size={30}
+                  size={32}
                   color={isSelected ? '#F5C518' : '#808080'}
                 />
               </TouchableOpacity>
@@ -487,7 +469,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#F5C518',
+                            backgroundColor: '#eb8600',
                           }
                         ]}
                       >
@@ -509,7 +491,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#F5C518CC',
+                            backgroundColor: '#eb8600CC',
                           }
                         ]}
                       >
@@ -531,7 +513,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#F5C5184D',
+                            backgroundColor: '#eb86004D',
                           }
                         ]}
                       >
@@ -567,7 +549,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#F5C518',
+                            backgroundColor: '#eb8600',
                           }
                         ]}
                       >
@@ -589,7 +571,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#F5C518CC',
+                            backgroundColor: '#eb8600CC',
                           }
                         ]}
                       >
@@ -611,7 +593,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#F5C5184D',
+                            backgroundColor: '#eb86004D',
                           }
                         ]}
                       >
@@ -737,8 +719,7 @@ const styles = StyleSheet.create({
   },
   flameContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 4,
+    justifyContent: 'space-between',
     paddingHorizontal: 8,
     marginTop: -15,
   },
