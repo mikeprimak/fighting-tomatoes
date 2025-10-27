@@ -8,7 +8,6 @@ import {
   Image,
   useColorScheme,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
@@ -61,25 +60,9 @@ interface UpcomingFightDetailScreenProps {
   onPredictionSuccess?: () => void;
 }
 
-// Placeholder image selection for fighters
-const getFighterPlaceholderImage = (fighterId: string) => {
-  const images = [
-    require('../assets/fighters/fighter-1.jpg'),
-    require('../assets/fighters/fighter-2.jpg'),
-    require('../assets/fighters/fighter-3.jpg'),
-    require('../assets/fighters/fighter-4.jpg'),
-    require('../assets/fighters/fighter-5.jpg'),
-    require('../assets/fighters/fighter-6.jpg'),
-  ];
-  const lastCharCode = fighterId.charCodeAt(fighterId.length - 1);
-  const index = lastCharCode % images.length;
-  return images[index];
-};
-
 export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }: UpcomingFightDetailScreenProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   // Local state for selections (will be saved immediately on change)
@@ -169,190 +152,9 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       .join(' ');
   };
 
-  // Determine which rings to show for each fighter
-  const getFighterRings = (fighterId: string, fighterName: string, isFighter2: boolean) => {
-    const rings = [];
-
-    // Community prediction ring - yellow for fighter1, gold for fighter2
-    if (aggregateStats?.communityPrediction?.winner === fighterName) {
-      rings.push(isFighter2 ? 'community-gold' : 'community');
-    }
-
-    // Blue ring - user's prediction
-    if (selectedWinner === fighterId) {
-      rings.push('user');
-    }
-
-    return rings;
-  };
-
   return (
     <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]}>
-      {/* Fighter Matchup - Clickable */}
-      <View style={styles.matchupContainer}>
-        {/* Fighter 1 */}
-        <TouchableOpacity
-          style={styles.fighterContainer}
-          onPress={() => router.push(`/fighter/${fight.fighter1.id}`)}
-        >
-          {(() => {
-            const fighter1Rings = getFighterRings(
-              fight.fighter1.id,
-              `${fight.fighter1.firstName} ${fight.fighter1.lastName}`,
-              false
-            );
-            const borderWidth = 3;
-            const gap = 2;
-            const baseSize = 125;
 
-            return (
-              <View style={{ width: baseSize, height: baseSize, marginBottom: 12, position: 'relative' }}>
-                {fighter1Rings.map((ring, index) => {
-                  const ringColor = ring === 'community' ? '#F5C518' : ring === 'community-gold' ? '#8A7014' : '#83B4F3';
-                  const inset = index * (borderWidth + gap);
-
-                  return (
-                    <View
-                      key={`${ring}-${index}`}
-                      style={{
-                        position: 'absolute',
-                        top: inset,
-                        left: inset,
-                        right: inset,
-                        bottom: inset,
-                        borderWidth: borderWidth,
-                        borderColor: ringColor,
-                        borderRadius: baseSize / 2,
-                        zIndex: index,
-                      }}
-                    />
-                  );
-                })}
-
-                <Image
-                  source={
-                    fight.fighter1.profileImage
-                      ? { uri: fight.fighter1.profileImage }
-                      : getFighterPlaceholderImage(fight.fighter1.id)
-                  }
-                  style={{
-                    width: baseSize,
-                    height: baseSize,
-                    borderRadius: baseSize / 2,
-                    zIndex: 100,
-                  }}
-                />
-              </View>
-            );
-          })()}
-          <Text style={[styles.fighterName, { color: colors.text }]}>
-            {fight.fighter1.firstName} {fight.fighter1.lastName}
-          </Text>
-          {fight.fighter1.nickname && (
-            <Text style={[styles.fighterNickname, { color: colors.textSecondary }]}>
-              "{fight.fighter1.nickname}"
-            </Text>
-          )}
-          {fight.fighter1Odds && (
-            <Text style={[styles.fighterRecord, { color: colors.textSecondary }]} numberOfLines={1}>
-              {fight.fighter1Odds} ({(() => {
-                const odds = parseInt(fight.fighter1Odds);
-                if (odds <= -400) return 'Massive Favorite';
-                if (odds <= -200) return 'Heavy Favorite';
-                if (odds < -110) return 'Favorite';
-                if (odds <= 110) return 'Even';
-                if (odds <= 200) return 'Minor Underdog';
-                if (odds <= 400) return 'Underdog';
-                return 'Major Underdog';
-              })()})
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        {/* VS Divider */}
-        <View style={styles.vsContainer}>
-          <Text style={[styles.vsText, { color: colors.textSecondary }]}>VS</Text>
-        </View>
-
-        {/* Fighter 2 */}
-        <TouchableOpacity
-          style={styles.fighterContainer}
-          onPress={() => router.push(`/fighter/${fight.fighter2.id}`)}
-        >
-          {(() => {
-            const fighter2Rings = getFighterRings(
-              fight.fighter2.id,
-              `${fight.fighter2.firstName} ${fight.fighter2.lastName}`,
-              true
-            );
-            const borderWidth = 3;
-            const gap = 2;
-            const baseSize = 125;
-
-            return (
-              <View style={{ width: baseSize, height: baseSize, marginBottom: 12, position: 'relative' }}>
-                {fighter2Rings.map((ring, index) => {
-                  const ringColor = ring === 'community' ? '#F5C518' : ring === 'community-gold' ? '#8A7014' : '#83B4F3';
-                  const inset = index * (borderWidth + gap);
-
-                  return (
-                    <View
-                      key={`${ring}-${index}`}
-                      style={{
-                        position: 'absolute',
-                        top: inset,
-                        left: inset,
-                        right: inset,
-                        bottom: inset,
-                        borderWidth: borderWidth,
-                        borderColor: ringColor,
-                        borderRadius: baseSize / 2,
-                        zIndex: index,
-                      }}
-                    />
-                  );
-                })}
-
-                <Image
-                  source={
-                    fight.fighter2.profileImage
-                      ? { uri: fight.fighter2.profileImage }
-                      : getFighterPlaceholderImage(fight.fighter2.id)
-                  }
-                  style={{
-                    width: baseSize,
-                    height: baseSize,
-                    borderRadius: baseSize / 2,
-                    zIndex: 100,
-                  }}
-                />
-              </View>
-            );
-          })()}
-          <Text style={[styles.fighterName, { color: colors.text }]}>
-            {fight.fighter2.firstName} {fight.fighter2.lastName}
-          </Text>
-          {fight.fighter2.nickname && (
-            <Text style={[styles.fighterNickname, { color: colors.textSecondary }]}>
-              "{fight.fighter2.nickname}"
-            </Text>
-          )}
-          {fight.fighter2Odds && (
-            <Text style={[styles.fighterRecord, { color: colors.textSecondary }]} numberOfLines={1}>
-              {fight.fighter2Odds} ({(() => {
-                const odds = parseInt(fight.fighter2Odds);
-                if (odds <= -400) return 'Massive Favorite';
-                if (odds <= -200) return 'Heavy Favorite';
-                if (odds < -110) return 'Favorite';
-                if (odds <= 110) return 'Even';
-                if (odds <= 200) return 'Minor Underdog';
-                if (odds <= 400) return 'Underdog';
-                return 'Major Underdog';
-              })()})
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
 
       {/* Who Do You Think Will Win? */}
       <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -633,38 +435,6 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
-  },
-  matchupContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-  },
-  fighterContainer: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  fighterName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  fighterNickname: {
-    fontSize: 13,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  fighterRecord: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  vsContainer: {
-    paddingHorizontal: 8,
-  },
-  vsText: {
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   section: {
     marginHorizontal: 4,
