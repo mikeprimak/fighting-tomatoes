@@ -582,7 +582,7 @@ export default function UpcomingFightCard({
 
                   return (
                     <View style={styles.badgesBelow}>
-                      {/* User prediction badge - blue */}
+                      {/* User prediction badge - yellow */}
                       {fighter1UserPrediction && aggregateStats?.userPrediction?.method && (
                         <View style={styles.methodBadgeSmall}>
                           <Text style={styles.methodBadgeSmallText}>
@@ -590,13 +590,13 @@ export default function UpcomingFightCard({
                           </Text>
                         </View>
                       )}
-                      {/* Community prediction badge - yellow */}
+                      {/* Community prediction badge - hollow yellow */}
                       {fighter1CommunityPrediction && (() => {
                         const topMethods = getTopMethods(predictionStats!.fighter1MethodPredictions);
                         if (topMethods.length > 0) {
                           return (
-                            <View style={[styles.methodBadgeSmall, { backgroundColor: '#F5C518' }]}>
-                              <Text style={[styles.methodBadgeSmallText, { color: '#000' }]}>
+                            <View style={styles.methodBadgeSmallHollow}>
+                              <Text style={styles.methodBadgeSmallHollowText}>
                                 {topMethods.map(m => m.label).join('/')}
                               </Text>
                             </View>
@@ -624,7 +624,7 @@ export default function UpcomingFightCard({
 
                   return (
                     <View style={styles.badgesBelow}>
-                      {/* User prediction badge - blue */}
+                      {/* User prediction badge - yellow */}
                       {fighter2UserPrediction && aggregateStats?.userPrediction?.method && (
                         <View style={styles.methodBadgeSmall}>
                           <Text style={styles.methodBadgeSmallText}>
@@ -632,13 +632,13 @@ export default function UpcomingFightCard({
                           </Text>
                         </View>
                       )}
-                      {/* Community prediction badge - yellow */}
+                      {/* Community prediction badge - hollow yellow */}
                       {fighter2CommunityPrediction && (() => {
                         const topMethods = getTopMethods(predictionStats!.fighter2MethodPredictions);
                         if (topMethods.length > 0) {
                           return (
-                            <View style={[styles.methodBadgeSmall, { backgroundColor: '#F5C518' }]}>
-                              <Text style={[styles.methodBadgeSmallText, { color: '#000' }]}>
+                            <View style={styles.methodBadgeSmallHollow}>
+                              <Text style={styles.methodBadgeSmallHollowText}>
                                 {topMethods.map(m => m.label).join('/')}
                               </Text>
                             </View>
@@ -960,13 +960,27 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   methodBadgeSmall: {
-    backgroundColor: '#83B4F3',
+    backgroundColor: '#F5C518',
     paddingHorizontal: 3,
     paddingVertical: 1,
     borderRadius: 2,
   },
   methodBadgeSmallText: {
     color: '#000000',
+    fontSize: 7,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  methodBadgeSmallHollow: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 2,
+    paddingVertical: 0,
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: '#808080',
+  },
+  methodBadgeSmallHollowText: {
+    color: '#808080',
     fontSize: 7,
     fontWeight: '600',
     textTransform: 'uppercase',
