@@ -469,7 +469,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#eb8600',
+                            backgroundColor: '#FF6B35',
                           }
                         ]}
                       >
@@ -491,7 +491,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#eb8600CC',
+                            backgroundColor: '#FF6B35CC',
                           }
                         ]}
                       >
@@ -513,7 +513,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#eb86004D',
+                            backgroundColor: '#FF6B354D',
                           }
                         ]}
                       >
@@ -549,7 +549,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#eb8600',
+                            backgroundColor: '#FF6B35',
                           }
                         ]}
                       >
@@ -571,7 +571,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#eb8600CC',
+                            backgroundColor: '#FF6B35CC',
                           }
                         ]}
                       >
@@ -593,7 +593,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#eb86004D',
+                            backgroundColor: '#FF6B354D',
                           }
                         ]}
                       >
