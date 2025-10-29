@@ -224,9 +224,18 @@ function EventSection({ event }: { event: Event }) {
             {/* Main Card */}
             {mainCard.length > 0 && (
               <View style={styles.cardSection}>
-                <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>
-                  MAIN CARD
-                </Text>
+                <View style={styles.sectionHeader}>
+                  <View style={styles.columnHeaders}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      HYPE
+                    </Text>
+                  </View>
+                  <View style={styles.sectionHeaderRight}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                      MAIN CARD
+                    </Text>
+                  </View>
+                </View>
                 {mainCard.map((fight: Fight) => (
                   <CompletedFightCard
                     key={fight.id}
@@ -241,9 +250,18 @@ function EventSection({ event }: { event: Event }) {
             {/* Preliminary Card */}
             {prelims.length > 0 && (
               <View style={styles.cardSection}>
-                <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>
-                  PRELIMINARY CARD
-                </Text>
+                <View style={styles.sectionHeader}>
+                  <View style={styles.columnHeaders}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      HYPE
+                    </Text>
+                  </View>
+                  <View style={styles.sectionHeaderRight}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                      PRELIMINARY CARD
+                    </Text>
+                  </View>
+                </View>
                 {prelims.map((fight: Fight) => (
                   <CompletedFightCard
                     key={fight.id}
@@ -258,9 +276,18 @@ function EventSection({ event }: { event: Event }) {
             {/* Early Prelims */}
             {earlyPrelims.length > 0 && (
               <View style={styles.cardSection}>
-                <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>
-                  EARLY PRELIMS
-                </Text>
+                <View style={styles.sectionHeader}>
+                  <View style={styles.columnHeaders}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      HYPE
+                    </Text>
+                  </View>
+                  <View style={styles.sectionHeaderRight}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                      EARLY PRELIMS
+                    </Text>
+                  </View>
+                </View>
                 {earlyPrelims.map((fight: Fight) => (
                   <CompletedFightCard
                     key={fight.id}
@@ -432,9 +459,34 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginTop: 8,
   },
   sectionHeader: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 8,
-    marginLeft: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  sectionHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 'auto',
+  },
+  sectionTitle: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  columnHeaders: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginLeft: -11,
+    width: 40,
+    justifyContent: 'center',
+  },
+  columnHeaderText: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
 });

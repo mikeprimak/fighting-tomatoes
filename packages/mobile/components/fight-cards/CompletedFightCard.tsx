@@ -1,50 +1,151 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert } from 'react-native';
 import { FontAwesome, FontAwesome6, Entypo } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
 import { router } from 'expo-router';
+import { useAuth } from '../../store/AuthContext';
 import { BaseFightCardProps } from './shared/types';
-import { getFighterImage, getFighterName, cleanFighterName, formatDate, formatMethod, getLastName } from './shared/utils';
+import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface CompletedFightCardProps extends BaseFightCardProps {
-  animateRating?: boolean;
+  isNextFight?: boolean;
+  hasLiveFight?: boolean;
+  lastCompletedFightTime?: string;
+  animatePrediction?: boolean;
 }
 
 export default function CompletedFightCard({
   fight,
   onPress,
   showEvent = true,
-  animateRating = false,
+  isNextFight = false,
+  hasLiveFight = false,
+  lastCompletedFightTime,
+  animatePrediction = false,
 }: CompletedFightCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Local formatMethod function for this component - shows "KO" instead of "KO/TKO"
+  const formatMethod = (method: string | null | undefined) => {
+    if (!method) return '';
+    if (method === 'KO_TKO') return 'KO';
+    if (method === 'DECISION') return 'DEC';
+    if (method === 'SUBMISSION') return 'SUB';
+    return method;
+  };
+
+  // Heatmap function - returns border color based on hype score (0-10)
+  // Uses same logic as flame icon for consistency
+  const getHypeBackgroundColor = (hypeScore: number) => {
+    if (hypeScore === 0) return '#808080'; // Grey for 0
+
+    // Gradient from grey (1) to orange (7)
+    if (hypeScore < 7.0) {
+      const score = Math.max(hypeScore, 1);
+      const linear = (score - 1) / 6;
+      const t = linear * linear; // Quadratic curve
+      const r = Math.round(128 + (235 - 128) * t);
+      const g = Math.round(128 + (134 - 128) * t);
+      const b = Math.round(128 + (0 - 128) * t);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // Gradient from orange (7) to red (8.5) - very gradual, mostly orange
+    if (hypeScore < 8.5) {
+      const linear = (hypeScore - 7.0) / 1.5; // 0 at 7.0, 1 at 8.5
+      const t = Math.pow(linear, 5); // Quintic curve - stays orange much longer
+      // Interpolate from orange rgb(235, 134, 0) to red rgb(255, 0, 0)
+      const r = Math.round(235 + (255 - 235) * t);
+      const g = Math.round(134 + (0 - 134) * t);
+      const b = Math.round(0 + (0 - 0) * t);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    return '#ff0000'; // Red for 8.5+
+  };
+
+  // Heatmap flame icon color - solid colors for icon display
+  const getHypeFlameColor = (hypeScore: number) => {
+    if (hypeScore === 0) return '#808080'; // Grey for 0
+
+    // Gradient from grey (1) to orange (7) - aggressive curve
+    if (hypeScore < 7.0) {
+      const score = Math.max(hypeScore, 1);
+      const linear = (score - 1) / 6;
+      const t = linear * linear; // Quadratic curve
+      const r = Math.round(128 + (235 - 128) * t);
+      const g = Math.round(128 + (134 - 128) * t);
+      const b = Math.round(128 + (0 - 128) * t);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // Gradient from orange (7) to red (8.5) - very gradual, mostly orange
+    if (hypeScore < 8.5) {
+      const linear = (hypeScore - 7.0) / 1.5; // 0 at 7.0, 1 at 8.5
+      const t = Math.pow(linear, 5); // Quintic curve - stays orange much longer
+      // Interpolate from orange rgb(235, 134, 0) to red rgb(255, 0, 0)
+      const r = Math.round(235 + (255 - 235) * t);
+      const g = Math.round(134 + (0 - 134) * t);
+      const b = Math.round(0 + (0 - 0) * t);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    return '#ff0000'; // Red for 8.5+
+  };
 
   // Image error states
   const [fighter1ImageError, setFighter1ImageError] = useState(false);
   const [fighter2ImageError, setFighter2ImageError] = useState(false);
 
-  // Rating button press state
-  const [isRatingPressed, setIsRatingPressed] = useState(false);
+  // Bell notification state
+  const [toastMessage, setToastMessage] = useState<string>('');
+  const bellRotation = useRef(new Animated.Value(0)).current;
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTranslateY = useRef(new Animated.Value(50)).current;
 
-  // Show winner state (revealed when user taps or has rated)
-  const [showWinner, setShowWinner] = useState(false);
+  // Prediction button press state
+  const [isPredictionPressed, setIsPredictionPressed] = useState(false);
 
+  // Track when "Up next..." first appeared
+  const upNextStartTimeRef = useRef<number | null>(null);
 
-  // Animated values for rating save animation (sparkles)
-  const ratingScaleAnim = useRef(new Animated.Value(1)).current;
-  const ratingGlowAnim = useRef(new Animated.Value(0)).current;
-  const sparkle1 = useRef(new Animated.Value(0)).current;
-  const sparkle2 = useRef(new Animated.Value(0)).current;
-  const sparkle3 = useRef(new Animated.Value(0)).current;
-  const sparkle4 = useRef(new Animated.Value(0)).current;
-  const sparkle5 = useRef(new Animated.Value(0)).current;
-  const sparkle6 = useRef(new Animated.Value(0)).current;
-  const sparkle7 = useRef(new Animated.Value(0)).current;
-  const sparkle8 = useRef(new Animated.Value(0)).current;
+  // Animation for "Starting soon..." text pulse
+  const startingSoonPulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Animated values for prediction save animation (flames)
+  const predictionScaleAnim = useRef(new Animated.Value(1)).current;
+  const predictionGlowAnim = useRef(new Animated.Value(0)).current;
+  const flame1 = useRef(new Animated.Value(0)).current;
+  const flame2 = useRef(new Animated.Value(0)).current;
+  const flame3 = useRef(new Animated.Value(0)).current;
+  const flame4 = useRef(new Animated.Value(0)).current;
+  const flame5 = useRef(new Animated.Value(0)).current;
+  const flame6 = useRef(new Animated.Value(0)).current;
+  const flame7 = useRef(new Animated.Value(0)).current;
+  const flame8 = useRef(new Animated.Value(0)).current;
+
+  // Animated values for fighter image sparkles
+  const fighterSparkle1 = useRef(new Animated.Value(0)).current;
+  const fighterSparkle2 = useRef(new Animated.Value(0)).current;
+  const fighterSparkle3 = useRef(new Animated.Value(0)).current;
+  const fighterSparkle4 = useRef(new Animated.Value(0)).current;
+
+  // Animated values for method text sparkles
+  const methodSparkle1 = useRef(new Animated.Value(0)).current;
+  const methodSparkle2 = useRef(new Animated.Value(0)).current;
+  const methodSparkle3 = useRef(new Animated.Value(0)).current;
+  const methodSparkle4 = useRef(new Animated.Value(0)).current;
+
+  // Animated value for hot fight flame glow
+  const hotFightGlowAnim = useRef(new Animated.Value(0)).current;
 
   // Fetch aggregate prediction stats
   const { data: predictionStats } = useQuery({
@@ -53,12 +154,106 @@ export default function CompletedFightCard({
     staleTime: 30 * 1000,
   });
 
-  // Fetch aggregate stats for completed fights
+  // Fetch aggregate stats (includes user prediction and community prediction)
   const { data: aggregateStats } = useQuery({
     queryKey: ['fightAggregateStats', fight.id],
     queryFn: () => apiService.getFightAggregateStats(fight.id),
     staleTime: 60 * 1000,
   });
+
+  // Bell ringing animation
+  const animateBellRing = () => {
+    bellRotation.setValue(0);
+    Animated.sequence([
+      Animated.timing(bellRotation, { toValue: 1, duration: 100, useNativeDriver: true }),
+      Animated.timing(bellRotation, { toValue: -1, duration: 100, useNativeDriver: true }),
+      Animated.timing(bellRotation, { toValue: 1, duration: 100, useNativeDriver: true }),
+      Animated.timing(bellRotation, { toValue: 0, duration: 100, useNativeDriver: true }),
+    ]).start();
+  };
+
+  // Toast notification animation
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    toastOpacity.setValue(0);
+    toastTranslateY.setValue(50); // Start from below
+
+    Animated.parallel([
+      Animated.timing(toastOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(toastTranslateY, { toValue: 0, duration: 400, useNativeDriver: true }), // Slide up to center (no offset)
+    ]).start();
+
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+        Animated.timing(toastTranslateY, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ]).start(() => setToastMessage(''));
+    }, 1400);
+  };
+
+  // Follow/Unfollow mutation
+  const followMutation = useMutation({
+    mutationFn: async (isCurrentlyFollowing: boolean) => {
+      if (isCurrentlyFollowing) {
+        return await apiService.unfollowFight(fight.id);
+      } else {
+        return await apiService.followFight(fight.id);
+      }
+    },
+    onSuccess: async (data) => {
+      animateBellRing();
+      if (data.isFollowing) {
+        showToast('You will be notified before this fight.');
+      }
+      await queryClient.invalidateQueries({ queryKey: ['fights'] });
+      await queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      await queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      await queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+    },
+  });
+
+  const handleBellPress = (e: any) => {
+    e.stopPropagation();
+    if (!isAuthenticated) return;
+    followMutation.mutate(fight.isFollowing || false);
+  };
+
+  // Get status message
+  const getUpcomingStatusMessage = () => {
+    if (!isNextFight || fight.hasStarted || fight.isComplete) {
+      upNextStartTimeRef.current = null;
+      return null;
+    }
+
+    if (hasLiveFight) {
+      upNextStartTimeRef.current = null;
+      return null;
+    }
+
+    if (!upNextStartTimeRef.current && lastCompletedFightTime) {
+      upNextStartTimeRef.current = Date.now();
+    }
+
+    if (upNextStartTimeRef.current) {
+      const secondsSinceStart = (Date.now() - upNextStartTimeRef.current) / 1000;
+      if (secondsSinceStart < 15) {
+        return 'Up next...';
+      } else {
+        return 'Starting soon...';
+      }
+    }
+
+    return null;
+  };
+
+  // Force re-render every second for next fight
+  const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
+  React.useEffect(() => {
+    if (isNextFight && !hasLiveFight && !fight.hasStarted) {
+      const interval = setInterval(forceUpdate, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isNextFight, hasLiveFight, fight.hasStarted]);
 
   // Reset image errors
   useEffect(() => {
@@ -66,90 +261,113 @@ export default function CompletedFightCard({
     setFighter2ImageError(false);
   }, [fight.id]);
 
-  // Trigger sparkle animation when rating is saved
+  // Pulsing animation for "Starting soon..."
   useEffect(() => {
-    if (animateRating && fight.userRating) {
-      // Reset sparkles
-      sparkle1.setValue(0);
-      sparkle2.setValue(0);
-      sparkle3.setValue(0);
-      sparkle4.setValue(0);
-      sparkle5.setValue(0);
-      sparkle6.setValue(0);
-      sparkle7.setValue(0);
-      sparkle8.setValue(0);
-
-      Animated.parallel([
+    const statusMessage = getUpcomingStatusMessage();
+    if (statusMessage === 'Starting soon...') {
+      const pulse = Animated.loop(
         Animated.sequence([
-          Animated.timing(ratingScaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
-          Animated.spring(ratingScaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }),
-        ]),
-        Animated.sequence([
-          Animated.timing(ratingGlowAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-          Animated.timing(ratingGlowAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
-        ]),
-        Animated.timing(sparkle1, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(sparkle2, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(sparkle3, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(sparkle4, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(sparkle5, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(sparkle6, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(sparkle7, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(sparkle8, { toValue: 1, duration: 500, useNativeDriver: true }),
-      ]).start();
+          Animated.timing(startingSoonPulseAnim, { toValue: 0.4, duration: 1000, useNativeDriver: true }),
+          Animated.timing(startingSoonPulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+        ])
+      );
+      pulse.start();
+      return () => {
+        pulse.stop();
+        startingSoonPulseAnim.setValue(1);
+      };
     }
-  }, [animateRating, fight.userRating, ratingScaleAnim, ratingGlowAnim, sparkle1, sparkle2, sparkle3, sparkle4, sparkle5, sparkle6, sparkle7, sparkle8]);
+  }, [getUpcomingStatusMessage(), startingSoonPulseAnim]);
 
-  // Determine which rings to show for each fighter
-  const getFighterRings = (fighterId: string, fighterName: string) => {
-    const rings = [];
 
-    // Green ring - actual winner (show if user has rated OR tapped to reveal)
-    if (fight.winner === fighterId && (fight.userRating || showWinner)) {
-      rings.push('winner');
+  // Trigger animation when prediction is saved (fighter, method, or hype)
+  useEffect(() => {
+    if (animatePrediction && (fight.userHypePrediction || aggregateStats?.userPrediction?.winner)) {
+      // Reset all sparkles
+      flame1.setValue(0);
+      flame2.setValue(0);
+      flame3.setValue(0);
+      flame4.setValue(0);
+      flame5.setValue(0);
+      flame6.setValue(0);
+      flame7.setValue(0);
+      flame8.setValue(0);
+      fighterSparkle1.setValue(0);
+      fighterSparkle2.setValue(0);
+      fighterSparkle3.setValue(0);
+      fighterSparkle4.setValue(0);
+      methodSparkle1.setValue(0);
+      methodSparkle2.setValue(0);
+      methodSparkle3.setValue(0);
+      methodSparkle4.setValue(0);
+
+      const animations = [];
+
+      // Add hype animations if hype rating exists
+      if (fight.userHypePrediction) {
+        animations.push(
+          Animated.sequence([
+            Animated.timing(predictionScaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
+            Animated.spring(predictionScaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }),
+          ]),
+          Animated.sequence([
+            Animated.timing(predictionGlowAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
+            Animated.timing(predictionGlowAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+          ]),
+          // Flame sparkles
+          Animated.timing(flame1, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame2, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame3, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame4, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame5, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame6, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame7, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(flame8, { toValue: 1, duration: 500, useNativeDriver: true })
+        );
+      }
+
+      // Add fighter sparkles if user predicted a fighter
+      if (aggregateStats?.userPrediction?.winner) {
+        animations.push(
+          Animated.timing(fighterSparkle1, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(fighterSparkle2, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(fighterSparkle3, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(fighterSparkle4, { toValue: 1, duration: 500, useNativeDriver: true })
+        );
+      }
+
+      // Add method sparkles if user predicted a method
+      if (aggregateStats?.userPrediction?.method) {
+        animations.push(
+          Animated.timing(methodSparkle1, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(methodSparkle2, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(methodSparkle3, { toValue: 1, duration: 500, useNativeDriver: true }),
+          Animated.timing(methodSparkle4, { toValue: 1, duration: 500, useNativeDriver: true })
+        );
+      }
+
+      if (animations.length > 0) {
+        Animated.parallel(animations).start();
+      }
     }
+  }, [animatePrediction, fight.userHypePrediction, aggregateStats?.userPrediction?.winner, aggregateStats?.userPrediction?.method, predictionScaleAnim, predictionGlowAnim, flame1, flame2, flame3, flame4, flame5, flame6, flame7, flame8, fighterSparkle1, fighterSparkle2, fighterSparkle3, fighterSparkle4, methodSparkle1, methodSparkle2, methodSparkle3, methodSparkle4]);
 
-    // Yellow ring - community prediction
-    if (aggregateStats?.communityPrediction?.winner === fighterName) {
-      rings.push('community');
-    }
-
-    // Blue ring - user's prediction
-    if (aggregateStats?.userPrediction?.winner === fighterName) {
-      rings.push('user');
-    }
-
-    return rings;
-  };
-
-  // Get outcome parts for split color rendering
-  const getOutcomeParts = () => {
-    if (!fight.isComplete || !fight.winner || !fight.method) return null;
-
-    let winnerName = '';
-    if (fight.winner === 'draw') {
-      winnerName = 'Draw';
-    } else if (fight.winner === 'nc') {
-      winnerName = 'No Contest';
-    } else if (fight.winner === fight.fighter1.id) {
-      winnerName = fight.fighter1.lastName;
-    } else if (fight.winner === fight.fighter2.id) {
-      winnerName = fight.fighter2.lastName;
-    } else {
-      return null;
-    }
-
-    const methodText = fight.method ? ` by ${fight.method}` : '';
-    const roundText = fight.round ? `R${fight.round}` : '';
-    const timeText = fight.time ? ` ${fight.time}` : '';
-    const roundTimeText = roundText || timeText ? ` - ${roundText}${timeText}` : '';
-
-    if (fight.winner === 'draw' || fight.winner === 'nc') {
-      return { winnerName, methodAndRound: roundTimeText };
-    }
-
-    return { winnerName, methodAndRound: `${methodText}${roundTimeText}` };
-  };
+  // Pulsing glow animation for hot fights (8+ hype) - DISABLED
+  // useEffect(() => {
+  //   if (predictionStats?.averageHype && predictionStats.averageHype >= 8) {
+  //     const pulse = Animated.loop(
+  //       Animated.sequence([
+  //         Animated.timing(hotFightGlowAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
+  //         Animated.timing(hotFightGlowAnim, { toValue: 0, duration: 1200, useNativeDriver: true }),
+  //       ])
+  //     );
+  //     pulse.start();
+  //     return () => {
+  //       pulse.stop();
+  //       hotFightGlowAnim.setValue(0);
+  //     };
+  //   }
+  // }, [predictionStats?.averageHype, hotFightGlowAnim]);
 
   const getFighter1ImageSource = () => {
     if (fighter1ImageError) {
@@ -165,654 +383,376 @@ export default function CompletedFightCard({
     return getFighterImage(fight.fighter2);
   };
 
-  const outcomeParts = getOutcomeParts();
+  // Determine which rings to show for each fighter (only community and user, no winner)
+  const getFighterRings = (fighterId: string, fighterName: string, isFighter2: boolean) => {
+    const rings = [];
+
+    // Blue ring - user's prediction (inner ring - pushed first)
+    if (aggregateStats?.userPrediction?.winner === fighterName) {
+      rings.push('user');
+    }
+
+    // Community prediction ring - yellow (outer ring - pushed second)
+    if (aggregateStats?.communityPrediction?.winner === fighterName) {
+      rings.push('community');
+    }
+
+    return rings;
+  };
+
+  // Helper function to find top methods with their percentages
+  const getTopMethods = (methods: { DECISION: number; KO_TKO: number; SUBMISSION: number }) => {
+    const methodEntries = Object.entries(methods) as [string, number][];
+    const total = methodEntries.reduce((sum, [_, count]) => sum + count, 0);
+
+    if (total === 0) return [];
+
+    // Sort by count descending
+    const sorted = methodEntries
+      .map(([method, count]) => ({
+        method,
+        count,
+        percentage: Math.round((count / total) * 100),
+        label: {
+          'DECISION': 'DEC',
+          'KO_TKO': 'KO',
+          'SUBMISSION': 'SUB',
+        }[method] || method,
+      }))
+      .filter(m => m.count > 0)
+      .sort((a, b) => b.count - a.count);
+
+    // Return top method, plus second if it's 33% or more
+    const result = [sorted[0]];
+    if (sorted[1] && sorted[1].percentage >= 33) {
+      result.push(sorted[1]);
+    }
+
+    return result;
+  };
+
+  const hypeBorderColor = getHypeBackgroundColor(predictionStats?.averageHype || 0);
+  const grayColor = colors.border || '#888888';
+
+  // Create a 50% opacity version of the hype color for the fade-in start
+  const getHalfOpacityColor = (color: string) => {
+    // If it's already an rgba color, halve the alpha
+    const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    if (rgbaMatch) {
+      const [, r, g, b, a] = rgbaMatch;
+      const alpha = a ? parseFloat(a) * 0.5 : 0.5;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+    // If it's a hex color, convert to rgba with 0.5 opacity
+    const hexMatch = color.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+    if (hexMatch) {
+      const [, r, g, b] = hexMatch;
+      return `rgba(${parseInt(r, 16)}, ${parseInt(g, 16)}, ${parseInt(b, 16)}, 0.5)`;
+    }
+    // Fallback to the original color
+    return color;
+  };
+
+  const halfHypeColor = getHalfOpacityColor(hypeBorderColor);
 
   return (
-    <>
     <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
-      <View style={[sharedStyles.container, { backgroundColor: colors.card, position: 'relative', minHeight: 200 }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4, minHeight: 30 }}>
-          {fight.weightClass && (
-            <Text style={[sharedStyles.titleLabel, { color: colors.textSecondary, marginBottom: 0 }]}>
-              {fight.weightClass.toUpperCase().replace(/_/g, ' ')}{fight.isTitle ? ' TITLE FIGHT' : ''}
+      <View style={[sharedStyles.container, {
+        position: 'relative',
+        overflow: 'hidden',
+        paddingLeft: 56, // 40px square + 16px padding
+        paddingVertical: 4, // Minimal vertical padding
+        paddingRight: 16,
+        minHeight: 40, // Minimum height to ensure content fits
+        justifyContent: 'center',
+      }]}>
+          {/* Full-height hype square on the left */}
+          <View style={[styles.hypeSquare, { backgroundColor: hypeBorderColor }]}>
+            <Text style={styles.hypeSquareText}>
+              {predictionStats?.averageHype !== undefined
+                ? predictionStats.averageHype.toFixed(1)
+                : '0.0'
+              }
             </Text>
-          )}
-        </View>
+          </View>
 
           {showEvent && (
-            <Text style={[sharedStyles.eventText, { color: colors.textSecondary }]}>
+            <Text style={[sharedStyles.eventText, { color: colors.textSecondary, marginBottom: 2, marginTop: 2 }]}>
               {fight.event.name} • {formatDate(fight.event.date)}
             </Text>
           )}
 
-          <View style={styles.fighterNamesRow}>
-            <Text style={[styles.fighterNameLeft, { color: colors.text }]} numberOfLines={1}>
-              {cleanFighterName(getFighterName(fight.fighter1))}
-            </Text>
-            <Text style={[styles.fighterNameRight, { color: colors.text }]} numberOfLines={1}>
-              {cleanFighterName(getFighterName(fight.fighter2))}
-            </Text>
+          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: 0 }]}>
+            {/* Fighter names together with "vs" */}
+            <View style={styles.fighterNamesVs}>
+              {/* Fighter 1 */}
+              <View style={styles.fighterWithBadge}>
+                <View
+                  style={[
+                    aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && {
+                      borderBottomWidth: 2,
+                      borderBottomColor: '#F5C518',
+                    }
+                  ]}
+                >
+                  <Text
+                    style={[styles.fighterName, { color: colors.text }]}
+                    numberOfLines={1}
+                  >
+                    {cleanFighterName(getFighterName(fight.fighter1))}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
+
+              {/* Fighter 2 */}
+              <View style={styles.fighterWithBadge}>
+                <View
+                  style={[
+                    aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && {
+                      borderBottomWidth: 2,
+                      borderBottomColor: '#F5C518',
+                    }
+                  ]}
+                >
+                  <Text
+                    style={[styles.fighterName, { color: colors.text }]}
+                    numberOfLines={1}
+                  >
+                    {cleanFighterName(getFighterName(fight.fighter2))}
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
 
-        {/* Fighter Headshots with Ratings Container */}
-        <View style={styles.headshotsWithRatingsContainer}>
-            {/* Fighter 1 with rings */}
-            {(() => {
-              const fighter1Name = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
-              const fighter1Rings = getFighterRings(fight.fighter1.id, fighter1Name);
-              const baseSize = 75;
-              const borderWidth = 3;
-              const gap = 3;
-
-              return (
-                <View style={styles.fighterColumn}>
-                  <View style={sharedStyles.fighterHeadshotWrapper}>
-                    {fighter1Rings.map((ring, index) => {
-                      const ringColor = ring === 'winner' ? '#22c55e' : ring === 'community' ? '#F5C518' : '#83B4F3';
-                      const inset = index * (borderWidth + gap);
-
-                      return (
-                        <View
-                          key={`${ring}-${index}`}
-                          style={{
-                            position: 'absolute',
-                            top: inset,
-                            left: inset,
-                            right: inset,
-                            bottom: inset,
-                            borderWidth: borderWidth,
-                            borderColor: ringColor,
-                            borderRadius: 37.5,
-                            zIndex: fighter1Rings.length - index,
-                          }}
-                        />
-                      );
-                    })}
-
-                    <Image
-                      source={getFighter1ImageSource()}
-                      style={{
-                        width: baseSize,
-                        height: baseSize,
-                        borderRadius: baseSize / 2,
-                        zIndex: 100,
-                      }}
-                      onError={() => setFighter1ImageError(true)}
-                    />
-                  </View>
-                </View>
-              );
-            })()}
-
-            {/* Hype and Ratings Container - Between fighters */}
-            <View style={styles.centeredScoresContainer}>
-            {/* Hype Scores Section */}
-            <View style={styles.centeredHypeScores}>
-              {/* Community Hype Score */}
-              <View style={styles.aggregateScoreContainer}>
-                {/* Flame icon changes based on hype level */}
-                {(() => {
-                  const hypeScore = predictionStats?.averageHype || 0;
-                  let flameIcon;
-
-                  if (hypeScore >= 8.5) {
-                    // Hot fight (8.5+) - flame with sparkle
-                    flameIcon = require('../../assets/flame-sparkle-3.png');
-                  } else if (hypeScore >= 7) {
-                    // Warm fight (7-8.4) - full flame
-                    flameIcon = require('../../assets/flame-full-2.png');
-                  } else if (hypeScore > 0) {
-                    // Cool fight (<7) - hollow flame
-                    flameIcon = require('../../assets/flame-hollow-1.png');
-                  } else {
-                    // No hype data (0) - grey hollow flame
-                    flameIcon = require('../../assets/flame-hollow-grey-0.png');
-                  }
-
-                  return (
-                    <Image
-                      source={flameIcon}
-                      style={{ width: 20, height: 20, marginRight: 6 }}
-                      resizeMode="contain"
-                    />
-                  );
-                })()}
-                <Text style={[sharedStyles.aggregateLabel, { color: colors.textSecondary }]}>
-                  {predictionStats?.averageHype !== undefined
-                    ? (predictionStats.averageHype % 1 === 0 ? predictionStats.averageHype.toString() : predictionStats.averageHype.toFixed(1))
-                    : '0'
-                  }
-                </Text>
-              </View>
-
-              {/* User's Personal Hype Score */}
-              <View style={styles.userHypeContainer}>
-                <View style={sharedStyles.ratingRow}>
-                  {/* User hype flame icon changes based on score */}
-                  {(() => {
-                    const userHype = fight.userHypePrediction;
-                    let userFlameIcon;
-                    let flameColor;
-
-                    if (!userHype) {
-                      // No hype - grey hollow flame
-                      userFlameIcon = require('../../assets/flame-hollow-grey-0.png');
-                      flameColor = colors.textSecondary;
-                    } else if (userHype >= 9) {
-                      // High hype (9-10) - blue flame with sparkle
-                      userFlameIcon = require('../../assets/flame-sparkle-blue-7.png');
-                      flameColor = '#83B4F3';
-                    } else if (userHype >= 7) {
-                      // Medium hype (7-8) - full blue flame
-                      userFlameIcon = require('../../assets/flame-full-blue-6.png');
-                      flameColor = '#83B4F3';
-                    } else {
-                      // Low hype (1-6) - hollow blue flame
-                      userFlameIcon = require('../../assets/flame-hollow-blue-8.png');
-                      flameColor = '#83B4F3';
-                    }
-
-                    return (
-                      <Image
-                        source={userFlameIcon}
-                        style={{ width: 20, height: 20, marginRight: 6 }}
-                        resizeMode="contain"
-                      />
-                    );
-                  })()}
-                  <Text style={[sharedStyles.userRatingText, { color: fight.userHypePrediction ? '#83B4F3' : colors.textSecondary }]}>
-                    {fight.userHypePrediction || '0'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Ratings Section */}
-            <View style={styles.centeredRatings}>
-            {/* Aggregate Rating */}
-            <View style={styles.aggregateScoreContainer}>
-              {(() => {
-                const rating = fight.averageRating || 0;
-
-                if (rating >= 8.5) {
-                  // 8.5+ - star with sparkles image
-                  return (
-                    <Image
-                      source={require('../../assets/star-stars-2.png')}
-                      style={{ width: 20, height: 20, marginRight: 6 }}
-                      resizeMode="contain"
-                    />
-                  );
+        {/* Status message */}
+        {getUpcomingStatusMessage() && (
+          <View style={[sharedStyles.outcomeContainer, { marginTop: 2 }]}>
+            <Animated.Text
+              style={[
+                styles.statusText,
+                {
+                  color: colors.text,
+                  opacity: getUpcomingStatusMessage() === 'Starting soon...' ? startingSoonPulseAnim : 1
                 }
-
-                // For ratings below 8.5, use FontAwesome icons
-                let starName: 'star' | 'star-o' = 'star';
-                let starColor = '#F5C518';
-
-                if (rating === 0) {
-                  // No ratings yet - grey hollow star
-                  starName = 'star-o';
-                  starColor = colors.textSecondary;
-                } else if (rating < 7) {
-                  // Under 7 - hollow yellow star
-                  starName = 'star-o';
-                  starColor = '#F5C518';
-                } else {
-                  // 7 to 8.4 - filled yellow star
-                  starName = 'star';
-                  starColor = '#F5C518';
-                }
-
-                return (
-                  <FontAwesome
-                    name={starName}
-                    size={20}
-                    color={starColor}
-                    style={{ marginRight: 6 }}
-                  />
-                );
-              })()}
-              <Text style={[sharedStyles.aggregateLabel, { color: colors.text }]}>
-                {fight.averageRating % 1 === 0 ? fight.averageRating.toString() : fight.averageRating.toFixed(1)}
-              </Text>
-              {aggregateStats?.totalRatings !== undefined && aggregateStats.totalRatings > 0 && (
-                <Text style={[styles.countText, { color: colors.textSecondary }]}>
-                  ({aggregateStats.totalRatings})
-                </Text>
-              )}
-            </View>
-
-            {/* User's Personal Rating */}
-            <View style={styles.userRatingContainer}>
-              {/* Star sparkles */}
-              {fight.userRating && (
-                <>
-                  {[sparkle1, sparkle2, sparkle3, sparkle4, sparkle5, sparkle6, sparkle7, sparkle8].map((sparkle, index) => {
-                    const positions = [
-                      { top: -10, right: -10, tx: 15, ty: -15 },
-                      { top: -10, left: -10, tx: -15, ty: -15 },
-                      { bottom: -10, right: -10, tx: 15, ty: 15 },
-                      { bottom: -10, left: -10, tx: -15, ty: 15 },
-                      { top: -10, left: 0, right: 0, tx: 0, ty: -20 },
-                      { top: 2, right: -10, tx: 20, ty: 0 },
-                      { bottom: -10, left: 0, right: 0, tx: 0, ty: 20 },
-                      { top: 2, left: -10, tx: -20, ty: 0 },
-                    ];
-                    const pos = positions[index] as any;
-
-                    return (
-                      <Animated.View
-                        key={index}
-                        style={[
-                          sharedStyles.sparkle,
-                          pos,
-                          {
-                            opacity: sparkle.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 1, 0] }),
-                            transform: [
-                              { scale: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, 1] }) },
-                              { translateX: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.tx] }) },
-                              { translateY: sparkle.interpolate({ inputRange: [0, 1], outputRange: [0, pos.ty] }) },
-                            ],
-                          },
-                        ]}
-                      >
-                        <FontAwesome name="star" size={12} color="#F5C518" />
-                      </Animated.View>
-                    );
-                  })}
-                </>
-              )}
-
-              {/* Glow effect */}
-              <Animated.View
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor: '#83B4F3',
-                  borderRadius: 20,
-                  opacity: ratingGlowAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0.3] }),
-                  transform: [{ scale: ratingGlowAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.5] }) }],
-                }}
-              />
-
-              <Animated.View style={{ transform: [{ scale: ratingScaleAnim }] }}>
-                <View style={sharedStyles.ratingRow}>
-                  {(() => {
-                    const userRating = fight.userRating || 0;
-
-                    if (userRating >= 9) {
-                      // 9-10 - star with sparkles image
-                      return (
-                        <Image
-                          source={require('../../assets/star-stars-blue.png')}
-                          style={{ width: 20, height: 20, marginRight: 6 }}
-                          resizeMode="contain"
-                        />
-                      );
-                    }
-
-                    // For ratings below 9, use FontAwesome icons
-                    let starName: 'star' | 'star-o' = 'star';
-                    let starColor = '#83B4F3';
-
-                    if (userRating === 0) {
-                      // No rating - grey hollow star
-                      starName = 'star-o';
-                      starColor = colors.textSecondary;
-                    } else if (userRating <= 6) {
-                      // 6 or lower - hollow blue star
-                      starName = 'star-o';
-                      starColor = '#83B4F3';
-                    } else {
-                      // 7-8 - filled blue star
-                      starName = 'star';
-                      starColor = '#83B4F3';
-                    }
-
-                    return (
-                      <FontAwesome
-                        name={starName}
-                        size={20}
-                        color={starColor}
-                        style={{ marginRight: 6 }}
-                      />
-                    );
-                  })()}
-                  <Text style={[sharedStyles.userRatingText, { color: fight.userRating ? '#83B4F3' : colors.textSecondary }]}>
-                    {fight.userRating || '0'}
-                  </Text>
-                </View>
-              </Animated.View>
-            </View>
-            </View>
-            </View>
-
-            {/* Fighter 2 with rings */}
-            {(() => {
-              const fighter2Name = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
-              const fighter2Rings = getFighterRings(fight.fighter2.id, fighter2Name);
-              const baseSize = 75;
-              const borderWidth = 3;
-              const gap = 3;
-
-              return (
-                <View style={styles.fighterColumn}>
-                  <View style={sharedStyles.fighterHeadshotWrapper}>
-                    {fighter2Rings.map((ring, index) => {
-                      const ringColor = ring === 'winner' ? '#22c55e' : ring === 'community' ? '#F5C518' : '#83B4F3';
-                      const inset = index * (borderWidth + gap);
-
-                      return (
-                        <View
-                          key={`${ring}-${index}`}
-                          style={{
-                            position: 'absolute',
-                            top: inset,
-                            left: inset,
-                            right: inset,
-                            bottom: inset,
-                            borderWidth: borderWidth,
-                            borderColor: ringColor,
-                            borderRadius: 37.5,
-                            zIndex: fighter2Rings.length - index,
-                          }}
-                        />
-                      );
-                    })}
-
-                    <Image
-                      source={getFighter2ImageSource()}
-                      style={{
-                        width: baseSize,
-                        height: baseSize,
-                        borderRadius: baseSize / 2,
-                        zIndex: 100,
-                      }}
-                      onError={() => setFighter2ImageError(true)}
-                    />
-                  </View>
-                </View>
-              );
-            })()}
-        </View>
-
-        {/* Prediction Methods Section - Positioned below headshots */}
-        <View
-          key={`predictions-${aggregateStats?.userPrediction?.winner}-${aggregateStats?.communityPrediction?.winner}`}
-          style={styles.predictionMethodsContainer}
-        >
-          {(() => {
-            const fighter1Name = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
-            const fighter2Name = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
-
-            // Special case: Draw or No Contest - always centered
-            const isDraw = fight.winner === 'draw';
-            const isNoContest = fight.winner === 'nc';
-            if ((isDraw || isNoContest) && outcomeParts) {
-              return (
-                <View style={styles.predictionMethodsFullWidth}>
-                  <View style={styles.predictionMethodColumnFull}>
-                    <View style={styles.methodTextContainer}>
-                      <Text style={[styles.methodText, { color: '#22c55e', textAlign: 'center' }]} numberOfLines={2}>
-                        Outcome: {outcomeParts.winnerName}{outcomeParts.methodAndRound}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              );
-            }
-
-            // Fighter 1 predictions (left column) - MUST be boolean for layout logic
-            const fighter1UserPrediction = aggregateStats?.userPrediction?.winner === fighter1Name;
-            const fighter1CommunityPrediction = aggregateStats?.communityPrediction?.winner === fighter1Name && !!aggregateStats?.communityPrediction;
-            const fighter1IsWinner = fight.winner === fight.fighter1.id;
-
-            // Fighter 2 predictions (right column) - MUST be boolean for layout logic
-            const fighter2UserPrediction = aggregateStats?.userPrediction?.winner === fighter2Name;
-            const fighter2CommunityPrediction = aggregateStats?.communityPrediction?.winner === fighter2Name && !!aggregateStats?.communityPrediction;
-            const fighter2IsWinner = fight.winner === fight.fighter2.id;
-
-            // Check if ALL items (predictions + winner) are on opposite fighters
-            const hasFighter1Item = fighter1UserPrediction || fighter1CommunityPrediction || fighter1IsWinner;
-            const hasFighter2Item = fighter2UserPrediction || fighter2CommunityPrediction || fighter2IsWinner;
-            const areOnOppositeSides = hasFighter1Item && hasFighter2Item;
-
-            if (areOnOppositeSides) {
-              // Items on opposite fighters - use 50/50 split
-              return (
-                <View style={styles.predictionMethodsRow}>
-                  {/* Left column - Fighter 1 predictions (always rendered for spacing) */}
-                  <View style={styles.predictionMethodColumn}>
-                    {/* User prediction method - blue */}
-                    {fighter1UserPrediction && (
-                      <View style={styles.methodTextContainer}>
-                        <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'left' }]} numberOfLines={3}>
-                          My Prediction: {fight.fighter1.lastName}{aggregateStats?.userPrediction?.method ? ` by ${formatMethod(aggregateStats.userPrediction.method)}` : ''}
-                        </Text>
-                      </View>
-                    )}
-                    {/* Community prediction method - yellow */}
-                    {fighter1CommunityPrediction && (
-                      <View style={styles.methodTextContainer}>
-                        <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'left' }]} numberOfLines={3}>
-                          Community Prediction: {fight.fighter1.lastName}{aggregateStats?.communityPrediction?.method ? ` by ${formatMethod(aggregateStats.communityPrediction.method)}` : ''}
-                        </Text>
-                      </View>
-                    )}
-                    {/* Winner - green */}
-                    {fighter1IsWinner && outcomeParts && (fight.userRating || showWinner) && (
-                      <View style={styles.methodTextContainer}>
-                        <Text style={[styles.methodText, { color: '#22c55e', textAlign: 'left' }]} numberOfLines={2}>
-                          Outcome: {outcomeParts.winnerName}{outcomeParts.methodAndRound}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Right column - Fighter 2 predictions (always rendered for spacing) */}
-                  <View style={styles.predictionMethodColumn}>
-                    {/* User prediction method - blue */}
-                    {fighter2UserPrediction && (
-                      <View style={styles.methodTextContainer}>
-                        <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'right' }]} numberOfLines={3}>
-                          My Prediction: {fight.fighter2.lastName}{aggregateStats?.userPrediction?.method ? ` by ${formatMethod(aggregateStats.userPrediction.method)}` : ''}
-                        </Text>
-                      </View>
-                    )}
-                    {/* Community prediction method - yellow */}
-                    {fighter2CommunityPrediction && (
-                      <View style={styles.methodTextContainer}>
-                        <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'right' }]} numberOfLines={3}>
-                          Community Prediction: {fight.fighter2.lastName}{aggregateStats?.communityPrediction?.method ? ` by ${formatMethod(aggregateStats.communityPrediction.method)}` : ''}
-                        </Text>
-                      </View>
-                    )}
-                    {/* Winner - green */}
-                    {fighter2IsWinner && outcomeParts && (fight.userRating || showWinner) && (
-                      <View style={styles.methodTextContainer}>
-                        <Text style={[styles.methodText, { color: '#22c55e', textAlign: 'right' }]} numberOfLines={2}>
-                          Outcome: {outcomeParts.winnerName}{outcomeParts.methodAndRound}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              );
-            } else {
-              // All items on same fighter - use full width
-              return (
-                <View style={[
-                  styles.predictionMethodsFullWidth,
-                  { justifyContent: hasFighter1Item ? 'flex-start' : 'flex-end' }
-                ]}>
-                  {/* Left column - Fighter 1 items */}
-                  {hasFighter1Item && (
-                    <View style={styles.predictionMethodColumnFull}>
-                      {/* User prediction method - blue */}
-                      {fighter1UserPrediction && (
-                        <View style={styles.methodTextContainer}>
-                          <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'left' }]} numberOfLines={3}>
-                            My Prediction: {fight.fighter1.lastName}{aggregateStats?.userPrediction?.method ? ` by ${formatMethod(aggregateStats.userPrediction.method)}` : ''}
-                          </Text>
-                        </View>
-                      )}
-                      {/* Community prediction method - yellow */}
-                      {fighter1CommunityPrediction && (
-                        <View style={styles.methodTextContainer}>
-                          <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'left' }]} numberOfLines={3}>
-                            Community Prediction: {fight.fighter1.lastName}{aggregateStats?.communityPrediction?.method ? ` by ${formatMethod(aggregateStats.communityPrediction.method)}` : ''}
-                          </Text>
-                        </View>
-                      )}
-                      {/* Winner - green */}
-                      {fighter1IsWinner && outcomeParts && (fight.userRating || showWinner) && (
-                        <View style={styles.methodTextContainer}>
-                          <Text style={[styles.methodText, { color: '#22c55e', textAlign: 'left' }]} numberOfLines={2}>
-                            Outcome: {outcomeParts.winnerName}{outcomeParts.methodAndRound}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
-
-                  {/* Right column - Fighter 2 items */}
-                  {hasFighter2Item && (
-                    <View style={styles.predictionMethodColumnFull}>
-                      {/* User prediction method - blue */}
-                      {fighter2UserPrediction && (
-                        <View style={styles.methodTextContainer}>
-                          <Text style={[styles.methodText, { color: '#83B4F3', textAlign: 'right' }]} numberOfLines={3}>
-                            My Prediction: {fight.fighter2.lastName}{aggregateStats?.userPrediction?.method ? ` by ${formatMethod(aggregateStats.userPrediction.method)}` : ''}
-                          </Text>
-                        </View>
-                      )}
-                      {/* Community prediction method - yellow */}
-                      {fighter2CommunityPrediction && (
-                        <View style={styles.methodTextContainer}>
-                          <Text style={[styles.methodText, { color: '#F5C518', textAlign: 'right' }]} numberOfLines={3}>
-                            Community Prediction: {fight.fighter2.lastName}{aggregateStats?.communityPrediction?.method ? ` by ${formatMethod(aggregateStats.communityPrediction.method)}` : ''}
-                          </Text>
-                        </View>
-                      )}
-                      {/* Winner - green */}
-                      {fighter2IsWinner && outcomeParts && (fight.userRating || showWinner) && (
-                        <View style={styles.methodTextContainer}>
-                          <Text style={[styles.methodText, { color: '#22c55e', textAlign: 'right' }]} numberOfLines={2}>
-                            Outcome: {outcomeParts.winnerName}{outcomeParts.methodAndRound}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
-                </View>
-              );
-            }
-          })()}
-        </View>
-
-        {/* Fight Outcome Details */}
-        {outcomeParts && (
-          <View style={sharedStyles.outcomeContainer}>
-            {/* Outcome and tags */}
-            <View style={styles.outcomeWithTagsContainer}>
-
-              {/* Tags - only show when user has rated */}
-              {fight.userRating && aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
-                <View style={[styles.tagsInlineContainer, { justifyContent: 'center' }]}>
-                  {aggregateStats.topTags.slice(0, 3).map((tag, index) => (
-                    <Text key={index} style={[styles.tagText, { color: colors.textSecondary }]}>
-                      #{tag.name}{index < 2 ? ' ' : ''}
-                    </Text>
-                  ))}
-                </View>
-              )}
-            </View>
+              ]}
+              numberOfLines={1}
+            >
+              {getUpcomingStatusMessage()}
+            </Animated.Text>
           </View>
         )}
 
-        {/* Three dots icon - bottom right - opens fight details */}
-        <TouchableOpacity
-          style={styles.threeDotsButton}
-          onPress={(e) => {
-            e.stopPropagation();
-            router.push(`/fight/${fight.id}`);
-          }}
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-        >
-          <Entypo name="dots-three-horizontal" size={20} color={colors.textSecondary} />
-        </TouchableOpacity>
+        {/* Bell icon - hidden but functionality preserved */}
+        {false && isAuthenticated && (
+          <TouchableOpacity
+            style={styles.bellButton}
+            onPress={handleBellPress}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          >
+            <Animated.View
+              style={{
+                transform: [{
+                  rotate: bellRotation.interpolate({
+                    inputRange: [-1, 0, 1],
+                    outputRange: ['-15deg', '0deg', '15deg'],
+                  }),
+                }],
+              }}
+            >
+              <FontAwesome
+                name={fight.isFollowing ? "bell" : "bell-o"}
+                size={18}
+                color={fight.isFollowing ? '#F5C518' : colors.textSecondary}
+              />
+            </Animated.View>
+          </TouchableOpacity>
+        )}
+
+        {/* Toast Notification */}
+        {toastMessage !== '' && (
+          <Animated.View
+            style={[
+              styles.toastContainer,
+              {
+                backgroundColor: colors.primary,
+                opacity: toastOpacity,
+                transform: [{ translateY: toastTranslateY }],
+              },
+            ]}
+            pointerEvents="none"
+          >
+            <View style={styles.toastContent}>
+              <FontAwesome name="bell" size={18} color="#1a1a1a" />
+              <Text style={styles.toastText}>{toastMessage}</Text>
+            </View>
+          </Animated.View>
+        )}
       </View>
     </TouchableOpacity>
-    </>
   );
 }
 
 const styles = StyleSheet.create({
+  hotFightBadge: {
+    backgroundColor: '#FF4500',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
+  hotFightText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+  headshotsWithOddsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    paddingHorizontal: 20,
+  },
+  fighterColumn: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  oddsText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  methodTextContainer: {
+    position: 'relative',
+    paddingHorizontal: 4,
+  },
+  centeredHypeScores: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    marginBottom: 12,
+  },
+  hypeScoresInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   aggregateScoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    width: 75,
   },
-  countText: {
+  userHypeInline: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  hypeCountText: {
     fontSize: 10,
     fontWeight: '400',
     marginLeft: 6,
   },
-  userRatingContainer: {
+  userHypeContainer: {
     position: 'relative',
-    width: 50,
+    width: 75,
     paddingVertical: 8,
     alignItems: 'flex-start',
-    marginLeft: -25,
   },
-  ratingButton: {
-    borderRadius: 20,
-    overflow: 'hidden',
+  statusText: {
+    fontSize: 13,
+    fontWeight: '500',
+    fontStyle: 'italic',
+    textAlign: 'left',
   },
-  ratingContainer: {
-    position: 'relative',
-    paddingVertical: 0,
-    paddingHorizontal: 0,
+  bellButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    padding: 8,
+    zIndex: 20,
   },
-  outcomeWithTagsContainer: {
-    gap: 4,
+  threeDotsButton: {
+    position: 'absolute',
+    top: 6,
+    right: 8,
+    padding: 4,
+    zIndex: 20,
   },
-  hypeScoresRow: {
+  toastContainer: {
+    position: 'absolute',
+    bottom: '50%', // Position at center
+    left: 16,
+    right: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 100,
+  },
+  toastContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    flex: 1,
   },
-  hypeScoreText: {
-    fontSize: 12,
+  toastText: {
+    color: '#1a1a1a',
+    fontSize: 14,
     fontWeight: '600',
   },
-  communityLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  tagsInlineContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'nowrap',
-    gap: 6,
-    overflow: 'hidden',
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: '500',
+  predictionBarContainer: {
+    marginTop: 3,
+    gap: 4,
   },
   fighterNamesRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     width: '100%',
-    marginBottom: 12,
-    gap: 8,
+    marginBottom: 4,
+    gap: 12,
+  },
+  fighterNamesVs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 6,
+  },
+  fighterWithBadge: {
+    position: 'relative',
+    flexShrink: 1,
+    maxWidth: '45%',
+    overflow: 'visible',
+  },
+  badgesAbsolute: {
+    position: 'absolute',
+    bottom: '100%',
+    left: 0,
+    flexDirection: 'row',
+    gap: 4,
+    flexWrap: 'nowrap',
+    marginBottom: 2,
+  },
+  badgesRow: {
+    flexDirection: 'row',
+    gap: 4,
+    flexWrap: 'wrap',
+  },
+  fighterName: {
+    fontSize: 14,
+    fontWeight: '700',
+    flexShrink: 1,
+  },
+  vsText: {
+    fontSize: 13,
+    fontWeight: '400',
   },
   fighterNameLeft: {
     fontSize: 16,
@@ -826,74 +766,99 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
   },
-  headshotsWithRatingsContainer: {
+  splitBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    paddingHorizontal: 20,
+    borderRadius: 6,
+    overflow: 'hidden',
   },
-  fighterColumn: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  centeredScoresContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  splitBarLeft: {
     justifyContent: 'center',
-    gap: 2,
-    marginLeft: 20,
-  },
-  centeredHypeScores: {
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
   },
-  centeredRatings: {
+  splitBarRight: {
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+  },
+  splitBarContent: {
+    flexDirection: 'column',
+    alignItems: 'center',
     gap: 2,
   },
-  userHypeContainer: {
-    position: 'relative',
-    width: 75,
-    paddingVertical: 8,
-    alignItems: 'flex-start',
+  splitBarPercentage: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#000',
   },
-  threeDotsButton: {
-    position: 'absolute',
-    top: 6,
-    right: 12,
-    padding: 8,
-    zIndex: 20,
-  },
-  predictionMethodsContainer: {
-    marginBottom: 2,
-    paddingHorizontal: 0,
-  },
-  predictionMethodsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  predictionMethodsFullWidth: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  predictionMethodColumn: {
-    flex: 1,
-    gap: 2,
-  },
-  predictionMethodColumnFull: {
-    gap: 2,
-    width: '100%',
-  },
-  methodTextContainer: {
-    position: 'relative',
-    paddingHorizontal: 4,
-  },
-  methodText: {
+  splitBarMethod: {
     fontSize: 10,
     fontWeight: '500',
+    color: '#000',
+  },
+  methodBadge: {
+    backgroundColor: '#83B4F3',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 3,
+    alignSelf: 'flex-start',
+  },
+  methodBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 8,
+    fontWeight: '600',
+  },
+  badgesBelow: {
+    position: 'absolute',
+    bottom: -14,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  methodBadgeSmall: {
+    backgroundColor: '#F5C518',
+    paddingHorizontal: 3,
+    paddingVertical: 1,
+    borderRadius: 2,
+  },
+  methodBadgeSmallText: {
+    color: '#000000',
+    fontSize: 7,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  methodBadgeSmallHollow: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 2,
+    paddingVertical: 0,
+    borderRadius: 2,
+    borderWidth: 1,
+    borderColor: '#808080',
+  },
+  methodBadgeSmallHollowText: {
+    color: '#808080',
+    fontSize: 7,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  hypeSquare: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  hypeSquareText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
