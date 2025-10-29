@@ -1981,12 +1981,12 @@ const styles = StyleSheet.create({
   inlineStarContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     marginBottom: 16,
-    gap: 4,
+    gap: 2,
   },
   inlineStarButton: {
-    padding: 4,
+    padding: 2,
   },
   inlineTagsSection: {
     marginBottom: 16,
