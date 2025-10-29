@@ -72,6 +72,36 @@ export default function CompletedFightCard({
     return '#ff0000'; // Red for 8.5+
   };
 
+  // Rating background color - returns color based on rating (0-10)
+  // Uses same heatmap colors as hype score
+  const getRatingBackgroundColor = (rating: number) => {
+    if (rating === 0) return '#808080'; // Grey for 0
+
+    // Gradient from grey (1) to orange (7)
+    if (rating < 7.0) {
+      const score = Math.max(rating, 1);
+      const linear = (score - 1) / 6;
+      const t = linear * linear; // Quadratic curve
+      const r = Math.round(128 + (235 - 128) * t);
+      const g = Math.round(128 + (134 - 128) * t);
+      const b = Math.round(128 + (0 - 128) * t);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    // Gradient from orange (7) to red (8.5) - very gradual, mostly orange
+    if (rating < 8.5) {
+      const linear = (rating - 7.0) / 1.5; // 0 at 7.0, 1 at 8.5
+      const t = Math.pow(linear, 5); // Quintic curve - stays orange much longer
+      // Interpolate from orange rgb(235, 134, 0) to red rgb(255, 0, 0)
+      const r = Math.round(235 + (255 - 235) * t);
+      const g = Math.round(134 + (0 - 134) * t);
+      const b = Math.round(0 + (0 - 0) * t);
+      return `rgb(${r}, ${g}, ${b})`;
+    }
+
+    return '#ff0000'; // Red for 8.5+
+  };
+
   // Heatmap flame icon color - solid colors for icon display
   const getHypeFlameColor = (hypeScore: number) => {
     if (hypeScore === 0) return '#808080'; // Grey for 0
@@ -432,6 +462,7 @@ export default function CompletedFightCard({
   };
 
   const hypeBorderColor = getHypeBackgroundColor(predictionStats?.averageHype || 0);
+  const ratingBorderColor = getRatingBackgroundColor(fight.averageRating || 0);
   const grayColor = colors.border || '#888888';
 
   // Create a 50% opacity version of the hype color for the fade-in start
@@ -460,7 +491,7 @@ export default function CompletedFightCard({
       <View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
-        paddingLeft: 56, // 40px square + 16px padding
+        paddingLeft: 96, // Two 40px squares + 8px spacing + 8px padding
         paddingVertical: 4, // Minimal vertical padding
         paddingRight: 16,
         minHeight: 40, // Minimum height to ensure content fits
@@ -471,6 +502,16 @@ export default function CompletedFightCard({
             <Text style={styles.hypeSquareText}>
               {predictionStats?.averageHype !== undefined
                 ? predictionStats.averageHype.toFixed(1)
+                : '0.0'
+              }
+            </Text>
+          </View>
+
+          {/* Full-height rating square next to hype */}
+          <View style={[styles.ratingSquare, { backgroundColor: ratingBorderColor }]}>
+            <Text style={styles.ratingSquareText}>
+              {fight.averageRating !== undefined && fight.averageRating > 0
+                ? fight.averageRating.toFixed(1)
                 : '0.0'
               }
             </Text>
@@ -856,6 +897,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   hypeSquareText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  ratingSquare: {
+    position: 'absolute',
+    top: 0,
+    left: 48,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  ratingSquareText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: 'bold',

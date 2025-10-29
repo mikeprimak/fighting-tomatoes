@@ -215,6 +215,9 @@ function EventSection({ event }: { event: Event }) {
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
                       HYPE
                     </Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary, marginLeft: 2 }]}>
+                      ACTUAL
+                    </Text>
                   </View>
                   <View style={styles.sectionHeaderRight}>
                     <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
@@ -455,10 +458,10 @@ const createStyles = (colors: any) => StyleSheet.create({
   columnHeaders: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginLeft: -11,
-    width: 40,
-    justifyContent: 'center',
+    gap: 8,
+    marginLeft: -7,
+    width: 88,
+    justifyContent: 'flex-start',
   },
   columnHeaderText: {
     fontSize: 10,
