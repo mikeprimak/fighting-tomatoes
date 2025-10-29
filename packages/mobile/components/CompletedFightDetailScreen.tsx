@@ -1994,17 +1994,17 @@ const styles = StyleSheet.create({
   inlineTagsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
     alignItems: 'flex-start',
   },
   inlineTagButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
     borderWidth: 1,
   },
   inlineTagText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
   },
   inlineCommentSection: {
