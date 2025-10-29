@@ -273,11 +273,23 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [reviewToFlag, setReviewToFlag] = useState<string | null>(null);
 
-  // Inline rating state
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [tagRandomSeed, setTagRandomSeed] = useState(0);
+  // Inline rating state - Initialize once with existing data, then manage locally
+  const [rating, setRating] = useState(() => {
+    if (fight.userReview) return fight.userReview.rating || 0;
+    if (fight.userRating) return typeof fight.userRating === 'number' ? fight.userRating : (fight.userRating.rating || 0);
+    return 0;
+  });
+  const [comment, setComment] = useState(() => fight.userReview?.content || '');
+  const [selectedTags, setSelectedTags] = useState<string[]>(() => {
+    const userTags = fight.userTags || [];
+    if (userTags.length === 0) return [];
+    return userTags.map((userTag: any) => {
+      const tagName = typeof userTag === 'string' ? userTag.toLowerCase() : (userTag.tag?.name || userTag.name || '').toLowerCase();
+      const frontendTag = ALL_FIGHT_TAGS.find(tag => tag.name.toLowerCase() === tagName || tag.id.toLowerCase() === tagName);
+      return frontendTag?.id;
+    }).filter(Boolean) as string[];
+  });
+  const [tagRandomSeed, setTagRandomSeed] = useState(Math.floor(Math.random() * 1000));
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Animation values for wheel animation (large star display) - Initialize based on existing rating
@@ -400,46 +412,6 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
       flagReviewMutation.mutate({ reviewId: reviewToFlag, reason });
     }
   };
-
-  // Initialize inline rating form with existing data
-  useEffect(() => {
-    // Extract existing data
-    let currentRating = 0;
-    let currentComment = '';
-    let currentTags: string[] = [];
-
-    // Check for review data
-    if (fight.userReview) {
-      currentRating = fight.userReview.rating || 0;
-      currentComment = fight.userReview.content || '';
-    } else if (fight.userRating) {
-      currentRating = typeof fight.userRating === 'number'
-        ? fight.userRating
-        : (fight.userRating.rating || 0);
-    }
-
-    // Extract existing tags (check both fight.userTags and tagsData)
-    const userTags = fight.userTags || tagsData?.userTags || [];
-    if (userTags && userTags.length > 0) {
-      currentTags = userTags.map((userTag: any) => {
-        const tagName = typeof userTag === 'string'
-          ? userTag.toLowerCase()
-          : (userTag.tag?.name || userTag.name || '').toLowerCase();
-
-        const frontendTag = ALL_FIGHT_TAGS.find(tag =>
-          tag.name.toLowerCase() === tagName ||
-          tag.id.toLowerCase() === tagName
-        );
-        return frontendTag?.id;
-      }).filter(Boolean) as string[];
-    }
-
-    // Initialize state
-    setRating(currentRating);
-    setComment(currentComment);
-    setSelectedTags(currentTags);
-    setTagRandomSeed(Math.floor(Math.random() * 1000));
-  }, [fight.id, fight.userReview, fight.userRating, fight.userTags, tagsData]);
 
   // Auto-save handler
   const handleAutoSave = React.useCallback(() => {
