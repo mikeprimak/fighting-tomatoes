@@ -279,11 +279,12 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagRandomSeed, setTagRandomSeed] = useState(0);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const isAnimatingRef = useRef(false);
 
-  // Animation values for wheel animation (large star display)
-  const wheelAnimation = useRef(new Animated.Value(1200)).current;
-  const starColorAnimation = useRef(new Animated.Value(0)).current;
+  // Animation values for wheel animation (large star display) - Initialize based on existing rating
+  const wheelAnimation = useRef(new Animated.Value(
+    fight.userRating ? (10 - fight.userRating) * 120 : 1200
+  )).current;
+  const starColorAnimation = useRef(new Animated.Value(fight.userRating ? 1 : 0)).current;
 
   // Animation values for My Rating
   const myRatingScaleAnim = useRef(new Animated.Value(1)).current;
@@ -351,24 +352,12 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     mutationFn: async (data: { rating: number | null; review: string | null; tags: string[]; }) => {
       return await apiService.updateFightUserData(fight.id, data);
     },
-    onSuccess: async () => {
-      // Refresh data
+    onSuccess: () => {
+      // Only invalidate queries - no state updates that cause re-renders
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightTags', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
-
-      // Refresh user stats
-      await refreshUserData();
-
-      // Reveal spoiler when user rates
-      setSpoilerRevealed(true);
-
-      // Trigger animation
-      setTimeout(() => {
-        setAnimateMyRating(true);
-      }, 300);
-
       onRatingSuccess?.();
     },
     onError: (error: any) => {
@@ -450,17 +439,6 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     setComment(currentComment);
     setSelectedTags(currentTags);
     setTagRandomSeed(Math.floor(Math.random() * 1000));
-
-    // Initialize wheel animation (instant, no animation on mount)
-    if (currentRating > 0) {
-      const wheelPosition = (10 - currentRating) * 120;
-      wheelAnimation.setValue(wheelPosition);
-      starColorAnimation.setValue(1);
-    } else {
-      wheelAnimation.setValue(1200);
-      starColorAnimation.setValue(0);
-    }
-    isAnimatingRef.current = false;
   }, [fight.id, fight.userReview, fight.userRating, fight.userTags, tagsData]);
 
   // Auto-save handler
@@ -500,57 +478,44 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     };
   }, [comment]);
 
-  // Handlers for rating and tags (immediate save)
+  // Simple animation function (like UpcomingFightDetailScreen)
+  const animateToNumber = (targetNumber: number) => {
+    wheelAnimation.stopAnimation();
+
+    const targetPosition = targetNumber === 0 ? 1200 : (10 - targetNumber) * 120;
+
+    Animated.timing(wheelAnimation, {
+      toValue: targetPosition,
+      duration: 800,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  // Handlers for rating and tags (immediate save) - Simplified like UpcomingFightDetailScreen
   const handleSetRating = (newRating: number) => {
-    if (isAnimatingRef.current) return; // Prevent rapid taps during animation
-
     const finalRating = rating === newRating ? 0 : newRating;
-    isAnimatingRef.current = true;
 
-    // Update rating state immediately for UI responsiveness
     setRating(finalRating);
     setTagRandomSeed(prev => prev + 1);
 
-    // Trigger wheel animation with completion callback
-    if (finalRating === 0) {
-      wheelAnimation.stopAnimation();
-      Animated.timing(wheelAnimation, {
-        toValue: 1200,
-        duration: 800,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }).start(() => {
-        isAnimatingRef.current = false;
-      });
-    } else {
-      const targetPosition = (10 - finalRating) * 120;
-      wheelAnimation.stopAnimation();
-      Animated.timing(wheelAnimation, {
-        toValue: targetPosition,
-        duration: 800,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }).start(() => {
-        isAnimatingRef.current = false;
-      });
-    }
+    // Animate wheel
+    animateToNumber(finalRating);
 
-    // Animate star color transition (separate from wheel)
+    // Animate star color
     Animated.timing(starColorAnimation, {
       toValue: finalRating > 0 ? 1 : 0,
       duration: 300,
       useNativeDriver: false,
     }).start();
 
-    // Save independently of animation - no delay needed
-    setTimeout(() => {
-      const submissionData = {
-        rating: finalRating > 0 ? finalRating : null,
-        review: comment.trim() || null,
-        tags: selectedTags
-      };
-      updateUserDataMutation.mutate(submissionData);
-    }, 900);
+    // Save immediately
+    const submissionData = {
+      rating: finalRating > 0 ? finalRating : null,
+      review: comment.trim() || null,
+      tags: selectedTags
+    };
+    updateUserDataMutation.mutate(submissionData);
   };
 
   const handleToggleTag = (tagId: string) => {
@@ -1005,16 +970,6 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
               numberOfLines={4}
             />
           </View>
-
-          {/* Auto-save indicator */}
-          {updateUserDataMutation.isPending && (
-            <View style={styles.savingIndicator}>
-              <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={[styles.savingText, { color: colors.textSecondary }]}>
-                Saving...
-              </Text>
-            </View>
-          )}
         </View>
 
         {/* Split Score Row */}
@@ -2020,17 +1975,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 100,
     textAlignVertical: 'top',
-  },
-  savingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 8,
-  },
-  savingText: {
-    fontSize: 14,
-    fontStyle: 'italic',
   },
   displayStarContainer: {
     alignItems: 'center',
