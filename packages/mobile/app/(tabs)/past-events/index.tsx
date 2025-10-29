@@ -196,14 +196,7 @@ function EventSection({ event }: { event: Event }) {
   return (
     <View style={styles.eventSection}>
       {/* Event Header with Banner and Info */}
-      <EventBannerCard
-        event={event}
-        statusBadge={{
-          text: formatTimeAgo(event.date),
-          backgroundColor: colors.textSecondary,
-        }}
-        showLocation={true}
-      />
+      <EventBannerCard event={event} />
 
       {/* Fights Container */}
       <View style={styles.fightsContainer}>

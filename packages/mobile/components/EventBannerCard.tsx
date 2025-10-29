@@ -8,7 +8,6 @@ interface EventBannerCardProps {
     id: string;
     name: string;
     date: string;
-    location?: string;
     bannerImage?: string | null;
     hasStarted: boolean;
     isComplete: boolean;
@@ -18,7 +17,6 @@ interface EventBannerCardProps {
     backgroundColor: string;
     textColor?: string;
   };
-  showLocation?: boolean;
   onPress?: () => void;
 }
 
@@ -80,7 +78,6 @@ const formatDate = (dateString: string) => {
 export function EventBannerCard({
   event,
   statusBadge,
-  showLocation = false,
   onPress,
 }: EventBannerCardProps) {
   const colorScheme = useColorScheme();
@@ -114,12 +111,6 @@ export function EventBannerCard({
             {formatDate(event.date)}
           </Text>
         </View>
-
-        {showLocation && event.location && (
-          <Text style={[styles.location, { color: colors.textSecondary }]}>
-            {event.location}
-          </Text>
-        )}
       </View>
     </View>
   );
@@ -158,9 +149,5 @@ const styles = StyleSheet.create({
   },
   date: {
     fontSize: 14,
-  },
-  location: {
-    fontSize: 13,
-    marginTop: 8,
   },
 });
