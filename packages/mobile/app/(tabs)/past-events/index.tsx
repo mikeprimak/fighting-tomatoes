@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { useAuth } from '../../../store/AuthContext';
 import CompletedFightCard from '../../../components/fight-cards/CompletedFightCard';
-import RateFightModal from '../../../components/RateFightModal';
 import { EventBannerCard } from '../../../components';
 
 interface Event {
@@ -155,8 +155,7 @@ function EventSection({ event }: { event: Event }) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
-  const [selectedFight, setSelectedFight] = useState<Fight | null>(null);
-  const [ratingModalVisible, setRatingModalVisible] = useState(false);
+  const router = useRouter();
 
   // Fetch fights for this specific event
   const { data: fightsData, isLoading: fightsLoading } = useQuery({
@@ -187,8 +186,7 @@ function EventSection({ event }: { event: Event }) {
   const { line1, line2 } = parseEventName(event.name);
 
   const handleFightPress = (fight: Fight) => {
-    setSelectedFight(fight);
-    setRatingModalVisible(true);
+    router.push(`/fight/${fight.id}`);
   };
 
   const styles = createStyles(colors);
@@ -280,18 +278,6 @@ function EventSection({ event }: { event: Event }) {
           </>
         )}
       </View>
-
-      {/* Rate Fight Modal */}
-      {selectedFight && (
-        <RateFightModal
-          visible={ratingModalVisible}
-          fight={selectedFight}
-          onClose={() => {
-            setRatingModalVisible(false);
-            setSelectedFight(null);
-          }}
-        />
-      )}
     </View>
   );
 }

@@ -9,13 +9,14 @@ import {
   useColorScheme,
   Animated,
   ActivityIndicator,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQueryClient, useQuery, useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
-import { RateFightModal, FlagReviewModal } from '.';
+import { FlagReviewModal } from '.';
 import { useAuth } from '../store/AuthContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
@@ -63,6 +64,7 @@ interface Fight {
   totalRatings?: number;
   userRating?: number;
   userReview?: any;
+  userTags?: any[];
   userPredictedWinner?: string | null;
   userPredictedMethod?: string | null;
   userPredictedRound?: number | null;
@@ -85,6 +87,162 @@ interface CompletedFightDetailScreenProps {
   onRatingSuccess?: () => void;
 }
 
+// Comprehensive fight descriptors organized by rating tiers (from RateFightModal)
+const ALL_FIGHT_TAGS = [
+  // EXCELLENT FIGHTS (9-10)
+  { id: 'masterpiece', name: 'Masterpiece', category: 'QUALITY', minRating: 9 },
+  { id: 'legendary', name: 'Legendary', category: 'QUALITY', minRating: 9 },
+  { id: 'instant-classic', name: 'Instant Classic', category: 'QUALITY', minRating: 9 },
+  { id: 'fight-of-the-year', name: 'Fight of the Year', category: 'QUALITY', minRating: 9 },
+  { id: 'epic', name: 'Epic', category: 'EMOTION', minRating: 9 },
+  { id: 'spectacular', name: 'Spectacular', category: 'EMOTION', minRating: 9 },
+  { id: 'jaw-dropping', name: 'Jaw-dropping', category: 'EMOTION', minRating: 9 },
+  { id: 'incredible-comeback', name: 'Incredible Comeback', category: 'DRAMA', minRating: 9 },
+  { id: 'perfect-technique', name: 'Perfect Technique', category: 'SKILL', minRating: 9 },
+  { id: 'flawless-execution', name: 'Flawless Execution', category: 'SKILL', minRating: 9 },
+  { id: 'submission-masterclass', name: 'Submission Masterclass', category: 'SKILL', minRating: 9 },
+  { id: 'striking-clinic', name: 'Striking Clinic', category: 'SKILL', minRating: 9 },
+  { id: 'heart-stopping', name: 'Heart-stopping', category: 'EMOTION', minRating: 9 },
+  { id: 'artistic', name: 'Artistic', category: 'STYLE', minRating: 9 },
+
+  // GREAT FIGHTS (7-8)
+  { id: 'exciting', name: 'Exciting', category: 'EMOTION', minRating: 7 },
+  { id: 'thrilling', name: 'Thrilling', category: 'EMOTION', minRating: 7 },
+  { id: 'entertaining', name: 'Entertaining', category: 'EMOTION', minRating: 7 },
+  { id: 'fight-of-the-night', name: 'Fight of the Night', category: 'QUALITY', minRating: 7 },
+  { id: 'back-and-forth', name: 'Back and Forth', category: 'PACE', minRating: 7 },
+  { id: 'war', name: 'War', category: 'STYLE', minRating: 7 },
+  { id: 'barn-burner', name: 'Barn Burner', category: 'PACE', minRating: 7 },
+  { id: 'comeback', name: 'Comeback', category: 'DRAMA', minRating: 7 },
+  { id: 'upset', name: 'Upset', category: 'OUTCOME', minRating: 7 },
+  { id: 'technical', name: 'Technical', category: 'STYLE', minRating: 7 },
+  { id: 'high-level', name: 'High Level', category: 'SKILL', minRating: 7 },
+  { id: 'fast-paced', name: 'Fast Paced', category: 'PACE', minRating: 7 },
+  { id: 'explosive', name: 'Explosive', category: 'PACE', minRating: 7 },
+  { id: 'dramatic', name: 'Dramatic', category: 'DRAMA', minRating: 7 },
+  { id: 'intense', name: 'Intense', category: 'EMOTION', minRating: 7 },
+  { id: 'knockout', name: 'Knockout', category: 'OUTCOME', minRating: 7 },
+  { id: 'submission', name: 'Submission', category: 'OUTCOME', minRating: 7 },
+  { id: 'striking', name: 'Striking', category: 'STYLE', minRating: 7 },
+  { id: 'grappling', name: 'Grappling', category: 'STYLE', minRating: 7 },
+
+  // GOOD FIGHTS (5-6)
+  { id: 'solid', name: 'Solid', category: 'QUALITY', minRating: 5 },
+  { id: 'decent', name: 'Decent', category: 'QUALITY', minRating: 5 },
+  { id: 'competitive', name: 'Competitive', category: 'QUALITY', minRating: 5 },
+  { id: 'close', name: 'Close', category: 'OUTCOME', minRating: 5 },
+  { id: 'decision', name: 'Decision', category: 'OUTCOME', minRating: 5 },
+  { id: 'tactical', name: 'Tactical', category: 'STYLE', minRating: 5 },
+  { id: 'methodical', name: 'Methodical', category: 'STYLE', minRating: 5 },
+  { id: 'grinding', name: 'Grinding', category: 'STYLE', minRating: 5 },
+  { id: 'chess-match', name: 'Chess Match', category: 'STYLE', minRating: 5 },
+  { id: 'measured', name: 'Measured', category: 'PACE', minRating: 5 },
+  { id: 'patient', name: 'Patient', category: 'STYLE', minRating: 5 },
+  { id: 'workmanlike', name: 'Workmanlike', category: 'STYLE', minRating: 5 },
+  { id: 'steady', name: 'Steady', category: 'PACE', minRating: 5 },
+  { id: 'professional', name: 'Professional', category: 'STYLE', minRating: 5 },
+  { id: 'momentum-shifts', name: 'Momentum Shifts', category: 'DRAMA', minRating: 5 },
+
+  // POOR FIGHTS (4 and below)
+  { id: 'disappointing', name: 'Disappointing', category: 'EMOTION', maxRating: 4 },
+  { id: 'boring', name: 'Boring', category: 'EMOTION', maxRating: 4 },
+  { id: 'slow', name: 'Slow', category: 'PACE', maxRating: 4 },
+  { id: 'uneventful', name: 'Uneventful', category: 'EMOTION', maxRating: 4 },
+  { id: 'lackluster', name: 'Lackluster', category: 'QUALITY', maxRating: 4 },
+  { id: 'sloppy', name: 'Sloppy', category: 'SKILL', maxRating: 4 },
+  { id: 'low-energy', name: 'Low Energy', category: 'PACE', maxRating: 4 },
+  { id: 'tentative', name: 'Tentative', category: 'STYLE', maxRating: 4 },
+  { id: 'stalling', name: 'Stalling', category: 'STYLE', maxRating: 4 },
+  { id: 'point-fighting', name: 'Point Fighting', category: 'STYLE', maxRating: 4 },
+  { id: 'one-sided', name: 'One-sided', category: 'OUTCOME', maxRating: 4 },
+  { id: 'mismatch', name: 'Mismatch', category: 'OUTCOME', maxRating: 4 },
+  { id: 'early-stoppage', name: 'Early Stoppage', category: 'CONTROVERSY', maxRating: 4 },
+  { id: 'bad-referee', name: 'Bad Referee', category: 'CONTROVERSY', maxRating: 4 },
+  { id: 'controversial', name: 'Controversial', category: 'CONTROVERSY', maxRating: 4 },
+  { id: 'flat', name: 'Flat', category: 'EMOTION', maxRating: 4 },
+
+  // UNIVERSAL TAGS
+  { id: 'emotional', name: 'Emotional', category: 'EMOTION' },
+  { id: 'heavyweight', name: 'Heavyweight', category: 'DIVISION' },
+  { id: 'title-fight', name: 'Title Fight', category: 'STAKES' },
+  { id: 'main-event', name: 'Main Event', category: 'STAKES' },
+  { id: 'veteran', name: 'Veteran', category: 'FIGHTER' },
+  { id: 'prospect', name: 'Prospect', category: 'FIGHTER' },
+  { id: 'debut', name: 'Debut', category: 'STAKES' },
+  { id: 'retirement', name: 'Retirement', category: 'STAKES' },
+  { id: 'grudge-match', name: 'Grudge Match', category: 'STAKES' },
+  { id: 'rematch', name: 'Rematch', category: 'STAKES' },
+  { id: 'ground-game', name: 'Ground Game', category: 'STYLE' },
+  { id: 'clinch-work', name: 'Clinch Work', category: 'STYLE' },
+  { id: 'cardio', name: 'Cardio', category: 'SKILL' },
+  { id: 'heart', name: 'Heart', category: 'EMOTION' },
+  { id: 'skill-gap', name: 'Skill Gap', category: 'SKILL' },
+  { id: 'size-advantage', name: 'Size Advantage', category: 'PHYSICAL' },
+  { id: 'reach-advantage', name: 'Reach Advantage', category: 'PHYSICAL' },
+  { id: 'age-factor', name: 'Age Factor', category: 'PHYSICAL' },
+  { id: 'injury', name: 'Injury', category: 'PHYSICAL' },
+  { id: 'crowd-favorite', name: 'Crowd Favorite', category: 'ATMOSPHERE' },
+  { id: 'home-crowd', name: 'Home Crowd', category: 'ATMOSPHERE' },
+];
+
+// Function to shuffle array randomly
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
+// Function to get available tags based on rating
+const getAvailableTagsForRating = (rating: number, selectedTags: string[]) => {
+  let eligibleTags: typeof ALL_FIGHT_TAGS = [];
+
+  if (rating >= 9) {
+    eligibleTags = ALL_FIGHT_TAGS.filter(tag =>
+      tag.minRating === 9 || (!tag.minRating && !tag.maxRating)
+    );
+  } else if (rating >= 7) {
+    eligibleTags = ALL_FIGHT_TAGS.filter(tag =>
+      tag.minRating === 7 || (!tag.minRating && !tag.maxRating)
+    );
+  } else if (rating >= 5) {
+    eligibleTags = ALL_FIGHT_TAGS.filter(tag =>
+      tag.minRating === 5 || (!tag.minRating && !tag.maxRating)
+    );
+  } else if (rating >= 1) {
+    eligibleTags = ALL_FIGHT_TAGS.filter(tag =>
+      tag.maxRating === 4 || (!tag.minRating && !tag.maxRating)
+    );
+  } else {
+    eligibleTags = ALL_FIGHT_TAGS.filter(tag =>
+      !tag.minRating && !tag.maxRating
+    );
+  }
+
+  // Include already selected tags
+  const selectedTagObjects = ALL_FIGHT_TAGS.filter(tag => selectedTags.includes(tag.id));
+  const mustIncludeTags = selectedTagObjects;
+
+  // Remove selected tags from pool
+  const unselectedEligibleTags = eligibleTags.filter(tag => !selectedTags.includes(tag.id));
+
+  // Limit to 7 tags for clean layout
+  const CONSERVATIVE_MAX_TAGS = 7;
+  const selectedCount = mustIncludeTags.length;
+  const remainingSlots = Math.max(0, Math.min(CONSERVATIVE_MAX_TAGS - selectedCount, unselectedEligibleTags.length));
+
+  let randomlySelectedTags: typeof ALL_FIGHT_TAGS = [];
+  if (remainingSlots > 0 && unselectedEligibleTags.length > 0) {
+    const shuffled = shuffleArray(unselectedEligibleTags);
+    randomlySelectedTags = shuffled.slice(0, remainingSlots);
+  }
+
+  const allTags = [...mustIncludeTags, ...randomlySelectedTags];
+  return allTags.slice(0, CONSERVATIVE_MAX_TAGS);
+};
+
 // Placeholder image selection for fighters
 const getFighterPlaceholderImage = (fighterId: string) => {
   const images = [
@@ -105,14 +263,20 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, refreshUserData } = useAuth();
   const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
 
-  const [showRatingModal, setShowRatingModal] = useState(false);
   const [animateMyRating, setAnimateMyRating] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [reviewToFlag, setReviewToFlag] = useState<string | null>(null);
+
+  // Inline rating state
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagRandomSeed, setTagRandomSeed] = useState(0);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Animation values for My Rating
   const myRatingScaleAnim = useRef(new Animated.Value(1)).current;
@@ -170,6 +334,42 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     staleTime: 30 * 1000,
   });
 
+  // Calculate available tags based on current rating
+  const availableTags = React.useMemo(() => {
+    return getAvailableTagsForRating(rating, selectedTags);
+  }, [rating, tagRandomSeed]);
+
+  // Mutation for auto-saving rating/review/tags
+  const updateUserDataMutation = useMutation({
+    mutationFn: async (data: { rating: number | null; review: string | null; tags: string[]; }) => {
+      return await apiService.updateFightUserData(fight.id, data);
+    },
+    onSuccess: async () => {
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fightTags', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
+
+      // Refresh user stats
+      await refreshUserData();
+
+      // Reveal spoiler when user rates
+      setSpoilerRevealed(true);
+
+      // Trigger animation
+      setTimeout(() => {
+        setAnimateMyRating(true);
+      }, 300);
+
+      onRatingSuccess?.();
+    },
+    onError: (error: any) => {
+      console.error('Update error:', error);
+      showError(error?.error || 'Failed to save data', 'Error');
+    },
+  });
+
   // Upvote mutation
   const upvoteMutation = useMutation({
     mutationFn: ({ reviewId }: { reviewId: string }) =>
@@ -203,6 +403,118 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     if (reviewToFlag) {
       flagReviewMutation.mutate({ reviewId: reviewToFlag, reason });
     }
+  };
+
+  // Initialize inline rating form with existing data
+  useEffect(() => {
+    // Extract existing data
+    let currentRating = 0;
+    let currentComment = '';
+    let currentTags: string[] = [];
+
+    // Check for review data
+    if (fight.userReview) {
+      currentRating = fight.userReview.rating || 0;
+      currentComment = fight.userReview.content || '';
+    } else if (fight.userRating) {
+      currentRating = typeof fight.userRating === 'number'
+        ? fight.userRating
+        : (fight.userRating.rating || 0);
+    }
+
+    // Extract existing tags (check both fight.userTags and tagsData)
+    const userTags = fight.userTags || tagsData?.userTags || [];
+    if (userTags && userTags.length > 0) {
+      currentTags = userTags.map((userTag: any) => {
+        const tagName = typeof userTag === 'string'
+          ? userTag.toLowerCase()
+          : (userTag.tag?.name || userTag.name || '').toLowerCase();
+
+        const frontendTag = ALL_FIGHT_TAGS.find(tag =>
+          tag.name.toLowerCase() === tagName ||
+          tag.id.toLowerCase() === tagName
+        );
+        return frontendTag?.id;
+      }).filter(Boolean) as string[];
+    }
+
+    // Initialize state
+    setRating(currentRating);
+    setComment(currentComment);
+    setSelectedTags(currentTags);
+    setTagRandomSeed(Math.floor(Math.random() * 1000));
+  }, [fight.id, fight.userReview, fight.userRating, fight.userTags, tagsData]);
+
+  // Auto-save handler
+  const handleAutoSave = React.useCallback(() => {
+    // Don't save if comment exists but no rating
+    if (comment.trim() && rating === 0) {
+      showError('Reviews require a rating.', 'Error');
+      return;
+    }
+
+    const submissionData = {
+      rating: rating > 0 ? rating : null,
+      review: comment.trim() || null,
+      tags: selectedTags
+    };
+
+    updateUserDataMutation.mutate(submissionData);
+  }, [rating, comment, selectedTags]);
+
+  // Debounced auto-save for comment changes
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Only trigger auto-save if there's actual data to save
+    if (rating > 0 || comment.trim() || selectedTags.length > 0) {
+      debounceTimerRef.current = setTimeout(() => {
+        handleAutoSave();
+      }, 1000); // 1 second debounce for comment
+    }
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [comment]);
+
+  // Handlers for rating and tags (immediate save)
+  const handleSetRating = (newRating: number) => {
+    const finalRating = rating === newRating ? 0 : newRating;
+    setRating(finalRating);
+    setTagRandomSeed(prev => prev + 1);
+
+    // Immediate save for rating
+    setTimeout(() => {
+      const submissionData = {
+        rating: finalRating > 0 ? finalRating : null,
+        review: comment.trim() || null,
+        tags: selectedTags
+      };
+      updateUserDataMutation.mutate(submissionData);
+    }, 100);
+  };
+
+  const handleToggleTag = (tagId: string) => {
+    const newTags = selectedTags.includes(tagId)
+      ? selectedTags.filter(id => id !== tagId)
+      : [...selectedTags, tagId];
+
+    setSelectedTags(newTags);
+
+    // Immediate save for tags
+    setTimeout(() => {
+      const submissionData = {
+        rating: rating > 0 ? rating : null,
+        review: comment.trim() || null,
+        tags: newTags
+      };
+      updateUserDataMutation.mutate(submissionData);
+    }, 100);
   };
 
   // Trigger animation when rating is submitted
@@ -311,21 +623,6 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const totalRatings = fight.totalRatings || 0;
   const maxCount = Math.max(...Object.values(ratingDistribution), 1);
 
-  const handleRatingSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
-    queryClient.invalidateQueries({ queryKey: ['fightTags', fight.id] });
-    queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
-
-    // Reveal spoiler when user rates
-    setSpoilerRevealed(true);
-
-    // Trigger animation after a short delay
-    setTimeout(() => {
-      setAnimateMyRating(true);
-    }, 300);
-
-    onRatingSuccess?.();
-  };
 
   return (
     <>
@@ -530,6 +827,88 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           </View>
         )}
 
+        {/* Inline Rating Section */}
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Rate This Fight</Text>
+
+          {/* Star Rating (1-10) */}
+          <View style={styles.inlineStarContainer}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
+              <TouchableOpacity
+                key={level}
+                onPress={() => handleSetRating(level)}
+                style={styles.inlineStarButton}
+              >
+                <FontAwesome
+                  name="star"
+                  size={28}
+                  color={level <= rating ? colors.primary : '#666666'}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Tags */}
+          {rating > 0 && availableTags.length > 0 && (
+            <View style={styles.inlineTagsSection}>
+              <View style={styles.inlineTagsContainer}>
+                {availableTags.map((tag) => (
+                  <TouchableOpacity
+                    key={tag.id}
+                    onPress={() => handleToggleTag(tag.id)}
+                    style={[
+                      styles.inlineTagButton,
+                      {
+                        backgroundColor: selectedTags.includes(tag.id) ? colors.primary : colors.background,
+                        borderColor: colors.border,
+                      }
+                    ]}
+                  >
+                    <Text style={[
+                      styles.inlineTagText,
+                      {
+                        color: selectedTags.includes(tag.id) ? colors.textOnAccent : colors.text
+                      }
+                    ]}>
+                      {tag.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Comment/Review */}
+          <View style={styles.inlineCommentSection}>
+            <TextInput
+              style={[
+                styles.inlineCommentInput,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  color: colors.text
+                }
+              ]}
+              placeholder="Write a review... (optional)"
+              placeholderTextColor={colors.textSecondary}
+              value={comment}
+              onChangeText={setComment}
+              multiline
+              numberOfLines={4}
+            />
+          </View>
+
+          {/* Auto-save indicator */}
+          {updateUserDataMutation.isPending && (
+            <View style={styles.savingIndicator}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={[styles.savingText, { color: colors.textSecondary }]}>
+                Saving...
+              </Text>
+            </View>
+          )}
+        </View>
+
         {/* Split Score Row */}
         <View style={styles.splitScoreRow}>
           {/* Aggregate Rating - Left */}
@@ -551,10 +930,8 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           </View>
 
           {/* My Rating - Right */}
-          <TouchableOpacity
+          <View
             style={[styles.halfScoreContainer, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => setShowRatingModal(true)}
-            activeOpacity={0.7}
           >
             <Animated.View
               style={[
@@ -741,7 +1118,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                 </>
               )}
             </Animated.View>
-          </TouchableOpacity>
+          </View>
         </View>
 
         {/* Fight Details */}
@@ -1165,13 +1542,6 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
       </ScrollView>
 
       {/* Modals */}
-      <RateFightModal
-        visible={showRatingModal}
-        fight={fight}
-        onClose={() => setShowRatingModal(false)}
-        onSuccess={handleRatingSuccess}
-      />
-
       <FlagReviewModal
         visible={flagModalVisible}
         onClose={() => setFlagModalVisible(false)}
@@ -1502,5 +1872,56 @@ const styles = StyleSheet.create({
   upvoteButtonText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  inlineStarContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+    gap: 4,
+  },
+  inlineStarButton: {
+    padding: 4,
+  },
+  inlineTagsSection: {
+    marginBottom: 16,
+  },
+  inlineTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    alignItems: 'flex-start',
+  },
+  inlineTagButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  inlineTagText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  inlineCommentSection: {
+    marginBottom: 12,
+  },
+  inlineCommentInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  savingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 8,
+  },
+  savingText: {
+    fontSize: 14,
+    fontStyle: 'italic',
   },
 });
