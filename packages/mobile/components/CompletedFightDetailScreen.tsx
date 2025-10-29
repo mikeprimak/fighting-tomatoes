@@ -946,7 +946,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
               >
                 <FontAwesome
                   name="star"
-                  size={28}
+                  size={32}
                   color={level <= rating ? colors.primary : '#666666'}
                 />
               </TouchableOpacity>
