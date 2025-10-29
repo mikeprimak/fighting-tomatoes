@@ -192,11 +192,11 @@ export function CommunityPredictionsCard({ predictionStats, userPrediction, onPr
                   styles.splitBarRight,
                   {
                     width: winnerPredictions.fighter1.percentage === 0 ? '100%' : `${winnerPredictions.fighter2.percentage}%`,
-                    backgroundColor: '#8A7014'
+                    backgroundColor: '#D4A017'
                   }
                 ]}
               >
-                <Text style={[styles.splitBarPercentage, { color: '#fff' }]}>
+                <Text style={[styles.splitBarPercentage, { color: '#000' }]}>
                   {winnerPredictions.fighter1.percentage === 0 ? '100' : winnerPredictions.fighter2.percentage}%
                 </Text>
               </View>
@@ -215,7 +215,7 @@ export function CommunityPredictionsCard({ predictionStats, userPrediction, onPr
 
           {/* Fighter 2 Prediction (Right) */}
           {fighter2Methods.length > 0 && (
-            <Text style={[styles.predictionTextRight, { color: '#8A7014' }]}>
+            <Text style={[styles.predictionTextRight, { color: '#D4A017' }]}>
               {fighter2Methods.map(m => m.label).join(' or ')}
             </Text>
           )}
