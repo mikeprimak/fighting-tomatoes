@@ -279,6 +279,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagRandomSeed, setTagRandomSeed] = useState(0);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isAnimatingRef = useRef(false);
 
   // Animation values for wheel animation (large star display)
   const wheelAnimation = useRef(new Animated.Value(1200)).current;
@@ -450,7 +451,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     setSelectedTags(currentTags);
     setTagRandomSeed(Math.floor(Math.random() * 1000));
 
-    // Initialize wheel animation
+    // Initialize wheel animation (instant, no animation on mount)
     if (currentRating > 0) {
       const wheelPosition = (10 - currentRating) * 120;
       wheelAnimation.setValue(wheelPosition);
@@ -459,6 +460,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
       wheelAnimation.setValue(1200);
       starColorAnimation.setValue(0);
     }
+    isAnimatingRef.current = false;
   }, [fight.id, fight.userReview, fight.userRating, fight.userTags, tagsData]);
 
   // Auto-save handler
@@ -498,48 +500,49 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     };
   }, [comment]);
 
-  // Animation function to move wheel to specific number
-  const animateToNumber = (targetNumber: number) => {
-    if (targetNumber === 0) {
-      // Animate to blank position (below "1")
+  // Handlers for rating and tags (immediate save)
+  const handleSetRating = (newRating: number) => {
+    if (isAnimatingRef.current) return; // Prevent rapid taps during animation
+
+    const finalRating = rating === newRating ? 0 : newRating;
+    isAnimatingRef.current = true;
+
+    // Update rating state immediately for UI responsiveness
+    setRating(finalRating);
+    setTagRandomSeed(prev => prev + 1);
+
+    // Trigger wheel animation with completion callback
+    if (finalRating === 0) {
       wheelAnimation.stopAnimation();
       Animated.timing(wheelAnimation, {
         toValue: 1200,
         duration: 800,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
-      }).start();
+      }).start(() => {
+        isAnimatingRef.current = false;
+      });
     } else {
-      // Calculate position for target number (10 at top, 1 at bottom)
-      const targetPosition = (10 - targetNumber) * 120;
-
+      const targetPosition = (10 - finalRating) * 120;
       wheelAnimation.stopAnimation();
       Animated.timing(wheelAnimation, {
         toValue: targetPosition,
         duration: 800,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
-      }).start();
+      }).start(() => {
+        isAnimatingRef.current = false;
+      });
     }
-  };
 
-  // Handlers for rating and tags (immediate save)
-  const handleSetRating = (newRating: number) => {
-    const finalRating = rating === newRating ? 0 : newRating;
-    setRating(finalRating);
-    setTagRandomSeed(prev => prev + 1);
-
-    // Trigger wheel animation
-    animateToNumber(finalRating);
-
-    // Animate star color transition
+    // Animate star color transition (separate from wheel)
     Animated.timing(starColorAnimation, {
       toValue: finalRating > 0 ? 1 : 0,
       duration: 300,
       useNativeDriver: false,
     }).start();
 
-    // Delay save until after animation completes (800ms animation + 100ms buffer)
+    // Save independently of animation - no delay needed
     setTimeout(() => {
       const submissionData = {
         rating: finalRating > 0 ? finalRating : null,
