@@ -18,6 +18,7 @@ import { useQueryClient, useQuery, useInfiniteQuery, useMutation } from '@tansta
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
+import { getHypeHeatmapColor } from '../utils/heatmap';
 import { FlagReviewModal } from '.';
 import { useAuth } from '../store/AuthContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
@@ -258,35 +259,6 @@ const getFighterPlaceholderImage = (fighterId: string) => {
   const lastCharCode = fighterId.charCodeAt(fighterId.length - 1);
   const index = lastCharCode % images.length;
   return images[index];
-};
-
-// Color gradient function for hype flame
-const getHypeFlameColor = (hypeScore: number) => {
-  if (hypeScore === 0) return '#808080'; // Grey for 0
-
-  // Gradient from grey (1) to orange (7) - aggressive curve
-  if (hypeScore < 7.0) {
-    const score = Math.max(hypeScore, 1);
-    const linear = (score - 1) / 6;
-    const t = linear * linear; // Quadratic curve
-    const r = Math.round(128 + (235 - 128) * t);
-    const g = Math.round(128 + (134 - 128) * t);
-    const b = Math.round(128 + (0 - 128) * t);
-    return `rgb(${r}, ${g}, ${b})`;
-  }
-
-  // Gradient from orange (7) to red (8.5) - very gradual, mostly orange
-  if (hypeScore < 8.5) {
-    const linear = (hypeScore - 7.0) / 1.5; // 0 at 7.0, 1 at 8.5
-    const t = Math.pow(linear, 5); // Quintic curve - stays orange much longer
-    // Interpolate from orange rgb(235, 134, 0) to red rgb(255, 0, 0)
-    const r = Math.round(235 + (255 - 235) * t);
-    const g = Math.round(134 + (0 - 134) * t);
-    const b = Math.round(0 + (0 - 0) * t);
-    return `rgb(${r}, ${g}, ${b})`;
-  }
-
-  return '#ff0000'; // Red for 8.5+
 };
 
 export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: CompletedFightDetailScreenProps) {
@@ -702,219 +674,195 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   return (
     <>
       <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]}>
-        {/* Fighter Matchup - Clickable */}
-        <View style={styles.matchupContainer}>
-          {/* Fighter 1 */}
-          <TouchableOpacity
-            style={styles.fighterContainer}
-            onPress={() => router.push(`/fighter/${fight.fighter1.id}`)}
-          >
-            {(() => {
-              const fighter1Rings = getFighterRings(
-                fight.fighter1.id,
-                `${fight.fighter1.firstName} ${fight.fighter1.lastName}`,
-                false
-              );
-              const borderWidth = 3;
-              const gap = 2;
-              const baseSize = 125;
 
-              return (
-                <View style={{ width: baseSize, height: baseSize, marginBottom: 12, position: 'relative' }}>
-                  {fighter1Rings.map((ring, index) => {
-                    const ringColor = ring === 'winner' ? '#22c55e' : ring === 'community' ? '#F5C518' : ring === 'community-gold' ? '#8A7014' : '#83B4F3';
-                    const inset = index * (borderWidth + gap);
-
-                    return (
-                      <View
-                        key={`${ring}-${index}`}
-                        style={{
-                          position: 'absolute',
-                          top: inset,
-                          left: inset,
-                          right: inset,
-                          bottom: inset,
-                          borderWidth: borderWidth,
-                          borderColor: ringColor,
-                          borderRadius: baseSize / 2,
-                          zIndex: index,
-                        }}
-                      />
-                    );
-                  })}
-
-                  <Image
-                    source={
-                      fight.fighter1.profileImage
-                        ? { uri: fight.fighter1.profileImage }
-                        : getFighterPlaceholderImage(fight.fighter1.id)
-                    }
-                    style={{
-                      width: baseSize,
-                      height: baseSize,
-                      borderRadius: baseSize / 2,
-                      zIndex: 100,
-                    }}
-                  />
-
-                  {/* Winner checkmark badge */}
-                  {fight.winner === fight.fighter1.id && (
-                    <View style={styles.winnerBadge}>
-                      <FontAwesome name="check" size={16} color="#000" />
-                    </View>
-                  )}
-                </View>
-              );
-            })()}
-            <Text style={[styles.fighterName, { color: colors.text }]}>
-              {fight.fighter1.firstName} {fight.fighter1.lastName}
+        {/* Who Won? */}
+        <View style={styles.sectionNoBorder}>
+          {fight.userPredictedWinner ? (
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Correct Winner Prediction?{' '}
+              <Text style={{
+                color: fight.userPredictedWinner === fight.winner ? '#22c55e' : colors.textSecondary,
+                fontWeight: 'bold',
+              }}>
+                {fight.userPredictedWinner === fight.winner ? 'Yes!' : 'No'}
+              </Text>
             </Text>
-            {fight.fighter1.nickname && (
-              <Text style={[styles.fighterNickname, { color: colors.textSecondary }]}>
-                "{fight.fighter1.nickname}"
-              </Text>
-            )}
-            {fight.fighter1Odds && (
-              <Text style={[styles.fighterRecord, { color: colors.textSecondary }]} numberOfLines={1}>
-                {fight.fighter1Odds} ({(() => {
-                  const odds = parseInt(fight.fighter1Odds);
-                  if (odds <= -400) return 'Massive Favorite';
-                  if (odds <= -200) return 'Heavy Favorite';
-                  if (odds < -110) return 'Favorite';
-                  if (odds <= 110) return 'Even';
-                  if (odds <= 200) return 'Minor Underdog';
-                  if (odds <= 400) return 'Underdog';
-                  return 'Major Underdog';
-                })()})
-              </Text>
-            )}
-            {/* Victory text - always reserve space for alignment */}
-            <Text style={[
-              styles.victoryText,
-              {
-                color: '#22c55e',
-                opacity: fight.winner === fight.fighter1.id ? 1 : 0
-              }
-            ]}>
-              {fight.winner === fight.fighter1.id ? (
-                <>
-                  {fight.method && `${fight.method}`}
-                  {fight.round && ` in RD ${fight.round}`}
-                </>
-              ) : (
-                'Placeholder'
+          ) : (
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Who won?
+            </Text>
+          )}
+          <View style={styles.fighterButtons}>
+            {/* Fighter 1 */}
+            <View
+              style={[
+                styles.fighterButton,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                }
+              ]}
+            >
+              {fight.userPredictedWinner === fight.fighter1.id && (
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#F5C518', borderRadius: 12 }]} />
               )}
-            </Text>
-          </TouchableOpacity>
+              <Image
+                source={
+                  fight.fighter1.profileImage
+                    ? { uri: fight.fighter1.profileImage }
+                    : getFighterPlaceholderImage(fight.fighter1.id)
+                }
+                style={styles.fighterButtonImage}
+              />
+              <Text style={[
+                styles.fighterButtonText,
+                {
+                  color: fight.userPredictedWinner === fight.fighter1.id ? '#000' : colors.text
+                }
+              ]}>
+                {fight.fighter1.lastName}
+              </Text>
+              {/* Green checkmark for winner - inside button, rendered last so on top */}
+              {fight.winner === fight.fighter1.id && (
+                <View style={styles.winnerCheckmark}>
+                  <FontAwesome name="check-circle" size={28} color="#22c55e" />
+                </View>
+              )}
+              {/* Lock icon for predicted fighter */}
+              {fight.userPredictedWinner === fight.fighter1.id && (
+                <View style={styles.lockIcon}>
+                  <FontAwesome name="lock" size={18} color={colors.background} />
+                </View>
+              )}
+            </View>
 
-          {/* VS Divider */}
-          <View style={styles.vsContainer}>
-            <Text style={[styles.vsText, { color: colors.textSecondary }]}>VS</Text>
+            {/* Fighter 2 */}
+            <View
+              style={[
+                styles.fighterButton,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                }
+              ]}
+            >
+              {fight.userPredictedWinner === fight.fighter2.id && (
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#F5C518', borderRadius: 12 }]} />
+              )}
+              <Image
+                source={
+                  fight.fighter2.profileImage
+                    ? { uri: fight.fighter2.profileImage }
+                    : getFighterPlaceholderImage(fight.fighter2.id)
+                }
+                style={styles.fighterButtonImage}
+              />
+              <Text style={[
+                styles.fighterButtonText,
+                {
+                  color: fight.userPredictedWinner === fight.fighter2.id ? '#000' : colors.text
+                }
+              ]}>
+                {fight.fighter2.lastName}
+              </Text>
+              {/* Green checkmark for winner - inside button, rendered last so on top */}
+              {fight.winner === fight.fighter2.id && (
+                <View style={styles.winnerCheckmark}>
+                  <FontAwesome name="check-circle" size={28} color="#22c55e" />
+                </View>
+              )}
+              {/* Lock icon for predicted fighter */}
+              {fight.userPredictedWinner === fight.fighter2.id && (
+                <View style={styles.lockIcon}>
+                  <FontAwesome name="lock" size={18} color={colors.background} />
+                </View>
+              )}
+            </View>
           </View>
-
-          {/* Fighter 2 */}
-          <TouchableOpacity
-            style={styles.fighterContainer}
-            onPress={() => router.push(`/fighter/${fight.fighter2.id}`)}
-          >
-            {(() => {
-              const fighter2Rings = getFighterRings(
-                fight.fighter2.id,
-                `${fight.fighter2.firstName} ${fight.fighter2.lastName}`,
-                true
-              );
-              const borderWidth = 3;
-              const gap = 2;
-              const baseSize = 125;
-
-              return (
-                <View style={{ width: baseSize, height: baseSize, marginBottom: 12, position: 'relative' }}>
-                  {fighter2Rings.map((ring, index) => {
-                    const ringColor = ring === 'winner' ? '#22c55e' : ring === 'community' ? '#F5C518' : ring === 'community-gold' ? '#8A7014' : '#83B4F3';
-                    const inset = index * (borderWidth + gap);
-
-                    return (
-                      <View
-                        key={`${ring}-${index}`}
-                        style={{
-                          position: 'absolute',
-                          top: inset,
-                          left: inset,
-                          right: inset,
-                          bottom: inset,
-                          borderWidth: borderWidth,
-                          borderColor: ringColor,
-                          borderRadius: baseSize / 2,
-                          zIndex: index,
-                        }}
-                      />
-                    );
-                  })}
-
-                  <Image
-                    source={
-                      fight.fighter2.profileImage
-                        ? { uri: fight.fighter2.profileImage }
-                        : getFighterPlaceholderImage(fight.fighter2.id)
-                    }
-                    style={{
-                      width: baseSize,
-                      height: baseSize,
-                      borderRadius: baseSize / 2,
-                      zIndex: 100,
-                    }}
-                  />
-
-                  {/* Winner checkmark badge */}
-                  {fight.winner === fight.fighter2.id && (
-                    <View style={styles.winnerBadge}>
-                      <FontAwesome name="check" size={16} color="#000" />
-                    </View>
-                  )}
-                </View>
-              );
-            })()}
-            <Text style={[styles.fighterName, { color: colors.text }]}>
-              {fight.fighter2.firstName} {fight.fighter2.lastName}
-            </Text>
-            {fight.fighter2.nickname && (
-              <Text style={[styles.fighterNickname, { color: colors.textSecondary }]}>
-                "{fight.fighter2.nickname}"
-              </Text>
-            )}
-            {fight.fighter2Odds && (
-              <Text style={[styles.fighterRecord, { color: colors.textSecondary }]} numberOfLines={1}>
-                {fight.fighter2Odds} ({(() => {
-                  const odds = parseInt(fight.fighter2Odds);
-                  if (odds <= -400) return 'Massive Favorite';
-                  if (odds <= -200) return 'Heavy Favorite';
-                  if (odds < -110) return 'Favorite';
-                  if (odds <= 110) return 'Even';
-                  if (odds <= 200) return 'Minor Underdog';
-                  if (odds <= 400) return 'Underdog';
-                  return 'Major Underdog';
-                })()})
-              </Text>
-            )}
-            {/* Victory text - always reserve space for alignment */}
-            <Text style={[
-              styles.victoryText,
-              {
-                color: '#22c55e',
-                opacity: fight.winner === fight.fighter2.id ? 1 : 0
-              }
-            ]}>
-              {fight.winner === fight.fighter2.id ? (
-                <>
-                  {fight.method && `${fight.method}`}
-                  {fight.round && ` in RD ${fight.round}`}
-                </>
-              ) : (
-                'Placeholder'
-              )}
-            </Text>
-          </TouchableOpacity>
         </View>
+
+      {/* How did it end? */}
+      <View style={[styles.sectionNoBorder, { marginTop: -28 }]}>
+        {fight.userPredictedMethod ? (
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Correct Method Prediction?{' '}
+            <Text style={{
+              color: fight.userPredictedMethod === fight.method ? '#22c55e' : colors.textSecondary,
+              fontWeight: 'bold',
+            }}>
+              {fight.userPredictedMethod === fight.method ? 'Yes!' : 'No'}
+            </Text>
+          </Text>
+        ) : (
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            How did it end?
+          </Text>
+        )}
+        <View style={styles.methodButtons}>
+          {(['KO_TKO', 'SUBMISSION', 'DECISION'] as const).map((method) => {
+            const isPredicted = fight.userPredictedMethod === method;
+
+            // Map method enum to actual fight.method string values
+            const methodMatches = (fightMethod: string | null | undefined, enumMethod: string) => {
+              if (!fightMethod) return false;
+              const lowerMethod = fightMethod.toLowerCase();
+              if (enumMethod === 'KO_TKO') {
+                return lowerMethod.includes('ko') || lowerMethod.includes('tko');
+              }
+              if (enumMethod === 'SUBMISSION') {
+                return lowerMethod.includes('submission') || lowerMethod.includes('sub');
+              }
+              if (enumMethod === 'DECISION') {
+                return lowerMethod.includes('decision') || lowerMethod.includes('dec');
+              }
+              return false;
+            };
+
+            const isActual = methodMatches(fight.method, method);
+            const isCorrect = isPredicted && isActual;
+
+            return (
+              <View
+                key={method}
+                style={[
+                  styles.methodButton,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                  }
+                ]}
+              >
+                {/* Yellow background for predicted method (correct or wrong) */}
+                {isPredicted && (
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: '#F5C518', borderRadius: 8 }]} />
+                )}
+
+                <Text style={[
+                  styles.methodButtonText,
+                  {
+                    color: isPredicted ? '#000' : colors.text
+                  }
+                ]}>
+                  {method === 'KO_TKO' ? 'KO/TKO' : method}
+                </Text>
+
+                {/* Green checkmark for actual method - inside button, rendered last so on top */}
+                {isActual && (
+                  <View style={styles.methodCheckmark}>
+                    <FontAwesome name="check-circle" size={20} color="#22c55e" />
+                  </View>
+                )}
+                {/* Lock icon for predicted method */}
+                {isPredicted && (
+                  <View style={styles.methodLockIcon}>
+                    <FontAwesome name="lock" size={18} color={colors.background} />
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
+      </View>
 
         {/* Inline Rating Section */}
         <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: -15 }]}>
@@ -992,7 +940,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           </View>
 
           {/* Tags */}
-          {rating > 0 && displayedTags.length > 0 && (
+          {displayedTags.length > 0 && (
             <View style={styles.inlineTagsSection}>
               <View style={styles.inlineTagsContainer}>
                 {displayedTags.map((tag) => {
@@ -1230,7 +1178,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                   Hype
                 </Text>
                 <View style={styles.barContainer}>
-                  <FontAwesome6 name="fire-flame-curved" size={20} color={getHypeFlameColor(predictionStats?.averageHype || 0)} />
+                  <FontAwesome6 name="fire-flame-curved" size={20} color={getHypeHeatmapColor(predictionStats?.averageHype || 0)} />
                   <Text style={[styles.hypeChartValue, { color: colors.text }]}>
                     {predictionStats?.averageHype !== undefined
                       ? predictionStats.averageHype % 1 === 0
@@ -1828,6 +1776,54 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12,
   },
+  predictionResultText: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  sectionNoBorder: {
+    marginHorizontal: 4,
+    marginBottom: 16,
+    padding: 16,
+  },
+  fighterButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  fighterButton: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 2,
+    gap: 12,
+  },
+  fighterButtonImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  fighterButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  methodButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  methodButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  methodButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   outcomeContainer: {
     gap: 8,
   },
@@ -1863,6 +1859,44 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 200,
+  },
+  winnerCheckmark: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    zIndex: 1000,
+    elevation: 10, // Android
+    backgroundColor: '#1a1a1a',
+    borderRadius: 14,
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  methodCheckmark: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    zIndex: 1000,
+    elevation: 10, // Android
+    backgroundColor: '#1a1a1a',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lockIcon: {
+    position: 'absolute',
+    bottom: 8,
+    right: 11,
+    zIndex: 999,
+  },
+  methodLockIcon: {
+    position: 'absolute',
+    bottom: 6,
+    right: 9,
+    zIndex: 999,
   },
   splitScoreRow: {
     flexDirection: 'row',

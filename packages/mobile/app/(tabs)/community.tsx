@@ -17,6 +17,9 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { apiService } from '../../services/api';
 import { CommentCard } from '../../components';
 import { useAuth } from '../../store/AuthContext';
+import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
+import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
+import FighterCard from '../../components/FighterCard';
 
 interface Event {
   id: string;
@@ -77,6 +80,34 @@ export default function CommunityScreen() {
     queryFn: () => apiService.getTopComments(),
     staleTime: 30 * 1000, // 30 seconds
     refetchOnMount: 'always',
+  });
+
+  // Fetch top upcoming fights
+  const { data: topUpcomingFights, isLoading: isTopUpcomingLoading } = useQuery({
+    queryKey: ['topUpcomingFights'],
+    queryFn: () => apiService.getTopUpcomingFights(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fetch top recent fights
+  const { data: topRecentFights, isLoading: isTopRecentLoading } = useQuery({
+    queryKey: ['topRecentFights'],
+    queryFn: () => apiService.getTopRecentFights(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Fetch hot predictions
+  const { data: hotPredictions, isLoading: isHotPredictionsLoading } = useQuery({
+    queryKey: ['hotPredictions'],
+    queryFn: () => apiService.getHotPredictions(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  // Fetch hot fighters
+  const { data: hotFighters, isLoading: isHotFightersLoading } = useQuery({
+    queryKey: ['hotFighters'],
+    queryFn: () => apiService.getHotFighters(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Upvote mutation
@@ -144,15 +175,17 @@ export default function CommunityScreen() {
       backgroundColor: colors.background,
     },
     scrollContent: {
-      padding: 16,
+      paddingBottom: 20,
     },
     section: {
+      marginTop: 8,
       marginBottom: 24,
     },
     sectionHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      marginHorizontal: 16,
       marginBottom: 12,
     },
     sectionTitle: {
@@ -173,6 +206,7 @@ export default function CommunityScreen() {
       backgroundColor: colors.card,
       borderRadius: 12,
       padding: 16,
+      marginHorizontal: 16,
       marginBottom: 12,
       borderWidth: 1,
       borderColor: colors.border,
@@ -186,6 +220,7 @@ export default function CommunityScreen() {
     cardSubtext: {
       fontSize: 14,
       color: colors.textSecondary,
+      marginHorizontal: 16,
     },
     comingSoonContainer: {
       backgroundColor: colors.card,
@@ -253,6 +288,27 @@ export default function CommunityScreen() {
       color: colors.tint,
       fontWeight: '600',
     },
+    columnHeadersUpcoming: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      marginLeft: -11,
+      width: 40,
+      justifyContent: 'center',
+    },
+    columnHeadersCompleted: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginLeft: -7,
+      width: 88,
+      justifyContent: 'flex-start',
+    },
+    columnHeaderText: {
+      fontSize: 10,
+      fontWeight: '600',
+      letterSpacing: 0.5,
+    },
   });
 
   // Placeholder sections for community features
@@ -290,216 +346,142 @@ export default function CommunityScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Community Predictions for Next Event */}
+        {/* Top Upcoming Fights Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              Top Predictions
-            </Text>
+            <Text style={styles.sectionTitle}>Top Upcoming Fights</Text>
           </View>
           <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            Who people think will win this weekend.
+            Upcoming fights with lots of hype
           </Text>
-
-          {isLoading ? (
+          <View style={[styles.sectionHeader, { marginBottom: 12 }]}>
+            <View style={styles.columnHeadersUpcoming}>
+              <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                HYPE
+              </Text>
+            </View>
+          </View>
+          {isTopUpcomingLoading ? (
             <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
-              <ActivityIndicator size="large" color={colors.primary} />
+              <ActivityIndicator size="small" color={colors.primary} />
             </View>
-          ) : nextUFCEvent ? (
-            <View style={styles.card}>
-              {isPredictionsLoading ? (
-                <View style={{ alignItems: 'center' }}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                  <Text style={[styles.cardSubtext, { marginTop: 8 }]}>Loading predictions...</Text>
-                </View>
-              ) : predictionData && predictionData.totalPredictions > 0 ? (
-                <View>
-                  {/* Top Predicted Winners */}
-                  {predictionData.topFighters.length > 0 && (
-                    <View>
-                      <Text style={[styles.cardSubtext, { fontWeight: '600', marginBottom: 8 }]}>
-                        🏆 Top Predicted Winners
-                      </Text>
-                      {predictionData.topFighters.slice(0, 5).map((fighter, index) => {
-                        const percentage = fighter.totalFightPredictions > 0
-                          ? Math.round((fighter.winPredictions / fighter.totalFightPredictions) * 100)
-                          : 0;
-
-                        return (
-                          <TouchableOpacity
-                            key={fighter.fighterId}
-                            style={{
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              paddingVertical: 6,
-                              borderBottomWidth: index < Math.min(predictionData.topFighters.length, 5) - 1 ? 1 : 0,
-                              borderBottomColor: colors.border,
-                            }}
-                            onPress={() => router.push(`/fight/${fighter.fightId}` as any)}
-                          >
-                            <Text style={[styles.cardSubtext, { fontSize: 13, marginRight: 8, width: 16 }]}>
-                              {index + 1}.
-                            </Text>
-                            {fighter.profileImage && (
-                              <Image
-                                source={{ uri: fighter.profileImage.startsWith('http') ? fighter.profileImage : `${apiService.baseURL}${fighter.profileImage}` }}
-                                style={{ width: 32, height: 32, borderRadius: 16, marginRight: 8 }}
-                              />
-                            )}
-                            <View style={{ flex: 1 }}>
-                              <Text style={[styles.cardSubtext, { fontSize: 13 }]}>
-                                {percentage}% picked {fighter.name} to beat {fighter.opponent.name}.
-                              </Text>
-                            </View>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  )}
-                </View>
-              ) : (
-                <View style={styles.comingSoonBadge}>
-                  <Text style={styles.comingSoonBadgeText}>
-                    No predictions yet - be the first!
-                  </Text>
-                </View>
-              )}
-            </View>
+          ) : topUpcomingFights && topUpcomingFights.data.length > 0 ? (
+            topUpcomingFights.data.map((fight: any) => (
+              <UpcomingFightCard
+                key={fight.id}
+                fight={fight}
+                onPress={() => router.push(`/fight/${fight.id}` as any)}
+                showEvent={true}
+              />
+            ))
           ) : (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>No upcoming UFC events</Text>
-              <Text style={styles.cardSubtext}>
-                Check back later for community predictions
+              <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
+                No upcoming fights found
               </Text>
             </View>
           )}
         </View>
 
-        {/* Most Hype Section */}
-        {!isLoading && nextUFCEvent && predictionData && predictionData.mostHypedFights.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Most Hype</Text>
+        {/* Top Recent Fights Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Top Recent Fights</Text>
+          </View>
+          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
+            Recent fights that delivered entertainment
+          </Text>
+          <View style={[styles.sectionHeader, { marginBottom: 12 }]}>
+            <View style={styles.columnHeadersCompleted}>
+              <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                HYPE
+              </Text>
+              <Text style={[styles.columnHeaderText, { color: colors.textSecondary, marginLeft: 2 }]}>
+                ACTUAL
+              </Text>
             </View>
-            <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-              Upcoming fights with heat on them.
-            </Text>
+          </View>
+          {isTopRecentLoading ? (
+            <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : topRecentFights && topRecentFights.data.length > 0 ? (
+            topRecentFights.data.map((fight: any) => (
+              <CompletedFightCard
+                key={fight.id}
+                fight={fight}
+                onPress={() => router.push(`/fight/${fight.id}` as any)}
+                showEvent={true}
+              />
+            ))
+          ) : (
             <View style={styles.card}>
-              {predictionData.mostHypedFights.map((fight, index) => (
-                <TouchableOpacity
-                  key={fight.fightId}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingVertical: 8,
-                    borderBottomWidth: index < predictionData.mostHypedFights.length - 1 ? 1 : 0,
-                    borderBottomColor: colors.border,
-                  }}
-                  onPress={() => router.push(`/fight/${fight.fightId}` as any)}
-                >
-                  <Text style={[styles.cardSubtext, { fontSize: 13, marginRight: 8, width: 16 }]}>
-                    {index + 1}.
-                  </Text>
-                  {fight.fighter1.profileImage && (
-                    <Image
-                      source={{ uri: fight.fighter1.profileImage.startsWith('http') ? fight.fighter1.profileImage : `${apiService.baseURL}${fight.fighter1.profileImage}` }}
-                      style={{ width: 32, height: 32, borderRadius: 16, marginRight: 6 }}
-                    />
-                  )}
-                  <Text style={[styles.cardSubtext, { fontSize: 13, marginRight: 4 }]}>vs</Text>
-                  {fight.fighter2.profileImage && (
-                    <Image
-                      source={{ uri: fight.fighter2.profileImage.startsWith('http') ? fight.fighter2.profileImage : `${apiService.baseURL}${fight.fighter2.profileImage}` }}
-                      style={{ width: 32, height: 32, borderRadius: 16, marginRight: 8 }}
-                    />
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.cardSubtext, { fontSize: 13 }]}>
-                      {fight.fighter1.name} vs {fight.fighter2.name}
-                    </Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                      <FontAwesome6
-                        name="fire-flame-curved"
-                        size={14}
-                        color='#FF6B35'
-                        style={{ marginRight: 4 }}
-                      />
-                      <Text style={[styles.cardSubtext, { fontSize: 12, color: colors.textSecondary }]}>
-                        {fight.averageHype}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
+              <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
+                No recent fights found
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Hot Predictions Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Hot Predictions</Text>
+          </View>
+          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
+            Lots of predictions are coming in on these fights
+          </Text>
+          {isHotPredictionsLoading ? (
+            <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : hotPredictions && hotPredictions.data.length > 0 ? (
+            hotPredictions.data.map((fight: any) => (
+              <UpcomingFightCard
+                key={fight.id}
+                fight={fight}
+                onPress={() => router.push(`/fight/${fight.id}` as any)}
+                showEvent={true}
+              />
+            ))
+          ) : (
+            <View style={styles.card}>
+              <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
+                No hot predictions found
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Hot Fighters Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Hot Fighters</Text>
+          </View>
+          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
+            Fighters who always entertain
+          </Text>
+          {isHotFightersLoading ? (
+            <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : hotFighters && (hotFighters.data.recent.length > 0 || hotFighters.data.upcoming.length > 0) ? (
+            <>
+              {[...hotFighters.data.recent, ...hotFighters.data.upcoming].map((fighterData: any) => (
+                <FighterCard
+                  key={fighterData.fighter.id}
+                  fighter={fighterData.fighter}
+                  onPress={() => router.push(`/(tabs)/fighters/${fighterData.fighter.id}` as any)}
+                />
               ))}
-            </View>
-          </View>
-        )}
-
-        {/* Top Fights Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top Fights</Text>
-            <TouchableOpacity
-              style={styles.seeAllButton}
-              onPress={() => router.push('/fights' as any)}
-            >
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            Highly rated on Fight Crew.
-          </Text>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Highest rated fights</Text>
-            <Text style={styles.cardSubtext}>
-              Top 3 fights change daily based on community ratings
-            </Text>
-            <View style={styles.comingSoonBadge}>
-              <Text style={styles.comingSoonBadgeText}>
-                Coming Soon
+            </>
+          ) : (
+            <View style={styles.card}>
+              <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
+                No hot fighters found
               </Text>
             </View>
-          </View>
-        </View>
-
-        {/* Top Fighters Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top Fighters</Text>
-            <TouchableOpacity
-              style={styles.seeAllButton}
-              onPress={() => router.push('/fighters' as any)}
-            >
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            Entertaining every time.
-          </Text>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Highest rated fighters</Text>
-            <Text style={styles.cardSubtext}>
-              Top 3 fighters change daily based on fight performance
-            </Text>
-            <View style={styles.comingSoonBadge}>
-              <Text style={styles.comingSoonBadgeText}>
-                Coming Soon
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* User Leaderboard Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>User Leaderboard</Text>
-            <TouchableOpacity style={styles.seeAllButton}>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            Users with the best predictions and comments.
-          </Text>
+          )}
         </View>
 
         {/* Top Comments Section */}
