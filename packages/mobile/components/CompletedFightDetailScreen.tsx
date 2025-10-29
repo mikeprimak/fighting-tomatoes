@@ -539,7 +539,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
       useNativeDriver: false,
     }).start();
 
-    // Immediate save for rating
+    // Delay save until after animation completes (800ms animation + 100ms buffer)
     setTimeout(() => {
       const submissionData = {
         rating: finalRating > 0 ? finalRating : null,
@@ -547,7 +547,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
         tags: selectedTags
       };
       updateUserDataMutation.mutate(submissionData);
-    }, 100);
+    }, 900);
   };
 
   const handleToggleTag = (tagId: string) => {
