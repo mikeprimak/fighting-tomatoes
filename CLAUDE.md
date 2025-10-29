@@ -99,7 +99,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 - **Component Updates**: EventCard and FighterCard now route to `/(tabs)/events/[id]` and `/(tabs)/fighters/[id]`
 - **Benefits**: 100% consistent tab bar, proper navigation stack per tab, better UX alignment with platform conventions
 
-**UpcomingFightCard Redesign** (Latest):
+**UpcomingFightCard Redesign**:
 - **Heatmap Square**: Replaced inline hype icon with 40x40px colored square on left edge, displays aggregate hype score (0.0-10.0), gradient from grey (0) → orange (7) → red (8.5+)
 - **Removed Elements**: Removed "My Hype" display, left border, prediction method badges (KO/DEC/SUB tags)
 - **Component Height**: Fixed minHeight of 40px with tight internal spacing (paddingVertical: 4px, reduced margins throughout)
@@ -108,6 +108,30 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 - **Font Sizes**: Hype square text 14px, fighter names 14px, event text 12px (from sharedStyles)
 - **Backup**: Full backup saved as `UpcomingFightCard.BACKUP-2025-10-28.tsx`
 - **Files**: `components/fight-cards/UpcomingFightCard.tsx`, `app/(tabs)/events/index.tsx`
+
+**Past Events Inline Rating System** (Latest):
+- **CompletedFightCard Updates**:
+  - Added second rating column (40x40px squares) next to hype column, same heatmap colors (grey → orange → red)
+  - Column headers: "HYPE" and "ACTUAL" with precise spacing (marginLeft: -7px for alignment)
+  - Both squares filled with solid backgrounds, white text displaying scores (0.0-10.0)
+  - Card navigation: Tapping card navigates to CompletedFightDetailScreen (removed RateFightModal)
+- **CompletedFightDetailScreen Inline Rating**:
+  - **Large Animated Star Display**: 80px star with wheel animation showing rating number 1-10
+  - **Wheel Animation**: Smooth 800ms scroll effect (matches UpcomingFightDetailScreen flame animation)
+  - **10 Tappable Stars**: 32px stars in single row (reduced gap: 2px, padding: 2px to fit screen width)
+  - **Auto-Save**: Immediate save on star tap/tag toggle, 1-second debounced save for comment changes
+  - **Contextual Tags**: Dynamic tag selection based on rating (1-4 negative, 5-7 neutral, 8-10 positive), compact 12px font
+  - **No Submit Button**: All actions save automatically
+  - **No Loading Indicators**: No "Saving..." message to prevent animation disruption
+- **Animation Architecture** (Critical for Smooth Performance):
+  - **Pattern**: Applied UpcomingFightDetailScreen approach for perfect animation smoothness
+  - **Lazy State Initialization**: `useState(() => fight.userRating)` - initialize once, manage locally (prevents flicker)
+  - **Simple Animation Function**: Direct `animateToNumber()` with no complex state tracking or delays
+  - **Minimal onSuccess**: Mutation only invalidates queries, no state updates that trigger re-renders
+  - **Native Thread Animation**: `useNativeDriver: true` for wheel, decoupled from React re-renders
+  - **No useEffect Reset**: Removed useEffect that was resetting state on query refetches (caused star flicker)
+- **Layout**: Borderless section with transparent background, stars and tags positioned directly below wheel
+- **Files**: `components/fight-cards/CompletedFightCard.tsx`, `components/CompletedFightDetailScreen.tsx`, `app/(tabs)/past-events/index.tsx`
 
 **Contact Invitations**:
 - **WhatsApp-style UX**: Select multiple contacts, send SMS invites with crew invite code
