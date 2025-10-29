@@ -10,7 +10,9 @@ import {
   Animated,
   ActivityIndicator,
   TextInput,
+  Easing,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useQueryClient, useQuery, useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
@@ -278,6 +280,10 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const [tagRandomSeed, setTagRandomSeed] = useState(0);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Animation values for wheel animation (large star display)
+  const wheelAnimation = useRef(new Animated.Value(1200)).current;
+  const starColorAnimation = useRef(new Animated.Value(0)).current;
+
   // Animation values for My Rating
   const myRatingScaleAnim = useRef(new Animated.Value(1)).current;
   const myRatingGlowAnim = useRef(new Animated.Value(0)).current;
@@ -443,6 +449,16 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     setComment(currentComment);
     setSelectedTags(currentTags);
     setTagRandomSeed(Math.floor(Math.random() * 1000));
+
+    // Initialize wheel animation
+    if (currentRating > 0) {
+      const wheelPosition = (10 - currentRating) * 120;
+      wheelAnimation.setValue(wheelPosition);
+      starColorAnimation.setValue(1);
+    } else {
+      wheelAnimation.setValue(1200);
+      starColorAnimation.setValue(0);
+    }
   }, [fight.id, fight.userReview, fight.userRating, fight.userTags, tagsData]);
 
   // Auto-save handler
@@ -482,11 +498,46 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     };
   }, [comment]);
 
+  // Animation function to move wheel to specific number
+  const animateToNumber = (targetNumber: number) => {
+    if (targetNumber === 0) {
+      // Animate to blank position (below "1")
+      wheelAnimation.stopAnimation();
+      Animated.timing(wheelAnimation, {
+        toValue: 1200,
+        duration: 800,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start();
+    } else {
+      // Calculate position for target number (10 at top, 1 at bottom)
+      const targetPosition = (10 - targetNumber) * 120;
+
+      wheelAnimation.stopAnimation();
+      Animated.timing(wheelAnimation, {
+        toValue: targetPosition,
+        duration: 800,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start();
+    }
+  };
+
   // Handlers for rating and tags (immediate save)
   const handleSetRating = (newRating: number) => {
     const finalRating = rating === newRating ? 0 : newRating;
     setRating(finalRating);
     setTagRandomSeed(prev => prev + 1);
+
+    // Trigger wheel animation
+    animateToNumber(finalRating);
+
+    // Animate star color transition
+    Animated.timing(starColorAnimation, {
+      toValue: finalRating > 0 ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
 
     // Immediate save for rating
     setTimeout(() => {
@@ -830,6 +881,60 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
         {/* Inline Rating Section */}
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Rate This Fight</Text>
+
+          {/* Large display star with wheel animation */}
+          <View style={styles.displayStarContainer}>
+            <View style={styles.animatedStarContainer}>
+              <View style={{ position: 'relative', marginTop: 24 }}>
+                {/* Grey star (base layer) */}
+                <FontAwesome name="star" size={80} color="#666666" />
+                {/* Primary color star (overlay) */}
+                <Animated.View
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    opacity: starColorAnimation
+                  }}
+                >
+                  <FontAwesome name="star" size={80} color={colors.primary} />
+                </Animated.View>
+              </View>
+              <View style={styles.wheelContainer}>
+                <Animated.View style={[
+                  styles.wheelNumbers,
+                  {
+                    transform: [{
+                      translateY: wheelAnimation.interpolate({
+                        inputRange: [0, 1200],
+                        outputRange: [475, -725],
+                      })
+                    }]
+                  }
+                ]}>
+                  {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => (
+                    <Text key={number} style={[styles.wheelNumber, { color: colors.text }]}>
+                      {number}
+                    </Text>
+                  ))}
+                </Animated.View>
+
+                {/* Smooth top gradient fade */}
+                <LinearGradient
+                  colors={[colors.card, `${colors.card}DD`, `${colors.card}99`, `${colors.card}44`, 'transparent']}
+                  style={[styles.fadeOverlay, { top: 0, height: 38 }]}
+                  pointerEvents="none"
+                />
+
+                {/* Smooth bottom gradient fade */}
+                <LinearGradient
+                  colors={['transparent', `${colors.card}44`, `${colors.card}99`, `${colors.card}DD`, colors.card, colors.card]}
+                  style={[styles.fadeOverlay, { bottom: -12, height: 25 }]}
+                  pointerEvents="none"
+                />
+              </View>
+            </View>
+          </View>
 
           {/* Star Rating (1-10) */}
           <View style={styles.inlineStarContainer}>
@@ -1923,5 +2028,49 @@ const styles = StyleSheet.create({
   savingText: {
     fontSize: 14,
     fontStyle: 'italic',
+  },
+  displayStarContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+    marginTop: -24,
+  },
+  animatedStarContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 20,
+    paddingBottom: 4,
+  },
+  wheelContainer: {
+    position: 'absolute',
+    top: 20,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  wheelNumbers: {
+    alignItems: 'center',
+    paddingTop: 150,
+  },
+  wheelNumber: {
+    fontSize: 52,
+    fontWeight: 'bold',
+    height: 120,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    lineHeight: 120,
+    textShadowColor: 'black',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
+    minWidth: 120,
+  },
+  fadeOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 1,
   },
 });
