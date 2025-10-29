@@ -41,20 +41,192 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 **Response**: Success `{ data, pagination? }`, Error `{ error, code, details? }`
 **Rate Limit**: Auth 5/15min, General 10/15min, headers: X-RateLimit-*
 
-## Workflow
+## 🚀 SERVER STARTUP PROTOCOL (READ THIS FIRST!)
 
-1. `pnpm docker:up && pnpm install && pnpm db:migrate && pnpm db:seed && pnpm dev`
+**CRITICAL PORTS - THESE MUST MATCH EVERYWHERE:**
+- ✅ Backend: **PORT 3008** (NOT 3001!)
+- ✅ Expo/Metro: **PORT 8083** (NOT 8081!)
+- ✅ Docker PostgreSQL: **PORT 5433** (NOT 5432!)
+- ✅ Mobile API URL: `http://10.0.0.53:3008/api`
 
-### Server Startup Protocol (CRITICAL)
-**Port conflicts & Expo Go issues common**. Follow exactly:
-1. Kill existing processes on ports
-2. Backend: `pnpm dev` OR `cd packages/backend && pnpm dev` (custom PORT if needed)
-3. Mobile: Kill Expo, then `cd packages/mobile && npx expo start --port 8083 --lan` (NO `--dev-client` for Expo Go)
-4. Trigger Metro: `curl http://localhost:8083`
-5. Use network IP: Expo `exp://10.0.0.53:8083`, Backend `http://10.0.0.53:3001`
+**CRITICAL: Expo Go vs Dev Client:**
+- ✅ Expo Go: Use `npx expo start --port 8083 --lan` (NO --dev-client flag)
+- ❌ Dev Client: Would use `npx expo start --port 8083 --lan --dev-client`
+- **Default for this project: Expo Go**
+
+### Step-by-Step Startup (USE THIS EVERY TIME)
+
+**Why These Ports?**
+- Port 3001 is often occupied by other services
+- Port 8081 conflicts with Metro default
+- Using 3008 and 8083 avoids conflicts
+
+**Full Startup Procedure (Follow in Order)**:
+
+```bash
+# ━━━ STEP 1: Start Docker Desktop ━━━
+start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+# ⏳ WAIT 30 seconds for Docker to fully initialize
+
+# ━━━ STEP 2: Verify Docker Containers ━━━
+docker ps
+# ✅ MUST SEE: yourapp-postgres (0.0.0.0:5433->5432/tcp)
+# ✅ MUST SEE: yourapp-redis (0.0.0.0:6379->6379/tcp)
+# ❌ If not running: pnpm docker:up
+
+# ━━━ STEP 3: Start Backend on Port 3008 ━━━
+cd packages/backend && PORT=3008 pnpm dev
+# ⏳ WAIT for these messages:
+#    ✅ "Database connected successfully"
+#    ✅ "Server listening at http://10.0.0.53:3008"
+# ❌ If "EADDRINUSE" error: Port already in use, kill it first
+#    netstat -ano | findstr ":3008"
+#    powershell -Command "Stop-Process -Id <PID> -Force"
+
+# ━━━ STEP 4: Start Expo for Expo Go (NO --dev-client!) ━━━
+# Open NEW terminal/command prompt
+cd packages/mobile && npx expo start --port 8083 --lan
+# ⏳ WAIT for QR code to appear
+# ✅ Should see "Metro waiting on exp://10.0.0.53:8083"
+
+# ━━━ STEP 5: Connect Expo Go ━━━
+# 📱 On phone: Open Expo Go app
+# 📱 Scan QR code from terminal
+# ⚠️ Phone and computer MUST be on same WiFi network
+```
+
+**Verification Checklist:**
+```bash
+# Run these to verify everything is working:
+curl http://localhost:3008/health          # Should return: {"status":"healthy"...}
+curl http://localhost:8083/status          # Should return: packager-status:running
+docker ps                                   # Should show 2 containers running
+netstat -ano | findstr ":3008 :8083"      # Should show both ports listening
+```
+
+**Quick Restart (When Servers Already Running)**:
+```bash
+# ━━━ Check Current Status ━━━
+netstat -ano | findstr ":3008 :8083"       # Check if ports are in use
+docker ps                                   # Check Docker containers
+curl http://localhost:3008/health          # Test backend
+curl http://localhost:8083/status          # Test Metro
+
+# ━━━ Restart Backend Only ━━━
+# 1. Find and kill old process:
+netstat -ano | findstr ":3008"
+powershell -Command "Stop-Process -Id <PID> -Force"
+# 2. Restart:
+cd packages/backend && PORT=3008 pnpm dev
+
+# ━━━ Restart Expo Only ━━━
+# 1. Find and kill old process:
+netstat -ano | findstr ":8083"
+powershell -Command "Stop-Process -Id <PID> -Force"
+# 2. Restart:
+cd packages/mobile && npx expo start --port 8083 --lan
+
+# ━━━ Full Reset (Nuclear Option) ━━━
+# Kill all Node processes (will stop everything):
+taskkill /F /IM node.exe
+# Then follow full startup procedure above
+```
+
+**⚙️ Configuration Audit (Run This Before Starting)**:
+
+Before starting servers, verify these configurations are correct:
+
+```bash
+# 1. Check mobile API configs have port 3008 (NOT 3001):
+grep "10.0.0.53:300" packages/mobile/services/api.ts packages/mobile/store/AuthContext.tsx
+# MUST show port 3008 in both files
+
+# 2. Check Docker ports are correct:
+grep "5433" docker-compose.yml
+# MUST show 5433:5432 mapping for PostgreSQL
+
+# 3. Verify .env file (if exists):
+cat packages/backend/.env | grep PORT
+# Should NOT override PORT to 3001
+```
+
+**If any of above checks fail, update files BEFORE starting servers!**
+
+**🔧 Common Issues & Fixes**:
+
+**Issue 1: "Port already in use" (EADDRINUSE)**
+```bash
+# Find what's using the port:
+netstat -ano | findstr ":3008"
+# Output: TCP  0.0.0.0:3008  0.0.0.0:0  LISTENING  12345
+#                                                    ^^^^^ This is the PID
+
+# Kill it:
+powershell -Command "Stop-Process -Id 12345 -Force"
+
+# Then restart backend:
+cd packages/backend && PORT=3008 pnpm dev
+```
+
+**Issue 2: "Network request failed" in mobile app**
+```
+Root Cause: Mobile app connecting to wrong port (3001 instead of 3008)
+Fix Steps:
+1. Verify backend is running on 3008:
+   curl http://localhost:3008/health
+2. Check mobile config files have port 3008:
+   - packages/mobile/services/api.ts line 18-20
+   - packages/mobile/store/AuthContext.tsx line 59-61
+3. Reload app in Expo Go (shake phone → Reload)
+```
+
+**Issue 3: App won't load in Expo Go**
+```
+Root Cause: Wrong Expo flags (--dev-client when should be vanilla)
+Fix Steps:
+1. Kill Expo process
+2. Restart WITHOUT --dev-client flag:
+   cd packages/mobile && npx expo start --port 8083 --lan
+3. If still fails, clear cache:
+   npx expo start --port 8083 --lan --clear
+4. Ensure phone and computer on SAME WiFi network
+```
+
+**Issue 4: Mobile config has wrong port**
+```
+ALWAYS verify these files after backend changes:
+- packages/mobile/services/api.ts:18-20
+  Should be: return 'http://10.0.0.53:3008/api';
+- packages/mobile/store/AuthContext.tsx:59-61
+  Should be: return 'http://10.0.0.53:3008/api';
+
+Search command to check:
+grep -r "10.0.0.53:300" packages/mobile
+```
+
+**🌐 Network URLs (For Reference)**:
+- Expo Go QR: Scan from terminal (exp://10.0.0.53:8083)
+- Backend API: http://10.0.0.53:3008/api
+- Backend Health: http://10.0.0.53:3008/health
+- Local Backend: http://localhost:3008
+- Docker PostgreSQL: localhost:5433
+
+**📝 File Locations (For Quick Reference)**:
+- Backend server: `packages/backend/src/server.ts`
+- Mobile API config: `packages/mobile/services/api.ts:18-20`
+- Auth API config: `packages/mobile/store/AuthContext.tsx:59-61`
+- Docker compose: `docker-compose.yml`
+
+---
+
+## Workflow (Legacy Reference)
+
+Initial setup: `pnpm docker:up && pnpm install && pnpm db:migrate && pnpm db:seed`
 
 **Auth**: JWT refresh rotation, pwd 8+ chars (upper/lower/num/special), email verify required, 5 attempts/15min
 **DB**: Docker PostgreSQL port 5433, `postgresql://dev:devpassword@localhost:5433/yourapp_dev`
+
+---
 
 ## Recent Features (Completed)
 

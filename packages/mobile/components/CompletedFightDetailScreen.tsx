@@ -260,6 +260,35 @@ const getFighterPlaceholderImage = (fighterId: string) => {
   return images[index];
 };
 
+// Color gradient function for hype flame
+const getHypeFlameColor = (hypeScore: number) => {
+  if (hypeScore === 0) return '#808080'; // Grey for 0
+
+  // Gradient from grey (1) to orange (7) - aggressive curve
+  if (hypeScore < 7.0) {
+    const score = Math.max(hypeScore, 1);
+    const linear = (score - 1) / 6;
+    const t = linear * linear; // Quadratic curve
+    const r = Math.round(128 + (235 - 128) * t);
+    const g = Math.round(128 + (134 - 128) * t);
+    const b = Math.round(128 + (0 - 128) * t);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  // Gradient from orange (7) to red (8.5) - very gradual, mostly orange
+  if (hypeScore < 8.5) {
+    const linear = (hypeScore - 7.0) / 1.5; // 0 at 7.0, 1 at 8.5
+    const t = Math.pow(linear, 5); // Quintic curve - stays orange much longer
+    // Interpolate from orange rgb(235, 134, 0) to red rgb(255, 0, 0)
+    const r = Math.round(235 + (255 - 235) * t);
+    const g = Math.round(134 + (0 - 134) * t);
+    const b = Math.round(0 + (0 - 0) * t);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  return '#ff0000'; // Red for 8.5+
+};
+
 export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: CompletedFightDetailScreenProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -269,7 +298,6 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
 
   const [animateMyRating, setAnimateMyRating] = useState(false);
-  const [spoilerRevealed, setSpoilerRevealed] = useState(false);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [reviewToFlag, setReviewToFlag] = useState<string | null>(null);
 
@@ -310,14 +338,51 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const star7 = useRef(new Animated.Value(0)).current;
   const star8 = useRef(new Animated.Value(0)).current;
 
+  // Animation for tags fade
+  const tagsOpacity = useRef(new Animated.Value(1)).current;
+
+  // State for displayed tags (delayed update for smooth animation)
+  const [displayedTags, setDisplayedTags] = useState<string[]>([]);
+
   // Fetch prediction stats
-  const { data: predictionStats } = useQuery({
+  const { data: fetchedPredictionStats } = useQuery({
     queryKey: ['fightPredictionStats', fight.id],
     queryFn: () => apiService.getFightPredictionStats(fight.id),
     enabled: !!fight.id,
     staleTime: 30 * 1000,
     refetchOnMount: 'always',
   });
+
+  // HARDCODED TEST DATA - Remove this when done testing
+  const testPredictionStats = {
+    totalPredictions: 100,
+    averageHype: 8.5,
+    winnerPredictions: {
+      fighter1: { id: fight.fighter1.id, name: `${fight.fighter1.firstName} ${fight.fighter1.lastName}`, predictions: 55, percentage: 55 },
+      fighter2: { id: fight.fighter2.id, name: `${fight.fighter2.firstName} ${fight.fighter2.lastName}`, predictions: 45, percentage: 45 },
+    },
+    methodPredictions: {
+      DECISION: 30,
+      KO_TKO: 45,
+      SUBMISSION: 25,
+    },
+    roundPredictions: {},
+    fighter1MethodPredictions: {
+      DECISION: 15,
+      KO_TKO: 30,
+      SUBMISSION: 10,
+    },
+    fighter1RoundPredictions: {},
+    fighter2MethodPredictions: {
+      DECISION: 15,
+      KO_TKO: 15,
+      SUBMISSION: 15,
+    },
+    fighter2RoundPredictions: {},
+  };
+
+  // Override with test data
+  const predictionStats = testPredictionStats;
 
   // Fetch aggregate stats
   const { data: aggregateStats } = useQuery({
@@ -357,6 +422,35 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   // Calculate available tags based on current rating
   const availableTags = React.useMemo(() => {
     return getAvailableTagsForRating(rating, selectedTags);
+  }, [rating, tagRandomSeed]);
+
+  // Initialize displayed tags on first render
+  useEffect(() => {
+    if (displayedTags.length === 0) {
+      setDisplayedTags(availableTags);
+    }
+  }, []);
+
+  // Animate tags when they change (fade out → update → fade in)
+  useEffect(() => {
+    // Only animate if tags actually changed
+    if (displayedTags.length > 0 && JSON.stringify(displayedTags) !== JSON.stringify(availableTags)) {
+      // Fade out
+      Animated.timing(tagsOpacity, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(() => {
+        // Update tags while invisible
+        setDisplayedTags(availableTags);
+        // Fade in with new tags
+        Animated.timing(tagsOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      });
+    }
   }, [rating, tagRandomSeed]);
 
   // Mutation for auto-saving rating/review/tags
@@ -580,19 +674,9 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const getFighterRings = (fighterId: string, fighterName: string, isFighter2: boolean) => {
     const rings = [];
 
-    // Green ring - actual winner (only show if user has rated OR revealed the winner)
-    if (fight.winner === fighterId && (fight.userRating || spoilerRevealed)) {
+    // Green ring - actual winner (always show)
+    if (fight.winner === fighterId) {
       rings.push('winner');
-    }
-
-    // Community prediction ring - yellow for fighter1, gold for fighter2
-    if (aggregateStats?.communityPrediction?.winner === fighterName) {
-      rings.push(isFighter2 ? 'community-gold' : 'community');
-    }
-
-    // Blue ring - user's prediction
-    if (aggregateStats?.userPrediction?.winner === fighterName) {
-      rings.push('user');
     }
 
     return rings;
@@ -672,6 +756,13 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                       zIndex: 100,
                     }}
                   />
+
+                  {/* Winner checkmark badge */}
+                  {fight.winner === fight.fighter1.id && (
+                    <View style={styles.winnerBadge}>
+                      <FontAwesome name="check" size={16} color="#000" />
+                    </View>
+                  )}
                 </View>
               );
             })()}
@@ -697,6 +788,23 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                 })()})
               </Text>
             )}
+            {/* Victory text - always reserve space for alignment */}
+            <Text style={[
+              styles.victoryText,
+              {
+                color: '#22c55e',
+                opacity: fight.winner === fight.fighter1.id ? 1 : 0
+              }
+            ]}>
+              {fight.winner === fight.fighter1.id ? (
+                <>
+                  {fight.method && `${fight.method}`}
+                  {fight.round && ` in RD ${fight.round}`}
+                </>
+              ) : (
+                'Placeholder'
+              )}
+            </Text>
           </TouchableOpacity>
 
           {/* VS Divider */}
@@ -756,6 +864,13 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                       zIndex: 100,
                     }}
                   />
+
+                  {/* Winner checkmark badge */}
+                  {fight.winner === fight.fighter2.id && (
+                    <View style={styles.winnerBadge}>
+                      <FontAwesome name="check" size={16} color="#000" />
+                    </View>
+                  )}
                 </View>
               );
             })()}
@@ -781,45 +896,28 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                 })()})
               </Text>
             )}
+            {/* Victory text - always reserve space for alignment */}
+            <Text style={[
+              styles.victoryText,
+              {
+                color: '#22c55e',
+                opacity: fight.winner === fight.fighter2.id ? 1 : 0
+              }
+            ]}>
+              {fight.winner === fight.fighter2.id ? (
+                <>
+                  {fight.method && `${fight.method}`}
+                  {fight.round && ` in RD ${fight.round}`}
+                </>
+              ) : (
+                'Placeholder'
+              )}
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Outcome (winner/method) */}
-        {fight.winner && (
-          <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.outcomeContainer}>
-              {!fight.userRating && !spoilerRevealed ? (
-                // Spoiler protection - hidden view
-                <View style={styles.spoilerRow}>
-                  <Text style={[styles.winnerText, { color: colors.text }]}>
-                    Winner:
-                  </Text>
-                  <TouchableOpacity
-                    style={[styles.revealButton, { backgroundColor: '#83B4F3' }]}
-                    onPress={() => setSpoilerRevealed(true)}
-                  >
-                    <Text style={[styles.revealButtonText, { color: '#000' }]}>Reveal Winner</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                // Normal view (rated or revealed)
-                <Text style={[styles.winnerText, { color: colors.text }]}>
-                  Winner: {fight.winner === fight.fighter1.id
-                    ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
-                    : fight.winner === fight.fighter2.id
-                    ? `${fight.fighter2.firstName} ${fight.fighter2.lastName}`
-                    : fight.winner}
-                  {fight.method && ` by ${fight.method}`}
-                  {fight.round && ` in Round ${fight.round}`}
-                  {fight.time && ` (${fight.time})`}
-                </Text>
-              )}
-            </View>
-          </View>
-        )}
-
         {/* Inline Rating Section */}
-        <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0 }]}>
+        <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: -15 }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Rate This Fight</Text>
 
           {/* Large display star with wheel animation */}
@@ -861,14 +959,14 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
 
                 {/* Smooth top gradient fade */}
                 <LinearGradient
-                  colors={[colors.card, `${colors.card}DD`, `${colors.card}99`, `${colors.card}44`, 'transparent']}
-                  style={[styles.fadeOverlay, { top: 0, height: 38 }]}
+                  colors={[colors.background, `${colors.background}DD`, `${colors.background}99`, `${colors.background}44`, 'transparent']}
+                  style={[styles.fadeOverlay, { top: -3, height: 38 }]}
                   pointerEvents="none"
                 />
 
                 {/* Smooth bottom gradient fade */}
                 <LinearGradient
-                  colors={['transparent', `${colors.card}44`, `${colors.card}99`, `${colors.card}DD`, colors.card, colors.card]}
+                  colors={['transparent', `${colors.background}44`, `${colors.background}99`, `${colors.background}DD`, colors.background, colors.background]}
                   style={[styles.fadeOverlay, { bottom: -12, height: 25 }]}
                   pointerEvents="none"
                 />
@@ -894,58 +992,281 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           </View>
 
           {/* Tags */}
-          {rating > 0 && availableTags.length > 0 && (
+          {rating > 0 && displayedTags.length > 0 && (
             <View style={styles.inlineTagsSection}>
               <View style={styles.inlineTagsContainer}>
-                {availableTags.map((tag) => (
-                  <TouchableOpacity
-                    key={tag.id}
-                    onPress={() => handleToggleTag(tag.id)}
-                    style={[
-                      styles.inlineTagButton,
-                      {
-                        backgroundColor: selectedTags.includes(tag.id) ? colors.primary : colors.background,
-                        borderColor: colors.border,
-                      }
-                    ]}
-                  >
-                    <Text style={[
-                      styles.inlineTagText,
-                      {
-                        color: selectedTags.includes(tag.id) ? colors.textOnAccent : colors.text
-                      }
-                    ]}>
-                      {tag.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {displayedTags.map((tag) => {
+                  const isSelected = selectedTags.includes(tag.id);
+                  return (
+                    <Animated.View
+                      key={tag.id}
+                      style={{ opacity: isSelected ? 1 : tagsOpacity }}
+                    >
+                      <TouchableOpacity
+                        onPress={() => handleToggleTag(tag.id)}
+                        style={[
+                          styles.inlineTagButton,
+                          {
+                            backgroundColor: isSelected ? colors.primary : colors.background,
+                            borderColor: colors.border,
+                          }
+                        ]}
+                      >
+                        <Text style={[
+                          styles.inlineTagText,
+                          {
+                            color: isSelected ? colors.textOnAccent : colors.text
+                          }
+                        ]}>
+                          {tag.name}
+                        </Text>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  );
+                })}
               </View>
             </View>
           )}
-
-          {/* Comment/Review */}
-          <View style={styles.inlineCommentSection}>
-            <TextInput
-              style={[
-                styles.inlineCommentInput,
-                {
-                  backgroundColor: colors.background,
-                  borderColor: colors.border,
-                  color: colors.text
-                }
-              ]}
-              placeholder="Write a review... (optional)"
-              placeholderTextColor={colors.textSecondary}
-              value={comment}
-              onChangeText={setComment}
-              multiline
-              numberOfLines={4}
-            />
-          </View>
         </View>
 
-        {/* Split Score Row */}
-        <View style={styles.splitScoreRow}>
+        {/* Good Fights User Ratings */}
+        <View style={styles.communityRatingsSection}>
+          <Text style={[styles.communityRatingsTitle, { color: colors.text }]}>
+            Good Fights User Ratings
+          </Text>
+          <View style={styles.communityRatingRow}>
+            <Text style={[styles.communityRatingLabel, { color: colors.textSecondary }]}>
+              Rating:{' '}
+            </Text>
+            <FontAwesome name="star" size={16} color="#F5C518" />
+            <Text style={[styles.communityRatingValue, { color: colors.text }]}>
+              {' '}{fight.averageRating
+                ? fight.averageRating % 1 === 0
+                  ? fight.averageRating.toString()
+                  : fight.averageRating.toFixed(1)
+                : '0'}
+            </Text>
+            <Text style={[styles.communityRatingLabel, { color: colors.textSecondary, marginLeft: 20 }]}>
+              Hype:{' '}
+            </Text>
+            <Text style={[styles.communityRatingValue, { color: colors.text }]}>
+              {predictionStats?.averageHype !== undefined
+                ? predictionStats.averageHype.toFixed(1)
+                : '0.0'}
+            </Text>
+          </View>
+
+          {/* Pre-Fight Predictions */}
+          <Text style={[styles.communityRatingsTitle, { color: colors.text, marginTop: 12 }]}>
+            Pre-Fight Predictions
+          </Text>
+
+          {/* Prediction Breakdown Chart */}
+          {predictionStats && predictionStats.totalPredictions > 0 && (
+            <View style={styles.chartContainer}>
+              {/* Fighter 1 Bar */}
+              <View style={styles.chartRow}>
+                <Text style={[styles.fighterLabel, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+                  {fight.fighter1.lastName}
+                </Text>
+                <View style={styles.barContainer}>
+                  <View style={styles.stackedBar}>
+                    {/* KO/TKO segment */}
+                    {(() => {
+                      const widthPercent = (predictionStats.fighter1MethodPredictions.KO_TKO / predictionStats.totalPredictions) * 100;
+                      let text = '';
+                      if (widthPercent > 10) text = 'KO';
+                      else if (widthPercent > 5) text = 'K';
+                      return (
+                        <View
+                          style={[
+                            styles.barSegment,
+                            {
+                              width: `${widthPercent}%`,
+                              backgroundColor: '#F5C518',
+                            }
+                          ]}
+                        >
+                          {text !== '' && (
+                            <Text style={styles.barSegmentText}>{text}</Text>
+                          )}
+                        </View>
+                      );
+                    })()}
+                    {/* Submission segment */}
+                    {(() => {
+                      const widthPercent = (predictionStats.fighter1MethodPredictions.SUBMISSION / predictionStats.totalPredictions) * 100;
+                      let text = '';
+                      if (widthPercent > 10) text = 'SUB';
+                      else if (widthPercent > 5) text = 'S';
+                      return (
+                        <View
+                          style={[
+                            styles.barSegment,
+                            {
+                              width: `${widthPercent}%`,
+                              backgroundColor: '#F5C518CC',
+                            }
+                          ]}
+                        >
+                          {text !== '' && (
+                            <Text style={styles.barSegmentText}>{text}</Text>
+                          )}
+                        </View>
+                      );
+                    })()}
+                    {/* Decision segment */}
+                    {(() => {
+                      const widthPercent = (predictionStats.fighter1MethodPredictions.DECISION / predictionStats.totalPredictions) * 100;
+                      let text = '';
+                      if (widthPercent > 10) text = 'DEC';
+                      else if (widthPercent > 5) text = 'D';
+                      return (
+                        <View
+                          style={[
+                            styles.barSegment,
+                            {
+                              width: `${widthPercent}%`,
+                              backgroundColor: '#F5C5184D',
+                            }
+                          ]}
+                        >
+                          {text !== '' && (
+                            <Text style={styles.barSegmentText}>{text}</Text>
+                          )}
+                        </View>
+                      );
+                    })()}
+                  </View>
+                  <Text style={[styles.percentageLabel, { color: colors.text }]}>
+                    {predictionStats.winnerPredictions.fighter1.percentage.toFixed(0)}%
+                  </Text>
+                </View>
+              </View>
+
+              {/* Fighter 2 Bar */}
+              <View style={styles.chartRow}>
+                <Text style={[styles.fighterLabel, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+                  {fight.fighter2.lastName}
+                </Text>
+                <View style={styles.barContainer}>
+                  <View style={styles.stackedBar}>
+                    {/* KO/TKO segment */}
+                    {(() => {
+                      const widthPercent = (predictionStats.fighter2MethodPredictions.KO_TKO / predictionStats.totalPredictions) * 100;
+                      let text = '';
+                      if (widthPercent > 10) text = 'KO';
+                      else if (widthPercent > 5) text = 'K';
+                      return (
+                        <View
+                          style={[
+                            styles.barSegment,
+                            {
+                              width: `${widthPercent}%`,
+                              backgroundColor: '#F5C518',
+                            }
+                          ]}
+                        >
+                          {text !== '' && (
+                            <Text style={styles.barSegmentText}>{text}</Text>
+                          )}
+                        </View>
+                      );
+                    })()}
+                    {/* Submission segment */}
+                    {(() => {
+                      const widthPercent = (predictionStats.fighter2MethodPredictions.SUBMISSION / predictionStats.totalPredictions) * 100;
+                      let text = '';
+                      if (widthPercent > 10) text = 'SUB';
+                      else if (widthPercent > 5) text = 'S';
+                      return (
+                        <View
+                          style={[
+                            styles.barSegment,
+                            {
+                              width: `${widthPercent}%`,
+                              backgroundColor: '#F5C518CC',
+                            }
+                          ]}
+                        >
+                          {text !== '' && (
+                            <Text style={styles.barSegmentText}>{text}</Text>
+                          )}
+                        </View>
+                      );
+                    })()}
+                    {/* Decision segment */}
+                    {(() => {
+                      const widthPercent = (predictionStats.fighter2MethodPredictions.DECISION / predictionStats.totalPredictions) * 100;
+                      let text = '';
+                      if (widthPercent > 10) text = 'DEC';
+                      else if (widthPercent > 5) text = 'D';
+                      return (
+                        <View
+                          style={[
+                            styles.barSegment,
+                            {
+                              width: `${widthPercent}%`,
+                              backgroundColor: '#F5C5184D',
+                            }
+                          ]}
+                        >
+                          {text !== '' && (
+                            <Text style={styles.barSegmentText}>{text}</Text>
+                          )}
+                        </View>
+                      );
+                    })()}
+                  </View>
+                  <Text style={[styles.percentageLabel, { color: colors.text }]}>
+                    {predictionStats.winnerPredictions.fighter2.percentage.toFixed(0)}%
+                  </Text>
+                </View>
+              </View>
+
+              {/* Hype Row */}
+              <View style={styles.chartRow}>
+                <Text style={[styles.fighterLabel, { color: colors.text }]} numberOfLines={1}>
+                  Hype
+                </Text>
+                <View style={styles.barContainer}>
+                  <FontAwesome6 name="fire-flame-curved" size={20} color={getHypeFlameColor(predictionStats?.averageHype || 0)} />
+                  <Text style={[styles.hypeChartValue, { color: colors.text }]}>
+                    {predictionStats?.averageHype !== undefined
+                      ? predictionStats.averageHype % 1 === 0
+                        ? predictionStats.averageHype.toString()
+                        : predictionStats.averageHype.toFixed(1)
+                      : '0'}
+                  </Text>
+                  <Text style={[styles.hypeChartCount, { color: colors.textSecondary }]}>
+                    ({predictionStats?.totalPredictions || 0})
+                  </Text>
+                </View>
+              </View>
+
+            </View>
+          )}
+
+          {/* Fight Outcome */}
+          <Text style={[styles.communityRatingsTitle, { color: colors.text, marginTop: 12 }]}>
+            Fight Outcome
+          </Text>
+          {fight.winner && (
+            <View style={styles.fightOutcomeRow}>
+              <Text style={[styles.communityRatingLabel, { color: colors.textSecondary }]}>
+                Winner:{' '}
+              </Text>
+              <Text style={[styles.communityRatingValue, { color: colors.text }]}>
+                {fight.winner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName}
+                {fight.method && ` by ${fight.method}`}
+                {fight.round && ` in round ${fight.round}`}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Split Score Row - HIDDEN */}
+        {false && <View style={styles.splitScoreRow}>
           {/* Aggregate Rating - Left */}
           <View style={[styles.halfScoreContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <FontAwesome name="star" size={48} color="#F5C518" />
@@ -1154,9 +1475,10 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
               )}
             </Animated.View>
           </View>
-        </View>
+        </View>}
 
-        {/* Fight Details */}
+        {/* Fight Details - HIDDEN */}
+        {false &&
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Fight Details</Text>
 
@@ -1227,11 +1549,11 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
               </Text>
             </View>
           )}
-        </View>
+        </View>}
 
         {/* Rating Distribution */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        <View style={styles.communityRatingsSection}>
+          <Text style={[styles.communityRatingsTitle, { color: colors.text }]}>
             Rating Distribution
           </Text>
           <View style={styles.distributionContainer}>
@@ -1263,158 +1585,6 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           </View>
         </View>
 
-        {/* My Pre-Fight Prediction */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>My Prediction</Text>
-          {(fight.userPredictedWinner || fight.userPredictedMethod || fight.userPredictedRound || fight.userHypePrediction) ? (
-            <Text style={[styles.myPredictionText, { color: colors.text }]}>
-              {fight.userPredictedWinner && (
-                <>
-                  {fight.userPredictedWinner === fight.fighter1.id
-                    ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
-                    : `${fight.fighter2.firstName} ${fight.fighter2.lastName}`}
-                </>
-              )}
-              {fight.userPredictedMethod && (
-                <> by {fight.userPredictedMethod === 'DECISION' ? 'Decision' : fight.userPredictedMethod === 'KO_TKO' ? 'KO/TKO' : 'Submission'}</>
-              )}
-              {fight.userPredictedRound && (
-                <> in Round {fight.userPredictedRound}</>
-              )}
-              {fight.userHypePrediction && (
-                <> (Hype: {fight.userHypePrediction}/10)</>
-              )}
-            </Text>
-          ) : (
-            <Text style={[styles.noPredictionText, { color: colors.textSecondary }]}>
-              You did not make a prediction for this fight.
-            </Text>
-          )}
-        </View>
-
-        {/* Community Pre-Fight Predictions */}
-        {predictionStats && predictionStats.totalPredictions > 0 && (
-          <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Community Predictions</Text>
-
-            {/* Winner Predictions */}
-            <View style={styles.predictionSubSection}>
-              <View style={styles.splitBarContainer}>
-                {/* Fighter names above bar */}
-                <View style={styles.fighterNamesRow}>
-                  <Text style={[styles.fighterNameLeft, { color: colors.text }]} numberOfLines={1}>
-                    {predictionStats.winnerPredictions.fighter1.name}
-                  </Text>
-                  <Text style={[styles.fighterNameRight, { color: colors.text }]} numberOfLines={1}>
-                    {predictionStats.winnerPredictions.fighter2.name}
-                  </Text>
-                </View>
-
-                {/* Single split bar */}
-                <View style={styles.splitBar}>
-                  {predictionStats.winnerPredictions.fighter1.percentage > 0 && (
-                    <View
-                      style={[
-                        styles.splitBarLeft,
-                        {
-                          width: predictionStats.winnerPredictions.fighter2.percentage === 0 ? '100%' : `${predictionStats.winnerPredictions.fighter1.percentage}%`,
-                          backgroundColor: '#83B4F3'
-                        }
-                      ]}
-                    >
-                      <Text style={styles.splitBarPercentage}>
-                        {predictionStats.winnerPredictions.fighter2.percentage === 0 ? '100' : predictionStats.winnerPredictions.fighter1.percentage}%
-                      </Text>
-                    </View>
-                  )}
-                  {predictionStats.winnerPredictions.fighter2.percentage > 0 && (
-                    <View
-                      style={[
-                        styles.splitBarRight,
-                        {
-                          width: predictionStats.winnerPredictions.fighter1.percentage === 0 ? '100%' : `${predictionStats.winnerPredictions.fighter2.percentage}%`,
-                          backgroundColor: '#FF6B35'
-                        }
-                      ]}
-                    >
-                      <Text style={styles.splitBarPercentage}>
-                        {predictionStats.winnerPredictions.fighter1.percentage === 0 ? '100' : predictionStats.winnerPredictions.fighter2.percentage}%
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-
-              {/* Per-Fighter Predictions Row */}
-              <View style={styles.predictionTextRow}>
-                {/* Fighter 1 Prediction (Left) */}
-                {(() => {
-                  const fighter1Method = (() => {
-                    const methodEntries = Object.entries(predictionStats.fighter1MethodPredictions) as [string, number][];
-                    const mostPopular = methodEntries.reduce((max, curr) => curr[1] > max[1] ? curr : max, ['DECISION', 0] as [string, number]);
-                    return {
-                      count: mostPopular[1],
-                      label: {
-                        'DECISION': 'Decision',
-                        'KO_TKO': 'KO/TKO',
-                        'SUBMISSION': 'Submission',
-                      }[mostPopular[0]] || mostPopular[0],
-                    };
-                  })();
-                  const fighter1Round = (() => {
-                    const roundEntries = Object.entries(predictionStats.fighter1RoundPredictions)
-                      .map(([round, count]) => [parseInt(round), count] as [number, number])
-                      .filter(([_, count]) => count > 0);
-                    if (roundEntries.length === 0) return null;
-                    const mostPopular = roundEntries.reduce((max, curr) => curr[1] > max[1] ? curr : max, [1, 0] as [number, number]);
-                    return { round: mostPopular[0] };
-                  })();
-
-                  return fighter1Method.count > 0 && fighter1Round ? (
-                    <Text style={[styles.predictionTextLeft, { color: '#83B4F3' }]}>
-                      by {fighter1Method.label} in Round {fighter1Round.round}
-                    </Text>
-                  ) : null;
-                })()}
-
-                {/* Fighter 2 Prediction (Right) */}
-                {(() => {
-                  const fighter2Method = (() => {
-                    const methodEntries = Object.entries(predictionStats.fighter2MethodPredictions) as [string, number][];
-                    const mostPopular = methodEntries.reduce((max, curr) => curr[1] > max[1] ? curr : max, ['DECISION', 0] as [string, number]);
-                    return {
-                      count: mostPopular[1],
-                      label: {
-                        'DECISION': 'Decision',
-                        'KO_TKO': 'KO/TKO',
-                        'SUBMISSION': 'Submission',
-                      }[mostPopular[0]] || mostPopular[0],
-                    };
-                  })();
-                  const fighter2Round = (() => {
-                    const roundEntries = Object.entries(predictionStats.fighter2RoundPredictions)
-                      .map(([round, count]) => [parseInt(round), count] as [number, number])
-                      .filter(([_, count]) => count > 0);
-                    if (roundEntries.length === 0) return null;
-                    const mostPopular = roundEntries.reduce((max, curr) => curr[1] > max[1] ? curr : max, [1, 0] as [number, number]);
-                    return { round: mostPopular[0] };
-                  })();
-
-                  return fighter2Method.count > 0 && fighter2Round ? (
-                    <Text style={[styles.predictionTextRight, { color: '#FF6B35' }]}>
-                      {fighter2Method.label} in Round {fighter2Round.round}
-                    </Text>
-                  ) : null;
-                })()}
-              </View>
-
-              <Text style={[styles.predictionSubtext, { color: colors.textSecondary }]}>
-                {predictionStats.totalPredictions} {predictionStats.totalPredictions === 1 ? 'prediction' : 'predictions'}
-              </Text>
-            </View>
-          </View>
-        )}
-
         {/* Tags */}
         {fight.topTags && fight.topTags.length > 0 && (
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -1438,6 +1608,26 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
         {/* Reviews */}
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Reviews</Text>
+
+          {/* Comment/Review */}
+          <View style={styles.inlineCommentSection}>
+            <TextInput
+              style={[
+                styles.inlineCommentInput,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  color: colors.text
+                }
+              ]}
+              placeholder="Write a review... (optional)"
+              placeholderTextColor={colors.textSecondary}
+              value={comment}
+              onChangeText={setComment}
+              multiline
+              numberOfLines={4}
+            />
+          </View>
 
           {/* User's review first (if exists) */}
           {fight.userReview && (
@@ -1641,14 +1831,14 @@ const styles = StyleSheet.create({
   outcomeContainer: {
     gap: 8,
   },
-  spoilerRow: {
-    flexDirection: 'row',
+  spoilerButtonContainer: {
     alignItems: 'center',
-    gap: 12,
+    marginTop: -8,
+    marginBottom: 16,
   },
   revealButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 8,
   },
   revealButtonText: {
@@ -1656,9 +1846,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  winnerText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  victoryText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  winnerBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#22c55e',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 200,
   },
   splitScoreRow: {
     flexDirection: 'row',
@@ -1919,6 +2123,7 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   inlineTagsSection: {
+    marginTop: 10,
     marginBottom: 16,
   },
   inlineTagsContainer: {
@@ -1948,10 +2153,88 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: 'top',
   },
+  communityRatingsSection: {
+    marginHorizontal: 4,
+    marginBottom: 16,
+    padding: 16,
+  },
+  communityRatingsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  communityRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  communityRatingLabel: {
+    fontSize: 16,
+  },
+  communityRatingValue: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  fightOutcomeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  chartContainer: {
+    marginTop: 4,
+  },
+  chartRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  fighterLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    width: 80,
+  },
+  barContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  stackedBar: {
+    flex: 1,
+    height: 24,
+    flexDirection: 'row',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  barSegment: {
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  barSegmentText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#000',
+  },
+  percentageLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    width: 40,
+    textAlign: 'right',
+  },
+  hypeChartValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  hypeChartCount: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
   displayStarContainer: {
     alignItems: 'center',
     marginBottom: 16,
-    marginTop: -24,
+    marginTop: -49,
   },
   animatedStarContainer: {
     position: 'relative',
