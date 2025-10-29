@@ -16,6 +16,7 @@ import { apiService } from '../../../services/api';
 import { useAuth } from '../../../store/AuthContext';
 import CompletedFightCard from '../../../components/fight-cards/CompletedFightCard';
 import RateFightModal from '../../../components/RateFightModal';
+import { EventBannerCard } from '../../../components';
 
 interface Event {
   id: string;
@@ -195,42 +196,14 @@ function EventSection({ event }: { event: Event }) {
   return (
     <View style={styles.eventSection}>
       {/* Event Header with Banner and Info */}
-      <View style={styles.eventHeader}>
-        <Image
-          source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
-          style={styles.eventBanner}
-          resizeMode="cover"
-        />
-
-        <View style={styles.eventInfo}>
-          <Text style={[styles.eventName, { color: colors.text }]}>
-            {line1}
-          </Text>
-          {line2 && (
-            <Text style={[styles.eventSubtitle, { color: colors.text }]}>
-              {line2}
-            </Text>
-          )}
-
-          <View style={styles.eventMeta}>
-            <View style={[styles.statusBadge, { backgroundColor: colors.textSecondary }]}>
-              <Text style={styles.statusBadgeText}>
-                {formatTimeAgo(event.date)}
-              </Text>
-            </View>
-
-            <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-              {formatDate(event.date)}
-            </Text>
-          </View>
-
-          {event.location && (
-            <Text style={[styles.eventLocation, { color: colors.textSecondary }]}>
-              {event.location}
-            </Text>
-          )}
-        </View>
-      </View>
+      <EventBannerCard
+        event={event}
+        statusBadge={{
+          text: formatTimeAgo(event.date),
+          backgroundColor: colors.textSecondary,
+        }}
+        showLocation={true}
+      />
 
       {/* Fights Container */}
       <View style={styles.fightsContainer}>

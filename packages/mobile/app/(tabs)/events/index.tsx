@@ -14,7 +14,7 @@ import { useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
-import { FightDisplayCard, RateFightModal, PredictionModal } from '../../../components';
+import { FightDisplayCard, RateFightModal, PredictionModal, EventBannerCard } from '../../../components';
 import { useAuth } from '../../../store/AuthContext';
 
 interface Event {
@@ -352,34 +352,14 @@ function EventSection({
   return (
     <View style={styles.eventSection}>
       {/* Event Banner and Info */}
-      <View style={styles.eventHeader}>
-        <Image
-          source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
-          style={styles.eventBanner}
-          resizeMode="cover"
-        />
-
-        <View style={[styles.eventInfo, { backgroundColor: colors.card }]}>
-          <Text style={[styles.eventName, { color: colors.text }]}>
-            {line2 ? `${line1}: ${line2}` : line1}
-          </Text>
-
-          <View style={styles.eventMeta}>
-            {isLive ? (
-              <View style={[styles.statusBadge, { backgroundColor: colors.danger }]}>
-                <Text style={styles.statusBadgeText}>LIVE NOW</Text>
-              </View>
-            ) : (
-              <View style={[styles.statusBadge, { backgroundColor: '#F5C518' }]}>
-                <Text style={[styles.statusBadgeText, { color: '#000000' }]}>{formatTimeUntil(event.date)}</Text>
-              </View>
-            )}
-            <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
-              {formatDate(event.date)}
-            </Text>
-          </View>
-        </View>
-      </View>
+      <EventBannerCard
+        event={event}
+        statusBadge={{
+          text: isLive ? 'LIVE NOW' : formatTimeUntil(event.date),
+          backgroundColor: isLive ? colors.danger : '#F5C518',
+          textColor: isLive ? '#FFFFFF' : '#000000',
+        }}
+      />
 
       {/* Fights List */}
       {fightsLoading ? (
