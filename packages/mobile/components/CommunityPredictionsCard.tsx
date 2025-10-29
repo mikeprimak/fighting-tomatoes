@@ -192,7 +192,7 @@ export function CommunityPredictionsCard({ predictionStats, userPrediction, onPr
                   styles.splitBarRight,
                   {
                     width: winnerPredictions.fighter1.percentage === 0 ? '100%' : `${winnerPredictions.fighter2.percentage}%`,
-                    backgroundColor: '#D4A017'
+                    backgroundColor: '#FFC107'
                   }
                 ]}
               >
@@ -215,7 +215,7 @@ export function CommunityPredictionsCard({ predictionStats, userPrediction, onPr
 
           {/* Fighter 2 Prediction (Right) */}
           {fighter2Methods.length > 0 && (
-            <Text style={[styles.predictionTextRight, { color: '#D4A017' }]}>
+            <Text style={[styles.predictionTextRight, { color: '#FFC107' }]}>
               {fighter2Methods.map(m => m.label).join(' or ')}
             </Text>
           )}

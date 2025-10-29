@@ -162,13 +162,8 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   // Auto-save winner selection
   const saveWinnerMutation = useMutation({
     mutationFn: async (winnerId: string | null) => {
-      if (!winnerId) {
-        // If deselecting, we'd need a DELETE endpoint or send null
-        // For now, just return early
-        return { prediction: null, message: '' };
-      }
       return apiService.createFightPrediction(fight.id, {
-        predictedWinner: winnerId,
+        predictedWinner: winnerId || undefined,
         // Keep existing values
         predictedMethod: fight.userPredictedMethod as 'DECISION' | 'KO_TKO' | 'SUBMISSION' | undefined,
         predictedRound: fight.userPredictedRound || undefined,
@@ -187,11 +182,8 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   // Auto-save hype selection
   const saveHypeMutation = useMutation({
     mutationFn: async (hypeLevel: number | null) => {
-      if (!hypeLevel) {
-        return { prediction: null, message: '' };
-      }
       return apiService.createFightPrediction(fight.id, {
-        predictedRating: hypeLevel,
+        predictedRating: hypeLevel || undefined,
         // Keep existing values
         predictedWinner: selectedWinner || undefined,
         predictedMethod: selectedMethod || undefined,
@@ -210,11 +202,8 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   // Auto-save method selection
   const saveMethodMutation = useMutation({
     mutationFn: async (method: 'KO_TKO' | 'SUBMISSION' | 'DECISION' | null) => {
-      if (!method) {
-        return { prediction: null, message: '' };
-      }
       return apiService.createFightPrediction(fight.id, {
-        predictedMethod: method,
+        predictedMethod: method || undefined,
         // Keep existing values
         predictedWinner: selectedWinner || undefined,
         predictedRating: selectedHype || undefined,
@@ -501,7 +490,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#FF6B35',
+                            backgroundColor: '#F5C518',
                           }
                         ]}
                       >
@@ -523,7 +512,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#FF6B35CC',
+                            backgroundColor: '#F5C518CC',
                           }
                         ]}
                       >
@@ -545,7 +534,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#FF6B354D',
+                            backgroundColor: '#F5C5184D',
                           }
                         ]}
                       >
@@ -581,7 +570,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#FF6B35',
+                            backgroundColor: '#F5C518',
                           }
                         ]}
                       >
@@ -603,7 +592,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#FF6B35CC',
+                            backgroundColor: '#F5C518CC',
                           }
                         ]}
                       >
@@ -625,7 +614,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                           styles.barSegment,
                           {
                             width: `${widthPercent}%`,
-                            backgroundColor: '#FF6B354D',
+                            backgroundColor: '#F5C5184D',
                           }
                         ]}
                       >
