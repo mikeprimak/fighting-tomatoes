@@ -176,13 +176,13 @@ function EventSection({ event }: { event: Event }) {
 
   const fights = fightsData?.fights || [];
 
-  // Categorize fights by card section
-  const mainCard = fights.filter((f: Fight) => f.cardSection === 'Main Card');
-  const prelims = fights.filter((f: Fight) => f.cardSection === 'Preliminary Card');
-  const earlyPrelims = fights.filter((f: Fight) => f.cardSection === 'Early Prelims');
-
-  // If no fights have card sections (older events), show all fights as one section
-  const allFights = mainCard.length === 0 && prelims.length === 0 && earlyPrelims.length === 0 ? fights : [];
+  // Group fights by card section using orderOnCard
+  const hasEarlyPrelims = !!event.earlyPrelimStartTime;
+  const mainCard = fights.filter((f: Fight) => f.orderOnCard <= 5);
+  const prelims = hasEarlyPrelims
+    ? fights.filter((f: Fight) => f.orderOnCard > 5 && f.orderOnCard <= 9)
+    : fights.filter((f: Fight) => f.orderOnCard > 5);
+  const earlyPrelims = hasEarlyPrelims ? fights.filter((f: Fight) => f.orderOnCard > 9) : [];
 
   const { line1, line2 } = parseEventName(event.name);
 
@@ -207,20 +207,6 @@ function EventSection({ event }: { event: Event }) {
           </View>
         ) : (
           <>
-            {/* All Fights (for events without card sections) */}
-            {allFights.length > 0 && (
-              <View style={styles.cardSection}>
-                {allFights.map((fight: Fight) => (
-                  <CompletedFightCard
-                    key={fight.id}
-                    fight={fight}
-                    onPress={handleFightPress}
-                    showEvent={false}
-                  />
-                ))}
-              </View>
-            )}
-
             {/* Main Card */}
             {mainCard.length > 0 && (
               <View style={styles.cardSection}>
@@ -251,11 +237,6 @@ function EventSection({ event }: { event: Event }) {
             {prelims.length > 0 && (
               <View style={styles.cardSection}>
                 <View style={styles.sectionHeader}>
-                  <View style={styles.columnHeaders}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      HYPE
-                    </Text>
-                  </View>
                   <View style={styles.sectionHeaderRight}>
                     <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                       PRELIMINARY CARD
@@ -277,11 +258,6 @@ function EventSection({ event }: { event: Event }) {
             {earlyPrelims.length > 0 && (
               <View style={styles.cardSection}>
                 <View style={styles.sectionHeader}>
-                  <View style={styles.columnHeaders}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      HYPE
-                    </Text>
-                  </View>
                   <View style={styles.sectionHeaderRight}>
                     <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                       EARLY PRELIMS
@@ -449,7 +425,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginTop: 4,
   },
   fightsContainer: {
-    paddingHorizontal: 16,
+    marginTop: 8,
   },
   loadingContainer: {
     paddingVertical: 20,

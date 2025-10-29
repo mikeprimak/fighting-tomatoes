@@ -576,7 +576,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     letterSpacing: 0.5,
   },
   sectionTime: {
-    fontSize: 12,
+    fontSize: 10,
+    fontWeight: '600',
   },
   columnHeaders: {
     flexDirection: 'row',
