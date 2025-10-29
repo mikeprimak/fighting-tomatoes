@@ -103,7 +103,8 @@
       "Bash(PGPASSWORD=devpassword psql:*)",
       "Bash(grep:*)",
       "Bash(start \"\" \"https://fontawesome.com/v5/icons/star?f=classic&s=solid\")",
-      "Bash(DATABASE_URL=\"postgresql://fightcrewapp_user:WjU2ZdAJESuMaMumbyRGgIV1HXJWg8KU@dpg-d3oee81r0fns73c59610-a.oregon-postgres.render.com/fightcrewapp\" npx ts-node:*)"
+      "Bash(DATABASE_URL=\"postgresql://fightcrewapp_user:WjU2ZdAJESuMaMumbyRGgIV1HXJWg8KU@dpg-d3oee81r0fns73c59610-a.oregon-postgres.render.com/fightcrewapp\" npx ts-node:*)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []

@@ -394,14 +394,8 @@ function EventSection({
               <View style={styles.sectionHeader}>
                 {/* Column Headers - On the left */}
                 <View style={styles.columnHeaders}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary, borderBottomWidth: 1, borderBottomColor: '#ff0000' }]}>
-                      HYPE
-                    </Text>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      /
-                    </Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary, borderBottomWidth: 1, borderBottomColor: '#F5C518' }]}>
-                      MY HYPE
+                      HYPE
                     </Text>
                   </View>
                 
@@ -607,8 +601,10 @@ const createStyles = (colors: any) => StyleSheet.create({
   columnHeaders: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4, // Space between HYPE, /, and MY HYPE
-    marginLeft: 4, // Push away from left edge to align with score columns
+    gap: 4,
+    marginLeft: -11, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
+    width: 40, // Match width of heatmap square
+    justifyContent: 'center', // Center text within the column
   },
   columnHeaderText: {
     fontSize: 10,

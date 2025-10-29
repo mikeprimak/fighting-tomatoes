@@ -99,6 +99,16 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 - **Component Updates**: EventCard and FighterCard now route to `/(tabs)/events/[id]` and `/(tabs)/fighters/[id]`
 - **Benefits**: 100% consistent tab bar, proper navigation stack per tab, better UX alignment with platform conventions
 
+**UpcomingFightCard Redesign** (Latest):
+- **Heatmap Square**: Replaced inline hype icon with 40x40px colored square on left edge, displays aggregate hype score (0.0-10.0), gradient from grey (0) → orange (7) → red (8.5+)
+- **Removed Elements**: Removed "My Hype" display, left border, prediction method badges (KO/DEC/SUB tags)
+- **Component Height**: Fixed minHeight of 40px with tight internal spacing (paddingVertical: 4px, reduced margins throughout)
+- **User Prediction Indicator**: Yellow (#F5C518) 2px bold bottom border on predicted fighter name
+- **Column Header**: Simplified to "HYPE" only (removed "/ MY HYPE"), centered over heatmap squares column with -11px marginLeft offset
+- **Font Sizes**: Hype square text 14px, fighter names 14px, event text 12px (from sharedStyles)
+- **Backup**: Full backup saved as `UpcomingFightCard.BACKUP-2025-10-28.tsx`
+- **Files**: `components/fight-cards/UpcomingFightCard.tsx`, `app/(tabs)/events/index.tsx`
+
 **Contact Invitations**:
 - **WhatsApp-style UX**: Select multiple contacts, send SMS invites with crew invite code
 - **Components**: `app/crew/invite-contacts.tsx` with contact selection UI
