@@ -879,7 +879,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
         )}
 
         {/* Inline Rating Section */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0 }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Rate This Fight</Text>
 
           {/* Large display star with wheel animation */}
