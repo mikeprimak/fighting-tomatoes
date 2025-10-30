@@ -103,11 +103,25 @@ export default function UpcomingEventsScreen() {
   const formatTimeUntil = (dateString: string) => {
     const eventDate = new Date(dateString);
     const now = new Date();
-    const diffTime = eventDate.getTime() - now.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
+    // Get calendar dates (ignoring time)
+    const eventCalendarDate = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+    const todayCalendarDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Calculate difference in calendar days
+    const diffTime = eventCalendarDate.getTime() - todayCalendarDate.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    // If it's today, show hours remaining
     if (diffDays === 0) {
-      return 'TODAY';
+      const hoursUntil = Math.floor((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60));
+      if (hoursUntil <= 0) {
+        return 'STARTING SOON';
+      }
+      if (hoursUntil === 1) {
+        return 'IN 1 HOUR';
+      }
+      return `IN ${hoursUntil} HOURS`;
     }
 
     if (diffDays === 1) {
