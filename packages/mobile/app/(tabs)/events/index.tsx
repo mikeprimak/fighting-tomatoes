@@ -424,8 +424,9 @@ function EventSection({
           {/* Preliminary Card */}
           {prelimCard.length > 0 && (
             <View style={styles.cardSection}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderRight}>
+              <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
+                {/* Center - Title and Time stacked vertically */}
+                <View style={styles.sectionHeaderCenter}>
                   <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                     PRELIMINARY CARD
                   </Text>
@@ -455,8 +456,9 @@ function EventSection({
           {/* Early Prelims */}
           {earlyPrelims.length > 0 && (
             <View style={styles.cardSection}>
-              <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderRight}>
+              <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
+                {/* Center - Title and Time stacked vertically */}
+                <View style={styles.sectionHeaderCenter}>
                   <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                     EARLY PRELIMS
                   </Text>
@@ -576,6 +578,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
     position: 'relative',
+  },
+  sectionHeaderPrelims: {
+    paddingVertical: 8,
   },
   sectionHeaderRight: {
     flexDirection: 'row',

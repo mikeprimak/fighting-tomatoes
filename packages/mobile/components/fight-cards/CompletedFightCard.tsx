@@ -442,34 +442,21 @@ export default function CompletedFightCard({
   const flameColor = getFlameColor(hypeBorderColor, colors.background);
   const starColor = getFlameColor(ratingBorderColor, colors.background);
 
+  const userRatingColor = getHypeHeatmapColor(fight.userRating || 0);
+  const userStarColor = getFlameColor(userRatingColor, colors.background);
+
   return (
     <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
       <View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
-        paddingLeft: 96, // Two 40px squares + 8px spacing + 8px padding
+        paddingLeft: 56, // One 40px square + 16px padding
         paddingVertical: 4, // Minimal vertical padding
-        paddingRight: 16,
+        paddingRight: 56, // One 40px square + 16px padding
         minHeight: 40, // Minimum height to ensure content fits
         justifyContent: 'center',
       }]}>
-          {/* Full-height hype square on the left */}
-          <View style={[styles.hypeSquare, { backgroundColor: hypeBorderColor }]}>
-            <FontAwesome6
-              name="fire-flame-curved"
-              size={30}
-              color={flameColor}
-              style={{ position: 'absolute' }}
-            />
-            <Text style={styles.hypeSquareText}>
-              {predictionStats?.averageHype !== undefined
-                ? predictionStats.averageHype.toFixed(1)
-                : '0.0'
-              }
-            </Text>
-          </View>
-
-          {/* Full-height rating square next to hype */}
+          {/* Full-height community rating square on the left */}
           <View style={[styles.ratingSquare, { backgroundColor: ratingBorderColor }]}>
             <FontAwesome
               name="star"
@@ -480,6 +467,22 @@ export default function CompletedFightCard({
             <Text style={styles.ratingSquareText}>
               {fight.averageRating !== undefined && fight.averageRating > 0
                 ? fight.averageRating.toFixed(1)
+                : '0.0'
+              }
+            </Text>
+          </View>
+
+          {/* Full-height user rating square on the right */}
+          <View style={[styles.userRatingSquare, { backgroundColor: userRatingColor }]}>
+            <FontAwesome
+              name="star"
+              size={30}
+              color={userStarColor}
+              style={{ position: 'absolute' }}
+            />
+            <Text style={styles.ratingSquareText}>
+              {fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0
+                ? fight.userRating.toFixed(1)
                 : '0.0'
               }
             </Text>
@@ -884,7 +887,17 @@ const styles = StyleSheet.create({
   ratingSquare: {
     position: 'absolute',
     top: 0,
-    left: 48,
+    left: 0,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  userRatingSquare: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
     width: 40,
     height: 40,
     justifyContent: 'center',

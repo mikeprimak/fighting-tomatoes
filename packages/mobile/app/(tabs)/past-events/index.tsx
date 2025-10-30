@@ -209,17 +209,30 @@ function EventSection({ event }: { event: Event }) {
             {mainCard.length > 0 && (
               <View style={styles.cardSection}>
                 <View style={styles.sectionHeader}>
+                  {/* Left Column Header - ALL / RATINGS */}
                   <View style={styles.columnHeaders}>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      HYPE
+                      ALL
                     </Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary, marginLeft: 2 }]}>
-                      ACTUAL
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      RATINGS
                     </Text>
                   </View>
-                  <View style={styles.sectionHeaderRight}>
+
+                  {/* Center - Title */}
+                  <View style={styles.sectionHeaderCenter}>
                     <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                       MAIN CARD
+                    </Text>
+                  </View>
+
+                  {/* Right Column Header - MY / RATING */}
+                  <View style={styles.columnHeadersRight}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      MY
+                    </Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      RATING
                     </Text>
                   </View>
                 </View>
@@ -429,6 +442,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     marginHorizontal: 16,
     marginBottom: 12,
+    position: 'relative',
   },
   sectionHeaderRight: {
     flexDirection: 'row',
@@ -436,22 +450,41 @@ const createStyles = (colors: any) => StyleSheet.create({
     gap: 8,
     marginLeft: 'auto',
   },
+  sectionHeaderCenter: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 2,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignSelf: 'center',
+  },
   sectionTitle: {
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 0.5,
   },
   columnHeaders: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
-    gap: 8,
-    marginLeft: -7,
-    width: 88,
-    justifyContent: 'flex-start',
+    gap: 0,
+    marginLeft: -14,
+    width: 60,
+    justifyContent: 'center',
+  },
+  columnHeadersRight: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginRight: -17,
+    width: 60,
+    justifyContent: 'center',
   },
   columnHeaderText: {
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 0.5,
+    flexWrap: 'nowrap',
+    textAlign: 'center',
   },
 });

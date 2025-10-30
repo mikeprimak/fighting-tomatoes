@@ -109,7 +109,8 @@
       "Bash(PGPASSWORD=devpassword pg_dump:*)",
       "Bash(DATABASE_URL=\"postgresql://dev:devpassword@localhost:5433/yourapp_dev\" pnpm exec prisma migrate deploy:*)",
       "Bash(wmic process where \"name=''node.exe''\" delete)",
-      "Bash(PGPASSWORD=ft_user_pass123654 psql:*)"
+      "Bash(PGPASSWORD=ft_user_pass123654 psql:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []
