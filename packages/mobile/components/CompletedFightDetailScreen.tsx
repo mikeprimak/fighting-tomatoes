@@ -731,8 +731,8 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                   <FontAwesome name="check-circle" size={28} color="#22c55e" />
                 </View>
               )}
-              {/* Lock icon for predicted fighter */}
-              {fight.userPredictedWinner === fight.fighter1.id && (
+              {/* Lock icon for predicted fighter (only when prediction is correct) */}
+              {fight.userPredictedWinner === fight.fighter1.id && fight.userPredictedWinner === fight.winner && (
                 <View style={styles.lockIcon}>
                   <FontAwesome name="lock" size={18} color={colors.background} />
                 </View>
@@ -774,8 +774,8 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                   <FontAwesome name="check-circle" size={28} color="#22c55e" />
                 </View>
               )}
-              {/* Lock icon for predicted fighter */}
-              {fight.userPredictedWinner === fight.fighter2.id && (
+              {/* Lock icon for predicted fighter (only when prediction is correct) */}
+              {fight.userPredictedWinner === fight.fighter2.id && fight.userPredictedWinner === fight.winner && (
                 <View style={styles.lockIcon}>
                   <FontAwesome name="lock" size={18} color={colors.background} />
                 </View>
@@ -855,8 +855,8 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                     <FontAwesome name="check-circle" size={20} color="#22c55e" />
                   </View>
                 )}
-                {/* Lock icon for predicted method */}
-                {isPredicted && (
+                {/* Lock icon for predicted method (only when prediction is correct) */}
+                {isPredicted && isCorrect && (
                   <View style={styles.methodLockIcon}>
                     <FontAwesome name="lock" size={18} color={colors.background} />
                   </View>
