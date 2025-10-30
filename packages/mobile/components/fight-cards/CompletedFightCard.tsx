@@ -482,8 +482,8 @@ export default function CompletedFightCard({
             />
             <Text style={styles.ratingSquareText}>
               {fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0
-                ? fight.userRating.toFixed(1)
-                : '0.0'
+                ? Math.round(fight.userRating).toString()
+                : '0'
               }
             </Text>
           </View>

@@ -480,8 +480,8 @@ export default function UpcomingFightCard({
             />
             <Text style={styles.hypeSquareText}>
               {fight.userHypePrediction !== undefined && fight.userHypePrediction !== null
-                ? fight.userHypePrediction.toFixed(1)
-                : '0.0'
+                ? Math.round(fight.userHypePrediction).toString()
+                : '0'
               }
             </Text>
           </View>

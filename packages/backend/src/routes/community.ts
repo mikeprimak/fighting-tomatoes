@@ -432,11 +432,19 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         // Check if either fighter has 60%+ consensus
         const hasConsensus = fighter1Percentage >= 60 || fighter2Percentage >= 60;
         const highestPercentage = Math.max(fighter1Percentage, fighter2Percentage);
+        const consensusWinner = fighter1Percentage > fighter2Percentage
+          ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
+          : `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+        const consensusLoser = fighter1Percentage > fighter2Percentage
+          ? `${fight.fighter2.firstName} ${fight.fighter2.lastName}`
+          : `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
 
         return hasConsensus ? {
           fight,
           totalPredictions,
           consensusPercentage: highestPercentage,
+          consensusWinner,
+          consensusLoser,
         } : null;
       }).filter((f: any) => f !== null);
 
@@ -449,6 +457,8 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         predictions: undefined, // Remove raw predictions from response
         totalPredictions: f.totalPredictions,
         consensusPercentage: f.consensusPercentage,
+        consensusWinner: f.consensusWinner,
+        consensusLoser: f.consensusLoser,
       }));
 
       return reply.send({ data: topFights });

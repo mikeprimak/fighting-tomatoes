@@ -1,9 +1,9 @@
 /**
  * Heatmap color utility for fight hype scores
  * Returns a color based on a 0-10 scale:
- * - Below 4.0: Grey (#808080)
- * - 4.0-7.0: Grey to Yellow (#fff33b) gradient
- * - 7.0: #fff33b (bright yellow)
+ * - 1-4: Gradient from grey to the color at 5
+ * - 5-7.0: Gradient to golden yellow (#ffcf3b)
+ * - 7.0: #ffcf3b (golden yellow)
  * - 7.5: #fdc70c (yellow-orange)
  * - 8.0: #f3903f (orange)
  * - 8.5: #ed683c (orange-red)
@@ -12,12 +12,13 @@
  * - Smooth blending between all stops
  */
 export const getHypeHeatmapColor = (hypeScore: number): string => {
-  // Below 4.0: completely grey
-  if (hypeScore <= 4.0) return '#808080';
+  // Below 1: completely grey
+  if (hypeScore < 1) return '#808080';
 
-  // Define color stops
+  // Define color stops - now starting from 1
   const colorStops = [
-    { score: 4.0, color: { r: 128, g: 128, b: 128 } },  // Grey
+    { score: 1.0, color: { r: 128, g: 128, b: 128 } },  // Grey
+    { score: 5.0, color: { r: 200, g: 185, b: 130 } },  // Muted yellowish (gradient transition point)
     { score: 7.0, color: { r: 255, g: 207, b: 59 } },   // #ffcf3b - golden yellow
     { score: 7.5, color: { r: 253, g: 183, b: 12 } },   // Adjusted yellow-orange
     { score: 8.0, color: { r: 243, g: 134, b: 53 } },   // Adjusted orange

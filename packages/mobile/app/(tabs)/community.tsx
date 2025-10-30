@@ -19,6 +19,7 @@ import { CommentCard } from '../../components';
 import { useAuth } from '../../store/AuthContext';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
+import HotPredictionCard from '../../components/fight-cards/HotPredictionCard';
 import FighterCard from '../../components/FighterCard';
 
 interface Event {
@@ -289,20 +290,36 @@ export default function CommunityScreen() {
       fontWeight: '600',
     },
     columnHeadersUpcoming: {
-      flexDirection: 'row',
+      flexDirection: 'column',
       alignItems: 'center',
-      gap: 4,
+      gap: 0,
       marginLeft: -11,
       width: 40,
       justifyContent: 'center',
     },
-    columnHeadersCompleted: {
-      flexDirection: 'row',
+    columnHeadersUpcomingRight: {
+      flexDirection: 'column',
       alignItems: 'center',
-      gap: 8,
-      marginLeft: -7,
-      width: 88,
-      justifyContent: 'flex-start',
+      gap: 0,
+      marginRight: -11,
+      width: 40,
+      justifyContent: 'center',
+    },
+    columnHeadersCompleted: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 0,
+      marginLeft: -14,
+      width: 60,
+      justifyContent: 'center',
+    },
+    columnHeadersCompletedRight: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 0,
+      marginRight: -17,
+      width: 60,
+      justifyContent: 'center',
     },
     columnHeaderText: {
       fontSize: 10,
@@ -355,7 +372,21 @@ export default function CommunityScreen() {
             Upcoming fights with lots of hype
           </Text>
           <View style={[styles.sectionHeader, { marginBottom: 12 }]}>
+            {/* Left Column Header - ALL / HYPE */}
             <View style={styles.columnHeadersUpcoming}>
+              <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                ALL
+              </Text>
+              <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                HYPE
+              </Text>
+            </View>
+
+            {/* Right Column Header - MY / HYPE */}
+            <View style={styles.columnHeadersUpcomingRight}>
+              <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                MY
+              </Text>
               <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
                 HYPE
               </Text>
@@ -392,12 +423,23 @@ export default function CommunityScreen() {
             Recent fights that delivered entertainment
           </Text>
           <View style={[styles.sectionHeader, { marginBottom: 12 }]}>
+            {/* Left Column Header - ALL / RATINGS */}
             <View style={styles.columnHeadersCompleted}>
               <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                HYPE
+                ALL
               </Text>
-              <Text style={[styles.columnHeaderText, { color: colors.textSecondary, marginLeft: 2 }]}>
-                ACTUAL
+              <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                RATINGS
+              </Text>
+            </View>
+
+            {/* Right Column Header - MY / RATING */}
+            <View style={styles.columnHeadersCompletedRight}>
+              <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                MY
+              </Text>
+              <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                RATING
               </Text>
             </View>
           </View>
@@ -437,11 +479,10 @@ export default function CommunityScreen() {
             </View>
           ) : hotPredictions && hotPredictions.data.length > 0 ? (
             hotPredictions.data.map((fight: any) => (
-              <UpcomingFightCard
+              <HotPredictionCard
                 key={fight.id}
                 fight={fight}
                 onPress={() => router.push(`/fight/${fight.id}` as any)}
-                showEvent={true}
               />
             ))
           ) : (

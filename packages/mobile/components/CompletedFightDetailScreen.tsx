@@ -23,6 +23,7 @@ import { FlagReviewModal } from '.';
 import { useAuth } from '../store/AuthContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
+import PredictionBarChart from './PredictionBarChart';
 
 interface Fighter {
   id: string;
@@ -436,6 +437,8 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
       queryClient.invalidateQueries({ queryKey: ['fightTags', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['eventFights', fight.event.id] });
+      queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });
       onRatingSuccess?.();
     },
     onError: (error: any) => {
@@ -872,19 +875,12 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           <View style={styles.displayStarContainer}>
             <View style={styles.animatedStarContainer}>
               <View style={{ position: 'relative', marginTop: 24 }}>
-                {/* Grey star (base layer) */}
-                <FontAwesome name="star" size={80} color="#666666" />
-                {/* Primary color star (overlay) */}
-                <Animated.View
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    opacity: starColorAnimation
-                  }}
-                >
-                  <FontAwesome name="star" size={80} color={colors.primary} />
-                </Animated.View>
+                {/* Display star with heatmap color */}
+                <FontAwesome
+                  name="star"
+                  size={80}
+                  color={rating > 0 ? getHypeHeatmapColor(rating) : '#666666'}
+                />
               </View>
               <View style={styles.wheelContainer}>
                 <Animated.View style={[
@@ -924,19 +920,24 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
 
           {/* Star Rating (1-10) */}
           <View style={styles.inlineStarContainer}>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
-              <TouchableOpacity
-                key={level}
-                onPress={() => handleSetRating(level)}
-                style={styles.inlineStarButton}
-              >
-                <FontAwesome
-                  name="star"
-                  size={32}
-                  color={level <= rating ? colors.primary : '#666666'}
-                />
-              </TouchableOpacity>
-            ))}
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
+              const isSelected = level <= rating;
+              const starColor = isSelected ? getHypeHeatmapColor(level) : '#666666';
+
+              return (
+                <TouchableOpacity
+                  key={level}
+                  onPress={() => handleSetRating(level)}
+                  style={styles.inlineStarButton}
+                >
+                  <FontAwesome
+                    name="star"
+                    size={32}
+                    color={starColor}
+                  />
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* Tags */}
@@ -1010,190 +1011,11 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           </Text>
 
           {/* Prediction Breakdown Chart */}
-          {predictionStats && predictionStats.totalPredictions > 0 && (
-            <View style={styles.chartContainer}>
-              {/* Fighter 1 Bar */}
-              <View style={styles.chartRow}>
-                <Text style={[styles.fighterLabel, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-                  {fight.fighter1.lastName}
-                </Text>
-                <View style={styles.barContainer}>
-                  <View style={styles.stackedBar}>
-                    {/* KO/TKO segment */}
-                    {(() => {
-                      const widthPercent = (predictionStats.fighter1MethodPredictions.KO_TKO / predictionStats.totalPredictions) * 100;
-                      let text = '';
-                      if (widthPercent > 10) text = 'KO';
-                      else if (widthPercent > 5) text = 'K';
-                      return (
-                        <View
-                          style={[
-                            styles.barSegment,
-                            {
-                              width: `${widthPercent}%`,
-                              backgroundColor: '#F5C518',
-                            }
-                          ]}
-                        >
-                          {text !== '' && (
-                            <Text style={styles.barSegmentText}>{text}</Text>
-                          )}
-                        </View>
-                      );
-                    })()}
-                    {/* Submission segment */}
-                    {(() => {
-                      const widthPercent = (predictionStats.fighter1MethodPredictions.SUBMISSION / predictionStats.totalPredictions) * 100;
-                      let text = '';
-                      if (widthPercent > 10) text = 'SUB';
-                      else if (widthPercent > 5) text = 'S';
-                      return (
-                        <View
-                          style={[
-                            styles.barSegment,
-                            {
-                              width: `${widthPercent}%`,
-                              backgroundColor: '#F5C518CC',
-                            }
-                          ]}
-                        >
-                          {text !== '' && (
-                            <Text style={styles.barSegmentText}>{text}</Text>
-                          )}
-                        </View>
-                      );
-                    })()}
-                    {/* Decision segment */}
-                    {(() => {
-                      const widthPercent = (predictionStats.fighter1MethodPredictions.DECISION / predictionStats.totalPredictions) * 100;
-                      let text = '';
-                      if (widthPercent > 10) text = 'DEC';
-                      else if (widthPercent > 5) text = 'D';
-                      return (
-                        <View
-                          style={[
-                            styles.barSegment,
-                            {
-                              width: `${widthPercent}%`,
-                              backgroundColor: '#F5C5184D',
-                            }
-                          ]}
-                        >
-                          {text !== '' && (
-                            <Text style={styles.barSegmentText}>{text}</Text>
-                          )}
-                        </View>
-                      );
-                    })()}
-                  </View>
-                  <Text style={[styles.percentageLabel, { color: colors.text }]}>
-                    {predictionStats.winnerPredictions.fighter1.percentage.toFixed(0)}%
-                  </Text>
-                </View>
-              </View>
-
-              {/* Fighter 2 Bar */}
-              <View style={styles.chartRow}>
-                <Text style={[styles.fighterLabel, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-                  {fight.fighter2.lastName}
-                </Text>
-                <View style={styles.barContainer}>
-                  <View style={styles.stackedBar}>
-                    {/* KO/TKO segment */}
-                    {(() => {
-                      const widthPercent = (predictionStats.fighter2MethodPredictions.KO_TKO / predictionStats.totalPredictions) * 100;
-                      let text = '';
-                      if (widthPercent > 10) text = 'KO';
-                      else if (widthPercent > 5) text = 'K';
-                      return (
-                        <View
-                          style={[
-                            styles.barSegment,
-                            {
-                              width: `${widthPercent}%`,
-                              backgroundColor: '#F5C518',
-                            }
-                          ]}
-                        >
-                          {text !== '' && (
-                            <Text style={styles.barSegmentText}>{text}</Text>
-                          )}
-                        </View>
-                      );
-                    })()}
-                    {/* Submission segment */}
-                    {(() => {
-                      const widthPercent = (predictionStats.fighter2MethodPredictions.SUBMISSION / predictionStats.totalPredictions) * 100;
-                      let text = '';
-                      if (widthPercent > 10) text = 'SUB';
-                      else if (widthPercent > 5) text = 'S';
-                      return (
-                        <View
-                          style={[
-                            styles.barSegment,
-                            {
-                              width: `${widthPercent}%`,
-                              backgroundColor: '#F5C518CC',
-                            }
-                          ]}
-                        >
-                          {text !== '' && (
-                            <Text style={styles.barSegmentText}>{text}</Text>
-                          )}
-                        </View>
-                      );
-                    })()}
-                    {/* Decision segment */}
-                    {(() => {
-                      const widthPercent = (predictionStats.fighter2MethodPredictions.DECISION / predictionStats.totalPredictions) * 100;
-                      let text = '';
-                      if (widthPercent > 10) text = 'DEC';
-                      else if (widthPercent > 5) text = 'D';
-                      return (
-                        <View
-                          style={[
-                            styles.barSegment,
-                            {
-                              width: `${widthPercent}%`,
-                              backgroundColor: '#F5C5184D',
-                            }
-                          ]}
-                        >
-                          {text !== '' && (
-                            <Text style={styles.barSegmentText}>{text}</Text>
-                          )}
-                        </View>
-                      );
-                    })()}
-                  </View>
-                  <Text style={[styles.percentageLabel, { color: colors.text }]}>
-                    {predictionStats.winnerPredictions.fighter2.percentage.toFixed(0)}%
-                  </Text>
-                </View>
-              </View>
-
-              {/* Hype Row */}
-              <View style={styles.chartRow}>
-                <Text style={[styles.fighterLabel, { color: colors.text }]} numberOfLines={1}>
-                  Hype
-                </Text>
-                <View style={styles.barContainer}>
-                  <FontAwesome6 name="fire-flame-curved" size={20} color={getHypeHeatmapColor(predictionStats?.averageHype || 0)} />
-                  <Text style={[styles.hypeChartValue, { color: colors.text }]}>
-                    {predictionStats?.averageHype !== undefined
-                      ? predictionStats.averageHype % 1 === 0
-                        ? predictionStats.averageHype.toString()
-                        : predictionStats.averageHype.toFixed(1)
-                      : '0'}
-                  </Text>
-                  <Text style={[styles.hypeChartCount, { color: colors.textSecondary }]}>
-                    ({predictionStats?.totalPredictions || 0})
-                  </Text>
-                </View>
-              </View>
-
-            </View>
-          )}
+          <PredictionBarChart
+            predictionStats={predictionStats}
+            fighter1Name={fight.fighter1.lastName}
+            fighter2Name={fight.fighter2.lastName}
+          />
 
         </View>
 
@@ -2196,58 +2018,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-  },
-  chartContainer: {
-    marginTop: 4,
-  },
-  chartRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  fighterLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    width: 80,
-  },
-  barContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stackedBar: {
-    flex: 1,
-    height: 24,
-    flexDirection: 'row',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  barSegment: {
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  barSegmentText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#000',
-  },
-  percentageLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    width: 40,
-    textAlign: 'right',
-  },
-  hypeChartValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  hypeChartCount: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 4,
   },
   displayStarContainer: {
     alignItems: 'center',
