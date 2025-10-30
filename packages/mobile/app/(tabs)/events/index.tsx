@@ -372,16 +372,18 @@ function EventSection({
           {mainCard.length > 0 && (
             <View style={styles.cardSection}>
               <View style={styles.sectionHeader}>
-                {/* Column Headers - On the left */}
+                {/* Left Column Header - ALL / HYPE */}
                 <View style={styles.columnHeaders}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      HYPE
-                    </Text>
-                  </View>
-                
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    ALL
+                  </Text>
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    HYPE
+                  </Text>
+                </View>
 
-                {/* Right side - Title and Time grouped together */}
-                <View style={styles.sectionHeaderRight}>
+                {/* Center - Title and Time stacked vertically */}
+                <View style={styles.sectionHeaderCenter}>
                   <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                     MAIN CARD
                   </Text>
@@ -390,6 +392,16 @@ function EventSection({
                       {formatTime(event.mainStartTime)}
                     </Text>
                   )}
+                </View>
+
+                {/* Right Column Header - MY / HYPE */}
+                <View style={styles.columnHeadersRight}>
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    MY
+                  </Text>
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    HYPE
+                  </Text>
                 </View>
               </View>
 
@@ -563,12 +575,22 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     marginHorizontal: 16,
     marginBottom: 12,
+    position: 'relative',
   },
   sectionHeaderRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginLeft: 'auto', // Push to the right when no left content
+  },
+  sectionHeaderCenter: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 2,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignSelf: 'center',
   },
   sectionTitle: {
     fontSize: 10,
@@ -580,10 +602,18 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '600',
   },
   columnHeaders: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
-    gap: 4,
+    gap: 0,
     marginLeft: -11, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
+    width: 40, // Match width of heatmap square
+    justifyContent: 'center', // Center text within the column
+  },
+  columnHeadersRight: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginRight: -11, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
     width: 40, // Match width of heatmap square
     justifyContent: 'center', // Center text within the column
   },

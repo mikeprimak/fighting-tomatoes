@@ -1195,22 +1195,6 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
             </View>
           )}
 
-          {/* Fight Outcome */}
-          <Text style={[styles.communityRatingsTitle, { color: colors.text, marginTop: 12 }]}>
-            Fight Outcome
-          </Text>
-          {fight.winner && (
-            <View style={styles.fightOutcomeRow}>
-              <Text style={[styles.communityRatingLabel, { color: colors.textSecondary }]}>
-                Winner:{' '}
-              </Text>
-              <Text style={[styles.communityRatingValue, { color: colors.text }]}>
-                {fight.winner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName}
-                {fight.method && ` by ${fight.method}`}
-                {fight.round && ` in round ${fight.round}`}
-              </Text>
-            </View>
-          )}
         </View>
 
         {/* Split Score Row - HIDDEN */}

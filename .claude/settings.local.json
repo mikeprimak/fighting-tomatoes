@@ -104,7 +104,12 @@
       "Bash(grep:*)",
       "Bash(start \"\" \"https://fontawesome.com/v5/icons/star?f=classic&s=solid\")",
       "Bash(DATABASE_URL=\"postgresql://fightcrewapp_user:WjU2ZdAJESuMaMumbyRGgIV1HXJWg8KU@dpg-d3oee81r0fns73c59610-a.oregon-postgres.render.com/fightcrewapp\" npx ts-node:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(PGPASSWORD=WjU2ZdAJESuMaMumbyRGgIV1HXJWg8KU psql:*)",
+      "Bash(PGPASSWORD=devpassword pg_dump:*)",
+      "Bash(DATABASE_URL=\"postgresql://dev:devpassword@localhost:5433/yourapp_dev\" pnpm exec prisma migrate deploy:*)",
+      "Bash(wmic process where \"name=''node.exe''\" delete)",
+      "Bash(PGPASSWORD=ft_user_pass123654 psql:*)"
     ],
     "deny": [],
     "ask": []

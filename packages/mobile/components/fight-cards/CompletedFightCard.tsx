@@ -11,6 +11,7 @@ import { BaseFightCardProps } from './shared/types';
 import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
+import { getHypeHeatmapColor } from '../../utils/heatmap';
 
 interface CompletedFightCardProps extends BaseFightCardProps {
   isNextFight?: boolean;
@@ -42,94 +43,6 @@ export default function CompletedFightCard({
     return method;
   };
 
-  // Heatmap function - returns border color based on hype score (0-10)
-  // Uses same logic as flame icon for consistency
-  const getHypeBackgroundColor = (hypeScore: number) => {
-    if (hypeScore === 0) return '#808080'; // Grey for 0
-
-    // Gradient from grey (1) to orange (7)
-    if (hypeScore < 7.0) {
-      const score = Math.max(hypeScore, 1);
-      const linear = (score - 1) / 6;
-      const t = linear * linear; // Quadratic curve
-      const r = Math.round(128 + (235 - 128) * t);
-      const g = Math.round(128 + (134 - 128) * t);
-      const b = Math.round(128 + (0 - 128) * t);
-      return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    // Gradient from orange (7) to red (8.5) - very gradual, mostly orange
-    if (hypeScore < 8.5) {
-      const linear = (hypeScore - 7.0) / 1.5; // 0 at 7.0, 1 at 8.5
-      const t = Math.pow(linear, 5); // Quintic curve - stays orange much longer
-      // Interpolate from orange rgb(235, 134, 0) to red rgb(255, 0, 0)
-      const r = Math.round(235 + (255 - 235) * t);
-      const g = Math.round(134 + (0 - 134) * t);
-      const b = Math.round(0 + (0 - 0) * t);
-      return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    return '#ff0000'; // Red for 8.5+
-  };
-
-  // Rating background color - returns color based on rating (0-10)
-  // Uses same heatmap colors as hype score
-  const getRatingBackgroundColor = (rating: number) => {
-    if (rating === 0) return '#808080'; // Grey for 0
-
-    // Gradient from grey (1) to orange (7)
-    if (rating < 7.0) {
-      const score = Math.max(rating, 1);
-      const linear = (score - 1) / 6;
-      const t = linear * linear; // Quadratic curve
-      const r = Math.round(128 + (235 - 128) * t);
-      const g = Math.round(128 + (134 - 128) * t);
-      const b = Math.round(128 + (0 - 128) * t);
-      return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    // Gradient from orange (7) to red (8.5) - very gradual, mostly orange
-    if (rating < 8.5) {
-      const linear = (rating - 7.0) / 1.5; // 0 at 7.0, 1 at 8.5
-      const t = Math.pow(linear, 5); // Quintic curve - stays orange much longer
-      // Interpolate from orange rgb(235, 134, 0) to red rgb(255, 0, 0)
-      const r = Math.round(235 + (255 - 235) * t);
-      const g = Math.round(134 + (0 - 134) * t);
-      const b = Math.round(0 + (0 - 0) * t);
-      return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    return '#ff0000'; // Red for 8.5+
-  };
-
-  // Heatmap flame icon color - solid colors for icon display
-  const getHypeFlameColor = (hypeScore: number) => {
-    if (hypeScore === 0) return '#808080'; // Grey for 0
-
-    // Gradient from grey (1) to orange (7) - aggressive curve
-    if (hypeScore < 7.0) {
-      const score = Math.max(hypeScore, 1);
-      const linear = (score - 1) / 6;
-      const t = linear * linear; // Quadratic curve
-      const r = Math.round(128 + (235 - 128) * t);
-      const g = Math.round(128 + (134 - 128) * t);
-      const b = Math.round(128 + (0 - 128) * t);
-      return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    // Gradient from orange (7) to red (8.5) - very gradual, mostly orange
-    if (hypeScore < 8.5) {
-      const linear = (hypeScore - 7.0) / 1.5; // 0 at 7.0, 1 at 8.5
-      const t = Math.pow(linear, 5); // Quintic curve - stays orange much longer
-      // Interpolate from orange rgb(235, 134, 0) to red rgb(255, 0, 0)
-      const r = Math.round(235 + (255 - 235) * t);
-      const g = Math.round(134 + (0 - 134) * t);
-      const b = Math.round(0 + (0 - 0) * t);
-      return `rgb(${r}, ${g}, ${b})`;
-    }
-
-    return '#ff0000'; // Red for 8.5+
-  };
 
   // Image error states
   const [fighter1ImageError, setFighter1ImageError] = useState(false);
@@ -461,8 +374,8 @@ export default function CompletedFightCard({
     return result;
   };
 
-  const hypeBorderColor = getHypeBackgroundColor(predictionStats?.averageHype || 0);
-  const ratingBorderColor = getRatingBackgroundColor(fight.averageRating || 0);
+  const hypeBorderColor = getHypeHeatmapColor(predictionStats?.averageHype || 0);
+  const ratingBorderColor = getHypeHeatmapColor(fight.averageRating || 0);
   const grayColor = colors.border || '#888888';
 
   // Create a 50% opacity version of the hype color for the fade-in start
@@ -486,6 +399,49 @@ export default function CompletedFightCard({
 
   const halfHypeColor = getHalfOpacityColor(hypeBorderColor);
 
+  // Mix 70% heatmap color with 30% background color for flame icon
+  const getFlameColor = (hypeColor: string, bgColor: string): string => {
+    // Parse hype color (RGB or hex)
+    const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    const hypeHexMatch = hypeColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+
+    let hypeR = 0, hypeG = 0, hypeB = 0;
+    if (hypeRgbaMatch) {
+      hypeR = parseInt(hypeRgbaMatch[1]);
+      hypeG = parseInt(hypeRgbaMatch[2]);
+      hypeB = parseInt(hypeRgbaMatch[3]);
+    } else if (hypeHexMatch) {
+      hypeR = parseInt(hypeHexMatch[1], 16);
+      hypeG = parseInt(hypeHexMatch[2], 16);
+      hypeB = parseInt(hypeHexMatch[3], 16);
+    }
+
+    // Parse background color (RGB or hex)
+    const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    const bgHexMatch = bgColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+
+    let bgR = 0, bgG = 0, bgB = 0;
+    if (bgRgbaMatch) {
+      bgR = parseInt(bgRgbaMatch[1]);
+      bgG = parseInt(bgRgbaMatch[2]);
+      bgB = parseInt(bgRgbaMatch[3]);
+    } else if (bgHexMatch) {
+      bgR = parseInt(bgHexMatch[1], 16);
+      bgG = parseInt(bgHexMatch[2], 16);
+      bgB = parseInt(bgHexMatch[3], 16);
+    }
+
+    // Mix 70% hype + 30% background
+    const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
+    const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
+    const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
+
+    return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
+  };
+
+  const flameColor = getFlameColor(hypeBorderColor, colors.background);
+  const starColor = getFlameColor(ratingBorderColor, colors.background);
+
   return (
     <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
       <View style={[sharedStyles.container, {
@@ -499,6 +455,12 @@ export default function CompletedFightCard({
       }]}>
           {/* Full-height hype square on the left */}
           <View style={[styles.hypeSquare, { backgroundColor: hypeBorderColor }]}>
+            <FontAwesome6
+              name="fire-flame-curved"
+              size={30}
+              color={flameColor}
+              style={{ position: 'absolute' }}
+            />
             <Text style={styles.hypeSquareText}>
               {predictionStats?.averageHype !== undefined
                 ? predictionStats.averageHype.toFixed(1)
@@ -509,6 +471,12 @@ export default function CompletedFightCard({
 
           {/* Full-height rating square next to hype */}
           <View style={[styles.ratingSquare, { backgroundColor: ratingBorderColor }]}>
+            <FontAwesome
+              name="star"
+              size={30}
+              color={starColor}
+              style={{ position: 'absolute' }}
+            />
             <Text style={styles.ratingSquareText}>
               {fight.averageRating !== undefined && fight.averageRating > 0
                 ? fight.averageRating.toFixed(1)
@@ -517,13 +485,7 @@ export default function CompletedFightCard({
             </Text>
           </View>
 
-          {showEvent && (
-            <Text style={[sharedStyles.eventText, { color: colors.textSecondary, marginBottom: 2, marginTop: 2 }]}>
-              {fight.event.name} • {formatDate(fight.event.date)}
-            </Text>
-          )}
-
-          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: 0 }]}>
+          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -15 : 2 }]}>
             {/* Fighter names together with "vs" */}
             <View style={styles.fighterNamesVs}>
               {/* Fighter 1 */}
@@ -566,6 +528,23 @@ export default function CompletedFightCard({
                 </View>
               </View>
             </View>
+
+            {/* Event text positioned absolutely below fighter names */}
+            {showEvent && (
+              <Text
+                style={{
+                  position: 'absolute',
+                  bottom: -16,
+                  left: 0,
+                  color: colors.textSecondary,
+                  fontSize: 10,
+                  textAlign: 'left',
+                }}
+                numberOfLines={1}
+              >
+                {fight.event.name} • {formatDate(fight.event.date)}
+              </Text>
+            )}
           </View>
 
         {/* Status message */}

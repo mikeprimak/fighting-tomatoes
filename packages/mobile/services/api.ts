@@ -865,6 +865,37 @@ class ApiService {
   }> {
     return this.makeRequest(`/community/comments?sortBy=${sortBy}`);
   }
+
+  async getTopUpcomingFights(): Promise<{ data: Fight[] }> {
+    return this.makeRequest('/community/top-upcoming-fights');
+  }
+
+  async getTopRecentFights(): Promise<{ data: Fight[] }> {
+    return this.makeRequest('/community/top-recent-fights');
+  }
+
+  async getHotPredictions(): Promise<{
+    data: Array<Fight & { totalPredictions: number; consensusPercentage: number }>;
+  }> {
+    return this.makeRequest('/community/hot-predictions');
+  }
+
+  async getHotFighters(): Promise<{
+    data: {
+      recent: Array<{
+        fighter: any;
+        avgRating: number;
+        fightCount: number;
+      }>;
+      upcoming: Array<{
+        fighter: any;
+        avgRating: number;
+        fightCount: number;
+      }>;
+    };
+  }> {
+    return this.makeRequest('/community/hot-fighters');
+  }
 }
 
 export const apiService = new ApiService();

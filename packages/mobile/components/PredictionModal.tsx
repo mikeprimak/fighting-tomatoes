@@ -8,6 +8,7 @@ import {
   Image,
   Animated,
   Easing,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -143,6 +144,7 @@ export function PredictionModal({
   // Create prediction mutation - ALWAYS use individual FightPrediction API
   const createPredictionMutation = useMutation({
     mutationFn: (data: PredictionData) => {
+      Alert.alert('DEBUG', '🔵 MUTATION: mutationFn called');
       if (!fight?.id) throw new Error('Missing fight ID');
 
       // Always use individual prediction API - convert PredictionData to API format
@@ -153,9 +155,11 @@ export function PredictionModal({
         predictedRound: data.predictedRound && data.predictedRound > 0 ? data.predictedRound : undefined,
       };
       console.log('📤 Sending prediction data to API:', apiData);
+      Alert.alert('DEBUG', `🔵 MUTATION: Calling API with ${JSON.stringify(apiData)}`);
       return apiService.createFightPrediction(fight.id, apiData);
     },
     onSuccess: () => {
+      Alert.alert('DEBUG', '✅ MUTATION: onSuccess called');
       // Invalidate individual prediction queries
       queryClient.invalidateQueries({ queryKey: ['fightPrediction', fight?.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight?.id] });
@@ -179,6 +183,7 @@ export function PredictionModal({
       onClose();
     },
     onError: (error: any) => {
+      Alert.alert('DEBUG', `🔴 MUTATION: onError called - ${error.message || error.error}`);
       showError(error.error || error.message || 'Failed to submit prediction', 'Error');
     },
   });
@@ -348,10 +353,14 @@ export function PredictionModal({
   };
 
   const handleSubmitPrediction = async () => {
+    Alert.alert('DEBUG', '🟢 STEP 1: handleSubmitPrediction called');
+
     // Check if at least one field is filled (any prediction is valid)
     const hasAnyPrediction = hypeLevel > 0 || predictedWinner || predictedMethod || predictedRound > 0;
     const currentPrediction = getCurrentUserPrediction();
     const isUpdate = !!currentPrediction;
+
+    Alert.alert('DEBUG', `🟢 STEP 2: hasAnyPrediction=${hasAnyPrediction}, isUpdate=${isUpdate}`);
 
     // Only show error if trying to create a NEW prediction with no fields
     // Allow clearing all fields if updating an existing prediction
@@ -372,11 +381,15 @@ export function PredictionModal({
       predictedRound: predictedRound > 0 ? predictedRound : undefined,
     };
 
+    Alert.alert('DEBUG', `🟢 STEP 3: predictionData=${JSON.stringify(predictionData)}`);
+
     try {
       setIsSubmitting(true);
+      Alert.alert('DEBUG', `🟢 STEP 4: onSubmit exists? ${!!onSubmit}`);
 
       if (onSubmit) {
         // Custom submit handler
+        Alert.alert('DEBUG', '🟡 Using custom onSubmit handler');
         await onSubmit(predictionData);
         onSuccess?.(isUpdate, {
           fightId: fight?.id,
@@ -387,12 +400,16 @@ export function PredictionModal({
         onClose();
       } else {
         // Default prediction submission (crew or individual)
+        Alert.alert('DEBUG', '🟢 STEP 5: About to call createPredictionMutation.mutate()');
         createPredictionMutation.mutate(predictionData);
+        Alert.alert('DEBUG', '🟢 STEP 6: createPredictionMutation.mutate() called successfully');
       }
     } catch (error: any) {
+      Alert.alert('DEBUG', `🔴 ERROR in try/catch: ${error.message}`);
       showError(error.message || 'Failed to submit prediction', 'Error');
     } finally {
       setIsSubmitting(false);
+      Alert.alert('DEBUG', '🟢 STEP 7: setIsSubmitting(false) - finally block');
     }
   };
 

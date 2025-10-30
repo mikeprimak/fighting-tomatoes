@@ -1492,12 +1492,16 @@ export async function fightRoutes(fastify: FastifyInstance) {
     preHandler: [authenticateUser, requireEmailVerification],
   }, async (request: any, reply: any) => {
     try {
+      console.log('🔴 POST /api/fights/:id/prediction - ENDPOINT HIT');
       const fightId = request.params.id;
       const currentUserId = (request as any).user.id;
+      console.log('🔴 fightId:', fightId, 'userId:', currentUserId);
+      console.log('🔴 request.body:', JSON.stringify(request.body));
 
       // Validate request body
       const validation = CreatePredictionSchema.safeParse(request.body);
       if (!validation.success) {
+        console.log('🔴 VALIDATION FAILED:', validation.error.errors);
         return reply.code(400).send({
           error: 'Invalid prediction data',
           code: 'INVALID_PREDICTION_DATA',
@@ -1506,6 +1510,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       const { predictedRating, predictedWinner, predictedMethod, predictedRound } = validation.data;
+      console.log('🔴 Validated data:', { predictedRating, predictedWinner, predictedMethod, predictedRound });
 
       // Check if fight exists
       const fight = await fastify.prisma.fight.findUnique({
@@ -1540,6 +1545,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Create or update prediction
+      console.log('🔴 About to upsert prediction...');
       const prediction = await fastify.prisma.fightPrediction.upsert({
         where: {
           userId_fightId: {
@@ -1573,6 +1579,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           },
         },
       });
+      console.log('🔴 Prediction upserted successfully! ID:', prediction.id);
 
       // Add activity log for new predictions
       const isNewPrediction = !await fastify.prisma.fightPrediction.findFirst({
