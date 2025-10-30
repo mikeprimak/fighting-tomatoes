@@ -542,9 +542,10 @@ export default function UpcomingFightCard({
                   position: 'absolute',
                   bottom: -16,
                   left: 0,
+                  right: 0,
                   color: colors.textSecondary,
                   fontSize: 10,
-                  textAlign: 'left',
+                  textAlign: 'center',
                 }}
                 numberOfLines={1}
               >
