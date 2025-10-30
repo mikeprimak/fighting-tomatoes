@@ -54,7 +54,7 @@ export default function EvenPredictionCard({ fight, onPress }: EvenPredictionCar
           <Text style={[styles.predictionText, { color: colors.text }]} numberOfLines={1}>
             <Text style={{ fontWeight: '700' }}>{favoritePercentage}-{underdogPercentage}</Text>
             {' split: '}
-            <Text style={{ fontWeight: '700', color: colors.primary }}>{fight.slightFavorite}</Text>
+            <Text style={{ fontWeight: '700' }}>{fight.slightFavorite}</Text>
             {' vs '}
             <Text style={{ fontWeight: '700' }}>{fight.slightUnderdog}</Text>
           </Text>
