@@ -84,13 +84,20 @@ export function EventBannerCard({
   const colors = Colors[colorScheme ?? 'light'];
   const { line1, line2 } = parseEventName(event.name);
 
+  const imageSource = event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id);
+  console.log('EventBannerCard - Event:', event.name);
+  console.log('EventBannerCard - bannerImage:', event.bannerImage);
+  console.log('EventBannerCard - imageSource:', imageSource);
+
   return (
     <View style={styles.container}>
       {/* Event Banner Image */}
       <Image
-        source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
+        source={imageSource}
         style={styles.banner}
         resizeMode="cover"
+        onError={(error) => console.log('Image load error:', error.nativeEvent)}
+        onLoad={() => console.log('Image loaded successfully for:', event.name)}
       />
 
       {/* Event Info */}

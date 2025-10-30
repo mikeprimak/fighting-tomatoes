@@ -487,12 +487,13 @@ export default function UpcomingFightCard({
           </View>
 
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -15 : 2 }]}>
-            {/* Fighter names together with "vs" */}
-            <View style={styles.fighterNamesVs}>
-              {/* Fighter 1 */}
-              <View style={styles.fighterWithBadge}>
+            {/* Fighter names with centered "vs" */}
+            <View style={styles.fighterNamesContainer}>
+              {/* Fighter 1 - Left half */}
+              <View style={styles.fighter1Container}>
                 <View
                   style={[
+                    { alignSelf: 'flex-end' },
                     aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && {
                       borderBottomWidth: 2,
                       borderBottomColor: '#F5C518',
@@ -500,7 +501,7 @@ export default function UpcomingFightCard({
                   ]}
                 >
                   <Text
-                    style={[styles.fighterName, { color: colors.text }]}
+                    style={[styles.fighterName, { color: colors.text, textAlign: 'right' }]}
                     numberOfLines={1}
                   >
                     {cleanFighterName(getFighterName(fight.fighter1))}
@@ -508,12 +509,16 @@ export default function UpcomingFightCard({
                 </View>
               </View>
 
-              <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
+              {/* "vs" text - Absolutely centered */}
+              <View style={styles.vsContainer}>
+                <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
+              </View>
 
-              {/* Fighter 2 */}
-              <View style={styles.fighterWithBadge}>
+              {/* Fighter 2 - Right half */}
+              <View style={styles.fighter2Container}>
                 <View
                   style={[
+                    { alignSelf: 'flex-start' },
                     aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && {
                       borderBottomWidth: 2,
                       borderBottomColor: '#F5C518',
@@ -521,7 +526,7 @@ export default function UpcomingFightCard({
                   ]}
                 >
                   <Text
-                    style={[styles.fighterName, { color: colors.text }]}
+                    style={[styles.fighterName, { color: colors.text, textAlign: 'left' }]}
                     numberOfLines={1}
                   >
                     {cleanFighterName(getFighterName(fight.fighter2))}
@@ -740,16 +745,38 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     gap: 12,
   },
+  fighterNamesContainer: {
+    position: 'relative',
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  fighter1Container: {
+    flex: 1,
+    paddingRight: 12,
+    justifyContent: 'center',
+    marginLeft: -5,
+  },
+  fighter2Container: {
+    flex: 1,
+    paddingLeft: 12,
+    justifyContent: 'center',
+  },
+  vsContainer: {
+    position: 'absolute',
+    left: '50%',
+    transform: [{ translateX: -10 }],
+    zIndex: 1,
+  },
   fighterNamesVs: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
-    gap: 6,
+    justifyContent: 'center',
   },
   fighterWithBadge: {
     position: 'relative',
-    flexShrink: 1,
-    maxWidth: '45%',
+    flex: 1,
     overflow: 'visible',
   },
   badgesAbsolute: {
