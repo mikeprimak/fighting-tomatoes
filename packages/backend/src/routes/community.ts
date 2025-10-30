@@ -507,7 +507,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       // Calculate prediction stats for each fight
       const fightsWithStats = fights.map((fight: any) => {
         const totalPredictions = fight.predictions.length;
-        if (totalPredictions < 5) return null; // Need at least 5 predictions
+        if (totalPredictions < 2) return null; // Need at least 2 predictions for a split
 
         const fighter1Predictions = fight.predictions.filter((p: any) => p.predictedWinner === fight.fighter1Id).length;
         const fighter2Predictions = fight.predictions.filter((p: any) => p.predictedWinner === fight.fighter2Id).length;
