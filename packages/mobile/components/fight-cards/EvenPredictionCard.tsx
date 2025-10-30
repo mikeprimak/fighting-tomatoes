@@ -5,20 +5,21 @@ import { Colors } from '../../constants/Colors';
 import { sharedStyles } from './shared/styles';
 import { formatDate, getFighterImage } from './shared/utils';
 
-interface HotPredictionCardProps {
+interface EvenPredictionCardProps {
   fight: any;
   onPress: (fight: any) => void;
 }
 
-export default function HotPredictionCard({ fight, onPress }: HotPredictionCardProps) {
+export default function EvenPredictionCard({ fight, onPress }: EvenPredictionCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [imageError, setImageError] = useState(false);
 
-  const percentage = Math.round(fight.consensusPercentage || 0);
+  const favoritePercentage = Math.round(fight.favoritePercentage || 0);
+  const underdogPercentage = 100 - favoritePercentage;
 
-  // Determine which fighter is the consensus winner
-  const winnerFighter = fight.consensusWinner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
+  // Determine which fighter is the slight favorite
+  const favoriteFighter = fight.slightFavorite === `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
     ? fight.fighter1
     : fight.fighter2;
 
@@ -26,7 +27,7 @@ export default function HotPredictionCard({ fight, onPress }: HotPredictionCardP
     if (imageError) {
       return require('../../assets/fighters/fighter-default-alpha.png');
     }
-    return getFighterImage(winnerFighter);
+    return getFighterImage(favoriteFighter);
   };
 
   return (
@@ -51,11 +52,11 @@ export default function HotPredictionCard({ fight, onPress }: HotPredictionCardP
         <View style={{ flex: 1 }}>
           {/* Prediction Text */}
           <Text style={[styles.predictionText, { color: colors.text }]} numberOfLines={1}>
-            <Text style={{ fontWeight: '700' }}>{percentage}%</Text>
-            {' pick '}
-            <Text style={{ fontWeight: '700', color: colors.primary }}>{fight.consensusWinner}</Text>
-            {' to beat '}
-            <Text style={{ fontWeight: '700' }}>{fight.consensusLoser}</Text>
+            <Text style={{ fontWeight: '700' }}>{favoritePercentage}-{underdogPercentage}</Text>
+            {' split: '}
+            <Text style={{ fontWeight: '700', color: colors.primary }}>{fight.slightFavorite}</Text>
+            {' vs '}
+            <Text style={{ fontWeight: '700' }}>{fight.slightUnderdog}</Text>
           </Text>
 
           {/* Event Info */}

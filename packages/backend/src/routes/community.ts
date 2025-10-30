@@ -471,6 +471,93 @@ export default async function communityRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Get even predictions (fights where predictions are split 42-58% or closer, next 20 days)
+  fastify.get('/even-predictions', {
+    preHandler: optionalAuthenticateMiddleware,
+  }, async (request, reply) => {
+    try {
+      const now = new Date();
+      const twentyDaysFromNow = new Date();
+      twentyDaysFromNow.setDate(now.getDate() + 20);
+
+      // Get all upcoming fights with predictions
+      const fights = await fastify.prisma.fight.findMany({
+        where: {
+          event: {
+            date: {
+              gte: now,
+              lte: twentyDaysFromNow,
+            },
+          },
+          hasStarted: false,
+          isComplete: false,
+        },
+        include: {
+          fighter1: true,
+          fighter2: true,
+          event: true,
+          predictions: {
+            select: {
+              predictedWinner: true,
+            },
+          },
+        },
+      });
+
+      // Calculate prediction stats for each fight
+      const fightsWithStats = fights.map((fight: any) => {
+        const totalPredictions = fight.predictions.length;
+        if (totalPredictions < 5) return null; // Need at least 5 predictions
+
+        const fighter1Predictions = fight.predictions.filter((p: any) => p.predictedWinner === fight.fighter1Id).length;
+        const fighter2Predictions = fight.predictions.filter((p: any) => p.predictedWinner === fight.fighter2Id).length;
+
+        const fighter1Percentage = (fighter1Predictions / totalPredictions) * 100;
+        const fighter2Percentage = (fighter2Predictions / totalPredictions) * 100;
+
+        // Check if both fighters have at least 42% (meaning it's between 42-58%)
+        const isEven = fighter1Percentage >= 42 && fighter2Percentage >= 42;
+
+        const higherPercentage = Math.max(fighter1Percentage, fighter2Percentage);
+        const slightFavorite = fighter1Percentage > fighter2Percentage
+          ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
+          : `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+        const slightUnderdog = fighter1Percentage > fighter2Percentage
+          ? `${fight.fighter2.firstName} ${fight.fighter2.lastName}`
+          : `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
+
+        return isEven ? {
+          fight,
+          totalPredictions,
+          favoritePercentage: higherPercentage,
+          slightFavorite,
+          slightUnderdog,
+        } : null;
+      }).filter((f: any) => f !== null);
+
+      // Sort by total predictions (most predicted with split)
+      fightsWithStats.sort((a: any, b: any) => b.totalPredictions - a.totalPredictions);
+
+      // Return top 7
+      const topFights = fightsWithStats.slice(0, 7).map((f: any) => ({
+        ...f.fight,
+        predictions: undefined, // Remove raw predictions from response
+        totalPredictions: f.totalPredictions,
+        favoritePercentage: f.favoritePercentage,
+        slightFavorite: f.slightFavorite,
+        slightUnderdog: f.slightUnderdog,
+      }));
+
+      return reply.send({ data: topFights });
+    } catch (error) {
+      console.error('Error fetching even predictions:', error);
+      return reply.status(500).send({
+        error: 'Failed to fetch even predictions',
+        code: 'FETCH_ERROR',
+      });
+    }
+  });
+
   // Get hot fighters (fighters with highest average ratings from recent/upcoming fights)
   fastify.get('/hot-fighters', {
     preHandler: optionalAuthenticateMiddleware,

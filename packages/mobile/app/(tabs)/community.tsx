@@ -20,6 +20,7 @@ import { useAuth } from '../../store/AuthContext';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import HotPredictionCard from '../../components/fight-cards/HotPredictionCard';
+import EvenPredictionCard from '../../components/fight-cards/EvenPredictionCard';
 import FighterCard from '../../components/FighterCard';
 
 interface Event {
@@ -101,6 +102,13 @@ export default function CommunityScreen() {
   const { data: hotPredictions, isLoading: isHotPredictionsLoading } = useQuery({
     queryKey: ['hotPredictions'],
     queryFn: () => apiService.getHotPredictions(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  // Fetch even predictions
+  const { data: evenPredictions, isLoading: isEvenPredictionsLoading } = useQuery({
+    queryKey: ['evenPredictions'],
+    queryFn: () => apiService.getEvenPredictions(),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 
@@ -489,6 +497,35 @@ export default function CommunityScreen() {
             <View style={styles.card}>
               <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
                 No hot predictions found
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Even Predictions Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Even Predictions</Text>
+          </View>
+          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
+            The crowd is split on who will win these upcoming fights
+          </Text>
+          {isEvenPredictionsLoading ? (
+            <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : evenPredictions && evenPredictions.data.length > 0 ? (
+            evenPredictions.data.map((fight: any) => (
+              <EvenPredictionCard
+                key={fight.id}
+                fight={fight}
+                onPress={() => router.push(`/fight/${fight.id}` as any)}
+              />
+            ))
+          ) : (
+            <View style={styles.card}>
+              <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
+                No even predictions found
               </Text>
             </View>
           )}

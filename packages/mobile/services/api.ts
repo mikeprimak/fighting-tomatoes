@@ -880,6 +880,12 @@ class ApiService {
     return this.makeRequest('/community/hot-predictions');
   }
 
+  async getEvenPredictions(): Promise<{
+    data: Array<Fight & { totalPredictions: number; favoritePercentage: number; slightFavorite: string; slightUnderdog: string }>;
+  }> {
+    return this.makeRequest('/community/even-predictions');
+  }
+
   async getHotFighters(): Promise<{
     data: {
       recent: Array<{
