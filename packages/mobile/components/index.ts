@@ -14,6 +14,7 @@ export { DetailScreenHeader } from './DetailScreenHeader';
 export { FlagReviewModal } from './FlagReviewModal';
 export { CommunityPredictionsCard } from './CommunityPredictionsCard';
 export { CommentCard } from './CommentCard';
+export { CustomAlert } from './CustomAlert';
 export { default as UpcomingFightDetailScreen } from './UpcomingFightDetailScreen';
 export { default as CompletedFightDetailScreen } from './CompletedFightDetailScreen';
 export { EventBannerCard } from './EventBannerCard';
