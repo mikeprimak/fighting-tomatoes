@@ -75,14 +75,6 @@ export default function FighterCard({ fighter, onPress, avgRating, fightCount }:
             </Text>
           </View>
         )}
-
-        <View style={styles.detailsContainer}>
-          {fighter.weightClass && (
-            <Text style={[styles.detail, { color: colors.textSecondary }]}>
-              {fighter.weightClass}
-            </Text>
-          )}
-        </View>
       </View>
 
       <View style={styles.chevron}>
