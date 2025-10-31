@@ -28,15 +28,49 @@ interface FighterCardProps {
   onPress?: (fighter: Fighter) => void;
   avgRating?: number; // Average rating from last 3 fights
   fightCount?: number; // Number of fights used for average
+  lastFightDate?: string; // Most recent completed fight date
+  nextFightDate?: string; // Next upcoming fight date
 }
 
-export default function FighterCard({ fighter, onPress, avgRating, fightCount }: FighterCardProps) {
+export default function FighterCard({ fighter, onPress, avgRating, fightCount, lastFightDate, nextFightDate }: FighterCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
   const getFighterName = (fighter: Fighter) => {
     const name = `${fighter.firstName} ${fighter.lastName}`;
     return fighter.nickname ? `${name} "${fighter.nickname}"` : name;
+  };
+
+  const getRelativeTimeText = () => {
+    if (nextFightDate) {
+      const now = new Date();
+      const fightDate = new Date(nextFightDate);
+      const diffMs = fightDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) return 'Fights today';
+      if (diffDays === 1) return 'Fights tomorrow';
+      if (diffDays <= 7) return `Fights in ${diffDays} days`;
+      const diffWeeks = Math.floor(diffDays / 7);
+      if (diffWeeks === 1) return 'Fights in 1 week';
+      return `Fights in ${diffWeeks} weeks`;
+    }
+
+    if (lastFightDate) {
+      const now = new Date();
+      const fightDate = new Date(lastFightDate);
+      const diffMs = now.getTime() - fightDate.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) return 'Fought today';
+      if (diffDays === 1) return 'Fought yesterday';
+      if (diffDays <= 7) return `Fought ${diffDays} days ago`;
+      const diffWeeks = Math.floor(diffDays / 7);
+      if (diffWeeks === 1) return 'Fought 1 week ago';
+      return `Fought ${diffWeeks} weeks ago`;
+    }
+
+    return null;
   };
 
   const handlePress = () => {
@@ -74,6 +108,12 @@ export default function FighterCard({ fighter, onPress, avgRating, fightCount }:
               {avgRating.toFixed(1)}/10
             </Text>
           </View>
+        )}
+
+        {getRelativeTimeText() && (
+          <Text style={[styles.relativeTime, { color: colors.textSecondary }]}>
+            {getRelativeTimeText()}
+          </Text>
         )}
       </View>
 
@@ -119,6 +159,11 @@ const createStyles = (colors: any) => StyleSheet.create({
   rating: {
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  relativeTime: {
+    fontSize: 11,
+    fontStyle: 'italic',
+    marginTop: 2,
   },
   detailsContainer: {
     flexDirection: 'row',

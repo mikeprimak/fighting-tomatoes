@@ -551,6 +551,8 @@ export default function CommunityScreen() {
                   fighter={fighterData.fighter}
                   avgRating={fighterData.avgRating}
                   fightCount={fighterData.fightCount}
+                  lastFightDate={fighterData.lastFightDate}
+                  nextFightDate={fighterData.nextFightDate}
                   onPress={() => router.push(`/fighter/${fighterData.fighter.id}` as any)}
                 />
               ))}

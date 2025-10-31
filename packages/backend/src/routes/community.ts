@@ -606,6 +606,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         include: {
           fighter1: true,
           fighter2: true,
+          event: true,
         },
       });
 
@@ -632,6 +633,9 @@ export default async function communityRoutes(fastify: FastifyInstance) {
                 },
               },
               take: 3,
+              include: {
+                event: true,
+              },
             });
 
             if (fighterFights.length > 0) {
@@ -640,6 +644,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
                 fighter,
                 avgRating,
                 fightCount: fighterFights.length,
+                lastFightDate: fighterFights[0].event.date, // Most recent completed fight
               });
             }
           }
@@ -648,8 +653,14 @@ export default async function communityRoutes(fastify: FastifyInstance) {
 
       // Calculate average rating for upcoming fighters
       const upcomingFighterStats = new Map();
+      const upcomingFighterDates = new Map(); // Track upcoming fight dates
       for (const fight of upcomingFights) {
         for (const fighter of [fight.fighter1, fight.fighter2]) {
+          // Track the earliest upcoming fight for this fighter
+          if (!upcomingFighterDates.has(fighter.id)) {
+            upcomingFighterDates.set(fighter.id, fight.event.date);
+          }
+
           if (!upcomingFighterStats.has(fighter.id)) {
             // Get fighter's last 3 completed fights with ratings
             const fighterFights = await fastify.prisma.fight.findMany({
@@ -677,6 +688,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
                 fighter,
                 avgRating,
                 fightCount: fighterFights.length,
+                nextFightDate: upcomingFighterDates.get(fighter.id), // Next upcoming fight
               });
             }
           }
