@@ -9,6 +9,7 @@ import {
 import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
+import { getFighterImage } from './fight-cards/shared/utils';
 
 interface Fighter {
   id: string;
@@ -19,6 +20,7 @@ interface Fighter {
   losses: number;
   draws: number;
   weightClass?: string;
+  profileImage?: string | null;
 }
 
 interface FighterCardProps {
@@ -27,23 +29,6 @@ interface FighterCardProps {
   avgRating?: number; // Average rating from last 3 fights
   fightCount?: number; // Number of fights used for average
 }
-
-// Fighter image selection logic (same as other components)
-const getFighterImage = (fighterId: string) => {
-  const images = [
-    require('../assets/fighters/fighter-1.jpg'),
-    require('../assets/fighters/fighter-2.jpg'),
-    require('../assets/fighters/fighter-3.jpg'),
-    require('../assets/fighters/fighter-4.jpg'),
-    require('../assets/fighters/fighter-5.jpg'),
-    require('../assets/fighters/fighter-6.jpg'),
-  ];
-
-  // Use charCodeAt to get a number from the last character (works for letters and numbers)
-  const lastCharCode = fighterId.charCodeAt(fighterId.length - 1);
-  const index = lastCharCode % images.length;
-  return images[index];
-};
 
 export default function FighterCard({ fighter, onPress, avgRating, fightCount }: FighterCardProps) {
   const colorScheme = useColorScheme();
@@ -58,7 +43,7 @@ export default function FighterCard({ fighter, onPress, avgRating, fightCount }:
     if (onPress) {
       onPress(fighter);
     } else {
-      router.push(`/fighter/${fighter.id}`);
+      router.push(`/fighter/${fighter.id}` as any);
     }
   };
 
@@ -70,7 +55,7 @@ export default function FighterCard({ fighter, onPress, avgRating, fightCount }:
       onPress={handlePress}
     >
       <Image
-        source={getFighterImage(fighter.id)}
+        source={getFighterImage(fighter)}
         style={styles.fighterImage}
         resizeMode="cover"
       />
