@@ -77,10 +77,40 @@ export function CommentCard({
 
         {/* Right side: Comment content */}
         <View style={styles.reviewContentContainer}>
+          {/* Header: Username and Rating/Flag */}
+          <View style={styles.reviewHeader}>
+            <Text style={[styles.reviewAuthor, { color: '#FFFFFF' }]}>
+              {showMyReview ? 'My Review' : comment.user.displayName}
+            </Text>
+            <View style={styles.ratingFlagContainer}>
+              <View style={styles.inlineRating}>
+                <FontAwesome name="star" size={12} color={getHypeHeatmapColor(comment.rating)} />
+                <Text style={[styles.reviewRatingText, { color: colors.text, fontSize: 12 }]}>
+                  {comment.rating}
+                </Text>
+              </View>
+              {onFlag && (
+                <TouchableOpacity
+                  onPress={onFlag}
+                  disabled={!isAuthenticated || isFlagging}
+                  style={styles.flagButton}
+                >
+                  <FontAwesome
+                    name="flag"
+                    size={12}
+                    color={isFlagging ? colors.textSecondary : colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {/* Comment body */}
           <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
             {comment.content}
           </Text>
 
+          {/* Fight info at bottom */}
           <View style={styles.fightInfo}>
             {comment.fight && (
               <>
@@ -92,32 +122,6 @@ export function CommentCard({
                 </Text>
               </>
             )}
-            <View style={styles.userRatingRow}>
-              <Text style={[styles.eventText, { color: colors.textSecondary }]}>
-                {showMyReview ? 'My Review' : `by ${comment.user.displayName}`}
-              </Text>
-              <View style={styles.ratingFlagContainer}>
-                <View style={styles.inlineRating}>
-                  <FontAwesome name="star" size={12} color={getHypeHeatmapColor(comment.rating)} />
-                  <Text style={[styles.reviewRatingText, { color: colors.text, fontSize: 12 }]}>
-                    {comment.rating}
-                  </Text>
-                </View>
-                {onFlag && (
-                  <TouchableOpacity
-                    onPress={onFlag}
-                    disabled={!isAuthenticated || isFlagging}
-                    style={styles.flagButton}
-                  >
-                    <FontAwesome
-                      name="flag"
-                      size={12}
-                      color={isFlagging ? colors.textSecondary : colors.textSecondary}
-                    />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
           </View>
         </View>
       </View>
@@ -170,8 +174,7 @@ const styles = StyleSheet.create({
   },
   reviewAuthor: {
     fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontWeight: '700',
   },
   reviewRating: {
     flexDirection: 'row',

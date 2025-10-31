@@ -15,8 +15,9 @@ import { Colors } from '../../constants/Colors';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { apiService } from '../../services/api';
-import { CommentCard } from '../../components';
+import { CommentCard, FlagReviewModal, CustomAlert } from '../../components';
 import { useAuth } from '../../store/AuthContext';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import HotPredictionCard from '../../components/fight-cards/HotPredictionCard';
@@ -52,7 +53,10 @@ export default function CommunityScreen() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
   const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
+  const [flagModalVisible, setFlagModalVisible] = useState(false);
+  const [reviewToFlag, setReviewToFlag] = useState<{ fightId: string; reviewId: string } | null>(null);
 
   // Fetch events from API
   const { data: eventsData, isLoading } = useQuery({
@@ -177,6 +181,36 @@ export default function CommunityScreen() {
       setUpvotingCommentId(null);
     },
   });
+
+  // Flag review mutation
+  const flagReviewMutation = useMutation({
+    mutationFn: ({ fightId, reviewId, reason }: { fightId: string; reviewId: string; reason: string }) =>
+      apiService.flagReview(fightId, reviewId, reason),
+    onSuccess: () => {
+      showSuccess('Review has been flagged for moderation');
+      setFlagModalVisible(false);
+      setReviewToFlag(null);
+      queryClient.invalidateQueries({ queryKey: ['topComments'] });
+    },
+    onError: (error: any) => {
+      showError(error?.error || 'Failed to flag review');
+    },
+  });
+
+  const handleFlagReview = (fightId: string, reviewId: string) => {
+    setReviewToFlag({ fightId, reviewId });
+    setFlagModalVisible(true);
+  };
+
+  const submitFlagReview = (reason: string) => {
+    if (reviewToFlag) {
+      flagReviewMutation.mutate({
+        fightId: reviewToFlag.fightId,
+        reviewId: reviewToFlag.reviewId,
+        reason
+      });
+    }
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -593,7 +627,9 @@ export default function CommunityScreen() {
                 comment={comment}
                 onPress={() => router.push(`/fight/${comment.fight.id}` as any)}
                 onUpvote={() => upvoteMutation.mutate({ fightId: comment.fight.id, reviewId: comment.id })}
+                onFlag={() => handleFlagReview(comment.fight.id, comment.id)}
                 isUpvoting={upvotingCommentId === comment.id}
+                isFlagging={flagReviewMutation.isPending && reviewToFlag?.reviewId === comment.id}
                 isAuthenticated={isAuthenticated}
               />
             ))
@@ -606,6 +642,17 @@ export default function CommunityScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Modals */}
+      <FlagReviewModal
+        visible={flagModalVisible}
+        onClose={() => setFlagModalVisible(false)}
+        onSubmit={submitFlagReview}
+        isLoading={flagReviewMutation.isPending}
+        colorScheme={colorScheme}
+      />
+
+      <CustomAlert {...alertState} onDismiss={hideAlert} />
     </View>
   );
 }
