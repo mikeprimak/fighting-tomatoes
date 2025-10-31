@@ -19,7 +19,7 @@ import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { getHypeHeatmapColor } from '../utils/heatmap';
-import { FlagReviewModal } from '.';
+import { FlagReviewModal, CommentCard } from '.';
 import { useAuth } from '../store/AuthContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
@@ -1388,116 +1388,48 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
 
           {/* User's review first (if exists) */}
           {fight.userReview && (
-            <View
-              style={[styles.reviewCard, styles.myReviewCard, { backgroundColor: colors.background, borderColor: '#83B4F3' }]}
-            >
-              <View style={styles.reviewContainer}>
-                {/* Left side: Upvote button (interactive) */}
-                <TouchableOpacity
-                  style={styles.upvoteButton}
-                  onPress={() => upvoteMutation.mutate({ reviewId: fight.userReview.id })}
-                  disabled={upvoteMutation.isPending}
-                >
-                  <FontAwesome
-                    name={fight.userReview.userHasUpvoted ? "thumbs-up" : "thumbs-o-up"}
-                    size={18}
-                    color={fight.userReview.userHasUpvoted ? colors.primary : colors.textSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.upvoteButtonText,
-                      { color: fight.userReview.userHasUpvoted ? colors.primary : colors.textSecondary }
-                    ]}
-                  >
-                    {fight.userReview.upvotes || 0}
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Right side: Review content */}
-                <View style={styles.reviewContentContainer}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={[styles.reviewAuthor, { color: colors.text }]}>
-                      My Review
-                    </Text>
-                    <View style={styles.reviewRating}>
-                      <FontAwesome name="star" size={14} color="#F5C518" />
-                      <Text style={[styles.reviewRatingText, { color: colors.text }]}>
-                        {fight.userReview.rating}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
-                    {fight.userReview.content}
-                  </Text>
-                </View>
-              </View>
-            </View>
+            <CommentCard
+              comment={{
+                id: fight.userReview.id,
+                content: fight.userReview.content,
+                rating: fight.userReview.rating,
+                upvotes: fight.userReview.upvotes || 0,
+                userHasUpvoted: fight.userReview.userHasUpvoted,
+                user: {
+                  displayName: user?.displayName || 'You',
+                },
+              }}
+              onUpvote={() => upvoteMutation.mutate({ reviewId: fight.userReview.id })}
+              isUpvoting={upvoteMutation.isPending}
+              isAuthenticated={isAuthenticated}
+              showMyReview={true}
+            />
           )}
 
           {/* Other reviews with infinite scroll */}
-          {reviewsData?.pages[0]?.reviews && reviewsData.pages[0].reviews.length > 0 ? (
+          {reviewsData?.pages[0]?.reviews && reviewsData.pages[0]?.reviews.length > 0 ? (
             <>
               {reviewsData.pages.flatMap(page =>
                 page.reviews.filter((review: any) => review.userId !== user?.id)
               ).map((review: any) => (
-                <View
+                <CommentCard
                   key={review.id}
-                  style={[styles.reviewCard, { backgroundColor: colors.background, borderColor: colors.border }]}
-                >
-                  <View style={styles.reviewContainer}>
-                    {/* Left side: Upvote button */}
-                    <TouchableOpacity
-                      style={styles.upvoteButton}
-                      onPress={() => upvoteMutation.mutate({ reviewId: review.id })}
-                      disabled={!isAuthenticated || upvoteMutation.isPending}
-                    >
-                      <FontAwesome
-                        name={review.userHasUpvoted ? "thumbs-up" : "thumbs-o-up"}
-                        size={18}
-                        color={review.userHasUpvoted ? colors.primary : colors.textSecondary}
-                      />
-                      <Text
-                        style={[
-                          styles.upvoteButtonText,
-                          { color: review.userHasUpvoted ? colors.primary : colors.textSecondary }
-                        ]}
-                      >
-                        {review.upvotes || 0}
-                      </Text>
-                    </TouchableOpacity>
-
-                    {/* Right side: Review content */}
-                    <View style={styles.reviewContentContainer}>
-                      <View style={styles.reviewHeader}>
-                        <Text style={[styles.reviewAuthor, { color: colors.text }]}>
-                          {review.user.displayName || `${review.user.firstName} ${review.user.lastName}`}
-                        </Text>
-                        <View style={styles.reviewHeaderRight}>
-                          <View style={styles.reviewRating}>
-                            <FontAwesome name="star" size={14} color="#F5C518" />
-                            <Text style={[styles.reviewRatingText, { color: colors.text }]}>
-                              {review.rating}
-                            </Text>
-                          </View>
-                          <TouchableOpacity
-                            onPress={() => handleFlagReview(review.id)}
-                            disabled={!isAuthenticated || flagReviewMutation.isPending}
-                            style={styles.flagButton}
-                          >
-                            <FontAwesome
-                              name="flag"
-                              size={14}
-                              color={review.userHasFlagged ? '#ef4444' : colors.textSecondary}
-                            />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                      <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
-                        {review.content}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
+                  comment={{
+                    id: review.id,
+                    content: review.content,
+                    rating: review.rating,
+                    upvotes: review.upvotes || 0,
+                    userHasUpvoted: review.userHasUpvoted,
+                    user: {
+                      displayName: review.user.displayName || `${review.user.firstName} ${review.user.lastName}`,
+                    },
+                  }}
+                  onUpvote={() => upvoteMutation.mutate({ reviewId: review.id })}
+                  onFlag={() => handleFlagReview(review.id)}
+                  isUpvoting={upvoteMutation.isPending}
+                  isFlagging={flagReviewMutation.isPending && reviewToFlag === review.id}
+                  isAuthenticated={isAuthenticated}
+                />
               ))}
 
               {/* Load more button */}
@@ -1881,53 +1813,6 @@ const styles = StyleSheet.create({
   tagCount: {
     fontSize: 12,
   },
-  reviewCard: {
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  reviewContainer: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  reviewContentContainer: {
-    flex: 1,
-  },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  reviewHeaderRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  reviewAuthor: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  reviewRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  flagButton: {
-    padding: 4,
-  },
-  reviewRatingText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  reviewContent: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  myReviewCard: {
-    borderWidth: 2,
-  },
   noReviewsText: {
     fontSize: 14,
     textAlign: 'center',
@@ -1944,18 +1829,6 @@ const styles = StyleSheet.create({
   loadMoreButtonText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
-  },
-  upvoteButton: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    minWidth: 50,
-  },
-  upvoteButtonText: {
-    fontSize: 13,
     fontWeight: '600',
   },
   inlineStarContainer: {

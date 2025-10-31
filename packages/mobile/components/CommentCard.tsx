@@ -14,7 +14,7 @@ interface CommentCardProps {
     user: {
       displayName: string;
     };
-    fight: {
+    fight?: {
       id: string;
       fighter1Name: string;
       fighter2Name: string;
@@ -27,6 +27,7 @@ interface CommentCardProps {
   isUpvoting?: boolean;
   isFlagging?: boolean;
   isAuthenticated?: boolean;
+  showMyReview?: boolean; // Flag to style as "My Review"
 }
 
 export function CommentCard({
@@ -37,13 +38,18 @@ export function CommentCard({
   isUpvoting = false,
   isFlagging = false,
   isAuthenticated = false,
+  showMyReview = false,
 }: CommentCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
   return (
     <TouchableOpacity
-      style={[styles.reviewCard, { backgroundColor: colors.background, borderColor: colors.border }]}
+      style={[
+        styles.reviewCard,
+        { backgroundColor: colors.background, borderColor: showMyReview ? '#83B4F3' : colors.border },
+        showMyReview && styles.myReviewCard
+      ]}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
     >
@@ -76,15 +82,19 @@ export function CommentCard({
           </Text>
 
           <View style={styles.fightInfo}>
-            <Text style={[styles.fightText, { color: colors.textSecondary }]}>
-              {comment.fight.fighter1Name} vs {comment.fight.fighter2Name}
-            </Text>
-            <Text style={[styles.eventText, { color: colors.textSecondary }]}>
-              {comment.fight.eventName}
-            </Text>
+            {comment.fight && (
+              <>
+                <Text style={[styles.fightText, { color: colors.textSecondary }]}>
+                  {comment.fight.fighter1Name} vs {comment.fight.fighter2Name}
+                </Text>
+                <Text style={[styles.eventText, { color: colors.textSecondary }]}>
+                  {comment.fight.eventName}
+                </Text>
+              </>
+            )}
             <View style={styles.userRatingRow}>
               <Text style={[styles.eventText, { color: colors.textSecondary }]}>
-                by {comment.user.displayName}
+                {showMyReview ? 'My Review' : `by ${comment.user.displayName}`}
               </Text>
               <View style={styles.ratingFlagContainer}>
                 <View style={styles.inlineRating}>
@@ -123,6 +133,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     marginBottom: 12,
+  },
+  myReviewCard: {
+    borderWidth: 2,
   },
   reviewContainer: {
     flexDirection: 'row',
