@@ -149,12 +149,15 @@ const styles = StyleSheet.create({
   fightInfo: {
     gap: 2,
     marginBottom: 8,
+    alignItems: 'flex-end',
   },
   fightText: {
     fontSize: 12,
+    textAlign: 'right',
   },
   eventText: {
     fontSize: 12,
+    textAlign: 'right',
   },
   upvoteButton: {
     flexDirection: 'column',
