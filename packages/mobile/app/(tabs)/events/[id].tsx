@@ -404,6 +404,34 @@ export default function EventDetailScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               MAIN CARD
             </Text>
+
+            {/* Column Headers */}
+            <View style={[styles.columnHeadersRow, { marginBottom: 12 }]}>
+              {event.isComplete ? (
+                <>
+                  <View style={styles.columnHeadersCompleted}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATINGS</Text>
+                  </View>
+                  <View style={styles.columnHeadersCompletedRight}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <View style={styles.columnHeadersUpcoming}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
+                  </View>
+                  <View style={styles.columnHeadersUpcomingRight}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
+                  </View>
+                </>
+              )}
+            </View>
+
             {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
               <FightDisplayCard
                 key={fight.id}
@@ -426,6 +454,34 @@ export default function EventDetailScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               PRELIMINARY CARD
             </Text>
+
+            {/* Column Headers */}
+            <View style={[styles.columnHeadersRow, { marginBottom: 12 }]}>
+              {event.isComplete ? (
+                <>
+                  <View style={styles.columnHeadersCompleted}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATINGS</Text>
+                  </View>
+                  <View style={styles.columnHeadersCompletedRight}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <View style={styles.columnHeadersUpcoming}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
+                  </View>
+                  <View style={styles.columnHeadersUpcomingRight}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
+                  </View>
+                </>
+              )}
+            </View>
+
             {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
               <FightDisplayCard
                 key={fight.id}
@@ -448,6 +504,34 @@ export default function EventDetailScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               EARLY PRELIMS
             </Text>
+
+            {/* Column Headers */}
+            <View style={[styles.columnHeadersRow, { marginBottom: 12 }]}>
+              {event.isComplete ? (
+                <>
+                  <View style={styles.columnHeadersCompleted}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATINGS</Text>
+                  </View>
+                  <View style={styles.columnHeadersCompletedRight}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <View style={styles.columnHeadersUpcoming}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
+                  </View>
+                  <View style={styles.columnHeadersUpcomingRight}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary}]}>MY</Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
+                  </View>
+                </>
+              )}
+            </View>
+
             {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
               <FightDisplayCard
                 key={fight.id}
@@ -616,6 +700,48 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginHorizontal: 16,
     marginBottom: 12,
+  },
+  columnHeadersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+  },
+  columnHeadersUpcoming: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginLeft: 5,
+    width: 40,
+    justifyContent: 'center',
+  },
+  columnHeadersUpcomingRight: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginRight: 4,
+    width: 40,
+    justifyContent: 'center',
+  },
+  columnHeadersCompleted: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginLeft: -2,
+    width: 60,
+    justifyContent: 'center',
+  },
+  columnHeadersCompletedRight: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginRight: -5,
+    width: 60,
+    justifyContent: 'center',
+  },
+  columnHeaderText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
   fightCard: {
     marginHorizontal: 16,
