@@ -31,8 +31,9 @@ interface EventDetails {
   hasStarted: boolean;
   isComplete: boolean;
   bannerImage?: string | null;
-  mainStartTime?: string | null;
+  earlyPrelimStartTime?: string | null;
   prelimStartTime?: string | null;
+  mainStartTime?: string | null;
 }
 
 type Fight = any;
@@ -401,30 +402,52 @@ export default function EventDetailScreen() {
         {/* Main Card */}
         {mainCard.length > 0 && (
           <View style={styles.cardSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              MAIN CARD
-            </Text>
-
-            {/* Column Headers */}
-            <View style={[styles.columnHeadersRow, { marginBottom: 12 }]}>
+            {/* Section Header with Column Headers and Title/Time */}
+            <View style={styles.sectionHeader}>
               {event.isComplete ? (
                 <>
-                  <View style={styles.columnHeadersCompleted}>
+                  {/* Left Column Header - ALL / RATINGS */}
+                  <View style={styles.columnHeaders}>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATINGS</Text>
                   </View>
-                  <View style={styles.columnHeadersCompletedRight}>
+
+                  {/* Center - Title and Time stacked vertically */}
+                  <View style={styles.sectionHeaderCenter}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>MAIN CARD</Text>
+                    {event.mainStartTime && (
+                      <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
+                        {formatTime(event.mainStartTime)}
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Right Column Header - MY / RATING */}
+                  <View style={styles.columnHeadersRight}>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
                   </View>
                 </>
               ) : (
                 <>
-                  <View style={styles.columnHeadersUpcoming}>
+                  {/* Left Column Header - ALL / HYPE */}
+                  <View style={styles.columnHeaders}>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
                   </View>
-                  <View style={styles.columnHeadersUpcomingRight}>
+
+                  {/* Center - Title and Time stacked vertically */}
+                  <View style={styles.sectionHeaderCenter}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>MAIN CARD</Text>
+                    {event.mainStartTime && (
+                      <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
+                        {formatTime(event.mainStartTime)}
+                      </Text>
+                    )}
+                  </View>
+
+                  {/* Right Column Header - MY / HYPE */}
+                  <View style={styles.columnHeadersRight}>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
                     <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
                   </View>
@@ -451,35 +474,16 @@ export default function EventDetailScreen() {
         {/* Preliminary Card */}
         {prelimCard.length > 0 && (
           <View style={styles.cardSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              PRELIMINARY CARD
-            </Text>
-
-            {/* Column Headers */}
-            <View style={[styles.columnHeadersRow, { marginBottom: 12 }]}>
-              {event.isComplete ? (
-                <>
-                  <View style={styles.columnHeadersCompleted}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATINGS</Text>
-                  </View>
-                  <View style={styles.columnHeadersCompletedRight}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
-                  </View>
-                </>
-              ) : (
-                <>
-                  <View style={styles.columnHeadersUpcoming}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
-                  </View>
-                  <View style={styles.columnHeadersUpcomingRight}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
-                  </View>
-                </>
-              )}
+            {/* Section Header - Center Only (No Column Headers) */}
+            <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
+              <View style={styles.sectionHeaderCenter}>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>PRELIMINARY CARD</Text>
+                {event.prelimStartTime && (
+                  <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
+                    {formatTime(event.prelimStartTime)}
+                  </Text>
+                )}
+              </View>
             </View>
 
             {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
@@ -501,35 +505,16 @@ export default function EventDetailScreen() {
         {/* Early Prelims */}
         {earlyPrelims.length > 0 && (
           <View style={styles.cardSection}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              EARLY PRELIMS
-            </Text>
-
-            {/* Column Headers */}
-            <View style={[styles.columnHeadersRow, { marginBottom: 12 }]}>
-              {event.isComplete ? (
-                <>
-                  <View style={styles.columnHeadersCompleted}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATINGS</Text>
-                  </View>
-                  <View style={styles.columnHeadersCompletedRight}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
-                  </View>
-                </>
-              ) : (
-                <>
-                  <View style={styles.columnHeadersUpcoming}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
-                  </View>
-                  <View style={styles.columnHeadersUpcomingRight}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary}]}>MY</Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
-                  </View>
-                </>
-              )}
+            {/* Section Header - Center Only (No Column Headers) */}
+            <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
+              <View style={styles.sectionHeaderCenter}>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>EARLY PRELIMS</Text>
+                {event.earlyPrelimStartTime && (
+                  <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
+                    {formatTime(event.earlyPrelimStartTime)}
+                  </Text>
+                )}
+              </View>
             </View>
 
             {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
@@ -695,53 +680,55 @@ const styles = StyleSheet.create({
   cardSection: {
     marginTop: 20,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginHorizontal: 16,
-    marginBottom: 12,
-  },
-  columnHeadersRow: {
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginHorizontal: 16,
+    marginBottom: 12,
+    position: 'relative',
   },
-  columnHeadersUpcoming: {
+  sectionHeaderPrelims: {
+    paddingVertical: 8,
+  },
+  sectionHeaderCenter: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 2,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignSelf: 'center',
+  },
+  sectionTitle: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  sectionTime: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  columnHeaders: {
     flexDirection: 'column',
     alignItems: 'center',
     gap: 0,
-    marginLeft: 5,
+    marginLeft: -11,
     width: 40,
     justifyContent: 'center',
   },
-  columnHeadersUpcomingRight: {
+  columnHeadersRight: {
     flexDirection: 'column',
     alignItems: 'center',
     gap: 0,
-    marginRight: 4,
+    marginRight: -11,
     width: 40,
-    justifyContent: 'center',
-  },
-  columnHeadersCompleted: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 0,
-    marginLeft: -2,
-    width: 60,
-    justifyContent: 'center',
-  },
-  columnHeadersCompletedRight: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 0,
-    marginRight: -5,
-    width: 60,
     justifyContent: 'center',
   },
   columnHeaderText: {
     fontSize: 10,
     fontWeight: '600',
+    letterSpacing: 0.5,
   },
   fightCard: {
     marginHorizontal: 16,
