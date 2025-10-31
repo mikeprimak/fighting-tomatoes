@@ -18,6 +18,7 @@ import { apiService } from '../services/api';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 import PredictionBarChart from './PredictionBarChart';
 import FightDetailsSection from './FightDetailsSection';
+import { useFightStats } from '../hooks/useFightStats';
 
 interface Fighter {
   id: string;
@@ -86,14 +87,23 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   // Wheel animation for number display
   const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 120 : 1200)).current;
 
-  // Fetch prediction stats
-  const { data: predictionStats } = useQuery({
-    queryKey: ['fightPredictionStats', fight.id],
-    queryFn: () => apiService.getFightPredictionStats(fight.id),
+  // Fetch both prediction stats and aggregate stats in a single API call
+  const { data: fightStatsData } = useQuery({
+    queryKey: ['fightStats', fight.id],
+    queryFn: async () => {
+      const [predictionStats, aggregateStats] = await Promise.all([
+        apiService.getFightPredictionStats(fight.id),
+        apiService.getFightAggregateStats(fight.id),
+      ]);
+      return { predictionStats, aggregateStats };
+    },
     enabled: !!fight.id,
-    staleTime: 30 * 1000,
+    staleTime: 60 * 1000,
     refetchOnMount: 'always',
   });
+
+  const predictionStats = fightStatsData?.predictionStats;
+  const aggregateStats = fightStatsData?.aggregateStats;
 
   // HARDCODED TEST DATA - Remove this when done testing
   const testPredictionStats = {
@@ -125,14 +135,6 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
   // Override with test data
   const displayPredictionStats = testPredictionStats;
-
-  // Fetch aggregate stats (includes community prediction)
-  const { data: aggregateStats } = useQuery({
-    queryKey: ['fightAggregateStats', fight.id],
-    queryFn: () => apiService.getFightAggregateStats(fight.id),
-    enabled: !!fight.id,
-    staleTime: 60 * 1000,
-  });
 
   // Auto-save winner selection
   const saveWinnerMutation = useMutation({

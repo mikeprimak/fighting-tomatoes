@@ -25,6 +25,7 @@ import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
 import PredictionBarChart from './PredictionBarChart';
 import FightDetailsSection from './FightDetailsSection';
+import { useFightStats } from '../hooks/useFightStats';
 
 interface Fighter {
   id: string;
@@ -318,14 +319,23 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   // State for displayed tags (delayed update for smooth animation)
   const [displayedTags, setDisplayedTags] = useState<string[]>([]);
 
-  // Fetch prediction stats
-  const { data: fetchedPredictionStats } = useQuery({
-    queryKey: ['fightPredictionStats', fight.id],
-    queryFn: () => apiService.getFightPredictionStats(fight.id),
+  // Fetch both prediction stats and aggregate stats in a single API call
+  const { data: fightStatsData } = useQuery({
+    queryKey: ['fightStats', fight.id],
+    queryFn: async () => {
+      const [predictionStats, aggregateStats] = await Promise.all([
+        apiService.getFightPredictionStats(fight.id),
+        apiService.getFightAggregateStats(fight.id),
+      ]);
+      return { predictionStats, aggregateStats };
+    },
     enabled: !!fight.id,
-    staleTime: 30 * 1000,
+    staleTime: 60 * 1000,
     refetchOnMount: 'always',
   });
+
+  const fetchedPredictionStats = fightStatsData?.predictionStats;
+  const aggregateStats = fightStatsData?.aggregateStats;
 
   // HARDCODED TEST DATA - Remove this when done testing
   const testPredictionStats = {
@@ -357,14 +367,6 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
 
   // Override with test data
   const predictionStats = testPredictionStats;
-
-  // Fetch aggregate stats
-  const { data: aggregateStats } = useQuery({
-    queryKey: ['fightAggregateStats', fight.id],
-    queryFn: () => apiService.getFightAggregateStats(fight.id),
-    enabled: !!fight.id,
-    staleTime: 60 * 1000,
-  });
 
   // Fetch tags
   const { data: tagsData } = useQuery({
