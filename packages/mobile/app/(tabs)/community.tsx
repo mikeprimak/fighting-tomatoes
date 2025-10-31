@@ -508,7 +508,7 @@ export default function CommunityScreen() {
             <Text style={styles.sectionTitle}>Even Predictions</Text>
           </View>
           <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            The crowd is split on who will win these upcoming fights
+            The crowd is split on who will win these fights
           </Text>
           {isEvenPredictionsLoading ? (
             <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
