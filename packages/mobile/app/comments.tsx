@@ -14,7 +14,8 @@ import { router, Stack } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { useAuth } from '../store/AuthContext';
-import { CommentCard } from '../components';
+import { CommentCard, FlagReviewModal, CustomAlert } from '../components';
+import { useCustomAlert } from '../hooks/useCustomAlert';
 
 type SortOption = 'top-recent' | 'top-all-time' | 'new';
 
@@ -23,9 +24,12 @@ export default function CommentsScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
 
   const [sortBy, setSortBy] = useState<SortOption>('top-recent');
   const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
+  const [flagModalVisible, setFlagModalVisible] = useState(false);
+  const [reviewToFlag, setReviewToFlag] = useState<{ fightId: string; reviewId: string } | null>(null);
 
   // Fetch comments based on sort option
   const { data: commentsData, isLoading } = useQuery({
@@ -90,6 +94,35 @@ export default function CommentsScreen() {
       setUpvotingCommentId(null);
     },
   });
+
+  // Flag review mutation
+  const flagReviewMutation = useMutation({
+    mutationFn: ({ fightId, reviewId, reason }: { fightId: string; reviewId: string; reason: string }) =>
+      apiService.flagReview(fightId, reviewId, reason),
+    onSuccess: () => {
+      showSuccess('Review has been flagged for moderation');
+      setFlagModalVisible(false);
+      setReviewToFlag(null);
+    },
+    onError: (error: any) => {
+      showError(error?.error || 'Failed to flag review');
+    },
+  });
+
+  const handleFlagReview = (fightId: string, reviewId: string) => {
+    setReviewToFlag({ fightId, reviewId });
+    setFlagModalVisible(true);
+  };
+
+  const submitFlagReview = (reason: string) => {
+    if (reviewToFlag) {
+      flagReviewMutation.mutate({
+        fightId: reviewToFlag.fightId,
+        reviewId: reviewToFlag.reviewId,
+        reason
+      });
+    }
+  };
 
   const handleSortChange = (option: SortOption) => {
     setSortBy(option);
@@ -167,7 +200,9 @@ export default function CommentsScreen() {
               comment={item}
               onPress={() => router.push(`/fight/${item.fight.id}` as any)}
               onUpvote={() => upvoteMutation.mutate({ fightId: item.fight.id, reviewId: item.id })}
+              onFlag={() => handleFlagReview(item.fight.id, item.id)}
               isUpvoting={upvotingCommentId === item.id}
+              isFlagging={flagReviewMutation.isPending && reviewToFlag?.reviewId === item.id}
               isAuthenticated={isAuthenticated}
             />
           )}
@@ -182,6 +217,17 @@ export default function CommentsScreen() {
         />
       )}
       </SafeAreaView>
+
+      {/* Modals */}
+      <FlagReviewModal
+        visible={flagModalVisible}
+        onClose={() => setFlagModalVisible(false)}
+        onSubmit={submitFlagReview}
+        isLoading={flagReviewMutation.isPending}
+        colorScheme={colorScheme}
+      />
+
+      <CustomAlert {...alertState} onDismiss={hideAlert} />
     </>
   );
 }

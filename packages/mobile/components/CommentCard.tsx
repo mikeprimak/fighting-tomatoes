@@ -23,7 +23,9 @@ interface CommentCardProps {
   };
   onPress?: () => void;
   onUpvote?: () => void;
+  onFlag?: () => void;
   isUpvoting?: boolean;
+  isFlagging?: boolean;
   isAuthenticated?: boolean;
 }
 
@@ -31,7 +33,9 @@ export function CommentCard({
   comment,
   onPress,
   onUpvote,
+  onFlag,
   isUpvoting = false,
+  isFlagging = false,
   isAuthenticated = false,
 }: CommentCardProps) {
   const colorScheme = useColorScheme();
@@ -82,11 +86,26 @@ export function CommentCard({
               <Text style={[styles.eventText, { color: colors.textSecondary }]}>
                 by {comment.user.displayName}
               </Text>
-              <View style={styles.inlineRating}>
-                <FontAwesome name="star" size={12} color={getHypeHeatmapColor(comment.rating)} />
-                <Text style={[styles.reviewRatingText, { color: colors.text, fontSize: 12 }]}>
-                  {comment.rating}
-                </Text>
+              <View style={styles.ratingFlagContainer}>
+                <View style={styles.inlineRating}>
+                  <FontAwesome name="star" size={12} color={getHypeHeatmapColor(comment.rating)} />
+                  <Text style={[styles.reviewRatingText, { color: colors.text, fontSize: 12 }]}>
+                    {comment.rating}
+                  </Text>
+                </View>
+                {onFlag && (
+                  <TouchableOpacity
+                    onPress={onFlag}
+                    disabled={!isAuthenticated || isFlagging}
+                    style={styles.flagButton}
+                  >
+                    <FontAwesome
+                      name="flag"
+                      size={12}
+                      color={isFlagging ? colors.textSecondary : colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           </View>
@@ -117,10 +136,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  ratingFlagContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   inlineRating: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
+  },
+  flagButton: {
+    padding: 4,
   },
   reviewHeader: {
     flexDirection: 'row',
