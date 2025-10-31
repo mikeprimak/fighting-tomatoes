@@ -43,36 +43,26 @@ export function CommentCard({
       activeOpacity={onPress ? 0.7 : 1}
     >
       <View style={styles.reviewContainer}>
-        {/* Left side: Upvote button and rating */}
-        <View style={styles.leftColumn}>
-          <TouchableOpacity
-            style={styles.upvoteButton}
-            onPress={onUpvote}
-            disabled={!isAuthenticated || isUpvoting || !onUpvote}
+        {/* Left side: Upvote button */}
+        <TouchableOpacity
+          style={styles.upvoteButton}
+          onPress={onUpvote}
+          disabled={!isAuthenticated || isUpvoting || !onUpvote}
+        >
+          <FontAwesome
+            name={comment.userHasUpvoted ? "thumbs-up" : "thumbs-o-up"}
+            size={18}
+            color={comment.userHasUpvoted ? '#F5C518' : colors.textSecondary}
+          />
+          <Text
+            style={[
+              styles.upvoteButtonText,
+              { color: comment.userHasUpvoted ? '#F5C518' : colors.textSecondary }
+            ]}
           >
-            <FontAwesome
-              name={comment.userHasUpvoted ? "thumbs-up" : "thumbs-o-up"}
-              size={18}
-              color={comment.userHasUpvoted ? '#F5C518' : colors.textSecondary}
-            />
-            <Text
-              style={[
-                styles.upvoteButtonText,
-                { color: comment.userHasUpvoted ? '#F5C518' : colors.textSecondary }
-              ]}
-            >
-              {comment.upvotes || 0}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Rating below upvote */}
-          <View style={styles.leftRating}>
-            <FontAwesome name="star" size={14} color="#F5C518" />
-            <Text style={[styles.reviewRatingText, { color: colors.text }]}>
-              {comment.rating}
-            </Text>
-          </View>
-        </View>
+            {comment.upvotes || 0}
+          </Text>
+        </TouchableOpacity>
 
         {/* Right side: Comment content */}
         <View style={styles.reviewContentContainer}>
@@ -87,9 +77,17 @@ export function CommentCard({
             <Text style={[styles.eventText, { color: colors.textSecondary }]}>
               {comment.fight.eventName}
             </Text>
-            <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
-              by {comment.user.displayName}
-            </Text>
+            <View style={styles.userRatingRow}>
+              <Text style={[styles.reviewContent, { color: colors.textSecondary, marginBottom: 0 }]}>
+                by {comment.user.displayName}
+              </Text>
+              <View style={styles.inlineRating}>
+                <FontAwesome name="star" size={12} color="#F5C518" />
+                <Text style={[styles.reviewRatingText, { color: colors.text, fontSize: 12 }]}>
+                  {comment.rating}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
       </View>
@@ -110,18 +108,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
-  leftColumn: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 8,
-  },
   reviewContentContainer: {
     flex: 1,
   },
-  leftRating: {
+  userRatingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
+  },
+  inlineRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
   reviewHeader: {
     flexDirection: 'row',
