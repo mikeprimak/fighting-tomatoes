@@ -18,6 +18,8 @@ interface User {
   createdAt: string;
   totalRatings?: number;
   totalReviews?: number;
+  averageRating?: number;
+  averageHype?: number;
   points?: number;
   level?: number;
 }

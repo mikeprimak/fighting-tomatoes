@@ -486,7 +486,12 @@ export class AuthController {
           downvotesReceived: true,
           accuracyScore: true,
           createdAt: true,
-          lastLoginAt: true
+          lastLoginAt: true,
+          ratings: {
+            select: {
+              rating: true
+            }
+          }
         }
       })
 
@@ -497,7 +502,19 @@ export class AuthController {
         })
       }
 
-      res.json({ user })
+      // Calculate average rating
+      const averageRating = user.ratings.length > 0
+        ? user.ratings.reduce((sum, r) => sum + r.rating, 0) / user.ratings.length
+        : 0
+
+      // Return user without ratings array, but with averageRating
+      const { ratings, ...userWithoutRatings } = user
+      res.json({
+        user: {
+          ...userWithoutRatings,
+          averageRating: Number(averageRating.toFixed(1))
+        }
+      })
 
     } catch (error) {
       console.error('Get profile error:', error)

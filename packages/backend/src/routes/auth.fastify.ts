@@ -492,6 +492,8 @@ export async function authRoutes(fastify: FastifyInstance) {
                 lastLoginAt: { type: ['string', 'null'] },
                 totalRatings: { type: 'integer' },
                 totalReviews: { type: 'integer' },
+                averageRating: { type: 'number' },
+                averageHype: { type: 'number' },
                 points: { type: 'integer' },
                 level: { type: 'integer' },
               },
@@ -539,6 +541,16 @@ export async function authRoutes(fastify: FastifyInstance) {
           totalReviews: true,
           points: true,
           level: true,
+          ratings: {
+            select: {
+              rating: true
+            }
+          },
+          predictions: {
+            select: {
+              predictedRating: true
+            }
+          }
         }
       });
 
@@ -549,8 +561,31 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Calculate average rating
+      const averageRating = user.ratings.length > 0
+        ? user.ratings.reduce((sum, r) => sum + r.rating, 0) / user.ratings.length
+        : 0;
+
+      // Calculate average hype (from predictions)
+      const predictionsWithRating = user.predictions.filter(p => p.predictedRating !== null && p.predictedRating > 0);
+      const averageHype = predictionsWithRating.length > 0
+        ? predictionsWithRating.reduce((sum, p) => sum + (p.predictedRating || 0), 0) / predictionsWithRating.length
+        : 0;
+
+      // Return user without ratings/predictions arrays, but with calculated averages
+      const { ratings, predictions, ...userWithoutArrays } = user;
+
       request.log.info('[GET /profile] Returning user avatar: ' + user.avatar);
-      return reply.code(200).send({ user });
+      request.log.info('[GET /profile] Average rating: ' + averageRating);
+      request.log.info('[GET /profile] Average hype: ' + averageHype);
+
+      return reply.code(200).send({
+        user: {
+          ...userWithoutArrays,
+          averageRating: Number(averageRating.toFixed(1)),
+          averageHype: Number(averageHype.toFixed(1))
+        }
+      });
 
     } catch (error: any) {
       request.log.error('Get profile error:', error);
