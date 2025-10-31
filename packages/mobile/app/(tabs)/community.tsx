@@ -549,6 +549,8 @@ export default function CommunityScreen() {
                 <FighterCard
                   key={fighterData.fighter.id}
                   fighter={fighterData.fighter}
+                  avgRating={fighterData.avgRating}
+                  fightCount={fighterData.fightCount}
                   onPress={() => router.push(`/(tabs)/fighters/${fighterData.fighter.id}` as any)}
                 />
               ))}

@@ -84,7 +84,13 @@ curl http://localhost:3008/health
 - **Files**: `app/event/[id].tsx`, `app/_layout.tsx`, `components/FightDetailsSection.tsx`
 - **Commits**: `2797e48`, `394bc01`, `1db2b4f`, `f4a90e4`
 
-### UI/UX Features
+### UI/UX Features (Latest)
+- **Fighter Cards (Community Screen)**: Removed borders, streamlined design
+  - No border on card or fighter image
+  - Replaced WLD record with fighter rating (average of last 3 fights)
+  - Shows "Avg Score (last N fights): X.X/10" with dynamic fight count
+  - Backend already calculates `avgRating` from last 3 completed fights
+  - Files: `components/FighterCard.tsx`, `app/(tabs)/community.tsx`
 - **Fight Cards**: Heatmap squares (40x40px) for hype/rating scores, yellow underline for user predictions, compact height (40px min)
 - **Detail Screens**: Large animated wheels (80px), auto-save, contextual tags, inline rating system
 - **Navigation**: Stack-inside-Tabs pattern, persistent native tab bar, smart highlighting

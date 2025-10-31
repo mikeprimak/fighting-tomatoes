@@ -24,6 +24,8 @@ interface Fighter {
 interface FighterCardProps {
   fighter: Fighter;
   onPress?: (fighter: Fighter) => void;
+  avgRating?: number; // Average rating from last 3 fights
+  fightCount?: number; // Number of fights used for average
 }
 
 // Fighter image selection logic (same as other components)
@@ -43,17 +45,13 @@ const getFighterImage = (fighterId: string) => {
   return images[index];
 };
 
-export default function FighterCard({ fighter, onPress }: FighterCardProps) {
+export default function FighterCard({ fighter, onPress, avgRating, fightCount }: FighterCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
   const getFighterName = (fighter: Fighter) => {
     const name = `${fighter.firstName} ${fighter.lastName}`;
     return fighter.nickname ? `${name} "${fighter.nickname}"` : name;
-  };
-
-  const getFighterRecord = (fighter: Fighter) => {
-    return `${fighter.wins}-${fighter.losses}-${fighter.draws}`;
   };
 
   const handlePress = () => {
@@ -68,7 +66,7 @@ export default function FighterCard({ fighter, onPress }: FighterCardProps) {
 
   return (
     <TouchableOpacity
-      style={[styles.fighterCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+      style={[styles.fighterCard, { backgroundColor: colors.card }]}
       onPress={handlePress}
     >
       <Image
@@ -82,14 +80,16 @@ export default function FighterCard({ fighter, onPress }: FighterCardProps) {
           {getFighterName(fighter)}
         </Text>
 
-        <View style={styles.recordContainer}>
-          <Text style={[styles.record, { color: colors.primary }]}>
-            {getFighterRecord(fighter)}
-          </Text>
-          <Text style={[styles.recordLabel, { color: colors.textSecondary }]}>
-            W-L-D
-          </Text>
-        </View>
+        {avgRating !== undefined && fightCount !== undefined && (
+          <View style={styles.ratingContainer}>
+            <Text style={[styles.ratingLabel, { color: colors.textSecondary }]}>
+              Avg Score (last {fightCount} {fightCount === 1 ? 'fight' : 'fights'}):
+            </Text>
+            <Text style={[styles.rating, { color: colors.primary }]}>
+              {avgRating.toFixed(1)}/10
+            </Text>
+          </View>
+        )}
 
         <View style={styles.detailsContainer}>
           {fighter.weightClass && (
@@ -114,15 +114,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: 12,
     padding: 12,
     borderRadius: 12,
-    borderWidth: 1,
   },
   fighterImage: {
     width: 60,
     height: 60,
     borderRadius: 30,
     marginRight: 12,
-    borderWidth: 2,
-    borderColor: '#ddd',
   },
   fighterInfo: {
     flex: 1,
@@ -133,18 +130,18 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '600',
     marginBottom: 4,
   },
-  recordContainer: {
+  ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
   },
-  record: {
+  ratingLabel: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  rating: {
     fontSize: 14,
     fontWeight: 'bold',
-    marginRight: 6,
-  },
-  recordLabel: {
-    fontSize: 12,
   },
   detailsContainer: {
     flexDirection: 'row',
