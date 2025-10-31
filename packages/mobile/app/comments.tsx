@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { useAuth } from '../store/AuthContext';
@@ -96,9 +96,11 @@ export default function CommentsScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      {/* Sort Options */}
-      <View style={styles.sortContainer}>
+    <>
+      <Stack.Screen options={{ title: 'Comments' }} />
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+        {/* Sort Options */}
+        <View style={styles.sortContainer}>
         <TouchableOpacity
           style={[
             styles.sortButton,
@@ -179,7 +181,8 @@ export default function CommentsScreen() {
           }
         />
       )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </>
   );
 }
 
