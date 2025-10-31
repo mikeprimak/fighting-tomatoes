@@ -305,13 +305,15 @@ Initial setup: `pnpm docker:up && pnpm install && pnpm db:migrate && pnpm db:see
 - **Layout**: Borderless section with transparent background, stars and tags positioned directly below wheel
 - **Files**: `components/fight-cards/CompletedFightCard.tsx`, `components/CompletedFightDetailScreen.tsx`, `app/(tabs)/past-events/index.tsx`
 
-**Performance Optimizations** (Latest):
+**Performance Optimizations**:
 - **API Call Reduction (50% fewer requests)**:
   - Created `useFightStats` hook (`hooks/useFightStats.ts`) that combines two API calls into one using `Promise.all`
   - Previously: Each fight card made 2 separate API calls (`getFightPredictionStats` + `getFightAggregateStats`)
   - Now: Single combined call fetches both in parallel, returns `{ predictionStats, aggregateStats }`
-  - Updated `UpcomingFightCard.tsx` and `CompletedFightCard.tsx` to use new hook
-  - **Impact**: Reduced from ~160 API calls to ~80 calls on initial load (with 8 events × 10 fights)
+  - Updated `UpcomingFightCard.tsx`, `CompletedFightCard.tsx` to use new hook
+  - Updated `UpcomingFightDetailScreen.tsx`, `CompletedFightDetailScreen.tsx` with inline Promise.all pattern
+  - **Impact**: Reduced from ~160 API calls to ~80 calls on list views (50% reduction)
+  - **Impact**: Reduced from 2 to 1 API call per detail screen view (50% reduction)
   - Cache: 60 second staleTime for combined query
 - **Removed Unused Code**:
   - Deleted `EventEngagementSummary.tsx` component (completely unused, only exported but never imported)
@@ -320,8 +322,21 @@ Initial setup: `pnpm docker:up && pnpm install && pnpm db:migrate && pnpm db:see
   - Removed 5 console.log statements from `EventBannerCard.tsx` (logged every banner render)
   - Removed 2 console.log statements from `api.ts` (logged every API request/response)
   - **Impact**: Hundreds fewer log lines on initial load, cleaner debugging experience
-- **Files**: `hooks/useFightStats.ts`, `components/fight-cards/UpcomingFightCard.tsx`, `components/fight-cards/CompletedFightCard.tsx`, `services/api.ts`
-- **Commit**: `16e67fe` - perf: Optimize API calls and remove excessive logging
+- **Files**: `hooks/useFightStats.ts`, `components/fight-cards/UpcomingFightCard.tsx`, `components/fight-cards/CompletedFightCard.tsx`, `components/UpcomingFightDetailScreen.tsx`, `components/CompletedFightDetailScreen.tsx`, `services/api.ts`
+- **Commits**: `16e67fe` - perf: Optimize API calls and remove excessive logging, `8972ea4` - perf: Extend API call optimization to fight detail screens
+
+**Navigation Improvements** (Latest):
+- **Root-Level Event Route** - Fixed back button navigation from fight details
+  - **Problem**: Fight Detail → Event Detail → Back button skipped Fight Detail, went to Past Events
+  - **Root Cause**: Fighter routes used root-level `/fighter/[id]`, but event route only existed in tab stack `/(tabs)/events/[id]`
+  - **Solution**: Created `/event/[id].tsx` route at root level (matching `/fighter` pattern)
+  - **Benefits**: Back button works correctly, faster navigation (stays in root stack, no remounting)
+- **Fight Card Navigation** - Changed event detail screen behavior
+  - **Previous**: Tapping fight cards opened modals (PredictionModal/RateFightModal)
+  - **Now**: Tapping UpcomingFightCard → UpcomingFightDetailScreen, CompletedFightCard → CompletedFightDetailScreen
+  - **Benefits**: More room for fight details, consistent UX across app
+- **Files**: `app/event/[id].tsx`, `app/event/_layout.tsx`, `app/_layout.tsx`, `app/(tabs)/events/[id].tsx`, `components/FightDetailsSection.tsx`
+- **Commits**: `2797e48` - fix: Create root-level event route, `394bc01` - fix: Correct import paths, `1db2b4f` - fix: Hide duplicate header, `f4a90e4` - feat: Navigate to fight detail screens
 
 **Contact Invitations**:
 - **WhatsApp-style UX**: Select multiple contacts, send SMS invites with crew invite code
