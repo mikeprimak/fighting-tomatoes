@@ -305,6 +305,24 @@ Initial setup: `pnpm docker:up && pnpm install && pnpm db:migrate && pnpm db:see
 - **Layout**: Borderless section with transparent background, stars and tags positioned directly below wheel
 - **Files**: `components/fight-cards/CompletedFightCard.tsx`, `components/CompletedFightDetailScreen.tsx`, `app/(tabs)/past-events/index.tsx`
 
+**Performance Optimizations** (Latest):
+- **API Call Reduction (50% fewer requests)**:
+  - Created `useFightStats` hook (`hooks/useFightStats.ts`) that combines two API calls into one using `Promise.all`
+  - Previously: Each fight card made 2 separate API calls (`getFightPredictionStats` + `getFightAggregateStats`)
+  - Now: Single combined call fetches both in parallel, returns `{ predictionStats, aggregateStats }`
+  - Updated `UpcomingFightCard.tsx` and `CompletedFightCard.tsx` to use new hook
+  - **Impact**: Reduced from ~160 API calls to ~80 calls on initial load (with 8 events × 10 fights)
+  - Cache: 60 second staleTime for combined query
+- **Removed Unused Code**:
+  - Deleted `EventEngagementSummary.tsx` component (completely unused, only exported but never imported)
+  - Removed `getEventEngagement()` method from `services/api.ts` (backend endpoint still exists but unused)
+- **Eliminated Excessive Logging**:
+  - Removed 5 console.log statements from `EventBannerCard.tsx` (logged every banner render)
+  - Removed 2 console.log statements from `api.ts` (logged every API request/response)
+  - **Impact**: Hundreds fewer log lines on initial load, cleaner debugging experience
+- **Files**: `hooks/useFightStats.ts`, `components/fight-cards/UpcomingFightCard.tsx`, `components/fight-cards/CompletedFightCard.tsx`, `services/api.ts`
+- **Commit**: `16e67fe` - perf: Optimize API calls and remove excessive logging
+
 **Contact Invitations**:
 - **WhatsApp-style UX**: Select multiple contacts, send SMS invites with crew invite code
 - **Components**: `app/crew/invite-contacts.tsx` with contact selection UI
