@@ -564,17 +564,17 @@ export default async function communityRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const now = new Date();
-      const twentyDaysAgo = new Date();
-      twentyDaysAgo.setDate(now.getDate() - 20);
-      const twentyDaysFromNow = new Date();
-      twentyDaysFromNow.setDate(now.getDate() + 20);
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(now.getDate() - 14);
+      const fourteenDaysFromNow = new Date();
+      fourteenDaysFromNow.setDate(now.getDate() + 14);
 
-      // Get all fighters from recent completed fights (past 20 days)
+      // Get all fighters from recent completed fights (past 14 days)
       const recentFights = await fastify.prisma.fight.findMany({
         where: {
           event: {
             date: {
-              gte: twentyDaysAgo,
+              gte: fourteenDaysAgo,
               lte: now,
             },
           },
@@ -591,13 +591,13 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Get all fighters from upcoming fights (next 20 days)
+      // Get all fighters from upcoming fights (next 14 days)
       const upcomingFights = await fastify.prisma.fight.findMany({
         where: {
           event: {
             date: {
               gte: now,
-              lte: twentyDaysFromNow,
+              lte: fourteenDaysFromNow,
             },
           },
           hasStarted: false,
