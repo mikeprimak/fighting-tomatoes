@@ -14,12 +14,12 @@ import { useLocalSearchParams, router, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
-import { Colors } from '../../../constants/Colors';
-import { apiService } from '../../../services/api';
-import { FightDisplayCard, RateFightModal, PredictionModal, ScreenHeader } from '../../../components';
-import { useAuth } from '../../../store/AuthContext';
+import { Colors } from '../../constants/Colors';
+import { apiService } from '../../services/api';
+import { FightDisplayCard, RateFightModal, PredictionModal, ScreenHeader } from '../../components';
+import { useAuth } from '../../store/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
-import { useLiveEventPolling } from '../../../hooks/useLiveEventPolling';
+import { useLiveEventPolling } from '../../hooks/useLiveEventPolling';
 
 interface EventDetails {
   id: string;
@@ -41,9 +41,9 @@ type Fight = any;
 // Placeholder image selection logic - same as EventCard
 const getPlaceholderImage = (eventId: string) => {
   const images = [
-    require('../../../assets/events/event-banner-1.jpg'),
-    require('../../../assets/events/event-banner-2.jpg'),
-    require('../../../assets/events/event-banner-3.jpg'),
+    require('../../assets/events/event-banner-1.jpg'),
+    require('../../assets/events/event-banner-2.jpg'),
+    require('../../assets/events/event-banner-3.jpg'),
   ];
 
   // Use charCodeAt to get a number from the last character (works for letters and numbers)
