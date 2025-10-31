@@ -78,7 +78,7 @@ export function CommentCard({
               {comment.fight.eventName}
             </Text>
             <View style={styles.userRatingRow}>
-              <Text style={[styles.reviewContent, { color: colors.textSecondary, marginBottom: 0 }]}>
+              <Text style={[styles.eventText, { color: colors.textSecondary }]}>
                 by {comment.user.displayName}
               </Text>
               <View style={styles.inlineRating}>
@@ -148,11 +148,10 @@ const styles = StyleSheet.create({
   },
   fightInfo: {
     gap: 2,
-    marginBottom: -4,
+    marginBottom: 8,
   },
   fightText: {
-    fontSize: 13,
-    fontWeight: '500',
+    fontSize: 12,
   },
   eventText: {
     fontSize: 12,
