@@ -17,6 +17,7 @@ import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 import PredictionBarChart from './PredictionBarChart';
+import FightDetailsSection from './FightDetailsSection';
 
 interface Fighter {
   id: string;
@@ -436,6 +437,9 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
           fighter2Name={fight.fighter2.lastName}
         />
       </View>
+
+      {/* Fight Details */}
+      <FightDetailsSection fight={fight} />
     </ScrollView>
   );
 }

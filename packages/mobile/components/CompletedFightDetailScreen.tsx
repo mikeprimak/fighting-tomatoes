@@ -24,6 +24,7 @@ import { useAuth } from '../store/AuthContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
 import PredictionBarChart from './PredictionBarChart';
+import FightDetailsSection from './FightDetailsSection';
 
 interface Fighter {
   id: string;
@@ -1518,6 +1519,9 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
             </Text>
           )}
         </View>
+
+        {/* Fight Details */}
+        <FightDetailsSection fight={fight} />
       </ScrollView>
 
       {/* Modals */}

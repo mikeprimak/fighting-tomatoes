@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { api } from '../../services/api';
 
@@ -30,6 +31,7 @@ interface NewsArticle {
 export default function NewsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [allArticles, setAllArticles] = useState<NewsArticle[]>([]);
 
@@ -180,6 +182,14 @@ export default function NewsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* TEMPORARY DEV BUTTON - TODO: REMOVE */}
+      <TouchableOpacity
+        style={[styles.devButton, { backgroundColor: colors.tint }]}
+        onPress={() => router.push('/fighter/017370b7-abfd-4b16-a210-e85e35d532de')}
+      >
+        <Text style={styles.devButtonText}>🥊 DEV: Manon Fiorot</Text>
+      </TouchableOpacity>
+
       <FlatList
         data={allArticles}
         renderItem={renderArticle}
@@ -299,5 +309,18 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 8,
     fontSize: 14,
+  },
+  devButton: {
+    margin: 16,
+    marginBottom: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  devButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

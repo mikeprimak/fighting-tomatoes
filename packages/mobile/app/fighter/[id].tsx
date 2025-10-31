@@ -11,20 +11,20 @@ import {
   Modal,
   Animated,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Colors } from '../../constants/Colors';
 import { apiService, Fight } from '../../services/api';
-import { DetailScreenHeader, FightDisplayCard, RateFightModal } from '../../components';
+import { DetailScreenHeader, FightDisplayCard } from '../../components';
 import { useAuth } from '../../store/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
 
 type SortOption = 'newest' | 'oldest' | 'highest-rating' | 'most-rated';
 
 const SORT_OPTIONS = [
+  { value: 'highest-rating' as SortOption, label: 'Highest Rated' },
   { value: 'newest' as SortOption, label: 'Date' },
-  { value: 'highest-rating' as SortOption, label: 'Rating' },
   { value: 'most-rated' as SortOption, label: 'Number of Ratings' },
 ];
 
@@ -49,11 +49,10 @@ export default function FighterDetailScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // State
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
-  const [selectedFight, setSelectedFight] = useState<Fight | null>(null);
-  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>('highest-rating');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>('');
 
@@ -163,7 +162,7 @@ export default function FighterDetailScreen() {
       // Animate bell ring and show toast when following
       if (data.isFollowing && fighter) {
         animateBellRing();
-        showToast(`You will be notified on days ${fighter.firstName} ${fighter.lastName} fights!`);
+        showToast(`You will be notified before ${fighter.lastName} fights.`);
       }
 
       // Force an immediate refetch of the fighter data
@@ -179,62 +178,67 @@ export default function FighterDetailScreen() {
     followMutation.mutate(isCurrentlyFollowing);
   };
 
-  // Sort fights based on selected option
-  const sortedFights = useMemo(() => {
+  // Get highest rated fight for header display
+  const highestRatedFight = useMemo(() => {
     const fights = fightsData?.fights || [];
-    if (fights.length === 0) return fights;
+    if (fights.length === 0) return null;
 
-    const fightsCopy = [...fights];
+    return [...fights]
+      .filter(f => f.averageRating && f.averageRating > 0)
+      .sort((a: Fight, b: Fight) => (b.averageRating || 0) - (a.averageRating || 0))[0] || null;
+  }, [fightsData?.fights]);
 
-    switch (sortBy) {
-      case 'newest':
-        return fightsCopy.sort((a: Fight, b: Fight) =>
-          new Date(b.event.date).getTime() - new Date(a.event.date).getTime()
-        );
-      case 'oldest':
-        return fightsCopy.sort((a: Fight, b: Fight) =>
-          new Date(a.event.date).getTime() - new Date(b.event.date).getTime()
-        );
-      case 'highest-rating':
-        return fightsCopy.sort((a: Fight, b: Fight) =>
-          (b.averageRating || 0) - (a.averageRating || 0)
-        );
-      case 'most-rated':
-        return fightsCopy.sort((a: Fight, b: Fight) =>
-          (b.totalRatings || 0) - (a.totalRatings || 0)
-        );
-      default:
-        return fightsCopy;
-    }
+  // Separate and sort fights
+  const { upcomingFights, completedFights, sortedFights } = useMemo(() => {
+    const fights = fightsData?.fights || [];
+    if (fights.length === 0) return { upcomingFights: [], completedFights: [], sortedFights: [] };
+
+    // Separate into upcoming and completed
+    const upcoming = fights.filter((f: Fight) => !f.isComplete);
+    const completed = fights.filter((f: Fight) => f.isComplete);
+
+    // Sort each group
+    const sortUpcoming = (a: Fight, b: Fight) => {
+      if (sortBy === 'newest') {
+        return new Date(b.event.date).getTime() - new Date(a.event.date).getTime();
+      }
+      return new Date(a.event.date).getTime() - new Date(b.event.date).getTime();
+    };
+
+    const sortCompleted = (a: Fight, b: Fight) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.event.date).getTime() - new Date(a.event.date).getTime();
+        case 'oldest':
+          return new Date(a.event.date).getTime() - new Date(b.event.date).getTime();
+        case 'highest-rating':
+          return (b.averageRating || 0) - (a.averageRating || 0);
+        case 'most-rated':
+          return (b.totalRatings || 0) - (a.totalRatings || 0);
+        default:
+          return 0;
+      }
+    };
+
+    const sortedUpcoming = [...upcoming].sort(sortUpcoming);
+    const sortedCompleted = [...completed].sort(sortCompleted);
+
+    // Determine order: upcoming first for 'newest', completed first for rating sorts
+    const showUpcomingFirst = sortBy === 'newest';
+    const allSorted = showUpcomingFirst
+      ? [...sortedUpcoming, ...sortedCompleted]
+      : [...sortedCompleted, ...sortedUpcoming];
+
+    return {
+      upcomingFights: sortedUpcoming,
+      completedFights: sortedCompleted,
+      sortedFights: allSorted,
+    };
   }, [fightsData?.fights, sortBy]);
 
-  const handleFightPress = async (fight: Fight) => {
-    try {
-      const hasUserData = fight.userRating || fight.userReview || (fight.userTags && fight.userTags.length > 0);
-
-      if (isAuthenticated && !hasUserData) {
-        const { fight: detailedFight } = await apiService.getFight(fight.id);
-        const enrichedFight = {
-          ...fight,
-          userRating: detailedFight.userRating,
-          userReview: detailedFight.userReview,
-          userTags: detailedFight.userTags
-        };
-        setSelectedFight(enrichedFight);
-      } else {
-        setSelectedFight(fight);
-      }
-      setShowRatingModal(true);
-    } catch (error) {
-      console.error('Error fetching detailed fight data:', error);
-      setSelectedFight(fight);
-      setShowRatingModal(true);
-    }
-  };
-
-  const closeModal = () => {
-    setSelectedFight(null);
-    setShowRatingModal(false);
+  const handleFightPress = (fight: Fight) => {
+    // Navigate to the fight detail screen
+    router.push(`/fight/${fight.id}`);
   };
 
   const fighter = fighterData?.fighter;
@@ -242,7 +246,7 @@ export default function FighterDetailScreen() {
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
-        <DetailScreenHeader title="Fighter Details" />
+        <DetailScreenHeader title="Fighter" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>Loading fighter...</Text>
@@ -254,7 +258,7 @@ export default function FighterDetailScreen() {
   if (error || !fighter) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
-        <DetailScreenHeader title="Fighter Details" />
+        <DetailScreenHeader title="Fighter" />
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: colors.danger }]}>
             Error loading fighter details
@@ -267,13 +271,13 @@ export default function FighterDetailScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <DetailScreenHeader
-        title={`${fighter.firstName} ${fighter.lastName}`}
-        subtitle={fighter.nickname ? `"${fighter.nickname}"` : undefined}
+        title="Fighter"
       />
 
       <ScrollView style={styles.scrollView}>
-        {/* Fighter Image */}
-        <View style={styles.imageContainer}>
+        {/* Fighter Header - Image and Info Side by Side */}
+        <View style={styles.headerContainer}>
+          {/* Fighter Image - Left */}
           <Image
             source={
               fighter.profileImage
@@ -282,102 +286,92 @@ export default function FighterDetailScreen() {
             }
             style={styles.fighterImage}
           />
-        </View>
 
-        {/* Follow Button */}
-        {isAuthenticated && (
-          <View style={styles.followButtonContainer}>
-            <TouchableOpacity
-              onPress={handleFollowPress}
-              disabled={followMutation.isPending}
-              style={[
-                styles.followButton,
-                fighter.isFollowing
-                  ? { backgroundColor: colors.card, borderColor: colors.border }
-                  : { backgroundColor: colors.primary }
-              ]}
-            >
-              {followMutation.isPending ? (
-                <ActivityIndicator size="small" color={colors.text} />
-              ) : (
-                <>
-                  <Animated.View
-                    style={{
-                      transform: [
-                        {
-                          rotate: bellRotation.interpolate({
-                            inputRange: [-1, 0, 1],
-                            outputRange: ['-15deg', '0deg', '15deg'],
-                          }),
-                        },
-                      ],
-                    }}
-                  >
-                    <FontAwesome
-                      name={fighter.isFollowing ? "bell" : "bell-o"}
-                      size={16}
-                      color={fighter.isFollowing ? '#ef4444' : '#1a1a1a'}
-                    />
-                  </Animated.View>
-                  <Text
-                    style={[
-                      styles.followButtonText,
-                      { color: fighter.isFollowing ? '#fff' : '#1a1a1a' }
-                    ]}
-                  >
-                    {fighter.isFollowing
-                      ? `Following ${fighter.firstName} ${fighter.lastName}`
-                      : `Follow ${fighter.firstName} ${fighter.lastName}`
-                    }
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Fighter Details */}
-        <View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fighter Details</Text>
-
-          {fighter.nickname && (
-            <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Nickname:</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>"{fighter.nickname}"</Text>
-            </View>
-          )}
-
-          {fighter.rank && (
-            <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Rank:</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{fighter.rank}</Text>
-            </View>
-          )}
-
-          {fighter.weightClass && (
-            <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Weight Class:</Text>
-              <Text style={[styles.infoValue, { color: colors.text }]}>{fighter.weightClass}</Text>
-            </View>
-          )}
-
-          <View style={styles.infoRow}>
-            <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Record:</Text>
-            <Text style={[styles.infoValue, { color: colors.primary, fontWeight: '600' }]}>
-              {fighter.wins}-{fighter.losses}-{fighter.draws}
+          {/* Fighter Info - Right */}
+          <View style={styles.headerInfoContainer}>
+            <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
+              {fighter.firstName} {fighter.lastName}
             </Text>
+
+            {fighter.nickname && (
+              <Text style={[styles.fighterNickname, { color: colors.textSecondary }]} numberOfLines={1}>
+                "{fighter.nickname}"
+              </Text>
+            )}
+
+            {fighter.weightClass && (
+              <Text style={[styles.fighterInfoText, { color: colors.text }]} numberOfLines={1}>
+                {fighter.isChampion
+                  ? `${fighter.weightClass.includes('WOMENS_') ? "Women's " : ''}${fighter.weightClass.replace(/WOMENS_/g, '').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())} Champion`
+                  : fighter.rank
+                    ? `${fighter.rank} ${fighter.weightClass.replace(/WOMENS_/g, '').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}`
+                    : `${fighter.weightClass.includes('WOMENS_') ? "Women's " : ''}${fighter.weightClass.replace(/WOMENS_/g, '').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}`
+                }
+              </Text>
+            )}
+
+            <Text style={[styles.fighterInfoText, { color: colors.text }]} numberOfLines={1}>
+              Record: {fighter.wins}-{fighter.losses}-{fighter.draws}
+            </Text>
+
+            {/* Follow Button */}
+            {isAuthenticated && (
+              <TouchableOpacity
+                onPress={handleFollowPress}
+                disabled={followMutation.isPending}
+                style={[
+                  styles.inlineFollowButton,
+                  fighter.isFollowing
+                    ? { backgroundColor: colors.card, borderColor: colors.border }
+                    : { backgroundColor: colors.primary }
+                ]}
+              >
+                {followMutation.isPending ? (
+                  <ActivityIndicator size="small" color={colors.text} />
+                ) : (
+                  <>
+                    <Animated.View
+                      style={{
+                        transform: [
+                          {
+                            rotate: bellRotation.interpolate({
+                              inputRange: [-1, 0, 1],
+                              outputRange: ['-15deg', '0deg', '15deg'],
+                            }),
+                          },
+                        ],
+                      }}
+                    >
+                      <FontAwesome
+                        name={fighter.isFollowing ? "bell" : "bell-o"}
+                        size={14}
+                        color={fighter.isFollowing ? '#10b981' : '#1a1a1a'}
+                      />
+                    </Animated.View>
+                    <Text
+                      style={[
+                        styles.inlineFollowButtonText,
+                        { color: fighter.isFollowing ? '#fff' : '#1a1a1a' }
+                      ]}
+                    >
+                      {fighter.isFollowing ? 'I will be notified' : 'Notify Me'}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
-        {/* Fight History */}
+        {/* Fights */}
         <View style={styles.fightHistorySection}>
-          <Text style={[styles.sectionTitle, styles.fightHistoryTitle, { color: colors.text }]}>
-            Fight History
-          </Text>
+          <View style={styles.fightsTitleRow}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Fights
+            </Text>
 
-          {/* Sort Dropdown */}
-          {sortedFights.length > 0 && (
-            <View style={styles.sortContainer}>
+            {/* Sort Dropdown */}
+            {sortedFights.length > 0 && (
               <TouchableOpacity
                 onPress={() => setShowSortDropdown(true)}
                 style={[styles.dropdownButton, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -387,52 +381,52 @@ export default function FighterDetailScreen() {
                 </Text>
                 <FontAwesome name="chevron-down" size={14} color={colors.textSecondary} />
               </TouchableOpacity>
+            )}
+          </View>
 
-              {/* Dropdown Modal */}
-              <Modal
-                visible={showSortDropdown}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setShowSortDropdown(false)}
-              >
-                <TouchableOpacity
-                  style={styles.dropdownOverlay}
-                  activeOpacity={1}
-                  onPress={() => setShowSortDropdown(false)}
-                >
-                  <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    {SORT_OPTIONS.map((option) => (
-                      <TouchableOpacity
-                        key={option.value}
-                        onPress={() => {
-                          setSortBy(option.value);
-                          setShowSortDropdown(false);
-                        }}
-                        style={[
-                          styles.dropdownItem,
-                          { borderBottomColor: colors.border },
-                          sortBy === option.value && { backgroundColor: colors.primary + '20' }
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.dropdownItemText,
-                            { color: colors.text },
-                            sortBy === option.value && { fontWeight: '600', color: colors.primary }
-                          ]}
-                        >
-                          {option.label}
-                        </Text>
-                        {sortBy === option.value && (
-                          <FontAwesome name="check" size={16} color={colors.primary} />
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </TouchableOpacity>
-              </Modal>
-            </View>
-          )}
+          {/* Dropdown Modal */}
+          <Modal
+            visible={showSortDropdown}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowSortDropdown(false)}
+          >
+            <TouchableOpacity
+              style={styles.dropdownOverlay}
+              activeOpacity={1}
+              onPress={() => setShowSortDropdown(false)}
+            >
+              <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {SORT_OPTIONS.map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    onPress={() => {
+                      setSortBy(option.value);
+                      setShowSortDropdown(false);
+                    }}
+                    style={[
+                      styles.dropdownItem,
+                      { borderBottomColor: colors.border },
+                      sortBy === option.value && { backgroundColor: colors.primary + '20' }
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.dropdownItemText,
+                        { color: colors.text },
+                        sortBy === option.value && { fontWeight: '600', color: colors.primary }
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                    {sortBy === option.value && (
+                      <FontAwesome name="check" size={16} color={colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </TouchableOpacity>
+          </Modal>
 
           {/* Fight List */}
           {fightsLoading ? (
@@ -442,14 +436,108 @@ export default function FighterDetailScreen() {
             </View>
           ) : sortedFights.length > 0 ? (
             <View style={styles.fightsContainer}>
-              {sortedFights.map((fight: Fight) => (
-                <FightDisplayCard
-                  key={fight.id}
-                  fight={fight}
-                  onPress={() => handleFightPress(fight)}
-                  showEvent={true}
-                />
-              ))}
+              {/* Render based on sort order */}
+              {sortBy === 'newest' ? (
+                <>
+                  {/* Upcoming Fights Section */}
+                  {upcomingFights.length > 0 && (
+                    <>
+                      <View style={[styles.columnHeadersRow, { marginBottom: 12 }]}>
+                        <View style={styles.columnHeadersUpcoming}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
+                        </View>
+                        <View style={styles.columnHeadersUpcomingRight}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
+                        </View>
+                      </View>
+                      {upcomingFights.map((fight: Fight) => (
+                        <FightDisplayCard
+                          key={fight.id}
+                          fight={fight}
+                          onPress={() => handleFightPress(fight)}
+                          showEvent={true}
+                        />
+                      ))}
+                    </>
+                  )}
+
+                  {/* Completed Fights Section */}
+                  {completedFights.length > 0 && (
+                    <>
+                      <View style={[styles.columnHeadersRow, { marginBottom: 12, marginTop: upcomingFights.length > 0 ? 20 : 0 }]}>
+                        <View style={styles.columnHeadersCompleted}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATINGS</Text>
+                        </View>
+                        <View style={styles.columnHeadersCompletedRight}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
+                        </View>
+                      </View>
+                      {completedFights.map((fight: Fight) => (
+                        <FightDisplayCard
+                          key={fight.id}
+                          fight={fight}
+                          onPress={() => handleFightPress(fight)}
+                          showEvent={true}
+                        />
+                      ))}
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* Completed Fights Section (shown first for rating sorts) */}
+                  {completedFights.length > 0 && (
+                    <>
+                      <View style={[styles.columnHeadersRow, { marginBottom: 12 }]}>
+                        <View style={styles.columnHeadersCompleted}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATINGS</Text>
+                        </View>
+                        <View style={styles.columnHeadersCompletedRight}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
+                        </View>
+                      </View>
+                      {completedFights.map((fight: Fight) => (
+                        <FightDisplayCard
+                          key={fight.id}
+                          fight={fight}
+                          onPress={() => handleFightPress(fight)}
+                          showEvent={true}
+                        />
+                      ))}
+                    </>
+                  )}
+
+                  {/* Upcoming Fights Section (shown last for rating sorts) */}
+                  {upcomingFights.length > 0 && (
+                    <>
+                      <View style={[styles.columnHeadersRow, { marginBottom: 12, marginTop: completedFights.length > 0 ? 20 : 0 }]}>
+                        <View style={styles.columnHeadersUpcoming}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
+                        </View>
+                        <View style={styles.columnHeadersUpcomingRight}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
+                        </View>
+                      </View>
+                      {upcomingFights.map((fight: Fight) => (
+                        <FightDisplayCard
+                          key={fight.id}
+                          fight={fight}
+                          onPress={() => handleFightPress(fight)}
+                          showEvent={true}
+                        />
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
             </View>
           ) : (
             <View style={styles.noFightsContainer}>
@@ -461,28 +549,21 @@ export default function FighterDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Rating Modal */}
-      <RateFightModal
-        visible={showRatingModal}
-        fight={selectedFight}
-        onClose={closeModal}
-        queryKey={['fighterFights', id]}
-      />
-
       {/* Toast Notification */}
       {toastMessage !== '' && (
         <Animated.View
           style={[
             styles.toastContainer,
             {
-              backgroundColor: colors.primary,
+              backgroundColor: colors.card,
+              borderColor: colors.border,
               opacity: toastOpacity,
               transform: [{ translateY: toastTranslateY }],
             },
           ]}
         >
-          <FontAwesome name="bell" size={16} color="#1a1a1a" />
-          <Text style={styles.toastText}>{toastMessage}</Text>
+          <FontAwesome name="bell" size={16} color="#10b981" />
+          <Text style={[styles.toastText, { color: '#fff' }]}>{toastMessage}</Text>
         </Animated.View>
       )}
     </SafeAreaView>
@@ -515,37 +596,53 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
-  imageContainer: {
-    alignItems: 'center',
-    paddingVertical: 24,
+  headerContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 16,
   },
   fighterImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
-  infoCard: {
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
+  headerInfoContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 4,
+  },
+  fighterName: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    lineHeight: 28,
+  },
+  fighterNickname: {
+    fontSize: 14,
+    fontStyle: 'italic',
+    lineHeight: 18,
+  },
+  fighterInfoText: {
+    fontSize: 14,
+    lineHeight: 18,
+  },
+  inlineFollowButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
     borderWidth: 1,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  inlineFollowButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  infoLabel: {
-    fontSize: 16,
-  },
-  infoValue: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   comingSoonText: {
     fontSize: 14,
@@ -555,27 +652,25 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 16,
   },
-  fightHistoryTitle: {
+  fightsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginHorizontal: 16,
-    marginBottom: 4,
-  },
-  sortContainer: {
-    marginHorizontal: 16,
-    marginTop: 12,
     marginBottom: 16,
   },
   dropdownButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
     borderWidth: 1,
   },
   dropdownButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
   },
   dropdownOverlay: {
     flex: 1,
@@ -601,31 +696,54 @@ const styles = StyleSheet.create({
   dropdownItemText: {
     fontSize: 16,
   },
+  columnHeadersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  columnHeadersUpcoming: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginLeft: 5,
+    width: 40,
+    justifyContent: 'center',
+  },
+  columnHeadersUpcomingRight: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginRight: 4,
+    width: 40,
+    justifyContent: 'center',
+  },
+  columnHeadersCompleted: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginLeft: -2,
+    width: 60,
+    justifyContent: 'center',
+  },
+  columnHeadersCompletedRight: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginRight: -5,
+    width: 60,
+    justifyContent: 'center',
+  },
+  columnHeaderText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
   fightsContainer: {
-    gap: 12,
-    paddingHorizontal: 16,
+    gap: 0,
+    paddingHorizontal: 0,
   },
   noFightsContainer: {
     padding: 20,
     alignItems: 'center',
-  },
-  followButtonContainer: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  followButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 8,
-  },
-  followButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   toastContainer: {
     position: 'absolute',
@@ -638,6 +756,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
+    borderWidth: 1,
     gap: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -646,7 +765,6 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   toastText: {
-    color: '#1a1a1a',
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
