@@ -43,38 +43,40 @@ export function CommentCard({
       activeOpacity={onPress ? 0.7 : 1}
     >
       <View style={styles.reviewContainer}>
-        {/* Left side: Upvote button */}
-        <TouchableOpacity
-          style={styles.upvoteButton}
-          onPress={onUpvote}
-          disabled={!isAuthenticated || isUpvoting || !onUpvote}
-        >
-          <FontAwesome
-            name={comment.userHasUpvoted ? "thumbs-up" : "thumbs-o-up"}
-            size={18}
-            color={comment.userHasUpvoted ? '#F5C518' : colors.textSecondary}
-          />
-          <Text
-            style={[
-              styles.upvoteButtonText,
-              { color: comment.userHasUpvoted ? '#F5C518' : colors.textSecondary }
-            ]}
+        {/* Left side: Upvote button and rating */}
+        <View style={styles.leftColumn}>
+          <TouchableOpacity
+            style={styles.upvoteButton}
+            onPress={onUpvote}
+            disabled={!isAuthenticated || isUpvoting || !onUpvote}
           >
-            {comment.upvotes || 0}
-          </Text>
-        </TouchableOpacity>
+            <FontAwesome
+              name={comment.userHasUpvoted ? "thumbs-up" : "thumbs-o-up"}
+              size={18}
+              color={comment.userHasUpvoted ? '#F5C518' : colors.textSecondary}
+            />
+            <Text
+              style={[
+                styles.upvoteButtonText,
+                { color: comment.userHasUpvoted ? '#F5C518' : colors.textSecondary }
+              ]}
+            >
+              {comment.upvotes || 0}
+            </Text>
+          </TouchableOpacity>
 
-        {/* Right side: Comment content */}
-        <View style={styles.reviewContentContainer}>
-          {/* Rating in top right corner */}
-          <View style={styles.topRightRating}>
+          {/* Rating below upvote */}
+          <View style={styles.leftRating}>
             <FontAwesome name="star" size={14} color="#F5C518" />
             <Text style={[styles.reviewRatingText, { color: colors.text }]}>
               {comment.rating}
             </Text>
           </View>
+        </View>
 
-          <Text style={[styles.reviewContent, styles.reviewContentWithRating, { color: colors.textSecondary }]}>
+        {/* Right side: Comment content */}
+        <View style={styles.reviewContentContainer}>
+          <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
             {comment.content}
           </Text>
 
@@ -108,13 +110,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
   },
+  leftColumn: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 8,
+  },
   reviewContentContainer: {
     flex: 1,
   },
-  topRightRating: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
+  leftRating: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
@@ -143,9 +147,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 12,
-  },
-  reviewContentWithRating: {
-    paddingRight: 50,
   },
   fightInfo: {
     gap: 2,
