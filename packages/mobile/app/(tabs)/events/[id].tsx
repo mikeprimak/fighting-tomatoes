@@ -217,14 +217,8 @@ export default function EventDetailScreen() {
   };
 
   const handleFightPress = (fight: Fight) => {
-    // Determine which modal to open based on fight status
-    if (fight.hasStarted || fight.isComplete) {
-      // For ongoing or completed fights, open rating modal
-      openRatingModal(fight);
-    } else {
-      // For upcoming fights, open prediction modal
-      openPredictionModal(fight);
-    }
+    // Navigate to fight detail screen
+    router.push(`/fight/${fight.id}` as any);
   };
 
   const closeModal = () => {
