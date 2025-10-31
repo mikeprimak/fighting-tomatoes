@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
+import { getHypeHeatmapColor } from '../utils/heatmap';
 
 interface CommentCardProps {
   comment: {
@@ -82,7 +83,7 @@ export function CommentCard({
                 by {comment.user.displayName}
               </Text>
               <View style={styles.inlineRating}>
-                <FontAwesome name="star" size={12} color="#F5C518" />
+                <FontAwesome name="star" size={12} color={getHypeHeatmapColor(comment.rating)} />
                 <Text style={[styles.reviewRatingText, { color: colors.text, fontSize: 12 }]}>
                   {comment.rating}
                 </Text>
