@@ -74,7 +74,7 @@ export function CommentCard({
             </Text>
           </View>
 
-          <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
+          <Text style={[styles.reviewContent, styles.reviewContentWithRating, { color: colors.textSecondary }]}>
             {comment.content}
           </Text>
 
@@ -143,6 +143,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 12,
+  },
+  reviewContentWithRating: {
+    paddingRight: 50,
   },
   fightInfo: {
     gap: 2,
