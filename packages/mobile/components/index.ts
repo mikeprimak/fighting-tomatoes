@@ -13,7 +13,6 @@ export { ScreenHeader } from './ScreenHeader';
 export { DetailScreenHeader } from './DetailScreenHeader';
 export { FlagReviewModal } from './FlagReviewModal';
 export { CommunityPredictionsCard } from './CommunityPredictionsCard';
-export { default as EventEngagementSummary } from './EventEngagementSummary';
 export { CommentCard } from './CommentCard';
 export { default as UpcomingFightDetailScreen } from './UpcomingFightDetailScreen';
 export { default as CompletedFightDetailScreen } from './CompletedFightDetailScreen';

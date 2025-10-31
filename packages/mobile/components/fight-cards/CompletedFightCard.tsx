@@ -12,6 +12,7 @@ import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastN
 import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
+import { useFightStats } from '../../hooks/useFightStats';
 
 interface CompletedFightCardProps extends BaseFightCardProps {
   isNextFight?: boolean;
@@ -90,19 +91,10 @@ export default function CompletedFightCard({
   // Animated value for hot fight flame glow
   const hotFightGlowAnim = useRef(new Animated.Value(0)).current;
 
-  // Fetch aggregate prediction stats
-  const { data: predictionStats } = useQuery({
-    queryKey: ['fightPredictionStats', fight.id],
-    queryFn: () => apiService.getFightPredictionStats(fight.id),
-    staleTime: 30 * 1000,
-  });
-
-  // Fetch aggregate stats (includes user prediction and community prediction)
-  const { data: aggregateStats } = useQuery({
-    queryKey: ['fightAggregateStats', fight.id],
-    queryFn: () => apiService.getFightAggregateStats(fight.id),
-    staleTime: 60 * 1000,
-  });
+  // Fetch both prediction stats and aggregate stats in a single API call
+  const { data } = useFightStats(fight.id);
+  const predictionStats = data?.predictionStats;
+  const aggregateStats = data?.aggregateStats;
 
   // Bell ringing animation
   const animateBellRing = () => {

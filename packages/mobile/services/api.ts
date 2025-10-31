@@ -114,9 +114,6 @@ class ApiService {
     const url = `${API_BASE_URL}${endpoint}`;
     const token = await this.getAuthToken();
 
-    console.log('Making API request to:', url);
-    console.log('Auth token available:', !!token, token ? `(${token.substring(0, 20)}...)` : '(none)');
-
     const headers: HeadersInit = {
       ...options.headers,
     };
@@ -323,22 +320,6 @@ class ApiService {
 
   async getEventFights(eventId: string): Promise<{ fights: Fight[] }> {
     return this.makeRequest(`/events/${eventId}/fights`);
-  }
-
-  async getEventEngagement(eventId: string): Promise<{
-    totalFights: number;
-    predictionsCount: number;
-    ratingsCount: number;
-    alertsCount: number;
-    averageHype: number | null;
-    topHypedFights: Array<{
-      fightId: string;
-      hype: number;
-      fighter1: string;
-      fighter2: string;
-    }>;
-  }> {
-    return this.makeRequest(`/events/${eventId}/engagement`);
   }
 
   // Fighter-related API methods

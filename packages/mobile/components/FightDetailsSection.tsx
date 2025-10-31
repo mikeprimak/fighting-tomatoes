@@ -67,7 +67,7 @@ export default function FightDetailsSection({ fight }: FightDetailsSectionProps)
       {/* Event Link */}
       <TouchableOpacity
         style={[styles.detailRow, { borderBottomWidth: 0 }]}
-        onPress={() => router.push(`/(tabs)/events/${fight.event.id}` as any)}
+        onPress={() => router.push(`/(tabs)/events/${fight.event.id}`)}
       >
         <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Event</Text>
         <View style={styles.detailValueRow}>

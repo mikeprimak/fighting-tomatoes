@@ -10,7 +10,7 @@ import {
   StatusBar,
   Animated,
 } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams, router, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
@@ -59,6 +59,7 @@ export default function EventDetailScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Modal state
   const [selectedFight, setSelectedFight] = useState<Fight | null>(null);
@@ -342,6 +343,16 @@ export default function EventDetailScreen() {
   console.log('  Prelims:', prelimCard.map((f: any) => `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName} (order: ${f.orderOnCard}, cardType: ${f.cardType || 'legacy'})`));
   console.log('  Early Prelims:', earlyPrelims.map((f: any) => `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName} (order: ${f.orderOnCard}, cardType: ${f.cardType || 'legacy'})`));
 
+  // Helper function to check if any fight in a card section has started
+  const hasCardSectionStarted = (fights: Fight[]) => {
+    return fights.some((f: Fight) => f.hasStarted || f.isComplete);
+  };
+
+  // Check if each card section has started
+  const mainCardStarted = hasCardSectionStarted(mainCard);
+  const prelimCardStarted = hasCardSectionStarted(prelimCard);
+  const earlyPrelimsStarted = hasCardSectionStarted(earlyPrelims);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <StatusBar translucent backgroundColor="transparent" barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
@@ -415,7 +426,7 @@ export default function EventDetailScreen() {
                   {/* Center - Title and Time stacked vertically */}
                   <View style={styles.sectionHeaderCenter}>
                     <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>MAIN CARD</Text>
-                    {event.mainStartTime && (
+                    {event.mainStartTime && !mainCardStarted && (
                       <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
                         {formatTime(event.mainStartTime)}
                       </Text>
@@ -439,7 +450,7 @@ export default function EventDetailScreen() {
                   {/* Center - Title and Time stacked vertically */}
                   <View style={styles.sectionHeaderCenter}>
                     <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>MAIN CARD</Text>
-                    {event.mainStartTime && (
+                    {event.mainStartTime && !mainCardStarted && (
                       <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
                         {formatTime(event.mainStartTime)}
                       </Text>
@@ -478,7 +489,7 @@ export default function EventDetailScreen() {
             <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
               <View style={styles.sectionHeaderCenter}>
                 <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>PRELIMINARY CARD</Text>
-                {event.prelimStartTime && (
+                {event.prelimStartTime && !prelimCardStarted && (
                   <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
                     {formatTime(event.prelimStartTime)}
                   </Text>
@@ -509,7 +520,7 @@ export default function EventDetailScreen() {
             <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
               <View style={styles.sectionHeaderCenter}>
                 <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>EARLY PRELIMS</Text>
-                {event.earlyPrelimStartTime && (
+                {event.earlyPrelimStartTime && !earlyPrelimsStarted && (
                   <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
                     {formatTime(event.earlyPrelimStartTime)}
                   </Text>
@@ -714,7 +725,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 0,
     marginLeft: -11,
-    width: 40,
+    width: 60,
     justifyContent: 'center',
   },
   columnHeadersRight: {
@@ -722,7 +733,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 0,
     marginRight: -11,
-    width: 40,
+    width: 60,
     justifyContent: 'center',
   },
   columnHeaderText: {
