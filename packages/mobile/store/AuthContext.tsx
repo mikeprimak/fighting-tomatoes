@@ -20,6 +20,8 @@ interface User {
   totalReviews?: number;
   averageRating?: number;
   averageHype?: number;
+  ratingDistribution?: Record<string, number>;
+  hypeDistribution?: Record<string, number>;
   points?: number;
   level?: number;
 }

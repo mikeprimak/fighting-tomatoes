@@ -23,9 +23,20 @@ export default function ProfileScreen() {
   const { alertState, showConfirm, showError, hideAlert } = useCustomAlert();
 
   // Auto-refresh user data if averageRating or averageHype is missing (from old cached data)
+  // OR if distributions are empty (to get real data)
   useEffect(() => {
-    if (user && (!user.hasOwnProperty('averageRating') || !user.hasOwnProperty('averageHype'))) {
-      console.log('Profile: averageRating or averageHype missing, refreshing user data...');
+    console.log('=== User Profile Data ===');
+    console.log('User:', JSON.stringify(user, null, 2));
+
+    if (user && (
+      !user.hasOwnProperty('averageRating') ||
+      !user.hasOwnProperty('averageHype') ||
+      !user.ratingDistribution ||
+      Object.keys(user.ratingDistribution || {}).length === 0 ||
+      !user.hypeDistribution ||
+      Object.keys(user.hypeDistribution || {}).length === 0
+    )) {
+      console.log('Profile: Missing data or empty distributions, refreshing user data...');
       refreshUserData();
     }
   }, [user?.id]); // Only run when user ID changes (mount/login)
@@ -121,6 +132,53 @@ export default function ProfileScreen() {
     return flames;
   };
 
+  // Render distribution bar chart
+  const renderDistributionChart = (distribution: Record<string, number>, type: 'rating' | 'hype') => {
+    const ratings = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+    // Use real distribution data only
+    const dataToUse = distribution || {};
+
+    // If there's no data, show empty chart with message
+    const hasData = Object.keys(dataToUse).length > 0;
+    const maxCount = hasData ? Math.max(...Object.values(dataToUse), 1) : 1;
+    const maxBarHeight = 70; // Maximum bar height in pixels
+
+    return (
+      <View>
+        {!hasData && (
+          <Text style={[styles.emptyChartMessage, { color: colors.textSecondary }]}>
+            No {type === 'rating' ? 'ratings' : 'hype scores'} yet
+          </Text>
+        )}
+        <View style={styles.chartContainer}>
+          {ratings.map((rating) => {
+            const count = dataToUse[rating] || 0;
+            const barHeight = count > 0 ? Math.max((count / maxCount) * maxBarHeight, 4) : 0;
+            const barColor = getHypeHeatmapColor(rating);
+
+            return (
+              <View key={rating} style={styles.barContainer}>
+                <View style={styles.barWrapper}>
+                  <View
+                    style={[
+                      styles.bar,
+                      {
+                        height: barHeight,
+                        backgroundColor: barColor,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={[styles.barLabel, { color: colors.textSecondary }]}>{rating}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -161,6 +219,14 @@ export default function ProfileScreen() {
           <Text style={[styles.ratingValue, { color: colors.text, marginTop: 8 }]}>
             {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'} / 10
           </Text>
+
+          {/* Rating Distribution Chart */}
+          <View style={styles.distributionContainer}>
+            <Text style={[styles.distributionLabel, { color: colors.textSecondary, marginTop: 12, marginBottom: 8 }]}>
+              Rating Distribution
+            </Text>
+            {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
+          </View>
         </View>
 
         {/* Average Hype */}
@@ -172,6 +238,14 @@ export default function ProfileScreen() {
           <Text style={[styles.ratingValue, { color: colors.text, marginTop: 8 }]}>
             {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'} / 10
           </Text>
+
+          {/* Hype Distribution Chart */}
+          <View style={styles.distributionContainer}>
+            <Text style={[styles.distributionLabel, { color: colors.textSecondary, marginTop: 12, marginBottom: 8 }]}>
+              Hype Distribution
+            </Text>
+            {renderDistributionChart(user?.hypeDistribution || {}, 'hype')}
+          </View>
         </View>
 
         {/* Actions */}
@@ -269,6 +343,52 @@ const createStyles = (colors: any) => StyleSheet.create({
   ratingValue: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  distributionContainer: {
+    width: '100%',
+  },
+  distributionLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  emptyChartMessage: {
+    fontSize: 12,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: 8,
+  },
+  chartContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    height: 100,
+    paddingHorizontal: 4,
+  },
+  barContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    height: '100%',
+  },
+  barWrapper: {
+    width: '100%',
+    height: 70,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  bar: {
+    width: '80%',
+    borderRadius: 2,
+    minHeight: 2,
+  },
+  barLabel: {
+    fontSize: 10,
+    marginTop: 2,
+  },
+  barCount: {
+    fontSize: 9,
+    marginTop: 1,
   },
   actionsContainer: {
     marginTop: 8,

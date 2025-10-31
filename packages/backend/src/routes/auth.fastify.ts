@@ -494,6 +494,8 @@ export async function authRoutes(fastify: FastifyInstance) {
                 totalReviews: { type: 'integer' },
                 averageRating: { type: 'number' },
                 averageHype: { type: 'number' },
+                ratingDistribution: { type: 'object', additionalProperties: { type: 'number' } },
+                hypeDistribution: { type: 'object', additionalProperties: { type: 'number' } },
                 points: { type: 'integer' },
                 level: { type: 'integer' },
               },
@@ -562,9 +564,21 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Calculate average rating
+      request.log.info('[GET /profile] User ratings count: ' + user.ratings.length);
+      request.log.info('[GET /profile] User ratings: ' + JSON.stringify(user.ratings.slice(0, 3)));
+
       const averageRating = user.ratings.length > 0
         ? user.ratings.reduce((sum, r) => sum + r.rating, 0) / user.ratings.length
         : 0;
+
+      // Calculate rating distribution
+      const ratingDistribution: Record<string, number> = {};
+      user.ratings.forEach((r) => {
+        const rating = Math.round(r.rating);
+        ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
+      });
+
+      request.log.info('[GET /profile] Rating distribution keys: ' + Object.keys(ratingDistribution).length);
 
       // Calculate average hype (from predictions)
       const predictionsWithRating = user.predictions.filter(p => p.predictedRating !== null && p.predictedRating > 0);
@@ -572,18 +586,29 @@ export async function authRoutes(fastify: FastifyInstance) {
         ? predictionsWithRating.reduce((sum, p) => sum + (p.predictedRating || 0), 0) / predictionsWithRating.length
         : 0;
 
-      // Return user without ratings/predictions arrays, but with calculated averages
+      // Calculate hype distribution
+      const hypeDistribution: Record<string, number> = {};
+      predictionsWithRating.forEach((p) => {
+        const rating = Math.round(p.predictedRating || 0);
+        hypeDistribution[rating] = (hypeDistribution[rating] || 0) + 1;
+      });
+
+      // Return user without ratings/predictions arrays, but with calculated averages and distributions
       const { ratings, predictions, ...userWithoutArrays } = user;
 
       request.log.info('[GET /profile] Returning user avatar: ' + user.avatar);
       request.log.info('[GET /profile] Average rating: ' + averageRating);
       request.log.info('[GET /profile] Average hype: ' + averageHype);
+      request.log.info('[GET /profile] Rating distribution: ' + JSON.stringify(ratingDistribution));
+      request.log.info('[GET /profile] Hype distribution: ' + JSON.stringify(hypeDistribution));
 
       return reply.code(200).send({
         user: {
           ...userWithoutArrays,
           averageRating: Number(averageRating.toFixed(1)),
-          averageHype: Number(averageHype.toFixed(1))
+          averageHype: Number(averageHype.toFixed(1)),
+          ratingDistribution,
+          hypeDistribution
         }
       });
 
