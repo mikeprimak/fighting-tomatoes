@@ -1105,7 +1105,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Get all pre-fight comments
+      // Get all pre-fight comments with user hype ratings
       const comments = await fastify.prisma.preFightComment.findMany({
         where: {
           fightId,
@@ -1126,12 +1126,124 @@ export async function fightRoutes(fastify: FastifyInstance) {
         },
       });
 
+      // Get hype ratings for all commenters
+      const commenterIds = comments.map(c => c.userId);
+      const predictions = await fastify.prisma.fightPrediction.findMany({
+        where: {
+          fightId,
+          userId: { in: commenterIds },
+        },
+        select: {
+          userId: true,
+          predictedRating: true,
+        },
+      });
+
+      // Create a map of userId to hype rating
+      const hypeMap = new Map(predictions.map((p: { userId: string; predictedRating: number | null }) => [p.userId, p.predictedRating]));
+
+      // Get user's upvotes if authenticated
+      let userUpvotes: Set<string> = new Set();
+      if (currentUserId) {
+        const commentIds = comments.map(c => c.id);
+        const votes = await fastify.prisma.preFightCommentVote.findMany({
+          where: {
+            userId: currentUserId,
+            commentId: { in: commentIds },
+          },
+          select: {
+            commentId: true,
+          },
+        });
+        userUpvotes = new Set(votes.map(v => v.commentId));
+      }
+
+      // Add hype ratings and upvote info to comments
+      const commentsWithHype = comments.map(comment => ({
+        ...comment,
+        hypeRating: hypeMap.get(comment.userId) || null,
+        userHasUpvoted: userUpvotes.has(comment.id),
+      }));
+
       return reply.code(200).send({
-        comments,
-        userComment: currentUserId ? comments.find(c => c.userId === currentUserId) : null,
+        comments: commentsWithHype,
+        userComment: currentUserId ? commentsWithHype.find(c => c.userId === currentUserId) : null,
       });
     } catch (error) {
       console.error('Get pre-fight comments error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // POST /api/fights/:id/pre-flight-comments/:commentId/upvote - Toggle upvote on a pre-flight comment
+  fastify.post('/fights/:id/pre-fight-comments/:commentId/upvote', { preHandler: authenticateUser }, async (request, reply) => {
+    try {
+      const { commentId } = request.params as { id: string; commentId: string };
+      const userId = (request as any).user.id;
+
+      // Check if comment exists
+      const comment = await fastify.prisma.preFightComment.findUnique({
+        where: { id: commentId },
+      });
+
+      if (!comment) {
+        return reply.code(404).send({
+          error: 'Comment not found',
+          code: 'COMMENT_NOT_FOUND',
+        });
+      }
+
+      // Check if user has already upvoted
+      const existingVote = await fastify.prisma.preFightCommentVote.findUnique({
+        where: {
+          userId_commentId: {
+            userId,
+            commentId,
+          },
+        },
+      });
+
+      if (existingVote) {
+        // Remove upvote
+        await fastify.prisma.$transaction([
+          fastify.prisma.preFightCommentVote.delete({
+            where: { id: existingVote.id },
+          }),
+          fastify.prisma.preFightComment.update({
+            where: { id: commentId },
+            data: { upvotes: { decrement: 1 } },
+          }),
+        ]);
+
+        return reply.code(200).send({
+          message: 'Upvote removed',
+          upvoted: false,
+        });
+      } else {
+        // Add upvote
+        await fastify.prisma.$transaction([
+          fastify.prisma.preFightCommentVote.create({
+            data: {
+              userId,
+              commentId,
+            },
+          }),
+          fastify.prisma.preFightComment.update({
+            where: { id: commentId },
+            data: { upvotes: { increment: 1 } },
+          }),
+        ]);
+
+        return reply.code(200).send({
+          message: 'Upvote added',
+          upvoted: true,
+        });
+      }
+    } catch (error) {
+      console.error('Upvote pre-flight comment error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
