@@ -17,6 +17,7 @@ interface PreFightCommentCardProps {
   };
   onUpvote?: () => void;
   onFlag?: () => void;
+  onEdit?: () => void;
   isUpvoting?: boolean;
   isFlagging?: boolean;
   isAuthenticated?: boolean;
@@ -27,6 +28,7 @@ export function PreFightCommentCard({
   comment,
   onUpvote,
   onFlag,
+  onEdit,
   isUpvoting = false,
   isFlagging = false,
   isAuthenticated = false,
@@ -81,7 +83,22 @@ export function PreFightCommentCard({
                   </Text>
                 </View>
               )}
-              {onFlag && (
+              {showMyComment && onEdit && (
+                <TouchableOpacity
+                  onPress={onEdit}
+                  style={styles.editButton}
+                >
+                  <FontAwesome
+                    name="edit"
+                    size={12}
+                    color={colors.tint}
+                  />
+                  <Text style={[styles.editButtonText, { color: colors.tint }]}>
+                    Edit
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {onFlag && !showMyComment && (
                 <TouchableOpacity
                   onPress={onFlag}
                   disabled={!isAuthenticated || isFlagging}
@@ -138,6 +155,16 @@ const styles = StyleSheet.create({
   },
   flagButton: {
     padding: 4,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    padding: 4,
+  },
+  editButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   commentHeader: {
     flexDirection: 'row',

@@ -91,7 +91,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   // Pre-flight comment state
   const [preFightComment, setPreFightComment] = useState<string>('');
   const [isCommentFocused, setIsCommentFocused] = useState(false);
-  const commentSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isEditingComment, setIsEditingComment] = useState(false);
 
   // Wheel animation for number display
   const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 120 : 1200)).current;
@@ -258,25 +258,14 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
     onSuccess: () => {
       // Invalidate pre-flight comments query to refresh the comment list
       queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
-      // Don't clear the input - user can edit their comment later
+      // Exit edit mode after successful save
+      setIsEditingComment(false);
     },
   });
 
-  // Auto-save comment handler
-  const handleCommentChange = (text: string) => {
-    setPreFightComment(text);
-
-    // Clear existing timer
-    if (commentSaveTimerRef.current) {
-      clearTimeout(commentSaveTimerRef.current);
-    }
-
-    // Set new timer to save after 1 second of inactivity
-    if (text.trim().length > 0) {
-      commentSaveTimerRef.current = setTimeout(() => {
-        saveCommentMutation.mutate(text.trim());
-      }, 1000);
-    }
+  // Manual save handler for comment
+  const handleSaveComment = () => {
+    saveCommentMutation.mutate(preFightComment.trim());
   };
 
   // Animated wheel effect for number display
@@ -509,43 +498,64 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         </View>
       </View>
 
-      {/* Hype Comments */}
+      {/* Pre-Fight Comments */}
       <View style={[styles.sectionNoBorder, { marginTop: -25 }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Hype Comments
+          Pre-Fight Comments
         </Text>
 
-        {/* Comment Input */}
-        <View style={[
-          styles.commentInputContainer,
-          {
-            backgroundColor: colors.card,
-            borderColor: isCommentFocused ? colors.tint : colors.border,
-          }
-        ]}>
-          <TextInput
-            style={[
-              styles.commentInput,
-              { color: colors.text }
-            ]}
-            placeholder="Share why you're excited for this fight..."
-            placeholderTextColor={colors.textSecondary}
-            multiline
-            numberOfLines={4}
-            maxLength={500}
-            value={preFightComment}
-            onChangeText={handleCommentChange}
-            onFocus={() => setIsCommentFocused(true)}
-            onBlur={() => setIsCommentFocused(false)}
-          />
-        </View>
+        {/* Show comment input only if user hasn't posted yet OR is editing */}
+        {(!preFightCommentsData?.userComment || isEditingComment) && (
+          <View>
+            <View style={[
+              styles.commentInputContainer,
+              {
+                backgroundColor: colors.card,
+                borderColor: isCommentFocused ? colors.tint : colors.border,
+              }
+            ]}>
+              <TextInput
+                style={[
+                  styles.commentInput,
+                  { color: colors.text }
+                ]}
+                placeholder="Share why you're excited for this fight..."
+                placeholderTextColor={colors.textSecondary}
+                multiline
+                numberOfLines={4}
+                maxLength={500}
+                value={preFightComment}
+                onChangeText={setPreFightComment}
+                onFocus={() => setIsCommentFocused(true)}
+                onBlur={() => setIsCommentFocused(false)}
+              />
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.saveCommentButton,
+                {
+                  backgroundColor: colors.tint,
+                }
+              ]}
+              disabled={saveCommentMutation.isPending}
+              onPress={handleSaveComment}
+            >
+              <Text style={[
+                styles.saveCommentButtonText,
+                { color: '#fff' }
+              ]}>
+                {saveCommentMutation.isPending ? 'Saving...' : 'Save Comment'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Display All Pre-Fight Comments */}
         {preFightCommentsData && preFightCommentsData.comments && preFightCommentsData.comments.length > 0 && (
           <View style={{ marginTop: 16 }}>
 
-          {/* User's own comment first (if exists) */}
-          {preFightCommentsData.userComment && (
+          {/* User's own comment first (if exists and not editing) */}
+          {preFightCommentsData.userComment && !isEditingComment && (
             <PreFightCommentCard
               comment={{
                 id: preFightCommentsData.userComment.id,
@@ -557,6 +567,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                   displayName: preFightCommentsData.userComment.user.displayName,
                 },
               }}
+              onEdit={() => setIsEditingComment(true)}
               isAuthenticated={isAuthenticated}
               showMyComment={true}
             />
@@ -736,5 +747,16 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: 'top',
     paddingTop: 8,
+  },
+  saveCommentButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  saveCommentButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
