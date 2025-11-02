@@ -12,10 +12,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
+import { useAuth } from '../../store/AuthContext';
 import FightDisplayCard, { FightData } from '../../components/FightDisplayCardNew';
+import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
+import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import RateFightModal from '../../components/RateFightModal';
+import { CommentCard, FlagReviewModal, CustomAlert } from '../../components';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { FontAwesome } from '@expo/vector-icons';
 
 type SortOption = 'newest' | 'rating' | 'aggregate' | 'upvotes' | 'rated-1' | 'rated-2' | 'rated-3' | 'rated-4' | 'rated-5' | 'rated-6' | 'rated-7' | 'rated-8' | 'rated-9' | 'rated-10';
@@ -24,12 +29,18 @@ type FilterType = 'ratings' | 'hype' | 'comments';
 export default function RatingsActivityScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
+  const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
   const [filterType, setFilterType] = useState<FilterType>('ratings');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [showFilterTypeMenu, setShowFilterTypeMenu] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [selectedFight, setSelectedFight] = useState<FightData | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [flagModalVisible, setFlagModalVisible] = useState(false);
+  const [reviewToFlag, setReviewToFlag] = useState<{ fightId: string; reviewId: string } | null>(null);
+  const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
 
   // Fetch user's rated fights
   const { data, isLoading, error, refetch } = useQuery({
@@ -59,28 +70,100 @@ export default function RatingsActivityScreen() {
     refetch(); // Refresh the list after modal closes
   };
 
+  // Upvote mutation for comments
+  const upvoteMutation = useMutation({
+    mutationFn: ({ fightId, reviewId }: { fightId: string; reviewId: string }) =>
+      apiService.toggleReviewUpvote(fightId, reviewId),
+    onMutate: async ({ reviewId }) => {
+      setUpvotingCommentId(reviewId);
+    },
+    onSuccess: () => {
+      refetch();
+    },
+    onSettled: () => {
+      setUpvotingCommentId(null);
+    },
+  });
+
+  // Flag review mutation for comments
+  const flagReviewMutation = useMutation({
+    mutationFn: ({ fightId, reviewId, reason }: { fightId: string; reviewId: string; reason: string }) =>
+      apiService.flagReview(fightId, reviewId, reason),
+    onSuccess: () => {
+      showSuccess('Review has been flagged for moderation');
+      setFlagModalVisible(false);
+      setReviewToFlag(null);
+    },
+    onError: (error: any) => {
+      showError(error?.error || 'Failed to flag review');
+    },
+  });
+
+  const handleFlagReview = (fightId: string, reviewId: string) => {
+    setReviewToFlag({ fightId, reviewId });
+    setFlagModalVisible(true);
+  };
+
+  const submitFlagReview = (reason: string) => {
+    if (reviewToFlag) {
+      flagReviewMutation.mutate({
+        fightId: reviewToFlag.fightId,
+        reviewId: reviewToFlag.reviewId,
+        reason
+      });
+    }
+  };
+
   const filterTypeOptions = [
     { value: 'ratings' as FilterType, label: 'My Ratings', icon: 'star' },
     { value: 'hype' as FilterType, label: 'My Hype', icon: 'fire' },
     { value: 'comments' as FilterType, label: 'My Comments', icon: 'comment' },
   ];
 
-  const sortOptions = [
-    { value: 'newest' as SortOption, label: 'Newest First', icon: 'clock-o' },
-    { value: 'rating' as SortOption, label: 'My Rating (High to Low)', icon: 'star' },
-    { value: 'aggregate' as SortOption, label: 'Community Rating (High to Low)', icon: 'users' },
-    { value: 'upvotes' as SortOption, label: 'Most Upvoted Reviews', icon: 'thumbs-up' },
-    { value: 'rated-10' as SortOption, label: 'I rated 10', icon: 'star' },
-    { value: 'rated-9' as SortOption, label: 'I rated 9', icon: 'star' },
-    { value: 'rated-8' as SortOption, label: 'I rated 8', icon: 'star' },
-    { value: 'rated-7' as SortOption, label: 'I rated 7', icon: 'star' },
-    { value: 'rated-6' as SortOption, label: 'I rated 6', icon: 'star' },
-    { value: 'rated-5' as SortOption, label: 'I rated 5', icon: 'star' },
-    { value: 'rated-4' as SortOption, label: 'I rated 4', icon: 'star' },
-    { value: 'rated-3' as SortOption, label: 'I rated 3', icon: 'star' },
-    { value: 'rated-2' as SortOption, label: 'I rated 2', icon: 'star' },
-    { value: 'rated-1' as SortOption, label: 'I rated 1', icon: 'star' },
-  ];
+  // Sort options change based on filter type
+  const sortOptions = React.useMemo(() => {
+    if (filterType === 'comments') {
+      return [
+        { value: 'newest' as SortOption, label: 'Newest First', icon: 'clock-o' },
+        { value: 'upvotes' as SortOption, label: 'Most Upvotes', icon: 'thumbs-up' },
+        { value: 'rating' as SortOption, label: 'My Fight Rating', icon: 'star' },
+      ];
+    }
+
+    if (filterType === 'hype') {
+      return [
+        { value: 'newest' as SortOption, label: 'Newest First', icon: 'clock-o' },
+        { value: 'rating' as SortOption, label: 'My Hype (High to Low)', icon: 'fire' },
+        { value: 'aggregate' as SortOption, label: 'Community Hype (High to Low)', icon: 'users' },
+        { value: 'rated-10' as SortOption, label: 'I hyped 10', icon: 'fire' },
+        { value: 'rated-9' as SortOption, label: 'I hyped 9', icon: 'fire' },
+        { value: 'rated-8' as SortOption, label: 'I hyped 8', icon: 'fire' },
+        { value: 'rated-7' as SortOption, label: 'I hyped 7', icon: 'fire' },
+        { value: 'rated-6' as SortOption, label: 'I hyped 6', icon: 'fire' },
+        { value: 'rated-5' as SortOption, label: 'I hyped 5', icon: 'fire' },
+        { value: 'rated-4' as SortOption, label: 'I hyped 4', icon: 'fire' },
+        { value: 'rated-3' as SortOption, label: 'I hyped 3', icon: 'fire' },
+        { value: 'rated-2' as SortOption, label: 'I hyped 2', icon: 'fire' },
+        { value: 'rated-1' as SortOption, label: 'I hyped 1', icon: 'fire' },
+      ];
+    }
+
+    return [
+      { value: 'newest' as SortOption, label: 'Newest First', icon: 'clock-o' },
+      { value: 'rating' as SortOption, label: 'My Rating (High to Low)', icon: 'star' },
+      { value: 'aggregate' as SortOption, label: 'Community Rating (High to Low)', icon: 'users' },
+      { value: 'rated-10' as SortOption, label: 'I rated 10', icon: 'star' },
+      { value: 'rated-9' as SortOption, label: 'I rated 9', icon: 'star' },
+      { value: 'rated-8' as SortOption, label: 'I rated 8', icon: 'star' },
+      { value: 'rated-7' as SortOption, label: 'I rated 7', icon: 'star' },
+      { value: 'rated-6' as SortOption, label: 'I rated 6', icon: 'star' },
+      { value: 'rated-5' as SortOption, label: 'I rated 5', icon: 'star' },
+      { value: 'rated-4' as SortOption, label: 'I rated 4', icon: 'star' },
+      { value: 'rated-3' as SortOption, label: 'I rated 3', icon: 'star' },
+      { value: 'rated-2' as SortOption, label: 'I rated 2', icon: 'star' },
+      { value: 'rated-1' as SortOption, label: 'I rated 1', icon: 'star' },
+    ];
+  }, [filterType]);
 
   const styles = createStyles(colors);
 
@@ -139,7 +222,7 @@ export default function RatingsActivityScreen() {
           headerShadowVisible: false,
         }}
       />
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
         {isLoading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
@@ -176,26 +259,116 @@ export default function RatingsActivityScreen() {
             <FlatList
               data={data.fights}
               keyExtractor={(item: FightData) => item.id}
-              renderItem={({ item }) => (
-                <View style={styles.fightCardContainer}>
-                  <FightDisplayCard
-                    fight={item}
-                    onPress={handleFightPress}
-                    showEvent={true}
-                  />
-                </View>
-              )}
+              renderItem={({ item }) => {
+                // Render hype cards without wrapper (to extend to edges like community screen)
+                if (filterType === 'hype') {
+                  return (
+                    <UpcomingFightCard
+                      fight={item}
+                      onPress={handleFightPress}
+                      showEvent={true}
+                    />
+                  );
+                }
+
+                // Render rating cards without wrapper (to extend to edges like community screen)
+                if (filterType === 'ratings') {
+                  return (
+                    <CompletedFightCard
+                      fight={item}
+                      onPress={handleFightPress}
+                      showEvent={true}
+                    />
+                  );
+                }
+
+                // Render comment cards with wrapper
+                return (
+                  <View style={styles.fightCardContainer}>
+                    {filterType === 'comments' && item.userReview ? (
+                      <CommentCard
+                        comment={{
+                          ...item.userReview,
+                          user: {
+                            displayName: 'Me'
+                          },
+                          userHasUpvoted: item.userReview.userHasUpvoted || false,
+                          fight: {
+                            id: item.id,
+                            fighter1Name: `${item.fighter1.firstName} ${item.fighter1.lastName}`,
+                            fighter2Name: `${item.fighter2.firstName} ${item.fighter2.lastName}`,
+                            eventName: item.event.name,
+                          }
+                        }}
+                        onPress={() => router.push(`/fight/${item.id}` as any)}
+                        onUpvote={() => upvoteMutation.mutate({ fightId: item.id, reviewId: item.userReview.id })}
+                        onFlag={() => handleFlagReview(item.id, item.userReview.id)}
+                        isUpvoting={upvotingCommentId === item.userReview.id}
+                        isFlagging={flagReviewMutation.isPending && reviewToFlag?.reviewId === item.userReview.id}
+                        isAuthenticated={isAuthenticated}
+                        showMyReview={true}
+                      />
+                    ) : (
+                      <FightDisplayCard
+                        fight={item}
+                        onPress={handleFightPress}
+                        showEvent={true}
+                      />
+                    )}
+                  </View>
+                );
+              }}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
               ListHeaderComponent={
-                <>
+                <View style={styles.headerContainer}>
                   <View style={styles.filtersRow}>
                     {renderFilterTypeButton()}
                   </View>
                   <View style={styles.filtersRow}>
                     {renderSortButton()}
                   </View>
-                </>
+                  {filterType === 'ratings' && (
+                    <View style={styles.columnHeadersContainer}>
+                      <View style={styles.columnHeadersLeft}>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          ALL
+                        </Text>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          RATINGS
+                        </Text>
+                      </View>
+                      <View style={styles.columnHeadersRight}>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          MY
+                        </Text>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          RATING
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                  {filterType === 'hype' && (
+                    <View style={styles.columnHeadersContainer}>
+                      <View style={styles.columnHeadersUpcoming}>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          ALL
+                        </Text>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          HYPE
+                        </Text>
+                      </View>
+                      <View style={styles.columnHeadersUpcomingRight}>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          MY
+                        </Text>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          HYPE
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                </View>
               }
             />
 
@@ -266,6 +439,18 @@ export default function RatingsActivityScreen() {
         fight={selectedFight}
         onClose={handleCloseModal}
       />
+
+      {/* Flag Review Modal */}
+      <FlagReviewModal
+        visible={flagModalVisible}
+        onClose={() => setFlagModalVisible(false)}
+        onSubmit={submitFlagReview}
+        isLoading={flagReviewMutation.isPending}
+        colorScheme={colorScheme}
+      />
+
+      {/* Custom Alert */}
+      <CustomAlert {...alertState} onDismiss={hideAlert} />
     </>
   );
 }
@@ -347,6 +532,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
   },
+  headerContainer: {
+    marginTop: 25,
+  },
   filtersRow: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -412,5 +600,48 @@ const createStyles = (colors: any) => StyleSheet.create({
   fightCardContainer: {
     marginBottom: 12,
     paddingHorizontal: 16,
+  },
+  columnHeadersContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  columnHeadersLeft: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginLeft: -14,
+    width: 60,
+    justifyContent: 'center',
+  },
+  columnHeadersRight: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginRight: -17,
+    width: 60,
+    justifyContent: 'center',
+  },
+  columnHeadersUpcoming: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginLeft: -11,
+    width: 40,
+    justifyContent: 'center',
+  },
+  columnHeadersUpcomingRight: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 0,
+    marginRight: -11,
+    width: 40,
+    justifyContent: 'center',
+  },
+  columnHeaderText: {
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
 });

@@ -111,7 +111,9 @@
       "Bash(wmic process where \"name=''node.exe''\" delete)",
       "Bash(PGPASSWORD=ft_user_pass123654 psql:*)",
       "Bash(wc:*)",
-      "Read(//c/**)"
+      "Read(//c/**)",
+      "Bash(nc:*)",
+      "Bash(git diff:*)"
     ],
     "deny": [],
     "ask": []

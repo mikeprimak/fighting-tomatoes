@@ -2171,6 +2171,12 @@ export async function fightRoutes(fastify: FastifyInstance) {
               upvotes: true,
               createdAt: true,
               updatedAt: true,
+              votes: {
+                where: { userId: currentUserId },
+                select: {
+                  isUpvote: true,
+                },
+              },
             },
           },
           tags: {
@@ -2199,9 +2205,41 @@ export async function fightRoutes(fastify: FastifyInstance) {
         },
       });
 
+      // Calculate aggregate hype for all fights
+      const aggregateHypePromises = fights.map(async (fight: any) => {
+        const allPredictions = await fastify.prisma.fightPrediction.findMany({
+          where: {
+            fightId: fight.id,
+            predictedRating: { not: null },
+          },
+          select: {
+            predictedRating: true,
+          },
+        });
+
+        const predictionsWithRating = allPredictions.filter(p => p.predictedRating !== null);
+        const averageHype = predictionsWithRating.length > 0
+          ? predictionsWithRating.reduce((sum, p) => sum + (p.predictedRating || 0), 0) / predictionsWithRating.length
+          : 0;
+
+        return {
+          fightId: fight.id,
+          averageHype: Math.round(averageHype * 10) / 10,
+          totalPredictions: predictionsWithRating.length,
+        };
+      });
+
+      const aggregateHypeResults = await Promise.all(aggregateHypePromises);
+      const hypeMap = new Map(aggregateHypeResults.map(r => [r.fightId, r]));
+
       // Transform fights data
       const transformedFights = fights.map((fight: any) => {
         const transformed = { ...fight };
+        const hypeStats = hypeMap.get(fight.id);
+
+        // Add aggregate hype stats
+        transformed.averageHype = hypeStats?.averageHype || 0;
+        transformed.totalPredictions = hypeStats?.totalPredictions || 0;
 
         // Transform user rating
         if (fight.ratings && fight.ratings.length > 0) {
@@ -2211,11 +2249,16 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
         // Transform user review
         if (fight.reviews && fight.reviews.length > 0) {
+          const review = fight.reviews[0];
+          const userHasUpvoted = review.votes && review.votes.length > 0 ? review.votes[0].isUpvote : false;
+
           transformed.userReview = {
-            content: fight.reviews[0].content,
-            rating: fight.reviews[0].rating,
-            upvotes: fight.reviews[0].upvotes,
-            createdAt: fight.reviews[0].createdAt,
+            id: review.id,
+            content: review.content,
+            rating: review.rating,
+            upvotes: review.upvotes,
+            createdAt: review.createdAt,
+            userHasUpvoted,
           };
         }
 
@@ -2245,19 +2288,29 @@ export async function fightRoutes(fastify: FastifyInstance) {
         return transformed;
       });
 
-      // Filter by rating if sortBy is a rated-X option
+      // Filter by rating/hype if sortBy is a rated-X option
       let filteredFights = transformedFights;
       if (query.sortBy.startsWith('rated-')) {
         const ratingValue = parseInt(query.sortBy.split('-')[1]);
-        filteredFights = transformedFights.filter(fight => fight.userRating === ratingValue);
+        if (query.filterType === 'hype') {
+          filteredFights = transformedFights.filter(fight => fight.userHype === ratingValue);
+        } else {
+          filteredFights = transformedFights.filter(fight => fight.userRating === ratingValue);
+        }
       }
 
       // Sort fights based on sortBy parameter
       filteredFights.sort((a, b) => {
-        // For rated-X filters, sort by newest within that rating
+        // For rated-X filters, sort by newest within that rating/hype
         if (query.sortBy.startsWith('rated-')) {
-          const aDate = a.userRatingCreatedAt || a.userReview?.createdAt || new Date(0);
-          const bDate = b.userRatingCreatedAt || b.userReview?.createdAt || new Date(0);
+          let aDate, bDate;
+          if (query.filterType === 'hype') {
+            aDate = a.userHypeCreatedAt || new Date(0);
+            bDate = b.userHypeCreatedAt || new Date(0);
+          } else {
+            aDate = a.userRatingCreatedAt || a.userReview?.createdAt || new Date(0);
+            bDate = b.userRatingCreatedAt || b.userReview?.createdAt || new Date(0);
+          }
           return new Date(bDate).getTime() - new Date(aDate).getTime();
         }
 
@@ -2271,8 +2324,16 @@ export async function fightRoutes(fastify: FastifyInstance) {
             if (query.filterType === 'hype') {
               return (b.userHype || 0) - (a.userHype || 0);
             }
+            // For comments filter, sort by the rating in the review
+            if (query.filterType === 'comments') {
+              return (b.userReview?.rating || 0) - (a.userReview?.rating || 0);
+            }
             return (b.userRating || 0) - (a.userRating || 0);
           case 'aggregate':
+            // For hype filter, sort by community hype instead of rating
+            if (query.filterType === 'hype') {
+              return (b.averageHype || 0) - (a.averageHype || 0);
+            }
             return (b.averageRating || 0) - (a.averageRating || 0);
           case 'upvotes':
             return (b.userReview?.upvotes || 0) - (a.userReview?.upvotes || 0);
