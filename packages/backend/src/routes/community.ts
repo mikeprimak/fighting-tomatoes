@@ -280,6 +280,8 @@ export default async function communityRoutes(fastify: FastifyInstance) {
     preHandler: optionalAuthenticateMiddleware,
   }, async (request, reply) => {
     try {
+      const userId = request.user?.id;
+      console.log('[Top Upcoming Fights] userId:', userId);
       const now = new Date();
       const twentyDaysFromNow = new Date();
       twentyDaysFromNow.setDate(now.getDate() + 20);
@@ -300,7 +302,18 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           fighter1: true,
           fighter2: true,
           event: true,
-          predictions: {
+          predictions: userId ? {
+            where: {
+              OR: [
+                { userId },
+                { predictedRating: { not: null } }
+              ]
+            },
+            select: {
+              predictedRating: true,
+              userId: true,
+            },
+          } : {
             where: {
               predictedRating: {
                 not: null,
@@ -313,23 +326,43 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Calculate average hype for each fight and sort
+      // Calculate average hype for each fight and add user hype
       const fightsWithHype = fights
         .map((fight: any) => {
-          const hypes = fight.predictions
+          const allHypes = fight.predictions
             .filter((p: any) => p.predictedRating != null)
             .map((p: any) => p.predictedRating);
-          const averageHype = hypes.length > 0
-            ? hypes.reduce((sum: number, h: number) => sum + h, 0) / hypes.length
+          const averageHype = allHypes.length > 0
+            ? allHypes.reduce((sum: number, h: number) => sum + h, 0) / allHypes.length
             : 0;
+
+          // Get user's hype if authenticated
+          const userPrediction = userId
+            ? fight.predictions.find((p: any) => p.userId === userId)
+            : null;
+          const userHypePrediction = userPrediction?.predictedRating || null;
+
+          if (userId && fight.id === '68606cbb-5e84-4bba-8c80-9bdd2e691994') {
+            console.log('[Shevchenko vs Zhang] userPrediction:', userPrediction);
+            console.log('[Shevchenko vs Zhang] userHypePrediction:', userHypePrediction);
+            console.log('[Shevchenko vs Zhang] all predictions:', fight.predictions);
+          }
+
           return {
             ...fight,
             predictions: undefined, // Remove from response
             averageHype,
+            userHypePrediction,
           };
         })
         .sort((a: any, b: any) => b.averageHype - a.averageHype)
         .slice(0, 7);
+
+      console.log('[Top Upcoming Fights] Returning data for first fight:', {
+        id: fightsWithHype[0]?.id,
+        userHypePrediction: fightsWithHype[0]?.userHypePrediction,
+        averageHype: fightsWithHype[0]?.averageHype,
+      });
 
       return reply.send({ data: fightsWithHype });
     } catch (error) {
@@ -346,6 +379,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
     preHandler: optionalAuthenticateMiddleware,
   }, async (request, reply) => {
     try {
+      const userId = request.user?.id;
       const now = new Date();
       const twentyDaysAgo = new Date();
       twentyDaysAgo.setDate(now.getDate() - 20);
@@ -367,6 +401,14 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           fighter1: true,
           fighter2: true,
           event: true,
+          ratings: userId ? {
+            where: {
+              userId,
+            },
+            select: {
+              rating: true,
+            },
+          } : false,
         },
         orderBy: {
           averageRating: 'desc',
@@ -374,7 +416,20 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         take: 7,
       });
 
-      return reply.send({ data: fights });
+      // Add user rating to each fight
+      const fightsWithUserData = fights.map((fight: any) => {
+        const userRating = userId && fight.ratings?.length > 0
+          ? fight.ratings[0].rating
+          : null;
+
+        return {
+          ...fight,
+          ratings: undefined, // Remove from response
+          userRating,
+        };
+      });
+
+      return reply.send({ data: fightsWithUserData });
     } catch (error) {
       console.error('Error fetching top recent fights:', error);
       return reply.status(500).send({

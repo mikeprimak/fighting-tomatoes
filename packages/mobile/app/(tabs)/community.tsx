@@ -90,14 +90,14 @@ export default function CommunityScreen() {
 
   // Fetch top upcoming fights
   const { data: topUpcomingFights, isLoading: isTopUpcomingLoading } = useQuery({
-    queryKey: ['topUpcomingFights'],
+    queryKey: ['topUpcomingFights', isAuthenticated],
     queryFn: () => apiService.getTopUpcomingFights(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   // Fetch top recent fights
   const { data: topRecentFights, isLoading: isTopRecentLoading } = useQuery({
-    queryKey: ['topRecentFights'],
+    queryKey: ['topRecentFights', isAuthenticated],
     queryFn: () => apiService.getTopRecentFights(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -439,14 +439,25 @@ export default function CommunityScreen() {
               <ActivityIndicator size="small" color={colors.primary} />
             </View>
           ) : topUpcomingFights && topUpcomingFights.data.length > 0 ? (
-            topUpcomingFights.data.map((fight: any) => (
-              <UpcomingFightCard
-                key={fight.id}
-                fight={fight}
-                onPress={() => router.push(`/fight/${fight.id}` as any)}
-                showEvent={true}
-              />
-            ))
+            topUpcomingFights.data.map((fight: any) => {
+              if (fight.id === '68606cbb-5e84-4bba-8c80-9bdd2e691994') {
+                console.log('[Community Screen] Shevchenko vs Zhang fight data:', {
+                  id: fight.id,
+                  userHypePrediction: fight.userHypePrediction,
+                  averageHype: fight.averageHype,
+                  fighter1: fight.fighter1?.firstName + ' ' + fight.fighter1?.lastName,
+                  fighter2: fight.fighter2?.firstName + ' ' + fight.fighter2?.lastName,
+                });
+              }
+              return (
+                <UpcomingFightCard
+                  key={fight.id}
+                  fight={fight}
+                  onPress={() => router.push(`/fight/${fight.id}` as any)}
+                  showEvent={true}
+                />
+              );
+            })
           ) : (
             <View style={styles.card}>
               <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
