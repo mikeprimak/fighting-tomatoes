@@ -148,10 +148,20 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       });
     },
     onSuccess: () => {
+      // Invalidate fight-specific queries
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
+
+      // Invalidate list queries that show this fight
       queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });
+      queryClient.invalidateQueries({ queryKey: ['hotPredictions'] });
+      queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
+      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+
       onPredictionSuccess?.();
     },
   });
@@ -168,10 +178,20 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       });
     },
     onSuccess: () => {
+      // Invalidate fight-specific queries
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
+
+      // Invalidate list queries that show this fight
       queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });
+      queryClient.invalidateQueries({ queryKey: ['hotPredictions'] });
+      queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
+      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+
       onPredictionSuccess?.();
     },
   });
@@ -188,10 +208,20 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       });
     },
     onSuccess: () => {
+      // Invalidate fight-specific queries
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
+
+      // Invalidate list queries that show this fight
       queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });
+      queryClient.invalidateQueries({ queryKey: ['hotPredictions'] });
+      queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
+      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+
       onPredictionSuccess?.();
     },
   });
