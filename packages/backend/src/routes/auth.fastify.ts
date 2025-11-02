@@ -494,8 +494,17 @@ export async function authRoutes(fastify: FastifyInstance) {
                 totalReviews: { type: 'integer' },
                 averageRating: { type: 'number' },
                 averageHype: { type: 'number' },
+                totalHype: { type: 'integer' },
                 ratingDistribution: { type: 'object', additionalProperties: { type: 'number' } },
                 hypeDistribution: { type: 'object', additionalProperties: { type: 'number' } },
+                totalWinnerPredictions: { type: 'integer' },
+                completedWinnerPredictions: { type: 'integer' },
+                correctWinnerPredictions: { type: 'integer' },
+                winnerAccuracy: { type: 'number' },
+                totalMethodPredictions: { type: 'integer' },
+                completedMethodPredictions: { type: 'integer' },
+                correctMethodPredictions: { type: 'integer' },
+                methodAccuracy: { type: 'number' },
                 points: { type: 'integer' },
                 level: { type: 'integer' },
               },
@@ -550,7 +559,16 @@ export async function authRoutes(fastify: FastifyInstance) {
           },
           predictions: {
             select: {
-              predictedRating: true
+              predictedRating: true,
+              predictedWinner: true,
+              predictedMethod: true,
+              fight: {
+                select: {
+                  isComplete: true,
+                  winner: true,
+                  method: true
+                }
+              }
             }
           }
         }
@@ -593,6 +611,43 @@ export async function authRoutes(fastify: FastifyInstance) {
         hypeDistribution[rating] = (hypeDistribution[rating] || 0) + 1;
       });
 
+      // Calculate prediction statistics
+      const predictionsWithWinner = user.predictions.filter(p => p.predictedWinner);
+      // Only count fights that are complete and have a decisive winner (not draw/nc)
+      const completedPredictions = predictionsWithWinner.filter(p =>
+        p.fight.isComplete &&
+        p.fight.winner &&
+        p.fight.winner !== 'draw' &&
+        p.fight.winner !== 'nc'
+      );
+      const correctWinnerPredictions = completedPredictions.filter(p => p.predictedWinner === p.fight.winner);
+
+      const predictionsWithMethod = user.predictions.filter(p => p.predictedWinner && p.predictedMethod);
+      const completedMethodPredictions = predictionsWithMethod.filter(p =>
+        p.fight.isComplete &&
+        p.fight.winner &&
+        p.fight.winner !== 'draw' &&
+        p.fight.winner !== 'nc' &&
+        p.fight.method
+      );
+      const correctMethodPredictions = completedMethodPredictions.filter(p =>
+        p.predictedWinner === p.fight.winner && p.predictedMethod === p.fight.method
+      );
+
+      const totalWinnerPredictions = predictionsWithWinner.length;
+      const completedWinnerPredictions = completedPredictions.length;
+      const correctWinnerCount = correctWinnerPredictions.length;
+      const winnerAccuracy = completedWinnerPredictions > 0
+        ? (correctWinnerCount / completedWinnerPredictions) * 100
+        : 0;
+
+      const totalMethodPredictions = predictionsWithMethod.length;
+      const completedMethodPredictionsCount = completedMethodPredictions.length;
+      const correctMethodCount = correctMethodPredictions.length;
+      const methodAccuracy = completedMethodPredictionsCount > 0
+        ? (correctMethodCount / completedMethodPredictionsCount) * 100
+        : 0;
+
       // Return user without ratings/predictions arrays, but with calculated averages and distributions
       const { ratings, predictions, ...userWithoutArrays } = user;
 
@@ -607,8 +662,17 @@ export async function authRoutes(fastify: FastifyInstance) {
           ...userWithoutArrays,
           averageRating: Number(averageRating.toFixed(1)),
           averageHype: Number(averageHype.toFixed(1)),
+          totalHype: predictionsWithRating.length,
           ratingDistribution,
-          hypeDistribution
+          hypeDistribution,
+          totalWinnerPredictions,
+          completedWinnerPredictions,
+          correctWinnerPredictions: correctWinnerCount,
+          winnerAccuracy: Number(winnerAccuracy.toFixed(1)),
+          totalMethodPredictions,
+          completedMethodPredictions: completedMethodPredictionsCount,
+          correctMethodPredictions: correctMethodCount,
+          methodAccuracy: Number(methodAccuracy.toFixed(1))
         }
       });
 

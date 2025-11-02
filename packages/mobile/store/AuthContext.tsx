@@ -20,8 +20,17 @@ interface User {
   totalReviews?: number;
   averageRating?: number;
   averageHype?: number;
+  totalHype?: number;
   ratingDistribution?: Record<string, number>;
   hypeDistribution?: Record<string, number>;
+  totalWinnerPredictions?: number;
+  completedWinnerPredictions?: number;
+  correctWinnerPredictions?: number;
+  winnerAccuracy?: number;
+  totalMethodPredictions?: number;
+  completedMethodPredictions?: number;
+  correctMethodPredictions?: number;
+  methodAccuracy?: number;
   points?: number;
   level?: number;
 }

@@ -94,15 +94,15 @@ export default function ProfileScreen() {
 
       if (i < fullStars) {
         stars.push(
-          <FontAwesome key={i} name="star" size={16} color={starColor} />
+          <FontAwesome key={i} name="star" size={20} color={starColor} />
         );
       } else if (i === fullStars && hasHalfStar) {
         stars.push(
-          <FontAwesome key={i} name="star-half-o" size={16} color={starColor} />
+          <FontAwesome key={i} name="star-half-o" size={20} color={starColor} />
         );
       } else {
         stars.push(
-          <FontAwesome key={i} name="star-o" size={16} color={colors.textSecondary} style={{ opacity: 0.3 }} />
+          <FontAwesome key={i} name="star-o" size={20} color={colors.textSecondary} style={{ opacity: 0.3 }} />
         );
       }
     }
@@ -121,11 +121,11 @@ export default function ProfileScreen() {
 
       if (i < fullFlames) {
         flames.push(
-          <FontAwesome6 key={i} name="fire-flame-curved" size={16} color={flameColor} solid />
+          <FontAwesome6 key={i} name="fire-flame-curved" size={20} color={flameColor} solid />
         );
       } else {
         flames.push(
-          <FontAwesome6 key={i} name="fire-flame-curved" size={16} color={colors.textSecondary} style={{ opacity: 0.3 }} />
+          <FontAwesome6 key={i} name="fire-flame-curved" size={20} color={colors.textSecondary} style={{ opacity: 0.3 }} />
         );
       }
     }
@@ -180,52 +180,39 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Profile Header */}
         <View style={styles.header}>
           <Text style={[styles.name, { color: colors.text }]}>
-            {user?.firstName && user?.lastName
-              ? `${user.firstName} ${user.lastName}`
-              : user?.displayName || 'User'
-            }
-          </Text>
-          <Text style={[styles.username, { color: colors.textSecondary }]}>
-            {user?.displayName && `@${user.displayName}`}
-          </Text>
-          <Text style={[styles.email, { color: colors.textSecondary }]}>
-            {user?.email}
+            {user?.displayName || user?.firstName || 'User'}
           </Text>
         </View>
 
-        {/* Profile Stats */}
-        <View style={styles.statsContainer}>
-          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>{user?.totalRatings || 0}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Fights Rated</Text>
-          </View>
-          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.statValue, { color: colors.primary }]}>{user?.totalReviews || 0}</Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Reviews Written</Text>
-          </View>
-        </View>
+        {/* Predictions Section */}
+        <View style={[styles.predictionsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Fight Predictions</Text>
 
-        {/* Average Rating */}
-        <View style={[styles.averageRatingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.statLabel, { color: colors.textSecondary, marginBottom: 8 }]}>Average Rating</Text>
-          <View style={styles.starsContainer}>
-            {renderStarRating(user?.averageRating || 0)}
-          </View>
-          <Text style={[styles.ratingValue, { color: colors.text, marginTop: 8 }]}>
-            {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'} / 10
-          </Text>
-
-          {/* Rating Distribution Chart */}
-          <View style={styles.distributionContainer}>
-            <Text style={[styles.distributionLabel, { color: colors.textSecondary, marginTop: 12, marginBottom: 8 }]}>
-              Rating Distribution
+          {/* Winner Predictions */}
+          <View style={styles.predictionRow}>
+            <View style={styles.predictionInfo}>
+              <FontAwesome name="trophy" size={20} color={colors.primary} />
+              <Text style={[styles.predictionLabel, { color: colors.text, marginLeft: 8 }]}>Winner Predictions:</Text>
+            </View>
+            <Text style={[styles.predictionValue, { color: colors.text }]}>
+              {user?.winnerAccuracy ? `${user.winnerAccuracy.toFixed(0)}%` : '0%'} ({user?.correctWinnerPredictions || 0}/{user?.completedWinnerPredictions || 0})
             </Text>
-            {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
+          </View>
+
+          {/* Method Predictions */}
+          <View style={styles.predictionRow}>
+            <View style={styles.predictionInfo}>
+              <FontAwesome6 name="bullseye" size={20} color={colors.primary} />
+              <Text style={[styles.predictionLabel, { color: colors.text, marginLeft: 8 }]}>Winner + Method Predictions:</Text>
+            </View>
+            <Text style={[styles.predictionValue, { color: colors.text }]}>
+              {user?.methodAccuracy ? `${user.methodAccuracy.toFixed(0)}%` : '0%'} ({user?.correctMethodPredictions || 0}/{user?.completedMethodPredictions || 0})
+            </Text>
           </View>
         </View>
 
@@ -238,6 +225,9 @@ export default function ProfileScreen() {
           <Text style={[styles.ratingValue, { color: colors.text, marginTop: 8 }]}>
             {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'} / 10
           </Text>
+          <Text style={[styles.fightsRatedText, { color: colors.textSecondary, marginTop: 4 }]}>
+            {user?.totalHype || 0} fight{user?.totalHype === 1 ? '' : 's'} hyped
+          </Text>
 
           {/* Hype Distribution Chart */}
           <View style={styles.distributionContainer}>
@@ -245,6 +235,28 @@ export default function ProfileScreen() {
               Hype Distribution
             </Text>
             {renderDistributionChart(user?.hypeDistribution || {}, 'hype')}
+          </View>
+        </View>
+
+        {/* Average Rating */}
+        <View style={[styles.averageRatingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.statLabel, { color: colors.textSecondary, marginBottom: 8 }]}>Average Rating</Text>
+          <View style={styles.starsContainer}>
+            {renderStarRating(user?.averageRating || 0)}
+          </View>
+          <Text style={[styles.ratingValue, { color: colors.text, marginTop: 8 }]}>
+            {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'} / 10
+          </Text>
+          <Text style={[styles.fightsRatedText, { color: colors.textSecondary, marginTop: 4 }]}>
+            {user?.totalRatings || 0} fight{user?.totalRatings === 1 ? '' : 's'} rated
+          </Text>
+
+          {/* Rating Distribution Chart */}
+          <View style={styles.distributionContainer}>
+            <Text style={[styles.distributionLabel, { color: colors.textSecondary, marginTop: 12, marginBottom: 8 }]}>
+              Rating Distribution
+            </Text>
+            {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
           </View>
         </View>
 
@@ -291,11 +303,14 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 25,
+    paddingBottom: 16,
   },
   header: {
     alignItems: 'center',
     marginBottom: 24,
+    marginTop: 0,
   },
   name: {
     fontSize: 24,
@@ -336,6 +351,33 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 24,
   },
+  predictionsCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  predictionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  predictionInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  predictionLabel: {
+    fontSize: 14,
+  },
+  predictionValue: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
   starsContainer: {
     flexDirection: 'row',
     gap: 4,
@@ -343,6 +385,9 @@ const createStyles = (colors: any) => StyleSheet.create({
   ratingValue: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  fightsRatedText: {
+    fontSize: 12,
   },
   distributionContainer: {
     width: '100%',
