@@ -114,7 +114,8 @@
       "Read(//c/**)",
       "Bash(nc:*)",
       "Bash(git diff:*)",
-      "Bash(wmic process where \"name=''''node.exe''''\" get ProcessId,CommandLine)"
+      "Bash(wmic process where \"name=''''node.exe''''\" get ProcessId,CommandLine)",
+      "Bash(nul)"
     ],
     "deny": [],
     "ask": []

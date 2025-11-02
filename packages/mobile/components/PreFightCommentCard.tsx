@@ -71,7 +71,7 @@ export function PreFightCommentCard({
           {/* Header: Username and Hype Rating/Flag */}
           <View style={styles.commentHeader}>
             <Text style={[styles.commentAuthor, { color: showMyComment ? '#83B4F3' : '#FFFFFF' }]}>
-              {showMyComment ? 'My Comment' : comment.user.displayName}
+              {comment.user.displayName}
             </Text>
             <View style={styles.ratingFlagContainer}>
               {comment.hypeRating && comment.hypeRating > 0 && (
