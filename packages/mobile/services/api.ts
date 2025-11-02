@@ -944,6 +944,15 @@ class ApiService {
   }> {
     return this.makeRequest(`/fights/${fightId}/pre-fight-comments`);
   }
+
+  async flagPreFightComment(fightId: string, commentId: string, reason: string): Promise<{
+    message: string;
+  }> {
+    return this.makeRequest(`/fights/${fightId}/pre-flight-comments/${commentId}/flag`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
 }
 
 export const apiService = new ApiService();

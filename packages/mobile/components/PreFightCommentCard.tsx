@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 
@@ -77,7 +77,7 @@ export function PreFightCommentCard({
             <View style={styles.ratingFlagContainer}>
               {comment.hypeRating && comment.hypeRating > 0 && (
                 <View style={styles.inlineRating}>
-                  <FontAwesome name="fire" size={12} color={getHypeHeatmapColor(comment.hypeRating)} />
+                  <FontAwesome6 name="fire-flame-curved" size={12} color={getHypeHeatmapColor(comment.hypeRating)} />
                   <Text style={[styles.commentRatingText, { color: colors.text, fontSize: 12 }]}>
                     {comment.hypeRating}
                   </Text>

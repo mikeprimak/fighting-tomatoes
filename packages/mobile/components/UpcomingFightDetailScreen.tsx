@@ -22,6 +22,9 @@ import FightDetailsSection from './FightDetailsSection';
 import { useFightStats } from '../hooks/useFightStats';
 import { PreFightCommentCard } from './PreFightCommentCard';
 import { useAuth } from '../store/AuthContext';
+import { FlagReviewModal } from '.';
+import { useCustomAlert } from '../hooks/useCustomAlert';
+import { CustomAlert } from './CustomAlert';
 
 interface Fighter {
   id: string;
@@ -80,6 +83,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
+  const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
 
   // Local state for selections (will be saved immediately on change)
   const [selectedWinner, setSelectedWinner] = useState<string | null>(fight.userPredictedWinner || null);
@@ -92,6 +96,8 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const [preFightComment, setPreFightComment] = useState<string>('');
   const [isCommentFocused, setIsCommentFocused] = useState(false);
   const [isEditingComment, setIsEditingComment] = useState(false);
+  const [flagModalVisible, setFlagModalVisible] = useState(false);
+  const [commentToFlag, setCommentToFlag] = useState<string | null>(null);
 
   // Wheel animation for number display
   const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 120 : 1200)).current;
@@ -266,6 +272,32 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   // Manual save handler for comment
   const handleSaveComment = () => {
     saveCommentMutation.mutate(preFightComment.trim());
+  };
+
+  // Flag comment mutation
+  const flagCommentMutation = useMutation({
+    mutationFn: async ({ commentId, reason }: { commentId: string; reason: string }) => {
+      return apiService.flagPreFightComment(fight.id, commentId, reason);
+    },
+    onSuccess: () => {
+      showSuccess('Comment has been flagged for moderation');
+      setFlagModalVisible(false);
+      setCommentToFlag(null);
+    },
+    onError: (error: any) => {
+      showError(error?.error || 'Failed to flag comment');
+    },
+  });
+
+  const handleFlagComment = (commentId: string) => {
+    setCommentToFlag(commentId);
+    setFlagModalVisible(true);
+  };
+
+  const submitFlagComment = (reason: string) => {
+    if (commentToFlag) {
+      flagCommentMutation.mutate({ commentId: commentToFlag, reason });
+    }
   };
 
   // Animated wheel effect for number display
@@ -589,6 +621,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                     displayName: comment.user.displayName,
                   },
                 }}
+                onFlag={() => handleFlagComment(comment.id)}
                 isAuthenticated={isAuthenticated}
                 showMyComment={false}
               />
@@ -613,6 +646,21 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
       {/* Fight Details */}
       <FightDetailsSection fight={fight} />
+
+      {/* Flag Comment Modal */}
+      <FlagReviewModal
+        visible={flagModalVisible}
+        onClose={() => {
+          setFlagModalVisible(false);
+          setCommentToFlag(null);
+        }}
+        onSubmit={submitFlagComment}
+        isSubmitting={flagCommentMutation.isPending}
+        colorScheme={colorScheme ?? 'light'}
+      />
+
+      {/* Custom Alert */}
+      <CustomAlert {...alertState} onDismiss={hideAlert} />
     </ScrollView>
   );
 }
