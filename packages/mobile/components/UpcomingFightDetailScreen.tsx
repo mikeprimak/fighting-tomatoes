@@ -9,6 +9,7 @@ import {
   useColorScheme,
   Animated,
   Easing,
+  TextInput,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
@@ -83,6 +84,10 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const [selectedMethod, setSelectedMethod] = useState<'KO_TKO' | 'SUBMISSION' | 'DECISION' | null>(
     (fight.userPredictedMethod as 'KO_TKO' | 'SUBMISSION' | 'DECISION') || null
   );
+
+  // Pre-fight comment state
+  const [preFightComment, setPreFightComment] = useState<string>('');
+  const [isCommentFocused, setIsCommentFocused] = useState(false);
 
   // Wheel animation for number display
   const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 120 : 1200)).current;
@@ -456,6 +461,62 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         </View>
       </View>
 
+      {/* Why Are You Hyped For This Fight? */}
+      <View style={[styles.sectionNoBorder, { marginTop: -25 }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Why Are You Hyped For This Fight?
+        </Text>
+        <View style={[
+          styles.commentInputContainer,
+          {
+            backgroundColor: colors.card,
+            borderColor: isCommentFocused ? colors.tint : colors.border,
+          }
+        ]}>
+          <TextInput
+            style={[
+              styles.commentInput,
+              { color: colors.text }
+            ]}
+            placeholder="Share why you're excited for this fight..."
+            placeholderTextColor={colors.textSecondary}
+            multiline
+            numberOfLines={4}
+            maxLength={500}
+            value={preFightComment}
+            onChangeText={setPreFightComment}
+            onFocus={() => setIsCommentFocused(true)}
+            onBlur={() => setIsCommentFocused(false)}
+          />
+          <View style={styles.commentFooter}>
+            <Text style={[styles.characterCount, { color: colors.textSecondary }]}>
+              {preFightComment.length}/500
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.submitCommentButton,
+                {
+                  backgroundColor: preFightComment.trim().length > 0 ? colors.tint : colors.border,
+                  opacity: preFightComment.trim().length > 0 ? 1 : 0.5,
+                }
+              ]}
+              disabled={preFightComment.trim().length === 0}
+              onPress={() => {
+                // TODO: Submit comment to backend
+                console.log('Submit pre-fight comment:', preFightComment);
+              }}
+            >
+              <Text style={[
+                styles.submitCommentButtonText,
+                { color: preFightComment.trim().length > 0 ? '#fff' : colors.textSecondary }
+              ]}>
+                Post
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
       {/* All Predictions */}
       <View style={styles.sectionNoBorder}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -595,5 +656,34 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginLeft: 12,
     flex: 1,
+  },
+  commentInputContainer: {
+    borderRadius: 12,
+    borderWidth: 2,
+    padding: 12,
+  },
+  commentInput: {
+    fontSize: 15,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    paddingTop: 8,
+  },
+  commentFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  characterCount: {
+    fontSize: 12,
+  },
+  submitCommentButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  submitCommentButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

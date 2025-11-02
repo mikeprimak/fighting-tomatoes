@@ -1007,6 +1007,138 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // POST /api/fights/:id/pre-fight-comment - Create or update a pre-fight comment
+  fastify.post('/fights/:id/pre-fight-comment', {
+    preHandler: [authenticateUser, requireEmailVerification],
+  }, async (request, reply) => {
+    try {
+      const { id: fightId } = request.params as { id: string };
+      const { content } = request.body as { content: string };
+      const currentUserId = (request as any).user.id;
+
+      // Validate content
+      if (!content || content.trim().length === 0) {
+        return reply.code(400).send({
+          error: 'Comment content is required',
+          code: 'INVALID_CONTENT',
+        });
+      }
+
+      if (content.length > 500) {
+        return reply.code(400).send({
+          error: 'Comment must be 500 characters or less',
+          code: 'CONTENT_TOO_LONG',
+        });
+      }
+
+      // Check if fight exists
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Check if fight has already started
+      if (fight.hasStarted) {
+        return reply.code(400).send({
+          error: 'Cannot comment on a fight that has already started',
+          code: 'FIGHT_STARTED',
+        });
+      }
+
+      // Create or update pre-fight comment
+      const comment = await fastify.prisma.preFightComment.upsert({
+        where: {
+          userId_fightId: {
+            userId: currentUserId,
+            fightId,
+          },
+        },
+        create: {
+          userId: currentUserId,
+          fightId,
+          content: content.trim(),
+        },
+        update: {
+          content: content.trim(),
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              displayName: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+            },
+          },
+        },
+      });
+
+      return reply.code(201).send({
+        comment,
+        message: 'Pre-fight comment saved successfully',
+      });
+    } catch (error) {
+      console.error('Create pre-fight comment error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // GET /api/fights/:id/pre-fight-comments - Get all pre-fight comments for a fight
+  fastify.get('/fights/:id/pre-fight-comments', { preHandler: optionalAuth }, async (request, reply) => {
+    try {
+      const { id: fightId } = request.params as { id: string };
+      const currentUserId = (request as any).user?.id;
+
+      // Check if fight exists
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Get all pre-fight comments
+      const comments = await fastify.prisma.preFightComment.findMany({
+        where: {
+          fightId,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              displayName: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      return reply.code(200).send({
+        comments,
+        userComment: currentUserId ? comments.find(c => c.userId === currentUserId) : null,
+      });
+    } catch (error) {
+      console.error('Get pre-fight comments error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
   // GET /api/fights/:id/reviews - Get paginated reviews for a fight
   fastify.get('/fights/:id/reviews', { preHandler: optionalAuth }, async (request, reply) => {
     try {

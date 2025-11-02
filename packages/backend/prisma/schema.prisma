@@ -72,6 +72,7 @@ model User {
   // Relations
   ratings           FightRating[]
   reviews           FightReview[]
+  preFightComments  PreFightComment[]
   predictions       FightPrediction[]
   followedFighters  UserFighterFollow[]
   fightAlerts       FightAlert[]
@@ -303,6 +304,7 @@ model Fight {
   // Relations
   ratings         FightRating[]
   reviews         FightReview[]
+  preFightComments PreFightComment[]
   predictions     FightPrediction[]
   tags            FightTag[]
   alerts          FightAlert[]
@@ -410,6 +412,27 @@ model FightReview {
   
   @@unique([userId, fightId])
   @@map("fight_reviews")
+}
+
+// ============== PRE-FIGHT COMMENTS ==============
+model PreFightComment {
+  id              String    @id @default(uuid())
+
+  // Relationships
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fightId         String
+  fight           Fight     @relation(fields: [fightId], references: [id], onDelete: Cascade)
+
+  // Comment content
+  content         String    @db.Text
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, fightId])
+  @@map("pre_fight_comments")
 }
 
 model ReviewVote {
