@@ -94,15 +94,15 @@ export default function ProfileScreen() {
 
       if (i < fullStars) {
         stars.push(
-          <FontAwesome key={i} name="star" size={20} color={starColor} />
+          <FontAwesome key={i} name="star" size={28} color={starColor} />
         );
       } else if (i === fullStars && hasHalfStar) {
         stars.push(
-          <FontAwesome key={i} name="star-half-o" size={20} color={starColor} />
+          <FontAwesome key={i} name="star-half-o" size={28} color={starColor} />
         );
       } else {
         stars.push(
-          <FontAwesome key={i} name="star-o" size={20} color={colors.textSecondary} style={{ opacity: 0.3 }} />
+          <FontAwesome key={i} name="star-o" size={28} color={colors.textSecondary} style={{ opacity: 0.3 }} />
         );
       }
     }
@@ -121,11 +121,11 @@ export default function ProfileScreen() {
 
       if (i < fullFlames) {
         flames.push(
-          <FontAwesome6 key={i} name="fire-flame-curved" size={20} color={flameColor} solid />
+          <FontAwesome6 key={i} name="fire-flame-curved" size={28} color={flameColor} solid />
         );
       } else {
         flames.push(
-          <FontAwesome6 key={i} name="fire-flame-curved" size={20} color={colors.textSecondary} style={{ opacity: 0.3 }} />
+          <FontAwesome6 key={i} name="fire-flame-curved" size={28} color={colors.textSecondary} style={{ opacity: 0.3 }} />
         );
       }
     }
@@ -219,7 +219,7 @@ export default function ProfileScreen() {
         {/* Average Hype */}
         <View style={[styles.averageRatingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.statLabel, { color: colors.textSecondary, marginBottom: 8 }]}>Average Hype</Text>
-          <View style={styles.starsContainer}>
+          <View style={styles.flamesContainer}>
             {renderFlameRating(user?.averageHype || 0)}
           </View>
           <Text style={[styles.ratingValue, { color: colors.text, marginTop: 8 }]}>
@@ -380,7 +380,11 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   starsContainer: {
     flexDirection: 'row',
-    gap: 4,
+    gap: 8,
+  },
+  flamesContainer: {
+    flexDirection: 'row',
+    gap: 13,
   },
   ratingValue: {
     fontSize: 16,
