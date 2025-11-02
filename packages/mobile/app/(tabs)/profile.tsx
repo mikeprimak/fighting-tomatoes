@@ -264,7 +264,7 @@ export default function ProfileScreen() {
         <View style={styles.actionsContainer}>
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => router.push('/activity')}
+            onPress={() => router.push('/activity/ratings')}
           >
             <Text style={[styles.actionButtonText, { color: colors.text }]}>My Activity</Text>
           </TouchableOpacity>

@@ -2025,7 +2025,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
   const MyRatingsQuerySchema = z.object({
     page: z.string().transform(val => parseInt(val) || 1).pipe(z.number().int().min(1)).default('1'),
     limit: z.string().transform(val => parseInt(val) || 20).pipe(z.number().int().min(1).max(50)).default('20'),
-    sortBy: z.enum(['newest', 'rating', 'aggregate', 'upvotes']).default('newest'),
+    sortBy: z.enum(['newest', 'rating', 'aggregate', 'upvotes', 'rated-1', 'rated-2', 'rated-3', 'rated-4', 'rated-5', 'rated-6', 'rated-7', 'rated-8', 'rated-9', 'rated-10']).default('newest'),
+    filterType: z.enum(['ratings', 'hype', 'comments']).default('ratings'),
     tagFilter: z.string().optional(),
   });
 
@@ -2036,28 +2037,35 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const query = MyRatingsQuerySchema.parse(request.query);
       const currentUserId = (request as any).user.id;
 
-      // Get all fight IDs where user has ratings, reviews, or tags
-      const [ratedFightIds, reviewedFightIds, taggedFightIds] = await Promise.all([
-        fastify.prisma.fightRating.findMany({
-          where: { userId: currentUserId },
-          select: { fightId: true },
-        }),
-        fastify.prisma.fightReview.findMany({
-          where: { userId: currentUserId },
-          select: { fightId: true },
-        }),
-        fastify.prisma.fightTag.findMany({
-          where: { userId: currentUserId },
-          select: { fightId: true },
-        }),
-      ]);
+      // Get fight IDs based on filter type
+      let allFightIds: string[] = [];
 
-      // Combine unique fight IDs
-      const allFightIds = Array.from(new Set([
-        ...ratedFightIds.map(r => r.fightId),
-        ...reviewedFightIds.map(r => r.fightId),
-        ...taggedFightIds.map(t => t.fightId),
-      ]));
+      if (query.filterType === 'ratings') {
+        // Get fights where user has rated
+        const ratedFights = await fastify.prisma.fightRating.findMany({
+          where: { userId: currentUserId },
+          select: { fightId: true },
+        });
+        allFightIds = ratedFights.map(r => r.fightId);
+      } else if (query.filterType === 'hype') {
+        // Get fights where user has made predictions (hype scores)
+        const hypedFights = await fastify.prisma.fightPrediction.findMany({
+          where: {
+            userId: currentUserId,
+            predictedRating: { not: null }
+          },
+          select: { fightId: true },
+        });
+        allFightIds = hypedFights.map(h => h.fightId);
+      } else if (query.filterType === 'comments') {
+        // Get fights where user has written reviews
+        const reviewedFights = await fastify.prisma.fightReview.findMany({
+          where: { userId: currentUserId },
+          select: { fightId: true },
+        });
+        allFightIds = Array.from(new Set(reviewedFights.map(r => r.fightId)));
+      }
+
 
       if (allFightIds.length === 0) {
         return reply.send({
@@ -2177,6 +2185,17 @@ export async function fightRoutes(fastify: FastifyInstance) {
               },
             },
           },
+          predictions: {
+            where: { userId: currentUserId },
+            select: {
+              id: true,
+              predictedRating: true,
+              predictedWinner: true,
+              predictedMethod: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
         },
       });
 
@@ -2205,22 +2224,53 @@ export async function fightRoutes(fastify: FastifyInstance) {
           transformed.userTags = fight.tags.map((fightTag: any) => fightTag.tag.name);
         }
 
+        // Transform user prediction (hype)
+        if (fight.predictions && fight.predictions.length > 0) {
+          transformed.userPrediction = {
+            predictedRating: fight.predictions[0].predictedRating,
+            predictedWinner: fight.predictions[0].predictedWinner,
+            predictedMethod: fight.predictions[0].predictedMethod,
+            createdAt: fight.predictions[0].createdAt,
+          };
+          transformed.userHype = fight.predictions[0].predictedRating;
+          transformed.userHypeCreatedAt = fight.predictions[0].createdAt;
+        }
+
         // Remove raw arrays
         delete transformed.ratings;
         delete transformed.reviews;
         delete transformed.tags;
+        delete transformed.predictions;
 
         return transformed;
       });
 
+      // Filter by rating if sortBy is a rated-X option
+      let filteredFights = transformedFights;
+      if (query.sortBy.startsWith('rated-')) {
+        const ratingValue = parseInt(query.sortBy.split('-')[1]);
+        filteredFights = transformedFights.filter(fight => fight.userRating === ratingValue);
+      }
+
       // Sort fights based on sortBy parameter
-      transformedFights.sort((a, b) => {
+      filteredFights.sort((a, b) => {
+        // For rated-X filters, sort by newest within that rating
+        if (query.sortBy.startsWith('rated-')) {
+          const aDate = a.userRatingCreatedAt || a.userReview?.createdAt || new Date(0);
+          const bDate = b.userRatingCreatedAt || b.userReview?.createdAt || new Date(0);
+          return new Date(bDate).getTime() - new Date(aDate).getTime();
+        }
+
         switch (query.sortBy) {
           case 'newest':
-            const aDate = a.userRatingCreatedAt || a.userReview?.createdAt || new Date(0);
-            const bDate = b.userRatingCreatedAt || b.userReview?.createdAt || new Date(0);
+            const aDate = a.userRatingCreatedAt || a.userHypeCreatedAt || a.userReview?.createdAt || new Date(0);
+            const bDate = b.userRatingCreatedAt || b.userHypeCreatedAt || b.userReview?.createdAt || new Date(0);
             return new Date(bDate).getTime() - new Date(aDate).getTime();
           case 'rating':
+            // For hype filter, sort by hype score instead of rating
+            if (query.filterType === 'hype') {
+              return (b.userHype || 0) - (a.userHype || 0);
+            }
             return (b.userRating || 0) - (a.userRating || 0);
           case 'aggregate':
             return (b.averageRating || 0) - (a.averageRating || 0);
@@ -2233,13 +2283,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Apply pagination
       const skip = (query.page - 1) * query.limit;
-      const paginatedFights = transformedFights.slice(skip, skip + query.limit);
+      const paginatedFights = filteredFights.slice(skip, skip + query.limit);
 
       const pagination = {
         page: query.page,
         limit: query.limit,
-        total: transformedFights.length,
-        totalPages: Math.ceil(transformedFights.length / query.limit),
+        total: filteredFights.length,
+        totalPages: Math.ceil(filteredFights.length / query.limit),
       };
 
       return reply.send({

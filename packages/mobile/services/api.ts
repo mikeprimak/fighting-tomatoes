@@ -664,6 +664,7 @@ class ApiService {
     page?: string;
     limit?: string;
     sortBy?: string;
+    filterType?: string;
     tagFilter?: string;
   } = {}): Promise<FightsResponse> {
     const queryParams = new URLSearchParams();

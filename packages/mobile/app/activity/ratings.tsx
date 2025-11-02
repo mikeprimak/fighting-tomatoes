@@ -18,47 +18,36 @@ import FightDisplayCard, { FightData } from '../../components/FightDisplayCardNe
 import RateFightModal from '../../components/RateFightModal';
 import { FontAwesome } from '@expo/vector-icons';
 
-type SortOption = 'newest' | 'rating' | 'aggregate' | 'upvotes';
+type SortOption = 'newest' | 'rating' | 'aggregate' | 'upvotes' | 'rated-1' | 'rated-2' | 'rated-3' | 'rated-4' | 'rated-5' | 'rated-6' | 'rated-7' | 'rated-8' | 'rated-9' | 'rated-10';
+type FilterType = 'ratings' | 'hype' | 'comments';
 
 export default function RatingsActivityScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const [filterType, setFilterType] = useState<FilterType>('ratings');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
-  const [tagFilter, setTagFilter] = useState<string | undefined>(undefined);
+  const [showFilterTypeMenu, setShowFilterTypeMenu] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [showTagMenu, setShowTagMenu] = useState(false);
   const [selectedFight, setSelectedFight] = useState<FightData | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
 
   // Fetch user's rated fights
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['myRatings', sortBy, tagFilter],
+    queryKey: ['myRatings', sortBy, filterType],
     queryFn: async () => {
       return apiService.getMyRatings({
         page: '1',
         limit: '50',
         sortBy,
-        tagFilter,
+        filterType,
       });
     },
   });
 
-  // Extract unique tags from all fights
-  const allTags = React.useMemo(() => {
-    if (!data?.fights) return [];
-    const tagSet = new Set<string>();
-    data.fights.forEach((fight: FightData) => {
-      if (fight.userTags) {
-        fight.userTags.forEach(tag => tagSet.add(tag));
-      }
-    });
-    return Array.from(tagSet).sort();
-  }, [data?.fights]);
-
   const handleFightPress = (fight: FightData) => {
     // Close any open dropdowns first
+    setShowFilterTypeMenu(false);
     setShowSortMenu(false);
-    setShowTagMenu(false);
 
     setSelectedFight(fight);
     setShowRatingModal(true);
@@ -70,14 +59,51 @@ export default function RatingsActivityScreen() {
     refetch(); // Refresh the list after modal closes
   };
 
+  const filterTypeOptions = [
+    { value: 'ratings' as FilterType, label: 'My Ratings', icon: 'star' },
+    { value: 'hype' as FilterType, label: 'My Hype', icon: 'fire' },
+    { value: 'comments' as FilterType, label: 'My Comments', icon: 'comment' },
+  ];
+
   const sortOptions = [
     { value: 'newest' as SortOption, label: 'Newest First', icon: 'clock-o' },
     { value: 'rating' as SortOption, label: 'My Rating (High to Low)', icon: 'star' },
     { value: 'aggregate' as SortOption, label: 'Community Rating (High to Low)', icon: 'users' },
     { value: 'upvotes' as SortOption, label: 'Most Upvoted Reviews', icon: 'thumbs-up' },
+    { value: 'rated-10' as SortOption, label: 'I rated 10', icon: 'star' },
+    { value: 'rated-9' as SortOption, label: 'I rated 9', icon: 'star' },
+    { value: 'rated-8' as SortOption, label: 'I rated 8', icon: 'star' },
+    { value: 'rated-7' as SortOption, label: 'I rated 7', icon: 'star' },
+    { value: 'rated-6' as SortOption, label: 'I rated 6', icon: 'star' },
+    { value: 'rated-5' as SortOption, label: 'I rated 5', icon: 'star' },
+    { value: 'rated-4' as SortOption, label: 'I rated 4', icon: 'star' },
+    { value: 'rated-3' as SortOption, label: 'I rated 3', icon: 'star' },
+    { value: 'rated-2' as SortOption, label: 'I rated 2', icon: 'star' },
+    { value: 'rated-1' as SortOption, label: 'I rated 1', icon: 'star' },
   ];
 
   const styles = createStyles(colors);
+
+  const renderFilterTypeButton = () => {
+    const currentFilterType = filterTypeOptions.find(opt => opt.value === filterType);
+    return (
+      <View style={styles.filterContainer}>
+        <TouchableOpacity
+          style={[styles.filterButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => {
+            setShowFilterTypeMenu(!showFilterTypeMenu);
+            setShowSortMenu(false);
+          }}
+        >
+          <FontAwesome name={currentFilterType?.icon as any} size={14} color={colors.text} />
+          <Text style={[styles.filterButtonText, { color: colors.text }]}>
+            {currentFilterType?.label}
+          </Text>
+          <FontAwesome name={showFilterTypeMenu ? 'chevron-up' : 'chevron-down'} size={12} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const renderSortButton = () => {
     const currentSort = sortOptions.find(opt => opt.value === sortBy);
@@ -87,7 +113,7 @@ export default function RatingsActivityScreen() {
           style={[styles.filterButton, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={() => {
             setShowSortMenu(!showSortMenu);
-            setShowTagMenu(false); // Close tag menu when opening sort menu
+            setShowFilterTypeMenu(false);
           }}
         >
           <FontAwesome name={currentSort?.icon as any} size={14} color={colors.text} />
@@ -100,34 +126,12 @@ export default function RatingsActivityScreen() {
     );
   };
 
-  const renderTagFilter = () => {
-    if (allTags.length === 0) return null;
-
-    return (
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={[styles.filterButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => {
-            setShowTagMenu(!showTagMenu);
-            setShowSortMenu(false); // Close sort menu when opening tag menu
-          }}
-        >
-          <FontAwesome name="tags" size={14} color={colors.text} />
-          <Text style={[styles.filterButtonText, { color: colors.text }]}>
-            {tagFilter || 'All Tags'}
-          </Text>
-          <FontAwesome name={showTagMenu ? 'chevron-up' : 'chevron-down'} size={12} color={colors.textSecondary} />
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
   return (
     <>
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'My Ratings',
+          title: 'My Activity',
           headerStyle: {
             backgroundColor: colors.card,
           },
@@ -163,58 +167,11 @@ export default function RatingsActivityScreen() {
               No Ratings Yet
             </Text>
             <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
-              {tagFilter
-                ? `You haven't rated any fights with the "${tagFilter}" tag yet.`
-                : 'Start rating fights to see them here!'
-              }
+              Start rating fights to see them here!
             </Text>
-            {tagFilter && (
-              <TouchableOpacity
-                style={[styles.clearFilterButton, { backgroundColor: colors.primary }]}
-                onPress={() => setTagFilter(undefined)}
-              >
-                <Text style={styles.clearFilterButtonText}>Clear Filter</Text>
-              </TouchableOpacity>
-            )}
           </View>
         ) : (
           <View style={styles.contentContainer}>
-            {/* Stats Header */}
-            <View style={[styles.statsContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: colors.primary }]}>
-                  {data.pagination.total}
-                </Text>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                  Total Fights
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: colors.primary }]}>
-                  {data.fights.filter((f: FightData) => f.userRating).length}
-                </Text>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                  Rated
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: colors.primary }]}>
-                  {data.fights.filter((f: FightData) => f.userReview).length}
-                </Text>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                  Reviewed
-                </Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={[styles.statValue, { color: colors.primary }]}>
-                  {allTags.length}
-                </Text>
-                <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                  Tags Used
-                </Text>
-              </View>
-            </View>
-
             {/* Fights List */}
             <FlatList
               data={data.fights}
@@ -231,14 +188,47 @@ export default function RatingsActivityScreen() {
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
               ListHeaderComponent={
-                <View style={styles.filtersRow}>
-                  {renderSortButton()}
-                  {renderTagFilter()}
-                </View>
+                <>
+                  <View style={styles.filtersRow}>
+                    {renderFilterTypeButton()}
+                  </View>
+                  <View style={styles.filtersRow}>
+                    {renderSortButton()}
+                  </View>
+                </>
               }
             />
 
-            {/* Dropdown Menus - Rendered on top */}
+            {/* Filter Type Dropdown Menu */}
+            {showFilterTypeMenu && (
+              <View style={[styles.overlayMenu, styles.filterTypeMenuPosition, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <ScrollView style={styles.menuScrollView}>
+                  {filterTypeOptions.map(option => (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[
+                        styles.filterMenuItem,
+                        filterType === option.value && { backgroundColor: colors.backgroundSecondary }
+                      ]}
+                      onPress={() => {
+                        setFilterType(option.value);
+                        setShowFilterTypeMenu(false);
+                      }}
+                    >
+                      <FontAwesome name={option.icon as any} size={14} color={colors.text} />
+                      <Text style={[styles.filterMenuItemText, { color: colors.text }]}>
+                        {option.label}
+                      </Text>
+                      {filterType === option.value && (
+                        <FontAwesome name="check" size={14} color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Sort Dropdown Menu */}
             {showSortMenu && (
               <View style={[styles.overlayMenu, styles.sortMenuPosition, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <ScrollView style={styles.menuScrollView}>
@@ -259,52 +249,6 @@ export default function RatingsActivityScreen() {
                         {option.label}
                       </Text>
                       {sortBy === option.value && (
-                        <FontAwesome name="check" size={14} color={colors.primary} />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {showTagMenu && allTags.length > 0 && (
-              <View style={[styles.overlayMenu, styles.tagMenuPosition, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <ScrollView style={styles.menuScrollView}>
-                  <TouchableOpacity
-                    style={[
-                      styles.filterMenuItem,
-                      !tagFilter && { backgroundColor: colors.backgroundSecondary }
-                    ]}
-                    onPress={() => {
-                      setTagFilter(undefined);
-                      setShowTagMenu(false);
-                    }}
-                  >
-                    <FontAwesome name="times" size={14} color={colors.text} />
-                    <Text style={[styles.filterMenuItemText, { color: colors.text }]}>
-                      All Tags
-                    </Text>
-                    {!tagFilter && (
-                      <FontAwesome name="check" size={14} color={colors.primary} />
-                    )}
-                  </TouchableOpacity>
-                  {allTags.map(tag => (
-                    <TouchableOpacity
-                      key={tag}
-                      style={[
-                        styles.filterMenuItem,
-                        tagFilter === tag && { backgroundColor: colors.backgroundSecondary }
-                      ]}
-                      onPress={() => {
-                        setTagFilter(tag);
-                        setShowTagMenu(false);
-                      }}
-                    >
-                      <FontAwesome name="tag" size={14} color={colors.text} />
-                      <Text style={[styles.filterMenuItemText, { color: colors.text }]}>
-                        {tag}
-                      </Text>
-                      {tagFilter === tag && (
                         <FontAwesome name="check" size={14} color={colors.primary} />
                       )}
                     </TouchableOpacity>
@@ -437,17 +381,15 @@ const createStyles = (colors: any) => StyleSheet.create({
     elevation: 10,
     zIndex: 10,
   },
+  filterTypeMenuPosition: {
+    top: 110,
+    left: 16,
+    right: 16,
+  },
   sortMenuPosition: {
     top: 165,
     left: 16,
-    right: '50%',
-    marginRight: 4,
-  },
-  tagMenuPosition: {
-    top: 165,
-    left: '50%',
     right: 16,
-    marginLeft: 4,
   },
   menuScrollView: {
     maxHeight: 300,
