@@ -551,7 +551,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                   styles.commentInput,
                   { color: colors.text }
                 ]}
-                placeholder="Share why you're excited for this fight..."
+                placeholder="Share why you're hyped for this fight..."
                 placeholderTextColor={colors.textSecondary}
                 multiline
                 numberOfLines={4}
@@ -566,7 +566,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
               style={[
                 styles.saveCommentButton,
                 {
-                  backgroundColor: colors.tint,
+                  backgroundColor: (preFightCommentsData?.userComment || preFightComment.trim().length > 0) ? colors.tint : colors.card,
                 }
               ]}
               disabled={saveCommentMutation.isPending}
@@ -574,7 +574,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             >
               <Text style={[
                 styles.saveCommentButtonText,
-                { color: '#fff' }
+                { color: (preFightCommentsData?.userComment || preFightComment.trim().length > 0) ? '#000' : colors.text }
               ]}>
                 {saveCommentMutation.isPending ? 'Saving...' : 'Save Comment'}
               </Text>
@@ -592,7 +592,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
               comment={{
                 id: preFightCommentsData.userComment.id,
                 content: preFightCommentsData.userComment.content,
-                hypeRating: preFightCommentsData.userComment.hypeRating,
+                hypeRating: selectedHype,
                 upvotes: preFightCommentsData.userComment.upvotes || 0,
                 userHasUpvoted: false, // User can't upvote their own comment
                 user: {

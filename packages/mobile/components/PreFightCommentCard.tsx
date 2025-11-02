@@ -41,8 +41,7 @@ export function PreFightCommentCard({
     <View
       style={[
         styles.commentCard,
-        { backgroundColor: colors.background, borderColor: showMyComment ? '#83B4F3' : colors.border },
-        showMyComment && styles.myCommentCard
+        { backgroundColor: colors.background, borderColor: colors.border },
       ]}
     >
       <View style={styles.commentContainer}>
@@ -71,7 +70,7 @@ export function PreFightCommentCard({
         <View style={styles.commentContentContainer}>
           {/* Header: Username and Hype Rating/Flag */}
           <View style={styles.commentHeader}>
-            <Text style={[styles.commentAuthor, { color: '#FFFFFF' }]}>
+            <Text style={[styles.commentAuthor, { color: showMyComment ? '#83B4F3' : '#FFFFFF' }]}>
               {showMyComment ? 'My Comment' : comment.user.displayName}
             </Text>
             <View style={styles.ratingFlagContainer}>
@@ -132,9 +131,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     marginBottom: 12,
-  },
-  myCommentCard: {
-    borderWidth: 2,
   },
   commentContainer: {
     flexDirection: 'row',

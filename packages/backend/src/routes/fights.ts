@@ -1016,11 +1016,17 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const { content } = request.body as { content: string };
       const currentUserId = (request as any).user.id;
 
-      // Validate content
+      // If content is empty, delete the comment
       if (!content || content.trim().length === 0) {
-        return reply.code(400).send({
-          error: 'Comment content is required',
-          code: 'INVALID_CONTENT',
+        await fastify.prisma.preFightComment.deleteMany({
+          where: {
+            userId: currentUserId,
+            fightId,
+          },
+        });
+
+        return reply.code(200).send({
+          message: 'Pre-fight comment deleted successfully',
         });
       }
 
