@@ -20,6 +20,8 @@ import { getHypeHeatmapColor } from '../utils/heatmap';
 import PredictionBarChart from './PredictionBarChart';
 import FightDetailsSection from './FightDetailsSection';
 import { useFightStats } from '../hooks/useFightStats';
+import { PreFightCommentCard } from './PreFightCommentCard';
+import { useAuth } from '../store/AuthContext';
 
 interface Fighter {
   id: string;
@@ -77,6 +79,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
+  const { isAuthenticated } = useAuth();
 
   // Local state for selections (will be saved immediately on change)
   const [selectedWinner, setSelectedWinner] = useState<string | null>(fight.userPredictedWinner || null);
@@ -85,9 +88,10 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
     (fight.userPredictedMethod as 'KO_TKO' | 'SUBMISSION' | 'DECISION') || null
   );
 
-  // Pre-fight comment state
+  // Pre-flight comment state
   const [preFightComment, setPreFightComment] = useState<string>('');
   const [isCommentFocused, setIsCommentFocused] = useState(false);
+  const commentSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Wheel animation for number display
   const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 120 : 1200)).current;
@@ -257,6 +261,23 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       // Don't clear the input - user can edit their comment later
     },
   });
+
+  // Auto-save comment handler
+  const handleCommentChange = (text: string) => {
+    setPreFightComment(text);
+
+    // Clear existing timer
+    if (commentSaveTimerRef.current) {
+      clearTimeout(commentSaveTimerRef.current);
+    }
+
+    // Set new timer to save after 1 second of inactivity
+    if (text.trim().length > 0) {
+      commentSaveTimerRef.current = setTimeout(() => {
+        saveCommentMutation.mutate(text.trim());
+      }, 1000);
+    }
+  };
 
   // Animated wheel effect for number display
   const animateToNumber = (targetNumber: number) => {
@@ -488,11 +509,13 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         </View>
       </View>
 
-      {/* Why Are You Hyped For This Fight? */}
+      {/* Hype Comments */}
       <View style={[styles.sectionNoBorder, { marginTop: -25 }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Why Are You Hyped For This Fight?
+          Hype Comments
         </Text>
+
+        {/* Comment Input */}
         <View style={[
           styles.commentInputContainer,
           {
@@ -511,38 +534,56 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             numberOfLines={4}
             maxLength={500}
             value={preFightComment}
-            onChangeText={setPreFightComment}
+            onChangeText={handleCommentChange}
             onFocus={() => setIsCommentFocused(true)}
             onBlur={() => setIsCommentFocused(false)}
           />
-          <View style={styles.commentFooter}>
-            <Text style={[styles.characterCount, { color: colors.textSecondary }]}>
-              {preFightComment.length}/500
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.submitCommentButton,
-                {
-                  backgroundColor: preFightComment.trim().length > 0 ? colors.tint : colors.border,
-                  opacity: preFightComment.trim().length > 0 ? 1 : 0.5,
-                }
-              ]}
-              disabled={preFightComment.trim().length === 0 || saveCommentMutation.isPending}
-              onPress={() => {
-                if (preFightComment.trim().length > 0) {
-                  saveCommentMutation.mutate(preFightComment.trim());
-                }
-              }}
-            >
-              <Text style={[
-                styles.submitCommentButtonText,
-                { color: preFightComment.trim().length > 0 ? '#fff' : colors.textSecondary }
-              ]}>
-                {saveCommentMutation.isPending ? 'Posting...' : 'Post'}
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
+
+        {/* Display All Pre-Fight Comments */}
+        {preFightCommentsData && preFightCommentsData.comments && preFightCommentsData.comments.length > 0 && (
+          <View style={{ marginTop: 16 }}>
+
+          {/* User's own comment first (if exists) */}
+          {preFightCommentsData.userComment && (
+            <PreFightCommentCard
+              comment={{
+                id: preFightCommentsData.userComment.id,
+                content: preFightCommentsData.userComment.content,
+                hypeRating: preFightCommentsData.userComment.hypeRating,
+                upvotes: preFightCommentsData.userComment.upvotes || 0,
+                userHasUpvoted: false, // User can't upvote their own comment
+                user: {
+                  displayName: preFightCommentsData.userComment.user.displayName,
+                },
+              }}
+              isAuthenticated={isAuthenticated}
+              showMyComment={true}
+            />
+          )}
+
+          {/* All other comments */}
+          {preFightCommentsData.comments
+            .filter((c: any) => c.id !== preFightCommentsData.userComment?.id)
+            .map((comment: any) => (
+              <PreFightCommentCard
+                key={comment.id}
+                comment={{
+                  id: comment.id,
+                  content: comment.content,
+                  hypeRating: comment.hypeRating,
+                  upvotes: comment.upvotes || 0,
+                  userHasUpvoted: comment.userHasUpvoted || false,
+                  user: {
+                    displayName: comment.user.displayName,
+                  },
+                }}
+                isAuthenticated={isAuthenticated}
+                showMyComment={false}
+              />
+            ))}
+          </View>
+        )}
       </View>
 
       {/* All Predictions */}
@@ -695,23 +736,5 @@ const styles = StyleSheet.create({
     minHeight: 100,
     textAlignVertical: 'top',
     paddingTop: 8,
-  },
-  commentFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  characterCount: {
-    fontSize: 12,
-  },
-  submitCommentButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  submitCommentButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
   },
 });
