@@ -26,7 +26,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 
 **Base**: Web `http://localhost:3008/api`, Mobile `http://10.0.0.53:3008/api`
 **Auth**: `POST register|login|logout|refresh`, `GET profile|verify-email`
-**Fights**: `GET /fights` (includeUserData param), `GET /fights/:id`, `POST /fights/:id/rate|review|tags`
+**Fights**: `GET /fights` (includeUserData param), `GET /fights/:id`, `POST /fights/:id/rate|review|tags|pre-fight-comment`, `GET /fights/:id/pre-fight-comments`
 **Fighters**: `GET /fighters` (page, limit=20), `GET /fighters/:id`
 **Events**: `GET /events`, `GET /events/:id`
 **Crews**: `GET /crews`, `POST /crews|/crews/join`, `GET /crews/:id/messages`, `DELETE /crews/:id`
@@ -68,7 +68,20 @@ curl http://localhost:3008/health
 
 ## Recent Features
 
-### Performance Optimizations (Latest)
+### Pre-Fight Comments (Latest)
+- **Feature**: Users can comment on why they're hyped for upcoming fights
+- **Backend**:
+  - Database: `PreFightComment` model with unique constraint (one comment per user per fight)
+  - API: `POST /api/fights/:id/pre-fight-comment` (create/update), `GET /api/fights/:id/pre-fight-comments` (fetch all)
+  - Validation: Requires auth + email verification, max 500 chars, prevents comments on started fights
+  - Upsert pattern: Updates existing comment if user already commented on that fight
+- **Mobile UI**:
+  - Section in `UpcomingFightDetailScreen` with multi-line input and character counter
+  - Auto-populates user's existing comment, optimistic UI updates via React Query
+- **Files**: `prisma/schema.prisma:417`, `routes/fights.ts`, `services/api.ts:888-946`, `UpcomingFightDetailScreen.tsx:464-547`
+- **Commits**: `26bf243`, `0bd687f`
+
+### Performance Optimizations
 - **API Call Reduction**: Combined `getFightPredictionStats` + `getFightAggregateStats` using `Promise.all`
 - **Impact**: 50% fewer requests (160→80 calls on list views, 2→1 on detail screens)
 - **Files**: `hooks/useFightStats.ts`, fight cards, detail screens
