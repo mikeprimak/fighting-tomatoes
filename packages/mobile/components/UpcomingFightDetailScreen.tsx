@@ -110,6 +110,21 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const predictionStats = fightStatsData?.predictionStats;
   const aggregateStats = fightStatsData?.aggregateStats;
 
+  // Fetch pre-fight comments
+  const { data: preFightCommentsData } = useQuery({
+    queryKey: ['preFightComments', fight.id],
+    queryFn: () => apiService.getPreFightComments(fight.id),
+    enabled: !!fight.id,
+    staleTime: 30 * 1000,
+  });
+
+  // Set initial comment from user's existing comment
+  useEffect(() => {
+    if (preFightCommentsData?.userComment?.content) {
+      setPreFightComment(preFightCommentsData.userComment.content);
+    }
+  }, [preFightCommentsData?.userComment?.content]);
+
   // HARDCODED TEST DATA - Remove this when done testing
   const testPredictionStats = {
     totalPredictions: 100,
@@ -228,6 +243,18 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
 
       onPredictionSuccess?.();
+    },
+  });
+
+  // Save pre-fight comment
+  const saveCommentMutation = useMutation({
+    mutationFn: async (content: string) => {
+      return apiService.createPreFightComment(fight.id, content);
+    },
+    onSuccess: () => {
+      // Invalidate pre-flight comments query to refresh the comment list
+      queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
+      // Don't clear the input - user can edit their comment later
     },
   });
 
@@ -500,17 +527,18 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                   opacity: preFightComment.trim().length > 0 ? 1 : 0.5,
                 }
               ]}
-              disabled={preFightComment.trim().length === 0}
+              disabled={preFightComment.trim().length === 0 || saveCommentMutation.isPending}
               onPress={() => {
-                // TODO: Submit comment to backend
-                console.log('Submit pre-fight comment:', preFightComment);
+                if (preFightComment.trim().length > 0) {
+                  saveCommentMutation.mutate(preFightComment.trim());
+                }
               }}
             >
               <Text style={[
                 styles.submitCommentButtonText,
                 { color: preFightComment.trim().length > 0 ? '#fff' : colors.textSecondary }
               ]}>
-                Post
+                {saveCommentMutation.isPending ? 'Posting...' : 'Post'}
               </Text>
             </TouchableOpacity>
           </View>

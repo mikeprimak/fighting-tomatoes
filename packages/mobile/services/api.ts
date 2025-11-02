@@ -884,6 +884,66 @@ class ApiService {
   }> {
     return this.makeRequest('/community/hot-fighters');
   }
+
+  // Pre-fight comment methods
+  async createPreFightComment(fightId: string, content: string): Promise<{
+    comment: {
+      id: string;
+      userId: string;
+      fightId: string;
+      content: string;
+      createdAt: string;
+      updatedAt: string;
+      user: {
+        id: string;
+        displayName: string;
+        firstName: string;
+        lastName: string;
+        avatar: string | null;
+      };
+    };
+    message: string;
+  }> {
+    return this.makeRequest(`/fights/${fightId}/pre-fight-comment`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async getPreFightComments(fightId: string): Promise<{
+    comments: Array<{
+      id: string;
+      userId: string;
+      fightId: string;
+      content: string;
+      createdAt: string;
+      updatedAt: string;
+      user: {
+        id: string;
+        displayName: string;
+        firstName: string;
+        lastName: string;
+        avatar: string | null;
+      };
+    }>;
+    userComment: {
+      id: string;
+      userId: string;
+      fightId: string;
+      content: string;
+      createdAt: string;
+      updatedAt: string;
+      user: {
+        id: string;
+        displayName: string;
+        firstName: string;
+        lastName: string;
+        avatar: string | null;
+      };
+    } | null;
+  }> {
+    return this.makeRequest(`/fights/${fightId}/pre-fight-comments`);
+  }
 }
 
 export const apiService = new ApiService();
