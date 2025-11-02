@@ -456,10 +456,10 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         </View>
       </View>
 
-      {/* Good Fight User Predictions */}
+      {/* All Predictions */}
       <View style={styles.sectionNoBorder}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Good Fight User Predictions
+          All Predictions
         </Text>
 
         {/* Prediction Breakdown Chart */}
