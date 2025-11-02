@@ -10,6 +10,9 @@ import {
   Animated,
   Easing,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
@@ -98,6 +101,8 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [commentToFlag, setCommentToFlag] = useState<string | null>(null);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const commentInputRef = useRef<View>(null);
 
   // Wheel animation for number display
   const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 120 : 1200)).current;
@@ -352,8 +357,29 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       .join(' ');
   };
 
+  // Handle keyboard show to scroll to input
+  const handleCommentFocus = () => {
+    setIsCommentFocused(true);
+    setTimeout(() => {
+      commentInputRef.current?.measureLayout(
+        scrollViewRef.current as any,
+        (x, y) => {
+          scrollViewRef.current?.scrollTo({
+            y: y - 100,
+            animated: true,
+          });
+        },
+        () => {}
+      );
+    }, 100);
+  };
+
   return (
-    <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]}>
+    <ScrollView
+      ref={scrollViewRef}
+      style={[styles.scrollView, { backgroundColor: colors.background }]}
+      keyboardShouldPersistTaps="handled"
+    >
 
 
       {/* Who Do You Think Will Win? */}
@@ -538,7 +564,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
         {/* Show comment input only if user hasn't posted yet OR is editing */}
         {(!preFightCommentsData?.userComment || isEditingComment) && (
-          <View>
+          <View ref={commentInputRef} collapsable={false}>
             <View style={[
               styles.commentInputContainer,
               {
@@ -558,7 +584,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 maxLength={500}
                 value={preFightComment}
                 onChangeText={setPreFightComment}
-                onFocus={() => setIsCommentFocused(true)}
+                onFocus={handleCommentFocus}
                 onBlur={() => setIsCommentFocused(false)}
               />
             </View>
