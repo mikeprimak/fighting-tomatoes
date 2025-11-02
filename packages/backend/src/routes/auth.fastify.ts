@@ -776,7 +776,10 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (displayName) {
         const existingUser = await fastify.prisma.user.findFirst({
           where: {
-            displayName: displayName,
+            displayName: {
+              equals: displayName,
+              mode: 'insensitive'
+            },
             id: { not: decoded.userId }
           }
         });
@@ -830,6 +833,57 @@ export async function authRoutes(fastify: FastifyInstance) {
           code: 'INVALID_TOKEN',
         });
       }
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // GET /api/auth/check-displayname - Check if display name is available
+  fastify.get('/check-displayname', async (request, reply) => {
+    try {
+      const { displayName } = request.query as { displayName: string };
+
+      if (!displayName || displayName.trim().length < 3) {
+        return reply.code(400).send({
+          error: 'Display name must be at least 3 characters',
+          code: 'INVALID_DISPLAY_NAME',
+        });
+      }
+
+      // Get current user ID if authenticated
+      const authorization = request.headers.authorization;
+      let currentUserId: string | null = null;
+
+      if (authorization && authorization.startsWith('Bearer ')) {
+        try {
+          const token = authorization.substring(7);
+          const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+          const decoded = jwt.verify(token, JWT_SECRET) as any;
+          currentUserId = decoded.userId;
+        } catch (error) {
+          // Invalid token, but that's okay - just means no current user
+        }
+      }
+
+      // Check if displayName is taken by another user (case-insensitive)
+      const existingUser = await fastify.prisma.user.findFirst({
+        where: {
+          displayName: {
+            equals: displayName.trim(),
+            mode: 'insensitive'
+          },
+          ...(currentUserId && { id: { not: currentUserId } })
+        }
+      });
+
+      return reply.code(200).send({
+        available: !existingUser,
+        displayName: displayName.trim(),
+      });
+    } catch (error: any) {
+      request.log.error('Check displayName error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',

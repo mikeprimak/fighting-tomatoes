@@ -953,6 +953,15 @@ class ApiService {
       body: JSON.stringify({ reason }),
     });
   }
+
+  async checkDisplayNameAvailability(displayName: string): Promise<{
+    available: boolean;
+    displayName: string;
+  }> {
+    return this.makeRequest(`/auth/check-displayname?displayName=${encodeURIComponent(displayName)}`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const apiService = new ApiService();

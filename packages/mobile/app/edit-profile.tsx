@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -35,8 +35,12 @@ export default function EditProfileScreen() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isCheckingDisplayName, setIsCheckingDisplayName] = useState(false);
+  const [displayNameAvailable, setDisplayNameAvailable] = useState<boolean | null>(null);
+  const originalDisplayNameRef = useRef<string>('');
+  const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sync state with user data when it changes
+  // Sync state with user data when it changes (only on mount or when user ID changes)
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName || '');
@@ -44,9 +48,65 @@ export default function EditProfileScreen() {
       setLastName(user.lastName || '');
       setAvatar(user.avatar || '');
       setSelectedImage(null); // Clear selected image when user data updates
-      console.log('User data synced - avatar:', user.avatar);
+      originalDisplayNameRef.current = user.displayName || '';
+      console.log('User data synced - displayName:', user.displayName);
     }
-  }, [user?.displayName, user?.firstName, user?.lastName, user?.avatar]);
+  }, [user?.id]); // Only sync when user ID changes, not on every prop change
+
+  // Check displayName availability with debouncing
+  useEffect(() => {
+    console.log('DisplayName effect triggered:', {
+      displayName,
+      trimmed: displayName.trim(),
+      original: originalDisplayNameRef.current,
+      originalTrimmed: originalDisplayNameRef.current.trim(),
+      length: displayName.trim().length
+    });
+
+    // Clear any existing timeout
+    if (checkTimeoutRef.current) {
+      clearTimeout(checkTimeoutRef.current);
+      checkTimeoutRef.current = null;
+    }
+
+    // Reset availability state if displayName is too short or unchanged
+    if (!displayName || displayName.trim().length < 3 || displayName.trim() === originalDisplayNameRef.current.trim()) {
+      console.log('Resetting availability state - too short or unchanged');
+      setDisplayNameAvailable(null);
+      setIsCheckingDisplayName(false);
+      return;
+    }
+
+    console.log('Setting timeout to check displayName...');
+
+    // Start checking after 500ms delay
+    checkTimeoutRef.current = setTimeout(async () => {
+      console.log('Timeout fired! Checking displayName availability:', displayName);
+      setIsCheckingDisplayName(true);
+      console.log('Set isCheckingDisplayName to TRUE');
+      try {
+        const result = await api.checkDisplayNameAvailability(displayName.trim());
+        console.log('DisplayName check result:', result);
+        setDisplayNameAvailable(result.available);
+        console.log('Set displayNameAvailable to:', result.available);
+      } catch (error) {
+        console.error('Error checking displayName:', error);
+        setDisplayNameAvailable(null);
+        showError('Failed to check availability');
+      } finally {
+        setIsCheckingDisplayName(false);
+        console.log('Set isCheckingDisplayName to FALSE');
+      }
+    }, 500);
+
+    // Cleanup
+    return () => {
+      if (checkTimeoutRef.current) {
+        clearTimeout(checkTimeoutRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayName]);
 
   const pickImage = async () => {
     try {
@@ -149,7 +209,13 @@ export default function EditProfileScreen() {
       }, 1500);
     } catch (error: any) {
       console.error('Error updating profile:', error);
-      showError(error.message || 'Failed to update profile');
+
+      // Handle specific error codes
+      if (error.code === 'DISPLAY_NAME_TAKEN') {
+        showError('This display name is already taken. Please choose a different one.');
+      } else {
+        showError(error.message || 'Failed to update profile');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -158,6 +224,13 @@ export default function EditProfileScreen() {
   const styles = createStyles(colors);
 
   const displayImageUri = selectedImage || (avatar ? `${api.baseURL}${avatar}` : null);
+
+  console.log('RENDER - Availability state:', {
+    isCheckingDisplayName,
+    displayNameAvailable,
+    displayName,
+    originalDisplayName: originalDisplayNameRef.current
+  });
 
   return (
     <>
@@ -236,6 +309,31 @@ export default function EditProfileScreen() {
               placeholderTextColor={colors.textSecondary}
               autoCapitalize="none"
             />
+            {/* Display name availability feedback */}
+            {isCheckingDisplayName && (
+              <View style={styles.availabilityContainer}>
+                <ActivityIndicator size="small" color={colors.textSecondary} />
+                <Text style={[styles.availabilityText, { color: colors.textSecondary }]}>
+                  Checking availability...
+                </Text>
+              </View>
+            )}
+            {!isCheckingDisplayName && displayNameAvailable === true && (
+              <View style={styles.availabilityContainer}>
+                <FontAwesome name="check-circle" size={16} color="#4CAF50" />
+                <Text style={[styles.availabilityText, { color: '#4CAF50' }]}>
+                  Username available
+                </Text>
+              </View>
+            )}
+            {!isCheckingDisplayName && displayNameAvailable === false && (
+              <View style={styles.availabilityContainer}>
+                <FontAwesome name="times-circle" size={16} color="#F44336" />
+                <Text style={[styles.availabilityText, { color: '#F44336' }]}>
+                  Username unavailable
+                </Text>
+              </View>
+            )}
             <Text style={[styles.helperText, { color: colors.textSecondary }]}>
               This is how others will see you (minimum 3 characters)
             </Text>
@@ -411,5 +509,15 @@ const createStyles = (colors: any) => StyleSheet.create({
   helperText: {
     fontSize: 12,
     marginTop: 4,
+  },
+  availabilityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 6,
+  },
+  availabilityText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
