@@ -34,8 +34,8 @@ export default async function searchRoutes(fastify: FastifyInstance) {
     try {
       // Search fighters (first name, last name, or nickname)
       // For multi-word queries like "Jon Jones", match first + last name combinations
-      const buildFighterSearchConditions = () => {
-        const baseConditions = [
+      const buildFighterSearchConditions = (): any => {
+        const baseConditions: any[] = [
           { firstName: { contains: searchTerm, mode: 'insensitive' } },
           { lastName: { contains: searchTerm, mode: 'insensitive' } },
           { nickname: { contains: searchTerm, mode: 'insensitive' } },
@@ -65,8 +65,10 @@ export default async function searchRoutes(fastify: FastifyInstance) {
 
       const foundFighters = await prisma.fighter.findMany({
         where: {
-          ...buildFighterSearchConditions(),
-          isActive: true,
+          AND: [
+            buildFighterSearchConditions(),
+            { isActive: true },
+          ],
         },
         select: {
           id: true,

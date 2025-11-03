@@ -44,6 +44,8 @@ export default function FightDetailsMenu({
   isFollowing,
   onToggleNotification,
   isTogglingNotification,
+  onToggleFighterNotification,
+  isTogglingFighterNotification,
 }: FightDetailsMenuProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -94,6 +96,65 @@ export default function FightDetailsMenu({
                   <Switch
                     value={isFollowing ?? false}
                     onValueChange={onToggleNotification}
+                    trackColor={{ false: colors.border, true: colors.tint }}
+                    thumbColor={colors.card}
+                  />
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* Fighter Follow Notifications */}
+          {fight.isFollowingFighter1 && (
+            <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
+              <View style={styles.notificationRow}>
+                <View style={styles.notificationTextContainer}>
+                  <Text style={[styles.menuItemLabel, { color: colors.text, fontWeight: '600' }]}>
+                    Following {fight.fighter1.lastName}
+                  </Text>
+                  <Text style={[styles.notificationSubtext, { color: colors.textSecondary }]}>
+                    You will be notified before this fight
+                  </Text>
+                </View>
+                {isTogglingFighterNotification ? (
+                  <ActivityIndicator size="small" color={colors.tint} />
+                ) : (
+                  <Switch
+                    value={true}
+                    onValueChange={(enabled) => {
+                      if (onToggleFighterNotification) {
+                        onToggleFighterNotification(fight.fighter1Id, enabled);
+                      }
+                    }}
+                    trackColor={{ false: colors.border, true: colors.tint }}
+                    thumbColor={colors.card}
+                  />
+                )}
+              </View>
+            </View>
+          )}
+
+          {fight.isFollowingFighter2 && (
+            <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
+              <View style={styles.notificationRow}>
+                <View style={styles.notificationTextContainer}>
+                  <Text style={[styles.menuItemLabel, { color: colors.text, fontWeight: '600' }]}>
+                    Following {fight.fighter2.lastName}
+                  </Text>
+                  <Text style={[styles.notificationSubtext, { color: colors.textSecondary }]}>
+                    You will be notified before this fight
+                  </Text>
+                </View>
+                {isTogglingFighterNotification ? (
+                  <ActivityIndicator size="small" color={colors.tint} />
+                ) : (
+                  <Switch
+                    value={true}
+                    onValueChange={(enabled) => {
+                      if (onToggleFighterNotification) {
+                        onToggleFighterNotification(fight.fighter2Id, enabled);
+                      }
+                    }}
                     trackColor={{ false: colors.border, true: colors.tint }}
                     thumbColor={colors.card}
                   />

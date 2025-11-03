@@ -719,6 +719,16 @@ class ApiService {
     });
   }
 
+  async updateFighterNotificationPreferences(
+    fighterId: string,
+    preferences: { startOfFightNotification?: boolean; dayBeforeNotification?: boolean }
+  ): Promise<{ message: string; startOfFightNotification: boolean; dayBeforeNotification: boolean }> {
+    return this.makeRequest(`/fighters/${fighterId}/notification-preferences`, {
+      method: 'PATCH',
+      body: JSON.stringify(preferences),
+    });
+  }
+
   // Profile methods
   async updateProfile(data: {
     displayName?: string;

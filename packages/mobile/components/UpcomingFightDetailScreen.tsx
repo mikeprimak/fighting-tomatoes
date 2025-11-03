@@ -388,6 +388,30 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
     toggleNotificationMutation.mutate(enabled);
   };
 
+  // Toggle fighter notification mutation
+  const toggleFighterNotificationMutation = useMutation({
+    mutationFn: async ({ fighterId, enabled }: { fighterId: string; enabled: boolean }) => {
+      return apiService.updateFighterNotificationPreferences(fighterId, {
+        startOfFightNotification: enabled,
+      });
+    },
+    onSuccess: () => {
+      // Invalidate queries to refresh fighter follow status
+      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fights'] });
+      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+    },
+    onError: (error: any) => {
+      showError(error?.error || 'Failed to update notification preference');
+    },
+  });
+
+  const handleToggleFighterNotification = (fighterId: string, enabled: boolean) => {
+    toggleFighterNotificationMutation.mutate({ fighterId, enabled });
+  };
+
   // Animated wheel effect for number display
   const animateToNumber = (targetNumber: number) => {
     const currentNumber = selectedHype || 0;
@@ -820,6 +844,8 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         isFollowing={isFollowing}
         onToggleNotification={handleToggleNotification}
         isTogglingNotification={toggleNotificationMutation.isPending}
+        onToggleFighterNotification={handleToggleFighterNotification}
+        isTogglingFighterNotification={toggleFighterNotificationMutation.isPending}
       />
     </ScrollView>
   );
