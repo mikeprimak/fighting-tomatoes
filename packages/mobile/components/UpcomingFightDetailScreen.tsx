@@ -106,8 +106,13 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const [commentToFlag, setCommentToFlag] = useState<string | null>(null);
   const [detailsMenuVisible, setDetailsMenuVisible] = useState(false);
   const [isFollowing, setIsFollowing] = useState(fight.isFollowing ?? false);
+  const [toastMessage, setToastMessage] = useState<string>('');
   const scrollViewRef = useRef<ScrollView>(null);
   const commentInputRef = useRef<View>(null);
+
+  // Animation for toast notification
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTranslateY = useRef(new Animated.Value(50)).current;
 
   // Wheel animation for number display
   const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 120 : 1200)).current;
@@ -310,6 +315,44 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
     }
   };
 
+  // Toast notification animation
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    toastOpacity.setValue(0);
+    toastTranslateY.setValue(50);
+
+    Animated.parallel([
+      Animated.timing(toastOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(toastTranslateY, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Auto-dismiss after 2 seconds
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(toastOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(toastTranslateY, {
+          toValue: 50,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setToastMessage('');
+      });
+    }, 2000);
+  };
+
   // Toggle fight notification mutation
   const toggleNotificationMutation = useMutation({
     mutationFn: async (shouldFollow: boolean) => {
@@ -321,9 +364,16 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
     },
     onSuccess: (data) => {
       setIsFollowing(data.isFollowing);
-      showSuccess(data.message);
-      // Invalidate fight query to refresh isFollowing status
+      // Show toast notification only when following (not when unfollowing)
+      if (data.isFollowing) {
+        showToast('You will be notified before this fight.');
+      }
+      // Invalidate queries to refresh isFollowing status across all views
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fights'] });
+      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
     },
     onError: (error: any) => {
       showError(error?.error || 'Failed to update notification preference');

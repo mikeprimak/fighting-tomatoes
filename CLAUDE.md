@@ -77,11 +77,14 @@ curl http://localhost:3008/health
   - Returns fighters (with records, rankings, champion status), fights (with event context), events (with stats), and promotions (with aggregated stats)
   - Validation: Minimum 2 character query, max 50 results per category
 - **Mobile UI**:
-  - Search bar at top of Community (Good Fights) screen
-  - Placeholder: "Search fighters, events, promotions"
+  - Search bar at top of Community (Good Fights) screen, scrollable with content
+  - Placeholder: "Search", dark button text on yellow background
   - Dedicated search results screen at `/search-results` with 4 sections
-  - Each section shows result count and navigates to relevant detail screens
-- **Files**: `routes/search.ts`, `routes/index.ts:1307`, `services/api.ts:968-1056`, `app/search-results.tsx`, `app/(tabs)/community.tsx:467-485`
+  - Uses reusable components: FighterCard, UpcomingFightCard, CompletedFightCard, SmallEventCard
+  - Column headers matching Community screen style (ALL HYPE/MY HYPE, ALL RATINGS/MY RATING)
+  - SmallEventCard: Compact horizontal layout with banner (33% width), event name, date, and relative time for upcoming events ("IN 2 WEEKS", "TOMORROW", etc.)
+  - Always shows all section headers even with 0 results
+- **Files**: `routes/search.ts`, `routes/index.ts:1307`, `services/api.ts:968-1056`, `app/search-results.tsx`, `app/(tabs)/community.tsx:467-485`, `components/SmallEventCard.tsx`
 
 ### Pre-Fight Comments
 - **Feature**: Users can comment on why they're hyped for upcoming fights
