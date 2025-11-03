@@ -106,6 +106,15 @@ function RootLayoutNav() {
             <Stack.Screen name="fight" options={{ headerShown: false }} />
             <Stack.Screen name="fighter" options={{ headerShown: false }} />
             <Stack.Screen name="event" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="search-results"
+              options={{
+                title: 'Search Results',
+                headerShown: true,
+                headerTintColor: colors.text,
+                headerTitleStyle: { color: colors.text }
+              }}
+            />
           </Stack>
         </ThemeProvider>
       </AuthProvider>

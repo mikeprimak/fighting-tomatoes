@@ -26,6 +26,7 @@ import { CustomAlert } from './CustomAlert';
 import PredictionBarChart from './PredictionBarChart';
 import FightDetailsSection from './FightDetailsSection';
 import { useFightStats } from '../hooks/useFightStats';
+import FightDetailsMenu from './FightDetailsMenu';
 
 interface Fighter {
   id: string;
@@ -275,6 +276,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const [animateMyRating, setAnimateMyRating] = useState(false);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [reviewToFlag, setReviewToFlag] = useState<string | null>(null);
+  const [detailsMenuVisible, setDetailsMenuVisible] = useState(false);
 
   // Inline rating state - Initialize once with existing data, then manage locally
   const [rating, setRating] = useState(() => {
@@ -683,21 +685,29 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
 
         {/* Who Won? */}
         <View style={styles.sectionNoBorder}>
-          {fight.userPredictedWinner ? (
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Correct Winner Prediction?{' '}
-              <Text style={{
-                color: fight.userPredictedWinner === fight.winner ? '#22c55e' : colors.textSecondary,
-                fontWeight: 'bold',
-              }}>
-                {fight.userPredictedWinner === fight.winner ? 'Yes!' : 'No'}
+          <View style={styles.headerRow}>
+            {fight.userPredictedWinner ? (
+              <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
+                Correct Winner Prediction?{' '}
+                <Text style={{
+                  color: fight.userPredictedWinner === fight.winner ? '#22c55e' : colors.textSecondary,
+                  fontWeight: 'bold',
+                }}>
+                  {fight.userPredictedWinner === fight.winner ? 'Yes!' : 'No'}
+                </Text>
               </Text>
-            </Text>
-          ) : (
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Who won?
-            </Text>
-          )}
+            ) : (
+              <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
+                Who won?
+              </Text>
+            )}
+            <TouchableOpacity
+              onPress={() => setDetailsMenuVisible(true)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <FontAwesome name="ellipsis-v" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
           <View style={styles.fighterButtons}>
             {/* Fighter 1 */}
             <View
@@ -1454,8 +1464,6 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           )}
         </View>
 
-        {/* Fight Details */}
-        <FightDetailsSection fight={fight} />
       </ScrollView>
 
       {/* Modals */}
@@ -1468,6 +1476,13 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
       />
 
       <CustomAlert {...alertState} onDismiss={hideAlert} />
+
+      {/* Fight Details Menu */}
+      <FightDetailsMenu
+        fight={fight}
+        visible={detailsMenuVisible}
+        onClose={() => setDetailsMenuVisible(false)}
+      />
     </>
   );
 }
@@ -1518,6 +1533,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
   },
   predictionResultText: {

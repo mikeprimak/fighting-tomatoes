@@ -14,6 +14,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import UpcomingFightCard from '../components/fight-cards/UpcomingFightCard';
+import CompletedFightCard from '../components/fight-cards/CompletedFightCard';
 
 /**
  * Search Results Screen
@@ -236,9 +238,8 @@ export default function SearchResultsScreen() {
   if (!q || q.length < 2) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Search</Text>
-          <Text style={styles.queryText}>Enter at least 2 characters to search</Text>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>Enter at least 2 characters to search</Text>
         </View>
       </View>
     );
@@ -247,12 +248,9 @@ export default function SearchResultsScreen() {
   if (isLoading) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Searching...</Text>
-          <Text style={styles.queryText}>"{q}"</Text>
-        </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.emptyText, { marginTop: 12 }]}>Searching for "{q}"...</Text>
         </View>
       </View>
     );
@@ -261,10 +259,6 @@ export default function SearchResultsScreen() {
   if (error) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Search Error</Text>
-          <Text style={styles.queryText}>"{q}"</Text>
-        </View>
         <View style={styles.errorContainer}>
           <FontAwesome name="exclamation-triangle" size={48} color={colors.error} />
           <Text style={styles.errorText}>Failed to search. Please try again.</Text>
@@ -282,13 +276,6 @@ export default function SearchResultsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Search Results</Text>
-        <Text style={styles.queryText}>
-          "{q}" - {data?.meta.totalResults || 0} results
-        </Text>
-      </View>
-
       {!hasResults ? (
         <View style={styles.emptyState}>
           <FontAwesome name="search" size={64} color={colors.border} style={styles.emptyIcon} />
@@ -353,34 +340,28 @@ export default function SearchResultsScreen() {
                 <Text style={styles.sectionTitle}>Fights</Text>
                 <Text style={styles.resultCount}>({data.data.fights.length})</Text>
               </View>
-              {data.data.fights.map((fight) => (
-                <TouchableOpacity
-                  key={fight.id}
-                  style={[styles.card, styles.fightCard]}
-                  onPress={() => router.push(`/fight/${fight.id}` as any)}
-                >
-                  <View style={styles.fightHeader}>
-                    <Text style={styles.fightTitle}>{fight.event.name}</Text>
-                    {fight.isTitle && (
-                      <View style={styles.titleBadge}>
-                        <Text style={styles.titleText}>TITLE</Text>
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.fighters}>
-                    <Text style={styles.fighterRow}>
-                      {fight.fighter1.firstName} {fight.fighter1.lastName}
-                    </Text>
-                    <Text style={styles.vsText}>vs</Text>
-                    <Text style={styles.fighterRow}>
-                      {fight.fighter2.firstName} {fight.fighter2.lastName}
-                    </Text>
-                  </View>
-                  <Text style={styles.eventDetails}>
-                    {fight.event.promotion} • {new Date(fight.event.date).toLocaleDateString()}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {data.data.fights.map((fight) => {
+                // Use appropriate card based on fight status
+                if (fight.isComplete) {
+                  return (
+                    <CompletedFightCard
+                      key={fight.id}
+                      fight={fight}
+                      onPress={() => router.push(`/fight/${fight.id}` as any)}
+                      showEvent={true}
+                    />
+                  );
+                } else {
+                  return (
+                    <UpcomingFightCard
+                      key={fight.id}
+                      fight={fight}
+                      onPress={() => router.push(`/fight/${fight.id}` as any)}
+                      showEvent={true}
+                    />
+                  );
+                }
+              })}
             </View>
           )}
 

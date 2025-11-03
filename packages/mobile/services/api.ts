@@ -706,6 +706,19 @@ class ApiService {
     });
   }
 
+  // Fight follow/notification methods
+  async followFight(fightId: string): Promise<{ message: string; isFollowing: boolean }> {
+    return this.makeRequest(`/fights/${fightId}/follow`, {
+      method: 'POST',
+    });
+  }
+
+  async unfollowFight(fightId: string): Promise<{ message: string; isFollowing: boolean }> {
+    return this.makeRequest(`/fights/${fightId}/unfollow`, {
+      method: 'DELETE',
+    });
+  }
+
   // Profile methods
   async updateProfile(data: {
     displayName?: string;

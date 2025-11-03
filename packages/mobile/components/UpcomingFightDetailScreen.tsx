@@ -28,6 +28,7 @@ import { useAuth } from '../store/AuthContext';
 import { FlagReviewModal } from '.';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
+import FightDetailsMenu from './FightDetailsMenu';
 
 interface Fighter {
   id: string;
@@ -68,6 +69,7 @@ interface Fight {
   userPredictedMethod?: string | null;
   userPredictedRound?: number | null;
   userHypePrediction?: number | null;
+  isFollowing?: boolean;
 }
 
 interface UpcomingFightDetailScreenProps {
@@ -102,6 +104,8 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [commentToFlag, setCommentToFlag] = useState<string | null>(null);
+  const [detailsMenuVisible, setDetailsMenuVisible] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(fight.isFollowing ?? false);
   const scrollViewRef = useRef<ScrollView>(null);
   const commentInputRef = useRef<View>(null);
 
@@ -306,6 +310,30 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
     }
   };
 
+  // Toggle fight notification mutation
+  const toggleNotificationMutation = useMutation({
+    mutationFn: async (shouldFollow: boolean) => {
+      if (shouldFollow) {
+        return apiService.followFight(fight.id);
+      } else {
+        return apiService.unfollowFight(fight.id);
+      }
+    },
+    onSuccess: (data) => {
+      setIsFollowing(data.isFollowing);
+      showSuccess(data.message);
+      // Invalidate fight query to refresh isFollowing status
+      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+    },
+    onError: (error: any) => {
+      showError(error?.error || 'Failed to update notification preference');
+    },
+  });
+
+  const handleToggleNotification = (enabled: boolean) => {
+    toggleNotificationMutation.mutate(enabled);
+  };
+
   // Animated wheel effect for number display
   const animateToNumber = (targetNumber: number) => {
     const currentNumber = selectedHype || 0;
@@ -385,9 +413,17 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
       {/* Who Do You Think Will Win? */}
       <View style={styles.sectionNoBorder}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Who do you think will win?
-        </Text>
+        <View style={styles.headerRow}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Who do you think will win?
+          </Text>
+          <TouchableOpacity
+            onPress={() => setDetailsMenuVisible(true)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <FontAwesome name="ellipsis-v" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
         <View style={styles.fighterButtons}>
           <TouchableOpacity
             style={[
@@ -684,9 +720,6 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         />
       </View>
 
-      {/* Fight Details */}
-      <FightDetailsSection fight={fight} />
-
       {/* Flag Comment Modal */}
       <FlagReviewModal
         visible={flagModalVisible}
@@ -701,6 +734,16 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
       {/* Custom Alert */}
       <CustomAlert {...alertState} onDismiss={hideAlert} />
+
+      {/* Fight Details Menu */}
+      <FightDetailsMenu
+        fight={fight}
+        visible={detailsMenuVisible}
+        onClose={() => setDetailsMenuVisible(false)}
+        isFollowing={isFollowing}
+        onToggleNotification={handleToggleNotification}
+        isTogglingNotification={toggleNotificationMutation.isPending}
+      />
     </ScrollView>
   );
 }
@@ -724,6 +767,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
   },
   fighterButtons: {
