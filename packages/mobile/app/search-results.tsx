@@ -401,7 +401,7 @@ export default function SearchResultsScreen() {
                 // Use local UFC logo if promotion is UFC, otherwise use banner image or black placeholder
                 const getPromotionImage = () => {
                   if (promotion.name.toUpperCase() === 'UFC') {
-                    return require('../../assets/promotions/UFC_logo.png');
+                    return require('../assets/promotions/UFC_logo.png');
                   }
                   return promotion.image ? { uri: promotion.image } : null;
                 };
