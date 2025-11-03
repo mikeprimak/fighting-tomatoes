@@ -60,6 +60,13 @@ export default function SearchResultsScreen() {
       fontSize: 14,
       color: colors.textSecondary,
     },
+    queryHeader: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: colors.card,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
     section: {
       marginTop: 16,
       marginBottom: 24,
@@ -227,6 +234,13 @@ export default function SearchResultsScreen() {
         </View>
       ) : (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+          {/* Search Query Header */}
+          <View style={styles.queryHeader}>
+            <Text style={styles.queryText}>
+              Search results for "{q}"
+            </Text>
+          </View>
+
           {/* Fighters Section */}
           {data.data.fighters.length > 0 && (
             <View style={styles.section}>
