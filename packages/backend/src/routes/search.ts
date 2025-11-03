@@ -36,18 +36,18 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       // For multi-word queries like "Jon Jones", match first + last name combinations
       const buildFighterSearchConditions = (): any => {
         const baseConditions: any[] = [
-          { firstName: { contains: searchTerm, mode: 'insensitive' } },
-          { lastName: { contains: searchTerm, mode: 'insensitive' } },
-          { nickname: { contains: searchTerm, mode: 'insensitive' } },
+          { firstName: { contains: searchTerm, mode: 'insensitive' as const } },
+          { lastName: { contains: searchTerm, mode: 'insensitive' as const } },
+          { nickname: { contains: searchTerm, mode: 'insensitive' as const } },
         ];
 
         // Add individual word searches for multi-word queries
         if (searchTerms.length > 1) {
           for (const term of searchTerms) {
             baseConditions.push(
-              { firstName: { contains: term, mode: 'insensitive' } },
-              { lastName: { contains: term, mode: 'insensitive' } },
-              { nickname: { contains: term, mode: 'insensitive' } }
+              { firstName: { contains: term, mode: 'insensitive' as const } },
+              { lastName: { contains: term, mode: 'insensitive' as const } },
+              { nickname: { contains: term, mode: 'insensitive' as const } }
             );
           }
 
@@ -57,14 +57,14 @@ export default async function searchRoutes(fastify: FastifyInstance) {
             baseConditions.push(
               {
                 AND: [
-                  { firstName: { contains: term1, mode: 'insensitive' } },
-                  { lastName: { contains: term2, mode: 'insensitive' } },
+                  { firstName: { contains: term1, mode: 'insensitive' as const } },
+                  { lastName: { contains: term2, mode: 'insensitive' as const } },
                 ],
               },
               {
                 AND: [
-                  { firstName: { contains: term2, mode: 'insensitive' } },
-                  { lastName: { contains: term1, mode: 'insensitive' } },
+                  { firstName: { contains: term2, mode: 'insensitive' as const } },
+                  { lastName: { contains: term1, mode: 'insensitive' as const } },
                 ],
               }
             );
@@ -142,16 +142,16 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       // Build OR conditions for full term and individual words
       const buildEventSearchConditions = () => {
         const conditions: any[] = [
-          { name: { contains: searchTerm, mode: 'insensitive' } },
-          { promotion: { contains: searchTerm, mode: 'insensitive' } },
+          { name: { contains: searchTerm, mode: 'insensitive' as const } },
+          { promotion: { contains: searchTerm, mode: 'insensitive' as const } },
         ];
 
         // Add individual word searches for multi-word queries
         if (searchTerms.length > 1) {
           for (const term of searchTerms) {
             conditions.push(
-              { name: { contains: term, mode: 'insensitive' } },
-              { promotion: { contains: term, mode: 'insensitive' } }
+              { name: { contains: term, mode: 'insensitive' as const } },
+              { promotion: { contains: term, mode: 'insensitive' as const } }
             );
           }
         }
@@ -197,26 +197,26 @@ export default async function searchRoutes(fastify: FastifyInstance) {
               {
                 fighter1: {
                   OR: [
-                    { firstName: { contains: searchTerm, mode: 'insensitive' } },
-                    { lastName: { contains: searchTerm, mode: 'insensitive' } },
-                    { nickname: { contains: searchTerm, mode: 'insensitive' } },
+                    { firstName: { contains: searchTerm, mode: 'insensitive' as const } },
+                    { lastName: { contains: searchTerm, mode: 'insensitive' as const } },
+                    { nickname: { contains: searchTerm, mode: 'insensitive' as const } },
                   ],
                 },
               },
               {
                 fighter2: {
                   OR: [
-                    { firstName: { contains: searchTerm, mode: 'insensitive' } },
-                    { lastName: { contains: searchTerm, mode: 'insensitive' } },
-                    { nickname: { contains: searchTerm, mode: 'insensitive' } },
+                    { firstName: { contains: searchTerm, mode: 'insensitive' as const } },
+                    { lastName: { contains: searchTerm, mode: 'insensitive' as const } },
+                    { nickname: { contains: searchTerm, mode: 'insensitive' as const } },
                   ],
                 },
               },
               {
                 event: {
                   OR: [
-                    { name: { contains: searchTerm, mode: 'insensitive' } },
-                    { promotion: { contains: searchTerm, mode: 'insensitive' } },
+                    { name: { contains: searchTerm, mode: 'insensitive' as const } },
+                    { promotion: { contains: searchTerm, mode: 'insensitive' as const } },
                   ],
                 },
               },
@@ -234,26 +234,26 @@ export default async function searchRoutes(fastify: FastifyInstance) {
             {
               fighter1: {
                 OR: [
-                  { firstName: { contains: term, mode: 'insensitive' } },
-                  { lastName: { contains: term, mode: 'insensitive' } },
-                  { nickname: { contains: term, mode: 'insensitive' } },
+                  { firstName: { contains: term, mode: 'insensitive' as const } },
+                  { lastName: { contains: term, mode: 'insensitive' as const } },
+                  { nickname: { contains: term, mode: 'insensitive' as const } },
                 ],
               },
             },
             {
               fighter2: {
                 OR: [
-                  { firstName: { contains: term, mode: 'insensitive' } },
-                  { lastName: { contains: term, mode: 'insensitive' } },
-                  { nickname: { contains: term, mode: 'insensitive' } },
+                  { firstName: { contains: term, mode: 'insensitive' as const } },
+                  { lastName: { contains: term, mode: 'insensitive' as const } },
+                  { nickname: { contains: term, mode: 'insensitive' as const } },
                 ],
               },
             },
             {
               event: {
                 OR: [
-                  { name: { contains: term, mode: 'insensitive' } },
-                  { promotion: { contains: term, mode: 'insensitive' } },
+                  { name: { contains: term, mode: 'insensitive' as const } },
+                  { promotion: { contains: term, mode: 'insensitive' as const } },
                 ],
               },
             },
@@ -324,13 +324,13 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       // Build OR conditions for full term and individual words
       const buildPromotionSearchConditions = () => {
         const conditions: any[] = [
-          { promotion: { contains: searchTerm, mode: 'insensitive' } },
+          { promotion: { contains: searchTerm, mode: 'insensitive' as const } },
         ];
 
         // Add individual word searches for multi-word queries
         if (searchTerms.length > 1) {
           for (const term of searchTerms) {
-            conditions.push({ promotion: { contains: term, mode: 'insensitive' } });
+            conditions.push({ promotion: { contains: term, mode: 'insensitive' as const } });
           }
         }
 
