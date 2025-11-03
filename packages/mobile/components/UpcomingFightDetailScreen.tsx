@@ -111,6 +111,11 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const [detailsMenuVisible, setDetailsMenuVisible] = useState(false);
   const [isFollowing, setIsFollowing] = useState(fight.isFollowing ?? false);
   const [toastMessage, setToastMessage] = useState<string>('');
+  const [localFighter1Notification, setLocalFighter1Notification] = useState(fight.isFollowingFighter1);
+  const [localFighter2Notification, setLocalFighter2Notification] = useState(fight.isFollowingFighter2);
+
+  // Snapshot the fight data when menu opens to prevent re-renders during toggles
+  const [menuFightSnapshot, setMenuFightSnapshot] = useState(fight);
   const scrollViewRef = useRef<ScrollView>(null);
   const commentInputRef = useRef<View>(null);
 
@@ -366,17 +371,25 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         return apiService.unfollowFight(fight.id);
       }
     },
+    onMutate: async (shouldFollow) => {
+      // Optimistically update local state immediately for smooth UI
+      setIsFollowing(shouldFollow);
+    },
     onSuccess: (data) => {
       setIsFollowing(data.isFollowing);
       // Don't show toast - user is toggling in the menu and can see the switch state
-      // Invalidate queries to refresh isFollowing status across all views
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
-      queryClient.invalidateQueries({ queryKey: ['fights'] });
-      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
-      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
-      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+      // Only invalidate queries if menu is closed to prevent jank
+      if (!detailsMenuVisible) {
+        queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+        queryClient.invalidateQueries({ queryKey: ['fights'] });
+        queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+        queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+        queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+      }
     },
     onError: (error: any) => {
+      // Revert optimistic update on error
+      setIsFollowing(fight.isFollowing ?? false);
       showError(error?.error || 'Failed to update notification preference');
     },
   });
@@ -392,15 +405,31 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         startOfFightNotification: enabled,
       });
     },
-    onSuccess: () => {
-      // Invalidate queries to refresh fighter follow status
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
-      queryClient.invalidateQueries({ queryKey: ['fights'] });
-      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
-      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
-      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+    onMutate: async ({ fighterId, enabled }) => {
+      // Optimistically update local state immediately for smooth UI
+      if (fighterId === fight.fighter1Id) {
+        setLocalFighter1Notification(enabled);
+      } else if (fighterId === fight.fighter2Id) {
+        setLocalFighter2Notification(enabled);
+      }
     },
-    onError: (error: any) => {
+    onSuccess: () => {
+      // Only invalidate queries if menu is closed to prevent jank
+      if (!detailsMenuVisible) {
+        queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+        queryClient.invalidateQueries({ queryKey: ['fights'] });
+        queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+        queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+        queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+      }
+    },
+    onError: (error: any, { fighterId }) => {
+      // Revert optimistic update on error
+      if (fighterId === fight.fighter1Id) {
+        setLocalFighter1Notification(fight.isFollowingFighter1);
+      } else if (fighterId === fight.fighter2Id) {
+        setLocalFighter2Notification(fight.isFollowingFighter2);
+      }
       showError(error?.error || 'Failed to update notification preference');
     },
   });
@@ -497,7 +526,11 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
               <FontAwesome name="bell" size={18} color={colors.tint} style={{ marginRight: 16 }} />
             )}
             <TouchableOpacity
-              onPress={() => setDetailsMenuVisible(true)}
+              onPress={() => {
+                // Snapshot fight data when opening menu to prevent re-renders
+                setMenuFightSnapshot(fight);
+                setDetailsMenuVisible(true);
+              }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
@@ -835,9 +868,21 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
       {/* Fight Details Menu */}
       <FightDetailsMenu
-        fight={fight}
+        fight={{
+          ...menuFightSnapshot,
+          isFollowingFighter1: localFighter1Notification,
+          isFollowingFighter2: localFighter2Notification,
+        }}
         visible={detailsMenuVisible}
-        onClose={() => setDetailsMenuVisible(false)}
+        onClose={() => {
+          setDetailsMenuVisible(false);
+          // Invalidate queries when menu closes to update bell icons
+          queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+          queryClient.invalidateQueries({ queryKey: ['fights'] });
+          queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+          queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+          queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+        }}
         isFollowing={isFollowing}
         onToggleNotification={handleToggleNotification}
         isTogglingNotification={toggleNotificationMutation.isPending}
