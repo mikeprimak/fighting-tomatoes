@@ -69,10 +69,44 @@ curl http://localhost:3008/health
 
 ## Recent Features
 
-### Search Functionality (Latest)
-- **Feature**: Global search across fighters, fights, events, and promotions
+### Fight Notification System (Latest - 2025-11-03)
+- **Feature**: Comprehensive fight notification system with fighter-based and fight-based alerts
+- **Backend**:
+  - Added `isFollowingFighter1` and `isFollowingFighter2` fields to fight responses (both list and detail endpoints)
+  - Checks `UserFighterFollow.startOfFightNotification` flag to determine if user gets notified
+  - New endpoint: `PATCH /api/fighters/:id/notification-preferences` to update notification settings
+  - Allows disabling notifications for a specific fight without unfollowing the fighter
+  - Existing endpoints: `POST /api/fights/:id/follow`, `DELETE /api/fights/:id/unfollow`
+- **Mobile UI**:
+  - **FightDetailsMenu Component**: New three-dots menu (vertical ellipsis icon using Ionicons) at top-right of fight detail screens
+    - Replaces inline "Fight Details" section with modal submenu
+    - Shows "Notify when fight starts" toggle for direct fight follows
+    - Shows "Following [Fighter Name]" sections for each followed fighter with notification toggle
+    - Toggle allows disabling fight notification without unfollowing fighter
+  - **Bell Icon Indicators**: Yellow bell icon (`#F5C518`) appears when notifications are active
+    - UpcomingFightCard: Bell replaces "vs" text when user follows fight OR either fighter
+    - UpcomingFightDetailScreen: Bell appears in header (left of three-dots) when following fight or either fighter
+  - **Toast Notifications**: Replaced modal alerts with toast (slides up from bottom, 2s auto-dismiss)
+    - Green bell icon with "You will be notified before this fight." message
+    - Matches fighter screen notification pattern for consistency
+  - **Query Invalidation**: Properly refreshes all fight lists when notification status changes
+- **User Flow**:
+  - Follow fighter → Enable notifications → Bell appears on all their fights
+  - Open fight detail → Three-dots menu → Toggle specific fight notifications
+  - Follow fight directly → Get notified 15 minutes before
+  - Follow fighter (with notifications) → Get notified before ALL their fights
+- **Files**: `routes/fights.ts:244-278,474-513`, `routes/index.ts:1098-1192`, `services/api.ts:709-730`, `FightDetailsMenu.tsx`, `UpcomingFightDetailScreen.tsx`, `UpcomingFightCard.tsx`
+
+### Search Functionality (Updated 2025-11-03)
+- **Feature**: Global search across fighters, fights, events, and promotions with intelligent multi-word matching
 - **Backend**:
   - API: `GET /api/search?q=query&limit=10` with unified search
+  - **Intelligent Multi-Word Search** (Added 2025-11-03):
+    - Fighter search: "Jon Jones" matches firstName + lastName combinations (both orders)
+    - Fight search: "Jon UFC" finds fights where one term matches fighter AND another matches event/promotion
+    - Maintains backward compatibility with single-term searches
+    - Examples: "Jon Jones" → first+last match, "Jon UFC" → Jon Jones fights at UFC events
+  - **Event Sorting** (Added 2025-11-03): Results ordered by upcoming events first (soonest first), then past events (most recent first)
   - Database: Case-insensitive search across Fighter names/nicknames, Event names, and Promotion names
   - Returns fighters (with records, rankings, champion status), fights (with event context), events (with stats), and promotions (with aggregated stats)
   - Validation: Minimum 2 character query, max 50 results per category
@@ -82,9 +116,13 @@ curl http://localhost:3008/health
   - Dedicated search results screen at `/search-results` with 4 sections
   - Uses reusable components: FighterCard, UpcomingFightCard, CompletedFightCard, SmallEventCard
   - Column headers matching Community screen style (ALL HYPE/MY HYPE, ALL RATINGS/MY RATING)
-  - SmallEventCard: Compact horizontal layout with banner (33% width), event name, date, and relative time for upcoming events ("IN 2 WEEKS", "TOMORROW", etc.)
+  - **SmallEventCard** (Added 2025-11-03): Compact horizontal layout with banner (33% width), event name, date, and yellow badge showing relative time for upcoming events ("IN 2 WEEKS", "TOMORROW", etc.)
   - Always shows all section headers even with 0 results
+- **Technical Notes**:
+  - Fixed TypeScript compilation errors using explicit `any` type annotations for complex Prisma queries
+  - Used `AND` array structure for combining search conditions with `isActive` filter
 - **Files**: `routes/search.ts`, `routes/index.ts:1307`, `services/api.ts:968-1056`, `app/search-results.tsx`, `app/(tabs)/community.tsx:467-485`, `components/SmallEventCard.tsx`
+- **Commits**: `b17bf6a`, `9e98472`, `487408c`, `2ff789d`, `56f10ea`
 
 ### Pre-Fight Comments
 - **Feature**: Users can comment on why they're hyped for upcoming fights
