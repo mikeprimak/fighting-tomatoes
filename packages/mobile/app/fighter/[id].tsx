@@ -165,8 +165,13 @@ export default function FighterDetailScreen() {
         showToast(`You will be notified before ${fighter.lastName} fights.`);
       }
 
-      // Force an immediate refetch of the fighter data
+      // Refetch fighter data and invalidate all fight queries to update bell icons
       await queryClient.refetchQueries({ queryKey: ['fighter', id] });
+      queryClient.invalidateQueries({ queryKey: ['fights'] });
+      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+      queryClient.invalidateQueries({ queryKey: ['fight'] }); // Invalidate all fight detail queries
     },
   });
 

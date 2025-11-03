@@ -462,6 +462,7 @@ export default function CommunityScreen() {
         style={styles.container}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Search Bar */}
         <View style={styles.searchContainer}>
