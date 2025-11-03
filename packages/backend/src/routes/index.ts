@@ -1009,13 +1009,13 @@ export async function registerRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Create follow
+      // Create follow with notifications enabled by default
       await fastify.prisma.userFighterFollow.create({
         data: {
           userId: user.id,
           fighterId: id,
           dayBeforeNotification: true,
-          startOfFightNotification: false,
+          startOfFightNotification: true, // Enable start-of-fight notifications by default
         },
       });
 

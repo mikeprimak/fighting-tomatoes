@@ -74,6 +74,9 @@ interface Fight {
     createdAt: string;
   };
   userTags?: string[];
+  isFollowing?: boolean;
+  isFollowingFighter1?: boolean;
+  isFollowingFighter2?: boolean;
 }
 
 interface FightsResponse {

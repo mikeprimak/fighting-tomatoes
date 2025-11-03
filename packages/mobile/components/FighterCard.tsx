@@ -101,12 +101,20 @@ export default function FighterCard({ fighter, onPress, avgRating, fightCount, l
 
         {avgRating !== undefined && fightCount !== undefined && (
           <View style={styles.ratingContainer}>
-            <Text style={[styles.ratingLabel, { color: colors.textSecondary }]}>
-              Avg Rating (last {fightCount} {fightCount === 1 ? 'fight' : 'fights'}):
-            </Text>
-            <Text style={[styles.rating, { color: colors.primary }]}>
-              {avgRating.toFixed(1)}/10
-            </Text>
+            {fightCount === 0 ? (
+              <Text style={[styles.ratingLabel, { color: colors.textSecondary }]}>
+                No average rating available.
+              </Text>
+            ) : (
+              <>
+                <Text style={[styles.ratingLabel, { color: colors.textSecondary }]}>
+                  Avg Rating (last {fightCount} {fightCount === 1 ? 'fight' : 'fights'}):
+                </Text>
+                <Text style={[styles.rating, { color: colors.primary }]}>
+                  {avgRating.toFixed(1)}/10
+                </Text>
+              </>
+            )}
           </View>
         )}
 
