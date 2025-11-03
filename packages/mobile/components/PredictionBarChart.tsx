@@ -120,29 +120,6 @@ export default function PredictionBarChart({
         </View>
       </View>
 
-      {/* Hype Row */}
-      <View style={styles.chartRow}>
-        <Text style={[styles.fighterLabel, { color: colors.text }]}>
-          Hype
-        </Text>
-        <View style={styles.barContainer}>
-          <FontAwesome6
-            name="fire-flame-curved"
-            size={20}
-            color={getHypeHeatmapColor(predictionStats.averageHype || 0)}
-          />
-          <Text style={[styles.hypeChartValue, { color: colors.text }]}>
-            {predictionStats.averageHype !== undefined
-              ? predictionStats.averageHype % 1 === 0
-                ? predictionStats.averageHype.toString()
-                : predictionStats.averageHype.toFixed(1)
-              : '0'}
-          </Text>
-          <Text style={[styles.hypeChartCount, { color: colors.textSecondary }]}>
-            ({predictionStats.totalPredictions || 0})
-          </Text>
-        </View>
-      </View>
     </View>
   );
 }
