@@ -30,7 +30,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
 
     try {
       // Search fighters (first name, last name, or nickname)
-      const fighters = await prisma.fighter.findMany({
+      const foundFighters = await prisma.fighter.findMany({
         where: {
           OR: [
             { firstName: { contains: searchTerm, mode: 'insensitive' } },
@@ -50,8 +50,6 @@ export default async function searchRoutes(fastify: FastifyInstance) {
           wins: true,
           losses: true,
           draws: true,
-          averageRating: true,
-          totalFights: true,
           isChampion: true,
           championshipTitle: true,
         },
@@ -62,6 +60,41 @@ export default async function searchRoutes(fastify: FastifyInstance) {
           { averageRating: 'desc' },
         ],
       });
+
+      // Calculate average rating from last 3 completed fights for each fighter
+      const fighters = await Promise.all(
+        foundFighters.map(async (fighter) => {
+          // Get last 3 completed fights for this fighter
+          const recentFights = await prisma.fight.findMany({
+            where: {
+              OR: [
+                { fighter1Id: fighter.id },
+                { fighter2Id: fighter.id },
+              ],
+              isComplete: true,
+              averageRating: { gt: 0 },
+            },
+            orderBy: {
+              event: { date: 'desc' },
+            },
+            take: 3,
+            select: {
+              averageRating: true,
+            },
+          });
+
+          // Calculate average rating from these fights
+          const avgRating = recentFights.length > 0
+            ? recentFights.reduce((sum, f) => sum + f.averageRating, 0) / recentFights.length
+            : 0;
+
+          return {
+            ...fighter,
+            averageRating: avgRating,
+            totalFights: recentFights.length,
+          };
+        })
+      );
 
       // Search events (by name)
       const events = await prisma.event.findMany({
