@@ -31,6 +31,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 **Events**: `GET /events`, `GET /events/:id`
 **Crews**: `GET /crews`, `POST /crews|/crews/join`, `GET /crews/:id/messages`, `DELETE /crews/:id`
 **Notifications**: `POST /register-token`, `GET/PUT /preferences`
+**Search**: `GET /search?q=query&limit=10` (fighters, fights, events, promotions)
 **Response**: Success `{ data, pagination? }`, Error `{ error, code, details? }`
 
 ## 🚀 Server Startup (Quick Reference)
@@ -68,7 +69,21 @@ curl http://localhost:3008/health
 
 ## Recent Features
 
-### Pre-Fight Comments (Latest)
+### Search Functionality (Latest)
+- **Feature**: Global search across fighters, fights, events, and promotions
+- **Backend**:
+  - API: `GET /api/search?q=query&limit=10` with unified search
+  - Database: Case-insensitive search across Fighter names/nicknames, Event names, and Promotion names
+  - Returns fighters (with records, rankings, champion status), fights (with event context), events (with stats), and promotions (with aggregated stats)
+  - Validation: Minimum 2 character query, max 50 results per category
+- **Mobile UI**:
+  - Search bar at top of Community (Good Fights) screen
+  - Placeholder: "Search fighters, events, promotions"
+  - Dedicated search results screen at `/search-results` with 4 sections
+  - Each section shows result count and navigates to relevant detail screens
+- **Files**: `routes/search.ts`, `routes/index.ts:1307`, `services/api.ts:968-1056`, `app/search-results.tsx`, `app/(tabs)/community.tsx:467-485`
+
+### Pre-Fight Comments
 - **Feature**: Users can comment on why they're hyped for upcoming fights
 - **Backend**:
   - Database: `PreFightComment` model with unique constraint (one comment per user per fight)

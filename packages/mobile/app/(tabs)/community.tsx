@@ -8,6 +8,7 @@ import {
   useColorScheme,
   ActivityIndicator,
   Image,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -57,6 +58,7 @@ export default function CommunityScreen() {
   const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [reviewToFlag, setReviewToFlag] = useState<{ fightId: string; reviewId: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch events from API
   const { data: eventsData, isLoading } = useQuery({
@@ -209,6 +211,12 @@ export default function CommunityScreen() {
         reviewId: reviewToFlag.reviewId,
         reason
       });
+    }
+  };
+
+  const handleSearch = () => {
+    if (searchQuery.trim().length >= 2) {
+      router.push(`/search-results?q=${encodeURIComponent(searchQuery.trim())}` as any);
     }
   };
 
@@ -368,6 +376,52 @@ export default function CommunityScreen() {
       fontWeight: '600',
       letterSpacing: 0.5,
     },
+    searchContainer: {
+      backgroundColor: colors.card,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    searchBarWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    searchInputContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 12,
+      height: 44,
+    },
+    searchIcon: {
+      marginRight: 8,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      color: colors.text,
+      height: 44,
+    },
+    searchButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderRadius: 8,
+      height: 44,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    searchButtonText: {
+      color: '#FFFFFF',
+      fontSize: 15,
+      fontWeight: '600',
+    },
   });
 
   // Placeholder sections for community features
@@ -400,6 +454,36 @@ export default function CommunityScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBarWrapper}>
+          <View style={styles.searchInputContainer}>
+            <FontAwesome
+              name="search"
+              size={18}
+              color={colors.textSecondary}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search fighters, events, promotions"
+              placeholderTextColor={colors.textSecondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearch}
+              returnKeyType="search"
+            />
+          </View>
+          <TouchableOpacity
+            style={styles.searchButton}
+            onPress={handleSearch}
+            disabled={searchQuery.trim().length < 2}
+          >
+            <Text style={styles.searchButtonText}>Search</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.scrollContent}

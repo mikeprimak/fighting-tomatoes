@@ -9,6 +9,7 @@ import mockLiveEventsRoutes from './mockLiveEvents';
 import notificationsRoutes from './notifications';
 import newsRoutes from './news';
 import communityRoutes from './community';
+import searchRoutes from './search';
 import { uploadRoutes } from './upload';
 import { authenticateUser } from '../middleware/auth';
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
@@ -1301,6 +1302,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Register community routes under /api/community prefix
   await fastify.register(communityRoutes, { prefix: '/api/community' });
+
+  // Register search routes under /api prefix
+  await fastify.register(searchRoutes, { prefix: '/api' });
 
   // Register upload routes under /api prefix
   await fastify.register(async function(fastify) {

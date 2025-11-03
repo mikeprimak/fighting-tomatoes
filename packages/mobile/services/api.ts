@@ -962,6 +962,98 @@ class ApiService {
       method: 'GET',
     });
   }
+
+  // ==================== SEARCH ====================
+
+  async search(query: string, limit: number = 10): Promise<{
+    data: {
+      fighters: Array<{
+        id: string;
+        firstName: string;
+        lastName: string;
+        nickname?: string;
+        profileImage?: string;
+        weightClass?: string;
+        rank?: string;
+        wins: number;
+        losses: number;
+        draws: number;
+        record: string;
+        averageRating: number;
+        totalFights: number;
+        isChampion: boolean;
+        championshipTitle?: string;
+      }>;
+      fights: Array<{
+        id: string;
+        isTitle: boolean;
+        titleName?: string;
+        weightClass?: string;
+        scheduledRounds: number;
+        hasStarted: boolean;
+        isComplete: boolean;
+        winner?: string;
+        method?: string;
+        round?: number;
+        time?: string;
+        averageRating: number;
+        totalRatings: number;
+        fighter1: {
+          id: string;
+          firstName: string;
+          lastName: string;
+          nickname?: string;
+          profileImage?: string;
+          weightClass?: string;
+          rank?: string;
+        };
+        fighter2: {
+          id: string;
+          firstName: string;
+          lastName: string;
+          nickname?: string;
+          profileImage?: string;
+          weightClass?: string;
+          rank?: string;
+        };
+        event: {
+          id: string;
+          name: string;
+          promotion: string;
+          date: string;
+          location?: string;
+        };
+      }>;
+      events: Array<{
+        id: string;
+        name: string;
+        promotion: string;
+        date: string;
+        venue?: string;
+        location?: string;
+        bannerImage?: string;
+        hasStarted: boolean;
+        isComplete: boolean;
+        averageRating: number;
+        totalRatings: number;
+        greatFights: number;
+      }>;
+      promotions: Array<{
+        name: string;
+        totalEvents: number;
+        averageRating: number;
+        upcomingEvents: number;
+      }>;
+    };
+    meta: {
+      query: string;
+      totalResults: number;
+    };
+  }> {
+    return this.makeRequest(`/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
+      method: 'GET',
+    });
+  }
 }
 
 export const apiService = new ApiService();
