@@ -16,6 +16,7 @@ import { apiService } from '../services/api';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import UpcomingFightCard from '../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../components/fight-cards/CompletedFightCard';
+import FighterCard from '../components/FighterCard';
 
 /**
  * Search Results Screen
@@ -86,93 +87,6 @@ export default function SearchResultsScreen() {
       marginBottom: 12,
       borderWidth: 1,
       borderColor: colors.border,
-    },
-    fighterCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    fighterImage: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      backgroundColor: colors.border,
-      marginRight: 12,
-    },
-    fighterInfo: {
-      flex: 1,
-    },
-    fighterName: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 2,
-    },
-    fighterNickname: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      fontStyle: 'italic',
-      marginBottom: 4,
-    },
-    fighterRecord: {
-      fontSize: 14,
-      color: colors.textSecondary,
-    },
-    championBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: colors.primary + '20',
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 6,
-      marginTop: 6,
-      alignSelf: 'flex-start',
-    },
-    championText: {
-      fontSize: 12,
-      color: colors.primary,
-      fontWeight: '600',
-      marginLeft: 4,
-    },
-    fightCard: {
-      gap: 8,
-    },
-    fightHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    fightTitle: {
-      fontSize: 14,
-      color: colors.textSecondary,
-    },
-    titleBadge: {
-      backgroundColor: colors.primary + '20',
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      borderRadius: 6,
-    },
-    titleText: {
-      fontSize: 12,
-      color: colors.primary,
-      fontWeight: '600',
-    },
-    fighters: {
-      gap: 4,
-    },
-    fighterRow: {
-      fontSize: 15,
-      color: colors.text,
-      fontWeight: '500',
-    },
-    vsText: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      textAlign: 'center',
-      marginVertical: 4,
-    },
-    eventCard: {
-      gap: 8,
     },
     eventName: {
       fontSize: 16,
@@ -330,43 +244,17 @@ export default function SearchResultsScreen() {
                 <Text style={styles.sectionTitle}>Fighters</Text>
                 <Text style={styles.resultCount}>({data.data.fighters.length})</Text>
               </View>
-              {data.data.fighters.map((fighter) => (
-                <TouchableOpacity
-                  key={fighter.id}
-                  style={[styles.card, styles.fighterCard]}
-                  onPress={() => router.push(`/fighter/${fighter.id}` as any)}
-                >
-                  {fighter.profileImage ? (
-                    <Image source={{ uri: fighter.profileImage }} style={styles.fighterImage} />
-                  ) : (
-                    <View style={styles.fighterImage}>
-                      <FontAwesome
-                        name="user"
-                        size={30}
-                        color={colors.textSecondary}
-                        style={{ alignSelf: 'center', marginTop: 15 }}
-                      />
-                    </View>
-                  )}
-                  <View style={styles.fighterInfo}>
-                    <Text style={styles.fighterName}>
-                      {fighter.firstName} {fighter.lastName}
-                    </Text>
-                    {fighter.nickname && (
-                      <Text style={styles.fighterNickname}>"{fighter.nickname}"</Text>
-                    )}
-                    <Text style={styles.fighterRecord}>
-                      {fighter.record} • {fighter.weightClass?.replace('_', ' ')}
-                    </Text>
-                    {fighter.isChampion && (
-                      <View style={styles.championBadge}>
-                        <FontAwesome name="trophy" size={12} color={colors.primary} />
-                        <Text style={styles.championText}>Champion</Text>
-                      </View>
-                    )}
-                  </View>
-                </TouchableOpacity>
-              ))}
+              <View style={{ paddingHorizontal: 16 }}>
+                {data.data.fighters.map((fighter) => (
+                  <FighterCard
+                    key={fighter.id}
+                    fighter={fighter}
+                    avgRating={fighter.averageRating}
+                    fightCount={fighter.totalFights}
+                    onPress={() => router.push(`/fighter/${fighter.id}` as any)}
+                  />
+                ))}
+              </View>
             </View>
           )}
 
