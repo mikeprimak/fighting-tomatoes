@@ -97,7 +97,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       );
 
       // Search events (by name)
-      const events = await prisma.event.findMany({
+      const allEvents = await prisma.event.findMany({
         where: {
           name: { contains: searchTerm, mode: 'insensitive' },
         },
@@ -115,11 +115,17 @@ export default async function searchRoutes(fastify: FastifyInstance) {
           totalRatings: true,
           greatFights: true,
         },
-        take: resultLimit,
-        orderBy: [
-          { date: 'desc' },
-        ],
       });
+
+      // Sort: upcoming events first (soonest first), then past events (most recent first)
+      const now = new Date();
+      const upcomingEvents = allEvents
+        .filter(e => new Date(e.date) >= now)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const pastEvents = allEvents
+        .filter(e => new Date(e.date) < now)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      const events = [...upcomingEvents, ...pastEvents].slice(0, resultLimit);
 
       // Search fights (by fighter names in the fight)
       const fights = await prisma.fight.findMany({
