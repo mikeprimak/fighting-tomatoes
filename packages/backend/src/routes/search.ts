@@ -188,119 +188,80 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       const events = [...upcomingEvents, ...pastEvents].slice(0, resultLimit);
 
       // Search fights (by fighter names and event/promotion)
-      // For multi-word queries, search for fights where any word matches fighter names or event/promotion
+      // For multi-word queries like "UFC Jon", require ALL words to match across different fields
       const buildFightSearchConditions = () => {
-        const allConditions: any[] = [];
-
-        // Add full search term matches
-        allConditions.push(
-          {
-            fighter1: {
-              OR: [
-                { firstName: { contains: searchTerm, mode: 'insensitive' } },
-                { lastName: { contains: searchTerm, mode: 'insensitive' } },
-                { nickname: { contains: searchTerm, mode: 'insensitive' } },
-              ],
-            },
-          },
-          {
-            fighter2: {
-              OR: [
-                { firstName: { contains: searchTerm, mode: 'insensitive' } },
-                { lastName: { contains: searchTerm, mode: 'insensitive' } },
-                { nickname: { contains: searchTerm, mode: 'insensitive' } },
-              ],
-            },
-          },
-          {
-            event: {
-              OR: [
-                { name: { contains: searchTerm, mode: 'insensitive' } },
-                { promotion: { contains: searchTerm, mode: 'insensitive' } },
-              ],
-            },
-          }
-        );
-
-        // Multi-term matching (e.g., "Jon UFC" or "UFC test")
-        if (searchTerms.length > 1) {
-          // Add individual word searches
-          for (const term of searchTerms) {
-            allConditions.push(
+        // Single word query - match any field
+        if (searchTerms.length === 1) {
+          return {
+            OR: [
               {
                 fighter1: {
                   OR: [
-                    { firstName: { contains: term, mode: 'insensitive' } },
-                    { lastName: { contains: term, mode: 'insensitive' } },
-                    { nickname: { contains: term, mode: 'insensitive' } },
+                    { firstName: { contains: searchTerm, mode: 'insensitive' } },
+                    { lastName: { contains: searchTerm, mode: 'insensitive' } },
+                    { nickname: { contains: searchTerm, mode: 'insensitive' } },
                   ],
                 },
               },
               {
                 fighter2: {
                   OR: [
-                    { firstName: { contains: term, mode: 'insensitive' } },
-                    { lastName: { contains: term, mode: 'insensitive' } },
-                    { nickname: { contains: term, mode: 'insensitive' } },
+                    { firstName: { contains: searchTerm, mode: 'insensitive' } },
+                    { lastName: { contains: searchTerm, mode: 'insensitive' } },
+                    { nickname: { contains: searchTerm, mode: 'insensitive' } },
                   ],
                 },
               },
               {
                 event: {
                   OR: [
-                    { name: { contains: term, mode: 'insensitive' } },
-                    { promotion: { contains: term, mode: 'insensitive' } },
+                    { name: { contains: searchTerm, mode: 'insensitive' } },
+                    { promotion: { contains: searchTerm, mode: 'insensitive' } },
                   ],
                 },
-              }
-            );
-          }
-
-          // For each term, try matching fighter + event/promotion combinations
-          for (let i = 0; i < searchTerms.length; i++) {
-            const fighterTerm = searchTerms[i];
-            const otherTerms = searchTerms.filter((_, idx) => idx !== i);
-
-            for (const eventTerm of otherTerms) {
-              allConditions.push({
-                AND: [
-                  {
-                    OR: [
-                      {
-                        fighter1: {
-                          OR: [
-                            { firstName: { contains: fighterTerm, mode: 'insensitive' } },
-                            { lastName: { contains: fighterTerm, mode: 'insensitive' } },
-                            { nickname: { contains: fighterTerm, mode: 'insensitive' } },
-                          ],
-                        },
-                      },
-                      {
-                        fighter2: {
-                          OR: [
-                            { firstName: { contains: fighterTerm, mode: 'insensitive' } },
-                            { lastName: { contains: fighterTerm, mode: 'insensitive' } },
-                            { nickname: { contains: fighterTerm, mode: 'insensitive' } },
-                          ],
-                        },
-                      },
-                    ],
-                  },
-                  {
-                    event: {
-                      OR: [
-                        { name: { contains: eventTerm, mode: 'insensitive' } },
-                        { promotion: { contains: eventTerm, mode: 'insensitive' } },
-                      ],
-                    },
-                  },
-                ],
-              });
-            }
-          }
+              },
+            ],
+          };
         }
 
-        return { OR: allConditions };
+        // Multi-word query - require ALL words to match
+        // For "UFC Jon", we need to ensure each word appears somewhere in the fight
+        const allConditions: any[] = [];
+
+        // Build AND conditions - each word must match somewhere
+        const wordMatchConditions = searchTerms.map((term) => ({
+          OR: [
+            {
+              fighter1: {
+                OR: [
+                  { firstName: { contains: term, mode: 'insensitive' } },
+                  { lastName: { contains: term, mode: 'insensitive' } },
+                  { nickname: { contains: term, mode: 'insensitive' } },
+                ],
+              },
+            },
+            {
+              fighter2: {
+                OR: [
+                  { firstName: { contains: term, mode: 'insensitive' } },
+                  { lastName: { contains: term, mode: 'insensitive' } },
+                  { nickname: { contains: term, mode: 'insensitive' } },
+                ],
+              },
+            },
+            {
+              event: {
+                OR: [
+                  { name: { contains: term, mode: 'insensitive' } },
+                  { promotion: { contains: term, mode: 'insensitive' } },
+                ],
+              },
+            },
+          ],
+        }));
+
+        // All words must match (AND)
+        return { AND: wordMatchConditions };
       };
 
       const fights = await prisma.fight.findMany({
