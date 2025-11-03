@@ -17,6 +17,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import UpcomingFightCard from '../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../components/fight-cards/CompletedFightCard';
 import FighterCard from '../components/FighterCard';
+import SmallEventCard from '../components/SmallEventCard';
 
 /**
  * Search Results Screen
@@ -87,17 +88,6 @@ export default function SearchResultsScreen() {
       marginBottom: 12,
       borderWidth: 1,
       borderColor: colors.border,
-    },
-    eventName: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 4,
-    },
-    eventDetails: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      marginBottom: 2,
     },
     promotionCard: {
       gap: 6,
@@ -354,24 +344,11 @@ export default function SearchResultsScreen() {
             </View>
             {data.data.events.length > 0 ? (
               data.data.events.map((event) => (
-                <TouchableOpacity
+                <SmallEventCard
                   key={event.id}
-                  style={[styles.card, styles.eventCard]}
+                  event={event}
                   onPress={() => router.push(`/event/${event.id}` as any)}
-                >
-                  <Text style={styles.eventName}>{event.name}</Text>
-                  <Text style={styles.eventDetails}>
-                    {event.promotion} • {new Date(event.date).toLocaleDateString()}
-                  </Text>
-                  {event.location && (
-                    <Text style={styles.eventDetails}>{event.location}</Text>
-                  )}
-                  {event.totalRatings > 0 && (
-                    <Text style={styles.eventDetails}>
-                      ⭐ {event.averageRating.toFixed(1)}/10 ({event.totalRatings} ratings)
-                    </Text>
-                  )}
-                </TouchableOpacity>
+                />
               ))
             ) : (
               <View style={styles.card}>

@@ -6,6 +6,7 @@ export { default as TabBar, FightCrewAppTabBar } from './TabBar';
 export type { TabConfig, TabBarProps } from './TabBar';
 export { default as EventCard } from './EventCard';
 export { default as FighterCard } from './FighterCard';
+export { default as SmallEventCard } from './SmallEventCard';
 export { PredictionModal } from './PredictionModal';
 export type { PredictionData, PredictionMethod, Fighter, Fight } from './PredictionModal';
 export { default as RoundVotingSlideup } from './RoundVotingSlideup';

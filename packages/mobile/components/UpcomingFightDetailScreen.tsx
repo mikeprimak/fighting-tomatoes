@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
-import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { getHypeHeatmapColor } from '../utils/heatmap';
@@ -417,12 +417,17 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Who do you think will win?
           </Text>
-          <TouchableOpacity
-            onPress={() => setDetailsMenuVisible(true)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <FontAwesome name="ellipsis-v" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+          <View style={styles.headerIcons}>
+            {isFollowing && (
+              <FontAwesome name="bell" size={18} color={colors.tint} style={{ marginRight: 16 }} />
+            )}
+            <TouchableOpacity
+              onPress={() => setDetailsMenuVisible(true)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={styles.fighterButtons}>
           <TouchableOpacity
@@ -774,6 +779,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   fighterButtons: {
     flexDirection: 'row',

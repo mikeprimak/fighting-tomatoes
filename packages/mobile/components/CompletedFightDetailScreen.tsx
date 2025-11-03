@@ -15,7 +15,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useQueryClient, useQuery, useInfiniteQuery, useMutation } from '@tanstack/react-query';
-import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { getHypeHeatmapColor } from '../utils/heatmap';
@@ -705,7 +705,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
               onPress={() => setDetailsMenuVisible(true)}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <FontAwesome name="ellipsis-v" size={20} color={colors.textSecondary} />
+              <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
           <View style={styles.fighterButtons}>

@@ -501,9 +501,13 @@ export default function UpcomingFightCard({
                 </View>
               </View>
 
-              {/* "vs" text - Absolutely centered */}
+              {/* "vs" text or bell icon - Absolutely centered */}
               <View style={styles.vsContainer}>
-                <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
+                {fight.isFollowing ? (
+                  <FontAwesome name="bell" size={14} color="#F5C518" />
+                ) : (
+                  <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
+                )}
               </View>
 
               {/* Fighter 2 - Right half */}
