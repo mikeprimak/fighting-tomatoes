@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Image,
   TextInput,
+  Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -215,6 +216,7 @@ export default function CommunityScreen() {
   };
 
   const handleSearch = () => {
+    Keyboard.dismiss(); // Dismiss keyboard before navigating
     if (searchQuery.trim().length >= 2) {
       router.push(`/search-results?q=${encodeURIComponent(searchQuery.trim())}` as any);
     }

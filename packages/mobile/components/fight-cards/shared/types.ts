@@ -52,6 +52,8 @@ export interface FightData {
   userTags?: string[];
   userHypePrediction?: number | null;
   isFollowing?: boolean;
+  isFollowingFighter1?: boolean;
+  isFollowingFighter2?: boolean;
 }
 
 export interface BaseFightCardProps {
