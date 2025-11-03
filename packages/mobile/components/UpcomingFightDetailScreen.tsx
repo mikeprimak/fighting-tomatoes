@@ -99,6 +99,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const [preFightComment, setPreFightComment] = useState<string>('');
   const [isCommentFocused, setIsCommentFocused] = useState(false);
   const [isEditingComment, setIsEditingComment] = useState(false);
+  const [showCommentForm, setShowCommentForm] = useState(false);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [commentToFlag, setCommentToFlag] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -558,13 +559,26 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
       {/* Pre-Fight Comments */}
       <View style={[styles.sectionNoBorder, { marginTop: -25 }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Pre-Fight Comments
-        </Text>
+        {/* Title row with Add Comment / Cancel button */}
+        <View style={styles.commentHeaderRow}>
+          <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
+            Pre-Fight Comments
+          </Text>
+          {!preFightCommentsData?.userComment && !isEditingComment && (
+            <TouchableOpacity
+              onPress={() => setShowCommentForm(!showCommentForm)}
+              style={styles.addCommentButton}
+            >
+              <Text style={[styles.addCommentButtonText, { color: colors.tint }]}>
+                {showCommentForm ? 'Cancel' : 'Add Comment'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
-        {/* Show comment input only if user hasn't posted yet OR is editing */}
-        {(!preFightCommentsData?.userComment || isEditingComment) && (
-          <View ref={commentInputRef} collapsable={false}>
+        {/* Show comment input when showCommentForm is true (for new comments) OR when editing */}
+        {((showCommentForm && !preFightCommentsData?.userComment) || isEditingComment) && (
+          <View ref={commentInputRef} collapsable={false} style={{ marginTop: 16 }}>
             <View style={[
               styles.commentInputContainer,
               {
@@ -810,6 +824,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginLeft: 12,
     flex: 1,
+  },
+  commentHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 0,
+  },
+  addCommentButton: {
+    padding: 8,
+  },
+  addCommentButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   commentInputContainer: {
     borderRadius: 12,
