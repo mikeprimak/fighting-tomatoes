@@ -379,7 +379,9 @@ export default function CommunityScreen() {
     searchContainer: {
       backgroundColor: colors.card,
       paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingTop: 12,
+      paddingBottom: 16,
+      marginBottom: 8,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
@@ -454,41 +456,41 @@ export default function CommunityScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBarWrapper}>
-          <View style={styles.searchInputContainer}>
-            <FontAwesome
-              name="search"
-              size={18}
-              color={colors.textSecondary}
-              style={styles.searchIcon}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search fighters, events, promotions"
-              placeholderTextColor={colors.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={handleSearch}
-              returnKeyType="search"
-            />
-          </View>
-          <TouchableOpacity
-            style={styles.searchButton}
-            onPress={handleSearch}
-            disabled={searchQuery.trim().length < 2}
-          >
-            <Text style={styles.searchButtonText}>Search</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBarWrapper}>
+            <View style={styles.searchInputContainer}>
+              <FontAwesome
+                name="search"
+                size={18}
+                color={colors.textSecondary}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search fighters, events, promotions"
+                placeholderTextColor={colors.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={handleSearch}
+              disabled={searchQuery.trim().length < 2}
+            >
+              <Text style={styles.searchButtonText}>Search</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Top Upcoming Fights Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
