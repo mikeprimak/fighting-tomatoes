@@ -18,7 +18,11 @@ interface Event {
 interface Fight {
   fighter1: Fighter;
   fighter2: Fighter;
+  fighter1Id: string;
+  fighter2Id: string;
   event: Event;
+  isFollowingFighter1?: boolean;
+  isFollowingFighter2?: boolean;
 }
 
 interface FightDetailsMenuProps {
@@ -29,6 +33,8 @@ interface FightDetailsMenuProps {
   isFollowing?: boolean;
   onToggleNotification?: (enabled: boolean) => void;
   isTogglingNotification?: boolean;
+  onToggleFighterNotification?: (fighterId: string, enabled: boolean) => void;
+  isTogglingFighterNotification?: boolean;
 }
 
 export default function FightDetailsMenu({

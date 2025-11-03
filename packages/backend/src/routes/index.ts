@@ -1095,6 +1095,102 @@ export async function registerRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Update fighter notification preferences endpoint
+  fastify.patch('/api/fighters/:id/notification-preferences', {
+    schema: {
+      description: 'Update notification preferences for a followed fighter',
+      tags: ['fighters'],
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+        },
+        required: ['id'],
+      },
+      body: {
+        type: 'object',
+        properties: {
+          startOfFightNotification: { type: 'boolean' },
+          dayBeforeNotification: { type: 'boolean' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+            startOfFightNotification: { type: 'boolean' },
+            dayBeforeNotification: { type: 'boolean' },
+          },
+        },
+        404: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        500: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+    preHandler: authenticateUser,
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { startOfFightNotification, dayBeforeNotification } = request.body as { startOfFightNotification?: boolean; dayBeforeNotification?: boolean };
+    const user = (request as any).user;
+
+    try {
+      // Check if user is following this fighter
+      const existingFollow = await fastify.prisma.userFighterFollow.findUnique({
+        where: {
+          userId_fighterId: {
+            userId: user.id,
+            fighterId: id,
+          },
+        },
+      });
+
+      if (!existingFollow) {
+        return reply.code(404).send({
+          error: 'You are not following this fighter',
+          code: 'NOT_FOLLOWING',
+        });
+      }
+
+      // Update preferences
+      const updated = await fastify.prisma.userFighterFollow.update({
+        where: {
+          userId_fighterId: {
+            userId: user.id,
+            fighterId: id,
+          },
+        },
+        data: {
+          ...(startOfFightNotification !== undefined && { startOfFightNotification }),
+          ...(dayBeforeNotification !== undefined && { dayBeforeNotification }),
+        },
+      });
+
+      return reply.code(200).send({
+        message: 'Notification preferences updated',
+        startOfFightNotification: updated.startOfFightNotification,
+        dayBeforeNotification: updated.dayBeforeNotification,
+      });
+    } catch (error: any) {
+      request.log.error('Update fighter notification preferences error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
   // Follow fight (create alert) endpoint
   fastify.post('/api/fights/:id/follow', {
     schema: {

@@ -56,6 +56,8 @@ interface Fight {
   id: string;
   fighter1: Fighter;
   fighter2: Fighter;
+  fighter1Id: string;
+  fighter2Id: string;
   fighter1Odds?: string | null;
   fighter2Odds?: string | null;
   fighter1Ranking?: number | null;
@@ -70,6 +72,8 @@ interface Fight {
   userPredictedRound?: number | null;
   userHypePrediction?: number | null;
   isFollowing?: boolean;
+  isFollowingFighter1?: boolean;
+  isFollowingFighter2?: boolean;
 }
 
 interface UpcomingFightDetailScreenProps {
@@ -468,7 +472,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             Who do you think will win?
           </Text>
           <View style={styles.headerIcons}>
-            {isFollowing && (
+            {(isFollowing || fight.isFollowingFighter1 || fight.isFollowingFighter2) && (
               <FontAwesome name="bell" size={18} color={colors.tint} style={{ marginRight: 16 }} />
             )}
             <TouchableOpacity

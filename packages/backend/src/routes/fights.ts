@@ -243,6 +243,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Check which fights the user is following (if authenticated)
       let fightAlerts: any[] = [];
+      let followedFighters: any[] = [];
       if (currentUserId) {
         const fightIds = fights.map((f: any) => f.id);
         fightAlerts = await fastify.prisma.fightAlert.findMany({
@@ -254,9 +255,27 @@ export async function fightRoutes(fastify: FastifyInstance) {
             fightId: true,
           },
         });
+
+        // Get all fighters in these fights
+        const allFighterIds = fights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]);
+        const uniqueFighterIds = [...new Set(allFighterIds)];
+
+        // Check which fighters the user is following with notifications enabled
+        followedFighters = await fastify.prisma.userFighterFollow.findMany({
+          where: {
+            userId: currentUserId,
+            fighterId: { in: uniqueFighterIds },
+            startOfFightNotification: true,
+          },
+          select: {
+            fighterId: true,
+            startOfFightNotification: true,
+          },
+        });
       }
 
       const followedFightIds = new Set(fightAlerts.map(fa => fa.fightId));
+      const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
 
       // Transform fights data to include user-specific data in the expected format
       const transformedFights = fights.map((fight: any) => {
@@ -290,6 +309,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
         // Add isFollowing field
         if (currentUserId) {
           transformed.isFollowing = followedFightIds.has(fight.id);
+
+          // Add fighter follow info
+          transformed.isFollowingFighter1 = followedFighterIds.has(fight.fighter1Id);
+          transformed.isFollowingFighter2 = followedFighterIds.has(fight.fighter2Id);
         }
 
         // Remove the raw arrays to avoid confusion
@@ -459,6 +482,35 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
         transformedFight.isFollowing = !!fightAlert;
         console.log('User is following this fight:', transformedFight.isFollowing);
+
+        // Check if user is following either fighter with notifications enabled
+        const [fighter1Follow, fighter2Follow] = await Promise.all([
+          fastify.prisma.userFighterFollow.findUnique({
+            where: {
+              userId_fighterId: {
+                userId: currentUserId,
+                fighterId: transformedFight.fighter1Id,
+              },
+            },
+            select: { startOfFightNotification: true },
+          }),
+          fastify.prisma.userFighterFollow.findUnique({
+            where: {
+              userId_fighterId: {
+                userId: currentUserId,
+                fighterId: transformedFight.fighter2Id,
+              },
+            },
+            select: { startOfFightNotification: true },
+          }),
+        ]);
+
+        transformedFight.isFollowingFighter1 = fighter1Follow?.startOfFightNotification || false;
+        transformedFight.isFollowingFighter2 = fighter2Follow?.startOfFightNotification || false;
+        console.log('Fighter follow status:', {
+          fighter1: transformedFight.isFollowingFighter1,
+          fighter2: transformedFight.isFollowingFighter2,
+        });
 
         // Remove the raw arrays to avoid confusion
         delete transformedFight.ratings;

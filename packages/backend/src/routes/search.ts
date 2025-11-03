@@ -28,15 +28,44 @@ export default async function searchRoutes(fastify: FastifyInstance) {
     const searchTerm = q.trim();
     const resultLimit = Math.min(Math.max(1, Number(limit) || 10), 50);
 
+    // Split search term into individual words for multi-term matching
+    const searchTerms = searchTerm.split(/\s+/).filter(t => t.length > 0);
+
     try {
       // Search fighters (first name, last name, or nickname)
+      // For multi-word queries like "Jon Jones", match first + last name combinations
+      const buildFighterSearchConditions = () => {
+        const baseConditions = [
+          { firstName: { contains: searchTerm, mode: 'insensitive' } },
+          { lastName: { contains: searchTerm, mode: 'insensitive' } },
+          { nickname: { contains: searchTerm, mode: 'insensitive' } },
+        ];
+
+        // Add multi-term matching for "first last" combinations
+        if (searchTerms.length === 2) {
+          const [term1, term2] = searchTerms;
+          baseConditions.push(
+            {
+              AND: [
+                { firstName: { contains: term1, mode: 'insensitive' } },
+                { lastName: { contains: term2, mode: 'insensitive' } },
+              ],
+            },
+            {
+              AND: [
+                { firstName: { contains: term2, mode: 'insensitive' } },
+                { lastName: { contains: term1, mode: 'insensitive' } },
+              ],
+            }
+          );
+        }
+
+        return { OR: baseConditions };
+      };
+
       const foundFighters = await prisma.fighter.findMany({
         where: {
-          OR: [
-            { firstName: { contains: searchTerm, mode: 'insensitive' } },
-            { lastName: { contains: searchTerm, mode: 'insensitive' } },
-            { nickname: { contains: searchTerm, mode: 'insensitive' } },
-          ],
+          ...buildFighterSearchConditions(),
           isActive: true,
         },
         select: {
@@ -127,9 +156,13 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       const events = [...upcomingEvents, ...pastEvents].slice(0, resultLimit);
 
-      // Search fights (by fighter names in the fight)
-      const fights = await prisma.fight.findMany({
-        where: {
+      // Search fights (by fighter names and event/promotion)
+      // For multi-word queries like "Jon UFC", search for fights where:
+      // - At least one fighter matches one term AND event/promotion matches another term
+      // - OR any single term matches fighter names
+      const buildFightSearchConditions = () => {
+        // Single term or full term match (original behavior)
+        const singleTermConditions = {
           OR: [
             {
               fighter1: {
@@ -150,7 +183,65 @@ export default async function searchRoutes(fastify: FastifyInstance) {
               },
             },
           ],
-        },
+        };
+
+        // Multi-term matching (e.g., "Jon UFC" should find Jon Jones at UFC events)
+        if (searchTerms.length > 1) {
+          const multiTermConditions: any[] = [];
+
+          // For each term, try matching fighter + event/promotion combinations
+          for (let i = 0; i < searchTerms.length; i++) {
+            const fighterTerm = searchTerms[i];
+            const otherTerms = searchTerms.filter((_, idx) => idx !== i);
+
+            for (const eventTerm of otherTerms) {
+              multiTermConditions.push({
+                AND: [
+                  {
+                    OR: [
+                      {
+                        fighter1: {
+                          OR: [
+                            { firstName: { contains: fighterTerm, mode: 'insensitive' } },
+                            { lastName: { contains: fighterTerm, mode: 'insensitive' } },
+                            { nickname: { contains: fighterTerm, mode: 'insensitive' } },
+                          ],
+                        },
+                      },
+                      {
+                        fighter2: {
+                          OR: [
+                            { firstName: { contains: fighterTerm, mode: 'insensitive' } },
+                            { lastName: { contains: fighterTerm, mode: 'insensitive' } },
+                            { nickname: { contains: fighterTerm, mode: 'insensitive' } },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                  {
+                    event: {
+                      OR: [
+                        { name: { contains: eventTerm, mode: 'insensitive' } },
+                        { promotion: { contains: eventTerm, mode: 'insensitive' } },
+                      ],
+                    },
+                  },
+                ],
+              });
+            }
+          }
+
+          return {
+            OR: [singleTermConditions, ...multiTermConditions],
+          };
+        }
+
+        return singleTermConditions;
+      };
+
+      const fights = await prisma.fight.findMany({
+        where: buildFightSearchConditions(),
         select: {
           id: true,
           isTitle: true,
