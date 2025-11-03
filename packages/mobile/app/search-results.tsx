@@ -233,6 +233,43 @@ export default function SearchResultsScreen() {
       textAlign: 'center',
       marginTop: 12,
     },
+    columnHeadersUpcoming: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 0,
+      marginLeft: -11,
+      width: 40,
+      justifyContent: 'center',
+    },
+    columnHeadersUpcomingRight: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 0,
+      marginRight: -11,
+      width: 40,
+      justifyContent: 'center',
+    },
+    columnHeadersCompleted: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 0,
+      marginLeft: -14,
+      width: 60,
+      justifyContent: 'center',
+    },
+    columnHeadersCompletedRight: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 0,
+      marginRight: -17,
+      width: 60,
+      justifyContent: 'center',
+    },
+    columnHeaderText: {
+      fontSize: 10,
+      fontWeight: '600',
+      letterSpacing: 0.5,
+    },
   });
 
   if (!q || q.length < 2) {
@@ -334,36 +371,92 @@ export default function SearchResultsScreen() {
           )}
 
           {/* Fights Section */}
-          {data.data.fights.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Fights</Text>
-                <Text style={styles.resultCount}>({data.data.fights.length})</Text>
-              </View>
-              {data.data.fights.map((fight) => {
-                // Use appropriate card based on fight status
-                if (fight.isComplete) {
-                  return (
-                    <CompletedFightCard
-                      key={fight.id}
-                      fight={fight}
-                      onPress={() => router.push(`/fight/${fight.id}` as any)}
-                      showEvent={true}
-                    />
-                  );
-                } else {
-                  return (
-                    <UpcomingFightCard
-                      key={fight.id}
-                      fight={fight}
-                      onPress={() => router.push(`/fight/${fight.id}` as any)}
-                      showEvent={true}
-                    />
-                  );
-                }
-              })}
-            </View>
-          )}
+          {data.data.fights.length > 0 && (() => {
+            const upcomingFights = data.data.fights.filter(f => !f.isComplete);
+            const completedFights = data.data.fights.filter(f => f.isComplete);
+
+            return (
+              <>
+                {/* Upcoming Fights */}
+                {upcomingFights.length > 0 && (
+                  <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                      <Text style={styles.sectionTitle}>Upcoming Fights</Text>
+                      <Text style={styles.resultCount}>({upcomingFights.length})</Text>
+                    </View>
+                    <View style={[styles.sectionHeader, { marginBottom: 12 }]}>
+                      {/* Left Column Header - ALL / HYPE */}
+                      <View style={styles.columnHeadersUpcoming}>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          ALL
+                        </Text>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          HYPE
+                        </Text>
+                      </View>
+
+                      {/* Right Column Header - MY / HYPE */}
+                      <View style={styles.columnHeadersUpcomingRight}>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          MY
+                        </Text>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          HYPE
+                        </Text>
+                      </View>
+                    </View>
+                    {upcomingFights.map((fight) => (
+                      <UpcomingFightCard
+                        key={fight.id}
+                        fight={fight}
+                        onPress={() => router.push(`/fight/${fight.id}` as any)}
+                        showEvent={true}
+                      />
+                    ))}
+                  </View>
+                )}
+
+                {/* Completed Fights */}
+                {completedFights.length > 0 && (
+                  <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                      <Text style={styles.sectionTitle}>Completed Fights</Text>
+                      <Text style={styles.resultCount}>({completedFights.length})</Text>
+                    </View>
+                    <View style={[styles.sectionHeader, { marginBottom: 12 }]}>
+                      {/* Left Column Header - ALL / RATINGS */}
+                      <View style={styles.columnHeadersCompleted}>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          ALL
+                        </Text>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          RATINGS
+                        </Text>
+                      </View>
+
+                      {/* Right Column Header - MY / RATING */}
+                      <View style={styles.columnHeadersCompletedRight}>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          MY
+                        </Text>
+                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                          RATING
+                        </Text>
+                      </View>
+                    </View>
+                    {completedFights.map((fight) => (
+                      <CompletedFightCard
+                        key={fight.id}
+                        fight={fight}
+                        onPress={() => router.push(`/fight/${fight.id}` as any)}
+                        showEvent={true}
+                      />
+                    ))}
+                  </View>
+                )}
+              </>
+            );
+          })()}
 
           {/* Events Section */}
           {data.data.events.length > 0 && (
