@@ -260,12 +260,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
         const allFighterIds = fights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]);
         const uniqueFighterIds = [...new Set(allFighterIds)];
 
-        // Check which fighters the user is following with notifications enabled
+        // Check which fighters the user is following (with their notification preferences)
         followedFighters = await fastify.prisma.userFighterFollow.findMany({
           where: {
             userId: currentUserId,
             fighterId: { in: uniqueFighterIds },
-            startOfFightNotification: true,
           },
           select: {
             fighterId: true,
@@ -275,7 +274,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       const followedFightIds = new Set(fightAlerts.map(fa => fa.fightId));
-      const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
+      // Create a map of fighterId -> startOfFightNotification status
+      const followedFightersMap = new Map(followedFighters.map(ff => [ff.fighterId, ff.startOfFightNotification]));
 
       // Transform fights data to include user-specific data in the expected format
       const transformedFights = fights.map((fight: any) => {
@@ -310,9 +310,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
         if (currentUserId) {
           transformed.isFollowing = followedFightIds.has(fight.id);
 
-          // Add fighter follow info
-          transformed.isFollowingFighter1 = followedFighterIds.has(fight.fighter1Id);
-          transformed.isFollowingFighter2 = followedFighterIds.has(fight.fighter2Id);
+          // Add fighter follow info (undefined if not following, true/false based on notification preference)
+          transformed.isFollowingFighter1 = followedFightersMap.has(fight.fighter1Id)
+            ? followedFightersMap.get(fight.fighter1Id)
+            : undefined;
+          transformed.isFollowingFighter2 = followedFightersMap.has(fight.fighter2Id)
+            ? followedFightersMap.get(fight.fighter2Id)
+            : undefined;
         }
 
         // Remove the raw arrays to avoid confusion
@@ -505,8 +509,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
           }),
         ]);
 
-        transformedFight.isFollowingFighter1 = fighter1Follow?.startOfFightNotification || false;
-        transformedFight.isFollowingFighter2 = fighter2Follow?.startOfFightNotification || false;
+        // Set notification status (true if following with notifications, false if following without, undefined if not following)
+        transformedFight.isFollowingFighter1 = fighter1Follow !== null ? fighter1Follow.startOfFightNotification : undefined;
+        transformedFight.isFollowingFighter2 = fighter2Follow !== null ? fighter2Follow.startOfFightNotification : undefined;
         console.log('Fighter follow status:', {
           fighter1: transformedFight.isFollowingFighter1,
           fighter2: transformedFight.isFollowingFighter2,

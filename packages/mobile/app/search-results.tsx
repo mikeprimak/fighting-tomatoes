@@ -99,14 +99,35 @@ export default function SearchResultsScreen() {
       borderWidth: 1,
       borderColor: colors.border,
     },
-    promotionCard: {
-      gap: 6,
+    promotionCardContainer: {
+      flexDirection: 'row',
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      marginHorizontal: 16,
+      marginBottom: 12,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    promotionImageContainer: {
+      width: '33%',
+      aspectRatio: 1,
+      backgroundColor: colors.border,
+    },
+    promotionImage: {
+      width: '100%',
+      height: '100%',
+    },
+    promotionContent: {
+      flex: 1,
+      padding: 12,
+      justifyContent: 'center',
     },
     promotionName: {
-      fontSize: 18,
+      fontSize: 15,
       fontWeight: '600',
       color: colors.text,
-      marginBottom: 4,
+      marginBottom: 6,
     },
     promotionStats: {
       flexDirection: 'row',
@@ -114,7 +135,7 @@ export default function SearchResultsScreen() {
       gap: 12,
     },
     promotionStat: {
-      fontSize: 14,
+      fontSize: 13,
       color: colors.textSecondary,
     },
     emptyState: {
@@ -377,24 +398,29 @@ export default function SearchResultsScreen() {
             </View>
             {data.data.promotions.length > 0 ? (
               data.data.promotions.map((promotion, index) => (
-                <View key={index} style={[styles.card, styles.promotionCard]}>
-                  <Text style={styles.promotionName}>{promotion.name}</Text>
-                  <View style={styles.promotionStats}>
-                    <Text style={styles.promotionStat}>
-                      {promotion.totalEvents} total events
-                    </Text>
-                    <Text style={styles.promotionStat}>•</Text>
-                    <Text style={styles.promotionStat}>
-                      {promotion.upcomingEvents} upcoming
-                    </Text>
-                    {promotion.averageRating > 0 && (
-                      <>
-                        <Text style={styles.promotionStat}>•</Text>
-                        <Text style={styles.promotionStat}>
-                          ⭐ {promotion.averageRating.toFixed(1)}/10 avg
-                        </Text>
-                      </>
+                <View key={index} style={styles.promotionCardContainer}>
+                  <View style={styles.promotionImageContainer}>
+                    {promotion.image ? (
+                      <Image
+                        source={{ uri: promotion.image }}
+                        style={styles.promotionImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[styles.promotionImage, { backgroundColor: colors.border }]} />
                     )}
+                  </View>
+                  <View style={styles.promotionContent}>
+                    <Text style={styles.promotionName}>{promotion.name}</Text>
+                    <View style={styles.promotionStats}>
+                      <Text style={styles.promotionStat}>
+                        {promotion.totalEvents} total events
+                      </Text>
+                      <Text style={styles.promotionStat}>•</Text>
+                      <Text style={styles.promotionStat}>
+                        {promotion.upcomingEvents} upcoming
+                      </Text>
+                    </View>
                   </View>
                 </View>
               ))

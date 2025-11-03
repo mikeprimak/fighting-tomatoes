@@ -363,11 +363,25 @@ export default async function searchRoutes(fastify: FastifyInstance) {
             },
           });
 
+          // Get a sample banner image from an event of this promotion
+          const sampleEvent = await prisma.event.findFirst({
+            where: {
+              promotion: p.promotion,
+              bannerImage: { not: null },
+            },
+            select: {
+              bannerImage: true,
+            },
+            orderBy: {
+              date: 'desc',
+            },
+          });
+
           return {
             name: p.promotion,
             totalEvents: stats._count.id,
-            averageRating: stats._avg.averageRating || 0,
             upcomingEvents: upcomingCount,
+            image: sampleEvent?.bannerImage || null,
           };
         })
       );

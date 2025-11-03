@@ -105,22 +105,25 @@ export default function FightDetailsMenu({
           )}
 
           {/* Fighter Follow Notifications */}
-          {fight.isFollowingFighter1 && (
+          {fight.isFollowingFighter1 !== undefined && (
             <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
               <View style={styles.notificationRow}>
                 <View style={styles.notificationTextContainer}>
                   <Text style={[styles.menuItemLabel, { color: colors.text, fontWeight: '600' }]}>
-                    Following {fight.fighter1.lastName}
+                    {fight.fighter1.lastName} Notification
                   </Text>
                   <Text style={[styles.notificationSubtext, { color: colors.textSecondary }]}>
-                    You will be notified before this fight
+                    {fight.isFollowingFighter1
+                      ? `You will be notified for this fight because you are following ${fight.fighter1.firstName} ${fight.fighter1.lastName}. Toggle to deactivate notification for this fight only.`
+                      : `You are following ${fight.fighter1.firstName} ${fight.fighter1.lastName} but notifications are off for this fight. Toggle to reactivate.`
+                    }
                   </Text>
                 </View>
                 {isTogglingFighterNotification ? (
                   <ActivityIndicator size="small" color={colors.tint} />
                 ) : (
                   <Switch
-                    value={true}
+                    value={fight.isFollowingFighter1}
                     onValueChange={(enabled) => {
                       if (onToggleFighterNotification) {
                         onToggleFighterNotification(fight.fighter1Id, enabled);
@@ -134,22 +137,25 @@ export default function FightDetailsMenu({
             </View>
           )}
 
-          {fight.isFollowingFighter2 && (
+          {fight.isFollowingFighter2 !== undefined && (
             <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
               <View style={styles.notificationRow}>
                 <View style={styles.notificationTextContainer}>
                   <Text style={[styles.menuItemLabel, { color: colors.text, fontWeight: '600' }]}>
-                    Following {fight.fighter2.lastName}
+                    {fight.fighter2.lastName} Notification
                   </Text>
                   <Text style={[styles.notificationSubtext, { color: colors.textSecondary }]}>
-                    You will be notified before this fight
+                    {fight.isFollowingFighter2
+                      ? `You will be notified for this fight because you are following ${fight.fighter2.firstName} ${fight.fighter2.lastName}. Toggle to deactivate notification for this fight only.`
+                      : `You are following ${fight.fighter2.firstName} ${fight.fighter2.lastName} but notifications are off for this fight. Toggle to reactivate.`
+                    }
                   </Text>
                 </View>
                 {isTogglingFighterNotification ? (
                   <ActivityIndicator size="small" color={colors.tint} />
                 ) : (
                   <Switch
-                    value={true}
+                    value={fight.isFollowingFighter2}
                     onValueChange={(enabled) => {
                       if (onToggleFighterNotification) {
                         onToggleFighterNotification(fight.fighter2Id, enabled);
