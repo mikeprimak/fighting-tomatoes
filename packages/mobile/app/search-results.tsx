@@ -459,13 +459,13 @@ export default function SearchResultsScreen() {
           })()}
 
           {/* Events Section */}
-          {data.data.events.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Events</Text>
-                <Text style={styles.resultCount}>({data.data.events.length})</Text>
-              </View>
-              {data.data.events.map((event) => (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Events</Text>
+              <Text style={styles.resultCount}>({data.data.events.length})</Text>
+            </View>
+            {data.data.events.length > 0 ? (
+              data.data.events.map((event) => (
                 <TouchableOpacity
                   key={event.id}
                   style={[styles.card, styles.eventCard]}
@@ -484,18 +484,24 @@ export default function SearchResultsScreen() {
                     </Text>
                   )}
                 </TouchableOpacity>
-              ))}
-            </View>
-          )}
+              ))
+            ) : (
+              <View style={styles.card}>
+                <Text style={[styles.emptyText, { textAlign: 'center' }]}>
+                  No events found
+                </Text>
+              </View>
+            )}
+          </View>
 
           {/* Promotions Section */}
-          {data.data.promotions.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Promotions</Text>
-                <Text style={styles.resultCount}>({data.data.promotions.length})</Text>
-              </View>
-              {data.data.promotions.map((promotion, index) => (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Promotions</Text>
+              <Text style={styles.resultCount}>({data.data.promotions.length})</Text>
+            </View>
+            {data.data.promotions.length > 0 ? (
+              data.data.promotions.map((promotion, index) => (
                 <View key={index} style={[styles.card, styles.promotionCard]}>
                   <Text style={styles.promotionName}>{promotion.name}</Text>
                   <View style={styles.promotionStats}>
@@ -516,9 +522,15 @@ export default function SearchResultsScreen() {
                     )}
                   </View>
                 </View>
-              ))}
-            </View>
-          )}
+              ))
+            ) : (
+              <View style={styles.card}>
+                <Text style={[styles.emptyText, { textAlign: 'center' }]}>
+                  No promotions found
+                </Text>
+              </View>
+            )}
+          </View>
         </ScrollView>
       )}
     </View>
