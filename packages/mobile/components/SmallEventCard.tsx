@@ -131,11 +131,17 @@ export default function SmallEventCard({ event, onPress }: SmallEventCardProps) 
       color: colors.textSecondary,
     },
     eventTimeUntil: {
-      fontSize: 11,
-      fontWeight: '600',
-      color: colors.textSecondary,
-      marginTop: 4,
-      letterSpacing: 0.5,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 6,
+      backgroundColor: '#F5C518',
+      alignSelf: 'flex-start',
+      marginTop: 8,
+    },
+    eventTimeUntilText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: '#000000',
     },
   });
 
@@ -160,9 +166,11 @@ export default function SmallEventCard({ event, onPress }: SmallEventCardProps) 
           {formatDate(event.date)}
         </Text>
         {isUpcoming && (
-          <Text style={styles.eventTimeUntil}>
-            {formatTimeUntil(event.date)}
-          </Text>
+          <View style={styles.eventTimeUntil}>
+            <Text style={styles.eventTimeUntilText}>
+              {formatTimeUntil(event.date)}
+            </Text>
+          </View>
         )}
       </View>
     </TouchableOpacity>

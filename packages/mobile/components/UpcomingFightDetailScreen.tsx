@@ -790,6 +790,24 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       {/* Custom Alert */}
       <CustomAlert {...alertState} onDismiss={hideAlert} />
 
+      {/* Toast Notification */}
+      {toastMessage !== '' && (
+        <Animated.View
+          style={[
+            styles.toastContainer,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              opacity: toastOpacity,
+              transform: [{ translateY: toastTranslateY }],
+            },
+          ]}
+        >
+          <FontAwesome name="bell" size={16} color="#10b981" />
+          <Text style={[styles.toastText, { color: '#fff' }]}>{toastMessage}</Text>
+        </Animated.View>
+      )}
+
       {/* Fight Details Menu */}
       <FightDetailsMenu
         fight={fight}
@@ -966,6 +984,30 @@ const styles = StyleSheet.create({
   },
   saveCommentButtonText: {
     fontSize: 15,
+    fontWeight: '600',
+  },
+  toastContainer: {
+    position: 'absolute',
+    bottom: 80,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  toastText: {
+    fontSize: 14,
     fontWeight: '600',
   },
 });
