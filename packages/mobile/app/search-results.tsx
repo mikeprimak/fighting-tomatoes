@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
@@ -27,7 +27,17 @@ export default function SearchResultsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
+  const navigation = useNavigation();
   const { q } = useLocalSearchParams<{ q: string }>();
+
+  // Set the navigation header title to show the search query
+  useLayoutEffect(() => {
+    if (q) {
+      navigation.setOptions({
+        title: `"${q}"`,
+      });
+    }
+  }, [q, navigation]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['search', q],
@@ -59,13 +69,6 @@ export default function SearchResultsScreen() {
     queryText: {
       fontSize: 14,
       color: colors.textSecondary,
-    },
-    queryHeader: {
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      backgroundColor: colors.card,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
     },
     section: {
       marginTop: 16,
@@ -234,13 +237,6 @@ export default function SearchResultsScreen() {
         </View>
       ) : (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-          {/* Search Query Header */}
-          <View style={styles.queryHeader}>
-            <Text style={styles.queryText}>
-              Search results for "{q}"
-            </Text>
-          </View>
-
           {/* Fighters Section */}
           {data.data.fighters.length > 0 && (
             <View style={styles.section}>
