@@ -368,10 +368,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
     },
     onSuccess: (data) => {
       setIsFollowing(data.isFollowing);
-      // Show toast notification only when following (not when unfollowing)
-      if (data.isFollowing) {
-        showToast('You will be notified before this fight.');
-      }
+      // Don't show toast - user is toggling in the menu and can see the switch state
       // Invalidate queries to refresh isFollowing status across all views
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });

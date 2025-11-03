@@ -397,33 +397,45 @@ export default function SearchResultsScreen() {
               <Text style={styles.resultCount}>({data.data.promotions.length})</Text>
             </View>
             {data.data.promotions.length > 0 ? (
-              data.data.promotions.map((promotion, index) => (
-                <View key={index} style={styles.promotionCardContainer}>
-                  <View style={styles.promotionImageContainer}>
-                    {promotion.image ? (
-                      <Image
-                        source={{ uri: promotion.image }}
-                        style={styles.promotionImage}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View style={[styles.promotionImage, { backgroundColor: colors.border }]} />
-                    )}
-                  </View>
-                  <View style={styles.promotionContent}>
-                    <Text style={styles.promotionName}>{promotion.name}</Text>
-                    <View style={styles.promotionStats}>
-                      <Text style={styles.promotionStat}>
-                        {promotion.totalEvents} total events
-                      </Text>
-                      <Text style={styles.promotionStat}>•</Text>
-                      <Text style={styles.promotionStat}>
-                        {promotion.upcomingEvents} upcoming
-                      </Text>
+              data.data.promotions.map((promotion, index) => {
+                // Use local UFC logo if promotion is UFC, otherwise use banner image or black placeholder
+                const getPromotionImage = () => {
+                  if (promotion.name.toUpperCase() === 'UFC') {
+                    return require('../../assets/promotions/UFC_logo.png');
+                  }
+                  return promotion.image ? { uri: promotion.image } : null;
+                };
+
+                const imageSource = getPromotionImage();
+
+                return (
+                  <View key={index} style={styles.promotionCardContainer}>
+                    <View style={styles.promotionImageContainer}>
+                      {imageSource ? (
+                        <Image
+                          source={imageSource}
+                          style={styles.promotionImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={[styles.promotionImage, { backgroundColor: '#000000' }]} />
+                      )}
+                    </View>
+                    <View style={styles.promotionContent}>
+                      <Text style={styles.promotionName}>{promotion.name}</Text>
+                      <View style={styles.promotionStats}>
+                        <Text style={styles.promotionStat}>
+                          {promotion.totalEvents} total events
+                        </Text>
+                        <Text style={styles.promotionStat}>•</Text>
+                        <Text style={styles.promotionStat}>
+                          {promotion.upcomingEvents} upcoming
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-              ))
+                );
+              })
             ) : (
               <View style={styles.card}>
                 <Text style={[styles.emptyText, { textAlign: 'center' }]}>
