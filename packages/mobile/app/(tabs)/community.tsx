@@ -420,7 +420,7 @@ export default function CommunityScreen() {
       alignItems: 'center',
     },
     searchButtonText: {
-      color: '#FFFFFF',
+      color: '#000000',
       fontSize: 15,
       fontWeight: '600',
     },
