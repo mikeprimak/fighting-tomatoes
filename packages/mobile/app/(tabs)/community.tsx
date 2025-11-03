@@ -473,7 +473,7 @@ export default function CommunityScreen() {
               />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search fighters, events, promotions"
+                placeholder="Search"
                 placeholderTextColor={colors.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
