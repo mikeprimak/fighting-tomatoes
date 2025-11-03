@@ -41,23 +41,34 @@ export default async function searchRoutes(fastify: FastifyInstance) {
           { nickname: { contains: searchTerm, mode: 'insensitive' } },
         ];
 
-        // Add multi-term matching for "first last" combinations
-        if (searchTerms.length === 2) {
-          const [term1, term2] = searchTerms;
-          baseConditions.push(
-            {
-              AND: [
-                { firstName: { contains: term1, mode: 'insensitive' } },
-                { lastName: { contains: term2, mode: 'insensitive' } },
-              ],
-            },
-            {
-              AND: [
-                { firstName: { contains: term2, mode: 'insensitive' } },
-                { lastName: { contains: term1, mode: 'insensitive' } },
-              ],
-            }
-          );
+        // Add individual word searches for multi-word queries
+        if (searchTerms.length > 1) {
+          for (const term of searchTerms) {
+            baseConditions.push(
+              { firstName: { contains: term, mode: 'insensitive' } },
+              { lastName: { contains: term, mode: 'insensitive' } },
+              { nickname: { contains: term, mode: 'insensitive' } }
+            );
+          }
+
+          // For 2-word queries, also try "first last" combinations
+          if (searchTerms.length === 2) {
+            const [term1, term2] = searchTerms;
+            baseConditions.push(
+              {
+                AND: [
+                  { firstName: { contains: term1, mode: 'insensitive' } },
+                  { lastName: { contains: term2, mode: 'insensitive' } },
+                ],
+              },
+              {
+                AND: [
+                  { firstName: { contains: term2, mode: 'insensitive' } },
+                  { lastName: { contains: term1, mode: 'insensitive' } },
+                ],
+              }
+            );
+          }
         }
 
         return { OR: baseConditions };
@@ -127,11 +138,29 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         })
       );
 
-      // Search events (by name)
+      // Search events (by name and promotion)
+      // Build OR conditions for full term and individual words
+      const buildEventSearchConditions = () => {
+        const conditions: any[] = [
+          { name: { contains: searchTerm, mode: 'insensitive' } },
+          { promotion: { contains: searchTerm, mode: 'insensitive' } },
+        ];
+
+        // Add individual word searches for multi-word queries
+        if (searchTerms.length > 1) {
+          for (const term of searchTerms) {
+            conditions.push(
+              { name: { contains: term, mode: 'insensitive' } },
+              { promotion: { contains: term, mode: 'insensitive' } }
+            );
+          }
+        }
+
+        return { OR: conditions };
+      };
+
       const allEvents = await prisma.event.findMany({
-        where: {
-          name: { contains: searchTerm, mode: 'insensitive' },
-        },
+        where: buildEventSearchConditions(),
         select: {
           id: true,
           name: true,
@@ -159,37 +188,73 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       const events = [...upcomingEvents, ...pastEvents].slice(0, resultLimit);
 
       // Search fights (by fighter names and event/promotion)
-      // For multi-word queries like "Jon UFC", search for fights where:
-      // - At least one fighter matches one term AND event/promotion matches another term
-      // - OR any single term matches fighter names
+      // For multi-word queries, search for fights where any word matches fighter names or event/promotion
       const buildFightSearchConditions = () => {
-        // Single term or full term match (original behavior)
-        const singleTermConditions = {
-          OR: [
-            {
-              fighter1: {
-                OR: [
-                  { firstName: { contains: searchTerm, mode: 'insensitive' } },
-                  { lastName: { contains: searchTerm, mode: 'insensitive' } },
-                  { nickname: { contains: searchTerm, mode: 'insensitive' } },
-                ],
-              },
-            },
-            {
-              fighter2: {
-                OR: [
-                  { firstName: { contains: searchTerm, mode: 'insensitive' } },
-                  { lastName: { contains: searchTerm, mode: 'insensitive' } },
-                  { nickname: { contains: searchTerm, mode: 'insensitive' } },
-                ],
-              },
-            },
-          ],
-        };
+        const allConditions: any[] = [];
 
-        // Multi-term matching (e.g., "Jon UFC" should find Jon Jones at UFC events)
+        // Add full search term matches
+        allConditions.push(
+          {
+            fighter1: {
+              OR: [
+                { firstName: { contains: searchTerm, mode: 'insensitive' } },
+                { lastName: { contains: searchTerm, mode: 'insensitive' } },
+                { nickname: { contains: searchTerm, mode: 'insensitive' } },
+              ],
+            },
+          },
+          {
+            fighter2: {
+              OR: [
+                { firstName: { contains: searchTerm, mode: 'insensitive' } },
+                { lastName: { contains: searchTerm, mode: 'insensitive' } },
+                { nickname: { contains: searchTerm, mode: 'insensitive' } },
+              ],
+            },
+          },
+          {
+            event: {
+              OR: [
+                { name: { contains: searchTerm, mode: 'insensitive' } },
+                { promotion: { contains: searchTerm, mode: 'insensitive' } },
+              ],
+            },
+          }
+        );
+
+        // Multi-term matching (e.g., "Jon UFC" or "UFC test")
         if (searchTerms.length > 1) {
-          const multiTermConditions: any[] = [];
+          // Add individual word searches
+          for (const term of searchTerms) {
+            allConditions.push(
+              {
+                fighter1: {
+                  OR: [
+                    { firstName: { contains: term, mode: 'insensitive' } },
+                    { lastName: { contains: term, mode: 'insensitive' } },
+                    { nickname: { contains: term, mode: 'insensitive' } },
+                  ],
+                },
+              },
+              {
+                fighter2: {
+                  OR: [
+                    { firstName: { contains: term, mode: 'insensitive' } },
+                    { lastName: { contains: term, mode: 'insensitive' } },
+                    { nickname: { contains: term, mode: 'insensitive' } },
+                  ],
+                },
+              },
+              {
+                event: {
+                  OR: [
+                    { name: { contains: term, mode: 'insensitive' } },
+                    { promotion: { contains: term, mode: 'insensitive' } },
+                  ],
+                },
+              }
+            );
+          }
 
           // For each term, try matching fighter + event/promotion combinations
           for (let i = 0; i < searchTerms.length; i++) {
@@ -197,7 +262,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
             const otherTerms = searchTerms.filter((_, idx) => idx !== i);
 
             for (const eventTerm of otherTerms) {
-              multiTermConditions.push({
+              allConditions.push({
                 AND: [
                   {
                     OR: [
@@ -233,13 +298,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
               });
             }
           }
-
-          return {
-            OR: [singleTermConditions, ...multiTermConditions],
-          };
         }
 
-        return singleTermConditions;
+        return { OR: allConditions };
       };
 
       const fights = await prisma.fight.findMany({
@@ -299,10 +360,24 @@ export default async function searchRoutes(fastify: FastifyInstance) {
 
       // Search promotions (UFC, Bellator, ONE, etc.)
       // We'll get unique promotions from events that match the search term
+      // Build OR conditions for full term and individual words
+      const buildPromotionSearchConditions = () => {
+        const conditions: any[] = [
+          { promotion: { contains: searchTerm, mode: 'insensitive' } },
+        ];
+
+        // Add individual word searches for multi-word queries
+        if (searchTerms.length > 1) {
+          for (const term of searchTerms) {
+            conditions.push({ promotion: { contains: term, mode: 'insensitive' } });
+          }
+        }
+
+        return { OR: conditions };
+      };
+
       const promotions = await prisma.event.findMany({
-        where: {
-          promotion: { contains: searchTerm, mode: 'insensitive' },
-        },
+        where: buildPromotionSearchConditions(),
         select: {
           promotion: true,
         },
