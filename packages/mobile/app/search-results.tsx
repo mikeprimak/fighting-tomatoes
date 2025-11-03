@@ -34,7 +34,7 @@ export default function SearchResultsScreen() {
   useLayoutEffect(() => {
     if (q) {
       navigation.setOptions({
-        title: `"${q}"`,
+        title: `Search Results - "${q}"`,
       });
     }
   }, [q, navigation]);
