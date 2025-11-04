@@ -360,6 +360,20 @@ class ApiService {
     });
   }
 
+  async getFollowedFighters(): Promise<{ fighters: any[] }> {
+    return this.makeRequest('/fighters/followed');
+  }
+
+  async updateFighterNotificationPreferences(
+    fighterId: string,
+    preferences: { startOfFightNotification?: boolean; dayBeforeNotification?: boolean }
+  ): Promise<{ message: string; startOfFightNotification: boolean; dayBeforeNotification: boolean }> {
+    return this.makeRequest(`/fighters/${fighterId}/notification-preferences`, {
+      method: 'PATCH',
+      body: JSON.stringify(preferences),
+    });
+  }
+
   async followFight(fightId: string): Promise<{ message: string; isFollowing: boolean }> {
     return this.makeRequest(`/fights/${fightId}/follow`, {
       method: 'POST',

@@ -217,6 +217,16 @@ export default function SettingsScreen() {
             onValueChange={(value) => updatePreference('notifyFollowedFighterFights', value)}
             sublabel="Get notified when a fighter you follow is about to fight"
           />
+
+          <TouchableOpacity
+            style={[styles.viewFollowedButton, { backgroundColor: colors.background, borderColor: colors.border }]}
+            onPress={() => router.push('/followed-fighters')}
+          >
+            <Text style={[styles.viewFollowedButtonText, { color: colors.text }]}>
+              See the fighters I follow
+            </Text>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
         {/* Pre-Event Report */}
@@ -347,5 +357,21 @@ const createStyles = (colors: any) =>
       color: 'white',
       fontSize: 14,
       fontWeight: '600',
+    },
+    viewFollowedButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      marginHorizontal: 16,
+      marginTop: 8,
+      marginBottom: 16,
+      borderRadius: 8,
+      borderWidth: 1,
+    },
+    viewFollowedButtonText: {
+      fontSize: 15,
+      fontWeight: '500',
     },
   });

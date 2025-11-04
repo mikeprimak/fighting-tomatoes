@@ -1096,6 +1096,90 @@ export async function registerRoutes(fastify: FastifyInstance) {
   });
 
   // Update fighter notification preferences endpoint
+  // Get followed fighters endpoint
+  fastify.get('/api/fighters/followed', {
+    schema: {
+      description: 'Get fighters that the current user is following',
+      tags: ['fighters'],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            fighters: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'string' },
+                  firstName: { type: 'string' },
+                  lastName: { type: 'string' },
+                  nickname: { type: 'string' },
+                  wins: { type: 'integer' },
+                  losses: { type: 'integer' },
+                  draws: { type: 'integer' },
+                  weightClass: { type: 'string' },
+                  profileImage: { type: 'string' },
+                  startOfFightNotification: { type: 'boolean' },
+                  dayBeforeNotification: { type: 'boolean' },
+                },
+              },
+            },
+          },
+        },
+        500: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+    preHandler: authenticateUser,
+  }, async (request, reply) => {
+    const user = (request as any).user;
+
+    try {
+      const followedFighters = await fastify.prisma.userFighterFollow.findMany({
+        where: {
+          userId: user.id,
+        },
+        include: {
+          fighter: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              nickname: true,
+              wins: true,
+              losses: true,
+              draws: true,
+              weightClass: true,
+              profileImage: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      const fighters = followedFighters.map((follow: any) => ({
+        ...follow.fighter,
+        startOfFightNotification: follow.startOfFightNotification,
+        dayBeforeNotification: follow.dayBeforeNotification,
+      }));
+
+      return reply.code(200).send({ fighters });
+    } catch (error: any) {
+      request.log.error('Get followed fighters error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
   fastify.patch('/api/fighters/:id/notification-preferences', {
     schema: {
       description: 'Update notification preferences for a followed fighter',
