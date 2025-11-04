@@ -204,7 +204,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       return apiService.createFightPrediction(fight.id, {
         predictedWinner: winnerId || undefined,
         // Keep existing values
-        predictedMethod: fight.userPredictedMethod as 'DECISION' | 'KO_TKO' | 'SUBMISSION' | undefined,
+        predictedMethod: selectedMethod || undefined,
         predictedRound: fight.userPredictedRound || undefined,
         predictedRating: selectedHype || undefined,
       });
@@ -608,11 +608,17 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   };
 
   return (
-    <ScrollView
-      ref={scrollViewRef}
-      style={[styles.scrollView, { backgroundColor: colors.background }]}
-      keyboardShouldPersistTaps="handled"
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
+      <ScrollView
+        ref={scrollViewRef}
+        style={[styles.scrollView, { backgroundColor: colors.background }]}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 20 }}
+      >
 
 
       {/* Who Do You Think Will Win? */}
@@ -993,7 +999,8 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         onToggleFighterNotification={handleToggleFighterNotification}
         isTogglingFighterNotification={toggleFighterNotificationMutation.isPending}
       />
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
