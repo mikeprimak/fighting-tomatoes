@@ -261,7 +261,7 @@ export default function SettingsScreen() {
             label="Morning Event Summary"
             value={preferences.notifyPreEventReport}
             onValueChange={(value) => updatePreference('notifyPreEventReport', value)}
-            sublabel="Get a notification the morning of events breaking down which fights are hyped and whether any fighters you follow are fighting."
+            sublabel="Get a notification the morning of events breaking down which fights are most hyped and whether any fighters you follow are fighting."
           />
         </View>
 
