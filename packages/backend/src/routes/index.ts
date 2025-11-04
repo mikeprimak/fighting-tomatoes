@@ -1143,7 +1143,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
       const followedFighters = await fastify.prisma.userFighterFollow.findMany({
         where: {
           userId: user.id,
-          startOfFightNotification: true, // Only return fighters with notifications enabled
         },
         include: {
           fighter: {

@@ -134,7 +134,7 @@ export default function FollowedFightersScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <Text style={[styles.headerText, { color: colors.textSecondary }]}>
-            Fighters you follow (notifications enabled). Toggle OFF to stop receiving notifications for that fighter's fights.
+            Fighters you follow. Toggle ON to get notified for all their upcoming fights.
           </Text>
 
           {fighters.map((fighter: FollowedFighter) => (
