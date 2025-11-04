@@ -314,7 +314,7 @@ const createStyles = (colors: any) =>
       overflow: 'hidden',
     },
     sectionWithPadding: {
-      paddingTop: 12,
+      paddingTop: 0,
       paddingBottom: 12,
     },
     sectionHeader: {
