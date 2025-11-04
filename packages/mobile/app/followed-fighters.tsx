@@ -42,24 +42,22 @@ export default function FollowedFightersScreen() {
     queryFn: () => apiService.getFollowedFighters(),
   });
 
-  const updateNotificationMutation = useMutation({
-    mutationFn: ({ fighterId, preferences }: { fighterId: string; preferences: any }) =>
-      apiService.updateFighterNotificationPreferences(fighterId, preferences),
+  const unfollowMutation = useMutation({
+    mutationFn: (fighterId: string) => apiService.unfollowFighter(fighterId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
       queryClient.invalidateQueries({ queryKey: ['fighters'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
+      showSuccess('Fighter unfollowed');
     },
     onError: () => {
-      showError('Failed to update notification preference');
+      showError('Failed to unfollow fighter');
     },
   });
 
-  const handleToggleNotification = (fighterId: string, currentValue: boolean) => {
-    updateNotificationMutation.mutate({
-      fighterId,
-      preferences: { startOfFightNotification: !currentValue },
-    });
+  const handleToggleFollow = (fighterId: string) => {
+    // Toggle OFF means unfollow (remove from database)
+    unfollowMutation.mutate(fighterId);
   };
 
   const getFighterImage = (fighter: FollowedFighter) => {
@@ -134,7 +132,7 @@ export default function FollowedFightersScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <Text style={[styles.headerText, { color: colors.textSecondary }]}>
-            Fighters you follow. Toggle ON to get notified for all their upcoming fights.
+            Fighters you follow. Toggle OFF to unfollow and stop receiving notifications.
           </Text>
 
           {fighters.map((fighter: FollowedFighter) => (
@@ -161,11 +159,11 @@ export default function FollowedFightersScreen() {
                 </Text>
               </View>
               <Switch
-                value={fighter.startOfFightNotification}
-                onValueChange={() => handleToggleNotification(fighter.id, fighter.startOfFightNotification)}
+                value={true}
+                onValueChange={() => handleToggleFollow(fighter.id)}
                 trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={fighter.startOfFightNotification ? colors.textOnAccent : colors.textSecondary}
-                disabled={updateNotificationMutation.isPending}
+                thumbColor={colors.textOnAccent}
+                disabled={unfollowMutation.isPending}
               />
             </View>
           ))}
