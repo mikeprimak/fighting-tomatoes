@@ -207,6 +207,18 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        {/* General Notifications Toggle */}
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Notifications</Text>
+
+          <SettingRow
+            label="Enable Notifications"
+            value={preferences.notificationsEnabled}
+            onValueChange={(value) => updatePreference('notificationsEnabled', value)}
+            sublabel="Turn on to receive all app notifications"
+          />
+        </View>
+
         {/* Fighter Notifications */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Fighter Notifications</Text>
