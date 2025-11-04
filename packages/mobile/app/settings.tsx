@@ -211,12 +211,9 @@ export default function SettingsScreen() {
         <View style={[styles.section, { backgroundColor: colors.card }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Fighter Notifications</Text>
 
-          <SettingRow
-            label="Followed Fighter Fights"
-            value={preferences.notifyFollowedFighterFights}
-            onValueChange={(value) => updatePreference('notifyFollowedFighterFights', value)}
-            sublabel="Get notified when a fighter you follow is about to fight"
-          />
+          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
+            You will receive notifications 15 minutes before these fighters fight.
+          </Text>
 
           <TouchableOpacity
             style={[styles.viewFollowedButton, { backgroundColor: colors.background, borderColor: colors.border }]}
@@ -280,6 +277,12 @@ const createStyles = (colors: any) =>
       fontWeight: '600',
       padding: 16,
       paddingBottom: 8,
+    },
+    sectionDescription: {
+      fontSize: 14,
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      lineHeight: 20,
     },
     settingRow: {
       flexDirection: 'row',
