@@ -348,7 +348,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       queryClient.setQueryData(['preFightComments', fight.id], (old: any) => {
         if (!old) return old;
 
-        // Update user comment if it's the one being upvoted (though users can't upvote their own)
+        // Update user comment if it's the one being upvoted
         const updatedUserComment = old.userComment?.id === commentId
           ? {
               ...old.userComment,
@@ -409,7 +409,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         };
       });
     },
-    onError: (err, commentId, context: any) => {
+    onError: (err: any, commentId, context: any) => {
       // Rollback on error
       if (context?.previousComments) {
         queryClient.setQueryData(['preFightComments', fight.id], context.previousComments);
@@ -883,14 +883,14 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 content: preFightCommentsData.userComment.content,
                 hypeRating: selectedHype,
                 upvotes: preFightCommentsData.userComment.upvotes || 0,
-                userHasUpvoted: false, // User can't upvote their own comment
+                userHasUpvoted: preFightCommentsData.userComment.userHasUpvoted || false,
                 user: {
                   displayName: preFightCommentsData.userComment.user.displayName,
                 },
               }}
               onEdit={() => setIsEditingComment(true)}
-              onUpvote={() => {}} // No-op since users can't upvote their own comment
-              isUpvoting={false}
+              onUpvote={() => handleUpvoteComment(preFightCommentsData.userComment.id)}
+              isUpvoting={upvotingCommentId === preFightCommentsData.userComment.id}
               isAuthenticated={isAuthenticated}
               showMyComment={true}
             />

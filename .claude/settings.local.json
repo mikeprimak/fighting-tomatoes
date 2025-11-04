@@ -115,7 +115,9 @@
       "Bash(nc:*)",
       "Bash(git diff:*)",
       "Bash(wmic process where \"name=''''node.exe''''\" get ProcessId,CommandLine)",
-      "Bash(nul)"
+      "Bash(nul)",
+      "Bash(wmic process where \"name=''node.exe''\" get ProcessId,CommandLine)",
+      "Bash(wmic process where \"name=''node.exe'' and not CommandLine like ''%claude-code%''\" call terminate)"
     ],
     "deny": [],
     "ask": []

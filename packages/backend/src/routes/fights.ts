@@ -1271,7 +1271,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       if (existingVote) {
         // Remove upvote
-        await fastify.prisma.$transaction([
+        const [, updatedComment] = await fastify.prisma.$transaction([
           fastify.prisma.preFightCommentVote.delete({
             where: { id: existingVote.id },
           }),
@@ -1282,12 +1282,12 @@ export async function fightRoutes(fastify: FastifyInstance) {
         ]);
 
         return reply.code(200).send({
-          message: 'Upvote removed',
-          upvoted: false,
+          userHasUpvoted: false,
+          upvotes: updatedComment.upvotes,
         });
       } else {
         // Add upvote
-        await fastify.prisma.$transaction([
+        const [, updatedComment] = await fastify.prisma.$transaction([
           fastify.prisma.preFightCommentVote.create({
             data: {
               userId,
@@ -1301,8 +1301,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
         ]);
 
         return reply.code(200).send({
-          message: 'Upvote added',
-          upvoted: true,
+          userHasUpvoted: true,
+          upvotes: updatedComment.upvotes,
         });
       }
     } catch (error) {
