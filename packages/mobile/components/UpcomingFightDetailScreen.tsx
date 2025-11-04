@@ -108,6 +108,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [commentToFlag, setCommentToFlag] = useState<string | null>(null);
+  const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
   const [detailsMenuVisible, setDetailsMenuVisible] = useState(false);
   const [isFollowing, setIsFollowing] = useState(fight.isFollowing ?? false);
   const [toastMessage, setToastMessage] = useState<string>('');
@@ -329,6 +330,98 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
     if (commentToFlag) {
       flagCommentMutation.mutate({ commentId: commentToFlag, reason });
     }
+  };
+
+  // Upvote pre-fight comment mutation
+  const upvotePreFightCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      return apiService.togglePreFightCommentUpvote(fight.id, commentId);
+    },
+    onMutate: async (commentId) => {
+      setUpvotingCommentId(commentId);
+
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['preFightComments', fight.id] });
+      const previousComments = queryClient.getQueryData(['preFightComments', fight.id]);
+
+      // Optimistic update
+      queryClient.setQueryData(['preFightComments', fight.id], (old: any) => {
+        if (!old) return old;
+
+        // Update user comment if it's the one being upvoted (though users can't upvote their own)
+        const updatedUserComment = old.userComment?.id === commentId
+          ? {
+              ...old.userComment,
+              userHasUpvoted: !old.userComment.userHasUpvoted,
+              upvotes: old.userComment.userHasUpvoted
+                ? old.userComment.upvotes - 1
+                : old.userComment.upvotes + 1,
+            }
+          : old.userComment;
+
+        // Update comments array
+        const updatedComments = old.comments.map((comment: any) =>
+          comment.id === commentId
+            ? {
+                ...comment,
+                userHasUpvoted: !comment.userHasUpvoted,
+                upvotes: comment.userHasUpvoted ? comment.upvotes - 1 : comment.upvotes + 1,
+              }
+            : comment
+        );
+
+        return {
+          ...old,
+          userComment: updatedUserComment,
+          comments: updatedComments,
+        };
+      });
+
+      return { previousComments };
+    },
+    onSuccess: (data, commentId) => {
+      // Update with actual server response
+      queryClient.setQueryData(['preFightComments', fight.id], (old: any) => {
+        if (!old) return old;
+
+        const updatedUserComment = old.userComment?.id === commentId
+          ? {
+              ...old.userComment,
+              userHasUpvoted: data.userHasUpvoted,
+              upvotes: data.upvotes,
+            }
+          : old.userComment;
+
+        const updatedComments = old.comments.map((comment: any) =>
+          comment.id === commentId
+            ? {
+                ...comment,
+                userHasUpvoted: data.userHasUpvoted,
+                upvotes: data.upvotes,
+              }
+            : comment
+        );
+
+        return {
+          ...old,
+          userComment: updatedUserComment,
+          comments: updatedComments,
+        };
+      });
+    },
+    onError: (err, commentId, context: any) => {
+      // Rollback on error
+      if (context?.previousComments) {
+        queryClient.setQueryData(['preFightComments', fight.id], context.previousComments);
+      }
+    },
+    onSettled: () => {
+      setUpvotingCommentId(null);
+    },
+  });
+
+  const handleUpvoteComment = (commentId: string) => {
+    upvotePreFightCommentMutation.mutate(commentId);
   };
 
   // Toast notification animation
@@ -796,6 +889,8 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 },
               }}
               onEdit={() => setIsEditingComment(true)}
+              onUpvote={() => {}} // No-op since users can't upvote their own comment
+              isUpvoting={false}
               isAuthenticated={isAuthenticated}
               showMyComment={true}
             />
@@ -817,7 +912,9 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                     displayName: comment.user.displayName,
                   },
                 }}
+                onUpvote={() => handleUpvoteComment(comment.id)}
                 onFlag={() => handleFlagComment(comment.id)}
+                isUpvoting={upvotingCommentId === comment.id}
                 isAuthenticated={isAuthenticated}
                 showMyComment={false}
               />
