@@ -193,8 +193,9 @@ export default function FollowedFightersScreen() {
                 <Switch
                   value={isFollowing}
                   onValueChange={() => handleToggleFollow(fighter.id, isFollowing)}
-                  trackColor={{ false: colors.border, true: colors.primary }}
-                  thumbColor={isFollowing ? colors.textOnAccent : colors.textSecondary}
+                  trackColor={{ false: colors.textSecondary, true: colors.tint }}
+                  thumbColor="#B0B5BA"
+                  style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
                   disabled={unfollowMutation.isPending || followMutation.isPending}
                 />
               </View>
