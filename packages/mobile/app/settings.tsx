@@ -228,7 +228,7 @@ export default function SettingsScreen() {
           </Text>
 
           {!preferences.notificationsEnabled && (
-            <Text style={[styles.warningText, { color: colors.error }]}>
+            <Text style={[styles.warningText, { color: colors.danger }]}>
               Notifications are toggled off - none of the below notifications will occur.
             </Text>
           )}
