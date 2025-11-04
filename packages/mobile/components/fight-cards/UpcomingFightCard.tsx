@@ -18,7 +18,6 @@ interface UpcomingFightCardProps extends BaseFightCardProps {
   isNextFight?: boolean;
   hasLiveFight?: boolean;
   lastCompletedFightTime?: string;
-  animatePrediction?: boolean;
 }
 
 export default function UpcomingFightCard({
@@ -28,7 +27,6 @@ export default function UpcomingFightCard({
   isNextFight = false,
   hasLiveFight = false,
   lastCompletedFightTime,
-  animatePrediction = false,
 }: UpcomingFightCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -55,41 +53,11 @@ export default function UpcomingFightCard({
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const toastTranslateY = useRef(new Animated.Value(50)).current;
 
-  // Prediction button press state
-  const [isPredictionPressed, setIsPredictionPressed] = useState(false);
-
   // Track when "Up next..." first appeared
   const upNextStartTimeRef = useRef<number | null>(null);
 
   // Animation for "Starting soon..." text pulse
   const startingSoonPulseAnim = useRef(new Animated.Value(1)).current;
-
-  // Animated values for prediction save animation (flames)
-  const predictionScaleAnim = useRef(new Animated.Value(1)).current;
-  const predictionGlowAnim = useRef(new Animated.Value(0)).current;
-  const flame1 = useRef(new Animated.Value(0)).current;
-  const flame2 = useRef(new Animated.Value(0)).current;
-  const flame3 = useRef(new Animated.Value(0)).current;
-  const flame4 = useRef(new Animated.Value(0)).current;
-  const flame5 = useRef(new Animated.Value(0)).current;
-  const flame6 = useRef(new Animated.Value(0)).current;
-  const flame7 = useRef(new Animated.Value(0)).current;
-  const flame8 = useRef(new Animated.Value(0)).current;
-
-  // Animated values for fighter image sparkles
-  const fighterSparkle1 = useRef(new Animated.Value(0)).current;
-  const fighterSparkle2 = useRef(new Animated.Value(0)).current;
-  const fighterSparkle3 = useRef(new Animated.Value(0)).current;
-  const fighterSparkle4 = useRef(new Animated.Value(0)).current;
-
-  // Animated values for method text sparkles
-  const methodSparkle1 = useRef(new Animated.Value(0)).current;
-  const methodSparkle2 = useRef(new Animated.Value(0)).current;
-  const methodSparkle3 = useRef(new Animated.Value(0)).current;
-  const methodSparkle4 = useRef(new Animated.Value(0)).current;
-
-  // Animated value for hot fight flame glow
-  const hotFightGlowAnim = useRef(new Animated.Value(0)).current;
 
   // Fetch both prediction stats and aggregate stats in a single API call
   const { data } = useFightStats(fight.id);
@@ -213,96 +181,6 @@ export default function UpcomingFightCard({
       };
     }
   }, [getUpcomingStatusMessage(), startingSoonPulseAnim]);
-
-
-  // Trigger animation when prediction is saved (fighter, method, or hype)
-  useEffect(() => {
-    if (animatePrediction && (fight.userHypePrediction || aggregateStats?.userPrediction?.winner)) {
-      // Reset all sparkles
-      flame1.setValue(0);
-      flame2.setValue(0);
-      flame3.setValue(0);
-      flame4.setValue(0);
-      flame5.setValue(0);
-      flame6.setValue(0);
-      flame7.setValue(0);
-      flame8.setValue(0);
-      fighterSparkle1.setValue(0);
-      fighterSparkle2.setValue(0);
-      fighterSparkle3.setValue(0);
-      fighterSparkle4.setValue(0);
-      methodSparkle1.setValue(0);
-      methodSparkle2.setValue(0);
-      methodSparkle3.setValue(0);
-      methodSparkle4.setValue(0);
-
-      const animations = [];
-
-      // Add hype animations if hype rating exists
-      if (fight.userHypePrediction) {
-        animations.push(
-          Animated.sequence([
-            Animated.timing(predictionScaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
-            Animated.spring(predictionScaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }),
-          ]),
-          Animated.sequence([
-            Animated.timing(predictionGlowAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-            Animated.timing(predictionGlowAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
-          ]),
-          // Flame sparkles
-          Animated.timing(flame1, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame2, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame3, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame4, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame5, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame6, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame7, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame8, { toValue: 1, duration: 500, useNativeDriver: true })
-        );
-      }
-
-      // Add fighter sparkles if user predicted a fighter
-      if (aggregateStats?.userPrediction?.winner) {
-        animations.push(
-          Animated.timing(fighterSparkle1, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(fighterSparkle2, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(fighterSparkle3, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(fighterSparkle4, { toValue: 1, duration: 500, useNativeDriver: true })
-        );
-      }
-
-      // Add method sparkles if user predicted a method
-      if (aggregateStats?.userPrediction?.method) {
-        animations.push(
-          Animated.timing(methodSparkle1, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(methodSparkle2, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(methodSparkle3, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(methodSparkle4, { toValue: 1, duration: 500, useNativeDriver: true })
-        );
-      }
-
-      if (animations.length > 0) {
-        Animated.parallel(animations).start();
-      }
-    }
-  }, [animatePrediction, fight.userHypePrediction, aggregateStats?.userPrediction?.winner, aggregateStats?.userPrediction?.method, predictionScaleAnim, predictionGlowAnim, flame1, flame2, flame3, flame4, flame5, flame6, flame7, flame8, fighterSparkle1, fighterSparkle2, fighterSparkle3, fighterSparkle4, methodSparkle1, methodSparkle2, methodSparkle3, methodSparkle4]);
-
-  // Pulsing glow animation for hot fights (8+ hype) - DISABLED
-  // useEffect(() => {
-  //   if (predictionStats?.averageHype && predictionStats.averageHype >= 8) {
-  //     const pulse = Animated.loop(
-  //       Animated.sequence([
-  //         Animated.timing(hotFightGlowAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
-  //         Animated.timing(hotFightGlowAnim, { toValue: 0, duration: 1200, useNativeDriver: true }),
-  //       ])
-  //     );
-  //     pulse.start();
-  //     return () => {
-  //       pulse.stop();
-  //       hotFightGlowAnim.setValue(0);
-  //     };
-  //   }
-  // }, [predictionStats?.averageHype, hotFightGlowAnim]);
 
   const getFighter1ImageSource = () => {
     if (fighter1ImageError) {

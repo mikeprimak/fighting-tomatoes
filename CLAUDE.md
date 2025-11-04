@@ -69,7 +69,37 @@ curl http://localhost:3008/health
 
 ## Recent Features
 
-### Fight Notification System (Latest - 2025-11-03)
+### Bug Fixes and Code Cleanup (2025-11-04)
+- **Winner Prediction Bug Fix**:
+  - Fixed issue where users couldn't save winner prediction without also selecting a method
+  - Changed `saveWinnerMutation` in UpcomingFightDetailScreen to use `selectedMethod` instead of `fight.userPredictedMethod`
+  - Users can now independently save winner, method, and hype predictions
+  - File: `components/UpcomingFightDetailScreen.tsx:207`
+
+- **Keyboard Handling Improvement**:
+  - Added `KeyboardAvoidingView` to UpcomingFightDetailScreen
+  - Pre-fight comment textarea now remains visible when phone keyboard appears
+  - Behavior: 'padding' for iOS, 'height' for Android
+  - Added bottom padding to ScrollView content for better UX
+  - File: `components/UpcomingFightDetailScreen.tsx:611-621`
+
+- **Removed Legacy Modal System** (354 lines deleted):
+  - Removed old modal-based prediction/rating system that was replaced by full-screen navigation
+  - Cleaned up 5 files: `app/(tabs)/events/index.tsx`, `app/(tabs)/events/[id].tsx`, `app/event/[id].tsx`, `app/crew/[id].tsx`, `app/activity/ratings.tsx`
+  - Removed: `RateFightModal`, `PredictionModal` components and all associated state/handlers
+  - Removed: `recentlyRatedFightId`, `recentlyPredictedFightId` animation tracking (was only working for modal flow, not navigation flow)
+  - Removed: `animateRating`, `animatePrediction` props from fight cards
+  - All prediction/rating functionality now uses navigation to UpcomingFightDetailScreen and CompletedFightDetailScreen
+
+- **Animation System Notes** (for future implementation):
+  - Existing sparkle animation infrastructure still exists in fight cards (flame1-8, fighterSparkle1-4, methodSparkle1-4)
+  - Animations currently only triggered by `animatePrediction` prop, which was only set by modal system
+  - For navigation-based flow, need global state solution (context/redux) or data-change detection
+  - Challenge: React Query caching means data doesn't always re-render on navigation back
+  - Solution attempted: Change detection with refs, pathname detection - both had timing/reliability issues
+  - Recommended approach for future: Simple data comparison on component focus/mount
+
+### Fight Notification System (2025-11-03)
 - **Feature**: Comprehensive fight notification system with fighter-based and fight-based alerts
 - **Backend**:
   - Added `isFollowingFighter1` and `isFollowingFighter2` fields to fight responses (both list and detail endpoints)
