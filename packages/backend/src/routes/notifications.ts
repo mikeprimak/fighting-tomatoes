@@ -13,6 +13,7 @@ const updatePreferencesSchema = z.object({
   notificationsEnabled: z.boolean().optional(),
   notifyFollowedFighterFights: z.boolean().optional(),
   notifyPreEventReport: z.boolean().optional(),
+  notifyHypedFights: z.boolean().optional(),
 });
 
 const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
@@ -87,6 +88,7 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
           notificationsEnabled: true,
           notifyFollowedFighterFights: true,
           notifyPreEventReport: true,
+          notifyHypedFights: true,
         },
       });
 
@@ -117,6 +119,7 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
             notificationsEnabled: true,
             notifyFollowedFighterFights: true,
             notifyPreEventReport: true,
+            notifyHypedFights: true,
           },
         });
 

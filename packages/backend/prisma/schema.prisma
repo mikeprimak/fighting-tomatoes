@@ -43,6 +43,7 @@ model User {
   notificationsEnabled         Boolean   @default(true)
   notifyFollowedFighterFights  Boolean   @default(true)
   notifyPreEventReport         Boolean   @default(true)
+  notifyHypedFights            Boolean   @default(true)
 
   // Media/Professional users
   isMedia           Boolean   @default(false)

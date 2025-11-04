@@ -24,6 +24,7 @@ interface NotificationPreferences {
   notificationsEnabled: boolean;
   notifyFollowedFighterFights: boolean;
   notifyPreEventReport: boolean;
+  notifyHypedFights: boolean;
 }
 
 export default function SettingsScreen() {
@@ -38,6 +39,7 @@ export default function SettingsScreen() {
     notificationsEnabled: true,
     notifyFollowedFighterFights: true,
     notifyPreEventReport: true,
+    notifyHypedFights: true,
   });
 
   useEffect(() => {
@@ -237,6 +239,18 @@ export default function SettingsScreen() {
             </Text>
             <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
           </TouchableOpacity>
+        </View>
+
+        {/* Hyped Fights */}
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Hyped Fights</Text>
+
+          <SettingRow
+            label="High Hype Notifications"
+            value={preferences.notifyHypedFights}
+            onValueChange={(value) => updatePreference('notifyHypedFights', value)}
+            sublabel="Get notified 15 minutes before fights with 8.5+ hype"
+          />
         </View>
 
         {/* Pre-Event Report */}
