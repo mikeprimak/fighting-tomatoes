@@ -250,16 +250,16 @@ const createStyles = (colors: any) =>
     fighterRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      padding: 16,
+      padding: 12,
       borderRadius: 12,
-      marginBottom: 12,
+      marginBottom: 8,
       borderBottomWidth: 1,
     },
     fighterImage: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
-      marginRight: 16,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      marginRight: 12,
     },
     fighterInfo: {
       flex: 1,
