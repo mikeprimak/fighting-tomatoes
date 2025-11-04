@@ -771,10 +771,10 @@ export default function CommunityScreen() {
         {/* Pre-Fight Comments Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Pre-Fight Comments</Text>
+            <Text style={styles.sectionTitle}>Top Pre-Fight Comments</Text>
           </View>
           <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            Top pre-fight hype from upcoming fights
+            Top pre-fight hype for upcoming fights
           </Text>
 
           {isTopPreFightCommentsLoading ? (
@@ -801,10 +801,10 @@ export default function CommunityScreen() {
           )}
         </View>
 
-        {/* Top Comments Section */}
+        {/* Top Post-Fight Comments Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top Comments</Text>
+            <Text style={styles.sectionTitle}>Top Post-Fight Comments</Text>
             <TouchableOpacity
               style={styles.seeAllButton}
               onPress={() => router.push('/comments' as any)}
