@@ -487,7 +487,7 @@ export default function CompletedFightCard({
               <View style={styles.fighter1Container}>
                 <View
                   style={[
-                    { alignSelf: 'flex-end' },
+                    { alignSelf: 'flex-end', position: 'relative' },
                     aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && {
                       borderBottomWidth: 2,
                       borderBottomColor: '#F5C518',
@@ -500,6 +500,15 @@ export default function CompletedFightCard({
                   >
                     {cleanFighterName(getFighterName(fight.fighter1))}
                   </Text>
+                  {/* Checkmark for correct prediction */}
+                  {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` &&
+                   fight.winner === fight.fighter1.id && (
+                    <View style={styles.checkmarkContainer}>
+                      <View style={[styles.checkmarkIcon, { backgroundColor: colors.background }]}>
+                        <FontAwesome name="check" size={10} color="#F5C518" />
+                      </View>
+                    </View>
+                  )}
                 </View>
               </View>
 
@@ -512,7 +521,7 @@ export default function CompletedFightCard({
               <View style={styles.fighter2Container}>
                 <View
                   style={[
-                    { alignSelf: 'flex-start' },
+                    { alignSelf: 'flex-start', position: 'relative' },
                     aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && {
                       borderBottomWidth: 2,
                       borderBottomColor: '#F5C518',
@@ -525,6 +534,15 @@ export default function CompletedFightCard({
                   >
                     {cleanFighterName(getFighterName(fight.fighter2))}
                   </Text>
+                  {/* Checkmark for correct prediction */}
+                  {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` &&
+                   fight.winner === fight.fighter2.id && (
+                    <View style={styles.checkmarkContainer}>
+                      <View style={[styles.checkmarkIcon, { backgroundColor: colors.background }]}>
+                        <FontAwesome name="check" size={10} color="#F5C518" />
+                      </View>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
@@ -727,6 +745,23 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     fontSize: 14,
     fontWeight: '600',
+  },
+  checkmarkContainer: {
+    position: 'absolute',
+    bottom: -8,
+    left: 0,
+    right: 0,
+    height: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+  },
+  checkmarkIcon: {
+    width: 20,
+    height: 12,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   predictionBarContainer: {
     marginTop: 3,
