@@ -218,7 +218,7 @@ export default function SettingsScreen() {
             label="Enable Notifications"
             value={preferences.notificationsEnabled}
             onValueChange={(value) => updatePreference('notificationsEnabled', value)}
-            sublabel="Turn on to receive all app notifications"
+            sublabel="Turn on to receive app notifications"
           />
         </View>
 
