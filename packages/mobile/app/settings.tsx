@@ -22,14 +22,8 @@ import { CustomAlert } from '../components/CustomAlert';
 
 interface NotificationPreferences {
   notificationsEnabled: boolean;
-  notifyEventStart: boolean;
-  notifyFightStart: boolean;
-  notifyMainCardOnly: boolean;
-  notifyUFCOnly: boolean;
-  notifyCrewMessages: boolean;
-  notifyCrewInvites: boolean;
-  notifyRoundChanges: boolean;
-  notifyFightResults: boolean;
+  notifyFollowedFighterFights: boolean;
+  notifyPreEventReport: boolean;
 }
 
 export default function SettingsScreen() {
@@ -42,14 +36,8 @@ export default function SettingsScreen() {
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     notificationsEnabled: true,
-    notifyEventStart: true,
-    notifyFightStart: true,
-    notifyMainCardOnly: false,
-    notifyUFCOnly: false,
-    notifyCrewMessages: true,
-    notifyCrewInvites: true,
-    notifyRoundChanges: false,
-    notifyFightResults: true,
+    notifyFollowedFighterFights: true,
+    notifyPreEventReport: true,
   });
 
   useEffect(() => {
@@ -219,120 +207,34 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        {/* Master Toggle */}
+        {/* Fighter Notifications */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Push Notifications</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fighter Notifications</Text>
 
           <SettingRow
-            label="Enable Notifications"
-            value={preferences.notificationsEnabled}
-            onValueChange={(value) => updatePreference('notificationsEnabled', value)}
-            sublabel="Receive push notifications from the app"
+            label="Followed Fighter Fights"
+            value={preferences.notifyFollowedFighterFights}
+            onValueChange={(value) => updatePreference('notifyFollowedFighterFights', value)}
+            sublabel="Get notified when a fighter you follow is about to fight"
           />
         </View>
 
-        {/* Event Notifications */}
+        {/* Pre-Event Report */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Events</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Pre-Event Report</Text>
 
           <SettingRow
-            label="Event Starts"
-            value={preferences.notifyEventStart}
-            onValueChange={(value) => updatePreference('notifyEventStart', value)}
-            disabled={!preferences.notificationsEnabled}
-            sublabel="Notify when an event begins"
+            label="Morning Event Summary"
+            value={preferences.notifyPreEventReport}
+            onValueChange={(value) => updatePreference('notifyPreEventReport', value)}
+            sublabel="Get a notification the morning of an event breaking down which fighters you follow are fighting and which fights are hyped"
           />
-
-          <SettingRow
-            label="UFC Events Only"
-            value={preferences.notifyUFCOnly}
-            onValueChange={(value) => updatePreference('notifyUFCOnly', value)}
-            disabled={!preferences.notificationsEnabled || !preferences.notifyEventStart}
-            sublabel="Only notify for UFC events"
-          />
-        </View>
-
-        {/* Fight Notifications */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fights</Text>
-
-          <SettingRow
-            label="Fight Starts"
-            value={preferences.notifyFightStart}
-            onValueChange={(value) => updatePreference('notifyFightStart', value)}
-            disabled={!preferences.notificationsEnabled}
-            sublabel="Notify when fights begin"
-          />
-
-          <SettingRow
-            label="Main Card Only"
-            value={preferences.notifyMainCardOnly}
-            onValueChange={(value) => updatePreference('notifyMainCardOnly', value)}
-            disabled={!preferences.notificationsEnabled || !preferences.notifyFightStart}
-            sublabel="Only notify for main card fights"
-          />
-
-          <SettingRow
-            label="Round Changes"
-            value={preferences.notifyRoundChanges}
-            onValueChange={(value) => updatePreference('notifyRoundChanges', value)}
-            disabled={!preferences.notificationsEnabled}
-            sublabel="Notify when rounds change (live fights)"
-          />
-
-          <SettingRow
-            label="Fight Results"
-            value={preferences.notifyFightResults}
-            onValueChange={(value) => updatePreference('notifyFightResults', value)}
-            disabled={!preferences.notificationsEnabled}
-            sublabel="Notify when fights end with results"
-          />
-        </View>
-
-        {/* Crew Notifications */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Crews</Text>
-
-          <SettingRow
-            label="Crew Messages"
-            value={preferences.notifyCrewMessages}
-            onValueChange={(value) => updatePreference('notifyCrewMessages', value)}
-            disabled={!preferences.notificationsEnabled}
-            sublabel="Notify for new crew messages"
-          />
-
-          <SettingRow
-            label="Crew Invites"
-            value={preferences.notifyCrewInvites}
-            onValueChange={(value) => updatePreference('notifyCrewInvites', value)}
-            disabled={!preferences.notificationsEnabled}
-            sublabel="Notify when invited to a crew"
-          />
-        </View>
-
-        {/* Test Notification */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <TouchableOpacity
-            style={[styles.testButton, { backgroundColor: colors.primary }]}
-            onPress={sendTestNotification}
-            disabled={saving || !preferences.notificationsEnabled}
-          >
-            {saving ? (
-              <ActivityIndicator size="small" color="white" />
-            ) : (
-              <>
-                <FontAwesome name="bell" size={16} color="white" />
-                <Text style={styles.testButtonText}>Send Test Notification</Text>
-              </>
-            )}
-          </TouchableOpacity>
         </View>
 
         {/* Info */}
         <View style={styles.infoSection}>
           <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-            Notifications help you stay updated on events, fights, and crew activity.
-            You can customize which notifications you receive above.
+            Stay updated on your favorite fighters and upcoming hyped fights.
           </Text>
         </View>
       </ScrollView>

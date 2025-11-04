@@ -11,14 +11,8 @@ const registerTokenSchema = z.object({
 
 const updatePreferencesSchema = z.object({
   notificationsEnabled: z.boolean().optional(),
-  notifyEventStart: z.boolean().optional(),
-  notifyFightStart: z.boolean().optional(),
-  notifyMainCardOnly: z.boolean().optional(),
-  notifyUFCOnly: z.boolean().optional(),
-  notifyCrewMessages: z.boolean().optional(),
-  notifyCrewInvites: z.boolean().optional(),
-  notifyRoundChanges: z.boolean().optional(),
-  notifyFightResults: z.boolean().optional(),
+  notifyFollowedFighterFights: z.boolean().optional(),
+  notifyPreEventReport: z.boolean().optional(),
 });
 
 const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
@@ -91,14 +85,8 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         where: { id: userId },
         select: {
           notificationsEnabled: true,
-          notifyEventStart: true,
-          notifyFightStart: true,
-          notifyMainCardOnly: true,
-          notifyUFCOnly: true,
-          notifyCrewMessages: true,
-          notifyCrewInvites: true,
-          notifyRoundChanges: true,
-          notifyFightResults: true,
+          notifyFollowedFighterFights: true,
+          notifyPreEventReport: true,
         },
       });
 
@@ -127,14 +115,8 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
           data: preferences,
           select: {
             notificationsEnabled: true,
-            notifyEventStart: true,
-            notifyFightStart: true,
-            notifyMainCardOnly: true,
-            notifyUFCOnly: true,
-            notifyCrewMessages: true,
-            notifyCrewInvites: true,
-            notifyRoundChanges: true,
-            notifyFightResults: true,
+            notifyFollowedFighterFights: true,
+            notifyPreEventReport: true,
           },
         });
 

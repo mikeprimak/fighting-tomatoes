@@ -39,16 +39,10 @@ model User {
   wantsEmails       Boolean   @default(true)
 
   // Push Notifications
-  pushToken                String?
-  notificationsEnabled     Boolean   @default(true)
-  notifyEventStart         Boolean   @default(true)
-  notifyFightStart         Boolean   @default(true)
-  notifyMainCardOnly       Boolean   @default(false)
-  notifyUFCOnly            Boolean   @default(false)
-  notifyCrewMessages       Boolean   @default(true)
-  notifyCrewInvites        Boolean   @default(true)
-  notifyRoundChanges       Boolean   @default(false)
-  notifyFightResults       Boolean   @default(true)
+  pushToken                    String?
+  notificationsEnabled         Boolean   @default(true)
+  notifyFollowedFighterFights  Boolean   @default(true)
+  notifyPreEventReport         Boolean   @default(true)
 
   // Media/Professional users
   isMedia           Boolean   @default(false)
