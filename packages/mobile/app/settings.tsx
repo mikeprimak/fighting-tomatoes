@@ -143,8 +143,9 @@ export default function SettingsScreen() {
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: colors.border, true: colors.primary }}
-        thumbColor={value ? colors.textOnAccent : colors.textSecondary}
+        trackColor={{ false: colors.textSecondary, true: colors.tint }}
+        thumbColor="#B0B5BA"
+        style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
         disabled={disabled}
       />
     </View>
