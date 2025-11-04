@@ -78,87 +78,101 @@ export default function FightDetailsMenu({
             </TouchableOpacity>
           </View>
 
-          {/* Notification Toggle (only shown for upcoming fights) */}
-          {onToggleNotification !== undefined && (
-            <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
-              <View style={styles.notificationRow}>
-                <View style={styles.notificationTextContainer}>
-                  <Text style={[styles.menuItemLabel, { color: colors.text, fontWeight: '600' }]}>
-                    Notify when fight starts
-                  </Text>
-                  <Text style={[styles.notificationSubtext, { color: colors.textSecondary }]}>
-                    Get a notification 15 minutes before
-                  </Text>
-                </View>
-                <Switch
-                  value={isFollowing ?? false}
-                  disabled={isTogglingNotification}
-                  onValueChange={onToggleNotification}
-                  trackColor={{ false: colors.border, true: colors.tint }}
-                  thumbColor={colors.card}
-                />
-              </View>
-            </View>
-          )}
+          {/* Consolidated Fight Notification Section (only shown for upcoming fights) */}
+          {onToggleNotification !== undefined && (() => {
+            // Determine if user will be notified (any toggle is on)
+            const hasManualNotification = isFollowing ?? false;
+            const hasFighter1Notification = fight.isFollowingFighter1 === true;
+            const hasFighter2Notification = fight.isFollowingFighter2 === true;
+            const willBeNotified = hasManualNotification || hasFighter1Notification || hasFighter2Notification;
 
-          {/* Fighter Follow Notifications */}
-          {fight.isFollowingFighter1 !== undefined && (
-            <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
-              <View style={styles.notificationRow}>
-                <View style={styles.notificationTextContainer}>
-                  <Text style={[styles.menuItemLabel, { color: colors.text, fontWeight: '600' }]}>
-                    {fight.fighter1.lastName} Notification
-                  </Text>
-                  <Text style={[styles.notificationSubtext, { color: colors.textSecondary }]}>
-                    {fight.isFollowingFighter1
-                      ? `You will be notified for this fight because you have ${fight.fighter1.firstName} ${fight.fighter1.lastName} notifications turned on. Toggle to deactivate notification for this fight only.`
-                      : `You have ${fight.fighter1.firstName} ${fight.fighter1.lastName} notifications turned on but notifications are off for this fight. Toggle to reactivate.`
-                    }
-                  </Text>
-                </View>
-                <Switch
-                  value={fight.isFollowingFighter1}
-                  disabled={isTogglingFighterNotification}
-                  onValueChange={(enabled) => {
-                    if (onToggleFighterNotification) {
-                      onToggleFighterNotification(fight.fighter1Id, enabled);
-                    }
-                  }}
-                  trackColor={{ false: colors.border, true: colors.tint }}
-                  thumbColor={colors.card}
-                />
-              </View>
-            </View>
-          )}
+            // Check if user is following fighters (regardless of notification status)
+            const isFollowingFighter1 = fight.isFollowingFighter1 !== undefined;
+            const isFollowingFighter2 = fight.isFollowingFighter2 !== undefined;
 
-          {fight.isFollowingFighter2 !== undefined && (
-            <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
-              <View style={styles.notificationRow}>
-                <View style={styles.notificationTextContainer}>
-                  <Text style={[styles.menuItemLabel, { color: colors.text, fontWeight: '600' }]}>
-                    {fight.fighter2.lastName} Notification
-                  </Text>
-                  <Text style={[styles.notificationSubtext, { color: colors.textSecondary }]}>
-                    {fight.isFollowingFighter2
-                      ? `You will be notified for this fight because you have ${fight.fighter2.firstName} ${fight.fighter2.lastName} notifications turned on. Toggle to deactivate notification for this fight only.`
-                      : `You have ${fight.fighter2.firstName} ${fight.fighter2.lastName} notifications turned on but notifications are off for this fight. Toggle to reactivate.`
-                    }
-                  </Text>
+            // Build the reasons list
+            const reasons: string[] = [];
+            if (hasManualNotification) {
+              reasons.push('You have manually set a notification');
+            }
+            if (hasFighter1Notification) {
+              reasons.push(`You have ${fight.fighter1.firstName} ${fight.fighter1.lastName} notifications turned on`);
+            }
+            if (hasFighter2Notification) {
+              reasons.push(`You have ${fight.fighter2.firstName} ${fight.fighter2.lastName} notifications turned on`);
+            }
+
+            // Determine toggle behavior
+            const hasFighterNotifications = hasFighter1Notification || hasFighter2Notification;
+            const isFollowingAnyFighter = isFollowingFighter1 || isFollowingFighter2;
+            const additionalText = isFollowingAnyFighter ? ' for this fight only' : '';
+
+            return (
+              <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
+                <View style={styles.notificationRow}>
+                  <View style={styles.notificationTextContainer}>
+                    <Text style={[styles.menuItemLabel, { color: colors.text, fontWeight: '600' }]}>
+                      Fight Notification
+                    </Text>
+                    {willBeNotified ? (
+                      <View style={styles.reasonsContainer}>
+                        <Text style={[styles.notificationSubtext, { color: colors.textSecondary }]}>
+                          You will be notified before this fight because:
+                        </Text>
+                        {reasons.map((reason, index) => (
+                          <Text key={index} style={[styles.reasonBullet, { color: colors.textSecondary }]}>
+                            • {reason}
+                          </Text>
+                        ))}
+                        <Text style={[styles.toggleHintText, { color: colors.textSecondary, marginTop: 4 }]}>
+                          Toggle to deactivate{additionalText}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={[styles.notificationSubtext, { color: colors.textSecondary }]}>
+                        Get a notification 15 minutes before this fight starts
+                      </Text>
+                    )}
+                  </View>
+                  <Switch
+                    value={willBeNotified}
+                    disabled={isTogglingNotification || isTogglingFighterNotification}
+                    onValueChange={(enabled) => {
+                      // When toggling OFF: disable all active notification sources
+                      if (!enabled) {
+                        if (hasManualNotification) {
+                          onToggleNotification(false);
+                        }
+                        if (isFollowingFighter1 && onToggleFighterNotification) {
+                          onToggleFighterNotification(fight.fighter1Id, false);
+                        }
+                        if (isFollowingFighter2 && onToggleFighterNotification) {
+                          onToggleFighterNotification(fight.fighter2Id, false);
+                        }
+                      } else {
+                        // When toggling ON: enable all available notification sources
+                        if (hasManualNotification) {
+                          onToggleNotification(true);
+                        }
+                        if (isFollowingFighter1 && onToggleFighterNotification) {
+                          onToggleFighterNotification(fight.fighter1Id, true);
+                        }
+                        if (isFollowingFighter2 && onToggleFighterNotification) {
+                          onToggleFighterNotification(fight.fighter2Id, true);
+                        }
+                        // If no existing sources, enable manual notification
+                        if (!hasManualNotification && !isFollowingFighter1 && !isFollowingFighter2) {
+                          onToggleNotification(true);
+                        }
+                      }
+                    }}
+                    trackColor={{ false: colors.border, true: colors.tint }}
+                    thumbColor={colors.card}
+                  />
                 </View>
-                <Switch
-                  value={fight.isFollowingFighter2}
-                  disabled={isTogglingFighterNotification}
-                  onValueChange={(enabled) => {
-                    if (onToggleFighterNotification) {
-                      onToggleFighterNotification(fight.fighter2Id, enabled);
-                    }
-                  }}
-                  trackColor={{ false: colors.border, true: colors.tint }}
-                  thumbColor={colors.card}
-                />
               </View>
-            </View>
-          )}
+            );
+          })()}
 
           {/* Fighter 1 Link */}
           <TouchableOpacity
@@ -277,5 +291,17 @@ const styles = StyleSheet.create({
   notificationSubtext: {
     fontSize: 12,
     marginTop: 2,
+  },
+  reasonsContainer: {
+    marginTop: 4,
+  },
+  reasonBullet: {
+    fontSize: 12,
+    marginTop: 2,
+    paddingLeft: 4,
+  },
+  toggleHintText: {
+    fontSize: 12,
+    fontStyle: 'italic',
   },
 });

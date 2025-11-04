@@ -159,6 +159,13 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
     }
   }, [preFightCommentsData?.userComment?.content]);
 
+  // Update local state when fight prop changes (e.g., after navigating back from fighter screen)
+  useEffect(() => {
+    setIsFollowing(fight.isFollowing ?? false);
+    setLocalFighter1Notification(fight.isFollowingFighter1);
+    setLocalFighter2Notification(fight.isFollowingFighter2);
+  }, [fight.isFollowing, fight.isFollowingFighter1, fight.isFollowingFighter2]);
+
   // HARDCODED TEST DATA - Remove this when done testing
   const testPredictionStats = {
     totalPredictions: 100,

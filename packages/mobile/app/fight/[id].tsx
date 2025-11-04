@@ -28,6 +28,8 @@ export default function FightDetailScreen() {
     queryKey: ['fight', id, isAuthenticated],
     queryFn: () => apiService.getFight(id as string),
     enabled: !!id,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const handleSuccess = () => {
