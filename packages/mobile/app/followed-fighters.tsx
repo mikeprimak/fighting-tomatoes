@@ -47,6 +47,8 @@ export default function FollowedFightersScreen() {
       apiService.updateFighterNotificationPreferences(fighterId, preferences),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
+      queryClient.invalidateQueries({ queryKey: ['fighters'] });
+      queryClient.invalidateQueries({ queryKey: ['fights'] });
     },
     onError: () => {
       showError('Failed to update notification preference');
@@ -123,16 +125,16 @@ export default function FollowedFightersScreen() {
       {fighters.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            You are not following any fighters yet.
+            No fighters with notifications enabled.
           </Text>
           <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-            Follow fighters to get notified when they fight!
+            Follow fighters from their profile pages to get notified when they fight!
           </Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <Text style={[styles.headerText, { color: colors.textSecondary }]}>
-            Toggle notifications on/off for each fighter
+            Fighters you follow (notifications enabled). Toggle OFF to stop receiving notifications for that fighter's fights.
           </Text>
 
           {fighters.map((fighter: FollowedFighter) => (
