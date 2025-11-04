@@ -211,7 +211,7 @@ export default function SettingsScreen() {
         )}
 
         {/* General Notifications Toggle */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Notifications</Text>
             <Switch
@@ -229,7 +229,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Fighter Notifications */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Fighter Notifications</Text>
           </View>
@@ -250,7 +250,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Hyped Fights */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Hyped Fights</Text>
             <Switch
@@ -268,7 +268,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Pre-Event Report */}
-        <View style={[styles.section, { backgroundColor: colors.card }]}>
+        <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Pre-Event Report</Text>
             <Switch
@@ -312,6 +312,10 @@ const createStyles = (colors: any) =>
       marginBottom: 16,
       borderRadius: 12,
       overflow: 'hidden',
+    },
+    sectionWithPadding: {
+      paddingTop: 12,
+      paddingBottom: 12,
     },
     sectionHeader: {
       flexDirection: 'row',
