@@ -212,19 +212,27 @@ export default function SettingsScreen() {
 
         {/* General Notifications Toggle */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Notifications</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Notifications</Text>
+            <Switch
+              value={preferences.notificationsEnabled}
+              onValueChange={(value) => updatePreference('notificationsEnabled', value)}
+              trackColor={{ false: colors.textSecondary, true: colors.tint }}
+              thumbColor="#B0B5BA"
+              style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
+            />
+          </View>
 
-          <SettingRow
-            label="Enable Notifications"
-            value={preferences.notificationsEnabled}
-            onValueChange={(value) => updatePreference('notificationsEnabled', value)}
-            sublabel="Turn on to receive app notifications"
-          />
+          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
+            Turn on to receive app notifications
+          </Text>
         </View>
 
         {/* Fighter Notifications */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Fighter Notifications</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Fighter Notifications</Text>
+          </View>
 
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
             You will receive notifications 15 minutes before these fighters fight.
@@ -243,26 +251,38 @@ export default function SettingsScreen() {
 
         {/* Hyped Fights */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Hyped Fights</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Hyped Fights</Text>
+            <Switch
+              value={preferences.notifyHypedFights}
+              onValueChange={(value) => updatePreference('notifyHypedFights', value)}
+              trackColor={{ false: colors.textSecondary, true: colors.tint }}
+              thumbColor="#B0B5BA"
+              style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
+            />
+          </View>
 
-          <SettingRow
-            label="High Hype Notifications"
-            value={preferences.notifyHypedFights}
-            onValueChange={(value) => updatePreference('notifyHypedFights', value)}
-            sublabel="Get notified 15 minutes before fights with 8.5+ hype"
-          />
+          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
+            Get notified 15 minutes before fights with 8.5+ hype
+          </Text>
         </View>
 
         {/* Pre-Event Report */}
         <View style={[styles.section, { backgroundColor: colors.card }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Pre-Event Report</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Pre-Event Report</Text>
+            <Switch
+              value={preferences.notifyPreEventReport}
+              onValueChange={(value) => updatePreference('notifyPreEventReport', value)}
+              trackColor={{ false: colors.textSecondary, true: colors.tint }}
+              thumbColor="#B0B5BA"
+              style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
+            />
+          </View>
 
-          <SettingRow
-            label="Morning Event Summary"
-            value={preferences.notifyPreEventReport}
-            onValueChange={(value) => updatePreference('notifyPreEventReport', value)}
-            sublabel="Get a notification the morning of events breaking down which fights are most hyped and whether any fighters you follow are fighting."
-          />
+          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
+            Get a notification the morning of events breaking down which fights are most hyped and whether any fighters you follow are fighting.
+          </Text>
         </View>
 
       </ScrollView>
@@ -293,11 +313,17 @@ const createStyles = (colors: any) =>
       borderRadius: 12,
       overflow: 'hidden',
     },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingTop: 16,
+      paddingBottom: 8,
+    },
     sectionTitle: {
       fontSize: 18,
       fontWeight: '600',
-      padding: 16,
-      paddingBottom: 8,
     },
     sectionDescription: {
       fontSize: 14,
