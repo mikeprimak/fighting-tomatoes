@@ -1159,16 +1159,16 @@ export async function registerRoutes(fastify: FastifyInstance) {
             },
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
       });
 
-      const fighters = followedFighters.map((follow: any) => ({
-        ...follow.fighter,
-        startOfFightNotification: follow.startOfFightNotification,
-        dayBeforeNotification: follow.dayBeforeNotification,
-      }));
+      // Map and sort by fighter's last name
+      const fighters = followedFighters
+        .map((follow: any) => ({
+          ...follow.fighter,
+          startOfFightNotification: follow.startOfFightNotification,
+          dayBeforeNotification: follow.dayBeforeNotification,
+        }))
+        .sort((a: any, b: any) => a.lastName.localeCompare(b.lastName));
 
       return reply.code(200).send({ fighters });
     } catch (error: any) {
