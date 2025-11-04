@@ -180,15 +180,6 @@ export default function FollowedFightersScreen() {
                   <Text style={[styles.fighterName, { color: colors.text }]}>
                     {fighter.firstName} {fighter.lastName}
                   </Text>
-                  {fighter.nickname && (
-                    <Text style={[styles.fighterNickname, { color: colors.textSecondary }]}>
-                      "{fighter.nickname}"
-                    </Text>
-                  )}
-                  <Text style={[styles.fighterRecord, { color: colors.textSecondary }]}>
-                    {fighter.wins}-{fighter.losses}-{fighter.draws}
-                    {fighter.weightClass && ` • ${fighter.weightClass}`}
-                  </Text>
                 </View>
                 <Switch
                   value={isFollowing}
