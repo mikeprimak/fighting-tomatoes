@@ -27,7 +27,7 @@ import { Colors } from '../../constants/Colors';
 import { FontAwesome } from '@expo/vector-icons';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
-import { PredictionModal, RateFightModal, RoundVotingSlideup, Fight, FightDisplayCardMinimal } from '../../components';
+import { RoundVotingSlideup, Fight, FightDisplayCardMinimal } from '../../components';
 import { GifPickerModal } from '../../components/GifPickerModal';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { CustomAlert } from '../../components/CustomAlert';
@@ -129,8 +129,6 @@ export default function CrewChatScreen() {
   const [showCodeCopiedToast, setShowCodeCopiedToast] = useState(false);
   const [eventBannerAspectRatio, setEventBannerAspectRatio] = useState<number>(16 / 9);
   const fightCardSlideAnim = useRef(new Animated.Value(-1000)).current;
-  const [recentlyRatedFightId, setRecentlyRatedFightId] = useState<string | null>(null);
-  const [recentlyPredictedFightId, setRecentlyPredictedFightId] = useState<string | null>(null);
 
   // Calculate padding lines for consistent section heights
   const getStatusPaddingLines = (baseText: string, maxLines: number = 3) => {
@@ -1273,7 +1271,6 @@ export default function CrewChatScreen() {
                           <FightDisplayCardMinimal
                             fightData={fight}
                             onPress={handleFightItemTap}
-                            animateRating={fight.id === recentlyRatedFightId || fight.id === recentlyPredictedFightId}
                           />
                         </View>
                       </View>
@@ -1452,59 +1449,6 @@ export default function CrewChatScreen() {
         </View>
       </Modal>
 
-      {/* Reusable Rate Fight Modal */}
-      <RateFightModal
-        visible={showFightRatingModal}
-        fight={currentFight}
-        onClose={closeFightRatingModal}
-        queryKey={['fight', currentFight?.id, 'withUserData']}
-        crewId={id}
-        onSuccess={(type, data) => {
-          // Trigger animation if rating was saved - delay until after modal close animation
-          if (type === 'rating' && data?.fightId) {
-            setTimeout(() => {
-              setRecentlyRatedFightId(data.fightId);
-              // Clear after animation duration (1 second)
-              setTimeout(() => setRecentlyRatedFightId(null), 1000);
-            }, 300); // Wait for modal close animation (typically 300ms)
-          }
-          // Invalidate fight data queries for fresh data on next modal open
-          if (currentFight?.id) {
-            queryClient.invalidateQueries({ queryKey: ['fight', currentFight.id, 'withUserData'] });
-          }
-          // Invalidate the event fights query to refresh the fight cards
-          queryClient.invalidateQueries({ queryKey: ['upcomingEvent'] });
-          // Refresh crew messages to show the new message
-          queryClient.invalidateQueries({ queryKey: ['crewMessages', id] });
-        }}
-      />
-
-
-      {/* Reusable Prediction Modal */}
-      <PredictionModal
-        visible={showPredictionModal}
-        onClose={closePredictionModal}
-        fight={currentFight}
-        crewId={id}
-        onSuccess={(isUpdate, data) => {
-          // Trigger animation if prediction was saved - delay until after modal close animation
-          if (data?.fightId && data?.hypeLevel) {
-            setTimeout(() => {
-              setRecentlyPredictedFightId(data.fightId);
-              // Clear after animation duration (1 second)
-              setTimeout(() => setRecentlyPredictedFightId(null), 1000);
-            }, 300); // Wait for modal close animation
-          }
-          // Invalidate queries to refresh fight card data
-          queryClient.invalidateQueries({ queryKey: ['upcomingEvent'] });
-          if (currentFight?.id) {
-            queryClient.invalidateQueries({ queryKey: ['crewPredictions', id, currentFight.id] });
-            queryClient.invalidateQueries({ queryKey: ['fight', currentFight.id, 'withUserData'] });
-          }
-          // Show success message
-          console.log(`Prediction ${isUpdate ? 'updated' : 'created'} successfully`);
-        }}
-      />
 
       {/* Emoji Reaction Menu */}
       {showReactionMenu && (

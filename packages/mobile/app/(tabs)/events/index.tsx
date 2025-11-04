@@ -14,7 +14,7 @@ import { useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
-import { FightDisplayCard, RateFightModal, PredictionModal, EventBannerCard } from '../../../components';
+import { FightDisplayCard, EventBannerCard } from '../../../components';
 import { useAuth } from '../../../store/AuthContext';
 
 interface Event {
@@ -53,13 +53,6 @@ export default function UpcomingEventsScreen() {
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
-
-  // Modal state
-  const [selectedFight, setSelectedFight] = useState<Fight | null>(null);
-  const [showRatingModal, setShowRatingModal] = useState(false);
-  const [showPredictionModal, setShowPredictionModal] = useState(false);
-  const [recentlyRatedFightId, setRecentlyRatedFightId] = useState<string | null>(null);
-  const [recentlyPredictedFightId, setRecentlyPredictedFightId] = useState<string | null>(null);
 
   // Fetch all events
   const { data: eventsData, isLoading: eventsLoading } = useQuery({
@@ -194,12 +187,6 @@ export default function UpcomingEventsScreen() {
     router.push(`/fight/${fight.id}`);
   };
 
-  const closeModal = () => {
-    setSelectedFight(null);
-    setShowRatingModal(false);
-    setShowPredictionModal(false);
-  };
-
   const styles = createStyles(colors);
 
   if (eventsLoading) {
@@ -246,49 +233,10 @@ export default function UpcomingEventsScreen() {
             formatDate={formatDate}
             formatTime={formatTime}
             formatTimeUntil={formatTimeUntil}
-            recentlyRatedFightId={recentlyRatedFightId}
-            recentlyPredictedFightId={recentlyPredictedFightId}
             isFirstEvent={index === 0}
           />
         ))}
       </ScrollView>
-
-      {/* Modals */}
-      <RateFightModal
-        visible={showRatingModal}
-        fight={selectedFight}
-        onClose={closeModal}
-        queryKey={['eventFights', selectedFight?.eventId]}
-        onSuccess={(type, data) => {
-          if (type === 'rating' && data?.fightId) {
-            queryClient.invalidateQueries({ queryKey: ['eventFights', selectedFight?.eventId] });
-            setTimeout(() => {
-              setRecentlyRatedFightId(data.fightId || null);
-              setTimeout(() => setRecentlyRatedFightId(null), 1000);
-            }, 300);
-          }
-        }}
-      />
-
-      <PredictionModal
-        visible={showPredictionModal}
-        fight={selectedFight}
-        onClose={closeModal}
-        onSuccess={(isUpdate, data) => {
-          if (data?.fightId) {
-            queryClient.invalidateQueries({ queryKey: ['eventFights', selectedFight?.eventId] });
-            queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', data.fightId] });
-            queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', data.fightId] });
-
-            if (data?.hypeLevel || data?.winner || data?.method) {
-              setTimeout(() => {
-                setRecentlyPredictedFightId(data.fightId || null);
-                setTimeout(() => setRecentlyPredictedFightId(null), 1000);
-              }, 300);
-            }
-          }
-        }}
-      />
     </SafeAreaView>
   );
 }
@@ -303,8 +251,6 @@ function EventSection({
   formatDate,
   formatTime,
   formatTimeUntil,
-  recentlyRatedFightId,
-  recentlyPredictedFightId,
   isFirstEvent,
 }: {
   event: Event;
@@ -315,8 +261,6 @@ function EventSection({
   formatDate: (date: string) => string;
   formatTime: (date: string) => string;
   formatTimeUntil: (date: string) => string;
-  recentlyRatedFightId: string | null;
-  recentlyPredictedFightId: string | null;
   isFirstEvent: boolean;
 }) {
   const { line1, line2 } = parseEventName(event.name);
@@ -428,8 +372,6 @@ function EventSection({
                   isNextFight={nextFight?.id === fight.id}
                   hasLiveFight={hasLiveFight}
                   lastCompletedFightTime={lastCompletedFight?.updatedAt}
-                  animateRating={fight.id === recentlyRatedFightId}
-                  animatePrediction={fight.id === recentlyPredictedFightId}
                 />
               ))}
             </View>
@@ -460,8 +402,6 @@ function EventSection({
                   isNextFight={nextFight?.id === fight.id}
                   hasLiveFight={hasLiveFight}
                   lastCompletedFightTime={lastCompletedFight?.updatedAt}
-                  animateRating={fight.id === recentlyRatedFightId}
-                  animatePrediction={fight.id === recentlyPredictedFightId}
                 />
               ))}
             </View>
@@ -492,8 +432,6 @@ function EventSection({
                   isNextFight={nextFight?.id === fight.id}
                   hasLiveFight={hasLiveFight}
                   lastCompletedFightTime={lastCompletedFight?.updatedAt}
-                  animateRating={fight.id === recentlyRatedFightId}
-                  animatePrediction={fight.id === recentlyPredictedFightId}
                 />
               ))}
             </View>

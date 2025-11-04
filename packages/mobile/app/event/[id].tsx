@@ -16,7 +16,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
-import { FightDisplayCard, RateFightModal, PredictionModal, ScreenHeader } from '../../components';
+import { FightDisplayCard, ScreenHeader } from '../../components';
 import { useAuth } from '../../store/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { useLiveEventPolling } from '../../hooks/useLiveEventPolling';
@@ -61,13 +61,7 @@ export default function EventDetailScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  // Modal state
-  const [selectedFight, setSelectedFight] = useState<Fight | null>(null);
-  const [showRatingModal, setShowRatingModal] = useState(false);
-  const [showPredictionModal, setShowPredictionModal] = useState(false);
   const [bannerAspectRatio, setBannerAspectRatio] = useState<number>(16 / 9);
-  const [recentlyRatedFightId, setRecentlyRatedFightId] = useState<string | null>(null);
-  const [recentlyPredictedFightId, setRecentlyPredictedFightId] = useState<string | null>(null);
 
   // Pulsing animation for live indicator
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -158,73 +152,9 @@ export default function EventDetailScreen() {
     }
   }, [eventIsLive, pulseAnim]);
 
-  const openRatingModal = async (fight: Fight) => {
-    try {
-      console.log('Opening rating modal for fight:', fight.id);
-      console.log('Fight already has user data:', {
-        hasUserRating: !!fight.userRating,
-        hasUserReview: !!fight.userReview,
-        hasUserTags: !!fight.userTags,
-        userRating: fight.userRating,
-        userReview: fight.userReview,
-        userTags: fight.userTags
-      });
-
-      // Check if we already have user data from the initial query
-      const hasUserData = fight.userRating || fight.userReview || (fight.userTags && fight.userTags.length > 0);
-
-      if (user?.id && !hasUserData) {
-        console.log('No user data found, fetching detailed fight data...');
-        const { fight: detailedFight } = await apiService.getFight(fight.id);
-
-        console.log('Detailed fight data received:', {
-          hasUserRating: !!detailedFight.userRating,
-          hasUserReview: !!detailedFight.userReview,
-          hasUserTags: !!detailedFight.userTags,
-          userRating: detailedFight.userRating,
-          userReview: detailedFight.userReview,
-          userTags: detailedFight.userTags
-        });
-
-        // Update the selected fight with enriched data
-        const enrichedFight = {
-          ...fight,
-          userRating: detailedFight.userRating,
-          userReview: detailedFight.userReview,
-          userTags: detailedFight.userTags
-        };
-
-        setSelectedFight(enrichedFight);
-      } else {
-        console.log('Using existing fight data (user data already present or user not logged in)');
-        setSelectedFight(fight);
-      }
-
-      setShowRatingModal(true);
-    } catch (error) {
-      console.error('Error fetching detailed fight data:', error);
-      console.log('Proceeding with basic fight data due to error');
-      // If fetch fails, just proceed with basic data
-      setSelectedFight(fight);
-      setShowRatingModal(true);
-    }
-  };
-
-  const openPredictionModal = (fight: Fight) => {
-    console.log('Opening prediction modal for fight:', fight.id);
-    setSelectedFight(fight);
-    setShowPredictionModal(true);
-  };
-
   const handleFightPress = (fight: Fight) => {
     // Navigate to fight detail screen
     router.push(`/fight/${fight.id}` as any);
-  };
-
-  const closeModal = () => {
-    setSelectedFight(null);
-    setShowRatingModal(false);
-    setShowPredictionModal(false);
   };
 
   const handleBannerLoad = (e: any) => {
@@ -469,8 +399,6 @@ export default function EventDetailScreen() {
                 isNextFight={nextFight?.id === fight.id}
                 hasLiveFight={hasLiveFight}
                 lastCompletedFightTime={lastCompletedFight?.updatedAt}
-                animateRating={fight.id === recentlyRatedFightId}
-                animatePrediction={fight.id === recentlyPredictedFightId}
               />
             ))}
           </View>
@@ -500,8 +428,6 @@ export default function EventDetailScreen() {
                 isNextFight={nextFight?.id === fight.id}
                 hasLiveFight={hasLiveFight}
                 lastCompletedFightTime={lastCompletedFight?.updatedAt}
-                animateRating={fight.id === recentlyRatedFightId}
-                animatePrediction={fight.id === recentlyPredictedFightId}
               />
             ))}
           </View>
@@ -531,8 +457,6 @@ export default function EventDetailScreen() {
                 isNextFight={nextFight?.id === fight.id}
                 hasLiveFight={hasLiveFight}
                 lastCompletedFightTime={lastCompletedFight?.updatedAt}
-                animateRating={fight.id === recentlyRatedFightId}
-                animatePrediction={fight.id === recentlyPredictedFightId}
               />
             ))}
           </View>
@@ -548,42 +472,6 @@ export default function EventDetailScreen() {
         )}
         </ScrollView>
       </View>
-
-      {/* Rating Modal */}
-      <RateFightModal
-        visible={showRatingModal}
-        fight={selectedFight}
-        onClose={closeModal}
-        queryKey={['eventFights', id]}
-        onSuccess={(type, data) => {
-          if (type === 'rating' && data?.fightId && data?.rating) {
-            setTimeout(() => {
-              setRecentlyRatedFightId(data.fightId || null);
-              setTimeout(() => setRecentlyRatedFightId(null), 1000);
-            }, 300);
-          }
-        }}
-      />
-
-      <PredictionModal
-        visible={showPredictionModal}
-        fight={selectedFight}
-        onClose={closeModal}
-        onSuccess={(isUpdate, data) => {
-          // Invalidate fights query to refresh data with user prediction
-          queryClient.invalidateQueries({ queryKey: ['eventFights', id] });
-
-          // Trigger flame animation
-          if (data?.fightId && data?.hypeLevel) {
-            setTimeout(() => {
-              setRecentlyPredictedFightId(data.fightId || null);
-              setTimeout(() => setRecentlyPredictedFightId(null), 1000);
-            }, 300);
-          }
-
-          console.log('Prediction submitted successfully', { isUpdate, data });
-        }}
-      />
     </SafeAreaView>
   );
 }

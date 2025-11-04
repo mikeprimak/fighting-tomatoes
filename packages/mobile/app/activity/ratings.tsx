@@ -18,7 +18,6 @@ import { useAuth } from '../../store/AuthContext';
 import FightDisplayCard, { FightData } from '../../components/FightDisplayCardNew';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
-import RateFightModal from '../../components/RateFightModal';
 import { CommentCard, FlagReviewModal, CustomAlert } from '../../components';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { FontAwesome } from '@expo/vector-icons';
@@ -432,13 +431,6 @@ export default function RatingsActivityScreen() {
           </View>
         )}
       </SafeAreaView>
-
-      {/* Rating Modal */}
-      <RateFightModal
-        visible={showRatingModal}
-        fight={selectedFight}
-        onClose={handleCloseModal}
-      />
 
       {/* Flag Review Modal */}
       <FlagReviewModal
