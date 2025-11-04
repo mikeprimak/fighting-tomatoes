@@ -36,28 +36,57 @@ export default function FollowedFightersScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
   const queryClient = useQueryClient();
+  const [localUnfollows, setLocalUnfollows] = useState<Set<string>>(new Set());
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['followedFighters'],
     queryFn: () => apiService.getFollowedFighters(),
   });
 
-  const unfollowMutation = useMutation({
-    mutationFn: (fighterId: string) => apiService.unfollowFighter(fighterId),
+  const followMutation = useMutation({
+    mutationFn: (fighterId: string) => apiService.followFighter(fighterId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
       queryClient.invalidateQueries({ queryKey: ['fighters'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
-      showSuccess('Fighter unfollowed');
     },
     onError: () => {
+      showError('Failed to follow fighter');
+    },
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: (fighterId: string) => apiService.unfollowFighter(fighterId),
+    onSuccess: () => {
+      // Don't invalidate queries immediately - let the local state handle visibility
+      queryClient.invalidateQueries({ queryKey: ['fighters'] });
+      queryClient.invalidateQueries({ queryKey: ['fights'] });
+    },
+    onError: (error, fighterId) => {
+      // Remove from local unfollows on error
+      setLocalUnfollows(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fighterId);
+        return newSet;
+      });
       showError('Failed to unfollow fighter');
     },
   });
 
-  const handleToggleFollow = (fighterId: string) => {
-    // Toggle OFF means unfollow (remove from database)
-    unfollowMutation.mutate(fighterId);
+  const handleToggleFollow = (fighterId: string, isCurrentlyFollowing: boolean) => {
+    if (isCurrentlyFollowing) {
+      // Toggle OFF - add to local unfollows and call API
+      setLocalUnfollows(prev => new Set(prev).add(fighterId));
+      unfollowMutation.mutate(fighterId);
+    } else {
+      // Toggle ON - remove from local unfollows and re-follow
+      setLocalUnfollows(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fighterId);
+        return newSet;
+      });
+      followMutation.mutate(fighterId);
+    }
   };
 
   const getFighterImage = (fighter: FollowedFighter) => {
@@ -135,38 +164,42 @@ export default function FollowedFightersScreen() {
             Fighters you follow. Toggle OFF to unfollow and stop receiving notifications.
           </Text>
 
-          {fighters.map((fighter: FollowedFighter) => (
-            <View
-              key={fighter.id}
-              style={[styles.fighterRow, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
-            >
-              <Image
-                source={getFighterImage(fighter)}
-                style={styles.fighterImage}
-              />
-              <View style={styles.fighterInfo}>
-                <Text style={[styles.fighterName, { color: colors.text }]}>
-                  {fighter.firstName} {fighter.lastName}
-                </Text>
-                {fighter.nickname && (
-                  <Text style={[styles.fighterNickname, { color: colors.textSecondary }]}>
-                    "{fighter.nickname}"
+          {fighters.map((fighter: FollowedFighter) => {
+            const isFollowing = !localUnfollows.has(fighter.id);
+
+            return (
+              <View
+                key={fighter.id}
+                style={[styles.fighterRow, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
+              >
+                <Image
+                  source={getFighterImage(fighter)}
+                  style={styles.fighterImage}
+                />
+                <View style={styles.fighterInfo}>
+                  <Text style={[styles.fighterName, { color: colors.text }]}>
+                    {fighter.firstName} {fighter.lastName}
                   </Text>
-                )}
-                <Text style={[styles.fighterRecord, { color: colors.textSecondary }]}>
-                  {fighter.wins}-{fighter.losses}-{fighter.draws}
-                  {fighter.weightClass && ` • ${fighter.weightClass}`}
-                </Text>
+                  {fighter.nickname && (
+                    <Text style={[styles.fighterNickname, { color: colors.textSecondary }]}>
+                      "{fighter.nickname}"
+                    </Text>
+                  )}
+                  <Text style={[styles.fighterRecord, { color: colors.textSecondary }]}>
+                    {fighter.wins}-{fighter.losses}-{fighter.draws}
+                    {fighter.weightClass && ` • ${fighter.weightClass}`}
+                  </Text>
+                </View>
+                <Switch
+                  value={isFollowing}
+                  onValueChange={() => handleToggleFollow(fighter.id, isFollowing)}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={isFollowing ? colors.textOnAccent : colors.textSecondary}
+                  disabled={unfollowMutation.isPending || followMutation.isPending}
+                />
               </View>
-              <Switch
-                value={true}
-                onValueChange={() => handleToggleFollow(fighter.id)}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={colors.textOnAccent}
-                disabled={unfollowMutation.isPending}
-              />
-            </View>
-          ))}
+            );
+          })}
         </ScrollView>
       )}
 
