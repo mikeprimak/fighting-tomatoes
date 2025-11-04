@@ -772,6 +772,12 @@ export default function CommunityScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Top Pre-Fight Comments</Text>
+            <TouchableOpacity
+              style={styles.seeAllButton}
+              onPress={() => router.push('/pre-fight-comments' as any)}
+            >
+              <Text style={styles.seeAllText}>See All</Text>
+            </TouchableOpacity>
           </View>
           <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
             Top pre-fight hype for upcoming fights

@@ -874,6 +874,30 @@ class ApiService {
     return this.makeRequest('/community/top-pre-fight-comments');
   }
 
+  async getPreFightComments(sortBy: 'top-recent' | 'top-all-time' | 'new' = 'top-recent'): Promise<{
+    data: Array<{
+      id: string;
+      content: string;
+      upvotes: number;
+      createdAt: string;
+      userHasUpvoted: boolean;
+      hypeRating: number | null;
+      user: {
+        id: string;
+        displayName: string;
+      };
+      fight: {
+        id: string;
+        fighter1Name: string;
+        fighter2Name: string;
+        eventName: string;
+        eventDate: string;
+      };
+    }>;
+  }> {
+    return this.makeRequest(`/community/pre-fight-comments?sortBy=${sortBy}`);
+  }
+
   async getComments(sortBy: 'top-recent' | 'top-all-time' | 'new' = 'top-recent'): Promise<{
     data: Array<{
       id: string;
