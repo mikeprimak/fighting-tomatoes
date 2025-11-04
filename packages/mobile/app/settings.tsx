@@ -318,8 +318,8 @@ const createStyles = (colors: any) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 16,
-      paddingTop: 16,
-      paddingBottom: 8,
+      paddingTop: 12,
+      paddingBottom: 4,
     },
     sectionTitle: {
       fontSize: 18,
