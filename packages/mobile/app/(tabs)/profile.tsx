@@ -273,7 +273,7 @@ export default function ProfileScreen() {
             style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
             onPress={() => router.push('/settings')}
           >
-            <Text style={[styles.actionButtonText, { color: colors.text }]}>Settings</Text>
+            <Text style={[styles.actionButtonText, { color: colors.text }]}>Notifications</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

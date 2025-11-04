@@ -160,7 +160,7 @@ export default function SettingsScreen() {
       <SafeAreaView style={styles.container}>
         <Stack.Screen
           options={{
-            title: 'Settings',
+            title: 'Notifications',
             headerStyle: { backgroundColor: colors.card },
             headerTintColor: colors.text,
             headerShadowVisible: false,
