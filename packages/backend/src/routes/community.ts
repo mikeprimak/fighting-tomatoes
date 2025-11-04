@@ -613,6 +613,127 @@ export default async function communityRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Get top pre-fight comments (most upvoted from fights happening within next 13 days)
+  fastify.get('/top-pre-fight-comments', {
+    preHandler: optionalAuthenticateMiddleware,
+  }, async (request, reply) => {
+    try {
+      const userId = request.user?.id;
+      const now = new Date();
+      const thirteenDaysFromNow = new Date();
+      thirteenDaysFromNow.setDate(now.getDate() + 13);
+
+      // Get top 3 upvoted pre-fight comments from upcoming fights within next 13 days
+      const topPreFightComments = await fastify.prisma.preFightComment.findMany({
+        where: {
+          fight: {
+            event: {
+              date: {
+                gte: now,
+                lte: thirteenDaysFromNow,
+              },
+            },
+            hasStarted: false,
+            isComplete: false,
+          },
+        },
+        orderBy: [
+          { upvotes: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        take: 3,
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              displayName: true,
+            },
+          },
+          fight: {
+            include: {
+              fighter1: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  nickname: true,
+                },
+              },
+              fighter2: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  nickname: true,
+                },
+              },
+              event: {
+                select: {
+                  id: true,
+                  name: true,
+                  date: true,
+                },
+              },
+              predictions: userId ? {
+                where: {
+                  userId,
+                },
+                select: {
+                  predictedRating: true,
+                },
+              } : false,
+            },
+          },
+        },
+      });
+
+      // Check which comments the user has upvoted (if authenticated)
+      const commentIds = topPreFightComments.map((c: any) => c.id);
+
+      const userUpvotes = userId ? await fastify.prisma.preFightCommentVote.findMany({
+        where: {
+          userId,
+          commentId: { in: commentIds },
+        },
+        select: { commentId: true },
+      }) : [];
+
+      const upvotedCommentIds = new Set(userUpvotes.map((u: any) => u.commentId));
+
+      return reply.send({
+        data: topPreFightComments.map((comment: any) => ({
+          id: comment.id,
+          content: comment.content,
+          upvotes: comment.upvotes,
+          createdAt: comment.createdAt,
+          userHasUpvoted: upvotedCommentIds.has(comment.id),
+          hypeRating: userId && comment.fight.predictions?.length > 0
+            ? comment.fight.predictions[0].predictedRating
+            : null,
+          user: {
+            id: comment.user.id,
+            displayName: comment.user.displayName || `${comment.user.firstName} ${comment.user.lastName}`,
+          },
+          fight: {
+            id: comment.fight.id,
+            fighter1Name: `${comment.fight.fighter1.firstName} ${comment.fight.fighter1.lastName}`,
+            fighter2Name: `${comment.fight.fighter2.firstName} ${comment.fight.fighter2.lastName}`,
+            eventName: comment.fight.event.name,
+            eventDate: comment.fight.event.date,
+          },
+        })),
+      });
+    } catch (error) {
+      console.error('Error fetching top pre-fight comments:', error);
+      return reply.status(500).send({
+        error: 'Failed to fetch top pre-fight comments',
+        code: 'FETCH_ERROR',
+      });
+    }
+  });
+
   // Get hot fighters (fighters with highest average ratings from recent/upcoming fights)
   fastify.get('/hot-fighters', {
     preHandler: optionalAuthenticateMiddleware,

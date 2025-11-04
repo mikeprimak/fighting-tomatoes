@@ -25,6 +25,7 @@ import CompletedFightCard from '../../components/fight-cards/CompletedFightCard'
 import HotPredictionCard from '../../components/fight-cards/HotPredictionCard';
 import EvenPredictionCard from '../../components/fight-cards/EvenPredictionCard';
 import FighterCard from '../../components/FighterCard';
+import { PreFightCommentCard } from '../../components/PreFightCommentCard';
 
 interface Event {
   id: string;
@@ -87,6 +88,14 @@ export default function CommunityScreen() {
   const { data: topCommentsData, isLoading: isTopCommentsLoading } = useQuery({
     queryKey: ['topComments'],
     queryFn: () => apiService.getTopComments(),
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnMount: 'always',
+  });
+
+  // Fetch top pre-fight comments
+  const { data: topPreFightCommentsData, isLoading: isTopPreFightCommentsLoading } = useQuery({
+    queryKey: ['topPreFightComments', isAuthenticated],
+    queryFn: () => apiService.getTopPreFightComments(),
     staleTime: 30 * 1000, // 30 seconds
     refetchOnMount: 'always',
   });
@@ -178,6 +187,65 @@ export default function CommunityScreen() {
       // Rollback on error
       if (context?.previousComments) {
         queryClient.setQueryData(['topComments'], context.previousComments);
+      }
+    },
+    onSettled: () => {
+      setUpvotingCommentId(null);
+    },
+  });
+
+  // Upvote pre-fight comment mutation
+  const upvotePreFightCommentMutation = useMutation({
+    mutationFn: ({ fightId, commentId }: { fightId: string; commentId: string }) =>
+      apiService.togglePreFightCommentUpvote(fightId, commentId),
+    onMutate: async ({ commentId }) => {
+      setUpvotingCommentId(commentId);
+
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['topPreFightComments'] });
+      const previousComments = queryClient.getQueryData(['topPreFightComments']);
+
+      // Optimistic update
+      queryClient.setQueryData(['topPreFightComments', isAuthenticated], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.map((comment: any) =>
+            comment.id === commentId
+              ? {
+                  ...comment,
+                  userHasUpvoted: !comment.userHasUpvoted,
+                  upvotes: comment.userHasUpvoted ? comment.upvotes - 1 : comment.upvotes + 1,
+                }
+              : comment
+          ),
+        };
+      });
+
+      return { previousComments };
+    },
+    onSuccess: (data, variables) => {
+      // Update with actual server response
+      queryClient.setQueryData(['topPreFightComments', isAuthenticated], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.map((comment: any) =>
+            comment.id === variables.commentId
+              ? {
+                  ...comment,
+                  userHasUpvoted: data.userHasUpvoted,
+                  upvotes: data.upvotes,
+                }
+              : comment
+          ),
+        };
+      });
+    },
+    onError: (err, variables, context: any) => {
+      // Rollback on error
+      if (context?.previousComments) {
+        queryClient.setQueryData(['topPreFightComments', isAuthenticated], context.previousComments);
       }
     },
     onSettled: () => {
@@ -695,6 +763,39 @@ export default function CommunityScreen() {
             <View style={styles.card}>
               <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
                 No hot fighters found
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Pre-Fight Comments Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Pre-Fight Comments</Text>
+          </View>
+          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
+            Top pre-fight hype from upcoming fights
+          </Text>
+
+          {isTopPreFightCommentsLoading ? (
+            <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={[styles.cardSubtext, { marginTop: 8 }]}>Loading comments...</Text>
+            </View>
+          ) : topPreFightCommentsData && topPreFightCommentsData.data.length > 0 ? (
+            topPreFightCommentsData.data.map((comment) => (
+              <PreFightCommentCard
+                key={comment.id}
+                comment={comment}
+                onUpvote={() => upvotePreFightCommentMutation.mutate({ fightId: comment.fight.id, commentId: comment.id })}
+                isUpvoting={upvotingCommentId === comment.id}
+                isAuthenticated={isAuthenticated}
+              />
+            ))
+          ) : (
+            <View style={styles.card}>
+              <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
+                No pre-fight comments yet
               </Text>
             </View>
           )}

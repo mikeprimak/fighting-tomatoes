@@ -850,6 +850,30 @@ class ApiService {
     return this.makeRequest('/community/top-comments');
   }
 
+  async getTopPreFightComments(): Promise<{
+    data: Array<{
+      id: string;
+      content: string;
+      upvotes: number;
+      createdAt: string;
+      userHasUpvoted: boolean;
+      hypeRating: number | null;
+      user: {
+        id: string;
+        displayName: string;
+      };
+      fight: {
+        id: string;
+        fighter1Name: string;
+        fighter2Name: string;
+        eventName: string;
+        eventDate: string;
+      };
+    }>;
+  }> {
+    return this.makeRequest('/community/top-pre-fight-comments');
+  }
+
   async getComments(sortBy: 'top-recent' | 'top-all-time' | 'new' = 'top-recent'): Promise<{
     data: Array<{
       id: string;
@@ -977,6 +1001,15 @@ class ApiService {
     return this.makeRequest(`/fights/${fightId}/pre-flight-comments/${commentId}/flag`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
+    });
+  }
+
+  async togglePreFightCommentUpvote(fightId: string, commentId: string): Promise<{
+    upvotes: number;
+    userHasUpvoted: boolean;
+  }> {
+    return this.makeRequest(`/fights/${fightId}/pre-flight-comments/${commentId}/upvote`, {
+      method: 'POST',
     });
   }
 
