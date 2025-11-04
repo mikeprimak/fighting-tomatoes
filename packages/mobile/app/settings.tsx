@@ -229,7 +229,7 @@ export default function SettingsScreen() {
         </View>
 
         {/* Fighter Notifications */}
-        <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>
+        <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card, paddingTop: 12 }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Fighter Notifications</Text>
           </View>
