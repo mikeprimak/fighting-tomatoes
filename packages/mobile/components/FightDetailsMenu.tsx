@@ -166,8 +166,9 @@ export default function FightDetailsMenu({
                         }
                       }
                     }}
-                    trackColor={{ false: colors.border, true: colors.tint }}
-                    thumbColor={colors.card}
+                    trackColor={{ false: colors.textSecondary, true: colors.tint }}
+                    thumbColor="#B0B5BA"
+                    style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
                   />
                 </View>
               </View>
