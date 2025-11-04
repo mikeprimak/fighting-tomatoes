@@ -319,7 +319,7 @@ const createStyles = (colors: any) =>
       justifyContent: 'space-between',
       paddingHorizontal: 16,
       paddingTop: 12,
-      paddingBottom: 4,
+      paddingBottom: 8,
     },
     sectionTitle: {
       fontSize: 18,
