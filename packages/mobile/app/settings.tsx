@@ -226,6 +226,12 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
             Turn on to receive app notifications
           </Text>
+
+          {!preferences.notificationsEnabled && (
+            <Text style={[styles.warningText, { color: colors.error }]}>
+              Notifications are toggled off - none of the below notifications will occur.
+            </Text>
+          )}
         </View>
 
         {/* Fighter Notifications */}
@@ -334,6 +340,13 @@ const createStyles = (colors: any) =>
       paddingHorizontal: 16,
       paddingBottom: 12,
       lineHeight: 20,
+    },
+    warningText: {
+      fontSize: 14,
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      lineHeight: 20,
+      fontWeight: '600',
     },
     settingRow: {
       flexDirection: 'row',
