@@ -1032,7 +1032,7 @@ class ApiService {
     upvotes: number;
     userHasUpvoted: boolean;
   }> {
-    return this.makeRequest(`/fights/${fightId}/pre-flight-comments/${commentId}/upvote`, {
+    return this.makeRequest(`/fights/${fightId}/pre-fight-comments/${commentId}/upvote`, {
       method: 'POST',
     });
   }
