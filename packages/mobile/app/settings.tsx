@@ -265,12 +265,6 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* Info */}
-        <View style={styles.infoSection}>
-          <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-            Stay updated on your favorite fighters and upcoming hyped fights.
-          </Text>
-        </View>
       </ScrollView>
 
       {/* Custom Alert */}
