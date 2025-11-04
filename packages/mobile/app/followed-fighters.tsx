@@ -161,7 +161,7 @@ export default function FollowedFightersScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <Text style={[styles.headerText, { color: colors.textSecondary }]}>
-            Fighters you follow. Toggle OFF to unfollow and stop receiving notifications.
+            Fighters you follow. You will receive a notification 15 minutes before they fight. Toggle OFF to unfollow.
           </Text>
 
           {fighters.map((fighter: FollowedFighter) => {
