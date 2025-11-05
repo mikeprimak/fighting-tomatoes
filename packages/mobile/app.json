@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/Fight-Crew-Logo-No-Background-fills-space.png",
     "splash": {
-      "image": "./assets/Fight-Crew-Logo-No-Background-fills-space.png",
+      "image": "./assets/Good-Fights-Splash-Screen.png",
       "resizeMode": "contain",
       "backgroundColor": "#181818"
     },
