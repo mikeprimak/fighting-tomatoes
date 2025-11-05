@@ -443,7 +443,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
         // Transform user rating (take the first/only rating)
         if (fightWithRelations.ratings && fightWithRelations.ratings.length > 0) {
           transformedFight.userRating = fightWithRelations.ratings[0].rating;
+          transformedFight.hasRevealedOutcome = fightWithRelations.ratings[0].hasRevealedOutcome;
           console.log('Found user rating:', fightWithRelations.ratings[0].rating);
+        } else {
+          transformedFight.hasRevealedOutcome = false;
         }
 
         // Transform user review (take the first/only review)
@@ -583,9 +586,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
           userId: currentUserId,
           fightId,
           rating,
+          hasRevealedOutcome: true, // Rating the fight automatically reveals the outcome
         },
         update: {
           rating,
+          hasRevealedOutcome: true, // Rating the fight automatically reveals the outcome
         },
       });
 
@@ -653,6 +658,56 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       console.error('Rate fight error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // POST /api/fights/:id/reveal-outcome - Mark that user has revealed the fight outcome
+  fastify.post('/fights/:id/reveal-outcome', {
+    preHandler: [authenticateUser, requireEmailVerification],
+  }, async (request, reply) => {
+    try {
+      const { id: fightId } = request.params as { id: string };
+      const currentUserId = (request as any).user.id;
+
+      // Check if fight exists
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Upsert rating with hasRevealedOutcome = true
+      // If no rating exists, create one with rating = 0
+      await fastify.prisma.fightRating.upsert({
+        where: {
+          userId_fightId: {
+            userId: currentUserId,
+            fightId,
+          },
+        },
+        create: {
+          userId: currentUserId,
+          fightId,
+          rating: 0,
+          hasRevealedOutcome: true,
+        },
+        update: {
+          hasRevealedOutcome: true,
+        },
+      });
+
+      return reply.code(200).send({
+        message: 'Outcome revealed successfully',
+        hasRevealedOutcome: true,
+      });
+    } catch (error) {
+      console.error('Reveal outcome error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',

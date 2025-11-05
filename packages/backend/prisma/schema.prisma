@@ -317,21 +317,24 @@ model Fight {
 
 // ============== RATINGS ==============
 model FightRating {
-  id          String    @id @default(uuid())
-  
+  id                String    @id @default(uuid())
+
   // Relationships
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fightId     String
-  fight       Fight     @relation(fields: [fightId], references: [id], onDelete: Cascade)
-  
+  userId            String
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fightId           String
+  fight             Fight     @relation(fields: [fightId], references: [id], onDelete: Cascade)
+
   // Rating
-  rating      Int       // 1-10
-  
+  rating            Int       // 1-10
+
+  // Outcome visibility
+  hasRevealedOutcome Boolean  @default(false)
+
   // Timestamps
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
   @@unique([userId, fightId])
   @@map("fight_ratings")
 }

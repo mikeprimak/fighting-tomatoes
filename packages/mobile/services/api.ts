@@ -196,6 +196,15 @@ class ApiService {
     });
   }
 
+  async revealFightOutcome(fightId: string): Promise<{
+    message: string;
+    hasRevealedOutcome: boolean;
+  }> {
+    return this.makeRequest(`/fights/${fightId}/reveal-outcome`, {
+      method: 'POST',
+    });
+  }
+
   async reviewFight(fightId: string, data: {
     content: string;
     rating: number;
