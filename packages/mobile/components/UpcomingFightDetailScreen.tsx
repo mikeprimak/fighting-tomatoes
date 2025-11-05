@@ -617,7 +617,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         ref={scrollViewRef}
         style={[styles.scrollView, { backgroundColor: colors.background }]}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: 80 }}
       >
 
 
@@ -812,6 +812,20 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         </View>
       </View>
 
+      {/* Community Predictions */}
+      <View style={styles.sectionNoBorder}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Community Predictions
+        </Text>
+
+        {/* Prediction Breakdown Chart */}
+        <PredictionBarChart
+          predictionStats={displayPredictionStats}
+          fighter1Name={fight.fighter1.lastName}
+          fighter2Name={fight.fighter2.lastName}
+        />
+      </View>
+
       {/* Pre-Fight Comments */}
       <View style={[styles.sectionNoBorder, { marginTop: -25 }]}>
         {/* Title row with Add Comment / Cancel button */}
@@ -929,20 +943,6 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         )}
       </View>
 
-      {/* All Predictions */}
-      <View style={styles.sectionNoBorder}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          All Predictions
-        </Text>
-
-        {/* Prediction Breakdown Chart */}
-        <PredictionBarChart
-          predictionStats={displayPredictionStats}
-          fighter1Name={fight.fighter1.lastName}
-          fighter2Name={fight.fighter2.lastName}
-        />
-      </View>
-
       {/* Flag Comment Modal */}
       <FlagReviewModal
         visible={flagModalVisible}
@@ -1017,13 +1017,13 @@ const styles = StyleSheet.create({
   },
   sectionNoBorder: {
     marginHorizontal: 4,
-    marginBottom: 16,
+    marginBottom: 26,
     padding: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 17,
   },
   headerRow: {
     flexDirection: 'row',

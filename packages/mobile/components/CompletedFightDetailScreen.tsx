@@ -720,7 +720,15 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
 
         {/* Inline Rating Section */}
         <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 0 }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Rate This Fight</Text>
+          <View style={styles.headerRow}>
+            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Rate This Fight</Text>
+            <TouchableOpacity
+              onPress={() => setDetailsMenuVisible(true)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
 
           {/* Large display star with wheel animation */}
           <View style={styles.displayStarContainer}>
@@ -831,15 +839,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
 
         {/* What Happened */}
         <View style={styles.sectionNoBorder}>
-          <View style={styles.headerRow}>
-            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>What Happened</Text>
-            <TouchableOpacity
-              onPress={() => setDetailsMenuVisible(true)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>What Happened</Text>
 
           <View style={styles.whatHappenedContainer}>
             {/* Fighter 1 */}
@@ -857,7 +857,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                   style={styles.whatHappenedImage}
                 />
               </View>
-              <Text style={[styles.whatHappenedFirstName, { color: colors.textSecondary }]}>
+              <Text style={[styles.whatHappenedFirstName, { color: colors.text }]}>
                 {fight.fighter1.firstName}
               </Text>
               <Text style={[styles.whatHappenedLastName, { color: colors.text }]}>
@@ -883,7 +883,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                   style={styles.whatHappenedImage}
                 />
               </View>
-              <Text style={[styles.whatHappenedFirstName, { color: colors.textSecondary }]}>
+              <Text style={[styles.whatHappenedFirstName, { color: colors.text }]}>
                 {fight.fighter2.firstName}
               </Text>
               <Text style={[styles.whatHappenedLastName, { color: colors.text }]}>
@@ -893,18 +893,16 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           </View>
 
           {/* Winner Text, No Data Message, or Prompt */}
-          {isOutcomeRevealed ? (
-            fight.winner ? (
-              <Text style={[styles.whatHappenedWinnerText, { color: '#22c55e' }]}>
-                {fight.winner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName} by {fight.method || 'Unknown'}
-                {fight.round && ` in Round ${fight.round}`}
-                {fight.time && ` ${fight.time}`}
-              </Text>
-            ) : (
-              <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary }]}>
-                Outcome data not yet available.
-              </Text>
-            )
+          {!fight.winner ? (
+            <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary }]}>
+              Outcome data not yet available.
+            </Text>
+          ) : isOutcomeRevealed ? (
+            <Text style={[styles.whatHappenedWinnerText, { color: '#22c55e' }]}>
+              {fight.winner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName} by {fight.method || 'Unknown'}
+              {fight.round && ` in Round ${fight.round}`}
+              {fight.time && ` ${fight.time}`}
+            </Text>
           ) : (
             <TouchableOpacity onPress={handleRevealOutcome}>
               <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary }]}>
@@ -2149,7 +2147,8 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   whatHappenedFirstName: {
-    fontSize: 14,
+    fontSize: 18,
+    fontWeight: 'bold',
     marginBottom: 2,
   },
   whatHappenedLastName: {
