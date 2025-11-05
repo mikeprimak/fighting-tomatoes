@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   TextInput,
   Easing,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -280,6 +282,8 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const [predictionTab, setPredictionTab] = useState<'mine' | 'community'>('mine');
   const [commentsTab, setCommentsTab] = useState<'postfight' | 'prefight'>('postfight');
   const [hasLocallyRevealed, setHasLocallyRevealed] = useState(false);
+  const [showCommentForm, setShowCommentForm] = useState(false);
+  const [isEditingComment, setIsEditingComment] = useState(false);
 
   // Inline rating state - Initialize once with existing data, then manage locally
   const [rating, setRating] = useState(() => {
@@ -320,6 +324,8 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
 
   // Animation for tags fade
   const tagsOpacity = useRef(new Animated.Value(1)).current;
+  const scrollViewRef = useRef<ScrollView>(null);
+  const commentInputRef = useRef<View>(null);
 
   // State for displayed tags (delayed update for smooth animation)
   const [displayedTags, setDisplayedTags] = useState<string[]>([]);
@@ -472,6 +478,32 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
     },
   });
+
+  // Manual save handler for comment
+  const handleSaveComment = () => {
+    const submissionData = {
+      rating: rating > 0 ? rating : null,
+      review: comment.trim() || null,
+      tags: selectedTags
+    };
+    updateUserDataMutation.mutate(submissionData);
+    // Exit edit mode and hide form after successful save
+    setIsEditingComment(false);
+    setShowCommentForm(false);
+  };
+
+  // Handle comment input focus - scroll into view
+  const handleCommentFocus = () => {
+    setTimeout(() => {
+      commentInputRef.current?.measureLayout(
+        scrollViewRef.current as any,
+        (x, y) => {
+          scrollViewRef.current?.scrollTo({ y: y - 20, animated: true });
+        },
+        () => {}
+      );
+    }, 100);
+  };
 
   // Flag review mutation
   const flagReviewMutation = useMutation({
@@ -716,7 +748,12 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
 
   return (
     <>
-      <ScrollView style={[styles.scrollView, { backgroundColor: colors.background }]}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={[styles.scrollView, { backgroundColor: colors.background }]}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 20 }}
+      >
 
         {/* Inline Rating Section */}
         <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 0 }]}>
@@ -1397,8 +1434,21 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
         )}
 
         {/* Comments */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Comments</Text>
+        <View style={styles.sectionNoBorder}>
+          {/* Title row with Add Comment / Cancel button */}
+          <View style={styles.commentHeaderRow}>
+            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Comments</Text>
+            {!fight.userReview && !isEditingComment && (
+              <TouchableOpacity
+                onPress={() => setShowCommentForm(!showCommentForm)}
+                style={styles.addCommentButton}
+              >
+                <Text style={[styles.addCommentButtonText, { color: colors.tint }]}>
+                  {showCommentForm ? 'Cancel' : 'Add Comment'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           {/* Tab Buttons */}
           <View style={styles.tabContainer}>
@@ -1437,28 +1487,53 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           {/* Tab Content */}
           {commentsTab === 'postfight' ? (
             <>
-              {/* Comment/Review */}
-              <View style={styles.inlineCommentSection}>
-                <TextInput
-                  style={[
-                    styles.inlineCommentInput,
+              {/* Show comment input when showCommentForm is true (for new comments) OR when editing */}
+              {((showCommentForm && !fight.userReview) || isEditingComment) && (
+                <View ref={commentInputRef} collapsable={false} style={{ marginTop: 16 }}>
+                  <View style={[
+                    styles.commentInputContainer,
                     {
-                      backgroundColor: colors.background,
+                      backgroundColor: colors.card,
                       borderColor: colors.border,
-                      color: colors.text
                     }
-                  ]}
-                  placeholder="Write a review... (optional)"
-                  placeholderTextColor={colors.textSecondary}
-                  value={comment}
-                  onChangeText={setComment}
-                  multiline
-                  numberOfLines={4}
-                />
-              </View>
+                  ]}>
+                    <TextInput
+                      style={[
+                        styles.commentInput,
+                        { color: colors.text }
+                      ]}
+                      placeholder="Write a review... (optional)"
+                      placeholderTextColor={colors.textSecondary}
+                      multiline
+                      numberOfLines={4}
+                      maxLength={500}
+                      value={comment}
+                      onChangeText={setComment}
+                      onFocus={handleCommentFocus}
+                    />
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.saveCommentButton,
+                      {
+                        backgroundColor: (fight.userReview || comment.trim().length > 0) ? colors.tint : colors.card,
+                      }
+                    ]}
+                    disabled={updateUserDataMutation.isPending}
+                    onPress={handleSaveComment}
+                  >
+                    <Text style={[
+                      styles.saveCommentButtonText,
+                      { color: (fight.userReview || comment.trim().length > 0) ? '#000' : colors.text }
+                    ]}>
+                      {updateUserDataMutation.isPending ? 'Saving...' : 'Save Comment'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
-          {/* User's review first (if exists) */}
-          {fight.userReview && (
+          {/* User's review first (if exists and not editing) */}
+          {fight.userReview && !isEditingComment && (
             <CommentCard
               comment={{
                 id: fight.userReview.id,
@@ -1470,6 +1545,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                   displayName: user?.displayName || 'You',
                 },
               }}
+              onEdit={() => setIsEditingComment(true)}
               onUpvote={() => upvoteMutation.mutate({ reviewId: fight.userReview.id })}
               isUpvoting={upvoteMutation.isPending}
               isAuthenticated={isAuthenticated}
@@ -2172,5 +2248,40 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     fontStyle: 'italic',
+  },
+  commentHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addCommentButton: {
+    padding: 8,
+  },
+  addCommentButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  commentInputContainer: {
+    borderRadius: 12,
+    borderWidth: 2,
+    padding: 12,
+  },
+  commentInput: {
+    fontSize: 15,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    paddingTop: 8,
+  },
+  saveCommentButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  saveCommentButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
