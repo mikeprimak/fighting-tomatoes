@@ -5,7 +5,7 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
-import { router, usePathname } from 'expo-router';
+import { router } from 'expo-router';
 import { useAuth } from '../../store/AuthContext';
 import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
 import { BaseFightCardProps } from './shared/types';
