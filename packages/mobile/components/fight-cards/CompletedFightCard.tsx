@@ -508,25 +508,22 @@ export default function CompletedFightCard({
           </View>
 
           {/* Full-height user rating square on the right */}
-          <Animated.View
-            style={[
-              styles.userRatingSquare,
-              { backgroundColor: userRatingColor, transform: [{ scale: ratingScaleAnim }] }
-            ]}
-          >
-            <FontAwesome
-              name="star"
-              size={30}
-              color={userStarColor}
-              style={{ position: 'absolute' }}
-            />
-            <Text style={styles.ratingSquareText}>
-              {fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0
-                ? Math.round(fight.userRating).toString()
-                : '0'
-              }
-            </Text>
-          </Animated.View>
+          <View style={[styles.userRatingSquare, { backgroundColor: userRatingColor }]}>
+            <Animated.View style={{ transform: [{ scale: ratingScaleAnim }] }}>
+              <FontAwesome
+                name="star"
+                size={30}
+                color={userStarColor}
+                style={{ position: 'absolute' }}
+              />
+              <Text style={styles.ratingSquareText}>
+                {fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0
+                  ? Math.round(fight.userRating).toString()
+                  : '0'
+                }
+              </Text>
+            </Animated.View>
+          </View>
 
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -15 : 2 }]}>
             {/* Fighter names with centered "vs" */}
