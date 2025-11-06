@@ -29,6 +29,10 @@ export const queryClient = new QueryClient({
     queries: {
       retry: 2,
       staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // Keep cached data for 10 minutes
+      refetchOnWindowFocus: false, // Don't refetch when app regains focus
+      refetchOnMount: false, // Don't refetch when component mounts if data exists
+      refetchOnReconnect: false, // Don't refetch on network reconnect
     },
   },
 });

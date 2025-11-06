@@ -110,8 +110,6 @@ export default function TabBar({ tabs, defaultHeaderTitle, children }: TabBarPro
 export function FightCrewAppTabBar() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const router = useRouter();
-  const pathname = usePathname();
 
   return (
     <Tabs
@@ -142,32 +140,26 @@ export function FightCrewAppTabBar() {
         name="events"
         options={{
           title: 'Upcoming Events',
-          tabBarIcon: ({ color, focused }) => {
-            // Only show as focused if on the events index page
-            const isOnEventsIndex = pathname === '/(tabs)/events' || pathname === '/events';
-            const iconColor = isOnEventsIndex ? color : colors.tabIconDefault;
-            return <FontAwesome6 name="fire-flame-curved" size={24} style={{ marginBottom: -3 }} color={iconColor} />;
-          },
-          tabBarLabel: ({ color, focused }) => {
-            // Only show as focused if on the events index page
-            const isOnEventsIndex = pathname === '/(tabs)/events' || pathname === '/events';
-            return (
-              <Text
-                style={{
-                  fontSize: 10,
-                  color: isOnEventsIndex ? color : colors.tabIconDefault,
-                  textAlign: 'center',
-                }}
-              >
-                Upcoming
-              </Text>
-            );
-          },
-          headerShown: pathname === '/(tabs)/events' || pathname === '/events',
+          tabBarIcon: ({ color, focused }) => (
+            <FontAwesome6
+              name="fire-flame-curved"
+              size={24}
+              style={{ marginBottom: -3 }}
+              color={color}
+            />
+          ),
+          tabBarLabel: ({ color }) => (
+            <Text
+              style={{
+                fontSize: 10,
+                color,
+                textAlign: 'center',
+              }}
+            >
+              Upcoming
+            </Text>
+          ),
           headerTitle: 'Upcoming Events',
-          tabBarStyle: {
-            display: pathname.includes('/events/') ? 'none' : 'flex',
-          },
         }}
       />
       <Tabs.Screen

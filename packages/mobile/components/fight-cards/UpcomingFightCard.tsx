@@ -33,7 +33,6 @@ export default function UpcomingFightCard({
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const pathname = usePathname();
   const { pendingAnimationFightId, setPendingAnimation } = usePredictionAnimation();
 
   // Animation refs for prediction animations
@@ -189,17 +188,10 @@ export default function UpcomingFightCard({
     }
   }, [getUpcomingStatusMessage(), startingSoonPulseAnim]);
 
-  // Prediction animation - triggers when navigating back to list screen after making prediction
+  // Prediction animation - triggers when pendingAnimationFightId matches this fight
   useEffect(() => {
     // Only animate if this is the fight that needs animation
     if (pendingAnimationFightId !== fight.id) {
-      return;
-    }
-
-    // Check if we're on a list screen (not a detail screen)
-    const isOnListScreen = !pathname.includes('/fight/') && !pathname.includes('/event/');
-
-    if (!isOnListScreen) {
       return;
     }
 

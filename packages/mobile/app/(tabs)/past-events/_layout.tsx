@@ -5,6 +5,7 @@ export default function PastEventsLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
+        animation: 'none',
       }}
     />
   );

@@ -35,7 +35,6 @@ export default function CompletedFightCard({
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const pathname = usePathname();
   const { pendingRatingAnimationFightId, setPendingRatingAnimation } = usePredictionAnimation();
 
   // Animation ref for rating animation
@@ -206,13 +205,6 @@ export default function CompletedFightCard({
   useEffect(() => {
     // Only animate if this is the fight that needs animation
     if (pendingRatingAnimationFightId !== fight.id) {
-      return;
-    }
-
-    // Check if we're on a list screen (not a detail screen)
-    const isOnListScreen = !pathname.includes('/fight/') && !pathname.includes('/event/');
-
-    if (!isOnListScreen) {
       return;
     }
 
