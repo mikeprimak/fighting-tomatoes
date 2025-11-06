@@ -320,7 +320,7 @@ export default function PastEventsScreen() {
 
   if (eventsLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
         <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -332,7 +332,7 @@ export default function PastEventsScreen() {
 
   if (pastEvents.length === 0) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
         <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
         <View style={styles.centerContainer}>
           <Text style={[styles.noEventsText, { color: colors.textSecondary }]}>
@@ -344,7 +344,7 @@ export default function PastEventsScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
       <ScrollView
@@ -364,7 +364,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
   },
   scrollContainer: {
-    paddingVertical: 0,
+    paddingBottom: 80,
   },
   centerContainer: {
     flex: 1,

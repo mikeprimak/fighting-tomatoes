@@ -191,7 +191,7 @@ export default function UpcomingEventsScreen() {
 
   if (eventsLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
         <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -203,7 +203,7 @@ export default function UpcomingEventsScreen() {
 
   if (upcomingEvents.length === 0) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
         <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
         <View style={styles.loadingContainer}>
           <Text style={[styles.noEventsText, { color: colors.textSecondary }]}>
@@ -215,7 +215,7 @@ export default function UpcomingEventsScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
       <ScrollView
@@ -447,7 +447,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
   },
   scrollContainer: {
-    paddingBottom: 20,
+    paddingBottom: 80,
   },
   loadingContainer: {
     flex: 1,
