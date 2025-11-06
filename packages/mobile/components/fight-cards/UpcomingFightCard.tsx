@@ -205,8 +205,18 @@ export default function UpcomingFightCard({
 
     // Start animation after 450ms delay
     const timer = setTimeout(() => {
-      // Animate underline: pulse by scaling up and back down
+      // Animate underline: pulse by scaling up and back down twice
       Animated.sequence([
+        Animated.timing(underlineScaleAnim, {
+          toValue: 1.3,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(underlineScaleAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
         Animated.timing(underlineScaleAnim, {
           toValue: 1.3,
           duration: 300,
@@ -219,8 +229,18 @@ export default function UpcomingFightCard({
         }),
       ]).start();
 
-      // Animate hype square: scale up and down
+      // Animate hype square: scale up and down twice
       Animated.sequence([
+        Animated.timing(hypeScaleAnim, {
+          toValue: 1.15,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(hypeScaleAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
         Animated.timing(hypeScaleAnim, {
           toValue: 1.15,
           duration: 300,
@@ -399,25 +419,21 @@ export default function UpcomingFightCard({
           </View>
 
           {/* Full-height user hype square on the right */}
-          <Animated.View
-            style={[
-              styles.userHypeSquare,
-              { backgroundColor: userHypeColor, transform: [{ scale: hypeScaleAnim }] }
-            ]}
-          >
-            <FontAwesome6
-              name="fire-flame-curved"
-              size={24}
-              color={userFlameColor}
-              style={{ position: 'absolute' }}
-            />
-            <Text style={styles.hypeSquareText}>
+          <View style={[styles.userHypeSquare, { backgroundColor: userHypeColor }]}>
+            <Animated.View style={{ position: 'absolute', transform: [{ scale: hypeScaleAnim }] }}>
+              <FontAwesome6
+                name="fire-flame-curved"
+                size={24}
+                color={userFlameColor}
+              />
+            </Animated.View>
+            <Animated.Text style={[styles.hypeSquareText, { transform: [{ scale: hypeScaleAnim }] }]}>
               {fight.userHypePrediction !== undefined && fight.userHypePrediction !== null
                 ? Math.round(fight.userHypePrediction).toString()
                 : '0'
               }
-            </Text>
-          </Animated.View>
+            </Animated.Text>
+          </View>
 
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -15 : 2 }]}>
             {/* Fighter names with centered "vs" */}
