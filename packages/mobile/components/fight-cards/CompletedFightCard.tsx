@@ -509,20 +509,19 @@ export default function CompletedFightCard({
 
           {/* Full-height user rating square on the right */}
           <View style={[styles.userRatingSquare, { backgroundColor: userRatingColor }]}>
-            <Animated.View style={{ transform: [{ scale: ratingScaleAnim }], position: 'relative' }}>
+            <Animated.View style={{ position: 'absolute', transform: [{ scale: ratingScaleAnim }] }}>
               <FontAwesome
                 name="star"
                 size={30}
                 color={userStarColor}
-                style={{ position: 'absolute' }}
               />
-              <Text style={styles.ratingSquareText}>
-                {fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0
-                  ? Math.round(fight.userRating).toString()
-                  : '0'
-                }
-              </Text>
             </Animated.View>
+            <Animated.Text style={[styles.ratingSquareText, { transform: [{ scale: ratingScaleAnim }] }]}>
+              {fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0
+                ? Math.round(fight.userRating).toString()
+                : '0'
+              }
+            </Animated.Text>
           </View>
 
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -15 : 2 }]}>
