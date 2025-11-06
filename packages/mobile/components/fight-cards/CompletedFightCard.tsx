@@ -218,8 +218,18 @@ export default function CompletedFightCard({
 
     // Start animation after 450ms delay
     const timer = setTimeout(() => {
-      // Animate rating square: scale up and down
+      // Animate rating square: scale up and down twice
       Animated.sequence([
+        Animated.timing(ratingScaleAnim, {
+          toValue: 1.15,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ratingScaleAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
         Animated.timing(ratingScaleAnim, {
           toValue: 1.15,
           duration: 300,
