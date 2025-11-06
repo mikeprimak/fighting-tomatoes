@@ -1160,6 +1160,26 @@ class ApiService {
       method: 'GET',
     });
   }
+
+  // ==================== FEEDBACK ====================
+
+  async submitFeedback(
+    content: string,
+    platform?: string,
+    appVersion?: string
+  ): Promise<{
+    message: string;
+    feedbackId: string;
+  }> {
+    return this.makeRequest('/feedback', {
+      method: 'POST',
+      body: JSON.stringify({
+        content,
+        platform,
+        appVersion,
+      }),
+    });
+  }
 }
 
 export const apiService = new ApiService();

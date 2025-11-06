@@ -10,6 +10,7 @@ import notificationsRoutes from './notifications';
 import newsRoutes from './news';
 import communityRoutes from './community';
 import searchRoutes from './search';
+import feedbackRoutes from './feedback';
 import { uploadRoutes } from './upload';
 import { authenticateUser } from '../middleware/auth';
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
@@ -1486,6 +1487,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
   // Register search routes under /api prefix
   await fastify.register(searchRoutes, { prefix: '/api' });
 
+  // Register feedback routes under /api prefix
+  await fastify.register(feedbackRoutes, { prefix: '/api' });
+
   // Register upload routes under /api prefix
   await fastify.register(async function(fastify) {
     await uploadRoutes(fastify);
@@ -1500,3 +1504,4 @@ export async function registerRoutes(fastify: FastifyInstance) {
   //   await analyticsRoutes(fastify);
   // }, { prefix: '/api/analytics' });
 }
+ 

@@ -284,6 +284,13 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+            onPress={() => router.push('/send-feedback')}
+          >
+            <Text style={[styles.actionButtonText, { color: colors.text }]}>Send Feedback</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={[styles.logoutButton, { backgroundColor: colors.primary }]}
             onPress={handleLogout}
           >

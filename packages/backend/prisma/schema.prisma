@@ -88,6 +88,9 @@ model User {
   crewRoundVotes    CrewRoundVote[]
   crewReactions     CrewReaction[]
 
+  // Feedback relations
+  feedback          UserFeedback[]
+
   @@map("users")
 }
 
@@ -1059,4 +1062,34 @@ model NewsArticle {
   @@index([source, createdAt])
   @@index([createdAt])
   @@map("news_articles")
+}
+
+// ============== USER FEEDBACK ==============
+model UserFeedback {
+  id              String    @id @default(uuid())
+
+  // User relationship (optional - allow anonymous feedback)
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Feedback content
+  content         String    @db.Text
+  userEmail       String?   // Store email for anonymous users or backup
+
+  // Metadata
+  platform        String?   // "ios", "android", "web"
+  appVersion      String?
+
+  // Status
+  isRead          Boolean   @default(false)
+  isResolved      Boolean   @default(false)
+  adminNotes      String?   @db.Text
+
+  // Timestamps
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("user_feedback")
 }
