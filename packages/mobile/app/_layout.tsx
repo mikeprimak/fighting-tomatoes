@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '../store/AuthContext';
+import { PredictionAnimationProvider } from '../store/PredictionAnimationContext';
 import { Colors } from '../constants/Colors';
 
 export {
@@ -88,35 +89,37 @@ function RootLayoutNav() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? customDarkTheme : customLightTheme}>
-          <Stack
-            screenOptions={{
-              contentStyle: { backgroundColor: colors.background },
-              animation: 'none',
-              headerStyle: {
-                backgroundColor: colors.card,
-              },
-            }}
-          >
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="activity" options={{ headerShown: false }} />
-            <Stack.Screen name="crew/[id]" options={{ headerShown: false }} />
-            <Stack.Screen name="crew/info/[id]" options={{ headerShown: false }} />
-            <Stack.Screen name="fight" options={{ headerShown: false }} />
-            <Stack.Screen name="fighter" options={{ headerShown: false }} />
-            <Stack.Screen name="event" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="search-results"
-              options={{
-                title: 'Search Results',
-                headerShown: true,
-                headerTintColor: colors.text,
-                headerTitleStyle: { color: colors.text }
+        <PredictionAnimationProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? customDarkTheme : customLightTheme}>
+            <Stack
+              screenOptions={{
+                contentStyle: { backgroundColor: colors.background },
+                animation: 'none',
+                headerStyle: {
+                  backgroundColor: colors.card,
+                },
               }}
-            />
-          </Stack>
-        </ThemeProvider>
+            >
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="activity" options={{ headerShown: false }} />
+              <Stack.Screen name="crew/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="crew/info/[id]" options={{ headerShown: false }} />
+              <Stack.Screen name="fight" options={{ headerShown: false }} />
+              <Stack.Screen name="fighter" options={{ headerShown: false }} />
+              <Stack.Screen name="event" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="search-results"
+                options={{
+                  title: 'Search Results',
+                  headerShown: true,
+                  headerTintColor: colors.text,
+                  headerTitleStyle: { color: colors.text }
+                }}
+              />
+            </Stack>
+          </ThemeProvider>
+        </PredictionAnimationProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

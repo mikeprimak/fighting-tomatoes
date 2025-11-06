@@ -25,6 +25,7 @@ import FightDetailsSection from './FightDetailsSection';
 import { useFightStats } from '../hooks/useFightStats';
 import { PreFightCommentCard } from './PreFightCommentCard';
 import { useAuth } from '../store/AuthContext';
+import { usePredictionAnimation } from '../store/PredictionAnimationContext';
 import { FlagReviewModal } from '.';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
@@ -92,6 +93,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
+  const { setPendingAnimation } = usePredictionAnimation();
   const { alertState, showSuccess, showError, showConfirm, hideAlert } = useCustomAlert();
 
   // Local state for selections (will be saved immediately on change)
@@ -210,6 +212,9 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       });
     },
     onSuccess: () => {
+      // Mark this fight as needing animation
+      setPendingAnimation(fight.id);
+
       // Invalidate fight-specific queries
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
@@ -240,6 +245,9 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       });
     },
     onSuccess: () => {
+      // Mark this fight as needing animation
+      setPendingAnimation(fight.id);
+
       // Invalidate fight-specific queries
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
@@ -270,6 +278,9 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       });
     },
     onSuccess: () => {
+      // Mark this fight as needing animation
+      setPendingAnimation(fight.id);
+
       // Invalidate fight-specific queries
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });

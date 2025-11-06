@@ -5,8 +5,9 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { useAuth } from '../../store/AuthContext';
+import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
 import { BaseFightCardProps } from './shared/types';
 import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
@@ -32,6 +33,12 @@ export default function UpcomingFightCard({
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const pathname = usePathname();
+  const { pendingAnimationFightId, setPendingAnimation } = usePredictionAnimation();
+
+  // Animation refs for prediction animations
+  const underlineScaleAnim = useRef(new Animated.Value(1)).current;
+  const hypeScaleAnim = useRef(new Animated.Value(1)).current;
 
   // Local formatMethod function for this component - shows "KO" instead of "KO/TKO"
   const formatMethod = (method: string | null | undefined) => {
@@ -181,6 +188,57 @@ export default function UpcomingFightCard({
       };
     }
   }, [getUpcomingStatusMessage(), startingSoonPulseAnim]);
+
+  // Prediction animation - triggers when navigating back to list screen after making prediction
+  useEffect(() => {
+    // Only animate if this is the fight that needs animation
+    if (pendingAnimationFightId !== fight.id) {
+      return;
+    }
+
+    // Check if we're on a list screen (not a detail screen)
+    const isOnListScreen = !pathname.includes('/fight/') && !pathname.includes('/event/');
+
+    if (!isOnListScreen) {
+      return;
+    }
+
+    // Start animation after 450ms delay
+    const timer = setTimeout(() => {
+      // Animate underline: pulse by scaling up and back down
+      Animated.sequence([
+        Animated.timing(underlineScaleAnim, {
+          toValue: 1.3,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(underlineScaleAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      // Animate hype square: scale up and down
+      Animated.sequence([
+        Animated.timing(hypeScaleAnim, {
+          toValue: 1.15,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(hypeScaleAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Clear the pending animation flag after animation completes
+        setPendingAnimation(null);
+      });
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [pendingAnimationFightId, fight.id, pathname, underlineScaleAnim, hypeScaleAnim, setPendingAnimation]);
 
   const getFighter1ImageSource = () => {
     if (fighter1ImageError) {
@@ -341,7 +399,12 @@ export default function UpcomingFightCard({
           </View>
 
           {/* Full-height user hype square on the right */}
-          <View style={[styles.userHypeSquare, { backgroundColor: userHypeColor }]}>
+          <Animated.View
+            style={[
+              styles.userHypeSquare,
+              { backgroundColor: userHypeColor, transform: [{ scale: hypeScaleAnim }] }
+            ]}
+          >
             <FontAwesome6
               name="fire-flame-curved"
               size={24}
@@ -354,28 +417,33 @@ export default function UpcomingFightCard({
                 : '0'
               }
             </Text>
-          </View>
+          </Animated.View>
 
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -15 : 2 }]}>
             {/* Fighter names with centered "vs" */}
             <View style={styles.fighterNamesContainer}>
               {/* Fighter 1 - Left half */}
               <View style={styles.fighter1Container}>
-                <View
-                  style={[
-                    { alignSelf: 'flex-end' },
-                    aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && {
-                      borderBottomWidth: 2,
-                      borderBottomColor: '#F5C518',
-                    }
-                  ]}
-                >
+                <View style={{ alignSelf: 'flex-end', position: 'relative' }}>
                   <Text
                     style={[styles.fighterName, { color: colors.text, textAlign: 'right' }]}
                     numberOfLines={1}
                   >
                     {cleanFighterName(getFighterName(fight.fighter1))}
                   </Text>
+                  {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
+                    <Animated.View
+                      style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: 2,
+                        backgroundColor: '#F5C518',
+                        transform: [{ scaleX: underlineScaleAnim }],
+                      }}
+                    />
+                  )}
                 </View>
               </View>
 
@@ -390,21 +458,26 @@ export default function UpcomingFightCard({
 
               {/* Fighter 2 - Right half */}
               <View style={styles.fighter2Container}>
-                <View
-                  style={[
-                    { alignSelf: 'flex-start' },
-                    aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && {
-                      borderBottomWidth: 2,
-                      borderBottomColor: '#F5C518',
-                    }
-                  ]}
-                >
+                <View style={{ alignSelf: 'flex-start', position: 'relative' }}>
                   <Text
                     style={[styles.fighterName, { color: colors.text, textAlign: 'left' }]}
                     numberOfLines={1}
                   >
                     {cleanFighterName(getFighterName(fight.fighter2))}
                   </Text>
+                  {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
+                    <Animated.View
+                      style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: 2,
+                        backgroundColor: '#F5C518',
+                        transform: [{ scaleX: underlineScaleAnim }],
+                      }}
+                    />
+                  )}
                 </View>
               </View>
             </View>
