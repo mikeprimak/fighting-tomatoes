@@ -91,13 +91,243 @@ curl http://localhost:3008/health
   - Removed: `animateRating`, `animatePrediction` props from fight cards
   - All prediction/rating functionality now uses navigation to UpcomingFightDetailScreen and CompletedFightDetailScreen
 
-- **Animation System Notes** (for future implementation):
-  - Existing sparkle animation infrastructure still exists in fight cards (flame1-8, fighterSparkle1-4, methodSparkle1-4)
-  - Animations currently only triggered by `animatePrediction` prop, which was only set by modal system
-  - For navigation-based flow, need global state solution (context/redux) or data-change detection
-  - Challenge: React Query caching means data doesn't always re-render on navigation back
-  - Solution attempted: Change detection with refs, pathname detection - both had timing/reliability issues
-  - Recommended approach for future: Simple data comparison on component focus/mount
+### UpcomingFightCard Animation System (2025-11-06) ✅ WORKING SOLUTION
+
+**Feature**: When user makes a prediction/hype selection on UpcomingFightDetailScreen and navigates back, the fight card animates (yellow underline and MY HYPE square scale briefly).
+
+**Key Requirement**: Animation should work across ALL screens where UpcomingFightCard appears (events list, community, fighter screens, etc.)
+
+---
+
+#### ✅ WORKING SOLUTION (Final Implementation)
+
+**Core Pattern**: Context-based flag + pathname detection
+
+**Files Modified**:
+1. `packages/mobile/store/PredictionAnimationContext.tsx` (NEW FILE)
+2. `packages/mobile/app/_layout.tsx`
+3. `packages/mobile/components/UpcomingFightDetailScreen.tsx`
+4. `packages/mobile/components/fight-cards/UpcomingFightCard.tsx`
+
+**Implementation Details**:
+
+**1. Create Context for Global State** (`store/PredictionAnimationContext.tsx`):
+```typescript
+import React, { createContext, useContext, useState, useCallback } from 'react';
+
+interface PredictionAnimationContextType {
+  pendingAnimationFightId: string | null;
+  setPendingAnimation: (fightId: string | null) => void;
+}
+
+const PredictionAnimationContext = createContext<PredictionAnimationContextType | undefined>(undefined);
+
+export function PredictionAnimationProvider({ children }: { children: React.ReactNode }) {
+  const [pendingAnimationFightId, setPendingAnimationFightId] = useState<string | null>(null);
+
+  const setPendingAnimation = useCallback((fightId: string | null) => {
+    setPendingAnimationFightId(fightId);
+  }, []);
+
+  return (
+    <PredictionAnimationContext.Provider value={{ pendingAnimationFightId, setPendingAnimation }}>
+      {children}
+    </PredictionAnimationContext.Provider>
+  );
+}
+
+export function usePredictionAnimation() {
+  const context = useContext(PredictionAnimationContext);
+  if (context === undefined) {
+    throw new Error('usePredictionAnimation must be used within PredictionAnimationProvider');
+  }
+  return context;
+}
+```
+
+**2. Wrap App with Provider** (`app/_layout.tsx`):
+```typescript
+import { PredictionAnimationProvider } from '../store/PredictionAnimationContext';
+
+// Inside RootLayoutNav:
+<QueryClientProvider client={queryClient}>
+  <AuthProvider>
+    <PredictionAnimationProvider>
+      <ThemeProvider value={...}>
+        <Stack>...</Stack>
+      </ThemeProvider>
+    </PredictionAnimationProvider>
+  </AuthProvider>
+</QueryClientProvider>
+```
+
+**3. Set Flag on Prediction** (`components/UpcomingFightDetailScreen.tsx`):
+```typescript
+import { usePredictionAnimation } from '../store/PredictionAnimationContext';
+
+// In component:
+const { setPendingAnimation } = usePredictionAnimation();
+
+// In ALL mutation onSuccess handlers (saveWinnerMutation, saveHypeMutation, saveMethodMutation):
+onSuccess: () => {
+  // Mark this fight as needing animation
+  setPendingAnimation(fight.id);
+
+  // Invalidate queries...
+  queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+  // ... etc
+}
+```
+
+**4. Animate on List Screen** (`components/fight-cards/UpcomingFightCard.tsx`):
+```typescript
+import { router, usePathname } from 'expo-router';
+import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
+
+// In component:
+const { pendingAnimationFightId, setPendingAnimation } = usePredictionAnimation();
+const pathname = usePathname();
+
+// Animation refs (already exist in component):
+const underlineScaleAnim = useRef(new Animated.Value(1)).current;
+const hypeScaleAnim = useRef(new Animated.Value(1)).current;
+
+// Add useEffect:
+useEffect(() => {
+  // Only animate if we're on a list screen (not a detail screen)
+  const isOnListScreen = !pathname.includes('/fight/') && !pathname.includes('/event/');
+
+  // Only animate if on list screen AND IDs match
+  if (pendingAnimationFightId === fight.id && isOnListScreen) {
+    // Delay animation by 300ms to let user see the screen first
+    const timer = setTimeout(() => {
+      // Animate yellow underline and hype squares
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(underlineScaleAnim, { toValue: 1.2, duration: 200, useNativeDriver: true }),
+          Animated.timing(underlineScaleAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        ]),
+        Animated.sequence([
+          Animated.timing(hypeScaleAnim, { toValue: 1.2, duration: 200, useNativeDriver: true }),
+          Animated.timing(hypeScaleAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        ]),
+      ]).start(() => {
+        // Clear the pending animation flag AFTER animation completes
+        setPendingAnimation(null);
+      });
+    }, 300);
+
+    // Cleanup timer if component unmounts
+    return () => clearTimeout(timer);
+  }
+}, [pendingAnimationFightId, fight.id, underlineScaleAnim, hypeScaleAnim, setPendingAnimation, pathname]);
+```
+
+**5. Update JSX for Underline Animation**:
+
+IMPORTANT: Separate the underline from the text so only the underline animates, not the text.
+
+**OLD (incorrect - animates text too)**:
+```typescript
+<Animated.View style={[
+  { alignSelf: 'flex-end' },
+  userPredictedWinner && { borderBottomWidth: 2, borderBottomColor: '#F5C518' },
+  { transform: [{ scaleX: underlineScaleAnim }] }
+]}>
+  <Text style={styles.fighterName}>Fighter Name</Text>
+</Animated.View>
+```
+
+**NEW (correct - only animates underline)**:
+```typescript
+<View style={{ alignSelf: 'flex-end', position: 'relative' }}>
+  <Text style={styles.fighterName}>Fighter Name</Text>
+  {userPredictedWinner && (
+    <Animated.View
+      style={[
+        {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 2,
+          backgroundColor: '#F5C518',
+        },
+        { transform: [{ scaleX: underlineScaleAnim }] }
+      ]}
+    />
+  )}
+</View>
+```
+
+Apply this pattern to BOTH fighter name containers (fighter1 and fighter2).
+
+**6. Update Hype Square Animation**:
+
+Only animate the USER hype square (MY HYPE), NOT the community hype square (ALL HYPE).
+
+```typescript
+{/* ALL HYPE - NO animation */}
+<View style={[styles.hypeSquare, { backgroundColor: hypeBorderColor }]}>
+  <FontAwesome6 name="fire-flame-curved" size={24} color={flameColor} />
+  <Text>{communityHype}</Text>
+</View>
+
+{/* MY HYPE - YES animation */}
+<Animated.View style={[styles.userHypeSquare, { backgroundColor: userHypeColor, transform: [{ scale: hypeScaleAnim }] }]}>
+  <FontAwesome6 name="fire-flame-curved" size={24} color={userFlameColor} />
+  <Text>{userHype}</Text>
+</Animated.View>
+```
+
+---
+
+#### ❌ APPROACHES THAT DIDN'T WORK
+
+**1. Set-Based Tracking** (multiple animating fights):
+- Problem: Only one card needs to animate at a time
+- Overcomplicated the solution
+
+**2. Delay-Based Execution** (setTimeout without pathname check):
+- Problem: Animation would fire on detail screen (hidden) before user navigated back
+- Card on events screen was mounted but not visible, useEffect fired prematurely
+
+**3. Change Detection with Refs**:
+- Problem: React Query cache means data doesn't always re-render on navigation
+- Unreliable timing
+
+**4. Direct Data Comparison on Mount**:
+- Problem: Component often already mounted when navigation happens
+- Miss the state change
+
+---
+
+#### 🔑 KEY INSIGHTS
+
+1. **React Navigation keeps screens mounted**: When navigating from events → fight detail, the events screen stays mounted but hidden. This means context updates trigger useEffects on hidden screens.
+
+2. **Pathname detection is critical**: Must check `usePathname()` to determine if we're on a list screen vs detail screen. Only animate on list screens.
+
+3. **300ms delay is important**: Gives user time to see the screen before animation starts. Without it, animation feels jarring.
+
+4. **Separate underline element**: Using `borderBottomWidth` on the text container scales both text and border. Must use absolutely positioned separate element for underline.
+
+5. **Clean up timers**: Always return cleanup function from useEffect to clear setTimeout if component unmounts.
+
+---
+
+#### 📋 TESTING CHECKLIST
+
+- [ ] Navigate to fight detail, change winner → back → yellow underline animates
+- [ ] Navigate to fight detail, change hype → back → MY HYPE square animates
+- [ ] Navigate to fight detail, change method → back → appropriate elements animate
+- [ ] Works from events tab
+- [ ] Works from community tab
+- [ ] Works from fighter screen
+- [ ] Animation doesn't fire on detail screen
+- [ ] Animation has 300ms delay after navigation
+- [ ] Only MY HYPE animates (not ALL HYPE)
+- [ ] Only yellow underline animates (not fighter names)
 
 ### Fight Notification System (2025-11-03)
 - **Feature**: Comprehensive fight notification system with fighter-based and fight-based alerts

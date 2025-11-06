@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
@@ -25,6 +26,7 @@ import FightDetailsSection from './FightDetailsSection';
 import { useFightStats } from '../hooks/useFightStats';
 import { PreFightCommentCard } from './PreFightCommentCard';
 import { useAuth } from '../store/AuthContext';
+import { usePredictionAnimation } from '../store/PredictionAnimationContext';
 import { FlagReviewModal } from '.';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
@@ -92,6 +94,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
+  const { setPendingAnimation } = usePredictionAnimation();
   const { alertState, showSuccess, showError, showConfirm, hideAlert } = useCustomAlert();
 
   // Local state for selections (will be saved immediately on change)
@@ -210,13 +213,14 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       });
     },
     onSuccess: () => {
-      // Invalidate fight-specific queries
+      // Mark this fight as needing animation
+      setPendingAnimation(fight.id);
+
+      // Invalidate all queries
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
-
-      // Invalidate list queries that show this fight
       queryClient.invalidateQueries({ queryKey: ['eventFights'] });
       queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
       queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });
@@ -240,13 +244,14 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       });
     },
     onSuccess: () => {
-      // Invalidate fight-specific queries
+      // Mark this fight as needing animation
+      setPendingAnimation(fight.id);
+
+      // Invalidate all queries
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
-
-      // Invalidate list queries that show this fight
       queryClient.invalidateQueries({ queryKey: ['eventFights'] });
       queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
       queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });
@@ -270,13 +275,14 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       });
     },
     onSuccess: () => {
-      // Invalidate fight-specific queries
+      // Mark this fight as needing animation
+      setPendingAnimation(fight.id);
+
+      // Invalidate all queries
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
-
-      // Invalidate list queries that show this fight
       queryClient.invalidateQueries({ queryKey: ['eventFights'] });
       queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
       queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });

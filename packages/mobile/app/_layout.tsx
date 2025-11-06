@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '../store/AuthContext';
+import { PredictionAnimationProvider } from '../store/PredictionAnimationContext';
 import { Colors } from '../constants/Colors';
 
 export {
@@ -88,7 +89,8 @@ function RootLayoutNav() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? customDarkTheme : customLightTheme}>
+        <PredictionAnimationProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? customDarkTheme : customLightTheme}>
           <Stack
             screenOptions={{
               contentStyle: { backgroundColor: colors.background },
@@ -117,6 +119,7 @@ function RootLayoutNav() {
             />
           </Stack>
         </ThemeProvider>
+        </PredictionAnimationProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
