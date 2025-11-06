@@ -23,6 +23,7 @@ import { apiService } from '../services/api';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 import { FlagReviewModal, CommentCard } from '.';
 import { useAuth } from '../store/AuthContext';
+import { usePredictionAnimation } from '../store/PredictionAnimationContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
 import PredictionBarChart from './PredictionBarChart';
@@ -273,6 +274,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, refreshUserData } = useAuth();
+  const { setPendingRatingAnimation } = usePredictionAnimation();
   const { alertState, showSuccess, showError, showConfirm, hideAlert } = useCustomAlert();
 
   const [animateMyRating, setAnimateMyRating] = useState(false);
@@ -453,6 +455,9 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
       return await apiService.updateFightUserData(fight.id, data);
     },
     onSuccess: () => {
+      // Mark this fight as needing animation
+      setPendingRatingAnimation(fight.id);
+
       // Only invalidate queries - no state updates that cause re-renders
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightTags', fight.id] });

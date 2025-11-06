@@ -5,8 +5,9 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
-import { router } from 'expo-router';
+import { router, usePathname } from 'expo-router';
 import { useAuth } from '../../store/AuthContext';
+import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
 import { BaseFightCardProps } from './shared/types';
 import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
@@ -34,6 +35,11 @@ export default function CompletedFightCard({
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const pathname = usePathname();
+  const { pendingRatingAnimationFightId, setPendingRatingAnimation } = usePredictionAnimation();
+
+  // Animation ref for rating animation
+  const ratingScaleAnim = useRef(new Animated.Value(1)).current;
 
   // Local formatMethod function for this component - shows "KO" instead of "KO/TKO"
   const formatMethod = (method: string | null | undefined) => {
@@ -195,6 +201,43 @@ export default function CompletedFightCard({
     setFighter1ImageError(false);
     setFighter2ImageError(false);
   }, [fight.id]);
+
+  // Rating animation - triggers when navigating back to list screen after rating fight
+  useEffect(() => {
+    // Only animate if this is the fight that needs animation
+    if (pendingRatingAnimationFightId !== fight.id) {
+      return;
+    }
+
+    // Check if we're on a list screen (not a detail screen)
+    const isOnListScreen = !pathname.includes('/fight/') && !pathname.includes('/event/');
+
+    if (!isOnListScreen) {
+      return;
+    }
+
+    // Start animation after 450ms delay
+    const timer = setTimeout(() => {
+      // Animate rating square: scale up and down
+      Animated.sequence([
+        Animated.timing(ratingScaleAnim, {
+          toValue: 1.15,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ratingScaleAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Clear the pending animation flag after animation completes
+        setPendingRatingAnimation(null);
+      });
+    }, 450);
+
+    return () => clearTimeout(timer);
+  }, [pendingRatingAnimationFightId, fight.id, pathname, ratingScaleAnim, setPendingRatingAnimation]);
 
   // Pulsing animation for "Starting soon..."
   useEffect(() => {
@@ -465,7 +508,12 @@ export default function CompletedFightCard({
           </View>
 
           {/* Full-height user rating square on the right */}
-          <View style={[styles.userRatingSquare, { backgroundColor: userRatingColor }]}>
+          <Animated.View
+            style={[
+              styles.userRatingSquare,
+              { backgroundColor: userRatingColor, transform: [{ scale: ratingScaleAnim }] }
+            ]}
+          >
             <FontAwesome
               name="star"
               size={30}
@@ -478,7 +526,7 @@ export default function CompletedFightCard({
                 : '0'
               }
             </Text>
-          </View>
+          </Animated.View>
 
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -15 : 2 }]}>
             {/* Fighter names with centered "vs" */}
