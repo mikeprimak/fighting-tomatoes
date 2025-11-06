@@ -18,7 +18,7 @@ import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { FightDisplayCard, ScreenHeader } from '../../../components';
 import { useAuth } from '../../../store/AuthContext';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useLiveEventPolling } from '../../../hooks/useLiveEventPolling';
 
 interface EventDetails {
@@ -288,7 +288,7 @@ export default function EventDetailScreen() {
           style={styles.backIcon}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <FontAwesome name="arrow-left" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={[styles.eventName, { color: colors.text }]} numberOfLines={1}>

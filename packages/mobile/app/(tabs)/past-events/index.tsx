@@ -251,9 +251,30 @@ function EventSection({ event }: { event: Event }) {
             {prelims.length > 0 && (
               <View style={styles.cardSection}>
                 <View style={styles.sectionHeader}>
-                  <View style={styles.sectionHeaderRight}>
+                  {/* Left Column Header - ALL / RATINGS */}
+                  <View style={styles.columnHeaders}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      ALL
+                    </Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      RATINGS
+                    </Text>
+                  </View>
+
+                  {/* Center - Title */}
+                  <View style={styles.sectionHeaderCenter}>
                     <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                       PRELIMINARY CARD
+                    </Text>
+                  </View>
+
+                  {/* Right Column Header - MY / RATING */}
+                  <View style={styles.columnHeadersRight}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      MY
+                    </Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      RATING
                     </Text>
                   </View>
                 </View>

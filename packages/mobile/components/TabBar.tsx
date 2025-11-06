@@ -192,10 +192,10 @@ export function FightCrewAppTabBar() {
             <Image
               source={
                 focused
-                  ? require('../assets/GOOD-FIGHTS-WORD-LOGO-SQUARE-FULL-YELLOW.png')
-                  : require('../assets/GOOD-FIGHTS-WORD-LOGO-SQUARE-FULL-GREY.png')
+                  ? require('../assets/GOOD-FIGHTS-WORD-LOGO-SQUARE-FULL-YELLOW-SIZED.png')
+                  : require('../assets/GOOD-FIGHTS-WORD-LOGO-SQUARE-FULL-GREY-SIZED.png')
               }
-              style={{ width: 125, height: 53, marginTop: 13 }}
+              style={{ width: 84, height: 36, marginTop: 14 }}
               resizeMode="contain"
             />
           ),

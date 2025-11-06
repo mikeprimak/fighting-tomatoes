@@ -24,7 +24,7 @@ import { useLocalSearchParams, router, Stack } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
 import { RoundVotingSlideup, Fight, FightDisplayCardMinimal } from '../../components';
@@ -1057,7 +1057,7 @@ export default function CrewChatScreen() {
           style={styles.backButton}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <FontAwesome name="arrow-left" size={20} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         {crew.imageUrl ? (
           <Image

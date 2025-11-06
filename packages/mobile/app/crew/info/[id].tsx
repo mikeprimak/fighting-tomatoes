@@ -17,7 +17,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../../constants/Colors';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { apiService } from '../../../services/api';
 import { useCustomAlert } from '../../../hooks/useCustomAlert';
@@ -245,7 +245,7 @@ export default function CrewInfoScreen() {
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <FontAwesome name="arrow-left" size={20} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Crew Info</Text>
         <View style={{ width: 40 }} />
