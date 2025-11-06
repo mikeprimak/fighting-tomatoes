@@ -92,7 +92,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
-  const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
+  const { alertState, showSuccess, showError, showConfirm, hideAlert } = useCustomAlert();
 
   // Local state for selections (will be saved immediately on change)
   const [selectedWinner, setSelectedWinner] = useState<string | null>(fight.userPredictedWinner || null);
@@ -302,8 +302,57 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   });
 
   // Manual save handler for comment
-  const handleSaveComment = () => {
-    saveCommentMutation.mutate(preFightComment.trim());
+  const handleSaveComment = async () => {
+    // Check if user is trying to delete an existing comment
+    const isDeletingComment = preFightCommentsData?.userComment && !preFightComment.trim();
+
+    // Confirm deletion if user is removing their existing comment
+    if (isDeletingComment) {
+      showConfirm(
+        'Are you sure you want to delete your comment?',
+        () => {
+          // User confirmed deletion - save empty string to delete
+          saveCommentMutation.mutate('');
+          setIsEditingComment(false);
+          setShowCommentForm(false);
+        },
+        'Delete Comment',
+        'Delete',
+        'Cancel',
+        true // destructive style
+      );
+      return;
+    }
+
+    // If adding a new comment but no text entered, just close the form
+    if (!preFightCommentsData?.userComment && !preFightComment.trim()) {
+      setShowCommentForm(false);
+      return;
+    }
+
+    // Check if this is a new comment (not editing existing)
+    const isNewComment = !preFightCommentsData?.userComment && preFightComment.trim();
+
+    try {
+      // Save the comment - this returns the created/updated comment
+      const response = await saveCommentMutation.mutateAsync(preFightComment.trim());
+
+      // Invalidate queries to refresh the comment list
+      await queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
+
+      // If it's a new comment, auto-upvote it
+      if (isNewComment && response?.comment?.id) {
+        const commentId = response.comment.id;
+        // Auto-upvote the newly created comment
+        await upvotePreFightCommentMutation.mutateAsync(commentId);
+      }
+
+      // Exit edit mode and hide form after successful save
+      setIsEditingComment(false);
+      setShowCommentForm(false);
+    } catch (error) {
+      console.error('Failed to save comment:', error);
+    }
   };
 
   // Flag comment mutation

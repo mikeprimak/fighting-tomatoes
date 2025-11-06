@@ -24,6 +24,7 @@ interface CommentCardProps {
   onPress?: () => void;
   onUpvote?: () => void;
   onFlag?: () => void;
+  onEdit?: () => void;
   isUpvoting?: boolean;
   isFlagging?: boolean;
   isAuthenticated?: boolean;
@@ -35,6 +36,7 @@ export function CommentCard({
   onPress,
   onUpvote,
   onFlag,
+  onEdit,
   isUpvoting = false,
   isFlagging = false,
   isAuthenticated = false,
@@ -89,7 +91,22 @@ export function CommentCard({
                   {comment.rating}
                 </Text>
               </View>
-              {onFlag && (
+              {showMyReview && onEdit && (
+                <TouchableOpacity
+                  onPress={onEdit}
+                  style={styles.editButton}
+                >
+                  <FontAwesome
+                    name="edit"
+                    size={12}
+                    color={colors.tint}
+                  />
+                  <Text style={[styles.editButtonText, { color: colors.tint }]}>
+                    Edit
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {onFlag && !showMyReview && (
                 <TouchableOpacity
                   onPress={onFlag}
                   disabled={!isAuthenticated || isFlagging}
@@ -165,6 +182,16 @@ const styles = StyleSheet.create({
   },
   flagButton: {
     padding: 4,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    padding: 4,
+  },
+  editButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   reviewHeader: {
     flexDirection: 'row',

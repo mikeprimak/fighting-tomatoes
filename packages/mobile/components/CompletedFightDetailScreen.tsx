@@ -273,7 +273,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const router = useRouter();
   const queryClient = useQueryClient();
   const { user, isAuthenticated, refreshUserData } = useAuth();
-  const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
+  const { alertState, showSuccess, showError, showConfirm, hideAlert } = useCustomAlert();
 
   const [animateMyRating, setAnimateMyRating] = useState(false);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
@@ -302,7 +302,6 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     }).filter(Boolean) as string[];
   });
   const [tagRandomSeed, setTagRandomSeed] = useState(Math.floor(Math.random() * 1000));
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Animation values for wheel animation (large star display) - Initialize based on existing rating
   const wheelAnimation = useRef(new Animated.Value(
@@ -480,16 +479,65 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   });
 
   // Manual save handler for comment
-  const handleSaveComment = () => {
+  const handleSaveComment = async () => {
+    // Check if user is trying to delete an existing comment
+    const isDeletingComment = fight.userReview && !comment.trim();
+
+    // Confirm deletion if user is removing their existing comment
+    if (isDeletingComment) {
+      showConfirm(
+        'Are you sure you want to delete your comment?',
+        async () => {
+          // User confirmed deletion
+          const submissionData = {
+            rating: rating > 0 ? rating : null,
+            review: null,
+            tags: selectedTags
+          };
+
+          try {
+            await updateUserDataMutation.mutateAsync(submissionData);
+            setIsEditingComment(false);
+            setShowCommentForm(false);
+          } catch (error) {
+            console.error('Failed to delete comment:', error);
+          }
+        },
+        'Delete Comment',
+        'Delete',
+        'Cancel',
+        true // destructive style
+      );
+      return;
+    }
+
     const submissionData = {
       rating: rating > 0 ? rating : null,
       review: comment.trim() || null,
       tags: selectedTags
     };
-    updateUserDataMutation.mutate(submissionData);
-    // Exit edit mode and hide form after successful save
-    setIsEditingComment(false);
-    setShowCommentForm(false);
+
+    // Check if this is a new review (not editing existing)
+    const isNewReview = !fight.userReview && comment.trim();
+
+    try {
+      // Save the comment - this returns the created/updated review
+      const response = await updateUserDataMutation.mutateAsync(submissionData);
+
+      // If it's a new review with content, auto-upvote it
+      if (isNewReview && response?.data?.review?.id) {
+        const reviewId = response.data.review.id;
+        // Auto-upvote the newly created review
+        await upvoteMutation.mutateAsync({ reviewId });
+      }
+
+      // Exit edit mode and hide form after successful save
+      setIsEditingComment(false);
+      setShowCommentForm(false);
+    } catch (error) {
+      // Error handling is already done in the mutation's onError
+      console.error('Failed to save comment:', error);
+    }
   };
 
   // Handle comment input focus - scroll into view
@@ -503,6 +551,25 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
         () => {}
       );
     }, 100);
+  };
+
+  // Handle showing comment form and scrolling to it
+  const handleToggleCommentForm = () => {
+    const newShowCommentForm = !showCommentForm;
+    setShowCommentForm(newShowCommentForm);
+
+    // If we're showing the form, scroll to it after it renders
+    if (newShowCommentForm) {
+      setTimeout(() => {
+        commentInputRef.current?.measureLayout(
+          scrollViewRef.current as any,
+          (x, y) => {
+            scrollViewRef.current?.scrollTo({ y: y - 20, animated: true });
+          },
+          () => {}
+        );
+      }, 100);
+    }
   };
 
   // Flag review mutation
@@ -549,42 +616,16 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     }
   };
 
-  // Auto-save handler
+  // Auto-save handler - only auto-saves rating and tags, NOT comment
   const handleAutoSave = React.useCallback(() => {
-    // Don't save if comment exists but no rating
-    if (comment.trim() && rating === 0) {
-      showError('Reviews require a rating.', 'Error');
-      return;
-    }
-
     const submissionData = {
       rating: rating > 0 ? rating : null,
-      review: comment.trim() || null,
+      review: null, // Don't auto-save comment
       tags: selectedTags
     };
 
     updateUserDataMutation.mutate(submissionData);
-  }, [rating, comment, selectedTags]);
-
-  // Debounced auto-save for comment changes
-  useEffect(() => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Only trigger auto-save if there's actual data to save
-    if (rating > 0 || comment.trim() || selectedTags.length > 0) {
-      debounceTimerRef.current = setTimeout(() => {
-        handleAutoSave();
-      }, 1000); // 1 second debounce for comment
-    }
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [comment]);
+  }, [rating, selectedTags]);
 
   // Simple animation function (like UpcomingFightDetailScreen)
   const animateToNumber = (targetNumber: number) => {
@@ -748,12 +789,17 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
 
   return (
     <>
-      <ScrollView
-        ref={scrollViewRef}
-        style={[styles.scrollView, { backgroundColor: colors.background }]}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 20 }}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
+        <ScrollView
+          ref={scrollViewRef}
+          style={[styles.scrollView, { backgroundColor: colors.background }]}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 20 }}
+        >
 
         {/* Inline Rating Section */}
         <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 0 }]}>
@@ -1440,7 +1486,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
             <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Comments</Text>
             {!fight.userReview && !isEditingComment && (
               <TouchableOpacity
-                onPress={() => setShowCommentForm(!showCommentForm)}
+                onPress={handleToggleCommentForm}
                 style={styles.addCommentButton}
               >
                 <Text style={[styles.addCommentButtonText, { color: colors.tint }]}>
@@ -1534,6 +1580,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
 
           {/* User's review first (if exists and not editing) */}
           {fight.userReview && !isEditingComment && (
+            <View style={{ marginTop: 16 }}>
             <CommentCard
               comment={{
                 id: fight.userReview.id,
@@ -1551,11 +1598,12 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
               isAuthenticated={isAuthenticated}
               showMyReview={true}
             />
+            </View>
           )}
 
           {/* Other reviews with infinite scroll */}
           {reviewsData?.pages[0]?.reviews && reviewsData.pages[0]?.reviews.length > 0 ? (
-            <>
+            <View style={{ marginTop: 16 }}>
               {reviewsData.pages.flatMap(page =>
                 page.reviews.filter((review: any) => review.userId !== user?.id)
               ).map((review: any) => (
@@ -1593,7 +1641,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
                   )}
                 </TouchableOpacity>
               )}
-            </>
+            </View>
           ) : !fight.userReview && (
             <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
               No reviews yet. Be the first to review this fight!
@@ -1628,7 +1676,8 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           )}
         </View>
 
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Modals */}
       <FlagReviewModal

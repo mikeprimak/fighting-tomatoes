@@ -1722,7 +1722,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
               rating: effectiveRating,
             },
           });
-          resultData.review = review;
+          resultData.review = {
+            id: fightReview.id,
+            content: review,
+            rating: effectiveRating,
+          };
         }
 
         // Update fight review statistics
