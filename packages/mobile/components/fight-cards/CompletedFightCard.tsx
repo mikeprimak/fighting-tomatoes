@@ -239,7 +239,7 @@ export default function CompletedFightCard({
     }, 450);
 
     return () => clearTimeout(timer);
-  }, [pendingRatingAnimationFightId, fight.id, pathname, ratingScaleAnim, setPendingRatingAnimation]);
+  }, [pendingRatingAnimationFightId, fight.id, ratingScaleAnim, setPendingRatingAnimation]);
 
   // Pulsing animation for "Starting soon..."
   useEffect(() => {

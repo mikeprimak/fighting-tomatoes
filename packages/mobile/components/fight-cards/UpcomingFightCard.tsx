@@ -250,7 +250,7 @@ export default function UpcomingFightCard({
     }, 450);
 
     return () => clearTimeout(timer);
-  }, [pendingAnimationFightId, fight.id, pathname, underlineScaleAnim, hypeScaleAnim, setPendingAnimation]);
+  }, [pendingAnimationFightId, fight.id, underlineScaleAnim, hypeScaleAnim, setPendingAnimation]);
 
   const getFighter1ImageSource = () => {
     if (fighter1ImageError) {
