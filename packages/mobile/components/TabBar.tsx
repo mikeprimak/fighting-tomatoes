@@ -1,5 +1,6 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { Tabs, useRouter, usePathname } from 'expo-router';
 import { useColorScheme, Text, View, Image } from 'react-native';
 import { Colors } from '../constants/Colors';
@@ -145,7 +146,7 @@ export function FightCrewAppTabBar() {
             // Only show as focused if on the events index page
             const isOnEventsIndex = pathname === '/(tabs)/events' || pathname === '/events';
             const iconColor = isOnEventsIndex ? color : colors.tabIconDefault;
-            return <TabBarIcon name="calendar" color={iconColor} />;
+            return <FontAwesome6 name="fire-flame-curved" size={24} style={{ marginBottom: -3 }} color={iconColor} />;
           },
           tabBarLabel: ({ color, focused }) => {
             // Only show as focused if on the events index page
@@ -158,7 +159,7 @@ export function FightCrewAppTabBar() {
                   textAlign: 'center',
                 }}
               >
-                Upcoming Events
+                Upcoming
               </Text>
             );
           },
@@ -178,7 +179,7 @@ export function FightCrewAppTabBar() {
               Past Events
             </Text>
           ),
-          tabBarIcon: ({ color }) => <TabBarIcon name="history" color={color} />,
+          tabBarIcon: ({ color }) => <FontAwesome name="star" size={24} style={{ marginBottom: -3 }} color={color} />,
           headerTitle: 'Past Events',
         }}
       />
@@ -186,12 +187,18 @@ export function FightCrewAppTabBar() {
         name="community"
         options={{
           title: 'Good Fights',
-          tabBarLabel: ({ color }) => (
-            <Text style={{ fontSize: 10, color, textAlign: 'center' }}>
-              Good Fights
-            </Text>
+          tabBarLabel: () => null,
+          tabBarIcon: ({ focused }) => (
+            <Image
+              source={
+                focused
+                  ? require('../assets/GOOD-FIGHTS-WORD-LOGO-SQUARE-YELLOW.png')
+                  : require('../assets/GOOD-FIGHTS-WORD-LOGO-SQUARE-GREY.png')
+              }
+              style={{ width: 125, height: 53, marginTop: 13 }}
+              resizeMode="contain"
+            />
           ),
-          tabBarIcon: ({ color }) => <TabBarIcon name="fire" color={color} />,
           headerTitle: 'Good Fights',
         }}
       />

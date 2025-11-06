@@ -117,7 +117,8 @@
       "Bash(wmic process where \"name=''''node.exe''''\" get ProcessId,CommandLine)",
       "Bash(nul)",
       "Bash(wmic process where \"name=''node.exe''\" get ProcessId,CommandLine)",
-      "Bash(wmic process where \"name=''node.exe'' and not CommandLine like ''%claude-code%''\" call terminate)"
+      "Bash(wmic process where \"name=''node.exe'' and not CommandLine like ''%claude-code%''\" call terminate)",
+      "Bash(packages/backend/src/routes/index.ts)"
     ],
     "deny": [],
     "ask": []

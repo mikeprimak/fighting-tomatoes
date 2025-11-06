@@ -182,14 +182,6 @@ export default function NewsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* TEMPORARY DEV BUTTON - TODO: REMOVE */}
-      <TouchableOpacity
-        style={[styles.devButton, { backgroundColor: colors.tint }]}
-        onPress={() => router.push('/fighter/017370b7-abfd-4b16-a210-e85e35d532de')}
-      >
-        <Text style={styles.devButtonText}>🥊 DEV: Manon Fiorot</Text>
-      </TouchableOpacity>
-
       <FlatList
         data={allArticles}
         renderItem={renderArticle}
@@ -309,18 +301,5 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 8,
     fontSize: 14,
-  },
-  devButton: {
-    margin: 16,
-    marginBottom: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  devButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

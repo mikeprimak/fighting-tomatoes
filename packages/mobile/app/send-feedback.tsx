@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack } from 'expo-router';
@@ -27,6 +28,8 @@ export default function SendFeedbackScreen() {
 
   const [feedback, setFeedback] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const textInputRef = useRef<TextInput>(null);
 
   const handleSubmit = async () => {
     if (!feedback.trim()) {
@@ -81,10 +84,13 @@ export default function SendFeedbackScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={styles.scrollContainer}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={true}
         >
           <View style={styles.header}>
             <FontAwesome name="comments" size={48} color={colors.primary} />
@@ -100,6 +106,7 @@ export default function SendFeedbackScreen() {
             <View style={styles.inputContainer}>
               <Text style={[styles.label, { color: colors.text }]}>Your Feedback</Text>
               <TextInput
+                ref={textInputRef}
                 style={[
                   styles.textArea,
                   {
@@ -112,6 +119,12 @@ export default function SendFeedbackScreen() {
                 placeholderTextColor={colors.textSecondary}
                 value={feedback}
                 onChangeText={setFeedback}
+                onFocus={() => {
+                  // Scroll to input when keyboard opens
+                  setTimeout(() => {
+                    scrollViewRef.current?.scrollTo({ y: 150, animated: true });
+                  }, 100);
+                }}
                 multiline
                 numberOfLines={10}
                 textAlignVertical="top"
@@ -174,7 +187,7 @@ const createStyles = (colors: any) =>
       flexGrow: 1,
       paddingHorizontal: 16,
       paddingTop: 24,
-      paddingBottom: 24,
+      paddingBottom: 80,
     },
     header: {
       alignItems: 'center',
