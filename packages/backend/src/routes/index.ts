@@ -1332,7 +1332,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       });
 
       if (!fight) {
-        return reply.code(404).send({
+        return reply.status(404).send({
           error: 'Fight not found',
           code: 'FIGHT_NOT_FOUND',
         });
@@ -1423,7 +1423,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       });
 
       if (!fight) {
-        return reply.code(404).send({
+        return reply.status(404).send({
           error: 'Fight not found',
           code: 'FIGHT_NOT_FOUND',
         });
