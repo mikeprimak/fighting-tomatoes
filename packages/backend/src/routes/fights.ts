@@ -569,6 +569,32 @@ export async function fightRoutes(fastify: FastifyInstance) {
         delete transformedFight.predictions;
       }
 
+      // Calculate average hype for this fight
+      const allPredictions = await fastify.prisma.fightPrediction.findMany({
+        where: {
+          fightId: id,
+          predictedRating: { not: null },
+        },
+        select: { predictedRating: true },
+      });
+
+      const validPredictions = allPredictions.filter(p => p.predictedRating !== null);
+      const averageHype = validPredictions.length > 0
+        ? validPredictions.reduce((sum, p) => sum + (p.predictedRating || 0), 0) / validPredictions.length
+        : 0;
+      transformedFight.averageHype = Math.round(averageHype * 10) / 10;
+
+      // Calculate isHypedFight if user is authenticated
+      if (currentUserId) {
+        const userPreferences = await fastify.prisma.user.findUnique({
+          where: { id: currentUserId },
+          select: { notifyHypedFights: true },
+        });
+        const hasHypedFightsNotification = userPreferences?.notifyHypedFights === true;
+        const isUpcoming = !transformedFight.hasStarted && !transformedFight.isComplete;
+        transformedFight.isHypedFight = hasHypedFightsNotification && isUpcoming && transformedFight.averageHype >= 8.5;
+      }
+
       // Final response logging
       console.log('Returning fight data with user-specific info:', {
         fightId: id,
