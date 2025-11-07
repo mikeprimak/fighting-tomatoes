@@ -1894,11 +1894,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Check if fight has started (can't predict after it starts)
-      if (fight.hasStarted) {
+      // Check if fight has started or is complete (can't predict after it starts)
+      if (fight.hasStarted || fight.isComplete) {
         return reply.code(400).send({
-          error: 'Cannot make predictions after fight has started',
-          code: 'FIGHT_ALREADY_STARTED',
+          error: 'Cannot make predictions for fights that have started or completed',
+          code: 'FIGHT_NOT_UPCOMING',
         });
       }
 

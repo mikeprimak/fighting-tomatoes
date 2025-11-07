@@ -251,67 +251,13 @@ export default function RatingsActivityScreen() {
         ) : (
           <View style={styles.contentContainer}>
             {/* Fights List */}
-            <FlatList
-              data={data.fights}
-              keyExtractor={(item: FightData) => item.id}
-              renderItem={({ item }) => {
-                // Render hype cards without wrapper (to extend to edges like community screen)
-                if (filterType === 'hype') {
-                  return (
-                    <UpcomingFightCard
-                      fight={item}
-                      onPress={handleFightPress}
-                      showEvent={true}
-                    />
-                  );
-                }
-
-                // Render rating cards without wrapper (to extend to edges like community screen)
-                if (filterType === 'ratings') {
-                  return (
-                    <CompletedFightCard
-                      fight={item}
-                      onPress={handleFightPress}
-                      showEvent={true}
-                    />
-                  );
-                }
-
-                // Render comment cards with wrapper (only for comments filter)
-                if (filterType === 'comments' && item.userReview) {
-                  return (
-                    <View style={styles.fightCardContainer}>
-                      <CommentCard
-                        comment={{
-                          ...item.userReview,
-                          user: {
-                            displayName: 'Me'
-                          },
-                          userHasUpvoted: item.userReview.userHasUpvoted || false,
-                          fight: {
-                            id: item.id,
-                            fighter1Name: `${item.fighter1.firstName} ${item.fighter1.lastName}`,
-                            fighter2Name: `${item.fighter2.firstName} ${item.fighter2.lastName}`,
-                            eventName: item.event.name,
-                          }
-                        }}
-                        onPress={() => router.push(`/fight/${item.id}` as any)}
-                        onUpvote={() => upvoteMutation.mutate({ fightId: item.id, reviewId: item.userReview.id })}
-                        onFlag={() => handleFlagReview(item.id, item.userReview.id)}
-                        isUpvoting={upvotingCommentId === item.userReview.id}
-                        isFlagging={flagReviewMutation.isPending && reviewToFlag?.reviewId === item.userReview.id}
-                        isAuthenticated={isAuthenticated}
-                        showMyReview={true}
-                      />
-                    </View>
-                  );
-                }
-
-                return null;
-              }}
-              contentContainerStyle={styles.listContent}
-              showsVerticalScrollIndicator={false}
-              ListHeaderComponent={
+            {filterType === 'hype' ? (
+              // Render separate sections for upcoming and completed fights when showing hype
+              <ScrollView
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* Header with filters */}
                 <View style={styles.headerContainer}>
                   <View style={styles.filtersRow}>
                     {renderFilterTypeButton()}
@@ -319,49 +265,144 @@ export default function RatingsActivityScreen() {
                   <View style={styles.filtersRow}>
                     {renderSortButton()}
                   </View>
-                  {filterType === 'ratings' && (
-                    <View style={styles.columnHeadersContainer}>
-                      <View style={styles.columnHeadersLeft}>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          ALL
-                        </Text>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          RATINGS
-                        </Text>
-                      </View>
-                      <View style={styles.columnHeadersRight}>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          MY
-                        </Text>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          RATING
-                        </Text>
-                      </View>
+                  <View style={styles.columnHeadersContainer}>
+                    <View style={styles.columnHeadersUpcoming}>
+                      <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                        ALL
+                      </Text>
+                      <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                        HYPE
+                      </Text>
                     </View>
-                  )}
-                  {filterType === 'hype' && (
-                    <View style={styles.columnHeadersContainer}>
-                      <View style={styles.columnHeadersUpcoming}>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          ALL
-                        </Text>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          HYPE
-                        </Text>
-                      </View>
-                      <View style={styles.columnHeadersUpcomingRight}>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          MY
-                        </Text>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          HYPE
-                        </Text>
-                      </View>
+                    <View style={styles.columnHeadersUpcomingRight}>
+                      <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                        MY
+                      </Text>
+                      <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                        HYPE
+                      </Text>
                     </View>
-                  )}
+                  </View>
                 </View>
-              }
-            />
+
+                {/* Upcoming Fights Section */}
+                {(() => {
+                  const upcomingFights = data.fights.filter((f: FightData) => f.status === 'upcoming');
+                  return upcomingFights.length > 0 ? (
+                    <View style={styles.sectionContainer}>
+                      <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Fights</Text>
+                      {upcomingFights.map((fight: FightData) => (
+                        <UpcomingFightCard
+                          key={fight.id}
+                          fight={fight}
+                          onPress={handleFightPress}
+                          showEvent={true}
+                        />
+                      ))}
+                    </View>
+                  ) : null;
+                })()}
+
+                {/* Past Fights Section */}
+                {(() => {
+                  const pastFights = data.fights.filter((f: FightData) => f.status === 'completed');
+                  return pastFights.length > 0 ? (
+                    <View style={styles.sectionContainer}>
+                      <Text style={[styles.sectionTitle, { color: colors.text }]}>Past Fights</Text>
+                      {pastFights.map((fight: FightData) => (
+                        <UpcomingFightCard
+                          key={fight.id}
+                          fight={fight}
+                          onPress={handleFightPress}
+                          showEvent={true}
+                        />
+                      ))}
+                    </View>
+                  ) : null;
+                })()}
+              </ScrollView>
+            ) : (
+              <FlatList
+                data={data.fights}
+                keyExtractor={(item: FightData) => item.id}
+                renderItem={({ item }) => {
+                  // Render rating cards without wrapper (to extend to edges like community screen)
+                  if (filterType === 'ratings') {
+                    return (
+                      <CompletedFightCard
+                        fight={item}
+                        onPress={handleFightPress}
+                        showEvent={true}
+                      />
+                    );
+                  }
+
+                  // Render comment cards with wrapper (only for comments filter)
+                  if (filterType === 'comments' && item.userReview) {
+                    return (
+                      <View style={styles.fightCardContainer}>
+                        <CommentCard
+                          comment={{
+                            ...item.userReview,
+                            user: {
+                              displayName: 'Me'
+                            },
+                            userHasUpvoted: item.userReview.userHasUpvoted || false,
+                            fight: {
+                              id: item.id,
+                              fighter1Name: `${item.fighter1.firstName} ${item.fighter1.lastName}`,
+                              fighter2Name: `${item.fighter2.firstName} ${item.fighter2.lastName}`,
+                              eventName: item.event.name,
+                            }
+                          }}
+                          onPress={() => router.push(`/fight/${item.id}` as any)}
+                          onUpvote={() => upvoteMutation.mutate({ fightId: item.id, reviewId: item.userReview.id })}
+                          onFlag={() => handleFlagReview(item.id, item.userReview.id)}
+                          isUpvoting={upvotingCommentId === item.userReview.id}
+                          isFlagging={flagReviewMutation.isPending && reviewToFlag?.reviewId === item.userReview.id}
+                          isAuthenticated={isAuthenticated}
+                          showMyReview={true}
+                        />
+                      </View>
+                    );
+                  }
+
+                  return null;
+                }}
+                contentContainerStyle={styles.listContent}
+                showsVerticalScrollIndicator={false}
+                ListHeaderComponent={
+                  <View style={styles.headerContainer}>
+                    <View style={styles.filtersRow}>
+                      {renderFilterTypeButton()}
+                    </View>
+                    <View style={styles.filtersRow}>
+                      {renderSortButton()}
+                    </View>
+                    {filterType === 'ratings' && (
+                      <View style={styles.columnHeadersContainer}>
+                        <View style={styles.columnHeadersLeft}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                            ALL
+                          </Text>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                            RATINGS
+                          </Text>
+                        </View>
+                        <View style={styles.columnHeadersRight}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                            MY
+                          </Text>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                            RATING
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                }
+              />
+            )}
 
             {/* Filter Type Dropdown Menu */}
             {showFilterTypeMenu && (
@@ -627,5 +668,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 0.5,
+  },
+  sectionContainer: {
+    marginTop: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+    marginLeft: 16,
   },
 });
