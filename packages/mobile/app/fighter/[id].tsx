@@ -28,19 +28,9 @@ const SORT_OPTIONS = [
   { value: 'most-rated' as SortOption, label: 'Number of Ratings' },
 ];
 
-// Placeholder image selection for fighters
+// Placeholder image for fighters
 const getFighterPlaceholderImage = (fighterId: string) => {
-  const images = [
-    require('../../assets/fighters/fighter-1.jpg'),
-    require('../../assets/fighters/fighter-2.jpg'),
-    require('../../assets/fighters/fighter-3.jpg'),
-    require('../../assets/fighters/fighter-4.jpg'),
-    require('../../assets/fighters/fighter-5.jpg'),
-    require('../../assets/fighters/fighter-6.jpg'),
-  ];
-  const lastCharCode = fighterId.charCodeAt(fighterId.length - 1);
-  const index = lastCharCode % images.length;
-  return images[index];
+  return require('../../assets/fighters/fighter-default-alpha.png');
 };
 
 export default function FighterDetailScreen() {
