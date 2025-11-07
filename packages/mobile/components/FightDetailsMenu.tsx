@@ -109,7 +109,20 @@ export default function FightDetailsMenu({
             // Determine toggle behavior
             const hasFighterNotifications = hasFighter1Notification || hasFighter2Notification;
             const isFollowingAnyFighter = isFollowingFighter1 || isFollowingFighter2;
-            const additionalText = isFollowingAnyFighter ? ' for this fight only' : '';
+
+            // Determine if toggle should be disabled (only source is hyped fights, which can't be toggled here)
+            const onlyHypedFightNotification = hasHypedFightNotification && !hasManualNotification && !hasFighterNotifications;
+            const isToggleDisabled = isTogglingNotification || isTogglingFighterNotification || onlyHypedFightNotification;
+
+            // Build hint text
+            let hintText = '';
+            if (onlyHypedFightNotification) {
+              hintText = 'Change this setting in Settings → Notifications';
+            } else if (isFollowingAnyFighter) {
+              hintText = 'Toggle to deactivate for this fight only';
+            } else if (willBeNotified) {
+              hintText = 'Toggle to deactivate';
+            }
 
             return (
               <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
@@ -128,9 +141,11 @@ export default function FightDetailsMenu({
                             • {reason}
                           </Text>
                         ))}
-                        <Text style={[styles.toggleHintText, { color: colors.textSecondary, marginTop: 4 }]}>
-                          Toggle to deactivate{additionalText}
-                        </Text>
+                        {hintText && (
+                          <Text style={[styles.toggleHintText, { color: colors.textSecondary, marginTop: 4 }]}>
+                            {hintText}
+                          </Text>
+                        )}
                       </View>
                     ) : (
                       <Text style={[styles.notificationSubtext, { color: colors.textSecondary }]}>
@@ -140,7 +155,7 @@ export default function FightDetailsMenu({
                   </View>
                   <Switch
                     value={willBeNotified}
-                    disabled={isTogglingNotification || isTogglingFighterNotification}
+                    disabled={isToggleDisabled}
                     onValueChange={(enabled) => {
                       // When toggling OFF: disable all active notification sources
                       if (!enabled) {
