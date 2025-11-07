@@ -1338,34 +1338,26 @@ export async function registerRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Check if already following
-      const existingAlert = await fastify.prisma.fightAlert.findUnique({
+      // Create or update alert - set alert time to 15 minutes before event date
+      const alertTime = new Date(fight.event.date);
+      alertTime.setMinutes(alertTime.getMinutes() - 15);
+
+      await fastify.prisma.fightAlert.upsert({
         where: {
           userId_fightId: {
             userId: user.id,
             fightId: id,
           },
         },
-      });
-
-      if (existingAlert) {
-        return reply.code(200).send({
-          message: 'Already following this fight',
-          isFollowing: true,
-        });
-      }
-
-      // Create alert - set alert time to 15 minutes before event date
-      const alertTime = new Date(fight.event.date);
-      alertTime.setMinutes(alertTime.getMinutes() - 15);
-
-      await fastify.prisma.fightAlert.create({
-        data: {
+        create: {
           userId: user.id,
           fightId: id,
           alertTime,
           isSent: false,
           isActive: true,
+        },
+        update: {
+          isActive: true, // Re-activate if was opted out
         },
       });
 
@@ -1424,11 +1416,39 @@ export async function registerRoutes(fastify: FastifyInstance) {
     const user = (request as any).user;
 
     try {
-      // Delete alert if it exists
-      await fastify.prisma.fightAlert.deleteMany({
+      // Get fight to calculate alert time
+      const fight = await fastify.prisma.fight.findUnique({
+        where: { id },
+        select: { event: { select: { date: true } } },
+      });
+
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Create/update alert with isActive: false to opt out of notifications for this fight
+      const alertTime = new Date(fight.event.date);
+      alertTime.setMinutes(alertTime.getMinutes() - 15);
+
+      await fastify.prisma.fightAlert.upsert({
         where: {
+          userId_fightId: {
+            userId: user.id,
+            fightId: id,
+          },
+        },
+        create: {
           userId: user.id,
           fightId: id,
+          alertTime,
+          isSent: false,
+          isActive: false, // Opted out
+        },
+        update: {
+          isActive: false, // Opted out
         },
       });
 

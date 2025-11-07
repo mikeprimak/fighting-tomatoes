@@ -110,18 +110,12 @@ export default function FightDetailsMenu({
             const hasFighterNotifications = hasFighter1Notification || hasFighter2Notification;
             const isFollowingAnyFighter = isFollowingFighter1 || isFollowingFighter2;
 
-            // Determine if toggle should be disabled (only source is hyped fights, which can't be toggled here)
-            const onlyHypedFightNotification = hasHypedFightNotification && !hasManualNotification && !hasFighterNotifications;
-            const isToggleDisabled = isTogglingNotification || isTogglingFighterNotification || onlyHypedFightNotification;
-
             // Build hint text
             let hintText = '';
-            if (onlyHypedFightNotification) {
-              hintText = 'Change this setting in Settings → Notifications';
-            } else if (isFollowingAnyFighter) {
+            if (isFollowingAnyFighter) {
               hintText = 'Toggle to deactivate for this fight only';
             } else if (willBeNotified) {
-              hintText = 'Toggle to deactivate';
+              hintText = 'Toggle to deactivate for this fight only';
             }
 
             return (
@@ -155,9 +149,9 @@ export default function FightDetailsMenu({
                   </View>
                   <Switch
                     value={willBeNotified}
-                    disabled={isToggleDisabled}
+                    disabled={isTogglingNotification || isTogglingFighterNotification}
                     onValueChange={(enabled) => {
-                      // When toggling OFF: disable all active notification sources
+                      // When toggling OFF: disable all active notification sources OR create an opt-out
                       if (!enabled) {
                         if (hasManualNotification) {
                           onToggleNotification(false);
@@ -167,6 +161,10 @@ export default function FightDetailsMenu({
                         }
                         if (isFollowingFighter2 && onToggleFighterNotification) {
                           onToggleFighterNotification(fight.fighter2Id, false);
+                        }
+                        // If only hyped fight notification is active, create an opt-out (inactive FightAlert)
+                        if (hasHypedFightNotification && !hasManualNotification && !hasFighterNotifications) {
+                          onToggleNotification(false);
                         }
                       } else {
                         // When toggling ON: enable all available notification sources
@@ -179,7 +177,7 @@ export default function FightDetailsMenu({
                         if (isFollowingFighter2 && onToggleFighterNotification) {
                           onToggleFighterNotification(fight.fighter2Id, true);
                         }
-                        // If no existing sources, enable manual notification
+                        // If no existing sources (just opted out of hyped fight), enable manual notification
                         if (!hasManualNotification && !isFollowingFighter1 && !isFollowingFighter2) {
                           onToggleNotification(true);
                         }

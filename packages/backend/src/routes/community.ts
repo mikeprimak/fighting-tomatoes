@@ -339,6 +339,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           },
           select: {
             fightId: true,
+            isActive: true,
           },
         });
 
@@ -365,7 +366,8 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const followedFightIds = new Set(fightAlerts.map(fa => fa.fightId));
+      const followedFightIds = new Set(fightAlerts.filter(fa => fa.isActive).map(fa => fa.fightId));
+      const optedOutFightIds = new Set(fightAlerts.filter(fa => !fa.isActive).map(fa => fa.fightId));
       const followedFightersMap = new Map(followedFighters.map(ff => [ff.fighterId, ff.startOfFightNotification]));
 
       // Calculate average hype for each fight and add user hype
@@ -407,10 +409,11 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               ? followedFightersMap.get(fight.fighter2Id)
               : undefined;
 
-            // Add isHypedFight (averageHype >= 8.5 AND user has notifyHypedFights enabled AND fight is upcoming)
+            // Add isHypedFight (averageHype >= 8.5 AND user has notifyHypedFights enabled AND fight is upcoming AND user hasn't opted out)
             const hasHypedFightsNotification = userNotificationPreferences?.notifyHypedFights === true;
             const isUpcoming = !fight.hasStarted && !fight.isComplete;
-            transformed.isHypedFight = hasHypedFightsNotification && isUpcoming && averageHype >= 8.5;
+            const hasOptedOut = optedOutFightIds.has(fight.id);
+            transformed.isHypedFight = hasHypedFightsNotification && isUpcoming && averageHype >= 8.5 && !hasOptedOut;
           }
 
           return transformed;

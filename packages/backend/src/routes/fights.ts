@@ -253,6 +253,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           },
           select: {
             fightId: true,
+            isActive: true,
           },
         });
 
@@ -273,7 +274,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const followedFightIds = new Set(fightAlerts.map(fa => fa.fightId));
+      const followedFightIds = new Set(fightAlerts.filter(fa => fa.isActive).map(fa => fa.fightId));
+      const optedOutFightIds = new Set(fightAlerts.filter(fa => !fa.isActive).map(fa => fa.fightId));
       // Create a map of fighterId -> startOfFightNotification status
       const followedFightersMap = new Map(followedFighters.map(ff => [ff.fighterId, ff.startOfFightNotification]));
 
@@ -355,10 +357,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
             ? followedFightersMap.get(fight.fighter2Id)
             : undefined;
 
-          // Add isHypedFight (averageHype >= 8.5 AND user has notifyHypedFights enabled AND fight is upcoming)
+          // Add isHypedFight (averageHype >= 8.5 AND user has notifyHypedFights enabled AND fight is upcoming AND user hasn't opted out)
           const hasHypedFightsNotification = userNotificationPreferences?.notifyHypedFights === true;
           const isUpcoming = !fight.hasStarted && !fight.isComplete;
-          transformed.isHypedFight = hasHypedFightsNotification && isUpcoming && transformed.averageHype >= 8.5;
+          const hasOptedOut = optedOutFightIds.has(fight.id);
+          transformed.isHypedFight = hasHypedFightsNotification && isUpcoming && transformed.averageHype >= 8.5 && !hasOptedOut;
         }
 
         // Remove the raw arrays to avoid confusion
@@ -592,7 +595,20 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
         const hasHypedFightsNotification = userPreferences?.notifyHypedFights === true;
         const isUpcoming = !transformedFight.hasStarted && !transformedFight.isComplete;
-        transformedFight.isHypedFight = hasHypedFightsNotification && isUpcoming && transformedFight.averageHype >= 8.5;
+
+        // Check if user has explicitly opted out of this fight (FightAlert with isActive: false)
+        const fightAlert = await fastify.prisma.fightAlert.findUnique({
+          where: {
+            userId_fightId: {
+              userId: currentUserId,
+              fightId: id,
+            },
+          },
+          select: { isActive: true },
+        });
+        const hasOptedOut = fightAlert !== null && fightAlert.isActive === false;
+
+        transformedFight.isHypedFight = hasHypedFightsNotification && isUpcoming && transformedFight.averageHype >= 8.5 && !hasOptedOut;
       }
 
       // Final response logging
