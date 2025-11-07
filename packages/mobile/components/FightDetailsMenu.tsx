@@ -84,7 +84,8 @@ export default function FightDetailsMenu({
             const hasManualNotification = isFollowing ?? false;
             const hasFighter1Notification = fight.isFollowingFighter1 === true;
             const hasFighter2Notification = fight.isFollowingFighter2 === true;
-            const willBeNotified = hasManualNotification || hasFighter1Notification || hasFighter2Notification;
+            const hasHypedFightNotification = fight.isHypedFight === true;
+            const willBeNotified = hasManualNotification || hasFighter1Notification || hasFighter2Notification || hasHypedFightNotification;
 
             // Check if user is following fighters (regardless of notification status)
             const isFollowingFighter1 = fight.isFollowingFighter1 !== undefined;
@@ -100,6 +101,9 @@ export default function FightDetailsMenu({
             }
             if (hasFighter2Notification) {
               reasons.push(`You have ${fight.fighter2.firstName} ${fight.fighter2.lastName} notifications turned on`);
+            }
+            if (hasHypedFightNotification) {
+              reasons.push('You have hyped fights notifications on');
             }
 
             // Determine toggle behavior

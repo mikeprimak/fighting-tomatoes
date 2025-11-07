@@ -277,9 +277,46 @@ export async function fightRoutes(fastify: FastifyInstance) {
       // Create a map of fighterId -> startOfFightNotification status
       const followedFightersMap = new Map(followedFighters.map(ff => [ff.fighterId, ff.startOfFightNotification]));
 
+      // Get user's notification preferences if authenticated
+      let userNotificationPreferences: any = null;
+      if (currentUserId) {
+        userNotificationPreferences = await fastify.prisma.user.findUnique({
+          where: { id: currentUserId },
+          select: { notifyHypedFights: true },
+        });
+      }
+
+      // Calculate average hype for all fights
+      const hypeCalculations = await Promise.all(
+        fights.map(async (fight: any) => {
+          const predictions = await fastify.prisma.fightPrediction.findMany({
+            where: {
+              fightId: fight.id,
+              predictedRating: { not: null },
+            },
+            select: { predictedRating: true },
+          });
+
+          const validPredictions = predictions.filter(p => p.predictedRating !== null);
+          const averageHype = validPredictions.length > 0
+            ? validPredictions.reduce((sum, p) => sum + (p.predictedRating || 0), 0) / validPredictions.length
+            : 0;
+
+          return {
+            fightId: fight.id,
+            averageHype: Math.round(averageHype * 10) / 10,
+          };
+        })
+      );
+
+      const hypeMap = new Map(hypeCalculations.map(h => [h.fightId, h.averageHype]));
+
       // Transform fights data to include user-specific data in the expected format
       const transformedFights = fights.map((fight: any) => {
         const transformed = { ...fight };
+
+        // Add averageHype
+        transformed.averageHype = hypeMap.get(fight.id) || 0;
 
         // Transform user rating (take the first/only rating)
         if (fight.ratings && fight.ratings.length > 0) {
@@ -317,6 +354,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
           transformed.isFollowingFighter2 = followedFightersMap.has(fight.fighter2Id)
             ? followedFightersMap.get(fight.fighter2Id)
             : undefined;
+
+          // Add isHypedFight (averageHype >= 8.5 AND user has notifyHypedFights enabled AND fight is upcoming)
+          const hasHypedFightsNotification = userNotificationPreferences?.notifyHypedFights === true;
+          const isUpcoming = !fight.hasStarted && !fight.isComplete;
+          transformed.isHypedFight = hasHypedFightsNotification && isUpcoming && transformed.averageHype >= 8.5;
         }
 
         // Remove the raw arrays to avoid confusion

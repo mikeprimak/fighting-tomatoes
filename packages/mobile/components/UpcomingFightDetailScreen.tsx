@@ -688,7 +688,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             Who do you think will win?
           </Text>
           <View style={styles.headerIcons}>
-            {(isFollowing || fight.isFollowingFighter1 || fight.isFollowingFighter2) && (
+            {(isFollowing || fight.isFollowingFighter1 || fight.isFollowingFighter2 || fight.isHypedFight) && (
               <FontAwesome name="bell" size={18} color={colors.tint} style={{ marginRight: 16 }} />
             )}
             <TouchableOpacity

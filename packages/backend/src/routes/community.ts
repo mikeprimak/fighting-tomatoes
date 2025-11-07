@@ -326,9 +326,10 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Get user's fight follows and fighter follows if authenticated
+      // Get user's fight follows, fighter follows, and notification preferences if authenticated
       let fightAlerts: any[] = [];
       let followedFighters: any[] = [];
+      let userNotificationPreferences: any = null;
       if (userId) {
         const fightIds = fights.map((f: any) => f.id);
         fightAlerts = await fastify.prisma.fightAlert.findMany({
@@ -355,6 +356,12 @@ export default async function communityRoutes(fastify: FastifyInstance) {
             fighterId: true,
             startOfFightNotification: true,
           },
+        });
+
+        // Get user's notification preferences
+        userNotificationPreferences = await fastify.prisma.user.findUnique({
+          where: { id: userId },
+          select: { notifyHypedFights: true },
         });
       }
 
@@ -399,6 +406,11 @@ export default async function communityRoutes(fastify: FastifyInstance) {
             transformed.isFollowingFighter2 = followedFightersMap.has(fight.fighter2Id)
               ? followedFightersMap.get(fight.fighter2Id)
               : undefined;
+
+            // Add isHypedFight (averageHype >= 8.5 AND user has notifyHypedFights enabled AND fight is upcoming)
+            const hasHypedFightsNotification = userNotificationPreferences?.notifyHypedFights === true;
+            const isUpcoming = !fight.hasStarted && !fight.isComplete;
+            transformed.isHypedFight = hasHypedFightsNotification && isUpcoming && averageHype >= 8.5;
           }
 
           return transformed;

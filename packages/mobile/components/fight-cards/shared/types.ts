@@ -54,6 +54,8 @@ export interface FightData {
   isFollowing?: boolean;
   isFollowingFighter1?: boolean;
   isFollowingFighter2?: boolean;
+  averageHype?: number;
+  isHypedFight?: boolean;
 }
 
 export interface BaseFightCardProps {
