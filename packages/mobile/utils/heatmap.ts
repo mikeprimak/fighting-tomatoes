@@ -54,3 +54,46 @@ export const getHypeHeatmapColor = (hypeScore: number): string => {
 
   return `rgb(${r}, ${g}, ${b})`;
 };
+
+/**
+ * Mix 70% heatmap color with 30% background color for flame icon
+ * This creates a semi-transparent effect that works on any background
+ */
+export const getFlameColor = (hypeColor: string, bgColor: string): string => {
+  // Parse hype color (RGB or hex)
+  const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+  const hypeHexMatch = hypeColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+
+  let hypeR = 0, hypeG = 0, hypeB = 0;
+  if (hypeRgbaMatch) {
+    hypeR = parseInt(hypeRgbaMatch[1]);
+    hypeG = parseInt(hypeRgbaMatch[2]);
+    hypeB = parseInt(hypeRgbaMatch[3]);
+  } else if (hypeHexMatch) {
+    hypeR = parseInt(hypeHexMatch[1], 16);
+    hypeG = parseInt(hypeHexMatch[2], 16);
+    hypeB = parseInt(hypeHexMatch[3], 16);
+  }
+
+  // Parse background color (RGB or hex)
+  const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+  const bgHexMatch = bgColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+
+  let bgR = 0, bgG = 0, bgB = 0;
+  if (bgRgbaMatch) {
+    bgR = parseInt(bgRgbaMatch[1]);
+    bgG = parseInt(bgRgbaMatch[2]);
+    bgB = parseInt(bgRgbaMatch[3]);
+  } else if (bgHexMatch) {
+    bgR = parseInt(bgHexMatch[1], 16);
+    bgG = parseInt(bgHexMatch[2], 16);
+    bgB = parseInt(bgHexMatch[3], 16);
+  }
+
+  // Mix 70% hype + 30% background
+  const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
+  const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
+  const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
+
+  return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
+};

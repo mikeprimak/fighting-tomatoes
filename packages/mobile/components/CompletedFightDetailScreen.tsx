@@ -20,7 +20,7 @@ import { useQueryClient, useQuery, useInfiniteQuery, useMutation } from '@tansta
 import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
-import { getHypeHeatmapColor } from '../utils/heatmap';
+import { getHypeHeatmapColor, getFlameColor } from '../utils/heatmap';
 import { FlagReviewModal, CommentCard } from '.';
 import { useAuth } from '../store/AuthContext';
 import { usePredictionAnimation } from '../store/PredictionAnimationContext';
@@ -925,6 +925,46 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           )}
         </View>
 
+        {/* Community Stats */}
+        <View style={styles.sectionNoBorder}>
+          <View style={styles.communityRatingHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Community Rating</Text>
+            <Text style={[styles.communityRatingCount, { color: colors.textSecondary }]}>
+              ({totalRatings} {totalRatings === 1 ? 'rating' : 'ratings'})
+            </Text>
+          </View>
+
+          <View style={styles.communityStatsContainer}>
+            <View style={styles.communityRatingSection}>
+            <FontAwesome
+              name="star"
+              size={48}
+              color={fight.averageRating > 0 ? getHypeHeatmapColor(Math.round(fight.averageRating)) : '#666666'}
+            />
+            <Text style={[styles.communityStatsValue, { color: colors.text }]}>
+              {fight.averageRating
+                ? fight.averageRating % 1 === 0
+                  ? fight.averageRating.toString()
+                  : fight.averageRating.toFixed(1)
+                : '0'}
+            </Text>
+          </View>
+
+          {/* Tags */}
+          {aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
+            <View style={styles.communityTagsSection}>
+              <View style={styles.communityTagsContainer}>
+                {aggregateStats.topTags.slice(0, 3).map((tagData: any, index: number) => (
+                  <Text key={index} style={[styles.communityTagText, { color: colors.textSecondary }]}>
+                    #{tagData.name}
+                  </Text>
+                ))}
+              </View>
+            </View>
+          )}
+          </View>
+        </View>
+
         {/* What Happened */}
         <View style={styles.sectionNoBorder}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>What Happened</Text>
@@ -1045,15 +1085,20 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
               <View style={styles.predictionRow}>
                 <Text style={[styles.predictionLabel, { color: colors.textSecondary }]}>Hype:</Text>
                 {fight.userHypePrediction ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <FontAwesome name="star" size={16} color={getHypeHeatmapColor(fight.userHypePrediction)} />
-                    <Text style={[styles.predictionValue, { color: colors.text }]}>
-                      {' '}{fight.userHypePrediction}/10
+                  <View style={[styles.hypeBox, { backgroundColor: getHypeHeatmapColor(fight.userHypePrediction) }]}>
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={24}
+                      color={getFlameColor(getHypeHeatmapColor(fight.userHypePrediction), colors.background)}
+                      style={{ position: 'absolute' }}
+                    />
+                    <Text style={styles.hypeBoxText}>
+                      {fight.userHypePrediction}
                     </Text>
                   </View>
                 ) : (
                   <Text style={[styles.predictionValue, { color: colors.textSecondary, fontStyle: 'italic' }]}>
-                    No prediction
+                    Not entered
                   </Text>
                 )}
               </View>
@@ -1114,10 +1159,15 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
               <View style={styles.predictionRow}>
                 <Text style={[styles.predictionLabel, { color: colors.textSecondary }]}>Average Hype:</Text>
                 {predictionStats?.averageHype ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <FontAwesome name="star" size={16} color={getHypeHeatmapColor(predictionStats.averageHype)} />
-                    <Text style={[styles.predictionValue, { color: colors.text }]}>
-                      {' '}{predictionStats.averageHype.toFixed(1)}/10
+                  <View style={[styles.hypeBox, { backgroundColor: getHypeHeatmapColor(predictionStats.averageHype) }]}>
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={24}
+                      color={getFlameColor(getHypeHeatmapColor(predictionStats.averageHype), colors.background)}
+                      style={{ position: 'absolute' }}
+                    />
+                    <Text style={styles.hypeBoxText}>
+                      {predictionStats.averageHype.toFixed(1)}
                     </Text>
                   </View>
                 ) : (
@@ -2337,5 +2387,77 @@ const styles = StyleSheet.create({
   saveCommentButtonText: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  communityRatingHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  communityStatsContainer: {
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  communityRatingSection: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  communityStatsValue: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginTop: 8,
+  },
+  communityStatsLabel: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  communityRatingCount: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  communityTagsSection: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  communityTagsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  communityTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  communityTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 6,
+  },
+  communityTagText: {
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  communityTagCount: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  hypeBox: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  hypeBoxText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

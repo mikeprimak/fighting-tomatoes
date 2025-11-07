@@ -15,7 +15,7 @@ import { Colors } from '../../constants/Colors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
-import FightDisplayCard, { FightData } from '../../components/FightDisplayCardNew';
+import { FightData } from '../../components/FightDisplayCardNew';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import { CommentCard, FlagReviewModal, CustomAlert } from '../../components';
@@ -35,8 +35,6 @@ export default function RatingsActivityScreen() {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [showFilterTypeMenu, setShowFilterTypeMenu] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [selectedFight, setSelectedFight] = useState<FightData | null>(null);
-  const [showRatingModal, setShowRatingModal] = useState(false);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [reviewToFlag, setReviewToFlag] = useState<{ fightId: string; reviewId: string } | null>(null);
   const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
@@ -59,14 +57,12 @@ export default function RatingsActivityScreen() {
     setShowFilterTypeMenu(false);
     setShowSortMenu(false);
 
-    setSelectedFight(fight);
-    setShowRatingModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowRatingModal(false);
-    setSelectedFight(null);
-    refetch(); // Refresh the list after modal closes
+    // Navigate to appropriate detail screen based on fight status
+    if (fight.status === 'upcoming') {
+      router.push(`/upcoming-fight/${fight.id}` as any);
+    } else {
+      router.push(`/fight/${fight.id}` as any);
+    }
   };
 
   // Upvote mutation for comments
@@ -281,10 +277,10 @@ export default function RatingsActivityScreen() {
                   );
                 }
 
-                // Render comment cards with wrapper
-                return (
-                  <View style={styles.fightCardContainer}>
-                    {filterType === 'comments' && item.userReview ? (
+                // Render comment cards with wrapper (only for comments filter)
+                if (filterType === 'comments' && item.userReview) {
+                  return (
+                    <View style={styles.fightCardContainer}>
                       <CommentCard
                         comment={{
                           ...item.userReview,
@@ -307,15 +303,11 @@ export default function RatingsActivityScreen() {
                         isAuthenticated={isAuthenticated}
                         showMyReview={true}
                       />
-                    ) : (
-                      <FightDisplayCard
-                        fight={item}
-                        onPress={handleFightPress}
-                        showEvent={true}
-                      />
-                    )}
-                  </View>
-                );
+                    </View>
+                  );
+                }
+
+                return null;
               }}
               contentContainerStyle={styles.listContent}
               showsVerticalScrollIndicator={false}
