@@ -326,6 +326,41 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         },
       });
 
+      // Get user's fight follows and fighter follows if authenticated
+      let fightAlerts: any[] = [];
+      let followedFighters: any[] = [];
+      if (userId) {
+        const fightIds = fights.map((f: any) => f.id);
+        fightAlerts = await fastify.prisma.fightAlert.findMany({
+          where: {
+            userId,
+            fightId: { in: fightIds },
+          },
+          select: {
+            fightId: true,
+          },
+        });
+
+        // Get all unique fighter IDs from the fights
+        const allFighterIds = fights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]);
+        const uniqueFighterIds = [...new Set(allFighterIds)];
+
+        // Check which fighters the user is following (with their notification preferences)
+        followedFighters = await fastify.prisma.userFighterFollow.findMany({
+          where: {
+            userId,
+            fighterId: { in: uniqueFighterIds },
+          },
+          select: {
+            fighterId: true,
+            startOfFightNotification: true,
+          },
+        });
+      }
+
+      const followedFightIds = new Set(fightAlerts.map(fa => fa.fightId));
+      const followedFightersMap = new Map(followedFighters.map(ff => [ff.fighterId, ff.startOfFightNotification]));
+
       // Calculate average hype for each fight and add user hype
       const fightsWithHype = fights
         .map((fight: any) => {
@@ -348,12 +383,25 @@ export default async function communityRoutes(fastify: FastifyInstance) {
             console.log('[Shevchenko vs Zhang] all predictions:', fight.predictions);
           }
 
-          return {
+          // Add notification/follow status
+          const transformed: any = {
             ...fight,
             predictions: undefined, // Remove from response
             averageHype,
             userHypePrediction,
           };
+
+          if (userId) {
+            transformed.isFollowing = followedFightIds.has(fight.id);
+            transformed.isFollowingFighter1 = followedFightersMap.has(fight.fighter1Id)
+              ? followedFightersMap.get(fight.fighter1Id)
+              : undefined;
+            transformed.isFollowingFighter2 = followedFightersMap.has(fight.fighter2Id)
+              ? followedFightersMap.get(fight.fighter2Id)
+              : undefined;
+          }
+
+          return transformed;
         })
         .sort((a: any, b: any) => b.averageHype - a.averageHype)
         .slice(0, 7);
@@ -416,17 +464,67 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         take: 7,
       });
 
-      // Add user rating to each fight
+      // Get user's fight follows and fighter follows if authenticated
+      let fightAlerts: any[] = [];
+      let followedFighters: any[] = [];
+      if (userId) {
+        const fightIds = fights.map((f: any) => f.id);
+        fightAlerts = await fastify.prisma.fightAlert.findMany({
+          where: {
+            userId,
+            fightId: { in: fightIds },
+          },
+          select: {
+            fightId: true,
+          },
+        });
+
+        // Get all unique fighter IDs from both corners
+        const allFighterIds = fights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]);
+        const uniqueFighterIds = [...new Set(allFighterIds)];
+
+        followedFighters = await fastify.prisma.userFighterFollow.findMany({
+          where: {
+            userId,
+            fighterId: { in: uniqueFighterIds },
+          },
+          select: {
+            fighterId: true,
+            startOfFightNotification: true,
+          },
+        });
+      }
+
+      // Create Sets/Maps for efficient lookup
+      const followedFightIds = new Set(fightAlerts.map(fa => fa.fightId));
+      const followedFightersMap = new Map(
+        followedFighters.map(ff => [ff.fighterId, ff.startOfFightNotification])
+      );
+
+      // Add user rating and notification data to each fight
       const fightsWithUserData = fights.map((fight: any) => {
         const userRating = userId && fight.ratings?.length > 0
           ? fight.ratings[0].rating
           : null;
 
-        return {
+        const transformed: any = {
           ...fight,
           ratings: undefined, // Remove from response
           userRating,
         };
+
+        // Add notification/follow data if user is authenticated
+        if (userId) {
+          transformed.isFollowing = followedFightIds.has(fight.id);
+          transformed.isFollowingFighter1 = followedFightersMap.has(fight.fighter1Id)
+            ? followedFightersMap.get(fight.fighter1Id)
+            : undefined;
+          transformed.isFollowingFighter2 = followedFightersMap.has(fight.fighter2Id)
+            ? followedFightersMap.get(fight.fighter2Id)
+            : undefined;
+        }
+
+        return transformed;
       });
 
       return reply.send({ data: fightsWithUserData });
