@@ -263,10 +263,98 @@ export async function notifyCrewMessage(
   );
 }
 
+/**
+ * Send notification when a fight starts (using notification rules)
+ * This integrates with the unified notification rule system
+ */
+export async function notifyFightStartViaRules(
+  fightId: string,
+  fighter1Name: string,
+  fighter2Name: string
+): Promise<void> {
+  console.log(`[Notifications] Checking rules for fight start: ${fighter1Name} vs ${fighter2Name}`);
+
+  // Get all users who have active notification matches for this fight
+  const matches = await prisma.fightNotificationMatch.findMany({
+    where: {
+      fightId,
+      isActive: true,
+      notificationSent: false,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          pushToken: true,
+          notificationsEnabled: true,
+        },
+      },
+      rule: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+
+  if (matches.length === 0) {
+    console.log(`[Notifications] No active notification matches for fight ${fightId}`);
+    return;
+  }
+
+  console.log(`[Notifications] Found ${matches.length} users to notify for fight ${fightId}`);
+
+  // Group by user (a user might have multiple rules matching this fight)
+  const userMap = new Map<string, { id: string; pushToken: string | null; notificationsEnabled: boolean }>();
+  for (const match of matches) {
+    if (!userMap.has(match.userId)) {
+      userMap.set(match.userId, match.user);
+    }
+  }
+
+  const users = Array.from(userMap.values()).filter(
+    (user) => user.notificationsEnabled && user.pushToken && Expo.isExpoPushToken(user.pushToken)
+  );
+
+  if (users.length === 0) {
+    console.log(`[Notifications] No users with valid push tokens`);
+    return;
+  }
+
+  const matchup = `${fighter1Name} vs ${fighter2Name}`;
+
+  // Send notifications
+  const result = await sendPushNotifications(
+    users.map((u) => u.id),
+    {
+      title: '🥊 Fight Starting Now!',
+      body: matchup,
+      data: { fightId, screen: 'fight-detail' },
+    }
+  );
+
+  console.log(`[Notifications] Sent ${result.success} notifications, ${result.failed} failed`);
+
+  // Mark notifications as sent
+  await prisma.fightNotificationMatch.updateMany({
+    where: {
+      fightId,
+      isActive: true,
+      notificationSent: false,
+    },
+    data: {
+      notificationSent: true,
+    },
+  });
+
+  console.log(`[Notifications] Marked ${matches.length} notification matches as sent`);
+}
+
 export const notificationService = {
   sendPushNotifications,
   notifyEventStart,
   notifyFightStart,
+  notifyFightStartViaRules,
   notifyRoundChange,
   notifyFightResult,
   notifyCrewMessage,

@@ -222,6 +222,19 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         updateData.hasStarted = fightUpdate.hasStarted;
         changed = true;
         console.log(`    🥊 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: hasStarted → ${fightUpdate.hasStarted}`);
+
+        // Send notifications when fight starts
+        if (fightUpdate.hasStarted === true) {
+          const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`;
+          const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`;
+
+          // Import and call notification function (async but don't wait)
+          import('../services/notificationService').then(({ notifyFightStartViaRules }) => {
+            notifyFightStartViaRules(dbFight.id, fighter1Name, fighter2Name).catch(err => {
+              console.error(`    ❌ Failed to send fight start notifications:`, err);
+            });
+          });
+        }
       }
 
       if (fightUpdate.isComplete !== undefined && dbFight.isComplete !== fightUpdate.isComplete) {
