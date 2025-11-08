@@ -457,6 +457,66 @@ const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
       return reply.status(500).send({ error: 'Failed to update fight' });
     }
   });
+
+  // ============= UFC SCRAPER =============
+
+  /**
+   * Trigger UFC data scraper
+   * POST /api/admin/scrape-ufc
+   */
+  fastify.post('/scrape-ufc', async (request, reply) => {
+    try {
+      const { mode = 'automated' } = request.body as { mode?: 'manual' | 'automated' };
+
+      // Send immediate response - scraping will happen in background
+      reply.send({
+        message: 'UFC scraper started',
+        mode,
+        note: 'Scraping is running in the background. Check logs for progress and results.'
+      });
+
+      // Run scraper in background (don't await)
+      (async () => {
+        try {
+          console.log(`\n🚀 Starting UFC scraper in ${mode} mode...`);
+
+          // Dynamically import and run the scraper
+          const { exec } = require('child_process');
+          const path = require('path');
+
+          const scraperPath = path.join(__dirname, '../services/scrapeAllUFCData.js');
+          const command = `SCRAPER_MODE=${mode} node ${scraperPath}`;
+
+          exec(command, {
+            cwd: path.join(__dirname, '../../'),
+            env: { ...process.env, SCRAPER_MODE: mode }
+          }, (error: any, stdout: any, stderr: any) => {
+            if (error) {
+              console.error('❌ Scraper error:', error.message);
+              console.error('stderr:', stderr);
+              return;
+            }
+
+            console.log('✅ Scraper completed successfully!');
+            console.log(stdout);
+
+            if (stderr) {
+              console.log('Scraper warnings:', stderr);
+            }
+          });
+        } catch (error: any) {
+          console.error('❌ Failed to start scraper:', error.message);
+        }
+      })();
+
+    } catch (error: any) {
+      console.error('Error starting scraper:', error);
+      return reply.status(500).send({
+        error: 'Failed to start scraper',
+        details: error.message
+      });
+    }
+  });
 };
 
 export default adminStatsRoutes;
