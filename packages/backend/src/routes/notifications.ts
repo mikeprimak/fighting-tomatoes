@@ -266,6 +266,50 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
       });
     }
   );
+
+  // Quick test endpoint - send notification to all users with push tokens (for testing only)
+  fastify.post('/test-broadcast', async (request, reply) => {
+    try {
+      const { notificationService } = await import('../services/notificationService');
+
+      // Get all users with push tokens
+      const users = await prisma.user.findMany({
+        where: {
+          pushToken: { not: null },
+          notificationsEnabled: true,
+        },
+        select: { id: true, displayName: true, pushToken: true },
+      });
+
+      if (users.length === 0) {
+        return reply.send({
+          message: 'No users with push tokens found',
+          result: { success: 0, failed: 0 },
+        });
+      }
+
+      const result = await notificationService.sendPushNotifications(
+        users.map(u => u.id),
+        {
+          title: '🥊 Test Notification',
+          body: 'This is a test from FightCrewApp!',
+          data: { test: true },
+        }
+      );
+
+      return reply.send({
+        message: `Test broadcast sent to ${users.length} user(s)`,
+        users: users.map(u => ({ id: u.id, displayName: u.displayName })),
+        result,
+      });
+    } catch (error: any) {
+      console.error('Test broadcast error:', error);
+      return reply.status(500).send({
+        error: 'Failed to send test broadcast',
+        details: error.message,
+      });
+    }
+  });
 };
 
 export default notificationsRoutes;
