@@ -291,15 +291,14 @@ async function importEvents(
       finalBannerUrl: bannerImageUrl
     }));
 
-    // Upsert event using name + date unique constraint
+    // Upsert event using ufcUrl unique constraint (prevents timezone-based duplicates)
     const event = await prisma.event.upsert({
       where: {
-        name_date: {
-          name: eventData.eventName,
-          date: eventDate,
-        }
+        ufcUrl: eventData.eventUrl,
       },
       update: {
+        name: eventData.eventName,
+        date: eventDate,
         venue: eventData.venue,
         location: `${eventData.city}, ${eventData.state || eventData.country}`,
         bannerImage: bannerImageUrl,
