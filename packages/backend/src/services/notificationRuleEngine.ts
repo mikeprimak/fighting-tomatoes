@@ -171,14 +171,10 @@ export async function evaluateRuleAgainstUpcomingFights(
   }
 
   // Get all upcoming fights (not yet started)
+  // Only filter by hasStarted - the live event tracker manages this field
   const upcomingFights = await prisma.fight.findMany({
     where: {
       hasStarted: false,
-      event: {
-        date: {
-          gte: new Date(),
-        },
-      },
     },
     select: {
       id: true,
