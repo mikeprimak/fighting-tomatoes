@@ -176,7 +176,7 @@ export async function notifyFightStartViaRules(
   const result = await sendPushNotifications(
     users.map((u) => u.id),
     {
-      title: '🥊 Fight Starting Now!',
+      title: '🥊 Fight Up Next!',
       body: matchup,
       data: { fightId, screen: 'fight-detail' },
     }

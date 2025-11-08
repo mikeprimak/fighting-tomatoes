@@ -222,25 +222,47 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         updateData.hasStarted = fightUpdate.hasStarted;
         changed = true;
         console.log(`    🥊 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: hasStarted → ${fightUpdate.hasStarted}`);
-
-        // Send notifications when fight starts
-        if (fightUpdate.hasStarted === true) {
-          const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`;
-          const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`;
-
-          // Import and call notification function (async but don't wait)
-          import('../services/notificationService').then(({ notifyFightStartViaRules }) => {
-            notifyFightStartViaRules(dbFight.id, fighter1Name, fighter2Name).catch(err => {
-              console.error(`    ❌ Failed to send fight start notifications:`, err);
-            });
-          });
-        }
+        // Note: Notifications are sent when the PREVIOUS fight completes, not when this fight starts
       }
 
       if (fightUpdate.isComplete !== undefined && dbFight.isComplete !== fightUpdate.isComplete) {
         updateData.isComplete = fightUpdate.isComplete;
         changed = true;
         console.log(`    ✅ ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: isComplete → ${fightUpdate.isComplete}`);
+
+        // When a fight completes, send notifications for the NEXT fight on the card
+        if (fightUpdate.isComplete === true) {
+          // Find the next fight on the card (lower orderOnCard number = earlier in the event)
+          // We want the fight with the next higher orderOnCard number
+          prisma.fight.findFirst({
+            where: {
+              eventId: dbFight.eventId,
+              orderOnCard: { gt: dbFight.orderOnCard },
+              hasStarted: false,
+              isComplete: false,
+            },
+            orderBy: { orderOnCard: 'asc' },
+            include: {
+              fighter1: { select: { firstName: true, lastName: true } },
+              fighter2: { select: { firstName: true, lastName: true } },
+            },
+          }).then(nextFight => {
+            if (nextFight) {
+              const fighter1Name = `${nextFight.fighter1.firstName} ${nextFight.fighter1.lastName}`;
+              const fighter2Name = `${nextFight.fighter2.firstName} ${nextFight.fighter2.lastName}`;
+
+              console.log(`    🔔 Previous fight complete, notifying for next fight: ${fighter1Name} vs ${fighter2Name}`);
+
+              import('../services/notificationService').then(({ notifyFightStartViaRules }) => {
+                notifyFightStartViaRules(nextFight.id, fighter1Name, fighter2Name).catch(err => {
+                  console.error(`    ❌ Failed to send next fight notifications:`, err);
+                });
+              });
+            }
+          }).catch(err => {
+            console.error(`    ❌ Error finding next fight:`, err);
+          });
+        }
       }
 
       // Check order changes (UFC sometimes reorders fights)
