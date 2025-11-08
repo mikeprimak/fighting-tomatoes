@@ -480,8 +480,8 @@ const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         try {
           console.log(`\n🚀 Starting UFC scraper in ${mode} mode...`);
 
-          // Dynamically import and run the scraper
-          const { exec } = require('child_process');
+          // Dynamically import and run the scraper with real-time output
+          const { spawn } = require('child_process');
           const path = require('path');
 
           // In production (dist), go up to packages/backend/src, in dev use relative path
@@ -497,30 +497,34 @@ const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
             cwd: path.join(__dirname, isDist ? '../../../' : '../../'),
           });
 
-          const command = `node ${scraperPath}`;
-
-          exec(command, {
+          const scraper = spawn('node', [scraperPath], {
             cwd: path.join(__dirname, isDist ? '../../../' : '../../'),
-            env: { ...process.env, SCRAPER_MODE: mode }
-          }, (error: any, stdout: any, stderr: any) => {
-            if (error) {
-              console.error('❌ Scraper process error:', {
-                message: error.message,
-                code: error.code,
-                killed: error.killed,
-                signal: error.signal,
-              });
-              console.error('stderr:', stderr);
-              console.error('stdout:', stdout);
-              return;
-            }
+            env: { ...process.env, SCRAPER_MODE: mode },
+            stdio: ['ignore', 'pipe', 'pipe']
+          });
 
-            console.log('✅ Scraper completed successfully!');
-            console.log('stdout:', stdout);
+          // Stream stdout in real-time
+          scraper.stdout.on('data', (data: any) => {
+            console.log('[SCRAPER]', data.toString().trim());
+          });
 
-            if (stderr) {
-              console.log('Scraper warnings/logs:', stderr);
+          // Stream stderr in real-time
+          scraper.stderr.on('data', (data: any) => {
+            console.error('[SCRAPER ERROR]', data.toString().trim());
+          });
+
+          // Handle process exit
+          scraper.on('close', (code: number) => {
+            if (code === 0) {
+              console.log('✅ Scraper completed successfully!');
+            } else {
+              console.error(`❌ Scraper exited with code ${code}`);
             }
+          });
+
+          // Handle spawn errors
+          scraper.on('error', (error: any) => {
+            console.error('❌ Failed to start scraper process:', error);
           });
         } catch (error: any) {
           console.error('❌ Failed to start scraper:', error.message);
