@@ -461,7 +461,7 @@ const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
   // ============= UFC SCRAPER =============
 
   /**
-   * Trigger UFC data scraper
+   * Trigger UFC data scraper to update fight/event details
    * POST /api/admin/scrape-ufc
    */
   fastify.post('/scrape-ufc', async (request, reply) => {
