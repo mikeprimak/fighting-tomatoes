@@ -19,6 +19,7 @@ import * as Notifications from 'expo-notifications';
 import { apiService } from '../services/api';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from '../components/CustomAlert';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface NotificationPreferences {
   notificationsEnabled: boolean;
@@ -31,6 +32,7 @@ export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,6 +73,14 @@ export default function SettingsScreen() {
 
     try {
       await apiService.updateNotificationPreferences({ [key]: value });
+
+      // Invalidate fight queries to refresh notification status
+      // This ensures bell icons update when hyped fights setting changes
+      queryClient.invalidateQueries({ queryKey: ['fights'] });
+      queryClient.invalidateQueries({ queryKey: ['fight'] });
+      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
     } catch (error) {
       // Revert on error
       setPreferences(prev => ({ ...prev, [key]: oldValue }));

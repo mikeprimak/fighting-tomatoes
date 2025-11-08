@@ -15,6 +15,16 @@ interface Event {
   name: string;
 }
 
+interface NotificationReasons {
+  willBeNotified: boolean;
+  reasons: Array<{
+    type: 'manual' | 'fighter' | 'rule';
+    source: string;
+    ruleId?: string;
+    isActive: boolean;
+  }>;
+}
+
 interface Fight {
   fighter1: Fighter;
   fighter2: Fighter;
@@ -23,6 +33,7 @@ interface Fight {
   event: Event;
   isFollowingFighter1?: boolean;
   isFollowingFighter2?: boolean;
+  notificationReasons?: NotificationReasons;
 }
 
 interface FightDetailsMenuProps {
@@ -80,32 +91,25 @@ export default function FightDetailsMenu({
 
           {/* Consolidated Fight Notification Section (only shown for upcoming fights) */}
           {onToggleNotification !== undefined && (() => {
-            // Determine if user will be notified (any toggle is on)
-            const hasManualNotification = isFollowing ?? false;
-            const hasFighter1Notification = fight.isFollowingFighter1 === true;
-            const hasFighter2Notification = fight.isFollowingFighter2 === true;
-            const willBeNotified = hasManualNotification || hasFighter1Notification || hasFighter2Notification;
+            // Use notification reasons from the new system if available
+            const willBeNotified = fight.notificationReasons?.willBeNotified ?? false;
+            const notificationReasons = fight.notificationReasons?.reasons ?? [];
 
-            // Check if user is following fighters (regardless of notification status)
-            const isFollowingFighter1 = fight.isFollowingFighter1 !== undefined;
-            const isFollowingFighter2 = fight.isFollowingFighter2 !== undefined;
+            // Build the reasons list from the new notification system
+            const reasons: string[] = notificationReasons
+              .filter(reason => reason.isActive)
+              .map(reason => {
+                if (reason.type === 'manual') {
+                  return 'You manually enabled notifications for this fight';
+                } else if (reason.type === 'fighter') {
+                  return reason.source;
+                } else if (reason.type === 'rule') {
+                  return reason.source;
+                }
+                return reason.source;
+              });
 
-            // Build the reasons list
-            const reasons: string[] = [];
-            if (hasManualNotification) {
-              reasons.push('You have manually set a notification');
-            }
-            if (hasFighter1Notification) {
-              reasons.push(`You have ${fight.fighter1.firstName} ${fight.fighter1.lastName} notifications turned on`);
-            }
-            if (hasFighter2Notification) {
-              reasons.push(`You have ${fight.fighter2.firstName} ${fight.fighter2.lastName} notifications turned on`);
-            }
-
-            // Determine toggle behavior
-            const hasFighterNotifications = hasFighter1Notification || hasFighter2Notification;
-            const isFollowingAnyFighter = isFollowingFighter1 || isFollowingFighter2;
-            const additionalText = isFollowingAnyFighter ? ' for this fight only' : '';
+            const toggleDisabled = isTogglingNotification || isTogglingFighterNotification;
 
             return (
               <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
@@ -117,7 +121,7 @@ export default function FightDetailsMenu({
                     {willBeNotified ? (
                       <View style={styles.reasonsContainer}>
                         <Text style={[styles.notificationSubtext, { color: colors.textSecondary }]}>
-                          You will be notified before this fight because:
+                          You will be notified 15 minutes before this fight because:
                         </Text>
                         {reasons.map((reason, index) => (
                           <Text key={index} style={[styles.reasonBullet, { color: colors.textSecondary }]}>
@@ -125,7 +129,7 @@ export default function FightDetailsMenu({
                           </Text>
                         ))}
                         <Text style={[styles.toggleHintText, { color: colors.textSecondary, marginTop: 4 }]}>
-                          Toggle to deactivate{additionalText}
+                          Toggle off to disable notifications for this fight
                         </Text>
                       </View>
                     ) : (
@@ -136,35 +140,11 @@ export default function FightDetailsMenu({
                   </View>
                   <Switch
                     value={willBeNotified}
-                    disabled={isTogglingNotification || isTogglingFighterNotification}
+                    disabled={toggleDisabled}
                     onValueChange={(enabled) => {
-                      // When toggling OFF: disable all active notification sources
-                      if (!enabled) {
-                        if (hasManualNotification) {
-                          onToggleNotification(false);
-                        }
-                        if (isFollowingFighter1 && onToggleFighterNotification) {
-                          onToggleFighterNotification(fight.fighter1Id, false);
-                        }
-                        if (isFollowingFighter2 && onToggleFighterNotification) {
-                          onToggleFighterNotification(fight.fighter2Id, false);
-                        }
-                      } else {
-                        // When toggling ON: enable all available notification sources
-                        if (hasManualNotification) {
-                          onToggleNotification(true);
-                        }
-                        if (isFollowingFighter1 && onToggleFighterNotification) {
-                          onToggleFighterNotification(fight.fighter1Id, true);
-                        }
-                        if (isFollowingFighter2 && onToggleFighterNotification) {
-                          onToggleFighterNotification(fight.fighter2Id, true);
-                        }
-                        // If no existing sources, enable manual notification
-                        if (!hasManualNotification && !isFollowingFighter1 && !isFollowingFighter2) {
-                          onToggleNotification(true);
-                        }
-                      }
+                      // Simply call the unified toggle notification handler
+                      // This will handle all notification types (manual, fighter, hyped fights)
+                      onToggleNotification(enabled);
                     }}
                     trackColor={{ false: colors.textSecondary, true: colors.tint }}
                     thumbColor="#B0B5BA"

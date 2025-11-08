@@ -2,6 +2,7 @@ import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
 import { authenticateUser } from '../middleware/auth';
+import { notificationRuleEngine } from '../services/notificationRuleEngine';
 
 const prisma = new PrismaClient();
 
@@ -11,10 +12,70 @@ const registerTokenSchema = z.object({
 
 const updatePreferencesSchema = z.object({
   notificationsEnabled: z.boolean().optional(),
-  notifyFollowedFighterFights: z.boolean().optional(),
-  notifyPreEventReport: z.boolean().optional(),
   notifyHypedFights: z.boolean().optional(),
+  // Legacy fields removed - all notifications now managed via rules
 });
+
+/**
+ * Manages the "Hyped Fights" notification rule for a user
+ * Creates/activates or deactivates the rule based on the enabled flag
+ */
+async function manageHypedFightsRule(userId: string, enabled: boolean): Promise<void> {
+  const RULE_NAME = 'Hyped Fights';
+  const RULE_CONDITIONS = { minHype: 8.5 };
+  const NOTIFY_MINUTES_BEFORE = 15;
+
+  // Check if rule already exists
+  const existingRule = await prisma.userNotificationRule.findFirst({
+    where: {
+      userId,
+      name: RULE_NAME,
+    },
+  });
+
+  if (existingRule) {
+    // Update existing rule
+    await prisma.userNotificationRule.update({
+      where: { id: existingRule.id },
+      data: { isActive: enabled },
+    });
+
+    if (enabled) {
+      // If enabled, sync matches
+      notificationRuleEngine.syncRuleMatches(existingRule.id).catch(err => {
+        console.error('Error syncing Hyped Fights rule matches:', err);
+      });
+    } else {
+      // If disabled, deactivate all matches for this rule
+      await prisma.fightNotificationMatch.updateMany({
+        where: {
+          ruleId: existingRule.id,
+        },
+        data: {
+          isActive: false,
+        },
+      });
+    }
+  } else if (enabled) {
+    // Create new rule (only if enabled)
+    const newRule = await prisma.userNotificationRule.create({
+      data: {
+        userId,
+        name: RULE_NAME,
+        conditions: RULE_CONDITIONS,
+        notifyMinutesBefore: NOTIFY_MINUTES_BEFORE,
+        priority: 0,
+        isActive: true,
+      },
+    });
+
+    // Sync matches for new rule
+    notificationRuleEngine.syncRuleMatches(newRule.id).catch(err => {
+      console.error('Error syncing Hyped Fights rule matches:', err);
+    });
+  }
+  // If !enabled and no existing rule, nothing to do
+}
 
 const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
   /**
@@ -86,9 +147,6 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         where: { id: userId },
         select: {
           notificationsEnabled: true,
-          notifyFollowedFighterFights: true,
-          notifyPreEventReport: true,
-          notifyHypedFights: true,
         },
       });
 
@@ -96,7 +154,21 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         return reply.status(404).send({ error: 'User not found' });
       }
 
-      return reply.send({ preferences: user });
+      // Check if user has the "Hyped Fights" notification rule active
+      const hypedFightsRule = await prisma.userNotificationRule.findFirst({
+        where: {
+          userId,
+          name: 'Hyped Fights',
+        },
+      });
+
+      return reply.send({
+        preferences: {
+          ...user,
+          notifyHypedFights: hypedFightsRule?.isActive ?? false,
+          // Legacy fields removed - all notifications now managed via rules
+        },
+      });
     }
   );
 
@@ -112,20 +184,37 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         const preferences = updatePreferencesSchema.parse(request.body);
         const userId = request.user!.id;
 
+        // Extract notifyHypedFights from preferences (handled via rules)
+        const { notifyHypedFights, ...userPreferences } = preferences;
+
+        // Update basic user preferences
         const updatedUser = await prisma.user.update({
           where: { id: userId },
-          data: preferences,
+          data: userPreferences,
           select: {
             notificationsEnabled: true,
-            notifyFollowedFighterFights: true,
-            notifyPreEventReport: true,
-            notifyHypedFights: true,
+          },
+        });
+
+        // Handle Hyped Fights notification rule
+        if (notifyHypedFights !== undefined) {
+          await manageHypedFightsRule(userId, notifyHypedFights);
+        }
+
+        // Get current state of Hyped Fights rule for response
+        const hypedFightsRule = await prisma.userNotificationRule.findFirst({
+          where: {
+            userId,
+            name: 'Hyped Fights',
           },
         });
 
         return reply.send({
           message: 'Preferences updated successfully',
-          preferences: updatedUser,
+          preferences: {
+            ...updatedUser,
+            notifyHypedFights: hypedFightsRule?.isActive ?? false,
+          },
         });
       } catch (error: any) {
         if (error.name === 'ZodError') {

@@ -326,26 +326,14 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Get user's fight follows and fighter follows if authenticated
-      let fightAlerts: any[] = [];
+      // Get user's fighter follows if authenticated
       let followedFighters: any[] = [];
       if (userId) {
-        const fightIds = fights.map((f: any) => f.id);
-        fightAlerts = await fastify.prisma.fightAlert.findMany({
-          where: {
-            userId,
-            fightId: { in: fightIds },
-          },
-          select: {
-            fightId: true,
-          },
-        });
-
         // Get all unique fighter IDs from the fights
         const allFighterIds = fights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]);
         const uniqueFighterIds = [...new Set(allFighterIds)];
 
-        // Check which fighters the user is following (with their notification preferences)
+        // Check which fighters the user is following
         followedFighters = await fastify.prisma.userFighterFollow.findMany({
           where: {
             userId,
@@ -353,13 +341,11 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           },
           select: {
             fighterId: true,
-            startOfFightNotification: true,
           },
         });
       }
 
-      const followedFightIds = new Set(fightAlerts.map(fa => fa.fightId));
-      const followedFightersMap = new Map(followedFighters.map(ff => [ff.fighterId, ff.startOfFightNotification]));
+      const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
 
       // Calculate average hype for each fight and add user hype
       const fightsWithHype = fights
@@ -392,13 +378,10 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           };
 
           if (userId) {
-            transformed.isFollowing = followedFightIds.has(fight.id);
-            transformed.isFollowingFighter1 = followedFightersMap.has(fight.fighter1Id)
-              ? followedFightersMap.get(fight.fighter1Id)
-              : undefined;
-            transformed.isFollowingFighter2 = followedFightersMap.has(fight.fighter2Id)
-              ? followedFightersMap.get(fight.fighter2Id)
-              : undefined;
+            // Note: isFollowing and notification data will be added by notificationRuleEngine
+            // For now, just add fighter follow status for UI display
+            transformed.isFollowingFighter1 = followedFighterIds.has(fight.fighter1Id) || undefined;
+            transformed.isFollowingFighter2 = followedFighterIds.has(fight.fighter2Id) || undefined;
           }
 
           return transformed;
@@ -464,21 +447,9 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         take: 7,
       });
 
-      // Get user's fight follows and fighter follows if authenticated
-      let fightAlerts: any[] = [];
+      // Get user's fighter follows if authenticated
       let followedFighters: any[] = [];
       if (userId) {
-        const fightIds = fights.map((f: any) => f.id);
-        fightAlerts = await fastify.prisma.fightAlert.findMany({
-          where: {
-            userId,
-            fightId: { in: fightIds },
-          },
-          select: {
-            fightId: true,
-          },
-        });
-
         // Get all unique fighter IDs from both corners
         const allFighterIds = fights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]);
         const uniqueFighterIds = [...new Set(allFighterIds)];
@@ -490,16 +461,12 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           },
           select: {
             fighterId: true,
-            startOfFightNotification: true,
           },
         });
       }
 
-      // Create Sets/Maps for efficient lookup
-      const followedFightIds = new Set(fightAlerts.map(fa => fa.fightId));
-      const followedFightersMap = new Map(
-        followedFighters.map(ff => [ff.fighterId, ff.startOfFightNotification])
-      );
+      // Create Set for efficient lookup
+      const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
 
       // Add user rating and notification data to each fight
       const fightsWithUserData = fights.map((fight: any) => {
@@ -513,15 +480,10 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           userRating,
         };
 
-        // Add notification/follow data if user is authenticated
+        // Add fighter follow data if user is authenticated
         if (userId) {
-          transformed.isFollowing = followedFightIds.has(fight.id);
-          transformed.isFollowingFighter1 = followedFightersMap.has(fight.fighter1Id)
-            ? followedFightersMap.get(fight.fighter1Id)
-            : undefined;
-          transformed.isFollowingFighter2 = followedFightersMap.has(fight.fighter2Id)
-            ? followedFightersMap.get(fight.fighter2Id)
-            : undefined;
+          transformed.isFollowingFighter1 = followedFighterIds.has(fight.fighter1Id);
+          transformed.isFollowingFighter2 = followedFighterIds.has(fight.fighter2Id);
         }
 
         return transformed;

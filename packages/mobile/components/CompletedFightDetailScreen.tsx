@@ -410,7 +410,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   // Fetch pre-fight comments
   const { data: preFightCommentsData } = useQuery({
     queryKey: ['preFightComments', fight.id],
-    queryFn: () => apiService.getPreFightComments(fight.id),
+    queryFn: () => apiService.getFightPreFightComments(fight.id),
     enabled: !!fight.id,
     staleTime: 60 * 1000,
   });

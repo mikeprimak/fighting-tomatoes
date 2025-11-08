@@ -248,19 +248,6 @@ export const getEventEngagement = async (req: Request, res: Response) => {
       }
     });
 
-    // Get user's fight alerts for this event
-    const alerts = await prisma.fightAlert.findMany({
-      where: {
-        userId,
-        fightId: { in: fightIds },
-        isActive: true,
-      },
-      select: {
-        id: true,
-        fightId: true,
-      }
-    });
-
     // Calculate average hype level from predictions
     const hypeLevels = predictions
       .map(p => p.rating)
@@ -278,7 +265,6 @@ export const getEventEngagement = async (req: Request, res: Response) => {
       crewPredictions: crewPredictions.length,
       totalPredictions: predictions.length,
       ratingsCount: ratings.length,
-      alertsCount: alerts.length,
       avgHype
     });
 
@@ -286,7 +272,6 @@ export const getEventEngagement = async (req: Request, res: Response) => {
       totalFights: event.fights.length,
       predictionsCount: predictions.length,
       ratingsCount: ratings.length,
-      alertsCount: alerts.length,
       averageHype: avgHype ? Number(avgHype.toFixed(1)) : null,
     };
 

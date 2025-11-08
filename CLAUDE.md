@@ -69,6 +69,220 @@ curl http://localhost:3008/health
 
 ## Recent Features
 
+### Notification System UI Fixes (2025-11-08)
+**Status**: ✅ Complete - All notification toggles working correctly with immediate UI updates
+
+#### Issues Fixed
+1. **Query Invalidation and Refetch**: Fixed `UpcomingFightCard` not updating when notifications toggled from child screens
+   - Added `useFocusEffect` to upcoming events screen to invalidate queries on focus
+   - Added `refetchOnMount: 'always'` and `refetchOnWindowFocus: true` to fight queries
+   - Now all screens update immediately when notification preferences change
+
+2. **Bell Icon Logic**: Fixed bell showing when it shouldn't (per-fight overrides not respected)
+   - Changed `UpcomingFightCard` to use ONLY `notificationReasons.willBeNotified` as source of truth
+   - Removed redundant checks for `isFollowing`, `isFollowingFighter1`, `isFollowingFighter2`
+   - Bell now properly reflects per-fight notification overrides
+
+#### Behavior After Fixes
+- **Hyped Fights Toggle**: Turning on/off in settings immediately shows/hides bells on all fight cards ✅
+- **Fighter Follow Notifications**:
+  - Enabling on fighter page → bell shows on all their fights ✅
+  - Disabling specific fight in detail screen submenu → bell disappears immediately ✅
+  - Disabling on fighter page → bell disappears from all their fights ✅
+- **Manual Fight Follow**: Toggle in detail screen submenu updates card immediately ✅
+
+#### Files Modified
+- `packages/mobile/app/(tabs)/events/index.tsx`: Added `useFocusEffect` and query refetch config
+- `packages/mobile/components/fight-cards/UpcomingFightCard.tsx`: Simplified bell icon logic to use unified notification data
+
+### Unified Notification Rule System (2025-11-08)
+**Status**: ✅ Complete - ALL legacy code removed, single cohesive system
+
+#### Overview
+The app uses a **single, extensible rule-based notification system** for ALL fight notifications. There is NO legacy code - everything from manual fight follows to fighter follows to hyped fights uses `UserNotificationRule` and `FightNotificationMatch` tables.
+
+#### Core Architecture
+
+**Database Tables**:
+- `UserNotificationRule`: Stores notification rules with JSON conditions, priority, custom timing
+  - Fields: `userId`, `name`, `conditions` (JSONB), `notifyMinutesBefore`, `priority`, `isActive`
+  - Each notification type (manual fight, fighter follow, hyped fights) creates a rule
+- `FightNotificationMatch`: Caches which fights match which rules (performance optimization)
+  - Fields: `userId`, `fightId`, `ruleId`, `isActive`, `notificationSent`, `matchedAt`
+  - Unique constraint: `userId_fightId_ruleId`
+  - Allows per-fight notification overrides via `isActive` field
+
+**Rule Engine** (`notificationRuleEngine.ts`):
+```typescript
+// Core evaluation function - checks if a fight matches rule conditions
+evaluateFightAgainstConditions(fightId, conditions): Promise<boolean>
+
+// Returns ALL reasons why user will be notified about a fight
+getNotificationReasonsForFight(userId, fightId): Promise<{
+  willBeNotified: boolean;
+  reasons: Array<{ type, source, ruleId, isActive }>;
+}>
+
+// Updates cached matches when rules change or new fights are added
+syncRuleMatches(ruleId): Promise<number>
+```
+
+**Available Condition Types** (easily extensible):
+```typescript
+interface NotificationRuleConditions {
+  fightIds?: string[];      // Manual fight follows (exact match)
+  fighterIds?: string[];    // Fighter follows (either fighter)
+  minHype?: number;         // Hyped fights filter
+  maxHype?: number;         // Hype ceiling filter
+  promotions?: string[];    // UFC, Bellator, PFL, etc.
+  daysOfWeek?: number[];    // 0=Sunday, 6=Saturday
+  notDaysOfWeek?: number[]; // Exclude specific days
+}
+```
+
+#### Three Notification Flows
+
+**1. Manual Fight Follows** (Fight Detail Screen → Three-Dots Menu → "Notify when fight starts")
+- User Flow: Tap bell icon on fight detail screen
+- Backend: `POST /api/fights/:id/follow` → calls `manageManualFightRule(userId, fightId, true)`
+- Rule Created: `{ name: "Manual Fight Follow: <fightId>", conditions: { fightIds: [fightId] }, priority: 10 }`
+- Unfollowing: `DELETE /api/fights/:id/unfollow` → calls `manageManualFightRule(userId, fightId, false)`
+- Files: `routes/index.ts:1342-1420`, `services/notificationRuleHelpers.ts:8-38`
+
+**2. Fighter Follows** (Fighter Screen → Follow Button → "Notify for upcoming fights" toggle)
+- User Flow: Follow fighter, then enable notifications toggle
+- Backend: `POST /api/fighters/:id/follow` → creates follow + calls `manageFighterNotificationRule(userId, fighterId, true)`
+- Rule Created: `{ name: "Fighter Follow: <fighterId>", conditions: { fighterIds: [fighterId] }, priority: 5 }`
+- Notification Toggle: `PATCH /api/fighters/:id/notification-preferences` → manages rule activation
+- Files: `routes/index.ts:1014-1024,1256-1260`, `services/notificationRuleHelpers.ts:40-70`
+
+**3. Hyped Fights** (Settings → Notifications → "Notify for hyped fights" toggle)
+- User Flow: Toggle switch in notification preferences
+- Backend: `PUT /api/notifications/preferences` → calls `manageHypedFightsRule(userId, enabled)`
+- Rule Created: `{ name: "Hyped Fights", conditions: { minHype: 8.5 }, priority: 0 }`
+- Reading State: `GET /api/notifications/preferences` → queries for "Hyped Fights" rule
+- Files: `routes/notifications.ts:23-68,169-218`
+
+#### Helper Functions Pattern
+
+All notification types use the same pattern via `notificationRuleHelpers.ts`:
+
+```typescript
+async function manageXRule(userId: string, entityId: string, enabled: boolean) {
+  const RULE_NAME = 'Rule Name';
+  const RULE_CONDITIONS = { /* conditions */ };
+  const NOTIFY_MINUTES_BEFORE = 15;
+
+  const existingRule = await prisma.userNotificationRule.findFirst({
+    where: { userId, name: RULE_NAME }
+  });
+
+  if (existingRule) {
+    // Update existing rule
+    await prisma.userNotificationRule.update({
+      where: { id: existingRule.id },
+      data: { isActive: enabled }
+    });
+    if (enabled) {
+      notificationRuleEngine.syncRuleMatches(existingRule.id); // Rebuild matches
+    }
+  } else if (enabled) {
+    // Create new rule
+    const newRule = await prisma.userNotificationRule.create({
+      data: { userId, name: RULE_NAME, conditions: RULE_CONDITIONS,
+              notifyMinutesBefore: NOTIFY_MINUTES_BEFORE, priority: X, isActive: true }
+    });
+    notificationRuleEngine.syncRuleMatches(newRule.id);
+  }
+}
+```
+
+#### Fight Notification Data in Responses
+
+**Fight List Endpoints** (`GET /api/fights`, `/api/community/top-upcoming-fights`, etc.):
+```typescript
+// Each fight includes:
+{
+  ...fightData,
+  isFollowing: boolean,                    // True if user has manual fight follow rule
+  isFollowingFighter1: boolean,            // True if user follows fighter 1
+  isFollowingFighter2: boolean,            // True if user follows fighter 2
+  notificationReasons: {                   // ALL reasons user will be notified
+    willBeNotified: boolean,
+    reasons: [
+      { type: 'manual', source: 'Manual Fight Follow: uuid', ruleId: 'uuid', isActive: true },
+      { type: 'fighter', source: 'Fighter Follow: uuid', ruleId: 'uuid', isActive: true },
+      { type: 'rule', source: 'Hyped Fights', ruleId: 'uuid', isActive: true }
+    ]
+  }
+}
+```
+
+**Query Pattern** (used in fights.ts, community.ts):
+```typescript
+// Get followed fighters for UI display
+const followedFighters = await prisma.userFighterFollow.findMany({
+  where: { userId, fighterId: { in: uniqueFighterIds } },
+  select: { fighterId: true }  // NO notification fields - those are in rules
+});
+const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
+
+// Get comprehensive notification data from unified rule system
+const notificationReasons = await notificationRuleEngine.getNotificationReasonsForFight(userId, fightId);
+
+// Populate response
+transformed.isFollowingFighter1 = followedFighterIds.has(fight.fighter1Id);
+transformed.isFollowingFighter2 = followedFighterIds.has(fight.fighter2Id);
+transformed.isFollowing = notificationReasons.reasons.some(r => r.type === 'manual' && r.isActive);
+transformed.notificationReasons = notificationReasons;
+```
+
+#### Per-Fight Notification Overrides
+
+Users can disable notifications for a specific fight WITHOUT unfollowing:
+- **UI Location**: Fight Detail Screen → Three-Dots Menu → Toggle notification for that fight
+- **Implementation**: Updates `FightNotificationMatch.isActive = false` for that specific fight+rule combination
+- **Effect**: Fight remains matched to rule but won't send notification
+- **Use Case**: Following Jon Jones but don't want notification for a specific fight
+
+#### Adding New Notification Types
+
+To add a new notification type (e.g., "Main Events Only"):
+
+1. **Create Helper Function** in `notificationRuleHelpers.ts`:
+```typescript
+export async function manageMainEventsRule(userId: string, enabled: boolean) {
+  const RULE_NAME = 'Main Events Only';
+  const RULE_CONDITIONS = { isMainEvent: true }; // Add to NotificationRuleConditions interface
+  // ... follow pattern above
+}
+```
+
+2. **Add Condition Type** to `NotificationRuleConditions` interface in `notificationRuleEngine.ts`
+3. **Add Evaluation Logic** to `evaluateFightAgainstConditions()` function
+4. **Expose in API**: Add endpoint/field in `routes/notifications.ts` for user to toggle
+
+#### Migration History
+
+**2025-11-08** (`20251108010000_remove_all_legacy_notification_system`):
+- Removed `FightAlert` table entirely
+- Removed `User.notifyFollowedFighterFights`, `User.notifyPreEventReport`, `User.notifyHypedFights`
+- Removed `UserFighterFollow.dayBeforeNotification`, `UserFighterFollow.startOfFightNotification`
+- Updated ALL backend code to use unified rule system
+- Files modified: 6 route files, 1 controller, 2 service files
+
+**Result**: Single cohesive notification system with NO legacy code fragments
+
+#### Key Files
+
+- `prisma/schema.prisma`: UserNotificationRule + FightNotificationMatch tables
+- `services/notificationRuleEngine.ts`: Core evaluation engine (240 lines)
+- `services/notificationRuleHelpers.ts`: Helper functions for each notification type (70 lines)
+- `routes/notifications.ts`: Notification preferences API (262 lines)
+- `routes/notificationRules.ts`: Advanced rule management API (future)
+- `routes/fights.ts`: Fight endpoints with notification data (244-278, 474-513)
+- `routes/index.ts`: Fighter/fight follow endpoints (1014-1024, 1256-1260, 1342-1420)
+
 ### Bug Fixes and Code Cleanup (2025-11-04)
 - **Winner Prediction Bug Fix**:
   - Fixed issue where users couldn't save winner prediction without also selecting a method

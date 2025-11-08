@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { WeightClass, Sport, Gender, ActivityType, PredictionMethod } from '@prisma/client';
 import { authenticateUser, requireEmailVerification, optionalAuth } from '../middleware/auth';
+import { notificationRuleEngine } from '../services/notificationRuleEngine';
 
 // Request/Response schemas using Zod for validation
 const CreateFightSchema = z.object({
@@ -241,26 +242,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
         include,
       });
 
-      // Check which fights the user is following (if authenticated)
-      let fightAlerts: any[] = [];
+      // Check which fighters the user is following (for UI display only - notifications via rules)
       let followedFighters: any[] = [];
       if (currentUserId) {
-        const fightIds = fights.map((f: any) => f.id);
-        fightAlerts = await fastify.prisma.fightAlert.findMany({
-          where: {
-            userId: currentUserId,
-            fightId: { in: fightIds },
-          },
-          select: {
-            fightId: true,
-          },
-        });
-
         // Get all fighters in these fights
         const allFighterIds = fights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]);
         const uniqueFighterIds = [...new Set(allFighterIds)];
 
-        // Check which fighters the user is following (with their notification preferences)
+        // Check which fighters the user is following
         followedFighters = await fastify.prisma.userFighterFollow.findMany({
           where: {
             userId: currentUserId,
@@ -268,17 +257,15 @@ export async function fightRoutes(fastify: FastifyInstance) {
           },
           select: {
             fighterId: true,
-            startOfFightNotification: true,
           },
         });
       }
 
-      const followedFightIds = new Set(fightAlerts.map(fa => fa.fightId));
-      // Create a map of fighterId -> startOfFightNotification status
-      const followedFightersMap = new Map(followedFighters.map(ff => [ff.fighterId, ff.startOfFightNotification]));
+      // Create a set of followed fighter IDs
+      const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
 
       // Transform fights data to include user-specific data in the expected format
-      const transformedFights = fights.map((fight: any) => {
+      const transformedFights = await Promise.all(fights.map(async (fight: any) => {
         const transformed = { ...fight };
 
         // Transform user rating (take the first/only rating)
@@ -306,17 +293,23 @@ export async function fightRoutes(fastify: FastifyInstance) {
           transformed.userHypePrediction = fight.predictions[0].predictedRating;
         }
 
-        // Add isFollowing field
+        // Add fighter follow info and notification reasons
         if (currentUserId) {
-          transformed.isFollowing = followedFightIds.has(fight.id);
+          // Check if user is following either fighter (for UI display only)
+          transformed.isFollowingFighter1 = followedFighterIds.has(fight.fighter1Id) || undefined;
+          transformed.isFollowingFighter2 = followedFighterIds.has(fight.fighter2Id) || undefined;
 
-          // Add fighter follow info (undefined if not following, true/false based on notification preference)
-          transformed.isFollowingFighter1 = followedFightersMap.has(fight.fighter1Id)
-            ? followedFightersMap.get(fight.fighter1Id)
-            : undefined;
-          transformed.isFollowingFighter2 = followedFightersMap.has(fight.fighter2Id)
-            ? followedFightersMap.get(fight.fighter2Id)
-            : undefined;
+          // Get comprehensive notification reasons using the unified rule engine
+          const notificationReasons = await notificationRuleEngine.getNotificationReasonsForFight(
+            currentUserId,
+            fight.id
+          );
+          transformed.notificationReasons = notificationReasons;
+
+          // Set isFollowing based on whether there's a manual fight follow rule
+          transformed.isFollowing = notificationReasons.reasons.some(
+            r => r.type === 'manual' && r.isActive
+          );
         }
 
         // Remove the raw arrays to avoid confusion
@@ -326,7 +319,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         delete transformed.predictions;
 
         return transformed;
-      });
+      }));
 
       const pagination = {
         page: query.page,
@@ -478,19 +471,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           console.log('Found user prediction:', transformedFight.userHypePrediction);
         }
 
-        // Check if user is following this fight
-        const fightAlert = await fastify.prisma.fightAlert.findUnique({
-          where: {
-            userId_fightId: {
-              userId: currentUserId,
-              fightId: id,
-            },
-          },
-        });
-        transformedFight.isFollowing = !!fightAlert;
-        console.log('User is following this fight:', transformedFight.isFollowing);
-
-        // Check if user is following either fighter with notifications enabled
+        // Check if user is following either fighter (for UI display only)
         const [fighter1Follow, fighter2Follow] = await Promise.all([
           fastify.prisma.userFighterFollow.findUnique({
             where: {
@@ -499,7 +480,6 @@ export async function fightRoutes(fastify: FastifyInstance) {
                 fighterId: transformedFight.fighter1Id,
               },
             },
-            select: { startOfFightNotification: true },
           }),
           fastify.prisma.userFighterFollow.findUnique({
             where: {
@@ -508,17 +488,30 @@ export async function fightRoutes(fastify: FastifyInstance) {
                 fighterId: transformedFight.fighter2Id,
               },
             },
-            select: { startOfFightNotification: true },
           }),
         ]);
 
-        // Set notification status (true if following with notifications, false if following without, undefined if not following)
-        transformedFight.isFollowingFighter1 = fighter1Follow !== null ? fighter1Follow.startOfFightNotification : undefined;
-        transformedFight.isFollowingFighter2 = fighter2Follow !== null ? fighter2Follow.startOfFightNotification : undefined;
+        // Set fighter follow status (for UI display)
+        transformedFight.isFollowingFighter1 = fighter1Follow !== null || undefined;
+        transformedFight.isFollowingFighter2 = fighter2Follow !== null || undefined;
         console.log('Fighter follow status:', {
           fighter1: transformedFight.isFollowingFighter1,
           fighter2: transformedFight.isFollowingFighter2,
         });
+
+        // Get comprehensive notification reasons using the unified rule engine
+        const notificationReasons = await notificationRuleEngine.getNotificationReasonsForFight(
+          currentUserId,
+          id
+        );
+        transformedFight.notificationReasons = notificationReasons;
+        console.log('Notification reasons:', notificationReasons);
+
+        // Set isFollowing based on whether there's a manual fight follow rule
+        transformedFight.isFollowing = notificationReasons.reasons.some(
+          r => r.type === 'manual' && r.isActive
+        );
+        console.log('User is following this fight:', transformedFight.isFollowing);
 
         // Remove the raw arrays to avoid confusion
         delete transformedFight.ratings;

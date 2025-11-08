@@ -373,28 +373,6 @@ class ApiService {
     return this.makeRequest('/fighters/followed');
   }
 
-  async updateFighterNotificationPreferences(
-    fighterId: string,
-    preferences: { startOfFightNotification?: boolean; dayBeforeNotification?: boolean }
-  ): Promise<{ message: string; startOfFightNotification: boolean; dayBeforeNotification: boolean }> {
-    return this.makeRequest(`/fighters/${fighterId}/notification-preferences`, {
-      method: 'PATCH',
-      body: JSON.stringify(preferences),
-    });
-  }
-
-  async followFight(fightId: string): Promise<{ message: string; isFollowing: boolean }> {
-    return this.makeRequest(`/fights/${fightId}/follow`, {
-      method: 'POST',
-    });
-  }
-
-  async unfollowFight(fightId: string): Promise<{ message: string; isFollowing: boolean }> {
-    return this.makeRequest(`/fights/${fightId}/unfollow`, {
-      method: 'DELETE',
-    });
-  }
-
   // Crew-related API methods
   async getCrews(): Promise<{ crews: any[] }> {
     return this.makeRequest('/crews');
@@ -745,6 +723,16 @@ class ApiService {
     });
   }
 
+  async toggleFightNotification(
+    fightId: string,
+    enabled: boolean
+  ): Promise<{ message: string; willBeNotified: boolean; affectedMatches: number }> {
+    return this.makeRequest(`/fights/${fightId}/notification`, {
+      method: 'PATCH',
+      body: JSON.stringify({ enabled }),
+    });
+  }
+
   async updateFighterNotificationPreferences(
     fighterId: string,
     preferences: { startOfFightNotification?: boolean; dayBeforeNotification?: boolean }
@@ -1007,7 +995,7 @@ class ApiService {
     });
   }
 
-  async getPreFightComments(fightId: string): Promise<{
+  async getFightPreFightComments(fightId: string): Promise<{
     comments: Array<{
       id: string;
       userId: string;

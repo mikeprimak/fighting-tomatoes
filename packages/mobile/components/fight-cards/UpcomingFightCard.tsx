@@ -457,7 +457,7 @@ export default function UpcomingFightCard({
 
               {/* "vs" text or bell icon - Absolutely centered */}
               <View style={styles.vsContainer}>
-                {(fight.isFollowing || fight.isFollowingFighter1 || fight.isFollowingFighter2) ? (
+                {fight.notificationReasons?.willBeNotified ? (
                   <FontAwesome name="bell" size={14} color="#F5C518" />
                 ) : (
                   <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>

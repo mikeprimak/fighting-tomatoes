@@ -41,9 +41,10 @@ model User {
   // Push Notifications
   pushToken                    String?
   notificationsEnabled         Boolean   @default(true)
-  notifyFollowedFighterFights  Boolean   @default(true)
-  notifyPreEventReport         Boolean   @default(true)
-  notifyHypedFights            Boolean   @default(true)
+  // Legacy notification fields removed - all notifications now use UserNotificationRule system
+  // notifyFollowedFighterFights removed
+  // notifyPreEventReport removed
+  // notifyHypedFights removed
 
   // Media/Professional users
   isMedia           Boolean   @default(false)
@@ -70,11 +71,12 @@ model User {
   preFightComments  PreFightComment[]
   predictions       FightPrediction[]
   followedFighters  UserFighterFollow[]
-  fightAlerts       FightAlert[]
+  // fightAlerts removed - now using UserNotificationRule system
   reviewVotes       ReviewVote[]
   preFightCommentVotes PreFightCommentVote[]
   activityLog       UserActivity[]
   notifications     UserNotification[]
+  notificationRules UserNotificationRule[]
 
   // Analytics relations
   analyticsEvents   AnalyticsEvent[]
@@ -306,7 +308,7 @@ model Fight {
   preFightComments PreFightComment[]
   predictions     FightPrediction[]
   tags            FightTag[]
-  alerts          FightAlert[]
+  // alerts removed - now using UserNotificationRule system
 
   // Crew relations
   crewMessages      CrewMessage[]
@@ -560,45 +562,88 @@ model FightTag {
 // ============== FOLLOWS & ALERTS ==============
 model UserFighterFollow {
   id        String @id @default(uuid())
-  
+
   // Relationships
   userId    String
   user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   fighterId String
   fighter   Fighter @relation(fields: [fighterId], references: [id], onDelete: Cascade)
-  
-  // Notification preferences
-  dayBeforeNotification Boolean @default(true)
-  startOfFightNotification Boolean @default(false)
-  
+
+  // Notification preferences removed - now managed via UserNotificationRule
+  // dayBeforeNotification removed
+  // startOfFightNotification removed
+
   // Timestamps
   createdAt DateTime @default(now())
-  
+
   @@unique([userId, fighterId])
   @@map("user_fighter_follows")
 }
 
-model FightAlert {
+// FightAlert table removed - migrated to UserNotificationRule system
+
+// ============== NOTIFICATION RULES ==============
+// Extensible rule-based notification system
+model UserNotificationRule {
   id        String @id @default(uuid())
-  
+
   // Relationships
   userId    String
   user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fightId   String
-  fight     Fight  @relation(fields: [fightId], references: [id], onDelete: Cascade)
-  
-  // Alert timing
-  alertTime DateTime
-  
-  // Status
-  isSent    Boolean @default(false)
-  isActive  Boolean @default(true)
-  
+
+  // Rule metadata
+  name      String    // User-friendly name: "High hype fights", "UFC Saturdays", etc.
+  isActive  Boolean   @default(true)
+  priority  Int       @default(0) // Higher priority rules evaluated first
+
+  // Rule conditions (JSON for maximum flexibility)
+  // Examples:
+  // { "minHype": 8.5 }
+  // { "promotions": ["UFC"], "daysOfWeek": [6] }
+  // { "fighterIds": ["uuid1", "uuid2"] }
+  // { "weightClasses": ["LIGHTWEIGHT"], "isChampionship": true }
+  // { "minHype": 9, "promotions": ["UFC"], "notDaysOfWeek": [6] }
+  conditions Json
+
+  // Notification settings
+  notifyMinutesBefore Int @default(15)
+
   // Timestamps
   createdAt DateTime @default(now())
-  
-  @@unique([userId, fightId])
-  @@map("fight_alerts")
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  matches   FightNotificationMatch[]
+
+  @@map("user_notification_rules")
+}
+
+// Tracks which fights match which rules for each user
+// This is computed/cached and can be refreshed periodically
+model FightNotificationMatch {
+  id        String @id @default(uuid())
+
+  // Relationships
+  userId    String
+  fightId   String
+  ruleId    String
+  rule      UserNotificationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  // Status
+  isActive  Boolean @default(true)  // User can disable per-fight without deleting rule
+  notificationSent Boolean @default(false)
+
+  // Metadata
+  matchedAt DateTime @default(now()) // When the rule matched
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, fightId, ruleId])
+  @@index([userId, fightId])
+  @@index([fightId, isActive])
+  @@map("fight_notification_matches")
 }
 
 // ============== GAMIFICATION ==============

@@ -7,6 +7,7 @@ import importRoutes from './import';
 import liveEventsRoutes from './liveEvents';
 import mockLiveEventsRoutes from './mockLiveEvents';
 import notificationsRoutes from './notifications';
+import notificationRulesRoutes from './notificationRules';
 import newsRoutes from './news';
 import communityRoutes from './community';
 import searchRoutes from './search';
@@ -431,15 +432,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Get user's alerts
-      const alerts = await fastify.prisma.fightAlert.findMany({
-        where: {
-          userId: user.id,
-          fightId: { in: fightIds },
-          isActive: true,
-        },
-      });
-
       // Calculate average hype
       const hypeLevels = Array.from(allPredictionsByFight.values())
         .map(p => p.hype)
@@ -470,7 +462,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
         totalFights: event.fights.length,
         predictionsCount: allPredictionsByFight.size,
         ratingsCount: ratings.length,
-        alertsCount: alerts.length,
         averageHype: avgHype ? Number(avgHype.toFixed(1)) : null,
         topHypedFights: predictionsWithFights,
       };
@@ -1010,15 +1001,17 @@ export async function registerRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Create follow with notifications enabled by default
+      // Create follow (for UI display)
       await fastify.prisma.userFighterFollow.create({
         data: {
           userId: user.id,
           fighterId: id,
-          dayBeforeNotification: true,
-          startOfFightNotification: true, // Enable start-of-fight notifications by default
         },
       });
+
+      // Create notification rule for this fighter (auto-enabled)
+      const { manageFighterNotificationRule } = await import('../services/notificationRuleHelpers');
+      await manageFighterNotificationRule(user.id, id, true);
 
       return reply.code(200).send({
         message: `Now following ${fighter.firstName} ${fighter.lastName}`,
@@ -1083,6 +1076,10 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       });
 
+      // Deactivate notification rule for this fighter
+      const { manageFighterNotificationRule } = await import('../services/notificationRuleHelpers');
+      await manageFighterNotificationRule(user.id, id, false);
+
       return reply.code(200).send({
         message: 'Unfollowed fighter',
         isFollowing: false,
@@ -1120,8 +1117,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   draws: { type: 'integer' },
                   weightClass: { type: 'string' },
                   profileImage: { type: 'string' },
-                  startOfFightNotification: { type: 'boolean' },
-                  dayBeforeNotification: { type: 'boolean' },
                 },
               },
             },
@@ -1166,8 +1161,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       const fighters = followedFighters
         .map((follow: any) => ({
           ...follow.fighter,
-          startOfFightNotification: follow.startOfFightNotification,
-          dayBeforeNotification: follow.dayBeforeNotification,
+          // Notification preferences removed - now managed via notification rules
         }))
         .sort((a: any, b: any) => a.lastName.localeCompare(b.lastName));
 
@@ -1196,7 +1190,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
         type: 'object',
         properties: {
           startOfFightNotification: { type: 'boolean' },
-          dayBeforeNotification: { type: 'boolean' },
         },
       },
       response: {
@@ -1205,7 +1198,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
           properties: {
             message: { type: 'string' },
             startOfFightNotification: { type: 'boolean' },
-            dayBeforeNotification: { type: 'boolean' },
           },
         },
         404: {
@@ -1227,7 +1219,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
     preHandler: authenticateUser,
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const { startOfFightNotification, dayBeforeNotification } = request.body as { startOfFightNotification?: boolean; dayBeforeNotification?: boolean };
+    const { startOfFightNotification } = request.body as { startOfFightNotification?: boolean };
     const user = (request as any).user;
 
     try {
@@ -1248,24 +1240,15 @@ export async function registerRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Update preferences
-      const updated = await fastify.prisma.userFighterFollow.update({
-        where: {
-          userId_fighterId: {
-            userId: user.id,
-            fighterId: id,
-          },
-        },
-        data: {
-          ...(startOfFightNotification !== undefined && { startOfFightNotification }),
-          ...(dayBeforeNotification !== undefined && { dayBeforeNotification }),
-        },
-      });
+      // Update notification rule for this fighter
+      if (startOfFightNotification !== undefined) {
+        const { manageFighterNotificationRule } = await import('../services/notificationRuleHelpers');
+        await manageFighterNotificationRule(user.id, id, startOfFightNotification);
+      }
 
       return reply.code(200).send({
         message: 'Notification preferences updated',
-        startOfFightNotification: updated.startOfFightNotification,
-        dayBeforeNotification: updated.dayBeforeNotification,
+        startOfFightNotification: startOfFightNotification ?? false,
       });
     } catch (error: any) {
       request.log.error('Update fighter notification preferences error:', error);
@@ -1338,36 +1321,21 @@ export async function registerRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Check if already following
-      const existingAlert = await fastify.prisma.fightAlert.findUnique({
-        where: {
-          userId_fightId: {
-            userId: user.id,
-            fightId: id,
-          },
-        },
-      });
+      // Use the new notification rule system
+      const { manageManualFightRule, hasManualFightRule } = await import('../services/notificationRuleHelpers');
 
-      if (existingAlert) {
+      // Check if already following
+      const isAlreadyFollowing = await hasManualFightRule(user.id, id);
+
+      if (isAlreadyFollowing) {
         return reply.code(200).send({
           message: 'Already following this fight',
           isFollowing: true,
         });
       }
 
-      // Create alert - set alert time to 15 minutes before event date
-      const alertTime = new Date(fight.event.date);
-      alertTime.setMinutes(alertTime.getMinutes() - 15);
-
-      await fastify.prisma.fightAlert.create({
-        data: {
-          userId: user.id,
-          fightId: id,
-          alertTime,
-          isSent: false,
-          isActive: true,
-        },
-      });
+      // Create notification rule for this fight
+      await manageManualFightRule(user.id, id, true);
 
       return reply.code(200).send({
         message: 'Now following this fight',
@@ -1424,13 +1392,11 @@ export async function registerRoutes(fastify: FastifyInstance) {
     const user = (request as any).user;
 
     try {
-      // Delete alert if it exists
-      await fastify.prisma.fightAlert.deleteMany({
-        where: {
-          userId: user.id,
-          fightId: id,
-        },
-      });
+      // Use the new notification rule system
+      const { manageManualFightRule } = await import('../services/notificationRuleHelpers');
+
+      // Deactivate the notification rule for this fight
+      await manageManualFightRule(user.id, id, false);
 
       return reply.code(200).send({
         message: 'Unfollowed fight',
@@ -1438,6 +1404,77 @@ export async function registerRoutes(fastify: FastifyInstance) {
       });
     } catch (error: any) {
       request.log.error('Unfollow fight error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Toggle fight notification (per-fight override)
+  fastify.patch('/api/fights/:id/notification', {
+    schema: {
+      description: 'Toggle notification for a specific fight (override for all notification rules)',
+      tags: ['fights'],
+      params: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+        },
+        required: ['id'],
+      },
+      body: {
+        type: 'object',
+        properties: {
+          enabled: { type: 'boolean' },
+        },
+        required: ['enabled'],
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+            willBeNotified: { type: 'boolean' },
+            affectedMatches: { type: 'number' },
+          },
+        },
+        401: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        500: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+    preHandler: authenticateUser,
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { enabled } = request.body as { enabled: boolean };
+    const user = (request as any).user;
+
+    try {
+      const { toggleFightNotificationOverride } = await import('../services/notificationRuleHelpers');
+
+      const result = await toggleFightNotificationOverride(user.id, id, enabled);
+
+      return reply.code(200).send({
+        message: enabled
+          ? 'Notification enabled for this fight'
+          : 'Notification disabled for this fight',
+        willBeNotified: result.willBeNotified,
+        affectedMatches: result.affectedMatches,
+      });
+    } catch (error: any) {
+      request.log.error('Toggle fight notification error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1477,6 +1514,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Register notifications routes under /api/notifications prefix
   await fastify.register(notificationsRoutes, { prefix: '/api/notifications' });
+
+  // Register notification rules routes under /api/notification-rules prefix
+  await fastify.register(notificationRulesRoutes, { prefix: '/api/notification-rules' });
 
   // Register news routes under /api prefix
   await fastify.register(newsRoutes, { prefix: '/api' });

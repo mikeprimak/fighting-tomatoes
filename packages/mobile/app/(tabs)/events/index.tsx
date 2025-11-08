@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { FightDisplayCard, EventBannerCard } from '../../../components';
@@ -53,6 +53,14 @@ export default function UpcomingEventsScreen() {
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
+
+  // Refetch fight data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Invalidate all fight-related queries to trigger refetch
+      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+    }, [queryClient])
+  );
 
   // Fetch all events
   const { data: eventsData, isLoading: eventsLoading } = useQuery({
@@ -278,6 +286,8 @@ function EventSection({
       response.fights.sort((a: any, b: any) => b.orderOnCard - a.orderOnCard);
       return response;
     },
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const fights = fightsData?.fights || [];

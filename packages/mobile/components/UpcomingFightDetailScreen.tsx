@@ -116,6 +116,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const [toastMessage, setToastMessage] = useState<string>('');
   const [localFighter1Notification, setLocalFighter1Notification] = useState(fight.isFollowingFighter1);
   const [localFighter2Notification, setLocalFighter2Notification] = useState(fight.isFollowingFighter2);
+  const [localNotificationReasons, setLocalNotificationReasons] = useState(fight.notificationReasons);
 
   // Snapshot the fight data when menu opens to prevent re-renders during toggles
   const [menuFightSnapshot, setMenuFightSnapshot] = useState(fight);
@@ -150,7 +151,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   // Fetch pre-fight comments
   const { data: preFightCommentsData } = useQuery({
     queryKey: ['preFightComments', fight.id],
-    queryFn: () => apiService.getPreFightComments(fight.id),
+    queryFn: () => apiService.getFightPreFightComments(fight.id),
     enabled: !!fight.id,
     staleTime: 30 * 1000,
   });
@@ -167,7 +168,8 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
     setIsFollowing(fight.isFollowing ?? false);
     setLocalFighter1Notification(fight.isFollowingFighter1);
     setLocalFighter2Notification(fight.isFollowingFighter2);
-  }, [fight.isFollowing, fight.isFollowingFighter1, fight.isFollowingFighter2]);
+    setLocalNotificationReasons(fight.notificationReasons);
+  }, [fight.isFollowing, fight.isFollowingFighter1, fight.isFollowingFighter2, fight.notificationReasons]);
 
   // HARDCODED TEST DATA - Remove this when done testing
   const testPredictionStats = {
@@ -524,32 +526,71 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
   // Toggle fight notification mutation
   const toggleNotificationMutation = useMutation({
-    mutationFn: async (shouldFollow: boolean) => {
-      if (shouldFollow) {
-        return apiService.followFight(fight.id);
-      } else {
-        return apiService.unfollowFight(fight.id);
-      }
+    mutationFn: async (enabled: boolean) => {
+      return apiService.toggleFightNotification(fight.id, enabled);
     },
-    onMutate: async (shouldFollow) => {
-      // Optimistically update local state immediately for smooth UI
-      setIsFollowing(shouldFollow);
+    onMutate: async (enabled) => {
+      // Optimistically update local state
+      if (enabled) {
+        // When enabling, create a "manual" notification reason
+        setLocalNotificationReasons({
+          willBeNotified: true,
+          reasons: [
+            ...(localNotificationReasons?.reasons || []).filter(r => r.isActive),
+            {
+              type: 'manual' as const,
+              source: 'Manual Fight Follow',
+              isActive: true,
+            },
+          ],
+        });
+      } else {
+        // When disabling, mark all reasons as inactive
+        setLocalNotificationReasons({
+          willBeNotified: false,
+          reasons: (localNotificationReasons?.reasons || []).map(r => ({
+            ...r,
+            isActive: false,
+          })),
+        });
+      }
+      // Update the menu snapshot
+      setMenuFightSnapshot(prev => ({
+        ...prev,
+        notificationReasons: enabled
+          ? {
+              willBeNotified: true,
+              reasons: [
+                ...(prev.notificationReasons?.reasons || []).filter(r => r.isActive),
+                {
+                  type: 'manual' as const,
+                  source: 'Manual Fight Follow',
+                  isActive: true,
+                },
+              ],
+            }
+          : {
+              willBeNotified: false,
+              reasons: (prev.notificationReasons?.reasons || []).map(r => ({
+                ...r,
+                isActive: false,
+              })),
+            },
+      }));
     },
     onSuccess: (data) => {
-      setIsFollowing(data.isFollowing);
       // Don't show toast - user is toggling in the menu and can see the switch state
-      // Only invalidate queries if menu is closed to prevent jank
-      if (!detailsMenuVisible) {
-        queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
-        queryClient.invalidateQueries({ queryKey: ['fights'] });
-        queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
-        queryClient.invalidateQueries({ queryKey: ['eventFights'] });
-        queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
-      }
+      // Invalidate queries to refresh notification status
+      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fights'] });
+      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
     },
-    onError: (error: any) => {
+    onError: (error: any, enabled) => {
       // Revert optimistic update on error
-      setIsFollowing(fight.isFollowing ?? false);
+      setLocalNotificationReasons(fight.notificationReasons);
+      setMenuFightSnapshot(fight);
       showError(error?.error || 'Failed to update notification preference');
     },
   });
@@ -688,13 +729,16 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             Who do you think will win?
           </Text>
           <View style={styles.headerIcons}>
-            {(isFollowing || fight.isFollowingFighter1 || fight.isFollowingFighter2) && (
+            {(localNotificationReasons?.willBeNotified) && (
               <FontAwesome name="bell" size={18} color={colors.tint} style={{ marginRight: 16 }} />
             )}
             <TouchableOpacity
               onPress={() => {
                 // Snapshot fight data when opening menu to prevent re-renders
-                setMenuFightSnapshot(fight);
+                setMenuFightSnapshot({
+                  ...fight,
+                  notificationReasons: localNotificationReasons,
+                });
                 setDetailsMenuVisible(true);
               }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -1042,6 +1086,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
           ...menuFightSnapshot,
           isFollowingFighter1: localFighter1Notification,
           isFollowingFighter2: localFighter2Notification,
+          notificationReasons: localNotificationReasons,
         }}
         visible={detailsMenuVisible}
         onClose={() => {
