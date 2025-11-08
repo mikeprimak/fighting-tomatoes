@@ -490,6 +490,13 @@ const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
             ? path.join(__dirname, '../../src/services/scrapeAllUFCData.js')
             : path.join(__dirname, '../services/scrapeAllUFCData.js');
 
+          console.log('📂 Scraper path info:', {
+            __dirname,
+            isDist,
+            scraperPath,
+            cwd: path.join(__dirname, isDist ? '../../../' : '../../'),
+          });
+
           const command = `node ${scraperPath}`;
 
           exec(command, {
@@ -497,16 +504,22 @@ const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
             env: { ...process.env, SCRAPER_MODE: mode }
           }, (error: any, stdout: any, stderr: any) => {
             if (error) {
-              console.error('❌ Scraper error:', error.message);
+              console.error('❌ Scraper process error:', {
+                message: error.message,
+                code: error.code,
+                killed: error.killed,
+                signal: error.signal,
+              });
               console.error('stderr:', stderr);
+              console.error('stdout:', stdout);
               return;
             }
 
             console.log('✅ Scraper completed successfully!');
-            console.log(stdout);
+            console.log('stdout:', stdout);
 
             if (stderr) {
-              console.log('Scraper warnings:', stderr);
+              console.log('Scraper warnings/logs:', stderr);
             }
           });
         } catch (error: any) {
