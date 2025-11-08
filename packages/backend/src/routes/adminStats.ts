@@ -484,11 +484,16 @@ const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
           const { exec } = require('child_process');
           const path = require('path');
 
-          const scraperPath = path.join(__dirname, '../services/scrapeAllUFCData.js');
-          const command = `SCRAPER_MODE=${mode} node ${scraperPath}`;
+          // In production (dist), go up to packages/backend/src, in dev use relative path
+          const isDist = __dirname.includes('/dist/') || __dirname.includes('\\dist\\');
+          const scraperPath = isDist
+            ? path.join(__dirname, '../../src/services/scrapeAllUFCData.js')
+            : path.join(__dirname, '../services/scrapeAllUFCData.js');
+
+          const command = `node ${scraperPath}`;
 
           exec(command, {
-            cwd: path.join(__dirname, '../../'),
+            cwd: path.join(__dirname, isDist ? '../../../' : '../../'),
             env: { ...process.env, SCRAPER_MODE: mode }
           }, (error: any, stdout: any, stderr: any) => {
             if (error) {
