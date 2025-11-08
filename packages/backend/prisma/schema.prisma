@@ -210,8 +210,8 @@ model Event {
   prelimChannel     String?
   prelimLink        String?
 
-  // UFC.com URL for live tracking
-  ufcUrl            String?   // e.g., "https://www.ufc.com/event/ufc-320"
+  // UFC.com URL for live tracking (now used as unique identifier)
+  ufcUrl            String    @unique // e.g., "https://www.ufc.com/event/ufc-320"
 
   // Stats
   averageRating     Float     @default(0)
@@ -226,11 +226,10 @@ model Event {
   // Timestamps
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  
+
   // Relations
   fights            Fight[]
 
-  @@unique([name, date])
   @@map("events")
 }
 
