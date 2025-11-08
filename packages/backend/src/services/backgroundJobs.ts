@@ -48,20 +48,21 @@ export function startBackgroundJobs(): void {
     '0 23 * * *',   // 7pm EDT = 11pm UTC (Note: during EST, this will be off by 1 hour)
   ];
 
-  // ENABLED: News scraper optimized for 512MB RAM (200-300MB peak usage)
-  newsScraperTimes.forEach((cronTime, index) => {
-    const job = cron.schedule(cronTime, async () => {
-      console.log(`[Background Jobs] Running news scraper (schedule ${index + 1}/6)...`);
-      try {
-        await runNewsScraper();
-      } catch (error) {
-        console.error('[Background Jobs] News scraper failed:', error);
-      }
-    });
-    newsScraperJobs.push(job);
-  });
+  // DISABLED: News scraper (causes memory crashes on Render free tier when running concurrently with other scrapers)
+  // To run manually: POST /api/news/scrape
+  // newsScraperTimes.forEach((cronTime, index) => {
+  //   const job = cron.schedule(cronTime, async () => {
+  //     console.log(`[Background Jobs] Running news scraper (schedule ${index + 1}/6)...`);
+  //     try {
+  //       await runNewsScraper();
+  //     } catch (error) {
+  //       console.error('[Background Jobs] News scraper failed:', error);
+  //     }
+  //   });
+  //   newsScraperJobs.push(job);
+  // });
 
-  console.log(`[Background Jobs] News scraper ENABLED - ${newsScraperTimes.length} daily schedules (${newsScraperTimes.join(', ')})`);
+  console.log(`[Background Jobs] News scraper DISABLED (memory constraints - run manually via API)`);
 
   // ENABLED: Live event scheduler - checks every 5 minutes for events to track
   liveEventSchedulerJob = cron.schedule('*/5 * * * *', async () => {

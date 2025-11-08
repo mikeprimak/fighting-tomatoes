@@ -19,7 +19,7 @@ const path = require('path');
 
 // Configuration based on mode
 const SCRAPER_MODE = process.env.SCRAPER_MODE || 'manual';
-const OVERALL_TIMEOUT = parseInt(process.env.SCRAPER_TIMEOUT || '600000', 10); // 10 minutes default
+const OVERALL_TIMEOUT = parseInt(process.env.SCRAPER_TIMEOUT || '1500000', 10); // 25 minutes default
 
 // Delays in milliseconds
 const DELAYS = {
