@@ -278,18 +278,10 @@ async function importEvents(
       }
     }
 
-    // Construct banner image URL from localImagePath
-    // Use BASE_URL from environment or default to network IP on port 3001
-    const baseUrl = process.env.BASE_URL || 'http://10.0.0.53:3001';
-    const bannerImageUrl = (eventData as any).localImagePath
-      ? `${baseUrl}${(eventData as any).localImagePath}`
-      : eventData.eventImageUrl;
+    // Use original UFC.com image URL (no local storage on Render free tier)
+    const bannerImageUrl = eventData.eventImageUrl;
 
-    console.log(`  Banner image for ${eventData.eventName}:`, JSON.stringify({
-      localImagePath: (eventData as any).localImagePath,
-      eventImageUrl: eventData.eventImageUrl,
-      finalBannerUrl: bannerImageUrl
-    }));
+    console.log(`  Banner image for ${eventData.eventName}: ${bannerImageUrl}`);
 
     // Upsert event using ufcUrl unique constraint (most reliable identifier)
     const event = await prisma.event.upsert({
