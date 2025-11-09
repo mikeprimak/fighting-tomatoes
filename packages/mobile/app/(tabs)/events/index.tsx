@@ -66,10 +66,15 @@ export default function UpcomingEventsScreen() {
   const { data: eventsData, isLoading: eventsLoading } = useQuery({
     queryKey: ['events'],
     queryFn: () => apiService.getEvents(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 seconds - refresh frequently for live status
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 
   const allEvents = eventsData?.events || [];
+
+  // Check if any event is live
+  const hasLiveEvent = allEvents.some((event: Event) => event.hasStarted && !event.isComplete);
 
   // Filter and sort upcoming events
   const upcomingEvents = allEvents
@@ -113,11 +118,11 @@ export default function UpcomingEventsScreen() {
     const diffTime = eventCalendarDate.getTime() - todayCalendarDate.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-    // If it's today, show hours remaining
+    // If it's today, show hours remaining or "TODAY"
     if (diffDays === 0) {
       const hoursUntil = Math.floor((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60));
       if (hoursUntil <= 0) {
-        return 'STARTING SOON';
+        return 'TODAY';
       }
       if (hoursUntil === 1) {
         return 'IN 1 HOUR';
@@ -288,6 +293,9 @@ function EventSection({
     },
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
+    // Poll every 15 seconds when event is live
+    refetchInterval: isLive ? 15000 : false,
+    refetchIntervalInBackground: false, // Stop polling when app is backgrounded
   });
 
   const fights = fightsData?.fights || [];
@@ -317,15 +325,47 @@ function EventSection({
 
   const styles = createStyles(colors);
 
+  // Determine earliest start time for countdown
+  const getEarliestStartTime = () => {
+    if (event.earlyPrelimStartTime) return event.earlyPrelimStartTime;
+    if (event.prelimStartTime) return event.prelimStartTime;
+    if (event.mainStartTime) return event.mainStartTime;
+    return event.date; // Fallback to event date
+  };
+
+  // Check if event should be considered live based on time
+  const earliestTime = getEarliestStartTime();
+  const now = new Date();
+  const startTime = new Date(earliestTime);
+  const isEventLive = (now >= startTime && !event.isComplete) || isLive;
+
+  // Debug logging for Bonfim event
+  if (event.name.includes('Bonfim')) {
+    console.log('=== BONFIM EVENT DEBUG ===');
+    console.log('Event name:', event.name);
+    console.log('event.hasStarted:', event.hasStarted);
+    console.log('event.isComplete:', event.isComplete);
+    console.log('isLive (from line 275):', isLive);
+    console.log('earliestTime:', earliestTime);
+    console.log('now:', now.toISOString());
+    console.log('startTime:', startTime.toISOString());
+    console.log('now >= startTime:', now >= startTime);
+    console.log('isEventLive:', isEventLive);
+    console.log('formatTimeUntil result:', formatTimeUntil(earliestTime));
+    console.log('event.prelimStartTime:', event.prelimStartTime);
+    console.log('event.mainStartTime:', event.mainStartTime);
+    console.log('event.date:', event.date);
+  }
+
   return (
     <View style={styles.eventSection}>
       {/* Event Banner and Info */}
       <EventBannerCard
         event={event}
         statusBadge={{
-          text: isLive ? 'LIVE NOW' : formatTimeUntil(event.date),
-          backgroundColor: isLive ? colors.danger : '#F5C518',
-          textColor: isLive ? '#FFFFFF' : '#000000',
+          text: isEventLive ? 'LIVE NOW' : formatTimeUntil(getEarliestStartTime()),
+          backgroundColor: isEventLive ? colors.danger : '#F5C518',
+          textColor: isEventLive ? '#FFFFFF' : '#000000',
         }}
       />
 
