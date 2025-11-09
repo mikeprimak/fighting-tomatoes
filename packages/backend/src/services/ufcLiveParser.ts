@@ -232,16 +232,16 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
 
         // When a fight completes, send notifications for the NEXT fight on the card
         if (fightUpdate.isComplete === true) {
-          // Find the next fight on the card (lower orderOnCard number = earlier in the event)
-          // We want the fight with the next higher orderOnCard number
+          // Find the next fight on the card (lower orderOnCard = later in event, closer to main event)
+          // We want the fight with the next lower orderOnCard number
           prisma.fight.findFirst({
             where: {
               eventId: dbFight.eventId,
-              orderOnCard: { gt: dbFight.orderOnCard },
+              orderOnCard: { lt: dbFight.orderOnCard },
               hasStarted: false,
               isComplete: false,
             },
-            orderBy: { orderOnCard: 'asc' },
+            orderBy: { orderOnCard: 'desc' },
             include: {
               fighter1: { select: { firstName: true, lastName: true } },
               fighter2: { select: { firstName: true, lastName: true } },
