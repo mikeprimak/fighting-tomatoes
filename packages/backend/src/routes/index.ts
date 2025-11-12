@@ -15,6 +15,7 @@ import feedbackRoutes from './feedback';
 import { uploadRoutes } from './upload';
 import { adminRoutes } from './admin';
 import { authenticateUser } from '../middleware/auth';
+import { triggerDailyUFCScraper } from '../services/backgroundJobs';
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
 
 export async function registerRoutes(fastify: FastifyInstance) {
@@ -113,6 +114,26 @@ export async function registerRoutes(fastify: FastifyInstance) {
       message: 'FightCrewApp API is working!',
       timestamp: new Date().toISOString(),
     });
+  });
+
+  // Manual trigger for daily UFC scraper (for testing R2)
+  fastify.post('/api/trigger-daily-scraper', async (request, reply) => {
+    try {
+      console.log('[API] Manual trigger: Daily UFC scraper');
+      const results = await triggerDailyUFCScraper();
+
+      return reply.send({
+        success: true,
+        message: 'Daily UFC scraper completed',
+        data: results
+      });
+    } catch (error: any) {
+      console.error('[API] Daily scraper trigger failed:', error);
+      return reply.code(500).send({
+        error: 'Daily scraper failed',
+        message: error.message
+      });
+    }
   });
 
   // Events endpoint
