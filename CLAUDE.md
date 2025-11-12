@@ -67,6 +67,130 @@ curl http://localhost:3008/health
 
 ---
 
+## TODO: Next Work Session
+
+### EAS Development Build Setup (Persistent App Access)
+**Goal**: Install development build on phone for 24/7 access without local machine running
+
+**Why**: Backend is on Render (always accessible), but frontend requires local Expo server. Need persistent frontend for real-world testing during live events.
+
+**Solution**: EAS Development Build + EAS Update for OTA code pushes
+
+**Steps**:
+1. Create `packages/mobile/eas.json` with development build profile
+2. Install EAS CLI: `npm install -g eas-cli`
+3. Build development APK: `cd packages/mobile && eas build --profile development --platform android`
+4. Install APK on phone (sideload via download link from EAS)
+5. Set up EAS Update for pushing code changes
+6. Push updates with: `eas update --branch development --message "description"`
+
+**Key Config** (for eas.json):
+```json
+{
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "channel": "development"
+    }
+  }
+}
+```
+
+**Result**: App on phone fetches code from Expo servers, no local machine needed. Updates pushed in ~2 min vs 20 min full rebuild.
+
+**Notes**:
+- Already have `expo-dev-client: ^6.0.12` installed
+- Already have EAS project ID: `4a64b9f8-325e-4869-ab78-9e0674d18b32`
+- First build takes ~20 min, subsequent updates take ~2 min
+- No app store deployment needed - internal distribution only
+
+---
+
+## Recent Features
+
+### Dynamic Fight Card Management During Live Events (2025-11-12)
+**Status**: ✅ Complete - Live tracker now handles mid-event fight card changes
+
+#### Overview
+The live event tracker can now detect and handle fight card changes that occur DURING live events, including:
+- New fights added to the card
+- Fights cancelled/removed from the card
+- Fighter replacements
+- Fight order changes (via `orderOnCard` updates)
+
+#### Implementation Details
+
+**Problem**: UFC.com can update fight cards mid-event (cancellations, additions, last-minute replacements). Previous system only updated existing fights and skipped unknown ones.
+
+**Solution**: Enhanced `ufcLiveParser.ts` with three key capabilities:
+
+1. **Create New Fights** (`findOrCreateFighter` helper):
+   - When scraped fight doesn't exist in DB, find/create both fighters
+   - Creates new Fight record with correct `orderOnCard` positioning
+   - Defaults to 3 rounds, marks as active (not cancelled)
+   - Logs: `🆕 Creating new fighter: [name]`
+
+2. **Track Scraped Fights** (signature-based tracking):
+   - Creates lowercase, sorted signatures for each scraped fight (e.g., "jones|smith")
+   - Maintains `Set<string>` of all fights seen in scraped data
+   - Used for cancellation detection
+
+3. **Detect Cancellations** (post-processing loop):
+   - After processing all scraped fights, checks DB fights not in scraped set
+   - Only marks as cancelled if event has started (avoids false positives)
+   - Sets `isCancelled: true`, keeps `isComplete: false`
+   - Logs: `❌ Marking fight as CANCELLED: [fighters]`
+
+#### Key Features
+
+**Fighter Name Parsing**:
+- Handles multi-part names ("Jon 'Bones' Jones" → firstName: "Jon 'Bones'", lastName: "Jones")
+- Case-insensitive matching via Prisma `mode: 'insensitive'`
+- Creates fighters with default stats (0-0-0 record, MALE gender, isActive: true)
+
+**Fight Matching**:
+- Uses last names only (more reliable than full names)
+- Checks both orderings (Jones vs Smith = Smith vs Jones)
+- Prevents duplicate fight creation
+
+**Cancellation Safety**:
+- Only triggers if `event.hasStarted === true`
+- Skips fights already complete or already cancelled
+- Logs informational message if event hasn't started yet
+
+#### Files Modified
+- `packages/backend/src/services/ufcLiveParser.ts`:
+  - Added `findOrCreateFighter()` helper (lines 108-154)
+  - Enhanced `parseLiveEventData()` fight processing loop (lines 252-318)
+  - Added cancellation detection section (lines 434-479)
+  - Added comprehensive comments explaining logic
+
+#### Example Scenarios
+
+**Scenario 1: Fight Cancelled During Event**
+- Fight exists in DB: "Jon Jones vs Stipe Miocic"
+- Scraped data: Fight missing (cancelled)
+- Result: `isCancelled: true` set in DB, logged as cancelled
+
+**Scenario 2: Last-Minute Replacement Fight Added**
+- Scraped data: New fight "Israel Adesanya vs Alex Pereira"
+- DB: Fight doesn't exist
+- Result: Both fighters created (if needed), new Fight record created with next available `orderOnCard`
+
+**Scenario 3: Fight Order Changed**
+- Scraped data: Fight moved from prelims to main card (`order: 3` → `order: 1`)
+- Result: `orderOnCard` updated via existing update logic
+
+#### Technical Notes
+- Uses Prisma's `findFirst` with case-insensitive search for fighter lookup
+- Creates fighters with `@@unique([firstName, lastName])` constraint (schema enforces uniqueness)
+- New fights default to 3 rounds (title fights would need manual update or scraper enhancement)
+- Gender defaults to MALE (would need additional scraper data to determine accurately)
+
+---
+
 ## Recent Features
 
 ### Notification System UI Fixes (2025-11-08)
@@ -454,9 +578,23 @@ See `CLAUDE-ARCHIVE.md` for detailed debugging examples and procedures.
 
 ---
 
+## Code Quality Standards (CRITICAL)
+
+**Code Comments**: ALL code must include descriptive comments
+- **Function headers**: Brief description of what the function does, parameters, and return value
+- **Complex logic**: Explain WHY, not just WHAT (e.g., "// Wait 5 seconds after server starts to avoid race conditions")
+- **Section markers**: Use comment headers to separate logical sections (e.g., "// ===== HELPER FUNCTIONS =====")
+- **Inline comments**: Clarify non-obvious logic, edge cases, and business rules
+
+**Commit Process**:
+1. Update CLAUDE.md with feature notes/changes FIRST
+2. Commit both code changes AND documentation together
+3. Use descriptive commit messages
+
 ## Important Reminders
 - Do exactly what's asked, nothing more
 - ALWAYS prefer editing existing files over creating new ones
 - NEVER proactively create docs unless requested
 - **Update CLAUDE.md first, then commit both code and docs together**
 - FOLLOW DEBUGGING PROTOCOL - Don't skip to random fixes
+- **ADD COMMENTS to all code** as described in Code Quality Standards

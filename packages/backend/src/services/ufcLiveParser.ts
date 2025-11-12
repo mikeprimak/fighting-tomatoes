@@ -81,6 +81,11 @@ async function findEventByName(eventName: string) {
 
 /**
  * Find fight by fighter names
+ * Matches fights using last names (more reliable than full names)
+ * @param fights - Array of fights to search
+ * @param fighter1Name - Full name of first fighter (e.g., "Jon Jones")
+ * @param fighter2Name - Full name of second fighter
+ * @returns Matching fight or undefined
  */
 function findFightByFighters(fights: any[], fighter1Name: string, fighter2Name: string) {
   const normalize = (name: string) => name.toLowerCase().trim();
@@ -92,11 +97,60 @@ function findFightByFighters(fights: any[], fighter1Name: string, fighter2Name: 
     const fighter2Last = normalize(fighter2Name).split(' ').pop() || '';
 
     // Match by last names (more reliable than full names)
+    // Check both orderings since UFC.com might list fighters in either order
     return (
       (f1LastName === fighter1Last && f2LastName === fighter2Last) ||
       (f1LastName === fighter2Last && f2LastName === fighter1Last)
     );
   });
+}
+
+/**
+ * Find or create a fighter by name
+ * Searches for fighter by last name, creates if not found
+ * @param fullName - Full name (e.g., "Jon Jones")
+ * @returns Fighter record
+ */
+async function findOrCreateFighter(fullName: string): Promise<any> {
+  const normalize = (name: string) => name.trim();
+  const nameParts = normalize(fullName).split(' ');
+
+  // Handle names with multiple parts (e.g., "Charles Oliveira", "Jon 'Bones' Jones")
+  // Assume last word is last name, everything before is first name
+  const lastName = nameParts.pop() || '';
+  const firstName = nameParts.join(' ');
+
+  if (!lastName || !firstName) {
+    throw new Error(`Cannot parse fighter name: ${fullName}`);
+  }
+
+  // Try to find existing fighter by first + last name
+  let fighter = await prisma.fighter.findFirst({
+    where: {
+      firstName: { equals: firstName, mode: 'insensitive' },
+      lastName: { equals: lastName, mode: 'insensitive' }
+    }
+  });
+
+  // If not found, create a new fighter record
+  if (!fighter) {
+    console.log(`  🆕 Creating new fighter: ${firstName} ${lastName}`);
+
+    fighter = await prisma.fighter.create({
+      data: {
+        firstName,
+        lastName,
+        gender: 'MALE', // Default, would need more info to determine accurately
+        isActive: true,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        noContests: 0
+      }
+    });
+  }
+
+  return fighter;
 }
 
 /**
@@ -195,10 +249,21 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
       console.log(`  💾 Event updated`);
     }
 
-    // Update fights
+    // ============== FIGHT PROCESSING ==============
+
+    // Track which fights from scraped data we've seen
+    const scrapedFightSignatures = new Set<string>();
+
     console.log(`  🔍 Processing ${liveData.fights.length} fight updates...`);
     for (const fightUpdate of liveData.fights) {
       console.log(`  🔎 Looking for fight: ${fightUpdate.fighterAName} vs ${fightUpdate.fighterBName} (hasStarted: ${fightUpdate.hasStarted}, isComplete: ${fightUpdate.isComplete})`);
+
+      // Create a signature to track which fights we've seen in the scraped data
+      const fightSignature = [fightUpdate.fighterAName, fightUpdate.fighterBName]
+        .map(n => n.toLowerCase().trim())
+        .sort()
+        .join('|');
+      scrapedFightSignatures.add(fightSignature);
 
       const dbFight = findFightByFighters(
         event.fights,
@@ -206,10 +271,50 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         fightUpdate.fighterBName
       );
 
+      // If fight not found in database, it's a new fight added during the event
       if (!dbFight) {
         console.warn(`  ⚠ Fight not found in DB: ${fightUpdate.fighterAName} vs ${fightUpdate.fighterBName}`);
-        console.warn(`  Available fights in DB: ${event.fights.map(f => `${f.fighter1.lastName} vs ${f.fighter2.lastName}`).join(', ')}`);
-        continue;
+        console.log(`  🆕 Creating new fight during live event...`);
+
+        try {
+          // Find or create both fighters
+          const fighter1 = await findOrCreateFighter(fightUpdate.fighterAName);
+          const fighter2 = await findOrCreateFighter(fightUpdate.fighterBName);
+
+          // Determine orderOnCard - if provided use it, otherwise put at end (highest number)
+          const maxOrder = Math.max(...event.fights.map(f => f.orderOnCard), 0);
+          const orderOnCard = fightUpdate.order ?? (maxOrder + 1);
+
+          // Create the fight
+          const newFight = await prisma.fight.create({
+            data: {
+              eventId: event.id,
+              fighter1Id: fighter1.id,
+              fighter2Id: fighter2.id,
+              orderOnCard,
+              hasStarted: fightUpdate.hasStarted ?? false,
+              isComplete: fightUpdate.isComplete ?? false,
+              currentRound: fightUpdate.currentRound ?? null,
+              completedRounds: fightUpdate.completedRounds ?? null,
+              scheduledRounds: 3, // Default to 3 rounds
+            }
+          });
+
+          console.log(`  ✅ Created new fight: ${fighter1.lastName} vs ${fighter2.lastName} (orderOnCard: ${orderOnCard})`);
+
+          // Reload event fights to include the new fight
+          event.fights.push({
+            ...newFight,
+            fighter1,
+            fighter2
+          });
+
+          fightsUpdated++;
+          continue; // Skip to next fight
+        } catch (error: any) {
+          console.error(`  ❌ Failed to create new fight:`, error.message);
+          continue;
+        }
       }
 
       console.log(`  ✓ Found DB fight: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (DB hasStarted: ${dbFight.hasStarted}, DB isComplete: ${dbFight.isComplete})`);
@@ -326,7 +431,52 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
       }
     }
 
-    console.log(`  ✅ Parser complete: ${fightsUpdated} fights updated\n`);
+    // ============== CANCELLATION DETECTION ==============
+    // Check for fights in DB that were NOT in the scraped data (possibly cancelled)
+
+    console.log(`  🔍 Checking for cancelled fights...`);
+    let cancelledCount = 0;
+
+    for (const dbFight of event.fights) {
+      // Skip fights that are already complete or already marked as cancelled
+      if (dbFight.isComplete || dbFight.isCancelled) {
+        continue;
+      }
+
+      // Create signature for this DB fight
+      const dbFightSignature = [dbFight.fighter1.lastName, dbFight.fighter2.lastName]
+        .map(n => n.toLowerCase().trim())
+        .sort()
+        .join('|');
+
+      // If this fight wasn't in the scraped data, it might be cancelled
+      if (!scrapedFightSignatures.has(dbFightSignature)) {
+        console.log(`  ⚠️  Fight missing from scraped data: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
+
+        // Only mark as cancelled if event has started (to avoid false positives before event begins)
+        if (event.hasStarted) {
+          console.log(`  ❌ Marking fight as CANCELLED: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
+
+          await prisma.fight.update({
+            where: { id: dbFight.id },
+            data: {
+              isCancelled: true,
+              // Don't mark as complete - cancelled fights stay incomplete
+            }
+          });
+
+          cancelledCount++;
+        } else {
+          console.log(`  ℹ️  Event hasn't started yet, not marking as cancelled (might be missing from preliminary data)`);
+        }
+      }
+    }
+
+    if (cancelledCount > 0) {
+      console.log(`  ⚠️  Marked ${cancelledCount} fights as cancelled`);
+    }
+
+    console.log(`  ✅ Parser complete: ${fightsUpdated} fights updated, ${cancelledCount} fights cancelled\n`);
 
   } catch (error) {
     console.error('  ❌ Parser error:', error);
