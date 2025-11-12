@@ -60,12 +60,12 @@ export async function runDailyUFCScraper(): Promise<DailyScraperResults> {
     const env = {
       ...process.env,
       SCRAPER_MODE: 'automated',
-      SCRAPER_TIMEOUT: '900000' // 15 minutes
+      SCRAPER_TIMEOUT: '1500000' // 25 minutes
     };
 
     const { stdout, stderr } = await execAsync(`node "${scraperPath}"`, {
       env,
-      timeout: 900000, // 15 minute timeout
+      timeout: 1500000, // 25 minute timeout (Render free tier is slower)
       maxBuffer: 50 * 1024 * 1024 // 50MB buffer
     });
 

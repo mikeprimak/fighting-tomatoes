@@ -620,12 +620,12 @@ async function main() {
   // 11. Create Fighter Follows
   console.log('👥 Creating fighter follows...')
   const followsData = [
-    { userId: users[0].id, fighterId: fighters[0].id, dayBeforeNotification: true, startOfFightNotification: false },
-    { userId: users[0].id, fighterId: fighters[2].id, dayBeforeNotification: true, startOfFightNotification: true },
-    { userId: users[1].id, fighterId: fighters[1].id, dayBeforeNotification: true, startOfFightNotification: false },
-    { userId: users[1].id, fighterId: fighters[3].id, dayBeforeNotification: false, startOfFightNotification: true },
-    { userId: users[2].id, fighterId: fighters[0].id, dayBeforeNotification: true, startOfFightNotification: true },
-    { userId: users[3].id, fighterId: fighters[4].id, dayBeforeNotification: true, startOfFightNotification: false },
+    { userId: users[0].id, fighterId: fighters[0].id },
+    { userId: users[0].id, fighterId: fighters[2].id },
+    { userId: users[1].id, fighterId: fighters[1].id },
+    { userId: users[1].id, fighterId: fighters[3].id },
+    { userId: users[2].id, fighterId: fighters[0].id },
+    { userId: users[3].id, fighterId: fighters[4].id },
   ]
 
   for (const followData of followsData) {
@@ -634,19 +634,7 @@ async function main() {
     })
   }
 
-  // 12. Create Fight Alerts
-  console.log('🔔 Creating fight alerts...')
-  const alertsData = [
-    { userId: users[0].id, fightId: fights[4].id, alertTime: new Date('2024-12-07T21:45:00Z'), isActive: true },
-    { userId: users[1].id, fightId: fights[4].id, alertTime: new Date('2024-12-06T12:00:00Z'), isActive: true },
-    { userId: users[2].id, fightId: fights[4].id, alertTime: new Date('2024-12-07T21:30:00Z'), isActive: true },
-  ]
-
-  for (const alertData of alertsData) {
-    await prisma.fightAlert.create({
-      data: alertData,
-    })
-  }
+  // 12. Create Fight Alerts - REMOVED (legacy FightAlert table deleted in migration 20251108010000)
 
   // 13. Create User Activities
   console.log('📊 Creating user activities...')
@@ -872,7 +860,6 @@ async function main() {
   console.log(`   • ${votesData.length} review votes created`)
   console.log(`   • ${fightTagsData.length} fight tags created`)
   console.log(`   • ${followsData.length} fighter follows created`)
-  console.log(`   • ${alertsData.length} fight alerts created`)
   console.log(`   • ${activitiesData.length} user activities created`)
   console.log(`   • ${notificationsData.length} notifications created`)
   console.log(`   • ${reportsData.length} review reports created`)
