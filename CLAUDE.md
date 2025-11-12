@@ -163,25 +163,41 @@ R2_ENDPOINT="https://YOUR-ACCOUNT-ID.r2.cloudflarestorage.com"
 R2_ACCESS_KEY_ID="your-access-key-id"
 R2_SECRET_ACCESS_KEY="your-secret-access-key"
 R2_BUCKET_NAME="fightcrewapp-images"
-R2_PUBLIC_URL="https://pub-xxxxx.r2.dev"  # Optional: R2 auto-generates this
+R2_PUBLIC_URL="https://pub-xxxxx.r2.dev"
 ```
 
-**Setup Steps**:
-1. **Sign up for Cloudflare** (free account)
-2. **Navigate to R2** in Cloudflare dashboard
-3. **Create bucket**: Name it "fightcrewapp-images"
-4. **Generate API token**:
-   - Go to R2 → Manage R2 API Tokens
-   - Create token with "Object Read & Write" permissions
-   - Copy Access Key ID and Secret Access Key
-5. **Get endpoint**: Format is `https://YOUR-ACCOUNT-ID.r2.cloudflarestorage.com`
-6. **Add to Render**: Dashboard → Environment → Add all 4-5 variables
-7. **Redeploy**: Trigger manual deploy or push code
+**Setup Steps** (Complete - Configured 2025-11-12):
+1. **Sign up for Cloudflare** (free account) ✅
+2. **Navigate to R2** in Cloudflare dashboard ✅
+3. **Create bucket**: Name it "fightcrewapp-images" ✅
+4. **Generate R2 API token** (NOT Account API token): ✅
+   - Go to **R2 section** → **Manage R2 API Tokens** (NOT Profile → API Tokens)
+   - Click "Create API Token" under **Account API Tokens** section
+   - Set permissions to **"Workers R2 Storage: Edit"**
+   - Set TTL to 1 year or maximum allowed
+   - Click "Create Token"
+   - **CRITICAL**: Copy both Access Key ID and Secret Access Key immediately (shown only once!)
+5. **Get S3 endpoint**: ✅
+   - Go to R2 bucket → Settings
+   - Look for "S3 API" or "Endpoint for S3 clients"
+   - Format: `https://XXXXXXXXXX.r2.cloudflarestorage.com`
+6. **Enable public access**: ✅
+   - Go to R2 bucket → Settings
+   - Find "Public Development URL" section
+   - Click "Enable"
+   - Copy the URL: `https://pub-xxxxxxxxxxxxx.r2.dev`
+7. **Add to Render**: ✅
+   - Go to Render Dashboard → Your backend service → Environment tab
+   - Add all 5 environment variables
+   - Click "Save Changes" (triggers automatic redeploy)
 
-**Public Access**:
-- R2 provides auto-generated dev subdomain: `https://pub-xxxxx.r2.dev`
-- Copy this from R2 bucket settings → Public URL
-- Set as `R2_PUBLIC_URL` environment variable
+**Common Setup Mistakes to Avoid**:
+- ❌ Creating Account API Token (bearer token) instead of R2 API Token (S3 credentials)
+  - **Wrong path**: Profile → API Tokens → Create Custom Token
+  - **Right path**: R2 section → Manage R2 API Tokens → Create API Token
+- ❌ Looking for "R2" permission in Account API tokens (it's called "Workers R2 Storage")
+- ❌ Not enabling "Public Development URL" in bucket settings (images won't be accessible)
+- ❌ Sharing token credentials publicly (regenerate immediately if exposed)
 
 #### Features
 
@@ -191,6 +207,31 @@ R2_PUBLIC_URL="https://pub-xxxxx.r2.dev"  # Optional: R2 auto-generates this
 ✅ **Clean URLs**: SEO-friendly filenames with collision prevention
 ✅ **Cache Headers**: 1-year cache for optimal CDN performance
 ✅ **Error Handling**: Graceful degradation on upload failures
+
+#### Testing R2 (After Render Deployment)
+
+Once Render finishes deploying with the R2 environment variables, test the integration:
+
+**Manual Scraper Test**:
+```bash
+curl -X POST https://fightcrewapp-backend.onrender.com/api/admin/scrape-daily
+```
+
+**Watch Render Logs** for R2 activity:
+```
+[R2] Downloading image: https://dmxg5wxfqgb4u.cloudfront.net/...
+[R2] Uploading to: fighters/jon-jones-abc123.jpg (45.23 KB)
+[R2] Upload successful: https://pub-xxxxx.r2.dev/fighters/jon-jones-abc123.jpg
+```
+
+**Verify Images in R2**:
+- Go to Cloudflare → R2 → Your bucket
+- Check `fighters/` and `events/` folders
+- Click on an image → Copy URL → Test in browser
+
+**Fallback Behavior** (if R2 fails):
+- App automatically uses UFC.com URLs
+- Check logs for: `[R2] Upload failed, using UFC.com URL`
 
 #### Cost Analysis
 
