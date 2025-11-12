@@ -286,10 +286,13 @@ model Fight {
   ratings10       Int       @default(0)
   
   // Status
-  hasStarted      Boolean   @default(false)
-  isComplete      Boolean   @default(false)
-  currentRound    Int?      // Current round in progress (1-5), null if not started or complete
-  completedRounds Int?      // Last completed round number (0-5), null if not started
+  hasStarted        Boolean   @default(false)
+  isComplete        Boolean   @default(false)
+  isCancelled       Boolean   @default(false)  // Fight was cancelled before event
+  completionMethod  String?   // "scraper" | "failsafe-timeout" | "failsafe-force-timeout" | "manual"
+  completedAt       DateTime? // When fight was marked complete
+  currentRound      Int?      // Current round in progress (1-5), null if not started or complete
+  completedRounds   Int?      // Last completed round number (0-5), null if not started
 
   // Media
   highlightUrl    String?

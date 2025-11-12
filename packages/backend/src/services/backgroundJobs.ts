@@ -5,6 +5,9 @@ import * as cron from 'node-cron';
 import { checkEventCompletion } from './eventCompletionChecker';
 import { MMANewsScraper } from './mmaNewsScraper';
 import { checkAndStartLiveEvents } from './liveEventScheduler';
+import { scheduleAllUpcomingEvents, safetyCheckEvents, cancelAllScheduledEvents } from './eventBasedScheduler';
+import { runFailsafeCleanup, FailsafeResults } from './failsafeCleanup';
+import { runDailyUFCScraper, DailyScraperResults } from './dailyUFCScraper';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -12,6 +15,9 @@ const prisma = new PrismaClient();
 let eventCompletionJob: cron.ScheduledTask | null = null;
 let newsScraperJobs: cron.ScheduledTask[] = [];
 let liveEventSchedulerJob: cron.ScheduledTask | null = null;
+let eventSchedulerSafetyJob: cron.ScheduledTask | null = null;
+let dailyScraperJob: cron.ScheduledTask | null = null;
+let failsafeCleanupJob: cron.ScheduledTask | null = null;
 
 /**
  * Start all background jobs
@@ -64,17 +70,59 @@ export function startBackgroundJobs(): void {
 
   console.log(`[Background Jobs] News scraper DISABLED (memory constraints - run manually via API)`);
 
-  // ENABLED: Live event scheduler - checks every 5 minutes for events to track
-  liveEventSchedulerJob = cron.schedule('*/5 * * * *', async () => {
-    console.log('[Background Jobs] Running live event scheduler check...');
+  // ENABLED: Event-based scheduler - schedules events at exact times with 15-min safety check
+  // On startup, schedule all upcoming events
+  setTimeout(async () => {
+    console.log('[Background Jobs] Initializing event-based scheduler...');
     try {
-      await checkAndStartLiveEvents();
+      await scheduleAllUpcomingEvents();
     } catch (error) {
-      console.error('[Background Jobs] Live event scheduler failed:', error);
+      console.error('[Background Jobs] Initial event scheduling failed:', error);
+    }
+  }, 5000); // Wait 5 seconds after server starts
+
+  // Safety check every 15 minutes for missed events
+  eventSchedulerSafetyJob = cron.schedule('*/15 * * * *', async () => {
+    console.log('[Background Jobs] Running event scheduler safety check...');
+    try {
+      await safetyCheckEvents();
+    } catch (error) {
+      console.error('[Background Jobs] Event scheduler safety check failed:', error);
     }
   });
 
-  console.log('[Background Jobs] Live event scheduler ENABLED - checks every 5 minutes');
+  console.log('[Background Jobs] Event-based scheduler ENABLED - safety check every 15 minutes');
+
+  // ENABLED: Daily UFC scraper - runs at 12pm EST (5pm UTC)
+  dailyScraperJob = cron.schedule('0 17 * * *', async () => {
+    console.log('[Background Jobs] Running daily UFC scraper...');
+    try {
+      await runDailyUFCScraper();
+
+      // After scraper completes, re-schedule all upcoming events
+      console.log('[Background Jobs] Re-scheduling events after daily scrape...');
+      await scheduleAllUpcomingEvents();
+    } catch (error) {
+      console.error('[Background Jobs] Daily UFC scraper failed:', error);
+    }
+  });
+
+  console.log('[Background Jobs] Daily UFC scraper ENABLED - runs at 12pm EST (5pm UTC)');
+
+  // ENABLED: Failsafe cleanup - runs every hour
+  failsafeCleanupJob = cron.schedule('0 * * * *', async () => {
+    console.log('[Background Jobs] Running failsafe cleanup...');
+    try {
+      const results = await runFailsafeCleanup();
+      if (results.fightsCompleted > 0 || results.eventsCompleted > 0) {
+        console.log(`[Background Jobs] Failsafe: Completed ${results.fightsCompleted} fights, ${results.eventsCompleted} events`);
+      }
+    } catch (error) {
+      console.error('[Background Jobs] Failsafe cleanup failed:', error);
+    }
+  });
+
+  console.log('[Background Jobs] Failsafe cleanup ENABLED - runs every hour');
 
   // DISABLED: Initial startup check (also disabled for memory constraints)
   // setTimeout(async () => {
@@ -113,6 +161,24 @@ export function stopBackgroundJobs(): void {
   if (liveEventSchedulerJob) {
     liveEventSchedulerJob.stop();
     console.log('[Background Jobs] Live event scheduler stopped');
+  }
+
+  if (eventSchedulerSafetyJob) {
+    eventSchedulerSafetyJob.stop();
+    console.log('[Background Jobs] Event scheduler safety check stopped');
+  }
+
+  // Cancel all scheduled event timers
+  cancelAllScheduledEvents();
+
+  if (dailyScraperJob) {
+    dailyScraperJob.stop();
+    console.log('[Background Jobs] Daily UFC scraper stopped');
+  }
+
+  if (failsafeCleanupJob) {
+    failsafeCleanupJob.stop();
+    console.log('[Background Jobs] Failsafe cleanup stopped');
   }
 
   console.log('[Background Jobs] All background jobs stopped');
@@ -196,4 +262,20 @@ export async function triggerNewsScraper(): Promise<void> {
 export async function triggerLiveEventScheduler(): Promise<void> {
   console.log('[Background Jobs] Manual trigger: live event scheduler');
   await checkAndStartLiveEvents();
+}
+
+/**
+ * Trigger daily UFC scraper manually (for testing/admin)
+ */
+export async function triggerDailyUFCScraper(): Promise<DailyScraperResults> {
+  console.log('[Background Jobs] Manual trigger: daily UFC scraper');
+  return await runDailyUFCScraper();
+}
+
+/**
+ * Trigger failsafe cleanup manually (for testing/admin)
+ */
+export async function triggerFailsafeCleanup(): Promise<FailsafeResults> {
+  console.log('[Background Jobs] Manual trigger: failsafe cleanup');
+  return await runFailsafeCleanup();
 }

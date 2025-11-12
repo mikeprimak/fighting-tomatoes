@@ -2,6 +2,7 @@
 import { PrismaClient, WeightClass, Gender } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { uploadFighterImage, uploadEventImage } from './imageStorage';
 
 const prisma = new PrismaClient();
 
@@ -208,9 +209,17 @@ async function importFighters(athletesData: ScrapedAthletesData): Promise<Map<st
     const { firstName, lastName, nickname } = parseFighterName(athlete.name);
     const recordParts = parseRecord(athlete.record);
 
-    // Use UFC.com hosted images (better quality, no white edge artifacts)
-    // Explicitly use null (not undefined) so Prisma updates the field even when there's no image
-    const profileImageUrl = athlete.headshotUrl || null;
+    // Upload image to R2 storage (falls back to UFC.com URL if R2 not configured)
+    // R2 provides reliable, free storage with global CDN delivery
+    let profileImageUrl: string | null = null;
+    if (athlete.headshotUrl) {
+      try {
+        profileImageUrl = await uploadFighterImage(athlete.headshotUrl, athlete.name);
+      } catch (error) {
+        console.warn(`  ⚠ Image upload failed for ${athlete.name}, using UFC.com URL`);
+        profileImageUrl = athlete.headshotUrl;
+      }
+    }
 
     // Upsert fighter using firstName + lastName unique constraint
     const fighter = await prisma.fighter.upsert({
@@ -278,23 +287,27 @@ async function importEvents(
       }
     }
 
-    // Construct banner image URL from localImagePath
-    // Use BASE_URL from environment or default to network IP on port 3001
-    const baseUrl = process.env.BASE_URL || 'http://10.0.0.53:3001';
-    const bannerImageUrl = (eventData as any).localImagePath
-      ? `${baseUrl}${(eventData as any).localImagePath}`
-      : eventData.eventImageUrl;
+    // Upload event banner to R2 storage (falls back to UFC.com URL if R2 not configured)
+    // R2 provides reliable, free storage with global CDN delivery
+    let bannerImageUrl: string | undefined;
+    if (eventData.eventImageUrl) {
+      try {
+        bannerImageUrl = await uploadEventImage(eventData.eventImageUrl, eventData.eventName);
+      } catch (error) {
+        console.warn(`  ⚠ Banner upload failed for ${eventData.eventName}, using UFC.com URL`);
+        bannerImageUrl = eventData.eventImageUrl;
+      }
+    }
 
-    console.log(`  Banner image for ${eventData.eventName}:`, JSON.stringify({
-      localImagePath: (eventData as any).localImagePath,
-      eventImageUrl: eventData.eventImageUrl,
-      finalBannerUrl: bannerImageUrl
-    }));
+    console.log(`  Banner image for ${eventData.eventName}: ${bannerImageUrl || 'none'}`);
 
-    // Upsert event using ufcUrl unique constraint (prevents timezone-based duplicates)
+    // Upsert event using name_date unique constraint (prevents timezone-based duplicates)
     const event = await prisma.event.upsert({
       where: {
-        ufcUrl: eventData.eventUrl,
+        name_date: {
+          name: eventData.eventName,
+          date: eventDate,
+        },
       },
       update: {
         name: eventData.eventName,

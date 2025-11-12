@@ -110,6 +110,114 @@ curl http://localhost:3008/health
 
 ## Recent Features
 
+### Cloudflare R2 Image Storage (2025-11-12)
+**Status**: ✅ Complete - Reliable, free image storage with global CDN
+
+#### Overview
+Implemented Cloudflare R2 object storage to host all UFC images (fighter headshots, event banners) instead of relying on UFC.com URLs or Render's ephemeral filesystem.
+
+**Why R2?**
+- **100% Free** for our scale (10GB storage, 1M reads/month free tier)
+- **Global CDN** built-in for fast worldwide delivery
+- **No egress fees** (unlike AWS S3)
+- **S3-compatible API** (easy to use, industry standard)
+- **Reliable** - backed by Cloudflare's infrastructure
+
+#### Implementation
+
+**Core Service** (`imageStorage.ts`):
+- `uploadImageToR2()`: Downloads from UFC.com, uploads to R2, returns public URL
+- `uploadFighterImage()`: Convenience wrapper for fighter headshots
+- `uploadEventImage()`: Convenience wrapper for event banners
+- **Automatic fallback**: Uses UFC.com URLs if R2 not configured
+- **Duplicate prevention**: Checks if image exists before re-uploading
+- **SEO-friendly filenames**: "jon-jones-abc123.jpg" with hash for uniqueness
+
+**Integration Points**:
+1. **Daily UFC Scraper** (`ufcDataParser.ts`):
+   - Uploads all fighter headshots to `fighters/` folder
+   - Uploads all event banners to `events/` folder
+   - Graceful error handling with UFC.com fallback
+
+2. **Live Event Tracker**: Uses same image URLs already in database
+
+**Storage Structure**:
+```
+fightcrewapp-images/
+├── fighters/
+│   ├── jon-jones-abc123.jpg
+│   ├── alex-pereira-def456.jpg
+│   └── ...
+├── events/
+│   ├── ufc-320-banner-ghi789.jpg
+│   └── ...
+└── news/
+    └── (future: news article images)
+```
+
+#### Environment Configuration
+
+**Required Variables** (add to Render dashboard):
+```bash
+R2_ENDPOINT="https://YOUR-ACCOUNT-ID.r2.cloudflarestorage.com"
+R2_ACCESS_KEY_ID="your-access-key-id"
+R2_SECRET_ACCESS_KEY="your-secret-access-key"
+R2_BUCKET_NAME="fightcrewapp-images"
+R2_PUBLIC_URL="https://pub-xxxxx.r2.dev"  # Optional: R2 auto-generates this
+```
+
+**Setup Steps**:
+1. **Sign up for Cloudflare** (free account)
+2. **Navigate to R2** in Cloudflare dashboard
+3. **Create bucket**: Name it "fightcrewapp-images"
+4. **Generate API token**:
+   - Go to R2 → Manage R2 API Tokens
+   - Create token with "Object Read & Write" permissions
+   - Copy Access Key ID and Secret Access Key
+5. **Get endpoint**: Format is `https://YOUR-ACCOUNT-ID.r2.cloudflarestorage.com`
+6. **Add to Render**: Dashboard → Environment → Add all 4-5 variables
+7. **Redeploy**: Trigger manual deploy or push code
+
+**Public Access**:
+- R2 provides auto-generated dev subdomain: `https://pub-xxxxx.r2.dev`
+- Copy this from R2 bucket settings → Public URL
+- Set as `R2_PUBLIC_URL` environment variable
+
+#### Features
+
+✅ **Automatic Upload**: Scraper downloads from UFC.com, uploads to R2 seamlessly
+✅ **Fallback System**: Works without R2 (uses UFC.com URLs directly)
+✅ **Smart Caching**: Checks for existing images before re-uploading
+✅ **Clean URLs**: SEO-friendly filenames with collision prevention
+✅ **Cache Headers**: 1-year cache for optimal CDN performance
+✅ **Error Handling**: Graceful degradation on upload failures
+
+#### Cost Analysis
+
+**Cloudflare R2 Free Tier**:
+- Storage: 10 GB/month (enough for ~50,000 fighter images)
+- Class A operations: 1M/month (uploads)
+- Class B operations: 10M/month (reads)
+- Egress: **Unlimited FREE** (biggest advantage over S3)
+
+**Our Usage**:
+- ~500 fighters × 50KB = 25 MB
+- ~50 events × 200KB = 10 MB
+- **Total: ~35 MB** (well within 10 GB limit)
+- **Monthly reads**: ~100K (well within 10M limit)
+
+**Conclusion**: $0/month forever for our use case
+
+#### Files Modified
+- `packages/backend/src/services/imageStorage.ts`: New R2 upload service (296 lines)
+- `packages/backend/src/services/ufcDataParser.ts`: Integrated R2 uploads for fighters and events
+- `packages/backend/.env.example`: Added R2 configuration documentation
+- `packages/backend/package.json`: Added `@aws-sdk/client-s3` dependency
+
+---
+
+## Recent Features
+
 ### Live Event Tracker - Daily Scraper Parity (2025-11-12)
 **Status**: ✅ Complete - Live tracker uses same data handling as daily scraper
 
