@@ -315,7 +315,7 @@ async function importEvents(
         venue: eventData.venue,
         location: `${eventData.city}, ${eventData.state || eventData.country}`,
         bannerImage: bannerImageUrl,
-        ufcUrl: eventData.eventUrl,
+        // ufcUrl is immutable - don't update it (unique constraint would cause conflicts)
         earlyPrelimStartTime,
         prelimStartTime,
         mainStartTime,
