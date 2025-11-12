@@ -110,84 +110,94 @@ curl http://localhost:3008/health
 
 ## Recent Features
 
-### Dynamic Fight Card Management During Live Events (2025-11-12)
-**Status**: ✅ Complete - Live tracker now handles mid-event fight card changes
+### Live Event Tracker - Daily Scraper Parity (2025-11-12)
+**Status**: ✅ Complete - Live tracker uses same data handling as daily scraper
 
 #### Overview
-The live event tracker can now detect and handle fight card changes that occur DURING live events, including:
-- New fights added to the card
-- Fights cancelled/removed from the card
-- Fighter replacements
-- Fight order changes (via `orderOnCard` updates)
+The live event tracker now uses the exact same data handling utilities and patterns as the extensively-tested daily UFC scraper, ensuring consistency and robustness:
+- **Shared utilities**: parseFighterName, mapWeightClass, inferGenderFromWeightClass
+- **Upsert pattern**: Updates existing fighters/fights instead of creating duplicates
+- **Full metadata**: Handles cardType, weight class, title fights, scheduled rounds
+- **Dynamic changes**: Creates new fights, detects cancellations, handles replacements
 
 #### Implementation Details
 
-**Problem**: UFC.com can update fight cards mid-event (cancellations, additions, last-minute replacements). Previous system only updated existing fights and skipped unknown ones.
+**Problem**: Live tracker and daily scraper were using different approaches, risking inconsistencies and missing fighter metadata (gender, weight class, nicknames).
 
-**Solution**: Enhanced `ufcLiveParser.ts` with three key capabilities:
+**Solution**: Refactored `ufcLiveParser.ts` to mirror `ufcDataParser.ts` patterns:
 
-1. **Create New Fights** (`findOrCreateFighter` helper):
-   - When scraped fight doesn't exist in DB, find/create both fighters
-   - Creates new Fight record with correct `orderOnCard` positioning
-   - Defaults to 3 rounds, marks as active (not cancelled)
-   - Logs: `🆕 Creating new fighter: [name]`
+1. **Shared Utility Functions** (copied from daily scraper):
+   - `parseFighterName()`: Handles nicknames ("Jon 'Bones' Jones" → first/last/nickname)
+   - `mapWeightClass()`: Converts UFC strings to database enums ("Lightweight" → LIGHTWEIGHT)
+   - `inferGenderFromWeightClass()`: Women's divisions → FEMALE, others → MALE
 
-2. **Track Scraped Fights** (signature-based tracking):
-   - Creates lowercase, sorted signatures for each scraped fight (e.g., "jones|smith")
-   - Maintains `Set<string>` of all fights seen in scraped data
-   - Used for cancellation detection
+2. **Fighter Upsert Pattern** (same as daily scraper):
+   - Uses `firstName_lastName` unique constraint to find existing fighters
+   - **Update mode**: Preserves W-L-D record and images, updates gender/weight class/nickname
+   - **Create mode**: Minimal record with defaults (0-0-0, inferred gender, active)
+   - Daily scraper fills in complete details (record, images) later
 
-3. **Detect Cancellations** (post-processing loop):
-   - After processing all scraped fights, checks DB fights not in scraped set
-   - Only marks as cancelled if event has started (avoids false positives)
-   - Sets `isCancelled: true`, keeps `isComplete: false`
-   - Logs: `❌ Marking fight as CANCELLED: [fighters]`
+3. **Fight Metadata Handling** (matches daily scraper fields):
+   - `cardType`: "Main Card", "Prelims", or "Early Prelims"
+   - `weightClass`: Database enum parsed from UFC string
+   - `isTitle`: Championship fight flag
+   - `titleName`: Auto-generated ("UFC Lightweight Championship")
+   - `scheduledRounds`: 5 for title fights, 3 for regular
+   - `orderOnCard`: Fight position (1 = main event, higher = earlier)
 
-#### Key Features
+4. **Dynamic Fight Card Changes**:
+   - **New Fights**: Creates fight with full metadata when detected mid-event
+   - **Cancellations**: Signature-based tracking detects missing fights
+   - **Safety**: Only marks cancelled if event has started (avoids false positives)
 
-**Fighter Name Parsing**:
-- Handles multi-part names ("Jon 'Bones' Jones" → firstName: "Jon 'Bones'", lastName: "Jones")
-- Case-insensitive matching via Prisma `mode: 'insensitive'`
-- Creates fighters with default stats (0-0-0 record, MALE gender, isActive: true)
+#### Key Improvements
 
-**Fight Matching**:
-- Uses last names only (more reliable than full names)
-- Checks both orderings (Jones vs Smith = Smith vs Jones)
-- Prevents duplicate fight creation
+**Before (Custom Logic)**:
+- Simple name splitting (broke on nicknames)
+- Hardcoded MALE gender for all fighters
+- Missing fight metadata (cardType, weight class, title status)
+- Basic create() calls (risk of duplicates)
 
-**Cancellation Safety**:
-- Only triggers if `event.hasStarted === true`
-- Skips fights already complete or already cancelled
-- Logs informational message if event hasn't started yet
+**After (Daily Scraper Parity)**:
+- Proper nickname parsing via `parseFighterName()`
+- Gender inferred from weight class division
+- Full fight metadata from scraped data
+- Upsert pattern prevents duplicates, preserves existing data
 
 #### Files Modified
-- `packages/backend/src/services/ufcLiveParser.ts`:
-  - Added `findOrCreateFighter()` helper (lines 108-154)
-  - Enhanced `parseLiveEventData()` fight processing loop (lines 252-318)
-  - Added cancellation detection section (lines 434-479)
-  - Added comprehensive comments explaining logic
+1. **`packages/backend/src/services/ufcLiveParser.ts`**:
+   - Added shared utilities from daily scraper (parseFighterName, mapWeightClass, inferGenderFromWeightClass)
+   - Updated `LiveFightUpdate` interface with cardType, weightClass, isTitle fields
+   - Refactored `findOrCreateFighter()` to use upsert pattern with weight class parameter
+   - Updated fight creation to include full metadata (cardType, titleName, scheduledRounds)
+   - Enhanced cancellation detection with event start check
+
+2. **`packages/backend/src/services/liveEventTracker.ts`**:
+   - Updated `convertScrapedToLiveUpdate()` to pass cardType, weightClass, isTitle from scraped data
 
 #### Example Scenarios
 
-**Scenario 1: Fight Cancelled During Event**
-- Fight exists in DB: "Jon Jones vs Stipe Miocic"
-- Scraped data: Fight missing (cancelled)
-- Result: `isCancelled: true` set in DB, logged as cancelled
+**Scenario 1: New Fighter Appears Mid-Event**
+- Scraped data: "Conor McGregor" fighting at Lightweight
+- Daily scraper ran yesterday but McGregor wasn't on card
+- Result: Live tracker creates minimal fighter record (inferring MALE from Lightweight), daily scraper fills in details next run
 
-**Scenario 2: Last-Minute Replacement Fight Added**
-- Scraped data: New fight "Israel Adesanya vs Alex Pereira"
-- DB: Fight doesn't exist
-- Result: Both fighters created (if needed), new Fight record created with next available `orderOnCard`
+**Scenario 2: Title Fight Added Last Minute**
+- Scraped data: New fight marked as title bout in Women's Bantamweight
+- Result: Both fighters upserted with FEMALE gender (inferred from weight class), fight created with 5 rounds and championship title
 
-**Scenario 3: Fight Order Changed**
-- Scraped data: Fight moved from prelims to main card (`order: 3` → `order: 1`)
-- Result: `orderOnCard` updated via existing update logic
+**Scenario 3: Fight Cancelled After Event Starts**
+- DB has "Jones vs Miocic" on main card
+- Live scraper runs, fight missing from UFC.com
+- Event status: `hasStarted: true`
+- Result: Fight marked `isCancelled: true` in database
 
-#### Technical Notes
-- Uses Prisma's `findFirst` with case-insensitive search for fighter lookup
-- Creates fighters with `@@unique([firstName, lastName])` constraint (schema enforces uniqueness)
-- New fights default to 3 rounds (title fights would need manual update or scraper enhancement)
-- Gender defaults to MALE (would need additional scraper data to determine accurately)
+#### Technical Benefits
+- **Consistency**: Same name parsing rules across daily and live scrapers
+- **Data Preservation**: Upsert doesn't overwrite fighter records/images from daily scraper
+- **Completeness**: All fight metadata captured (card type, weight, title status)
+- **Gender Accuracy**: Correctly identifies women fighters from division
+- **Duplicate Prevention**: Unique constraints prevent multiple records for same fighter
 
 ---
 

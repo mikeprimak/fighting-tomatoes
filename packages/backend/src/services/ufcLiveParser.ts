@@ -2,11 +2,91 @@
  * UFC Live Data Parser
  * Takes scraped live event data and updates the database
  * Detects changes in event status, fight status, rounds, and results
+ *
+ * Uses the same data handling utilities as the daily UFC scraper to ensure consistency:
+ * - parseFighterName: Handles nicknames and multi-part names
+ * - mapWeightClass: Converts UFC strings to database enums
+ * - inferGenderFromWeightClass: Determines fighter gender from division
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, WeightClass, Gender } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+// ============== SHARED UTILITIES (from ufcDataParser.ts) ==============
+
+/**
+ * Parse fighter name into first/last name and optional nickname
+ * Handles formats like: "Jon Jones", "Jon 'Bones' Jones", "Charles Oliveira"
+ * @param fullName - Full fighter name from UFC.com
+ * @returns Parsed name components
+ */
+function parseFighterName(fullName: string): { firstName: string; lastName: string; nickname?: string } {
+  // Handle nicknames in quotes: Jon "Bones" Jones
+  const nicknameMatch = fullName.match(/^(.+?)\s+"([^"]+)"\s+(.+)$/);
+  if (nicknameMatch) {
+    return {
+      firstName: nicknameMatch[1].trim(),
+      nickname: nicknameMatch[2].trim(),
+      lastName: nicknameMatch[3].trim()
+    };
+  }
+
+  // Simple first/last split
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: '' };
+  }
+
+  const lastName = parts.pop() || '';
+  const firstName = parts.join(' ');
+
+  return { firstName, lastName };
+}
+
+/**
+ * Map UFC weight class strings to database enum
+ * @param weightClassStr - Weight class string from UFC.com (e.g., "Lightweight", "Women's Bantamweight")
+ * @returns Database WeightClass enum or null if not recognized
+ */
+function mapWeightClass(weightClassStr: string): WeightClass | null {
+  const mapping: Record<string, WeightClass> = {
+    'Strawweight': WeightClass.STRAWWEIGHT,
+    'Flyweight': WeightClass.FLYWEIGHT,
+    'Bantamweight': WeightClass.BANTAMWEIGHT,
+    'Featherweight': WeightClass.FEATHERWEIGHT,
+    'Lightweight': WeightClass.LIGHTWEIGHT,
+    'Welterweight': WeightClass.WELTERWEIGHT,
+    'Middleweight': WeightClass.MIDDLEWEIGHT,
+    'Light Heavyweight': WeightClass.LIGHT_HEAVYWEIGHT,
+    'Heavyweight': WeightClass.HEAVYWEIGHT,
+    "Women's Strawweight": WeightClass.WOMENS_STRAWWEIGHT,
+    "Women's Flyweight": WeightClass.WOMENS_FLYWEIGHT,
+    "Women's Bantamweight": WeightClass.WOMENS_BANTAMWEIGHT,
+    "Women's Featherweight": WeightClass.WOMENS_FEATHERWEIGHT,
+  };
+
+  return mapping[weightClassStr] || null;
+}
+
+/**
+ * Infer fighter gender from weight class division
+ * Women's divisions → FEMALE, all others → MALE
+ * @param weightClass - Database WeightClass enum
+ * @returns Gender enum (MALE or FEMALE)
+ */
+function inferGenderFromWeightClass(weightClass: WeightClass | null): Gender {
+  if (!weightClass) return Gender.MALE;
+
+  const womensClasses: WeightClass[] = [
+    WeightClass.WOMENS_STRAWWEIGHT,
+    WeightClass.WOMENS_FLYWEIGHT,
+    WeightClass.WOMENS_BANTAMWEIGHT,
+    WeightClass.WOMENS_FEATHERWEIGHT
+  ];
+
+  return womensClasses.includes(weightClass) ? Gender.FEMALE : Gender.MALE;
+}
 
 // ============== TYPE DEFINITIONS ==============
 
@@ -14,6 +94,9 @@ interface LiveFightUpdate {
   fighterAName: string;
   fighterBName: string;
   order?: number | null;  // Fight order on card (UFC may change this)
+  cardType?: string | null;  // "Main Card", "Prelims", or "Early Prelims"
+  weightClass?: string | null;  // Weight class string from UFC.com
+  isTitle?: boolean;  // Whether this is a championship fight
   status?: 'upcoming' | 'live' | 'complete';
   currentRound?: number | null;
   completedRounds?: number | null;
@@ -106,48 +189,60 @@ function findFightByFighters(fights: any[], fighter1Name: string, fighter2Name: 
 }
 
 /**
- * Find or create a fighter by name
- * Searches for fighter by last name, creates if not found
- * @param fullName - Full name (e.g., "Jon Jones")
- * @returns Fighter record
+ * Find or create a fighter by name using upsert pattern (same as daily scraper)
+ * Updates existing fighter or creates minimal record if not found
+ * Gender is inferred from weight class when fight data is available
+ * @param fullName - Full name (e.g., "Jon Jones" or "Jon 'Bones' Jones")
+ * @param weightClass - Optional weight class enum to infer gender
+ * @returns Fighter record with ID
  */
-async function findOrCreateFighter(fullName: string): Promise<any> {
-  const normalize = (name: string) => name.trim();
-  const nameParts = normalize(fullName).split(' ');
-
-  // Handle names with multiple parts (e.g., "Charles Oliveira", "Jon 'Bones' Jones")
-  // Assume last word is last name, everything before is first name
-  const lastName = nameParts.pop() || '';
-  const firstName = nameParts.join(' ');
+async function findOrCreateFighter(
+  fullName: string,
+  weightClass?: WeightClass | null
+): Promise<any> {
+  // Use shared utility to parse name (handles nicknames properly)
+  const { firstName, lastName, nickname } = parseFighterName(fullName);
 
   if (!lastName || !firstName) {
     throw new Error(`Cannot parse fighter name: ${fullName}`);
   }
 
-  // Try to find existing fighter by first + last name
-  let fighter = await prisma.fighter.findFirst({
+  // Infer gender from weight class if available (women's divisions = FEMALE)
+  const gender = weightClass ? inferGenderFromWeightClass(weightClass) : Gender.MALE;
+
+  // Upsert fighter using firstName + lastName unique constraint (same pattern as daily scraper)
+  // Updates: gender, weightClass, nickname (keeps existing record data like W-L-D intact)
+  // Creates: minimal record with defaults if fighter doesn't exist
+  const fighter = await prisma.fighter.upsert({
     where: {
-      firstName: { equals: firstName, mode: 'insensitive' },
-      lastName: { equals: lastName, mode: 'insensitive' }
+      firstName_lastName: {
+        firstName,
+        lastName,
+      }
+    },
+    update: {
+      // Only update gender and weight class, preserve everything else (record, images, etc.)
+      gender,
+      weightClass: weightClass || undefined,
+      nickname: nickname || undefined,
+    },
+    create: {
+      // Create minimal fighter record - daily scraper will fill in details later
+      firstName,
+      lastName,
+      nickname,
+      gender,
+      weightClass,
+      isActive: true,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+      noContests: 0
     }
   });
 
-  // If not found, create a new fighter record
   if (!fighter) {
-    console.log(`  🆕 Creating new fighter: ${firstName} ${lastName}`);
-
-    fighter = await prisma.fighter.create({
-      data: {
-        firstName,
-        lastName,
-        gender: 'MALE', // Default, would need more info to determine accurately
-        isActive: true,
-        wins: 0,
-        losses: 0,
-        draws: 0,
-        noContests: 0
-      }
-    });
+    console.log(`  🆕 Created new fighter: ${firstName} ${lastName}${nickname ? ` "${nickname}"` : ''}`);
   }
 
   return fighter;
@@ -277,30 +372,40 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         console.log(`  🆕 Creating new fight during live event...`);
 
         try {
-          // Find or create both fighters
-          const fighter1 = await findOrCreateFighter(fightUpdate.fighterAName);
-          const fighter2 = await findOrCreateFighter(fightUpdate.fighterBName);
+          // Parse weight class from UFC string to database enum (same as daily scraper)
+          const weightClass = fightUpdate.weightClass ? mapWeightClass(fightUpdate.weightClass) : null;
+
+          // Find or create both fighters with weight class for gender inference
+          const fighter1 = await findOrCreateFighter(fightUpdate.fighterAName, weightClass);
+          const fighter2 = await findOrCreateFighter(fightUpdate.fighterBName, weightClass);
 
           // Determine orderOnCard - if provided use it, otherwise put at end (highest number)
           const maxOrder = Math.max(...event.fights.map(f => f.orderOnCard), 0);
           const orderOnCard = fightUpdate.order ?? (maxOrder + 1);
 
-          // Create the fight
+          // Determine scheduled rounds (title fights = 5, regular = 3)
+          const scheduledRounds = fightUpdate.isTitle ? 5 : 3;
+
+          // Create the fight with full metadata (same pattern as daily scraper)
           const newFight = await prisma.fight.create({
             data: {
               eventId: event.id,
               fighter1Id: fighter1.id,
               fighter2Id: fighter2.id,
               orderOnCard,
+              cardType: fightUpdate.cardType || null,  // "Main Card", "Prelims", "Early Prelims"
+              weightClass,
+              isTitle: fightUpdate.isTitle ?? false,
+              titleName: fightUpdate.isTitle ? `UFC ${fightUpdate.weightClass} Championship` : undefined,
+              scheduledRounds,
               hasStarted: fightUpdate.hasStarted ?? false,
               isComplete: fightUpdate.isComplete ?? false,
               currentRound: fightUpdate.currentRound ?? null,
               completedRounds: fightUpdate.completedRounds ?? null,
-              scheduledRounds: 3, // Default to 3 rounds
             }
           });
 
-          console.log(`  ✅ Created new fight: ${fighter1.lastName} vs ${fighter2.lastName} (orderOnCard: ${orderOnCard})`);
+          console.log(`  ✅ Created new fight: ${fighter1.lastName} vs ${fighter2.lastName} (${fightUpdate.cardType || 'Unknown Card'}, orderOnCard: ${orderOnCard})`);
 
           // Reload event fights to include the new fight
           event.fights.push({

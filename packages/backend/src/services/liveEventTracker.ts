@@ -219,6 +219,9 @@ class LiveEventTracker {
         fighterAName: fight.fighterA?.name || fight.fighter1Name || '',
         fighterBName: fight.fighterB?.name || fight.fighter2Name || '',
         order: fight.order || null, // Fight order on card (1 = first fight, higher = later fights)
+        cardType: fight.cardType || null,  // "Main Card", "Prelims", "Early Prelims"
+        weightClass: fight.weightClass || null,  // Weight class string from UFC.com
+        isTitle: fight.isTitle || false,  // Championship fight flag
         status: fightStatus,
         currentRound,
         completedRounds,
