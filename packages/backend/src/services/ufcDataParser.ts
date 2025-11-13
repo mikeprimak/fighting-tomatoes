@@ -301,13 +301,10 @@ async function importEvents(
 
     console.log(`  Banner image for ${eventData.eventName}: ${bannerImageUrl || 'none'}`);
 
-    // Upsert event using name_date unique constraint (prevents timezone-based duplicates)
+    // Upsert event using ufcUrl as unique identifier (most reliable for UFC events)
     const event = await prisma.event.upsert({
       where: {
-        name_date: {
-          name: eventData.eventName,
-          date: eventDate,
-        },
+        ufcUrl: eventData.eventUrl,
       },
       update: {
         name: eventData.eventName,
@@ -315,7 +312,6 @@ async function importEvents(
         venue: eventData.venue,
         location: `${eventData.city}, ${eventData.state || eventData.country}`,
         bannerImage: bannerImageUrl,
-        // ufcUrl is immutable - don't update it (unique constraint would cause conflicts)
         earlyPrelimStartTime,
         prelimStartTime,
         mainStartTime,
