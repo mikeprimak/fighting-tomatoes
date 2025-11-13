@@ -124,7 +124,8 @@
       "Bash(exit 0)",
       "Bash(DATABASE_URL=\"postgresql://fightcrewapp_user:WjU2ZdAJESuMaMumbyRGgIV1HXJWg8KU@dpg-d3oee81r0fns73c59610-a.oregon-postgres.render.com/fightcrewapp\" npx prisma migrate:*)",
       "Bash(echo \"curl -X POST https://fightcrewapp-backend.onrender.com/api/notifications/test \\\"\necho \" -H \"\"Authorization: Bearer YOUR_AUTH_TOKEN\"\" \\\")",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(pnpm db:reset:*)"
     ],
     "deny": [],
     "ask": []

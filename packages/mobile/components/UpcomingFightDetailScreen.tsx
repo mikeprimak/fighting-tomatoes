@@ -230,6 +230,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       queryClient.invalidateQueries({ queryKey: ['hotPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
 
       onPredictionSuccess?.();
     },
@@ -263,6 +264,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       queryClient.invalidateQueries({ queryKey: ['hotPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
 
       onPredictionSuccess?.();
     },
@@ -296,6 +298,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       queryClient.invalidateQueries({ queryKey: ['hotPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
 
       onPredictionSuccess?.();
     },
@@ -584,6 +587,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
       queryClient.invalidateQueries({ queryKey: ['eventFights'] });
       queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
     },
@@ -620,6 +624,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
         queryClient.invalidateQueries({ queryKey: ['fights'] });
         queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
         queryClient.invalidateQueries({ queryKey: ['eventFights'] });
         queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
       }
@@ -1095,6 +1100,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
           queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
           queryClient.invalidateQueries({ queryKey: ['fights'] });
           queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
           queryClient.invalidateQueries({ queryKey: ['eventFights'] });
           queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
         }}

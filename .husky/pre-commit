@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Auto-backup database before commit
+echo "🔄 Auto-backup: Creating database backup before commit..."
+
+# Check if Docker is running
+if ! docker ps > /dev/null 2>&1; then
+  echo "⚠️  Docker not running - skipping database backup"
+  exit 0
+fi
+
+# Check if postgres container is running
+if ! docker ps --format '{{.Names}}' | grep -q "yourapp-postgres"; then
+  echo "⚠️  Postgres container not running - skipping database backup"
+  exit 0
+fi
+
+# Run backup script (convert Windows path to Git Bash path)
+SCRIPT_DIR="$(pwd)/scripts"
+if [ -f "$SCRIPT_DIR/backup-db.sh" ]; then
+  bash "$SCRIPT_DIR/backup-db.sh" || {
+    echo "⚠️  Database backup failed (non-fatal, continuing with commit)"
+  }
+else
+  echo "⚠️  Backup script not found - skipping database backup"
+fi
+
+echo ""

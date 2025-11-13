@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
@@ -57,12 +58,8 @@ export default function RatingsActivityScreen() {
     setShowFilterTypeMenu(false);
     setShowSortMenu(false);
 
-    // Navigate to appropriate detail screen based on fight status
-    if (fight.status === 'upcoming') {
-      router.push(`/upcoming-fight/${fight.id}` as any);
-    } else {
-      router.push(`/fight/${fight.id}` as any);
-    }
+    // Navigate to fight detail screen (handles both upcoming and completed fights)
+    router.push(`/fight/${fight.id}` as any);
   };
 
   // Upvote mutation for comments

@@ -131,3 +131,6 @@ packages/backend/backups/
 packages/backend/public/news-images/
 packages/backend/nul
 nul
+
+# Database backups (local only, not committed)
+db-backups/

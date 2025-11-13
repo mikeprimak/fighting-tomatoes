@@ -2416,6 +2416,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           select: { fightId: true },
         });
         allFightIds = hypedFights.map(h => h.fightId);
+        console.log('[DEBUG] Hype filter - found fight IDs:', allFightIds);
       } else if (query.filterType === 'comments') {
         // Get fights where user has written reviews
         const reviewedFights = await fastify.prisma.fightReview.findMany({
@@ -2600,6 +2601,15 @@ export async function fightRoutes(fastify: FastifyInstance) {
         transformed.averageHype = hypeStats?.averageHype || 0;
         transformed.totalPredictions = hypeStats?.totalPredictions || 0;
 
+        // Calculate fight status based on isComplete and hasStarted flags
+        if (fight.isComplete) {
+          transformed.status = 'completed';
+        } else if (fight.hasStarted) {
+          transformed.status = 'live';
+        } else {
+          transformed.status = 'upcoming';
+        }
+
         // Transform user rating
         if (fight.ratings && fight.ratings.length > 0) {
           transformed.userRating = fight.ratings[0].rating;
@@ -2634,7 +2644,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
             predictedMethod: fight.predictions[0].predictedMethod,
             createdAt: fight.predictions[0].createdAt,
           };
-          transformed.userHype = fight.predictions[0].predictedRating;
+          transformed.userHypePrediction = fight.predictions[0].predictedRating;
           transformed.userHypeCreatedAt = fight.predictions[0].createdAt;
         }
 
