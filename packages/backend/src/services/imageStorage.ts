@@ -18,14 +18,14 @@ import crypto from 'crypto';
 
 /**
  * Check if R2 storage is properly configured via environment variables
- * Required vars: R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME
+ * Required vars: R2_ENDPOINT, R2_ACCESS_KEY, R2_SECRET_KEY, R2_BUCKET
  */
 function isR2Configured(): boolean {
   return !!(
     process.env.R2_ENDPOINT &&
-    process.env.R2_ACCESS_KEY_ID &&
-    process.env.R2_SECRET_ACCESS_KEY &&
-    process.env.R2_BUCKET_NAME
+    process.env.R2_ACCESS_KEY &&
+    process.env.R2_SECRET_KEY &&
+    process.env.R2_BUCKET
   );
 }
 
@@ -41,8 +41,8 @@ function getS3Client(): S3Client {
       region: 'auto', // R2 uses 'auto' for region
       endpoint: process.env.R2_ENDPOINT,
       credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+        accessKeyId: process.env.R2_ACCESS_KEY!,
+        secretAccessKey: process.env.R2_SECRET_KEY!,
       },
     });
   }
@@ -118,7 +118,7 @@ function getPublicUrl(key: string): string {
 
   // R2 dev subdomain (e.g., https://pub-xxxxx.r2.dev)
   // This is automatically available for all R2 buckets
-  const bucket = process.env.R2_BUCKET_NAME;
+  const bucket = process.env.R2_BUCKET;
   return `https://${bucket}.r2.dev/${key}`;
 }
 
@@ -135,7 +135,7 @@ async function imageExists(key: string): Promise<boolean> {
   try {
     const client = getS3Client();
     await client.send(new HeadObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME!,
+      Bucket: process.env.R2_BUCKET!,
       Key: key,
     }));
     return true;
@@ -196,7 +196,7 @@ export async function uploadImageToR2(
 
     // Upload to R2 with proper content type and cache headers
     await client.send(new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME!,
+      Bucket: process.env.R2_BUCKET!,
       Key: key,
       Body: buffer,
       ContentType: getContentType(fileName),
@@ -264,7 +264,7 @@ export function getR2Status(): {
   return {
     configured: isR2Configured(),
     endpoint: process.env.R2_ENDPOINT,
-    bucket: process.env.R2_BUCKET_NAME,
+    bucket: process.env.R2_BUCKET,
     publicUrl: process.env.R2_PUBLIC_URL,
   };
 }

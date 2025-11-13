@@ -160,9 +160,9 @@ fightcrewapp-images/
 **Required Variables** (add to Render dashboard):
 ```bash
 R2_ENDPOINT="https://YOUR-ACCOUNT-ID.r2.cloudflarestorage.com"
-R2_ACCESS_KEY_ID="your-access-key-id"
-R2_SECRET_ACCESS_KEY="your-secret-access-key"
-R2_BUCKET_NAME="fightcrewapp-images"
+R2_ACCESS_KEY="your-access-key-id"
+R2_SECRET_KEY="your-secret-access-key"
+R2_BUCKET="fightcrewapp-images"
 R2_PUBLIC_URL="https://pub-xxxxx.r2.dev"
 ```
 
