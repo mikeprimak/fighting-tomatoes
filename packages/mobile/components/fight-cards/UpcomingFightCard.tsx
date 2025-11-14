@@ -750,7 +750,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   fighterName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     flexShrink: 1,
   },
