@@ -41,14 +41,14 @@
             "name": "Jack Della Maddalena",
             "rank": "C",
             "country": "Australia",
-            "odds": "-",
+            "odds": "+230",
             "athleteUrl": "https://www.ufc.com/athlete/dzhek-della-maddalena"
           },
           "fighterB": {
             "name": "Islam Makhachev",
             "rank": "",
             "country": "Russia",
-            "odds": "-",
+            "odds": "-285",
             "athleteUrl": "https://www.ufc.com/athlete/islam-makhachev"
           },
           "startTime": "10:00 PM"
@@ -63,14 +63,14 @@
             "name": "Valentina Shevchenko",
             "rank": "C",
             "country": "Kyrgyzstan",
-            "odds": "-",
+            "odds": "-135",
             "athleteUrl": "https://www.ufc.com/athlete/valentina-shevchenko"
           },
           "fighterB": {
             "name": "Zhang Weili",
             "rank": "",
             "country": "China",
-            "odds": "-",
+            "odds": "+114",
             "athleteUrl": "https://www.ufc.com/athlete/weili-zhang"
           },
           "startTime": "10:30 PM"
@@ -85,14 +85,14 @@
             "name": "Sean Brady",
             "rank": "#2",
             "country": "United States",
-            "odds": "-",
+            "odds": "-135",
             "athleteUrl": "https://www.ufc.com/athlete/sean-brady"
           },
           "fighterB": {
             "name": "Michael Morales",
             "rank": "#8",
             "country": "Ecuador",
-            "odds": "-",
+            "odds": "+114",
             "athleteUrl": "https://www.ufc.com/athlete/karlos-olberg-2"
           },
           "startTime": "11:00 PM"
@@ -107,14 +107,14 @@
             "name": "Leon Edwards",
             "rank": "#4",
             "country": "England",
-            "odds": "-",
+            "odds": "+145",
             "athleteUrl": "https://www.ufc.com/athlete/leon-edwards"
           },
           "fighterB": {
             "name": "Carlos Prates",
             "rank": "#9",
             "country": "Brazil",
-            "odds": "-",
+            "odds": "-175",
             "athleteUrl": "https://www.ufc.com/athlete/carlos-prates"
           },
           "startTime": "11:30 PM"
@@ -129,14 +129,14 @@
             "name": "Beneil Dariush",
             "rank": "#9",
             "country": "United States",
-            "odds": "-",
+            "odds": "+150",
             "athleteUrl": "https://www.ufc.com/athlete/beneil-dariush"
           },
           "fighterB": {
             "name": "Benoît Saint Denis",
             "rank": "#13",
             "country": "France",
-            "odds": "-",
+            "odds": "-180",
             "athleteUrl": "https://www.ufc.com/athlete/mariya-agapova-0"
           },
           "startTime": "12:00 AM"
@@ -151,14 +151,14 @@
             "name": "Bo Nickal",
             "rank": "",
             "country": "United States",
-            "odds": "-",
+            "odds": "-205",
             "athleteUrl": "https://www.ufc.com/athlete/bo-nickal"
           },
           "fighterB": {
             "name": "Rodolfo Vieira",
             "rank": "",
             "country": "Brazil",
-            "odds": "-",
+            "odds": "+170",
             "athleteUrl": "https://www.ufc.com/athlete/rodolfo-vieira"
           },
           "startTime": "12:30 AM"
@@ -173,14 +173,14 @@
             "name": "Roman Kopylov",
             "rank": "",
             "country": "Russia",
-            "odds": "-",
+            "odds": "+154",
             "athleteUrl": "https://www.ufc.com/athlete/roman-kopylov"
           },
           "fighterB": {
             "name": "Gregory Rodrigues",
             "rank": "",
             "country": "Brazil",
-            "odds": "-",
+            "odds": "-185",
             "athleteUrl": "https://www.ufc.com/athlete/gregory-rodrigues"
           },
           "startTime": "1:00 AM"
@@ -195,37 +195,37 @@
             "name": "Erin Blanchfield",
             "rank": "#4",
             "country": "United States",
-            "odds": "-",
+            "odds": "-258",
             "athleteUrl": "https://www.ufc.com/athlete/erin-blanchfield"
           },
           "fighterB": {
             "name": "Tracy Cortez",
             "rank": "#8",
             "country": "United States",
-            "odds": "-",
+            "odds": "+210",
             "athleteUrl": "https://www.ufc.com/athlete/tracy-cortez"
           },
           "startTime": "1:30 AM"
         },
         {
-          "fightId": "12492",
+          "fightId": "12524",
           "order": 9,
           "cardType": "Prelims",
-          "weightClass": "Bantamweight",
+          "weightClass": "Featherweight",
           "isTitle": false,
           "fighterA": {
             "name": "Malcolm Wellmaker",
             "rank": "",
             "country": "United States",
-            "odds": "-",
+            "odds": "-155",
             "athleteUrl": "https://www.ufc.com/athlete/malcolm-wellmaker"
           },
           "fighterB": {
-            "name": "Cody Haddon",
+            "name": "Ethyn Ewing",
             "rank": "",
-            "country": "Australia",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/cody-haddon"
+            "country": "United States",
+            "odds": "+130",
+            "athleteUrl": "https://www.ufc.com/athlete/ethyn-ewing"
           },
           "startTime": "2:00 AM"
         },
@@ -239,14 +239,14 @@
             "name": "Kyle Daukaus",
             "rank": "",
             "country": "United States",
-            "odds": "-",
+            "odds": "-425",
             "athleteUrl": "https://www.ufc.com/athlete/kyle-daukaus"
           },
           "fighterB": {
             "name": "Gerald Meerschaert",
             "rank": "",
             "country": "United States",
-            "odds": "-",
+            "odds": "+330",
             "athleteUrl": "https://www.ufc.com/athlete/gerald-meerschaert"
           },
           "startTime": "2:30 AM"
@@ -261,14 +261,14 @@
             "name": "Pat Sabatini",
             "rank": "",
             "country": "United States",
-            "odds": "-",
+            "odds": "-130",
             "athleteUrl": "https://www.ufc.com/athlete/pat-sabatini"
           },
           "fighterB": {
             "name": "Chepe Mariscal",
             "rank": "",
             "country": "United States",
-            "odds": "-",
+            "odds": "+110",
             "athleteUrl": "https://www.ufc.com/athlete/chepe-mariscal"
           },
           "startTime": "3:00 AM"
@@ -283,14 +283,14 @@
             "name": "Angela Hill",
             "rank": "#12",
             "country": "United States",
-            "odds": "-",
+            "odds": "+390",
             "athleteUrl": "https://www.ufc.com/athlete/angela-hill"
           },
           "fighterB": {
             "name": "Fatima Kline",
             "rank": "",
             "country": "United States",
-            "odds": "-",
+            "odds": "-520",
             "athleteUrl": "https://www.ufc.com/athlete/fatima-kline"
           },
           "startTime": "3:30 AM"
@@ -305,14 +305,14 @@
             "name": "Baisangur Susurkaev",
             "rank": "",
             "country": "Russia",
-            "odds": "-",
+            "odds": "-1050",
             "athleteUrl": "https://www.ufc.com/athlete/baisangur-susurkaev"
           },
           "fighterB": {
             "name": "Eric McConico",
             "rank": "",
             "country": "United States",
-            "odds": "-",
+            "odds": "+675",
             "athleteUrl": "https://www.ufc.com/athlete/eric-mcconico"
           },
           "startTime": "4:00 AM"
@@ -327,14 +327,14 @@
             "name": "Viacheslav Borshchev",
             "rank": "",
             "country": "Russia",
-            "odds": "-",
+            "odds": "+150",
             "athleteUrl": "https://www.ufc.com/athlete/viacheslav-borshchev"
           },
           "fighterB": {
             "name": "Matheus Camilo",
             "rank": "",
             "country": "Brazil",
-            "odds": "-",
+            "odds": "-180",
             "athleteUrl": "https://www.ufc.com/athlete/matheus-camilo"
           },
           "startTime": "4:30 AM"

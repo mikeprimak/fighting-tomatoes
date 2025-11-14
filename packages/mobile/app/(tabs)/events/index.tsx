@@ -16,6 +16,7 @@ import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { FightDisplayCard, EventBannerCard } from '../../../components';
 import { useAuth } from '../../../store/AuthContext';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 interface Event {
   id: string;
@@ -380,11 +381,9 @@ function EventSection({
           {mainCard.length > 0 && (
             <View style={styles.cardSection}>
               <View style={styles.sectionHeader}>
-                {/* Left Column Header - ALL / HYPE */}
+                {/* Left Column Header - Group Icon / HYPE */}
                 <View style={styles.columnHeaders}>
-                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                    ALL
-                  </Text>
+                  <FontAwesome name="users" size={12} color={colors.textSecondary} />
                   <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
                     HYPE
                   </Text>
@@ -402,11 +401,9 @@ function EventSection({
                   )}
                 </View>
 
-                {/* Right Column Header - MY / HYPE */}
+                {/* Right Column Header - User Icon / HYPE */}
                 <View style={styles.columnHeadersRight}>
-                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                    MY
-                  </Text>
+                  <FontAwesome name="user" size={12} color={colors.textSecondary} />
                   <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
                     HYPE
                   </Text>
@@ -611,7 +608,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   columnHeaders: {
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 0,
+    gap: 2,
     marginLeft: -11, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
     width: 40, // Match width of heatmap square
     justifyContent: 'center', // Center text within the column
@@ -619,7 +616,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   columnHeadersRight: {
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 0,
+    gap: 2,
     marginRight: -11, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
     width: 40, // Match width of heatmap square
     justifyContent: 'center', // Center text within the column

@@ -19,3 +19,5 @@ export { CustomAlert } from './CustomAlert';
 export { default as UpcomingFightDetailScreen } from './UpcomingFightDetailScreen';
 export { default as CompletedFightDetailScreen } from './CompletedFightDetailScreen';
 export { EventBannerCard } from './EventBannerCard';
+export { default as Button } from './Button';
+export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';

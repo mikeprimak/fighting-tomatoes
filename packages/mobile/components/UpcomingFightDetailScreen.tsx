@@ -30,6 +30,7 @@ import { FlagReviewModal } from '.';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
 import FightDetailsMenu from './FightDetailsMenu';
+import Button from './Button';
 
 interface Fighter {
   id: string;
@@ -314,6 +315,14 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
       // Exit edit mode after successful save
       setIsEditingComment(false);
+    },
+    onError: (error: any) => {
+      console.error('Failed to save comment:', error);
+      showAlert(
+        'Failed to save comment',
+        error?.message || 'Please try again later',
+        'error'
+      );
     },
   });
 
@@ -777,7 +786,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 color: selectedWinner === fight.fighter1.id ? '#000' : colors.text
               }
             ]}>
-              {fight.fighter1.lastName}
+              {fight.fighter1.firstName} {fight.fighter1.lastName}
             </Text>
           </TouchableOpacity>
 
@@ -805,7 +814,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 color: selectedWinner === fight.fighter2.id ? '#000' : colors.text
               }
             ]}>
-              {fight.fighter2.lastName}
+              {fight.fighter2.firstName} {fight.fighter2.lastName}
             </Text>
           </TouchableOpacity>
         </View>
@@ -935,22 +944,21 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         />
       </View>
 
-      {/* Pre-Fight Comments */}
+      {/* Comments */}
       <View style={[styles.sectionNoBorder, { marginTop: -25 }]}>
         {/* Title row with Add Comment / Cancel button */}
         <View style={styles.commentHeaderRow}>
           <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
-            Pre-Fight Comments
+            Comments
           </Text>
           {!preFightCommentsData?.userComment && !isEditingComment && (
-            <TouchableOpacity
+            <Button
               onPress={() => setShowCommentForm(!showCommentForm)}
-              style={styles.addCommentButton}
+              variant={showCommentForm ? 'ghost' : 'outline'}
+              size="small"
             >
-              <Text style={[styles.addCommentButtonText, { color: colors.tint }]}>
-                {showCommentForm ? 'Cancel' : 'Add Comment'}
-              </Text>
-            </TouchableOpacity>
+              {showCommentForm ? 'Cancel' : '+ Add'}
+            </Button>
           )}
         </View>
 
@@ -969,7 +977,11 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                   styles.commentInput,
                   { color: colors.text }
                 ]}
-                placeholder="Share why you're hyped for this fight..."
+                placeholder={
+                  selectedHype && selectedHype > 0
+                    ? `Why are you ${selectedHype}/10 hyped for this fight?`
+                    : "Why are you hyped for this fight?"
+                }
                 placeholderTextColor={colors.textSecondary}
                 multiline
                 numberOfLines={4}
@@ -1166,6 +1178,7 @@ const styles = StyleSheet.create({
   fighterButtonText: {
     fontSize: 16,
     fontWeight: '600',
+    textAlign: 'center',
   },
   displayFlameContainer: {
     alignItems: 'center',

@@ -191,7 +191,7 @@ export default function ProfileScreen() {
 
         {/* Predictions Section */}
         <View style={[styles.predictionsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Fight Predictions</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text, textAlign: 'center' }]}>Fight Predictions</Text>
 
           {/* Winner Predictions */}
           <View style={styles.predictionRow}>
@@ -218,7 +218,7 @@ export default function ProfileScreen() {
 
         {/* Average Hype */}
         <View style={[styles.averageRatingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.statLabel, { color: colors.textSecondary, marginBottom: 8 }]}>Average Hype</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Average Hype</Text>
           <View style={styles.flamesContainer}>
             {renderFlameRating(user?.averageHype || 0)}
           </View>
@@ -240,7 +240,7 @@ export default function ProfileScreen() {
 
         {/* Average Rating */}
         <View style={[styles.averageRatingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.statLabel, { color: colors.textSecondary, marginBottom: 8 }]}>Average Rating</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Average Rating</Text>
           <View style={styles.starsContainer}>
             {renderStarRating(user?.averageRating || 0)}
           </View>
@@ -266,35 +266,50 @@ export default function ProfileScreen() {
             style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
             onPress={() => router.push('/activity/ratings')}
           >
-            <Text style={[styles.actionButtonText, { color: colors.text }]}>My Activity</Text>
+            <View style={styles.actionButtonContent}>
+              <FontAwesome name="history" size={18} color={colors.text} />
+              <Text style={[styles.actionButtonText, { color: colors.text }]}>My Activity</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
             onPress={() => router.push('/settings')}
           >
-            <Text style={[styles.actionButtonText, { color: colors.text }]}>Notifications</Text>
+            <View style={styles.actionButtonContent}>
+              <FontAwesome name="bell" size={18} color={colors.text} />
+              <Text style={[styles.actionButtonText, { color: colors.text }]}>Notifications</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
             onPress={() => router.push('/edit-profile')}
           >
-            <Text style={[styles.actionButtonText, { color: colors.text }]}>Edit Profile</Text>
+            <View style={styles.actionButtonContent}>
+              <FontAwesome name="user" size={18} color={colors.text} />
+              <Text style={[styles.actionButtonText, { color: colors.text }]}>Edit Profile</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
             onPress={() => router.push('/send-feedback')}
           >
-            <Text style={[styles.actionButtonText, { color: colors.text }]}>Send Feedback</Text>
+            <View style={styles.actionButtonContent}>
+              <FontAwesome name="comment" size={18} color={colors.text} />
+              <Text style={[styles.actionButtonText, { color: colors.text }]}>Send Feedback</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.logoutButton, { backgroundColor: colors.primary }]}
             onPress={handleLogout}
           >
-            <Text style={[styles.logoutButtonText, { color: colors.textOnAccent }]}>Sign Out</Text>
+            <View style={styles.actionButtonContent}>
+              <FontAwesome name="sign-out" size={18} color={colors.textOnAccent} />
+              <Text style={[styles.logoutButtonText, { color: colors.textOnAccent }]}>Sign Out</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -367,6 +382,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 16,
   },
   predictionRow: {
     flexDirection: 'row',
@@ -455,6 +471,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     marginBottom: 12,
+  },
+  actionButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   actionButtonText: {
     fontSize: 16,
