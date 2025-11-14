@@ -411,20 +411,39 @@ export default function UpcomingFightCard({
           </View>
 
           {/* Full-height user hype square on the right */}
-          <View style={[styles.userHypeSquare, { backgroundColor: userHypeColor }]}>
-            <Animated.View style={{ position: 'absolute', transform: [{ scale: hypeScaleAnim }] }}>
+          <View style={[
+            styles.userHypeSquare,
+            {
+              backgroundColor: (fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0)
+                ? userHypeColor
+                : 'transparent',
+              borderWidth: (fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0)
+                ? 0
+                : 1,
+              borderColor: colors.textSecondary,
+            }
+          ]}>
+            {(fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0) ? (
+              <>
+                <Animated.View style={{ position: 'absolute', transform: [{ scale: hypeScaleAnim }] }}>
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={24}
+                    color={userFlameColor}
+                  />
+                </Animated.View>
+                <Animated.Text style={[styles.hypeSquareText, { transform: [{ scale: hypeScaleAnim }] }]}>
+                  {Math.round(fight.userHypePrediction).toString()}
+                </Animated.Text>
+              </>
+            ) : (
               <FontAwesome6
                 name="fire-flame-curved"
-                size={24}
-                color={userFlameColor}
+                size={20}
+                color={colors.textSecondary}
+                style={{ position: 'absolute', opacity: 0.5 }}
               />
-            </Animated.View>
-            <Animated.Text style={[styles.hypeSquareText, { transform: [{ scale: hypeScaleAnim }] }]}>
-              {fight.userHypePrediction !== undefined && fight.userHypePrediction !== null
-                ? Math.round(fight.userHypePrediction).toString()
-                : '0'
-              }
-            </Animated.Text>
+            )}
           </View>
 
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -15 : 2 }]}>
