@@ -90,9 +90,9 @@ export function PreFightCommentCard({
                   <FontAwesome
                     name="edit"
                     size={12}
-                    color={colors.tint}
+                    color={colors.textSecondary}
                   />
-                  <Text style={[styles.editButtonText, { color: colors.tint }]}>
+                  <Text style={[styles.editButtonText, { color: colors.textSecondary }]}>
                     Edit
                   </Text>
                 </TouchableOpacity>
