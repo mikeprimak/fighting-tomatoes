@@ -921,7 +921,12 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
               <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
                 {displayPredictionStats.winnerPredictions.fighter1.percentage}%
               </Text>
-              <FontAwesome name="users" size={18} color={colors.textSecondary} />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <FontAwesome name="users" size={14} color={colors.textSecondary} />
+                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
+                  Community
+                </Text>
+              </View>
               <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
                 {displayPredictionStats.winnerPredictions.fighter2.percentage}%
               </Text>
@@ -1092,9 +1097,92 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
       {/* How Hyped? */}
       <View style={[styles.sectionNoBorder, { marginTop: -25 }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text, zIndex: 10 }]}>
-          How Hyped?
-        </Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text style={[styles.sectionTitle, { color: colors.text, zIndex: 10 }]}>
+            Your Hype:
+          </Text>
+          {selectedHype !== null && selectedHype > 0 && (() => {
+            const hypeColor = aggregateStats?.communityAverageHype
+              ? getHypeHeatmapColor(aggregateStats.communityAverageHype)
+              : colors.border;
+
+            // Mix 70% heatmap color with 30% background color for flame icon (matches UpcomingFightCard)
+            const getFlameColor = (hypeColor: string, bgColor: string): string => {
+              // Parse hype color (RGB or hex)
+              const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+              const hypeHexMatch = hypeColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+
+              let hypeR = 0, hypeG = 0, hypeB = 0;
+              if (hypeRgbaMatch) {
+                hypeR = parseInt(hypeRgbaMatch[1]);
+                hypeG = parseInt(hypeRgbaMatch[2]);
+                hypeB = parseInt(hypeRgbaMatch[3]);
+              } else if (hypeHexMatch) {
+                hypeR = parseInt(hypeHexMatch[1], 16);
+                hypeG = parseInt(hypeHexMatch[2], 16);
+                hypeB = parseInt(hypeHexMatch[3], 16);
+              }
+
+              // Parse background color (RGB or hex)
+              const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+              const bgHexMatch = bgColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+
+              let bgR = 0, bgG = 0, bgB = 0;
+              if (bgRgbaMatch) {
+                bgR = parseInt(bgRgbaMatch[1]);
+                bgG = parseInt(bgRgbaMatch[2]);
+                bgB = parseInt(bgRgbaMatch[3]);
+              } else if (bgHexMatch) {
+                bgR = parseInt(bgHexMatch[1], 16);
+                bgG = parseInt(bgHexMatch[2], 16);
+                bgB = parseInt(bgHexMatch[3], 16);
+              }
+
+              // Mix 70% hype + 30% background
+              const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
+              const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
+              const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
+
+              return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
+            };
+
+            const flameColor = getFlameColor(hypeColor, colors.background);
+
+            return (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <FontAwesome name="users" size={14} color={colors.textSecondary} />
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
+                    Community:
+                  </Text>
+                </View>
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderRadius: 8,
+                  backgroundColor: hypeColor,
+                }}>
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={24}
+                    color={flameColor}
+                    style={{ position: 'absolute' }}
+                  />
+                  <Text style={{
+                    color: '#FFFFFF',
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                  }}>
+                    {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
+                  </Text>
+                </View>
+              </View>
+            );
+          })()}
+        </View>
 
         {/* Large display flame with wheel animation */}
         <View style={styles.displayFlameContainer}>
