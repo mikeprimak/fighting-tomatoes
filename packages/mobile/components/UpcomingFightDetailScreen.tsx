@@ -10,7 +10,6 @@ import {
   Animated,
   Easing,
   TextInput,
-  KeyboardAvoidingView,
   Platform,
   Keyboard,
 } from 'react-native';
@@ -124,6 +123,9 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const scrollViewRef = useRef<ScrollView>(null);
   const commentInputRef = useRef<View>(null);
 
+  // Keyboard height state for dynamic padding
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
   // Animation for toast notification
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const toastTranslateY = useRef(new Animated.Value(50)).current;
@@ -171,6 +173,31 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
     setLocalFighter2Notification(fight.isFollowingFighter2);
     setLocalNotificationReasons(fight.notificationReasons);
   }, [fight.isFollowing, fight.isFollowingFighter1, fight.isFollowingFighter2, fight.notificationReasons]);
+
+  // Keyboard event listeners for dynamic padding
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        // Set keyboard height, accounting for tab bar (typically 49-83px)
+        // We subtract tab bar height because SafeAreaView already handles it
+        const tabBarHeight = 60; // Approximate tab bar height
+        setKeyboardHeight(e.endCoordinates.height - tabBarHeight);
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
 
   // HARDCODED TEST DATA - Remove this when done testing
   const testPredictionStats = {
@@ -705,35 +732,20 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       .join(' ');
   };
 
-  // Handle keyboard show to scroll to input
+  // Handle keyboard show - just set focus state, let native behavior handle scroll
   const handleCommentFocus = () => {
     setIsCommentFocused(true);
-    setTimeout(() => {
-      commentInputRef.current?.measureLayout(
-        scrollViewRef.current as any,
-        (x, y) => {
-          scrollViewRef.current?.scrollTo({
-            y: y - 100,
-            animated: true,
-          });
-        },
-        () => {}
-      );
-    }, 100);
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    <ScrollView
+      ref={scrollViewRef}
+      style={[styles.scrollView, { backgroundColor: colors.background }]}
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={{
+        paddingBottom: keyboardHeight > 0 ? keyboardHeight + 20 : 80
+      }}
     >
-      <ScrollView
-        ref={scrollViewRef}
-        style={[styles.scrollView, { backgroundColor: colors.background }]}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: 80 }}
-      >
 
 
       {/* Who Do You Think Will Win? */}
@@ -853,10 +865,10 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         </View>
       </View>
 
-      {/* How Hyped Are You? */}
+      {/* How Hyped? */}
       <View style={[styles.sectionNoBorder, { marginTop: -25 }]}>
         <Text style={[styles.sectionTitle, { color: colors.text, zIndex: 10 }]}>
-          How hyped are you?
+          How Hyped?
         </Text>
 
         {/* Large display flame with wheel animation */}
@@ -930,19 +942,21 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         </View>
       </View>
 
-      {/* Community Predictions */}
-      <View style={styles.sectionNoBorder}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Community Predictions
-        </Text>
+      {/* Community Predictions - Temporarily Hidden */}
+      {false && (
+        <View style={styles.sectionNoBorder}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Community Predictions
+          </Text>
 
-        {/* Prediction Breakdown Chart */}
-        <PredictionBarChart
-          predictionStats={displayPredictionStats}
-          fighter1Name={fight.fighter1.lastName}
-          fighter2Name={fight.fighter2.lastName}
-        />
-      </View>
+          {/* Prediction Breakdown Chart */}
+          <PredictionBarChart
+            predictionStats={displayPredictionStats}
+            fighter1Name={fight.fighter1.lastName}
+            fighter2Name={fight.fighter2.lastName}
+          />
+        </View>
+      )}
 
       {/* Comments */}
       <View style={[styles.sectionNoBorder, { marginTop: -25 }]}>
@@ -1150,8 +1164,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         onToggleFighterNotification={handleToggleFighterNotification}
         isTogglingFighterNotification={toggleFighterNotificationMutation.isPending}
       />
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </ScrollView>
   );
 }
 

@@ -72,7 +72,7 @@ export default function FightDetailScreen() {
   const isComplete = fight.isComplete;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
       <DetailScreenHeader
         title={fight ? `${fight.fighter1.lastName} vs ${fight.fighter2.lastName}` : 'Fight Details'}
       />

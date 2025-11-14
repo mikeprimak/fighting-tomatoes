@@ -11,8 +11,8 @@ import {
   ActivityIndicator,
   TextInput,
   Easing,
-  KeyboardAvoidingView,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -328,6 +328,9 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const scrollViewRef = useRef<ScrollView>(null);
   const commentInputRef = useRef<View>(null);
 
+  // Keyboard height state for dynamic padding
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
   // State for displayed tags (delayed update for smooth animation)
   const [displayedTags, setDisplayedTags] = useState<string[]>([]);
 
@@ -425,6 +428,31 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     if (displayedTags.length === 0) {
       setDisplayedTags(availableTags);
     }
+  }, []);
+
+  // Keyboard event listeners for dynamic padding
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        // Set keyboard height, accounting for tab bar (typically 49-83px)
+        // We subtract tab bar height because SafeAreaView already handles it
+        const tabBarHeight = 60; // Approximate tab bar height
+        setKeyboardHeight(e.endCoordinates.height - tabBarHeight);
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
   }, []);
 
   // Animate tags when they change (fade out → update → fade in)
@@ -545,36 +573,15 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
     }
   };
 
-  // Handle comment input focus - scroll into view
+  // Handle comment input focus - let native behavior handle scroll
   const handleCommentFocus = () => {
-    setTimeout(() => {
-      commentInputRef.current?.measureLayout(
-        scrollViewRef.current as any,
-        (x, y) => {
-          scrollViewRef.current?.scrollTo({ y: y - 20, animated: true });
-        },
-        () => {}
-      );
-    }, 100);
+    // Native keyboard behavior will handle scrolling
   };
 
-  // Handle showing comment form and scrolling to it
+  // Handle showing comment form - let native behavior handle scroll
   const handleToggleCommentForm = () => {
-    const newShowCommentForm = !showCommentForm;
-    setShowCommentForm(newShowCommentForm);
-
-    // If we're showing the form, scroll to it after it renders
-    if (newShowCommentForm) {
-      setTimeout(() => {
-        commentInputRef.current?.measureLayout(
-          scrollViewRef.current as any,
-          (x, y) => {
-            scrollViewRef.current?.scrollTo({ y: y - 20, animated: true });
-          },
-          () => {}
-        );
-      }, 100);
-    }
+    setShowCommentForm(!showCommentForm);
+    // Native keyboard behavior will handle scrolling when input is focused
   };
 
   // Flag review mutation
@@ -794,17 +801,14 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
 
   return (
     <>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      <ScrollView
+        ref={scrollViewRef}
+        style={[styles.scrollView, { backgroundColor: colors.background }]}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{
+          paddingBottom: keyboardHeight > 0 ? keyboardHeight + 20 : 80
+        }}
       >
-        <ScrollView
-          ref={scrollViewRef}
-          style={[styles.scrollView, { backgroundColor: colors.background }]}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: 20 }}
-        >
 
         {/* Inline Rating Section */}
         <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 0 }]}>
@@ -1731,8 +1735,7 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
           )}
         </View>
 
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </ScrollView>
 
       {/* Modals */}
       <FlagReviewModal
