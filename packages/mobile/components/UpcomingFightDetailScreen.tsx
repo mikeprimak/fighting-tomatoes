@@ -954,10 +954,38 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
           {!preFightCommentsData?.userComment && !isEditingComment && (
             <Button
               onPress={() => setShowCommentForm(!showCommentForm)}
-              variant={showCommentForm ? 'ghost' : 'outline'}
+              variant="outline"
               size="small"
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.background,
+              }}
+              textStyle={{
+                color: colors.text,
+              }}
             >
               {showCommentForm ? 'Cancel' : '+ Add'}
+            </Button>
+          )}
+          {isEditingComment && (
+            <Button
+              onPress={() => {
+                setIsEditingComment(false);
+                setPreFightComment(preFightCommentsData?.userComment?.content || '');
+              }}
+              variant="outline"
+              size="small"
+              style={{
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.background,
+              }}
+              textStyle={{
+                color: colors.text,
+              }}
+            >
+              Cancel
             </Button>
           )}
         </View>
