@@ -144,6 +144,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const predictionsFadeAnim = useRef(new Animated.Value(0)).current;
   const methodSubdivisionsFadeAnim = useRef(new Animated.Value(0)).current;
   const [shouldRenderPredictions, setShouldRenderPredictions] = useState(false);
+  const [shouldShowMethodSubdivisions, setShouldShowMethodSubdivisions] = useState(false);
 
   // Fetch both prediction stats and aggregate stats in a single API call
   const { data: fightStatsData } = useQuery({
@@ -214,19 +215,22 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   // Animate layout changes when winner selection changes
   useEffect(() => {
     if (selectedWinner) {
-      // Mount component first
-      setShouldRenderPredictions(true);
+      // Mount component if not already mounted
+      if (!shouldRenderPredictions) {
+        setShouldRenderPredictions(true);
 
-      // Trigger layout animation
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        // Trigger layout animation
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
-      // Reset to 0 first, then animate to 1
-      predictionsFadeAnim.setValue(0);
-      Animated.timing(predictionsFadeAnim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
+        // Reset to 0 first, then animate to 1
+        predictionsFadeAnim.setValue(0);
+        Animated.timing(predictionsFadeAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }).start();
+      }
+      // If already mounted (switching fighters), don't animate - just stay visible
     } else {
       // Trigger layout animation
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -247,20 +251,30 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   // Animate method subdivisions when method selection changes
   useEffect(() => {
     if (selectedMethod) {
-      // Reset to 0 first, then animate to 1
-      methodSubdivisionsFadeAnim.setValue(0);
-      Animated.timing(methodSubdivisionsFadeAnim, {
-        toValue: 1,
-        duration: 250,
-        useNativeDriver: true,
-      }).start();
+      // Show subdivisions if not already shown
+      if (!shouldShowMethodSubdivisions) {
+        setShouldShowMethodSubdivisions(true);
+
+        // Reset to 0 first, then animate to 1
+        methodSubdivisionsFadeAnim.setValue(0);
+        Animated.timing(methodSubdivisionsFadeAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }).start();
+      }
+      // If already shown (switching methods), don't animate - just stay visible
     } else {
       // Fade out
       Animated.timing(methodSubdivisionsFadeAnim, {
         toValue: 0,
         duration: 250,
         useNativeDriver: true,
-      }).start();
+      }).start(({ finished }) => {
+        if (finished) {
+          setShouldShowMethodSubdivisions(false);
+        }
+      });
     }
   }, [selectedMethod]);
 
@@ -927,7 +941,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 backgroundColor: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#F5C518' : colors.border,
               }}>
                 {/* Fighter 1 method subdivisions - Fade in/out based on method selection */}
-                {displayPredictionStats.fighter1MethodPredictions && (
+                {shouldShowMethodSubdivisions && displayPredictionStats.fighter1MethodPredictions && (
                   <Animated.View style={{ flexDirection: 'row', flex: 1, opacity: methodSubdivisionsFadeAnim }}>
                     {displayPredictionStats.fighter1MethodPredictions.KO_TKO > 0 && (
                       <View style={{
@@ -986,7 +1000,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 backgroundColor: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#F5C518' : colors.border,
               }}>
                 {/* Fighter 2 method subdivisions - Fade in/out based on method selection */}
-                {displayPredictionStats.fighter2MethodPredictions && (
+                {shouldShowMethodSubdivisions && displayPredictionStats.fighter2MethodPredictions && (
                   <Animated.View style={{ flexDirection: 'row', flex: 1, opacity: methodSubdivisionsFadeAnim }}>
                     {displayPredictionStats.fighter2MethodPredictions.KO_TKO > 0 && (
                       <View style={{
