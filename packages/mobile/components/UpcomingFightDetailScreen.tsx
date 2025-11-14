@@ -12,6 +12,8 @@ import {
   TextInput,
   Platform,
   Keyboard,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
@@ -87,6 +89,11 @@ const getFighterPlaceholderImage = (fighterId: string) => {
   return require('../assets/fighters/fighter-default-alpha.png');
 };
 
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 // Heatmap flame icon color - solid colors for icon display
 export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }: UpcomingFightDetailScreenProps) {
   const colorScheme = useColorScheme();
@@ -132,6 +139,11 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
   // Wheel animation for number display
   const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 120 : 1200)).current;
+
+  // Simple fade animation for community predictions
+  const predictionsFadeAnim = useRef(new Animated.Value(0)).current;
+  const methodSubdivisionsFadeAnim = useRef(new Animated.Value(0)).current;
+  const [shouldRenderPredictions, setShouldRenderPredictions] = useState(false);
 
   // Fetch both prediction stats and aggregate stats in a single API call
   const { data: fightStatsData } = useQuery({
@@ -198,6 +210,59 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       keyboardWillHide.remove();
     };
   }, []);
+
+  // Animate layout changes when winner selection changes
+  useEffect(() => {
+    if (selectedWinner) {
+      // Mount component first
+      setShouldRenderPredictions(true);
+
+      // Trigger layout animation
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+      // Reset to 0 first, then animate to 1
+      predictionsFadeAnim.setValue(0);
+      Animated.timing(predictionsFadeAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      // Trigger layout animation
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+      // Fade out, then unmount
+      Animated.timing(predictionsFadeAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setShouldRenderPredictions(false);
+        }
+      });
+    }
+  }, [selectedWinner]);
+
+  // Animate method subdivisions when method selection changes
+  useEffect(() => {
+    if (selectedMethod) {
+      // Reset to 0 first, then animate to 1
+      methodSubdivisionsFadeAnim.setValue(0);
+      Animated.timing(methodSubdivisionsFadeAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      // Fade out
+      Animated.timing(methodSubdivisionsFadeAnim, {
+        toValue: 0,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [selectedMethod]);
 
   // HARDCODED TEST DATA - Remove this when done testing
   const testPredictionStats = {
@@ -832,6 +897,152 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         </View>
       </View>
 
+      {/* Community Predictions - Simple conditional with LayoutAnimation + fade */}
+      {shouldRenderPredictions && (
+        <Animated.View style={[styles.sectionNoBorder, { marginTop: -28, opacity: predictionsFadeAnim }]}>
+          {displayPredictionStats && displayPredictionStats.winnerPredictions && (
+          <View style={{ marginTop: 8 }}>
+            {/* Header row with percentages and centered icon */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
+                {displayPredictionStats.winnerPredictions.fighter1.percentage}%
+              </Text>
+              <FontAwesome name="users" size={18} color={colors.textSecondary} />
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
+                {displayPredictionStats.winnerPredictions.fighter2.percentage}%
+              </Text>
+            </View>
+
+            {/* Horizontal prediction bar */}
+            <View style={{
+              height: 40,
+              flexDirection: 'row',
+              borderRadius: 4,
+              overflow: 'hidden',
+            }}>
+              {/* Fighter 1 side */}
+              <View style={{
+                flex: displayPredictionStats.winnerPredictions.fighter1.percentage,
+                flexDirection: 'row',
+                backgroundColor: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#F5C518' : colors.border,
+              }}>
+                {/* Fighter 1 method subdivisions - Fade in/out based on method selection */}
+                {displayPredictionStats.fighter1MethodPredictions && (
+                  <Animated.View style={{ flexDirection: 'row', flex: 1, opacity: methodSubdivisionsFadeAnim }}>
+                    {displayPredictionStats.fighter1MethodPredictions.KO_TKO > 0 && (
+                      <View style={{
+                        flex: displayPredictionStats.fighter1MethodPredictions.KO_TKO,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRightWidth: 1,
+                        borderRightColor: 'rgba(0,0,0,0.1)',
+                      }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#000' : colors.text }}>
+                          KO
+                        </Text>
+                        <Text style={{ fontSize: 8, color: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#000' : colors.textSecondary }}>
+                          {displayPredictionStats.fighter1MethodPredictions.KO_TKO}
+                        </Text>
+                      </View>
+                    )}
+                    {displayPredictionStats.fighter1MethodPredictions.SUBMISSION > 0 && (
+                      <View style={{
+                        flex: displayPredictionStats.fighter1MethodPredictions.SUBMISSION,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRightWidth: 1,
+                        borderRightColor: 'rgba(0,0,0,0.1)',
+                      }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#000' : colors.text }}>
+                          SUB
+                        </Text>
+                        <Text style={{ fontSize: 8, color: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#000' : colors.textSecondary }}>
+                          {displayPredictionStats.fighter1MethodPredictions.SUBMISSION}
+                        </Text>
+                      </View>
+                    )}
+                    {displayPredictionStats.fighter1MethodPredictions.DECISION > 0 && (
+                      <View style={{
+                        flex: displayPredictionStats.fighter1MethodPredictions.DECISION,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#000' : colors.text }}>
+                          DEC
+                        </Text>
+                        <Text style={{ fontSize: 8, color: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#000' : colors.textSecondary }}>
+                          {displayPredictionStats.fighter1MethodPredictions.DECISION}
+                        </Text>
+                      </View>
+                    )}
+                  </Animated.View>
+                )}
+              </View>
+
+              {/* Fighter 2 side */}
+              <View style={{
+                flex: displayPredictionStats.winnerPredictions.fighter2.percentage,
+                flexDirection: 'row',
+                backgroundColor: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#F5C518' : colors.border,
+              }}>
+                {/* Fighter 2 method subdivisions - Fade in/out based on method selection */}
+                {displayPredictionStats.fighter2MethodPredictions && (
+                  <Animated.View style={{ flexDirection: 'row', flex: 1, opacity: methodSubdivisionsFadeAnim }}>
+                    {displayPredictionStats.fighter2MethodPredictions.KO_TKO > 0 && (
+                      <View style={{
+                        flex: displayPredictionStats.fighter2MethodPredictions.KO_TKO,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRightWidth: 1,
+                        borderRightColor: 'rgba(0,0,0,0.1)',
+                      }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#000' : colors.text }}>
+                          KO
+                        </Text>
+                        <Text style={{ fontSize: 8, color: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#000' : colors.textSecondary }}>
+                          {displayPredictionStats.fighter2MethodPredictions.KO_TKO}
+                        </Text>
+                      </View>
+                    )}
+                    {displayPredictionStats.fighter2MethodPredictions.SUBMISSION > 0 && (
+                      <View style={{
+                        flex: displayPredictionStats.fighter2MethodPredictions.SUBMISSION,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRightWidth: 1,
+                        borderRightColor: 'rgba(0,0,0,0.1)',
+                      }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#000' : colors.text }}>
+                          SUB
+                        </Text>
+                        <Text style={{ fontSize: 8, color: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#000' : colors.textSecondary }}>
+                          {displayPredictionStats.fighter2MethodPredictions.SUBMISSION}
+                        </Text>
+                      </View>
+                    )}
+                    {displayPredictionStats.fighter2MethodPredictions.DECISION > 0 && (
+                      <View style={{
+                        flex: displayPredictionStats.fighter2MethodPredictions.DECISION,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}>
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#000' : colors.text }}>
+                          DEC
+                        </Text>
+                        <Text style={{ fontSize: 8, color: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#000' : colors.textSecondary }}>
+                          {displayPredictionStats.fighter2MethodPredictions.DECISION}
+                        </Text>
+                      </View>
+                    )}
+                  </Animated.View>
+                )}
+              </View>
+            </View>
+          </View>
+        )}
+        </Animated.View>
+      )}
+
       {/* How will it end? */}
       <View style={[styles.sectionNoBorder, { marginTop: -28 }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -941,22 +1152,6 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
           })}
         </View>
       </View>
-
-      {/* Community Predictions - Temporarily Hidden */}
-      {false && (
-        <View style={styles.sectionNoBorder}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Community Predictions
-          </Text>
-
-          {/* Prediction Breakdown Chart */}
-          <PredictionBarChart
-            predictionStats={displayPredictionStats}
-            fighter1Name={fight.fighter1.lastName}
-            fighter2Name={fight.fighter2.lastName}
-          />
-        </View>
-      )}
 
       {/* Comments */}
       <View style={[styles.sectionNoBorder, { marginTop: -25 }]}>
