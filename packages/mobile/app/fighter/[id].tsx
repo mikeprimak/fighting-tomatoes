@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Colors } from '../../constants/Colors';
 import { apiService, Fight } from '../../services/api';
-import { DetailScreenHeader, FightDisplayCard } from '../../components';
+import { DetailScreenHeader, FightDisplayCard, Button } from '../../components';
 import { useAuth } from '../../store/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
 
@@ -311,49 +311,35 @@ export default function FighterDetailScreen() {
 
             {/* Follow Button */}
             {isAuthenticated && (
-              <TouchableOpacity
+              <Button
                 onPress={handleFollowPress}
                 disabled={followMutation.isPending}
-                style={[
-                  styles.inlineFollowButton,
-                  fighter.isFollowing
-                    ? { backgroundColor: colors.card, borderColor: colors.border }
-                    : { backgroundColor: colors.primary }
-                ]}
+                loading={followMutation.isPending}
+                variant={fighter.isFollowing ? 'primary' : 'outline'}
+                size="small"
+                icon={
+                  <Animated.View
+                    style={{
+                      transform: [
+                        {
+                          rotate: bellRotation.interpolate({
+                            inputRange: [-1, 0, 1],
+                            outputRange: ['-15deg', '0deg', '15deg'],
+                          }),
+                        },
+                      ],
+                    }}
+                  >
+                    <FontAwesome
+                      name={fighter.isFollowing ? "bell" : "bell-o"}
+                      size={14}
+                      color={fighter.isFollowing ? '#1a1a1a' : colors.primary}
+                    />
+                  </Animated.View>
+                }
               >
-                {followMutation.isPending ? (
-                  <ActivityIndicator size="small" color={colors.text} />
-                ) : (
-                  <>
-                    <Animated.View
-                      style={{
-                        transform: [
-                          {
-                            rotate: bellRotation.interpolate({
-                              inputRange: [-1, 0, 1],
-                              outputRange: ['-15deg', '0deg', '15deg'],
-                            }),
-                          },
-                        ],
-                      }}
-                    >
-                      <FontAwesome
-                        name={fighter.isFollowing ? "bell" : "bell-o"}
-                        size={14}
-                        color={fighter.isFollowing ? '#10b981' : '#1a1a1a'}
-                      />
-                    </Animated.View>
-                    <Text
-                      style={[
-                        styles.inlineFollowButtonText,
-                        { color: fighter.isFollowing ? '#fff' : '#1a1a1a' }
-                      ]}
-                    >
-                      {fighter.isFollowing ? 'I will be notified' : 'Notify Me'}
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
+                {fighter.isFollowing ? 'Notifications On' : 'Notify Me'}
+              </Button>
             )}
           </View>
         </View>
@@ -372,7 +358,7 @@ export default function FighterDetailScreen() {
                 style={[styles.dropdownButton, { backgroundColor: colors.card, borderColor: colors.border }]}
               >
                 <Text style={[styles.dropdownButtonText, { color: colors.text }]}>
-                  Sort by: {SORT_OPTIONS.find(opt => opt.value === sortBy)?.label}
+                  {SORT_OPTIONS.find(opt => opt.value === sortBy)?.label}
                 </Text>
                 <FontAwesome name="chevron-down" size={14} color={colors.textSecondary} />
               </TouchableOpacity>
@@ -550,15 +536,15 @@ export default function FighterDetailScreen() {
           style={[
             styles.toastContainer,
             {
-              backgroundColor: colors.card,
-              borderColor: colors.border,
+              backgroundColor: colors.primary,
+              borderColor: colors.primary,
               opacity: toastOpacity,
               transform: [{ translateY: toastTranslateY }],
             },
           ]}
         >
-          <FontAwesome name="bell" size={16} color="#10b981" />
-          <Text style={[styles.toastText, { color: '#fff' }]}>{toastMessage}</Text>
+          <FontAwesome name="bell" size={16} color="#1a1a1a" />
+          <Text style={[styles.toastText, { color: '#1a1a1a' }]}>{toastMessage}</Text>
         </Animated.View>
       )}
     </SafeAreaView>

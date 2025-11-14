@@ -102,7 +102,15 @@ export default function FightDetailsMenu({
                 if (reason.type === 'manual') {
                   return 'You manually enabled notifications for this fight';
                 } else if (reason.type === 'fighter') {
-                  return reason.source;
+                  // Extract fighter ID from source string like "Fighter Follow: uuid"
+                  const fighterId = reason.source.replace('Fighter Follow: ', '');
+                  // Find the fighter name from the fight data
+                  if (fighterId === fight.fighter1Id) {
+                    return `Following ${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
+                  } else if (fighterId === fight.fighter2Id) {
+                    return `Following ${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+                  }
+                  return reason.source; // Fallback to raw source
                 } else if (reason.type === 'rule') {
                   return reason.source;
                 }
