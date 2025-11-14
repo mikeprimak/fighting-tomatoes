@@ -943,7 +943,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
               <View style={{
                 flex: displayPredictionStats.winnerPredictions.fighter1.percentage,
                 flexDirection: 'row',
-                backgroundColor: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#F5C518' : colors.border,
+                backgroundColor: selectedWinner === fight.fighter1Id ? '#F5C518' : colors.border,
               }}>
                 {/* Fighter 1 method subdivisions - Fade in/out based on method selection */}
                 {shouldShowMethodSubdivisions && displayPredictionStats.fighter1MethodPredictions && (
@@ -956,10 +956,19 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                         borderRightWidth: 1,
                         borderRightColor: 'rgba(0,0,0,0.1)',
                       }}>
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#000' : colors.text }}>
-                          KO
-                        </Text>
-                        <Text style={{ fontSize: 8, color: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#000' : colors.textSecondary }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                          {selectedWinner === fight.fighter1Id && selectedMethod === 'KO_TKO' && (
+                            <FontAwesome
+                              name="user"
+                              size={8}
+                              color="#000"
+                            />
+                          )}
+                          <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id ? '#000' : colors.text }}>
+                            KO
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter1Id ? '#000' : colors.textSecondary }}>
                           {displayPredictionStats.fighter1MethodPredictions.KO_TKO}
                         </Text>
                       </View>
@@ -972,10 +981,19 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                         borderRightWidth: 1,
                         borderRightColor: 'rgba(0,0,0,0.1)',
                       }}>
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#000' : colors.text }}>
-                          SUB
-                        </Text>
-                        <Text style={{ fontSize: 8, color: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#000' : colors.textSecondary }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                          {selectedWinner === fight.fighter1Id && selectedMethod === 'SUBMISSION' && (
+                            <FontAwesome
+                              name="user"
+                              size={8}
+                              color="#000"
+                            />
+                          )}
+                          <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id ? '#000' : colors.text }}>
+                            SUB
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter1Id ? '#000' : colors.textSecondary }}>
                           {displayPredictionStats.fighter1MethodPredictions.SUBMISSION}
                         </Text>
                       </View>
@@ -986,10 +1004,19 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                         justifyContent: 'center',
                         alignItems: 'center',
                       }}>
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#000' : colors.text }}>
-                          DEC
-                        </Text>
-                        <Text style={{ fontSize: 8, color: displayPredictionStats.winnerPredictions.fighter1.percentage >= displayPredictionStats.winnerPredictions.fighter2.percentage ? '#000' : colors.textSecondary }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                          {selectedWinner === fight.fighter1Id && selectedMethod === 'DECISION' && (
+                            <FontAwesome
+                              name="user"
+                              size={8}
+                              color="#000"
+                            />
+                          )}
+                          <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id ? '#000' : colors.text }}>
+                            DEC
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter1Id ? '#000' : colors.textSecondary }}>
                           {displayPredictionStats.fighter1MethodPredictions.DECISION}
                         </Text>
                       </View>
@@ -1002,7 +1029,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
               <View style={{
                 flex: displayPredictionStats.winnerPredictions.fighter2.percentage,
                 flexDirection: 'row',
-                backgroundColor: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#F5C518' : colors.border,
+                backgroundColor: selectedWinner === fight.fighter2Id ? '#F5C518' : colors.border,
               }}>
                 {/* Fighter 2 method subdivisions - Fade in/out based on method selection */}
                 {shouldShowMethodSubdivisions && displayPredictionStats.fighter2MethodPredictions && (
@@ -1015,10 +1042,19 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                         borderRightWidth: 1,
                         borderRightColor: 'rgba(0,0,0,0.1)',
                       }}>
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#000' : colors.text }}>
-                          KO
-                        </Text>
-                        <Text style={{ fontSize: 8, color: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#000' : colors.textSecondary }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                          {selectedWinner === fight.fighter2Id && selectedMethod === 'KO_TKO' && (
+                            <FontAwesome
+                              name="user"
+                              size={8}
+                              color="#000"
+                            />
+                          )}
+                          <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter2Id ? '#000' : colors.text }}>
+                            KO
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter2Id ? '#000' : colors.textSecondary }}>
                           {displayPredictionStats.fighter2MethodPredictions.KO_TKO}
                         </Text>
                       </View>
@@ -1031,10 +1067,19 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                         borderRightWidth: 1,
                         borderRightColor: 'rgba(0,0,0,0.1)',
                       }}>
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#000' : colors.text }}>
-                          SUB
-                        </Text>
-                        <Text style={{ fontSize: 8, color: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#000' : colors.textSecondary }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                          {selectedWinner === fight.fighter2Id && selectedMethod === 'SUBMISSION' && (
+                            <FontAwesome
+                              name="user"
+                              size={8}
+                              color="#000"
+                            />
+                          )}
+                          <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter2Id ? '#000' : colors.text }}>
+                            SUB
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter2Id ? '#000' : colors.textSecondary }}>
                           {displayPredictionStats.fighter2MethodPredictions.SUBMISSION}
                         </Text>
                       </View>
@@ -1045,10 +1090,19 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                         justifyContent: 'center',
                         alignItems: 'center',
                       }}>
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#000' : colors.text }}>
-                          DEC
-                        </Text>
-                        <Text style={{ fontSize: 8, color: displayPredictionStats.winnerPredictions.fighter2.percentage > displayPredictionStats.winnerPredictions.fighter1.percentage ? '#000' : colors.textSecondary }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                          {selectedWinner === fight.fighter2Id && selectedMethod === 'DECISION' && (
+                            <FontAwesome
+                              name="user"
+                              size={8}
+                              color="#000"
+                            />
+                          )}
+                          <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter2Id ? '#000' : colors.text }}>
+                            DEC
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter2Id ? '#000' : colors.textSecondary }}>
                           {displayPredictionStats.fighter2MethodPredictions.DECISION}
                         </Text>
                       </View>
