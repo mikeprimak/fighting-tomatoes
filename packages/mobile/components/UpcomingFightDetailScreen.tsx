@@ -1171,7 +1171,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
           <Text style={[styles.sectionTitle, { color: colors.text, zIndex: 10 }]}>
             Your Hype:
           </Text>
-          {selectedHype !== null && selectedHype > 0 && (() => {
+          {(() => {
             const hypeColor = aggregateStats?.communityAverageHype
               ? getHypeHeatmapColor(aggregateStats.communityAverageHype)
               : colors.border;
@@ -1217,9 +1217,16 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             };
 
             const flameColor = getFlameColor(hypeColor, colors.background);
+            const isVisible = selectedHype !== null && selectedHype > 0;
 
             return (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 6,
+                opacity: isVisible ? 1 : 0,
+                pointerEvents: isVisible ? 'auto' : 'none'
+              }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <FontAwesome name="users" size={14} color={colors.textSecondary} />
                   <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
