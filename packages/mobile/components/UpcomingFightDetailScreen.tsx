@@ -840,6 +840,286 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       }}
     >
 
+      {/* Community Hype and Predictions */}
+      <View style={styles.sectionNoBorder}>
+        {/* First row: Hype box and bar chart aligned horizontally */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+          {/* Community Hype Box */}
+          {(() => {
+            const hypeColor = aggregateStats?.communityAverageHype
+              ? getHypeHeatmapColor(aggregateStats.communityAverageHype)
+              : colors.border;
+
+            // Mix 70% heatmap color with 30% background color for flame icon
+            const getFlameColor = (hypeColor: string, bgColor: string): string => {
+              // Parse hype color (RGB or hex)
+              const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+              const hypeHexMatch = hypeColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+
+              let hypeR = 0, hypeG = 0, hypeB = 0;
+              if (hypeRgbaMatch) {
+                hypeR = parseInt(hypeRgbaMatch[1]);
+                hypeG = parseInt(hypeRgbaMatch[2]);
+                hypeB = parseInt(hypeRgbaMatch[3]);
+              } else if (hypeHexMatch) {
+                hypeR = parseInt(hypeHexMatch[1], 16);
+                hypeG = parseInt(hypeHexMatch[2], 16);
+                hypeB = parseInt(hypeHexMatch[3], 16);
+              }
+
+              // Parse background color (RGB or hex)
+              const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+              const bgHexMatch = bgColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+
+              let bgR = 0, bgG = 0, bgB = 0;
+              if (bgRgbaMatch) {
+                bgR = parseInt(bgRgbaMatch[1]);
+                bgG = parseInt(bgRgbaMatch[2]);
+                bgB = parseInt(bgRgbaMatch[3]);
+              } else if (bgHexMatch) {
+                bgR = parseInt(bgHexMatch[1], 16);
+                bgG = parseInt(bgHexMatch[2], 16);
+                bgB = parseInt(bgHexMatch[3], 16);
+              }
+
+              // Mix 70% hype + 30% background
+              const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
+              const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
+              const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
+
+              return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
+            };
+
+            const flameColor = getFlameColor(hypeColor, colors.background);
+
+            return (
+              <View style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 11,
+              }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <FontAwesome name="users" size={19} color={colors.textSecondary} />
+                </View>
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderRadius: 8,
+                  backgroundColor: hypeColor,
+                }}>
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={24}
+                    color={flameColor}
+                    style={{ position: 'absolute' }}
+                  />
+                  <Text style={{
+                    color: '#FFFFFF',
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                  }}>
+                    {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
+                  </Text>
+                </View>
+              </View>
+            );
+          })()}
+
+          {/* Community Predictions Bar - shown when user has selected a winner */}
+          {shouldRenderPredictions && (
+            <Animated.View style={{ flex: 1, opacity: predictionsFadeAnim }}>
+              {displayPredictionStats && displayPredictionStats.winnerPredictions && (
+                <View style={{
+                  height: 40,
+                  flexDirection: 'row',
+                  borderRadius: 8,
+                  overflow: 'hidden',
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}>
+                    {/* Fighter 1 side */}
+                    <View style={{
+                      flex: displayPredictionStats.winnerPredictions.fighter1.percentage,
+                      flexDirection: 'row',
+                      backgroundColor: selectedWinner === fight.fighter1Id ? '#F5C518' : colors.background,
+                    }}>
+                      {/* Fighter 1 method subdivisions */}
+                      {shouldShowMethodSubdivisions && displayPredictionStats.fighter1MethodPredictions && (
+                        <Animated.View style={{ flexDirection: 'row', flex: 1, opacity: methodSubdivisionsFadeAnim }}>
+                          {displayPredictionStats.fighter1MethodPredictions.KO_TKO > 0 && (
+                            <View style={{
+                              flex: displayPredictionStats.fighter1MethodPredictions.KO_TKO,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              borderRightWidth: 1,
+                              borderRightColor: colors.border,
+                            }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                {selectedWinner === fight.fighter1Id && selectedMethod === 'KO_TKO' && (
+                                  <FontAwesome name="user" size={8} color="#000" />
+                                )}
+                                <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id ? '#000' : colors.text }}>
+                                  KO
+                                </Text>
+                              </View>
+                              <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter1Id ? '#000' : colors.textSecondary }}>
+                                {displayPredictionStats.fighter1MethodPredictions.KO_TKO}
+                              </Text>
+                            </View>
+                          )}
+                          {displayPredictionStats.fighter1MethodPredictions.SUBMISSION > 0 && (
+                            <View style={{
+                              flex: displayPredictionStats.fighter1MethodPredictions.SUBMISSION,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              borderRightWidth: 1,
+                              borderRightColor: colors.border,
+                            }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                {selectedWinner === fight.fighter1Id && selectedMethod === 'SUBMISSION' && (
+                                  <FontAwesome name="user" size={8} color="#000" />
+                                )}
+                                <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id ? '#000' : colors.text }}>
+                                  SUB
+                                </Text>
+                              </View>
+                              <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter1Id ? '#000' : colors.textSecondary }}>
+                                {displayPredictionStats.fighter1MethodPredictions.SUBMISSION}
+                              </Text>
+                            </View>
+                          )}
+                          {displayPredictionStats.fighter1MethodPredictions.DECISION > 0 && (
+                            <View style={{
+                              flex: displayPredictionStats.fighter1MethodPredictions.DECISION,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                {selectedWinner === fight.fighter1Id && selectedMethod === 'DECISION' && (
+                                  <FontAwesome name="user" size={8} color="#000" />
+                                )}
+                                <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id ? '#000' : colors.text }}>
+                                  DEC
+                                </Text>
+                              </View>
+                              <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter1Id ? '#000' : colors.textSecondary }}>
+                                {displayPredictionStats.fighter1MethodPredictions.DECISION}
+                              </Text>
+                            </View>
+                          )}
+                        </Animated.View>
+                      )}
+                    </View>
+
+                    {/* Fighter 2 side */}
+                    <View style={{
+                      flex: displayPredictionStats.winnerPredictions.fighter2.percentage,
+                      flexDirection: 'row',
+                      backgroundColor: selectedWinner === fight.fighter2Id ? '#F5C518' : colors.background,
+                    }}>
+                      {/* Fighter 2 method subdivisions */}
+                      {shouldShowMethodSubdivisions && displayPredictionStats.fighter2MethodPredictions && (
+                        <Animated.View style={{ flexDirection: 'row', flex: 1, opacity: methodSubdivisionsFadeAnim }}>
+                          {displayPredictionStats.fighter2MethodPredictions.KO_TKO > 0 && (
+                            <View style={{
+                              flex: displayPredictionStats.fighter2MethodPredictions.KO_TKO,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              borderRightWidth: 1,
+                              borderRightColor: colors.border,
+                            }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                {selectedWinner === fight.fighter2Id && selectedMethod === 'KO_TKO' && (
+                                  <FontAwesome name="user" size={8} color="#000" />
+                                )}
+                                <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter2Id ? '#000' : colors.text }}>
+                                  KO
+                                </Text>
+                              </View>
+                              <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter2Id ? '#000' : colors.textSecondary }}>
+                                {displayPredictionStats.fighter2MethodPredictions.KO_TKO}
+                              </Text>
+                            </View>
+                          )}
+                          {displayPredictionStats.fighter2MethodPredictions.SUBMISSION > 0 && (
+                            <View style={{
+                              flex: displayPredictionStats.fighter2MethodPredictions.SUBMISSION,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              borderRightWidth: 1,
+                              borderRightColor: colors.border,
+                            }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                {selectedWinner === fight.fighter2Id && selectedMethod === 'SUBMISSION' && (
+                                  <FontAwesome name="user" size={8} color="#000" />
+                                )}
+                                <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter2Id ? '#000' : colors.text }}>
+                                  SUB
+                                </Text>
+                              </View>
+                              <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter2Id ? '#000' : colors.textSecondary }}>
+                                {displayPredictionStats.fighter2MethodPredictions.SUBMISSION}
+                              </Text>
+                            </View>
+                          )}
+                          {displayPredictionStats.fighter2MethodPredictions.DECISION > 0 && (
+                            <View style={{
+                              flex: displayPredictionStats.fighter2MethodPredictions.DECISION,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                            }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                                {selectedWinner === fight.fighter2Id && selectedMethod === 'DECISION' && (
+                                  <FontAwesome name="user" size={8} color="#000" />
+                                )}
+                                <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter2Id ? '#000' : colors.text }}>
+                                  DEC
+                                </Text>
+                              </View>
+                              <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter2Id ? '#000' : colors.textSecondary }}>
+                                {displayPredictionStats.fighter2MethodPredictions.DECISION}
+                              </Text>
+                            </View>
+                          )}
+                        </Animated.View>
+                      )}
+                    </View>
+                  </View>
+              )}
+            </Animated.View>
+          )}
+        </View>
+
+        {/* Second row: Number of hype scores and percentages */}
+        <View style={{ flexDirection: 'row', marginTop: 4, gap: 20 }}>
+          {/* Hype scores count */}
+          <View style={{ marginLeft: 30, alignItems: 'center', width: 40 }}>
+            <Text style={{
+              fontSize: 11,
+              color: colors.textSecondary,
+            }}>
+              ({displayPredictionStats?.totalPredictions || 0})
+            </Text>
+          </View>
+
+          {/* Percentages below bar chart */}
+          {shouldRenderPredictions && displayPredictionStats?.winnerPredictions && (
+            <Animated.View style={{ flex: 1, opacity: predictionsFadeAnim }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                  {displayPredictionStats.winnerPredictions.fighter1.percentage}% {fight.fighter1.lastName}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                  {displayPredictionStats.winnerPredictions.fighter2.percentage}% {fight.fighter2.lastName}
+                </Text>
+              </View>
+            </Animated.View>
+          )}
+        </View>
+      </View>
 
       {/* Who Do You Think Will Win? */}
       <View style={styles.sectionNoBorder}>
@@ -925,213 +1205,6 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         </View>
       </View>
 
-      {/* Community Predictions - Simple conditional with LayoutAnimation + fade */}
-      {shouldRenderPredictions && (
-        <Animated.View style={[styles.sectionNoBorder, { marginTop: -22, opacity: predictionsFadeAnim }]}>
-          {displayPredictionStats && displayPredictionStats.winnerPredictions && (
-          <View style={{ marginTop: 4 }}>
-            {/* Header row with percentages and centered icon */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
-                {displayPredictionStats.winnerPredictions.fighter1.percentage}%
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <FontAwesome name="users" size={14} color={colors.textSecondary} />
-                <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
-                  Community ({displayPredictionStats.totalPredictions || 0})
-                </Text>
-              </View>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
-                {displayPredictionStats.winnerPredictions.fighter2.percentage}%
-              </Text>
-            </View>
-
-            {/* Horizontal prediction bar */}
-            <View style={{
-              height: 40,
-              flexDirection: 'row',
-              borderRadius: 4,
-              overflow: 'hidden',
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}>
-              {/* Fighter 1 side */}
-              <View style={{
-                flex: displayPredictionStats.winnerPredictions.fighter1.percentage,
-                flexDirection: 'row',
-                backgroundColor: selectedWinner === fight.fighter1Id ? '#F5C518' : colors.background,
-              }}>
-                {/* Fighter 1 method subdivisions - Fade in/out based on method selection */}
-                {shouldShowMethodSubdivisions && displayPredictionStats.fighter1MethodPredictions && (
-                  <Animated.View style={{ flexDirection: 'row', flex: 1, opacity: methodSubdivisionsFadeAnim }}>
-                    {displayPredictionStats.fighter1MethodPredictions.KO_TKO > 0 && (
-                      <View style={{
-                        flex: displayPredictionStats.fighter1MethodPredictions.KO_TKO,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRightWidth: 1,
-                        borderRightColor: colors.border,
-                      }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                          {selectedWinner === fight.fighter1Id && selectedMethod === 'KO_TKO' && (
-                            <FontAwesome
-                              name="user"
-                              size={8}
-                              color="#000"
-                            />
-                          )}
-                          <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id ? '#000' : colors.text }}>
-                            KO
-                          </Text>
-                        </View>
-                        <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter1Id ? '#000' : colors.textSecondary }}>
-                          {displayPredictionStats.fighter1MethodPredictions.KO_TKO}
-                        </Text>
-                      </View>
-                    )}
-                    {displayPredictionStats.fighter1MethodPredictions.SUBMISSION > 0 && (
-                      <View style={{
-                        flex: displayPredictionStats.fighter1MethodPredictions.SUBMISSION,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRightWidth: 1,
-                        borderRightColor: colors.border,
-                      }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                          {selectedWinner === fight.fighter1Id && selectedMethod === 'SUBMISSION' && (
-                            <FontAwesome
-                              name="user"
-                              size={8}
-                              color="#000"
-                            />
-                          )}
-                          <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id ? '#000' : colors.text }}>
-                            SUB
-                          </Text>
-                        </View>
-                        <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter1Id ? '#000' : colors.textSecondary }}>
-                          {displayPredictionStats.fighter1MethodPredictions.SUBMISSION}
-                        </Text>
-                      </View>
-                    )}
-                    {displayPredictionStats.fighter1MethodPredictions.DECISION > 0 && (
-                      <View style={{
-                        flex: displayPredictionStats.fighter1MethodPredictions.DECISION,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                          {selectedWinner === fight.fighter1Id && selectedMethod === 'DECISION' && (
-                            <FontAwesome
-                              name="user"
-                              size={8}
-                              color="#000"
-                            />
-                          )}
-                          <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id ? '#000' : colors.text }}>
-                            DEC
-                          </Text>
-                        </View>
-                        <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter1Id ? '#000' : colors.textSecondary }}>
-                          {displayPredictionStats.fighter1MethodPredictions.DECISION}
-                        </Text>
-                      </View>
-                    )}
-                  </Animated.View>
-                )}
-              </View>
-
-              {/* Fighter 2 side */}
-              <View style={{
-                flex: displayPredictionStats.winnerPredictions.fighter2.percentage,
-                flexDirection: 'row',
-                backgroundColor: selectedWinner === fight.fighter2Id ? '#F5C518' : colors.background,
-              }}>
-                {/* Fighter 2 method subdivisions - Fade in/out based on method selection */}
-                {shouldShowMethodSubdivisions && displayPredictionStats.fighter2MethodPredictions && (
-                  <Animated.View style={{ flexDirection: 'row', flex: 1, opacity: methodSubdivisionsFadeAnim }}>
-                    {displayPredictionStats.fighter2MethodPredictions.KO_TKO > 0 && (
-                      <View style={{
-                        flex: displayPredictionStats.fighter2MethodPredictions.KO_TKO,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRightWidth: 1,
-                        borderRightColor: colors.border,
-                      }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                          {selectedWinner === fight.fighter2Id && selectedMethod === 'KO_TKO' && (
-                            <FontAwesome
-                              name="user"
-                              size={8}
-                              color="#000"
-                            />
-                          )}
-                          <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter2Id ? '#000' : colors.text }}>
-                            KO
-                          </Text>
-                        </View>
-                        <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter2Id ? '#000' : colors.textSecondary }}>
-                          {displayPredictionStats.fighter2MethodPredictions.KO_TKO}
-                        </Text>
-                      </View>
-                    )}
-                    {displayPredictionStats.fighter2MethodPredictions.SUBMISSION > 0 && (
-                      <View style={{
-                        flex: displayPredictionStats.fighter2MethodPredictions.SUBMISSION,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRightWidth: 1,
-                        borderRightColor: colors.border,
-                      }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                          {selectedWinner === fight.fighter2Id && selectedMethod === 'SUBMISSION' && (
-                            <FontAwesome
-                              name="user"
-                              size={8}
-                              color="#000"
-                            />
-                          )}
-                          <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter2Id ? '#000' : colors.text }}>
-                            SUB
-                          </Text>
-                        </View>
-                        <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter2Id ? '#000' : colors.textSecondary }}>
-                          {displayPredictionStats.fighter2MethodPredictions.SUBMISSION}
-                        </Text>
-                      </View>
-                    )}
-                    {displayPredictionStats.fighter2MethodPredictions.DECISION > 0 && (
-                      <View style={{
-                        flex: displayPredictionStats.fighter2MethodPredictions.DECISION,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                          {selectedWinner === fight.fighter2Id && selectedMethod === 'DECISION' && (
-                            <FontAwesome
-                              name="user"
-                              size={8}
-                              color="#000"
-                            />
-                          )}
-                          <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter2Id ? '#000' : colors.text }}>
-                            DEC
-                          </Text>
-                        </View>
-                        <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter2Id ? '#000' : colors.textSecondary }}>
-                          {displayPredictionStats.fighter2MethodPredictions.DECISION}
-                        </Text>
-                      </View>
-                    )}
-                  </Animated.View>
-                )}
-              </View>
-            </View>
-          </View>
-        )}
-        </Animated.View>
-      )}
-
       {/* How will it end? */}
       <View style={[styles.sectionNoBorder, { marginTop: -4 }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -1167,183 +1240,93 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
       {/* How Hyped? */}
       <View style={[styles.sectionNoBorder, { marginTop: -18 }]}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={[styles.sectionTitle, { color: colors.text, zIndex: 10, marginTop: 6 }]}>
-              How hyped are you?
-            </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={[styles.sectionTitle, { color: colors.text, zIndex: 10, marginTop: 6 }]}>
+            How hyped are you?
+          </Text>
 
-            {/* User's hype wheel */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginLeft: 20 }}>
-              <View style={{ marginTop: 4 }}>
-                <FontAwesome name="user" size={20} color={colors.textSecondary} />
-              </View>
-              <View style={[styles.displayFlameContainer, { marginTop: 17 }]}>
-          <View style={styles.animatedFlameContainer}>
-            <View style={styles.wheelContainer} pointerEvents="none">
-              <Animated.View style={[
-                styles.wheelNumbers,
-                {
-                  transform: [{
-                    translateY: wheelAnimation.interpolate({
-                      inputRange: [0, 520],
-                      outputRange: [156, -364],
-                    })
-                  }]
-                }
-              ]}>
-                {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
-                  const hypeColor = getHypeHeatmapColor(number);
-
-                  // Calculate flame color (same logic as Community area)
-                  const getFlameColor = (hypeColor: string, bgColor: string) => {
-                    const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                    const hypeHexMatch = hypeColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
-
-                    let hypeR = 0, hypeG = 0, hypeB = 0;
-                    if (hypeRgbaMatch) {
-                      hypeR = parseInt(hypeRgbaMatch[1]);
-                      hypeG = parseInt(hypeRgbaMatch[2]);
-                      hypeB = parseInt(hypeRgbaMatch[3]);
-                    } else if (hypeHexMatch) {
-                      hypeR = parseInt(hypeHexMatch[1], 16);
-                      hypeG = parseInt(hypeHexMatch[2], 16);
-                      hypeB = parseInt(hypeHexMatch[3], 16);
-                    }
-
-                    const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                    const bgHexMatch = bgColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
-
-                    let bgR = 0, bgG = 0, bgB = 0;
-                    if (bgRgbaMatch) {
-                      bgR = parseInt(bgRgbaMatch[1]);
-                      bgG = parseInt(bgRgbaMatch[2]);
-                      bgB = parseInt(bgRgbaMatch[3]);
-                    } else if (bgHexMatch) {
-                      bgR = parseInt(bgHexMatch[1], 16);
-                      bgG = parseInt(bgHexMatch[2], 16);
-                      bgB = parseInt(bgHexMatch[3], 16);
-                    }
-
-                    const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
-                    const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
-                    const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
-
-                    return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
-                  };
-
-                  const flameColor = getFlameColor(hypeColor, colors.background);
-
-                  return (
-                    <View key={number} style={styles.wheelBoxContainer}>
-                      <View style={[
-                        styles.wheelBox,
-                        { backgroundColor: hypeColor }
-                      ]}>
-                        <FontAwesome6
-                          name="fire-flame-curved"
-                          size={24}
-                          color={flameColor}
-                          style={{ position: 'absolute' }}
-                        />
-                        <Text style={styles.wheelBoxText}>{number}</Text>
-                      </View>
-                    </View>
-                  );
-                })}
-              </Animated.View>
+          {/* User's hype wheel */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginLeft: 20 }}>
+            <View style={{ marginTop: 4 }}>
+              <FontAwesome name="user" size={20} color={colors.textSecondary} />
             </View>
-          </View>
-        </View>
-            </View>
+            <View style={[styles.displayFlameContainer, { marginTop: 17 }]}>
+              <View style={styles.animatedFlameContainer}>
+                <View style={styles.wheelContainer} pointerEvents="none">
+                  <Animated.View style={[
+                    styles.wheelNumbers,
+                    {
+                      transform: [{
+                        translateY: wheelAnimation.interpolate({
+                          inputRange: [0, 520],
+                          outputRange: [156, -364],
+                        })
+                      }]
+                    }
+                  ]}>
+                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
+                      const hypeColor = getHypeHeatmapColor(number);
 
-          {/* Community hype */}
-          {(() => {
-              const hypeColor = aggregateStats?.communityAverageHype
-                ? getHypeHeatmapColor(aggregateStats.communityAverageHype)
-                : colors.border;
+                      // Calculate flame color (same logic as Community area)
+                      const getFlameColor = (hypeColor: string, bgColor: string) => {
+                        const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                        const hypeHexMatch = hypeColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
 
-              // Mix 70% heatmap color with 30% background color for flame icon (matches UpcomingFightCard)
-              const getFlameColor = (hypeColor: string, bgColor: string): string => {
-                // Parse hype color (RGB or hex)
-                const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-                const hypeHexMatch = hypeColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+                        let hypeR = 0, hypeG = 0, hypeB = 0;
+                        if (hypeRgbaMatch) {
+                          hypeR = parseInt(hypeRgbaMatch[1]);
+                          hypeG = parseInt(hypeRgbaMatch[2]);
+                          hypeB = parseInt(hypeRgbaMatch[3]);
+                        } else if (hypeHexMatch) {
+                          hypeR = parseInt(hypeHexMatch[1], 16);
+                          hypeG = parseInt(hypeHexMatch[2], 16);
+                          hypeB = parseInt(hypeHexMatch[3], 16);
+                        }
 
-                let hypeR = 0, hypeG = 0, hypeB = 0;
-                if (hypeRgbaMatch) {
-                  hypeR = parseInt(hypeRgbaMatch[1]);
-                  hypeG = parseInt(hypeRgbaMatch[2]);
-                  hypeB = parseInt(hypeRgbaMatch[3]);
-                } else if (hypeHexMatch) {
-                  hypeR = parseInt(hypeHexMatch[1], 16);
-                  hypeG = parseInt(hypeHexMatch[2], 16);
-                  hypeB = parseInt(hypeHexMatch[3], 16);
-                }
+                        const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                        const bgHexMatch = bgColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
 
-                // Parse background color (RGB or hex)
-                const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-                const bgHexMatch = bgColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+                        let bgR = 0, bgG = 0, bgB = 0;
+                        if (bgRgbaMatch) {
+                          bgR = parseInt(bgRgbaMatch[1]);
+                          bgG = parseInt(bgRgbaMatch[2]);
+                          bgB = parseInt(bgRgbaMatch[3]);
+                        } else if (bgHexMatch) {
+                          bgR = parseInt(bgHexMatch[1], 16);
+                          bgG = parseInt(bgHexMatch[2], 16);
+                          bgB = parseInt(bgHexMatch[3], 16);
+                        }
 
-                let bgR = 0, bgG = 0, bgB = 0;
-                if (bgRgbaMatch) {
-                  bgR = parseInt(bgRgbaMatch[1]);
-                  bgG = parseInt(bgRgbaMatch[2]);
-                  bgB = parseInt(bgRgbaMatch[3]);
-                } else if (bgHexMatch) {
-                  bgR = parseInt(bgHexMatch[1], 16);
-                  bgG = parseInt(bgHexMatch[2], 16);
-                  bgB = parseInt(bgHexMatch[3], 16);
-                }
+                        const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
+                        const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
+                        const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
 
-                // Mix 70% hype + 30% background
-                const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
-                const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
-                const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
+                        return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
+                      };
 
-                return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
-              };
+                      const flameColor = getFlameColor(hypeColor, colors.background);
 
-              const flameColor = getFlameColor(hypeColor, colors.background);
-              const isVisible = selectedHype !== null && selectedHype > 0;
-
-              return (
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 11,
-                  opacity: isVisible ? 1 : 0,
-                  pointerEvents: isVisible ? 'auto' : 'none',
-                  marginLeft: 20
-                }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <FontAwesome name="users" size={19} color={colors.textSecondary} />
-                  </View>
-                  <View style={{
-                    width: 40,
-                    height: 40,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderRadius: 8,
-                    backgroundColor: hypeColor,
-                  }}>
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={24}
-                      color={flameColor}
-                      style={{ position: 'absolute' }}
-                    />
-                    <Text style={{
-                      color: '#FFFFFF',
-                      fontSize: 14,
-                      fontWeight: 'bold',
-                      textAlign: 'center',
-                    }}>
-                      {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
-                    </Text>
-                  </View>
+                      return (
+                        <View key={number} style={styles.wheelBoxContainer}>
+                          <View style={[
+                            styles.wheelBox,
+                            { backgroundColor: hypeColor }
+                          ]}>
+                            <FontAwesome6
+                              name="fire-flame-curved"
+                              size={24}
+                              color={flameColor}
+                              style={{ position: 'absolute' }}
+                            />
+                            <Text style={styles.wheelBoxText}>{number}</Text>
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </Animated.View>
                 </View>
-              );
-            })()}
+              </View>
+            </View>
           </View>
         </View>
 
