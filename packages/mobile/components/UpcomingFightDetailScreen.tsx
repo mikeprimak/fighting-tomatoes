@@ -14,6 +14,7 @@ import {
   Keyboard,
   LayoutAnimation,
   UIManager,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
@@ -811,9 +812,22 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       .join(' ');
   };
 
-  // Handle keyboard show - just set focus state, let native behavior handle scroll
+  // Handle keyboard show - scroll to input and set focus state
   const handleCommentFocus = () => {
     setIsCommentFocused(true);
+    // Scroll to the comment input after a short delay to ensure keyboard is showing
+    setTimeout(() => {
+      commentInputRef.current?.measureLayout(
+        scrollViewRef.current as any,
+        (x, y) => {
+          scrollViewRef.current?.scrollTo({
+            y: y - 50, // Scroll with less offset to reveal save button below
+            animated: true,
+          });
+        },
+        () => {} // Error callback
+      );
+    }, 300);
   };
 
   return (
@@ -822,7 +836,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       style={[styles.scrollView, { backgroundColor: colors.background }]}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={{
-        paddingBottom: keyboardHeight > 0 ? keyboardHeight + 20 : 80
+        paddingBottom: keyboardHeight > 0 ? keyboardHeight + 100 : 80
       }}
     >
 
@@ -938,12 +952,14 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
               flexDirection: 'row',
               borderRadius: 4,
               overflow: 'hidden',
+              borderWidth: 1,
+              borderColor: colors.border,
             }}>
               {/* Fighter 1 side */}
               <View style={{
                 flex: displayPredictionStats.winnerPredictions.fighter1.percentage,
                 flexDirection: 'row',
-                backgroundColor: selectedWinner === fight.fighter1Id ? '#F5C518' : colors.border,
+                backgroundColor: selectedWinner === fight.fighter1Id ? '#F5C518' : colors.background,
               }}>
                 {/* Fighter 1 method subdivisions - Fade in/out based on method selection */}
                 {shouldShowMethodSubdivisions && displayPredictionStats.fighter1MethodPredictions && (
@@ -954,7 +970,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                         justifyContent: 'center',
                         alignItems: 'center',
                         borderRightWidth: 1,
-                        borderRightColor: 'rgba(0,0,0,0.1)',
+                        borderRightColor: colors.border,
                       }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                           {selectedWinner === fight.fighter1Id && selectedMethod === 'KO_TKO' && (
@@ -979,7 +995,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                         justifyContent: 'center',
                         alignItems: 'center',
                         borderRightWidth: 1,
-                        borderRightColor: 'rgba(0,0,0,0.1)',
+                        borderRightColor: colors.border,
                       }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                           {selectedWinner === fight.fighter1Id && selectedMethod === 'SUBMISSION' && (
@@ -1029,7 +1045,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
               <View style={{
                 flex: displayPredictionStats.winnerPredictions.fighter2.percentage,
                 flexDirection: 'row',
-                backgroundColor: selectedWinner === fight.fighter2Id ? '#F5C518' : colors.border,
+                backgroundColor: selectedWinner === fight.fighter2Id ? '#F5C518' : colors.background,
               }}>
                 {/* Fighter 2 method subdivisions - Fade in/out based on method selection */}
                 {shouldShowMethodSubdivisions && displayPredictionStats.fighter2MethodPredictions && (
@@ -1040,7 +1056,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                         justifyContent: 'center',
                         alignItems: 'center',
                         borderRightWidth: 1,
-                        borderRightColor: 'rgba(0,0,0,0.1)',
+                        borderRightColor: colors.border,
                       }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                           {selectedWinner === fight.fighter2Id && selectedMethod === 'KO_TKO' && (
@@ -1065,7 +1081,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                         justifyContent: 'center',
                         alignItems: 'center',
                         borderRightWidth: 1,
-                        borderRightColor: 'rgba(0,0,0,0.1)',
+                        borderRightColor: colors.border,
                       }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                           {selectedWinner === fight.fighter2Id && selectedMethod === 'SUBMISSION' && (
@@ -1357,34 +1373,38 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
         {/* Show comment input when showCommentForm is true (for new comments) OR when editing */}
         {((showCommentForm && !preFightCommentsData?.userComment) || isEditingComment) && (
-          <View ref={commentInputRef} collapsable={false} style={{ marginTop: 10 }}>
-            <View style={[
-              styles.commentInputContainer,
-              {
-                backgroundColor: colors.card,
-                borderColor: isCommentFocused ? colors.tint : colors.border,
-              }
-            ]}>
-              <TextInput
-                style={[
-                  styles.commentInput,
-                  { color: colors.text }
-                ]}
-                placeholder={
-                  selectedHype && selectedHype > 0
-                    ? `Why are you ${selectedHype}/10 hyped for this fight?`
-                    : "Why are you hyped for this fight?"
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={100}
+          >
+            <View ref={commentInputRef} collapsable={false} style={{ marginTop: 10 }}>
+              <View style={[
+                styles.commentInputContainer,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
                 }
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                numberOfLines={4}
-                maxLength={500}
-                value={preFightComment}
-                onChangeText={setPreFightComment}
-                onFocus={handleCommentFocus}
-                onBlur={() => setIsCommentFocused(false)}
-              />
-            </View>
+              ]}>
+                <TextInput
+                  style={[
+                    styles.commentInput,
+                    { color: colors.text }
+                  ]}
+                  placeholder={
+                    selectedHype && selectedHype > 0
+                      ? `Why are you ${selectedHype}/10 hyped for this fight?`
+                      : "Why are you hyped for this fight?"
+                  }
+                  placeholderTextColor={colors.textSecondary}
+                  multiline
+                  numberOfLines={4}
+                  maxLength={500}
+                  value={preFightComment}
+                  onChangeText={setPreFightComment}
+                  onFocus={handleCommentFocus}
+                  onBlur={() => setIsCommentFocused(false)}
+                />
+              </View>
             <TouchableOpacity
               style={[
                 styles.saveCommentButton,
@@ -1402,7 +1422,8 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 {saveCommentMutation.isPending ? 'Saving...' : 'Save Comment'}
               </Text>
             </TouchableOpacity>
-          </View>
+            </View>
+          </KeyboardAvoidingView>
         )}
 
         {/* Display All Pre-Fight Comments */}
