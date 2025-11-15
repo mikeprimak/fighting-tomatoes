@@ -1258,12 +1258,20 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         <View style={styles.displayFlameContainer}>
           <View style={styles.animatedFlameContainer}>
             <View style={{ position: 'relative' }}>
-              {/* Flame icon changes based on selected hype level */}
-              <FontAwesome6
-                name="fire-flame-curved"
-                size={80}
-                color={selectedHype && selectedHype > 0 ? getHypeHeatmapColor(selectedHype) : '#808080'}
-              />
+              {/* Flame icon - custom image for unselected state, colored icon for selected */}
+              {selectedHype && selectedHype > 0 ? (
+                <FontAwesome6
+                  name="fire-flame-curved"
+                  size={80}
+                  color={getHypeHeatmapColor(selectedHype)}
+                />
+              ) : (
+                <Image
+                  source={require('../assets/flame-hollow-thin-alpha-colored2.png')}
+                  style={{ width: 80, height: 80 }}
+                  resizeMode="contain"
+                />
+              )}
             </View>
             <View style={styles.wheelContainer}>
               <Animated.View style={[
@@ -1314,11 +1322,21 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 style={styles.flameButton}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <FontAwesome6
-                  name="fire-flame-curved"
-                  size={32}
-                  color={flameColor}
-                />
+                <View style={{ width: 32, alignItems: 'center' }}>
+                  {isSelected ? (
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={32}
+                      color={flameColor}
+                    />
+                  ) : (
+                    <Image
+                      source={require('../assets/flame-hollow-thin-alpha-colored2.png')}
+                      style={{ width: 32, height: 32 }}
+                      resizeMode="contain"
+                    />
+                  )}
+                </View>
               </TouchableOpacity>
             );
           })}
