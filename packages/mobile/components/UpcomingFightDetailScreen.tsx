@@ -1428,6 +1428,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                   onChangeText={setPreFightComment}
                   onFocus={handleCommentFocus}
                   onBlur={() => setIsCommentFocused(false)}
+                  autoFocus={true}
                 />
               </View>
             <TouchableOpacity
