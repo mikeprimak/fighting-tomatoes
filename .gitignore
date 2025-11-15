@@ -134,3 +134,5 @@ nul
 
 # Database backups (local only, not committed)
 db-backups/
+packages/mobile/fcm-service-account.json
+packages/mobile/fight-app-ba5cd-*.json

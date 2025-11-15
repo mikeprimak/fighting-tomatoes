@@ -17,7 +17,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fightcrewapp.mobile",
-      "backgroundColor": "#181818"
+      "backgroundColor": "#181818",
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,7 +32,23 @@
       "statusBar": {
         "translucent": true,
         "backgroundColor": "#00000000"
-      }
+      },
+      "runtimeVersion": "1.0.0",
+      "googleServicesFile": "./google-services.json",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "fightcrewapp"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -38,7 +57,15 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#F5C518",
+          "sounds": []
+        }
+      ]
     ],
     "scheme": "fightcrewapp",
     "extra": {
@@ -49,6 +76,9 @@
         "projectId": "4a64b9f8-325e-4869-ab78-9e0674d18b32"
       }
     },
-    "owner": "mikeprimak"
+    "owner": "mikeprimak",
+    "updates": {
+      "url": "https://u.expo.dev/4a64b9f8-325e-4869-ab78-9e0674d18b32"
+    }
   }
 }

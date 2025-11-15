@@ -1,12 +1,17 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
-// Check if running in Expo Go (push notifications not supported in SDK 53+)
+// Check if running in Expo Go
+// Push notifications ARE supported in Expo Go SDK 54+
 const isExpoGo = Constants.appOwnership === 'expo';
 
-// Conditionally import Notifications to avoid library-level warnings in Expo Go
+// Lazy load Notifications to prevent initialization on import
 let Notifications: any = null;
-if (!isExpoGo) {
+let isInitialized = false;
+
+function initializeNotifications() {
+  if (isInitialized) return;
+
   Notifications = require('expo-notifications');
 
   // Configure how notifications are displayed when app is in foreground
@@ -19,16 +24,15 @@ if (!isExpoGo) {
       shouldShowList: true,
     }),
   });
+
+  isInitialized = true;
 }
 
 /**
  * Request notification permissions
  */
 export async function requestNotificationPermissions(): Promise<boolean> {
-  // Skip if running in Expo Go (not supported in SDK 53+)
-  if (isExpoGo || !Notifications) {
-    return false;
-  }
+  initializeNotifications();
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
@@ -45,12 +49,6 @@ export async function requestNotificationPermissions(): Promise<boolean> {
  * Get Expo Push Token and register with backend
  */
 export async function registerPushToken(): Promise<string | null> {
-  // Skip if running in Expo Go (not supported in SDK 53+)
-  if (isExpoGo || !Notifications) {
-    console.log('Push notifications not available in Expo Go - use a development build');
-    return null;
-  }
-
   try {
     // Request permissions first
     const hasPermission = await requestNotificationPermissions();
@@ -87,10 +85,7 @@ export async function registerPushToken(): Promise<string | null> {
 export function addNotificationResponseListener(
   callback: (notification: any) => void
 ) {
-  // Skip if running in Expo Go (not supported in SDK 53+)
-  if (isExpoGo || !Notifications) {
-    return { remove: () => {} };
-  }
+  initializeNotifications();
   return Notifications.addNotificationResponseReceivedListener(callback);
 }
 
@@ -100,10 +95,7 @@ export function addNotificationResponseListener(
 export function addNotificationReceivedListener(
   callback: (notification: any) => void
 ) {
-  // Skip if running in Expo Go (not supported in SDK 53+)
-  if (isExpoGo || !Notifications) {
-    return { remove: () => {} };
-  }
+  initializeNotifications();
   return Notifications.addNotificationReceivedListener(callback);
 }
 

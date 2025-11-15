@@ -255,8 +255,12 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         [userId],
         {
           title: 'Test Notification',
-          body: `Hello ${user.displayName || 'there'}! Notifications are working.`,
-          data: { test: true },
+          body: 'kooky butt butt',
+          data: {
+            test: true,
+            url: 'fightcrewapp://community',
+            screen: 'community'
+          },
         }
       );
 
@@ -271,6 +275,11 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
   fastify.post('/test-broadcast', async (request, reply) => {
     try {
       const { notificationService } = await import('../services/notificationService');
+
+      // Parse optional custom message from request body
+      const body = request.body as any;
+      const customTitle = body?.title || '🥊 Test Notification';
+      const customBody = body?.body || 'This is a test from FightCrewApp!';
 
       // Get all users with push tokens
       const users = await prisma.user.findMany({
@@ -291,8 +300,8 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
       const result = await notificationService.sendPushNotifications(
         users.map(u => u.id),
         {
-          title: '🥊 Test Notification',
-          body: 'This is a test from FightCrewApp!',
+          title: customTitle,
+          body: customBody,
           data: { test: true },
         }
       );

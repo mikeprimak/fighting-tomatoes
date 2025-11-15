@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1082468109842",
+    "project_id": "fight-app-ba5cd",
+    "storage_bucket": "fight-app-ba5cd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1082468109842:android:db5d7ffc75c4b5b93812cb",
+        "android_client_info": {
+          "package_name": "com.fightcrewapp.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyo5HbbD-bWgDTbOE8hV6OQG5-arUqW1I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

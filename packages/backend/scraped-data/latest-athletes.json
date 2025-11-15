@@ -233,9 +233,7 @@
     {
       "name": "Alonzo Menifield",
       "url": "https://www.ufc.com/athlete/alonzo-menifield",
-      "record": "17-5-1",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-06/MENIFIELD_ALONZO_06-14.png?itok=FUztw1r9",
-      "localHeadshotPath": "/images/athletes/alonzo-menifield.png"
+      "error": "Navigation timeout of 30000 ms exceeded"
     },
     {
       "name": "Jack Hermansson",

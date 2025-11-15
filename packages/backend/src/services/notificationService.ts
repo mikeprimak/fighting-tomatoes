@@ -83,22 +83,25 @@ export async function notifyCrewMessage(
   senderName: string,
   messagePreview: string
 ): Promise<void> {
-  // Get all crew members except the sender
+  // Get all crew members with push tokens
   const crewMembers = await prisma.crewMember.findMany({
     where: {
       crewId,
+    },
+    include: {
       user: {
-        notificationsEnabled: true,
-        notifyCrewMessages: true,
-        pushToken: { not: null },
+        select: {
+          id: true,
+          pushToken: true,
+          notificationsEnabled: true,
+        },
       },
     },
-    include: { user: true },
   });
 
   const users = crewMembers
     .map((m) => m.user)
-    .filter((user) => Expo.isExpoPushToken(user.pushToken!));
+    .filter((user) => user.notificationsEnabled && user.pushToken && Expo.isExpoPushToken(user.pushToken));
 
   if (users.length === 0) return;
 
@@ -131,13 +134,6 @@ export async function notifyFightStartViaRules(
       notificationSent: false,
     },
     include: {
-      user: {
-        select: {
-          id: true,
-          pushToken: true,
-          notificationsEnabled: true,
-        },
-      },
       rule: {
         select: {
           name: true,
@@ -146,26 +142,32 @@ export async function notifyFightStartViaRules(
     },
   });
 
+  // Get user details separately
+  const userIds = [...new Set(matches.map(m => m.userId))];
+  const users = await prisma.user.findMany({
+    where: {
+      id: { in: userIds },
+    },
+    select: {
+      id: true,
+      pushToken: true,
+      notificationsEnabled: true,
+    },
+  });
+
   if (matches.length === 0) {
     console.log(`[Notifications] No active notification matches for fight ${fightId}`);
     return;
   }
 
-  console.log(`[Notifications] Found ${matches.length} users to notify for fight ${fightId}`);
+  console.log(`[Notifications] Found ${matches.length} notification matches for fight ${fightId}`);
 
-  // Group by user (a user might have multiple rules matching this fight)
-  const userMap = new Map<string, { id: string; pushToken: string | null; notificationsEnabled: boolean }>();
-  for (const match of matches) {
-    if (!userMap.has(match.userId)) {
-      userMap.set(match.userId, match.user);
-    }
-  }
-
-  const users = Array.from(userMap.values()).filter(
+  // Filter users with valid push tokens
+  const validUsers = users.filter(
     (user) => user.notificationsEnabled && user.pushToken && Expo.isExpoPushToken(user.pushToken)
   );
 
-  if (users.length === 0) {
+  if (validUsers.length === 0) {
     console.log(`[Notifications] No users with valid push tokens`);
     return;
   }
@@ -174,7 +176,7 @@ export async function notifyFightStartViaRules(
 
   // Send notifications
   const result = await sendPushNotifications(
-    users.map((u) => u.id),
+    validUsers.map((u) => u.id),
     {
       title: '🥊 Fight Up Next!',
       body: matchup,

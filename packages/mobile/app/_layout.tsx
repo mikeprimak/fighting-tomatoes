@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '../store/AuthContext';
 import { PredictionAnimationProvider } from '../store/PredictionAnimationContext';
 import { Colors } from '../constants/Colors';
+import { notificationService } from '../services/notificationService';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -64,6 +65,26 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter();
+
+  // Handle notification taps
+  useEffect(() => {
+    const subscription = notificationService.addNotificationResponseListener((response) => {
+      const data = response.notification.request.content.data;
+      console.log('Notification tapped:', data);
+
+      // Navigate based on notification data
+      if (data.screen === 'community') {
+        router.push('/(tabs)/community');
+      } else if (data.fightId) {
+        router.push(`/fight/${data.fightId}`);
+      } else if (data.crewId) {
+        router.push(`/crew/${data.crewId}`);
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   // Custom navigation themes that match app colors
   const customLightTheme = {

@@ -15,8 +15,8 @@ import { Stack, router } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { FontAwesome } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 import { apiService } from '../services/api';
+import { notificationService } from '../services/notificationService';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from '../components/CustomAlert';
 import { useQueryClient } from '@tanstack/react-query';
@@ -50,8 +50,8 @@ export default function SettingsScreen() {
   }, []);
 
   const checkPermissions = async () => {
-    const { status } = await Notifications.getPermissionsAsync();
-    setPermissionStatus(status);
+    const hasPermission = await notificationService.requestNotificationPermissions();
+    setPermissionStatus(hasPermission ? 'granted' : 'denied');
   };
 
   const loadPreferences = async () => {
@@ -89,7 +89,8 @@ export default function SettingsScreen() {
   };
 
   const requestPermissions = async () => {
-    const { status } = await Notifications.requestPermissionsAsync();
+    const hasPermission = await notificationService.requestNotificationPermissions();
+    const status = hasPermission ? 'granted' : 'denied';
     setPermissionStatus(status);
 
     if (status === 'granted') {
@@ -298,6 +299,27 @@ export default function SettingsScreen() {
 
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
             Get a notification the morning of events breaking down which fights are most hyped and whether any fighters you follow are fighting.
+          </Text>
+        </View>
+
+        {/* Test Notification Button */}
+        <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>
+          <TouchableOpacity
+            style={[styles.testButton, { backgroundColor: colors.primary }]}
+            onPress={sendTestNotification}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <FontAwesome name="paper-plane" size={16} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.testButtonText}>Send Test Notification</Text>
+              </>
+            )}
+          </TouchableOpacity>
+          <Text style={[styles.sectionDescription, { color: colors.textSecondary, marginTop: 8 }]}>
+            Test your notification settings
           </Text>
         </View>
 

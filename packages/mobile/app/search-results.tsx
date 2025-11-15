@@ -9,8 +9,8 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { useRouter, useLocalSearchParams, useNavigation } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useRouter, useLocalSearchParams, useNavigation, useFocusEffect } from 'expo-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -28,6 +28,7 @@ export default function SearchResultsScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const navigation = useNavigation();
+  const queryClient = useQueryClient();
   const { q } = useLocalSearchParams<{ q: string }>();
 
   // Set the navigation header title to show the search query
@@ -39,11 +40,21 @@ export default function SearchResultsScreen() {
     }
   }, [q, navigation]);
 
+  // Invalidate search results when screen comes into focus (e.g., after updating a fight prediction)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (q && q.length >= 2) {
+        queryClient.invalidateQueries({ queryKey: ['search', q] });
+      }
+    }, [q, queryClient])
+  );
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['search', q],
     queryFn: () => apiService.search(q || '', 10),
     enabled: !!q && q.length >= 2,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchOnMount: 'always', // Always refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
 
   const styles = StyleSheet.create({

@@ -67,44 +67,180 @@ curl http://localhost:3008/health
 
 ---
 
-## TODO: Next Work Session
+## Push Notifications Setup (2025-11-15)
+**Status**: ✅ Complete - Push notifications working in EAS development builds
 
-### EAS Development Build Setup (Persistent App Access)
-**Goal**: Install development build on phone for 24/7 access without local machine running
+### Overview
+Implemented Firebase Cloud Messaging (FCM) V1 API for push notifications in bare workflow React Native app. The setup requires both client-side (Android native files) and server-side (EAS credentials) configuration.
 
-**Why**: Backend is on Render (always accessible), but frontend requires local Expo server. Need persistent frontend for real-world testing during live events.
+### Problem Solved
+Push notifications were failing with error: **"is not a registered push notification recipient or it is associated with a project that does not exist"**
 
-**Solution**: EAS Development Build + EAS Update for OTA code pushes
+**Root Cause**:
+- App uses **bare workflow** (has `android` directory), so Firebase must be configured in native Android files
+- FCM V1 credentials must be uploaded to EAS for **each build profile** (development, production, etc.)
+- Simply adding `googleServicesFile` to app.json doesn't work for bare workflow
 
-**Steps**:
-1. Create `packages/mobile/eas.json` with development build profile
-2. Install EAS CLI: `npm install -g eas-cli`
-3. Build development APK: `cd packages/mobile && eas build --profile development --platform android`
-4. Install APK on phone (sideload via download link from EAS)
-5. Set up EAS Update for pushing code changes
-6. Push updates with: `eas update --branch development --message "description"`
+### Complete Setup Process
 
-**Key Config** (for eas.json):
-```json
-{
-  "build": {
-    "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "android": { "buildType": "apk" },
-      "channel": "development"
-    }
+#### 1. Firebase Console Setup
+
+**Enable Firebase Cloud Messaging API**:
+1. Go to https://console.cloud.google.com/
+2. Select project: "fight-app-ba5cd"
+3. Search for: **"Firebase Cloud Messaging API"**
+4. Click **"ENABLE"**
+
+**Create FCM V1 Service Account**:
+1. Go to Firebase Console → Project Settings → Cloud Messaging tab
+2. Under "Cloud Messaging API (V1)" section, click **"Manage Service Accounts"**
+3. Click **"Create Service Account"**
+4. Name: "fcm-push-notifications"
+5. Role: **"Firebase Cloud Messaging API Admin"**
+6. Click "Create and Continue" → "Done"
+7. Click on the service account email
+8. Go to **"Keys"** tab
+9. Click "Add Key" → "Create new key"
+10. Select **JSON** format
+11. Click "Create" - downloads `fight-app-ba5cd-xxxxx.json`
+
+**Important Notes**:
+- Legacy FCM API is deprecated - use V1 API only
+- Don't use Account API tokens (those are bearer tokens, not S3 credentials)
+- The service account JSON contains private keys - keep it secure
+
+#### 2. Android Native Configuration
+
+**Copy google-services.json**:
+```bash
+# From packages/mobile/ directory
+cp google-services.json android/app/google-services.json
+```
+
+**Add Google Services Plugin** (`android/app/build.gradle`):
+```gradle
+apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
+apply plugin: "com.google.gms.google-services"  // Add this line
+```
+
+**Add Google Services Classpath** (`android/build.gradle`):
+```gradle
+buildscript {
+  dependencies {
+    classpath('com.android.tools.build:gradle')
+    classpath('com.facebook.react:react-native-gradle-plugin')
+    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+    classpath('com.google.gms:google-services:4.4.0')  // Add this line
   }
 }
 ```
 
-**Result**: App on phone fetches code from Expo servers, no local machine needed. Updates pushed in ~2 min vs 20 min full rebuild.
+#### 3. Upload FCM Credentials to EAS
 
-**Notes**:
-- Already have `expo-dev-client: ^6.0.12` installed
-- Already have EAS project ID: `4a64b9f8-325e-4869-ab78-9e0674d18b32`
-- First build takes ~20 min, subsequent updates take ~2 min
-- No app store deployment needed - internal distribution only
+**CRITICAL**: Must upload to EACH build profile separately (development, production, etc.)
+
+**Command**:
+```bash
+cd packages/mobile
+eas credentials
+```
+
+**Steps for EACH profile**:
+1. Select: **Android**
+2. Select build profile: **development** (or production, preview, etc.)
+3. Select: **Google Service Account**
+4. Select: **Manage your Google Service Account Key for Push Notifications (FCM V1)**
+5. Select: **Set up a Google Service Account Key for Push Notifications (FCM V1)**
+6. Choose the JSON file: **fcm-service-account.json**
+
+**Repeat for all profiles you use** (development, production, preview)
+
+#### 4. Build and Test
+
+**Build**:
+```bash
+cd packages/mobile
+eas build --profile development --platform android
+```
+
+**Test**:
+1. Install the APK on device
+2. Log in to the app
+3. Go to Settings → Notifications → "Send Test Notification"
+4. Notification should arrive with app branding and deep linking
+
+### Files Modified
+
+**Android Native**:
+- `packages/mobile/android/app/google-services.json` (copied from root)
+- `packages/mobile/android/app/build.gradle` (added Google Services plugin)
+- `packages/mobile/android/build.gradle` (added Google Services classpath)
+
+**App Configuration**:
+- `packages/mobile/app.json` (already had googleServicesFile reference - ignored in bare workflow)
+- `packages/mobile/eas.json` (no changes needed - credentials uploaded via CLI)
+
+**Backend** (no changes needed):
+- `packages/backend/src/routes/notifications.ts` (test message updated to "kooky butt butt")
+- Push notification logic already working, just needed proper FCM credentials
+
+### Troubleshooting Tips
+
+**Check if credentials are uploaded**:
+```bash
+cd packages/mobile
+eas credentials -p android
+# Select your build profile
+# Look for "Push Notifications (FCM V1): Google Service Account Key For FCM V1"
+```
+
+**Test notification directly via Expo API**:
+```bash
+curl -X POST https://exp.host/--/api/v2/push/send \
+  -H "Content-Type: application/json" \
+  -d '{"to":"ExponentPushToken[xxx]","title":"Test","body":"Test message"}'
+```
+
+**Common Errors**:
+- "Unable to retrieve the FCM server key" → FCM credentials not uploaded for that build profile
+- "is not a registered push notification recipient" → FCM credentials uploaded to wrong profile (e.g., production instead of development)
+- Firebase initialization error → google-services.json not in android/app/ directory
+
+### Project Details
+
+**Firebase Project**:
+- Project ID: `fight-app-ba5cd`
+- Project Number: `1082468109842`
+- Package Name: `com.fightcrewapp.mobile`
+
+**EAS Project**:
+- Project ID: `4a64b9f8-325e-4869-ab78-9e0674d18b32`
+- Owner: `mikeprimak`
+
+**Service Account**:
+- Email: `fcm-push-notifications@fight-app-ba5cd.iam.gserviceaccount.com`
+- Role: Firebase Cloud Messaging API Admin
+
+### Build History
+
+- **Build 1-7**: Various attempts with incomplete Firebase configuration
+- **Build 8**: Added google-services.json and Gradle plugins (still failed - credentials uploaded to production profile)
+- **Build 9-10**: Configuration errors with eas.json
+- **Build 11**: ✅ SUCCESS - FCM V1 credentials properly uploaded to development profile
+
+### Next Steps
+
+**For Production**:
+1. Upload FCM credentials to production profile using same process
+2. Build production APK: `eas build --profile production --platform android`
+3. Test notifications work in production build
+
+**For iOS** (future):
+1. Configure APNs (Apple Push Notification service) in Firebase
+2. Upload APNs certificates to EAS
+3. Build iOS development/production builds
 
 ---
 

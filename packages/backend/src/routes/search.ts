@@ -1,5 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
+import { optionalAuth } from '../middleware/auth';
+import { notificationRuleEngine } from '../services/notificationRuleEngine';
 
 const prisma = new PrismaClient();
 
@@ -14,8 +16,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
    *   - q: search query (required, min 2 chars)
    *   - limit: max results per category (default 10, max 50)
    */
-  fastify.get('/search', async (request, reply) => {
+  fastify.get('/search', { preHandler: optionalAuth }, async (request, reply) => {
     const { q, limit = 10 } = request.query as { q?: string; limit?: number };
+    const currentUserId = (request as any).user?.id; // Optional auth - may or may not be present
 
     // Validate query
     if (!q || typeof q !== 'string' || q.trim().length < 2) {
@@ -264,60 +267,122 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         return { AND: wordMatchConditions };
       };
 
-      const fights = await prisma.fight.findMany({
-        where: buildFightSearchConditions(),
-        select: {
-          id: true,
-          isTitle: true,
-          titleName: true,
-          weightClass: true,
-          scheduledRounds: true,
-          hasStarted: true,
-          isComplete: true,
-          winner: true,
-          method: true,
-          round: true,
-          time: true,
-          averageRating: true,
-          totalRatings: true,
-          fighter1: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              nickname: true,
-              profileImage: true,
-              weightClass: true,
-              rank: true,
-            },
-          },
-          fighter2: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              nickname: true,
-              profileImage: true,
-              weightClass: true,
-              rank: true,
-            },
-          },
-          event: {
-            select: {
-              id: true,
-              name: true,
-              promotion: true,
-              date: true,
-              location: true,
-            },
+      // Build include object for user-specific data
+      const include: any = {
+        fighter1: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            nickname: true,
+            profileImage: true,
+            weightClass: true,
+            rank: true,
           },
         },
+        fighter2: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            nickname: true,
+            profileImage: true,
+            weightClass: true,
+            rank: true,
+          },
+        },
+        event: {
+          select: {
+            id: true,
+            name: true,
+            promotion: true,
+            date: true,
+            location: true,
+          },
+        },
+      };
+
+      // Add user predictions if authenticated
+      if (currentUserId) {
+        include.predictions = {
+          where: { userId: currentUserId },
+          select: {
+            id: true,
+            predictedRating: true,
+            predictedWinner: true,
+            predictedMethod: true,
+            predictedRound: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        };
+      }
+
+      const rawFights = await prisma.fight.findMany({
+        where: buildFightSearchConditions(),
+        include,
         take: resultLimit,
         orderBy: [
           { event: { date: 'desc' } },
           { orderOnCard: 'asc' },
         ],
       });
+
+      // Add notification data for logged-in users (same pattern as /api/fights endpoint)
+      let fights: any[] = rawFights;
+      if (currentUserId && rawFights.length > 0) {
+        // Get all unique fighter IDs from the search results
+        const uniqueFighterIds = new Set<string>();
+        rawFights.forEach(fight => {
+          uniqueFighterIds.add(fight.fighter1Id);
+          uniqueFighterIds.add(fight.fighter2Id);
+        });
+
+        // Check which fighters the user is following
+        const followedFighters = await prisma.userFighterFollow.findMany({
+          where: {
+            userId: currentUserId,
+            fighterId: { in: Array.from(uniqueFighterIds) }
+          },
+          select: { fighterId: true }
+        });
+        const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
+
+        // Add notification data to each fight
+        fights = await Promise.all(rawFights.map(async (fight) => {
+          const transformed: any = { ...fight };
+
+          // Transform user prediction data (same pattern as /api/fights endpoint)
+          if (fight.predictions && fight.predictions.length > 0) {
+            const prediction: any = (fight.predictions as any)[0];
+            transformed.userHypePrediction = prediction.predictedRating;
+            transformed.userPredictedWinner = prediction.predictedWinner;
+            transformed.userPredictedMethod = prediction.predictedMethod;
+            transformed.userPredictedRound = prediction.predictedRound;
+          }
+
+          // Add fighter follow info (for UI display)
+          transformed.isFollowingFighter1 = followedFighterIds.has(fight.fighter1Id) || undefined;
+          transformed.isFollowingFighter2 = followedFighterIds.has(fight.fighter2Id) || undefined;
+
+          // Get comprehensive notification reasons using the unified rule engine
+          const notificationReasons = await notificationRuleEngine.getNotificationReasonsForFight(
+            currentUserId,
+            fight.id
+          );
+          transformed.notificationReasons = notificationReasons;
+
+          // Set isFollowing based on whether there's a manual fight follow rule
+          transformed.isFollowing = notificationReasons.reasons.some(
+            r => r.type === 'manual' && r.isActive
+          );
+
+          // Remove raw predictions array to avoid confusion
+          delete transformed.predictions;
+
+          return transformed;
+        }));
+      }
 
       // Search promotions (UFC, Bellator, ONE, etc.)
       // We'll get unique promotions from events that match the search term
