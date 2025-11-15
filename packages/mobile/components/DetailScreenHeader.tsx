@@ -9,12 +9,14 @@ interface DetailScreenHeaderProps {
   title: string;
   subtitle?: string;
   onBackPress?: () => void;
+  rightIcon?: React.ReactNode;
 }
 
 export function DetailScreenHeader({
   title,
   subtitle,
-  onBackPress
+  onBackPress,
+  rightIcon
 }: DetailScreenHeaderProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -53,6 +55,11 @@ export function DetailScreenHeader({
           </Text>
         )}
       </View>
+      {rightIcon && (
+        <View style={styles.rightIcon}>
+          {rightIcon}
+        </View>
+      )}
     </View>
   );
 }
@@ -78,5 +85,9 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 14,
+  },
+  rightIcon: {
+    padding: 8,
+    marginLeft: 12,
   },
 });

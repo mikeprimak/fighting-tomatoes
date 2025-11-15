@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
@@ -22,6 +22,7 @@ export default function FightDetailScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
+  const [detailsMenuVisible, setDetailsMenuVisible] = useState(false);
 
   // Fetch fight details
   const { data: fightData, isLoading: fightLoading, error: fightError } = useQuery({
@@ -71,17 +72,33 @@ export default function FightDetailScreen() {
   const { fight } = fightData;
   const isComplete = fight.isComplete;
 
+  const renderMenuButton = () => (
+    <TouchableOpacity
+      onPress={() => setDetailsMenuVisible(true)}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+    >
+      <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
       <DetailScreenHeader
         title={fight ? `${fight.fighter1.lastName} vs ${fight.fighter2.lastName}` : 'Fight Details'}
+        rightIcon={!isComplete ? renderMenuButton() : undefined}
       />
 
       {/* Route to appropriate component based on fight state */}
       {isComplete ? (
         <CompletedFightDetailScreen fight={fight} onRatingSuccess={handleSuccess} />
       ) : (
-        <UpcomingFightDetailScreen fight={fight} onPredictionSuccess={handleSuccess} />
+        <UpcomingFightDetailScreen
+          fight={fight}
+          onPredictionSuccess={handleSuccess}
+          renderMenuButton={renderMenuButton}
+          detailsMenuVisible={detailsMenuVisible}
+          setDetailsMenuVisible={setDetailsMenuVisible}
+        />
       )}
     </SafeAreaView>
   );

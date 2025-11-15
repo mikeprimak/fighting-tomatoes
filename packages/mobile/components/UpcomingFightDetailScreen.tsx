@@ -83,6 +83,9 @@ interface Fight {
 interface UpcomingFightDetailScreenProps {
   fight: Fight;
   onPredictionSuccess?: () => void;
+  renderMenuButton?: () => React.ReactNode;
+  detailsMenuVisible?: boolean;
+  setDetailsMenuVisible?: (visible: boolean) => void;
 }
 
 // Placeholder image for fighters
@@ -96,7 +99,13 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 // Heatmap flame icon color - solid colors for icon display
-export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }: UpcomingFightDetailScreenProps) {
+export default function UpcomingFightDetailScreen({
+  fight,
+  onPredictionSuccess,
+  renderMenuButton,
+  detailsMenuVisible: externalDetailsMenuVisible,
+  setDetailsMenuVisible: externalSetDetailsMenuVisible
+}: UpcomingFightDetailScreenProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
@@ -119,7 +128,10 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [commentToFlag, setCommentToFlag] = useState<string | null>(null);
   const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
-  const [detailsMenuVisible, setDetailsMenuVisible] = useState(false);
+  // Use external state if provided, otherwise use local state
+  const [localDetailsMenuVisible, setLocalDetailsMenuVisible] = useState(false);
+  const detailsMenuVisible = externalDetailsMenuVisible !== undefined ? externalDetailsMenuVisible : localDetailsMenuVisible;
+  const setDetailsMenuVisible = externalSetDetailsMenuVisible || setLocalDetailsMenuVisible;
   const [isFollowing, setIsFollowing] = useState(fight.isFollowing ?? false);
   const [toastMessage, setToastMessage] = useState<string>('');
   const [localFighter1Notification, setLocalFighter1Notification] = useState(fight.isFollowingFighter1);
@@ -1081,29 +1093,9 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
       {/* Who Do You Think Will Win? */}
       <View style={styles.sectionNoBorder}>
-        <View style={styles.headerRow}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Who do you think will win?
-          </Text>
-          <View style={styles.headerIcons}>
-            {(localNotificationReasons?.willBeNotified) && (
-              <FontAwesome name="bell" size={18} color={colors.tint} style={{ marginRight: 16 }} />
-            )}
-            <TouchableOpacity
-              onPress={() => {
-                // Snapshot fight data when opening menu to prevent re-renders
-                setMenuFightSnapshot({
-                  ...fight,
-                  notificationReasons: localNotificationReasons,
-                });
-                setDetailsMenuVisible(true);
-              }}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Who do you think will win?
+        </Text>
         <View style={styles.fighterButtons}>
           <TouchableOpacity
             style={[
