@@ -139,7 +139,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
   const toastTranslateY = useRef(new Animated.Value(50)).current;
 
   // Wheel animation for number display
-  const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 120 : 1200)).current;
+  const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 52 : 520)).current;
 
   // Simple fade animation for community predictions
   const predictionsFadeAnim = useRef(new Animated.Value(0)).current;
@@ -770,9 +770,9 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
     // Calculate target position
     // Numbers are arranged 10,9,8,7,6,5,4,3,2,1 (10 at top, 1 at bottom)
-    // Position 0 = number 10, position 120 = number 9, ... position 1080 = number 1
-    // Position 1200 = blank (below "1")
-    const targetPosition = targetNumber === 0 ? 1200 : (10 - targetNumber) * 120;
+    // Position 0 = number 10, position 52 = number 9, ... position 468 = number 1
+    // Position 520 = blank (below "1")
+    const targetPosition = targetNumber === 0 ? 520 : (10 - targetNumber) * 52;
 
     // Simple, smooth animation
     Animated.timing(wheelAnimation, {
@@ -1264,54 +1264,78 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
         {/* Large display flame with wheel animation */}
         <View style={styles.displayFlameContainer}>
           <View style={styles.animatedFlameContainer}>
-            <View style={{ position: 'relative' }}>
-              {/* Flame icon - custom image for unselected state, colored icon for selected */}
-              {selectedHype && selectedHype > 0 ? (
-                <FontAwesome6
-                  name="fire-flame-curved"
-                  size={80}
-                  color={getHypeHeatmapColor(selectedHype)}
-                />
-              ) : (
-                <Image
-                  source={require('../assets/flame-hollow-medium-alpha-colored.png')}
-                  style={{ width: 80, height: 80 }}
-                  resizeMode="contain"
-                />
-              )}
-            </View>
-            <View style={styles.wheelContainer}>
+            <View style={styles.wheelContainer} pointerEvents="none">
               <Animated.View style={[
                 styles.wheelNumbers,
                 {
                   transform: [{
                     translateY: wheelAnimation.interpolate({
-                      inputRange: [0, 1200],
-                      outputRange: [475, -725],
+                      inputRange: [0, 520],
+                      outputRange: [156, -364],
                     })
                   }]
                 }
               ]}>
-                {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => (
-                  <Text key={number} style={[styles.wheelNumber, { color: colors.text }]}>
-                    {number}
-                  </Text>
-                ))}
+                {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
+                  const hypeColor = getHypeHeatmapColor(number);
+
+                  // Calculate flame color (same logic as Community area)
+                  const getFlameColor = (hypeColor: string, bgColor: string) => {
+                    const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                    const hypeHexMatch = hypeColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
+
+                    let hypeR = 0, hypeG = 0, hypeB = 0;
+                    if (hypeRgbaMatch) {
+                      hypeR = parseInt(hypeRgbaMatch[1]);
+                      hypeG = parseInt(hypeRgbaMatch[2]);
+                      hypeB = parseInt(hypeRgbaMatch[3]);
+                    } else if (hypeHexMatch) {
+                      hypeR = parseInt(hypeHexMatch[1], 16);
+                      hypeG = parseInt(hypeHexMatch[2], 16);
+                      hypeB = parseInt(hypeHexMatch[3], 16);
+                    }
+
+                    const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                    const bgHexMatch = bgColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
+
+                    let bgR = 0, bgG = 0, bgB = 0;
+                    if (bgRgbaMatch) {
+                      bgR = parseInt(bgRgbaMatch[1]);
+                      bgG = parseInt(bgRgbaMatch[2]);
+                      bgB = parseInt(bgRgbaMatch[3]);
+                    } else if (bgHexMatch) {
+                      bgR = parseInt(bgHexMatch[1], 16);
+                      bgG = parseInt(bgHexMatch[2], 16);
+                      bgB = parseInt(bgHexMatch[3], 16);
+                    }
+
+                    const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
+                    const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
+                    const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
+
+                    return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
+                  };
+
+                  const flameColor = getFlameColor(hypeColor, colors.background);
+
+                  return (
+                    <View key={number} style={styles.wheelBoxContainer}>
+                      <View style={[
+                        styles.wheelBox,
+                        { backgroundColor: hypeColor }
+                      ]}>
+                        <FontAwesome6
+                          name="fire-flame-curved"
+                          size={24}
+                          color={flameColor}
+                          style={{ position: 'absolute' }}
+                        />
+                        <Text style={styles.wheelBoxText}>{number}</Text>
+                      </View>
+                    </View>
+                  );
+                })}
               </Animated.View>
-
-              {/* Smooth top gradient fade */}
-              <LinearGradient
-                colors={[colors.background, `${colors.background}DD`, `${colors.background}99`, `${colors.background}44`, 'transparent']}
-                style={[styles.fadeOverlay, { top: -8, height: 38 }]}
-                pointerEvents="none"
-              />
-
-              {/* Smooth bottom gradient fade */}
-              <LinearGradient
-                colors={['transparent', `${colors.background}44`, `${colors.background}99`, `${colors.background}DD`, colors.background, colors.background]}
-                style={[styles.fadeOverlay, { bottom: -6, height: 31 }]}
-                pointerEvents="none"
-              />
             </View>
           </View>
         </View>
@@ -1629,14 +1653,10 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 120,
+    height: 52,
   },
   wheelContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -1651,6 +1671,24 @@ const styles = StyleSheet.create({
     height: 120,
     textAlign: 'center',
     lineHeight: 120,
+  },
+  wheelBoxContainer: {
+    height: 52,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wheelBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  wheelBoxText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
   },
   fadeOverlay: {
     position: 'absolute',
