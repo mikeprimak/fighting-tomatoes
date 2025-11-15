@@ -928,45 +928,39 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             );
           })()}
 
-          {/* Community Predictions Bar - shown when user has selected a winner */}
-          {shouldRenderPredictions && (
-            <Animated.View style={{ flex: 1, opacity: predictionsFadeAnim }}>
-              {displayPredictionStats && displayPredictionStats.winnerPredictions && (
+          {/* Community Predictions Bar - always visible */}
+          {displayPredictionStats && displayPredictionStats.winnerPredictions && (
+            <View style={{
+              flex: 1,
+            }}>
+              <View style={{
+                height: 40,
+                flexDirection: 'row',
+                borderRadius: 8,
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}>
+                {/* Fighter 1 side */}
                 <View style={{
-                  height: 40,
+                  flex: displayPredictionStats.winnerPredictions.fighter1.percentage,
                   flexDirection: 'row',
-                  borderRadius: 8,
-                  overflow: 'hidden',
-                  borderWidth: 1,
-                  borderColor: colors.border,
+                  backgroundColor: colors.background,
                 }}>
-                    {/* Fighter 1 side */}
-                    <View style={{
-                      flex: displayPredictionStats.winnerPredictions.fighter1.percentage,
-                      flexDirection: 'row',
-                      backgroundColor: selectedWinner === fight.fighter1Id ? '#F5C518' : colors.background,
-                    }}>
-                      {/* Fighter 1 method subdivisions */}
-                      {shouldShowMethodSubdivisions && displayPredictionStats.fighter1MethodPredictions && (
-                        <Animated.View style={{ flexDirection: 'row', flex: 1, opacity: methodSubdivisionsFadeAnim }}>
-                          {displayPredictionStats.fighter1MethodPredictions.KO_TKO > 0 && (
+                  {/* Fighter 1 method subdivisions - always show if data exists */}
+                  {displayPredictionStats.fighter1MethodPredictions && (
+                    <View style={{ flexDirection: 'row', flex: 1 }}>
+                      {displayPredictionStats.fighter1MethodPredictions.KO_TKO > 0 && (
                             <View style={{
                               flex: displayPredictionStats.fighter1MethodPredictions.KO_TKO,
                               justifyContent: 'center',
                               alignItems: 'center',
                               borderRightWidth: 1,
                               borderRightColor: colors.border,
+                              backgroundColor: selectedWinner === fight.fighter1Id && selectedMethod === 'KO_TKO' ? '#F5C518' : 'transparent',
                             }}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                                {selectedWinner === fight.fighter1Id && selectedMethod === 'KO_TKO' && (
-                                  <FontAwesome name="user" size={8} color="#000" />
-                                )}
-                                <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id ? '#000' : colors.text }}>
-                                  KO
-                                </Text>
-                              </View>
-                              <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter1Id ? '#000' : colors.textSecondary }}>
-                                {displayPredictionStats.fighter1MethodPredictions.KO_TKO}
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id && selectedMethod === 'KO_TKO' ? '#000' : colors.text }}>
+                                KO
                               </Text>
                             </View>
                           )}
@@ -977,17 +971,10 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                               alignItems: 'center',
                               borderRightWidth: 1,
                               borderRightColor: colors.border,
+                              backgroundColor: selectedWinner === fight.fighter1Id && selectedMethod === 'SUBMISSION' ? '#F5C518' : 'transparent',
                             }}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                                {selectedWinner === fight.fighter1Id && selectedMethod === 'SUBMISSION' && (
-                                  <FontAwesome name="user" size={8} color="#000" />
-                                )}
-                                <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id ? '#000' : colors.text }}>
-                                  SUB
-                                </Text>
-                              </View>
-                              <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter1Id ? '#000' : colors.textSecondary }}>
-                                {displayPredictionStats.fighter1MethodPredictions.SUBMISSION}
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id && selectedMethod === 'SUBMISSION' ? '#000' : colors.text }}>
+                                SUB
                               </Text>
                             </View>
                           )}
@@ -996,21 +983,14 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                               flex: displayPredictionStats.fighter1MethodPredictions.DECISION,
                               justifyContent: 'center',
                               alignItems: 'center',
+                              backgroundColor: selectedWinner === fight.fighter1Id && selectedMethod === 'DECISION' ? '#F5C518' : 'transparent',
                             }}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                                {selectedWinner === fight.fighter1Id && selectedMethod === 'DECISION' && (
-                                  <FontAwesome name="user" size={8} color="#000" />
-                                )}
-                                <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id ? '#000' : colors.text }}>
-                                  DEC
-                                </Text>
-                              </View>
-                              <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter1Id ? '#000' : colors.textSecondary }}>
-                                {displayPredictionStats.fighter1MethodPredictions.DECISION}
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id && selectedMethod === 'DECISION' ? '#000' : colors.text }}>
+                                DEC
                               </Text>
                             </View>
                           )}
-                        </Animated.View>
+                        </View>
                       )}
                     </View>
 
@@ -1018,11 +998,11 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                     <View style={{
                       flex: displayPredictionStats.winnerPredictions.fighter2.percentage,
                       flexDirection: 'row',
-                      backgroundColor: selectedWinner === fight.fighter2Id ? '#F5C518' : colors.background,
+                      backgroundColor: '#FFFFFF',
                     }}>
-                      {/* Fighter 2 method subdivisions */}
-                      {shouldShowMethodSubdivisions && displayPredictionStats.fighter2MethodPredictions && (
-                        <Animated.View style={{ flexDirection: 'row', flex: 1, opacity: methodSubdivisionsFadeAnim }}>
+                      {/* Fighter 2 method subdivisions - always show if data exists */}
+                      {displayPredictionStats.fighter2MethodPredictions && (
+                        <View style={{ flexDirection: 'row', flex: 1 }}>
                           {displayPredictionStats.fighter2MethodPredictions.KO_TKO > 0 && (
                             <View style={{
                               flex: displayPredictionStats.fighter2MethodPredictions.KO_TKO,
@@ -1030,17 +1010,10 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                               alignItems: 'center',
                               borderRightWidth: 1,
                               borderRightColor: colors.border,
+                              backgroundColor: selectedWinner === fight.fighter2Id && selectedMethod === 'KO_TKO' ? '#F5C518' : 'transparent',
                             }}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                                {selectedWinner === fight.fighter2Id && selectedMethod === 'KO_TKO' && (
-                                  <FontAwesome name="user" size={8} color="#000" />
-                                )}
-                                <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter2Id ? '#000' : colors.text }}>
-                                  KO
-                                </Text>
-                              </View>
-                              <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter2Id ? '#000' : colors.textSecondary }}>
-                                {displayPredictionStats.fighter2MethodPredictions.KO_TKO}
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: '#000' }}>
+                                KO
                               </Text>
                             </View>
                           )}
@@ -1051,17 +1024,10 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                               alignItems: 'center',
                               borderRightWidth: 1,
                               borderRightColor: colors.border,
+                              backgroundColor: selectedWinner === fight.fighter2Id && selectedMethod === 'SUBMISSION' ? '#F5C518' : 'transparent',
                             }}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                                {selectedWinner === fight.fighter2Id && selectedMethod === 'SUBMISSION' && (
-                                  <FontAwesome name="user" size={8} color="#000" />
-                                )}
-                                <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter2Id ? '#000' : colors.text }}>
-                                  SUB
-                                </Text>
-                              </View>
-                              <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter2Id ? '#000' : colors.textSecondary }}>
-                                {displayPredictionStats.fighter2MethodPredictions.SUBMISSION}
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: '#000' }}>
+                                SUB
                               </Text>
                             </View>
                           )}
@@ -1070,26 +1036,18 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                               flex: displayPredictionStats.fighter2MethodPredictions.DECISION,
                               justifyContent: 'center',
                               alignItems: 'center',
+                              backgroundColor: selectedWinner === fight.fighter2Id && selectedMethod === 'DECISION' ? '#F5C518' : 'transparent',
                             }}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                                {selectedWinner === fight.fighter2Id && selectedMethod === 'DECISION' && (
-                                  <FontAwesome name="user" size={8} color="#000" />
-                                )}
-                                <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter2Id ? '#000' : colors.text }}>
-                                  DEC
-                                </Text>
-                              </View>
-                              <Text style={{ fontSize: 8, color: selectedWinner === fight.fighter2Id ? '#000' : colors.textSecondary }}>
-                                {displayPredictionStats.fighter2MethodPredictions.DECISION}
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: '#000' }}>
+                                DEC
                               </Text>
                             </View>
                           )}
-                        </Animated.View>
+                        </View>
                       )}
                     </View>
                   </View>
-              )}
-            </Animated.View>
+            </View>
           )}
         </View>
 
@@ -1106,8 +1064,8 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
           </View>
 
           {/* Percentages below bar chart */}
-          {shouldRenderPredictions && displayPredictionStats?.winnerPredictions && (
-            <Animated.View style={{ flex: 1, opacity: predictionsFadeAnim }}>
+          {displayPredictionStats?.winnerPredictions && (
+            <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <Text style={{ fontSize: 11, color: colors.textSecondary }}>
                   {displayPredictionStats.winnerPredictions.fighter1.percentage}% {fight.fighter1.lastName}
@@ -1116,7 +1074,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                   {displayPredictionStats.winnerPredictions.fighter2.percentage}% {fight.fighter2.lastName}
                 </Text>
               </View>
-            </Animated.View>
+            </View>
           )}
         </View>
       </View>
