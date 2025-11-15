@@ -913,11 +913,11 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
       {/* Community Predictions - Simple conditional with LayoutAnimation + fade */}
       {shouldRenderPredictions && (
-        <Animated.View style={[styles.sectionNoBorder, { marginTop: -28, opacity: predictionsFadeAnim }]}>
+        <Animated.View style={[styles.sectionNoBorder, { marginTop: -22, opacity: predictionsFadeAnim }]}>
           {displayPredictionStats && displayPredictionStats.winnerPredictions && (
-          <View style={{ marginTop: 8 }}>
+          <View style={{ marginTop: 4 }}>
             {/* Header row with percentages and centered icon */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
                 {displayPredictionStats.winnerPredictions.fighter1.percentage}%
               </Text>
@@ -1117,7 +1117,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       )}
 
       {/* How will it end? */}
-      <View style={[styles.sectionNoBorder, { marginTop: -28 }]}>
+      <View style={[styles.sectionNoBorder, { marginTop: -14 }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           How will it end?
         </Text>
@@ -1150,7 +1150,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       </View>
 
       {/* How Hyped? */}
-      <View style={[styles.sectionNoBorder, { marginTop: -25 }]}>
+      <View style={[styles.sectionNoBorder, { marginTop: -18 }]}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={[styles.sectionTitle, { color: colors.text, zIndex: 10 }]}>
             Your Hype:
@@ -1310,7 +1310,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
       </View>
 
       {/* Comments */}
-      <View style={[styles.sectionNoBorder, { marginTop: -25 }]}>
+      <View style={[styles.sectionNoBorder, { marginTop: -18 }]}>
         {/* Title row with Add Comment / Cancel button */}
         <View style={styles.commentHeaderRow}>
           <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
@@ -1357,7 +1357,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
         {/* Show comment input when showCommentForm is true (for new comments) OR when editing */}
         {((showCommentForm && !preFightCommentsData?.userComment) || isEditingComment) && (
-          <View ref={commentInputRef} collapsable={false} style={{ marginTop: 16 }}>
+          <View ref={commentInputRef} collapsable={false} style={{ marginTop: 10 }}>
             <View style={[
               styles.commentInputContainer,
               {
@@ -1407,7 +1407,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
 
         {/* Display All Pre-Fight Comments */}
         {preFightCommentsData && preFightCommentsData.comments && preFightCommentsData.comments.length > 0 && (
-          <View style={{ marginTop: 16 }}>
+          <View style={{ marginTop: 10 }}>
 
           {/* User's own comment first (if exists and not editing) */}
           {preFightCommentsData.userComment && !isEditingComment && (
@@ -1525,26 +1525,26 @@ const styles = StyleSheet.create({
   },
   section: {
     marginHorizontal: 4,
-    marginBottom: 16,
-    padding: 16,
+    marginBottom: 8,
+    padding: 12,
     borderRadius: 12,
     borderWidth: 1,
   },
   sectionNoBorder: {
     marginHorizontal: 4,
-    marginBottom: 26,
-    padding: 16,
+    marginBottom: 12,
+    padding: 12,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 17,
+    marginBottom: 10,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   headerIcons: {
     flexDirection: 'row',
@@ -1552,15 +1552,15 @@ const styles = StyleSheet.create({
   },
   fighterButtons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   fighterButton: {
     flex: 1,
     alignItems: 'center',
-    padding: 16,
+    padding: 12,
     borderRadius: 12,
     borderWidth: 2,
-    gap: 12,
+    gap: 8,
   },
   fighterButtonImage: {
     width: 80,
@@ -1622,11 +1622,11 @@ const styles = StyleSheet.create({
   scoreRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
   methodButtons: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   methodButton: {
     flex: 1,
@@ -1643,7 +1643,7 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   infoText: {
     fontSize: 15,
@@ -1666,7 +1666,7 @@ const styles = StyleSheet.create({
   commentInputContainer: {
     borderRadius: 12,
     borderWidth: 2,
-    padding: 12,
+    padding: 10,
   },
   commentInput: {
     fontSize: 15,
@@ -1675,11 +1675,11 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   saveCommentButton: {
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 8,
   },
   saveCommentButtonText: {
     fontSize: 15,
