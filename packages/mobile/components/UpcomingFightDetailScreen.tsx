@@ -1174,7 +1174,11 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             </Text>
 
             {/* User's hype wheel */}
-            <View style={[styles.displayFlameContainer, { marginTop: 17, marginLeft: 20 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginLeft: 20 }}>
+              <View style={{ marginTop: 4 }}>
+                <FontAwesome name="user" size={20} color={colors.textSecondary} />
+              </View>
+              <View style={[styles.displayFlameContainer, { marginTop: 17 }]}>
           <View style={styles.animatedFlameContainer}>
             <View style={styles.wheelContainer} pointerEvents="none">
               <Animated.View style={[
@@ -1251,6 +1255,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
             </View>
           </View>
         </View>
+            </View>
 
           {/* Community hype */}
           {(() => {
@@ -1305,13 +1310,13 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 <View style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  gap: 6,
+                  gap: 11,
                   opacity: isVisible ? 1 : 0,
                   pointerEvents: isVisible ? 'auto' : 'none',
                   marginLeft: 20
                 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <FontAwesome name="users" size={14} color={colors.textSecondary} />
+                    <FontAwesome name="users" size={19} color={colors.textSecondary} />
                   </View>
                   <View style={{
                     width: 40,
