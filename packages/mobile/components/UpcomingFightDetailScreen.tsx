@@ -938,7 +938,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <FontAwesome name="users" size={14} color={colors.textSecondary} />
                 <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
-                  Community
+                  Community ({displayPredictionStats.totalPredictions || 0})
                 </Text>
               </View>
               <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary }}>
@@ -1274,7 +1274,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                 />
               ) : (
                 <Image
-                  source={require('../assets/flame-hollow-thin-alpha-colored2.png')}
+                  source={require('../assets/flame-hollow-medium-alpha-colored.png')}
                   style={{ width: 80, height: 80 }}
                   resizeMode="contain"
                 />
@@ -1338,7 +1338,7 @@ export default function UpcomingFightDetailScreen({ fight, onPredictionSuccess }
                     />
                   ) : (
                     <Image
-                      source={require('../assets/flame-hollow-thin-alpha-colored2.png')}
+                      source={require('../assets/flame-hollow-alpha-colored.png')}
                       style={{ width: 32, height: 32 }}
                       resizeMode="contain"
                     />
