@@ -478,17 +478,28 @@ export default function UpcomingFightCard({
                     {cleanFighterName(getFighterName(fight.fighter1))}
                   </Text>
                   {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
-                    <Animated.View
-                      style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: 2,
-                        backgroundColor: '#F5C518',
-                        transform: [{ scaleX: underlineScaleAnim }],
-                      }}
-                    />
+                    <>
+                      <Animated.View
+                        style={{
+                          position: 'absolute',
+                          bottom: -4.5,
+                          left: 0,
+                          right: 0,
+                          height: 2,
+                          backgroundColor: '#F5C518',
+                          transform: [{ scaleX: underlineScaleAnim }],
+                        }}
+                      />
+                      {aggregateStats?.userPrediction?.method && (
+                        <View style={styles.checkmarkContainer}>
+                          <View style={[styles.checkmarkIcon, { backgroundColor: colors.background }]}>
+                            <Text style={{ color: '#F5C518', fontSize: 9, fontWeight: '700' }}>
+                              {formatMethod(aggregateStats.userPrediction.method)}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+                    </>
                   )}
                 </View>
               </View>
@@ -512,17 +523,28 @@ export default function UpcomingFightCard({
                     {cleanFighterName(getFighterName(fight.fighter2))}
                   </Text>
                   {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
-                    <Animated.View
-                      style={{
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: 2,
-                        backgroundColor: '#F5C518',
-                        transform: [{ scaleX: underlineScaleAnim }],
-                      }}
-                    />
+                    <>
+                      <Animated.View
+                        style={{
+                          position: 'absolute',
+                          bottom: -4.5,
+                          left: 0,
+                          right: 0,
+                          height: 2,
+                          backgroundColor: '#F5C518',
+                          transform: [{ scaleX: underlineScaleAnim }],
+                        }}
+                      />
+                      {aggregateStats?.userPrediction?.method && (
+                        <View style={styles.checkmarkContainer}>
+                          <View style={[styles.checkmarkIcon, { backgroundColor: colors.background }]}>
+                            <Text style={{ color: '#F5C518', fontSize: 9, fontWeight: '700' }}>
+                              {formatMethod(aggregateStats.userPrediction.method)}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+                    </>
                   )}
                 </View>
               </View>
@@ -886,6 +908,24 @@ const styles = StyleSheet.create({
     fontSize: 7,
     fontWeight: '600',
     textTransform: 'uppercase',
+  },
+  checkmarkContainer: {
+    position: 'absolute',
+    bottom: -8,
+    left: 0,
+    right: 0,
+    height: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 5,
+  },
+  checkmarkIcon: {
+    minWidth: 28,
+    height: 12,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
   },
   hypeSquare: {
     position: 'absolute',
