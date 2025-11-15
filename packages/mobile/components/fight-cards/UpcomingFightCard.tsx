@@ -395,19 +395,38 @@ export default function UpcomingFightCard({
         justifyContent: 'center',
       }]}>
           {/* Full-height community hype square on the left */}
-          <View style={[styles.hypeSquare, { backgroundColor: hypeBorderColor }]}>
-            <FontAwesome6
-              name="fire-flame-curved"
-              size={24}
-              color={flameColor}
-              style={{ position: 'absolute' }}
-            />
-            <Text style={styles.hypeSquareText}>
-              {predictionStats?.averageHype !== undefined
-                ? predictionStats.averageHype.toFixed(1)
-                : '0.0'
-              }
-            </Text>
+          <View style={[
+            styles.hypeSquare,
+            {
+              backgroundColor: (predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0)
+                ? hypeBorderColor
+                : 'transparent',
+              borderWidth: (predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0)
+                ? 0
+                : 1,
+              borderColor: colors.textSecondary,
+            }
+          ]}>
+            {(predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0) ? (
+              <>
+                <FontAwesome6
+                  name="fire-flame-curved"
+                  size={24}
+                  color={flameColor}
+                  style={{ position: 'absolute' }}
+                />
+                <Text style={styles.hypeSquareText}>
+                  {predictionStats.averageHype.toFixed(1)}
+                </Text>
+              </>
+            ) : (
+              <FontAwesome6
+                name="fire-flame-curved"
+                size={20}
+                color={colors.textSecondary}
+                style={{ position: 'absolute', opacity: 0.5 }}
+              />
+            )}
           </View>
 
           {/* Full-height user hype square on the right */}

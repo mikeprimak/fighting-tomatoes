@@ -383,16 +383,16 @@ function EventSection({
               <View style={styles.sectionHeader}>
                 {/* Left Column Header - Group Icon / HYPE */}
                 <View style={styles.columnHeaders}>
-                  <FontAwesome name="users" size={12} color={colors.textSecondary} />
+                  <FontAwesome name="users" size={16} color={colors.textSecondary} />
                   <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
                     HYPE
                   </Text>
                 </View>
 
-                {/* Center - Title and Time stacked vertically */}
-                <View style={styles.sectionHeaderCenter}>
+                {/* Center - Title and Time on same line */}
+                <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
                   <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                    MAIN CARD
+                    MAIN
                   </Text>
                   {event.mainStartTime && (
                     <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
@@ -403,7 +403,7 @@ function EventSection({
 
                 {/* Right Column Header - User Icon / HYPE */}
                 <View style={styles.columnHeadersRight}>
-                  <FontAwesome name="user" size={12} color={colors.textSecondary} />
+                  <FontAwesome name="user" size={16} color={colors.textSecondary} />
                   <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
                     HYPE
                   </Text>
@@ -428,10 +428,10 @@ function EventSection({
           {prelimCard.length > 0 && (
             <View style={styles.cardSection}>
               <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
-                {/* Center - Title and Time stacked vertically */}
-                <View style={styles.sectionHeaderCenter}>
+                {/* Center - Title and Time on same line */}
+                <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
                   <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                    PRELIMINARY CARD
+                    PRELIMS
                   </Text>
                   {event.prelimStartTime && (
                     <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
@@ -458,8 +458,8 @@ function EventSection({
           {earlyPrelims.length > 0 && (
             <View style={styles.cardSection}>
               <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
-                {/* Center - Title and Time stacked vertically */}
-                <View style={styles.sectionHeaderCenter}>
+                {/* Center - Title and Time on same line */}
+                <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
                   <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                     EARLY PRELIMS
                   </Text>
