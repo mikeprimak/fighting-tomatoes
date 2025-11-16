@@ -952,17 +952,18 @@ export default function UpcomingFightDetailScreen({
 
       {/* How Hyped? */}
       <View style={[styles.sectionNoBorder, { marginTop: -18 }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={[styles.sectionTitle, { color: colors.text, zIndex: 10, marginTop: 6 }]}>
-            How hyped are you?
-          </Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          How hyped are you?
+        </Text>
 
-          {/* User's hype wheel */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginLeft: 20 }}>
-            <View style={{ marginTop: 4 }}>
+        {/* User's hype selection row */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 10 }}>
+          {/* User icon and hype wheel */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 10 }}>
               <FontAwesome name="user" size={20} color={colors.textSecondary} />
             </View>
-            <View style={[styles.displayFlameContainer, { marginTop: 17 }]}>
+            <View style={[styles.displayFlameContainer, { marginTop: 10 }]}>
               <View style={styles.animatedFlameContainer}>
                 <View style={styles.wheelContainer} pointerEvents="none">
                   <Animated.View style={[
@@ -1040,10 +1041,9 @@ export default function UpcomingFightDetailScreen({
               </View>
             </View>
           </View>
-        </View>
 
-        {/* Row of selectable flames (1-10) */}
-        <View style={[styles.flameContainer, { marginTop: 5 }]}>
+          {/* Row of selectable flames (1-10) */}
+          <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: -12, marginTop: -5 }]}>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
             const isSelected = level <= (selectedHype || 0);
             const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
@@ -1053,19 +1053,19 @@ export default function UpcomingFightDetailScreen({
                 key={level}
                 onPress={() => handleHypeSelection(level)}
                 style={styles.flameButton}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               >
-                <View style={{ width: 32, alignItems: 'center' }}>
+                <View style={{ width: 26, alignItems: 'center' }}>
                   {isSelected ? (
                     <FontAwesome6
                       name="fire-flame-curved"
-                      size={32}
+                      size={26}
                       color={flameColor}
                     />
                   ) : (
                     <Image
                       source={require('../assets/flame-hollow-alpha-colored.png')}
-                      style={{ width: 32, height: 32 }}
+                      style={{ width: 26, height: 26 }}
                       resizeMode="contain"
                     />
                   )}
@@ -1073,6 +1073,7 @@ export default function UpcomingFightDetailScreen({
               </TouchableOpacity>
             );
           })}
+          </View>
         </View>
       </View>
 

@@ -65,13 +65,13 @@ const parseEventName = (eventName: string) => {
   };
 };
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString: string, isComplete: boolean) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
+    ...(isComplete && { year: 'numeric' }), // Only show year for completed events
   });
 };
 
@@ -108,7 +108,7 @@ export function EventBannerCard({
 
           <View style={styles.dateOverlay}>
             <Text style={styles.dateText}>
-              {formatDate(event.date)}
+              {formatDate(event.date, event.isComplete)}
             </Text>
           </View>
         </View>

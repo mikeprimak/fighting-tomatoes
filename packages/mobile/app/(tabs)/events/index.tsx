@@ -94,7 +94,6 @@ export default function UpcomingEventsScreen() {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
-      year: 'numeric',
     });
   };
 
