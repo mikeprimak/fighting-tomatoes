@@ -274,23 +274,21 @@ export default function PredictionPieChart({
   return (
     <View style={styles.container}>
       <View style={styles.innerContainer}>
-        {/* Fighter percentages at top left and top right - only show if colors revealed */}
-        {showColors && (
-          <View style={styles.legendTop}>
-            <View style={{ flexShrink: 1, marginRight: 8 }}>
-              <RNText style={[styles.legendText, { color: '#FFFFFF' }]} numberOfLines={1} ellipsizeMode="tail">
-                {fighter1Percentage}% {fighter1Name}
-              </RNText>
-              <View style={styles.underlineRed} />
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <RNText style={[styles.legendText, styles.legendTextRight, { color: '#FFFFFF' }]} numberOfLines={1} ellipsizeMode="tail">
-                {fighter2Percentage}% {fighter2Name}
-              </RNText>
-              <View style={styles.underlineBlue} />
-            </View>
+        {/* Fighter names always visible, percentages only show after winner prediction */}
+        <View style={styles.legendTop}>
+          <View style={{ flexShrink: 1, marginRight: 8 }}>
+            <RNText style={[styles.legendText, { color: '#FFFFFF' }]} numberOfLines={1} ellipsizeMode="tail">
+              {showColors && `${fighter1Percentage}% `}{fighter1Name}
+            </RNText>
+            <View style={styles.underlineRed} />
           </View>
-        )}
+          <View style={{ alignItems: 'flex-end' }}>
+            <RNText style={[styles.legendText, styles.legendTextRight, { color: '#FFFFFF' }]} numberOfLines={1} ellipsizeMode="tail">
+              {showColors && `${fighter2Percentage}% `}{fighter2Name}
+            </RNText>
+            <View style={styles.underlineBlue} />
+          </View>
+        </View>
 
       <View style={styles.chartWrapper}>
         <Svg width={size} height={size}>
