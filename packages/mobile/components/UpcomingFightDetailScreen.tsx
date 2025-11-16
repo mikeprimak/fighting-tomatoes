@@ -1681,7 +1681,8 @@ const styles = StyleSheet.create({
   },
   methodButton: {
     flex: 1,
-    padding: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',

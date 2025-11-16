@@ -10,7 +10,8 @@
       "Bash(node -e:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nfeat: Add auto un-cancellation for fights and reorganize UI sections\n\n- **Live Event Tracker**: Add automatic un-cancellation mechanism\n  - Fights marked as cancelled now auto-revert when they reappear in scraped data\n  - Handles transient UFC.com data glitches gracefully\n  - Logs show \"X fights un-cancelled\" in parser output\n  - Fixes issue where temporary data drops permanently cancelled fights\n\n- **Test Notification Logging**: Enhanced debug output\n  - Added detailed logging to /api/notifications/test endpoint\n  - Shows user lookup, push token verification, and send status\n  - Helps diagnose notification delivery issues\n\n- **UI Reorganization**: Move community data below user predictions\n  - Relocated \"Community Data\" section from top to between hype and comments\n  - New order: Winner → Method → Hype → Community Data → Comments\n  - More logical flow: users make predictions before seeing community data\n  - Section includes community hype box and prediction bar chart\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
