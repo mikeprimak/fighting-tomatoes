@@ -2401,15 +2401,33 @@ export async function fightRoutes(fastify: FastifyInstance) {
         ? Math.round(hypeScoresAggregate._avg.predictedRating * 10) / 10 // Round to 1 decimal
         : null;
 
+      // 8. Get hype distribution (1-10 scale)
+      const hypePredictions = await fastify.prisma.fightPrediction.findMany({
+        where: {
+          fightId,
+          predictedRating: { not: null },
+        },
+        select: {
+          predictedRating: true,
+        },
+      });
+
+      const hypeDistribution: Record<number, number> = {};
+      for (let hype = 1; hype <= 10; hype++) {
+        hypeDistribution[hype] = hypePredictions.filter(p => p.predictedRating === hype).length;
+      }
+
       return reply.send({
         fightId,
         reviewCount,
         totalRatings,
+        totalPredictions: hypePredictions.length,
         userPrediction,
         communityPrediction,
         topTags,
         userHypeScore,
         communityAverageHype,
+        hypeDistribution,
       });
 
     } catch (error) {
