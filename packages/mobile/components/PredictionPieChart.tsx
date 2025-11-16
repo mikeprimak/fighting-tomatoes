@@ -314,15 +314,37 @@ export default function PredictionPieChart({
         {/* Fighter names always visible, percentages only show after winner prediction */}
         <View style={styles.legendTop}>
           <View style={{ flexShrink: 1, marginRight: 8 }}>
-            <RNText style={[styles.legendText, { color: '#FFFFFF' }]} numberOfLines={1} ellipsizeMode="tail">
-              {showColors && `${fighter1Percentage}% `}{fighter1Name}
-            </RNText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <RNText style={[styles.legendText, { color: '#FFFFFF' }]} numberOfLines={1} ellipsizeMode="tail">
+                {showColors && `${fighter1Percentage}% `}{fighter1Name}
+              </RNText>
+              {/* Show user icon if fighter1 is selected winner but no method chosen */}
+              {selectedWinner === fighter1Id && !selectedMethod && (
+                <Svg width={20} height={20} viewBox="0 0 24 24">
+                  <Path
+                    d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                    fill="#F5C518"
+                  />
+                </Svg>
+              )}
+            </View>
             <View style={styles.underlineRed} />
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-            <RNText style={[styles.legendText, styles.legendTextRight, { color: '#FFFFFF' }]} numberOfLines={1} ellipsizeMode="tail">
-              {showColors && `${fighter2Percentage}% `}{fighter2Name}
-            </RNText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <RNText style={[styles.legendText, styles.legendTextRight, { color: '#FFFFFF' }]} numberOfLines={1} ellipsizeMode="tail">
+                {showColors && `${fighter2Percentage}% `}{fighter2Name}
+              </RNText>
+              {/* Show user icon if fighter2 is selected winner but no method chosen */}
+              {selectedWinner === fighter2Id && !selectedMethod && (
+                <Svg width={20} height={20} viewBox="0 0 24 24">
+                  <Path
+                    d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                    fill="#F5C518"
+                  />
+                </Svg>
+              )}
+            </View>
             <View style={styles.underlineBlue} />
           </View>
         </View>
