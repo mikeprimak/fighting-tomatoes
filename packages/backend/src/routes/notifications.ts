@@ -238,18 +238,30 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
     async (request, reply) => {
       const userId = request.user!.id;
 
+      console.log(`[Test Notification] Request from user: ${userId}`);
+
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { pushToken: true, displayName: true },
+        select: { pushToken: true, displayName: true, notificationsEnabled: true },
+      });
+
+      console.log(`[Test Notification] User found:`, {
+        displayName: user?.displayName,
+        hasPushToken: !!user?.pushToken,
+        pushToken: user?.pushToken?.substring(0, 20) + '...',
+        notificationsEnabled: user?.notificationsEnabled
       });
 
       if (!user?.pushToken) {
+        console.log(`[Test Notification] ERROR: No push token for user ${userId}`);
         return reply.status(400).send({
           error: 'No push token registered for this user',
         });
       }
 
       const { notificationService } = await import('../services/notificationService');
+
+      console.log(`[Test Notification] Sending notification to user ${userId}...`);
 
       const result = await notificationService.sendPushNotifications(
         [userId],
@@ -263,6 +275,8 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
           },
         }
       );
+
+      console.log(`[Test Notification] Result:`, result);
 
       return reply.send({
         message: 'Test notification sent',

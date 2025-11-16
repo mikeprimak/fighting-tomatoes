@@ -852,10 +852,238 @@ export default function UpcomingFightDetailScreen({
       }}
     >
 
-      {/* Community Hype and Predictions */}
+
+      {/* Who Do You Think Will Win? */}
       <View style={styles.sectionNoBorder}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Who do you think will win?
+        </Text>
+        <View style={styles.fighterButtons}>
+          <TouchableOpacity
+            style={[
+              styles.fighterButton,
+              {
+                backgroundColor: selectedWinner === fight.fighter1.id ? '#F5C518' : colors.background,
+                borderColor: colors.border,
+              }
+            ]}
+            onPress={() => handleWinnerSelection(fight.fighter1.id)}
+          >
+            <Image
+              source={
+                fight.fighter1.profileImage
+                  ? { uri: fight.fighter1.profileImage }
+                  : getFighterPlaceholderImage(fight.fighter1.id)
+              }
+              style={styles.fighterButtonImage}
+            />
+            <Text style={[
+              styles.fighterButtonText,
+              {
+                color: selectedWinner === fight.fighter1.id ? '#000' : colors.text
+              }
+            ]}>
+              {fight.fighter1.firstName} {fight.fighter1.lastName}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.fighterButton,
+              {
+                backgroundColor: selectedWinner === fight.fighter2.id ? '#F5C518' : colors.background,
+                borderColor: colors.border,
+              }
+            ]}
+            onPress={() => handleWinnerSelection(fight.fighter2.id)}
+          >
+            <Image
+              source={
+                fight.fighter2.profileImage
+                  ? { uri: fight.fighter2.profileImage }
+                  : getFighterPlaceholderImage(fight.fighter2.id)
+              }
+              style={styles.fighterButtonImage}
+            />
+            <Text style={[
+              styles.fighterButtonText,
+              {
+                color: selectedWinner === fight.fighter2.id ? '#000' : colors.text
+              }
+            ]}>
+              {fight.fighter2.firstName} {fight.fighter2.lastName}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* How will it end? */}
+      <View style={[styles.sectionNoBorder, { marginTop: -4 }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          How will it end?
+        </Text>
+        <View style={styles.methodButtons}>
+          {(['KO_TKO', 'SUBMISSION', 'DECISION'] as const).map((method) => {
+            return (
+              <TouchableOpacity
+                key={method}
+                style={[
+                  styles.methodButton,
+                  {
+                    backgroundColor: selectedMethod === method ? '#F5C518' : colors.background,
+                    borderColor: colors.border,
+                  }
+                ]}
+                onPress={() => handleMethodSelection(method)}
+              >
+                <Text style={[
+                  styles.methodButtonText,
+                  {
+                    color: selectedMethod === method ? '#000' : colors.text
+                  }
+                ]}>
+                  {method === 'KO_TKO' ? 'KO/TKO' : method}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* How Hyped? */}
+      <View style={[styles.sectionNoBorder, { marginTop: -18 }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={[styles.sectionTitle, { color: colors.text, zIndex: 10, marginTop: 6 }]}>
+            How hyped are you?
+          </Text>
+
+          {/* User's hype wheel */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginLeft: 20 }}>
+            <View style={{ marginTop: 4 }}>
+              <FontAwesome name="user" size={20} color={colors.textSecondary} />
+            </View>
+            <View style={[styles.displayFlameContainer, { marginTop: 17 }]}>
+              <View style={styles.animatedFlameContainer}>
+                <View style={styles.wheelContainer} pointerEvents="none">
+                  <Animated.View style={[
+                    styles.wheelNumbers,
+                    {
+                      transform: [{
+                        translateY: wheelAnimation.interpolate({
+                          inputRange: [0, 520],
+                          outputRange: [156, -364],
+                        })
+                      }]
+                    }
+                  ]}>
+                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
+                      const hypeColor = getHypeHeatmapColor(number);
+
+                      // Calculate flame color (same logic as Community area)
+                      const getFlameColor = (hypeColor: string, bgColor: string) => {
+                        const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                        const hypeHexMatch = hypeColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
+
+                        let hypeR = 0, hypeG = 0, hypeB = 0;
+                        if (hypeRgbaMatch) {
+                          hypeR = parseInt(hypeRgbaMatch[1]);
+                          hypeG = parseInt(hypeRgbaMatch[2]);
+                          hypeB = parseInt(hypeRgbaMatch[3]);
+                        } else if (hypeHexMatch) {
+                          hypeR = parseInt(hypeHexMatch[1], 16);
+                          hypeG = parseInt(hypeHexMatch[2], 16);
+                          hypeB = parseInt(hypeHexMatch[3], 16);
+                        }
+
+                        const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                        const bgHexMatch = bgColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
+
+                        let bgR = 0, bgG = 0, bgB = 0;
+                        if (bgRgbaMatch) {
+                          bgR = parseInt(bgRgbaMatch[1]);
+                          bgG = parseInt(bgRgbaMatch[2]);
+                          bgB = parseInt(bgRgbaMatch[3]);
+                        } else if (bgHexMatch) {
+                          bgR = parseInt(bgHexMatch[1], 16);
+                          bgG = parseInt(bgHexMatch[2], 16);
+                          bgB = parseInt(bgHexMatch[3], 16);
+                        }
+
+                        const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
+                        const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
+                        const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
+
+                        return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
+                      };
+
+                      const flameColor = getFlameColor(hypeColor, colors.background);
+
+                      return (
+                        <View key={number} style={styles.wheelBoxContainer}>
+                          <View style={[
+                            styles.wheelBox,
+                            { backgroundColor: hypeColor }
+                          ]}>
+                            <FontAwesome6
+                              name="fire-flame-curved"
+                              size={24}
+                              color={flameColor}
+                              style={{ position: 'absolute' }}
+                            />
+                            <Text style={styles.wheelBoxText}>{number}</Text>
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </Animated.View>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Row of selectable flames (1-10) */}
+        <View style={[styles.flameContainer, { marginTop: 5 }]}>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
+            const isSelected = level <= (selectedHype || 0);
+            const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
+
+            return (
+              <TouchableOpacity
+                key={level}
+                onPress={() => handleHypeSelection(level)}
+                style={styles.flameButton}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <View style={{ width: 32, alignItems: 'center' }}>
+                  {isSelected ? (
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={32}
+                      color={flameColor}
+                    />
+                  ) : (
+                    <Image
+                      source={require('../assets/flame-hollow-alpha-colored.png')}
+                      style={{ width: 32, height: 32 }}
+                      resizeMode="contain"
+                    />
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
+      {/* Community Data */}
+      <View style={[styles.sectionNoBorder, { marginTop: -8 }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Community Data
+        </Text>
+
         {/* First row: Hype box and bar chart aligned horizontally */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 10 }}>
           {/* Community Hype Box */}
           {(() => {
             const hypeColor = aggregateStats?.communityAverageHype
@@ -1088,229 +1316,6 @@ export default function UpcomingFightDetailScreen({
               </View>
             </View>
           )}
-        </View>
-      </View>
-
-      {/* Who Do You Think Will Win? */}
-      <View style={styles.sectionNoBorder}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Who do you think will win?
-        </Text>
-        <View style={styles.fighterButtons}>
-          <TouchableOpacity
-            style={[
-              styles.fighterButton,
-              {
-                backgroundColor: selectedWinner === fight.fighter1.id ? '#F5C518' : colors.background,
-                borderColor: colors.border,
-              }
-            ]}
-            onPress={() => handleWinnerSelection(fight.fighter1.id)}
-          >
-            <Image
-              source={
-                fight.fighter1.profileImage
-                  ? { uri: fight.fighter1.profileImage }
-                  : getFighterPlaceholderImage(fight.fighter1.id)
-              }
-              style={styles.fighterButtonImage}
-            />
-            <Text style={[
-              styles.fighterButtonText,
-              {
-                color: selectedWinner === fight.fighter1.id ? '#000' : colors.text
-              }
-            ]}>
-              {fight.fighter1.firstName} {fight.fighter1.lastName}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.fighterButton,
-              {
-                backgroundColor: selectedWinner === fight.fighter2.id ? '#F5C518' : colors.background,
-                borderColor: colors.border,
-              }
-            ]}
-            onPress={() => handleWinnerSelection(fight.fighter2.id)}
-          >
-            <Image
-              source={
-                fight.fighter2.profileImage
-                  ? { uri: fight.fighter2.profileImage }
-                  : getFighterPlaceholderImage(fight.fighter2.id)
-              }
-              style={styles.fighterButtonImage}
-            />
-            <Text style={[
-              styles.fighterButtonText,
-              {
-                color: selectedWinner === fight.fighter2.id ? '#000' : colors.text
-              }
-            ]}>
-              {fight.fighter2.firstName} {fight.fighter2.lastName}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* How will it end? */}
-      <View style={[styles.sectionNoBorder, { marginTop: -4 }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          How will it end?
-        </Text>
-        <View style={styles.methodButtons}>
-          {(['KO_TKO', 'SUBMISSION', 'DECISION'] as const).map((method) => {
-            return (
-              <TouchableOpacity
-                key={method}
-                style={[
-                  styles.methodButton,
-                  {
-                    backgroundColor: selectedMethod === method ? '#F5C518' : colors.background,
-                    borderColor: colors.border,
-                  }
-                ]}
-                onPress={() => handleMethodSelection(method)}
-              >
-                <Text style={[
-                  styles.methodButtonText,
-                  {
-                    color: selectedMethod === method ? '#000' : colors.text
-                  }
-                ]}>
-                  {method === 'KO_TKO' ? 'KO/TKO' : method}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* How Hyped? */}
-      <View style={[styles.sectionNoBorder, { marginTop: -18 }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={[styles.sectionTitle, { color: colors.text, zIndex: 10, marginTop: 6 }]}>
-            How hyped are you?
-          </Text>
-
-          {/* User's hype wheel */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginLeft: 20 }}>
-            <View style={{ marginTop: 4 }}>
-              <FontAwesome name="user" size={20} color={colors.textSecondary} />
-            </View>
-            <View style={[styles.displayFlameContainer, { marginTop: 17 }]}>
-              <View style={styles.animatedFlameContainer}>
-                <View style={styles.wheelContainer} pointerEvents="none">
-                  <Animated.View style={[
-                    styles.wheelNumbers,
-                    {
-                      transform: [{
-                        translateY: wheelAnimation.interpolate({
-                          inputRange: [0, 520],
-                          outputRange: [156, -364],
-                        })
-                      }]
-                    }
-                  ]}>
-                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
-                      const hypeColor = getHypeHeatmapColor(number);
-
-                      // Calculate flame color (same logic as Community area)
-                      const getFlameColor = (hypeColor: string, bgColor: string) => {
-                        const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                        const hypeHexMatch = hypeColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
-
-                        let hypeR = 0, hypeG = 0, hypeB = 0;
-                        if (hypeRgbaMatch) {
-                          hypeR = parseInt(hypeRgbaMatch[1]);
-                          hypeG = parseInt(hypeRgbaMatch[2]);
-                          hypeB = parseInt(hypeRgbaMatch[3]);
-                        } else if (hypeHexMatch) {
-                          hypeR = parseInt(hypeHexMatch[1], 16);
-                          hypeG = parseInt(hypeHexMatch[2], 16);
-                          hypeB = parseInt(hypeHexMatch[3], 16);
-                        }
-
-                        const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                        const bgHexMatch = bgColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
-
-                        let bgR = 0, bgG = 0, bgB = 0;
-                        if (bgRgbaMatch) {
-                          bgR = parseInt(bgRgbaMatch[1]);
-                          bgG = parseInt(bgRgbaMatch[2]);
-                          bgB = parseInt(bgRgbaMatch[3]);
-                        } else if (bgHexMatch) {
-                          bgR = parseInt(bgHexMatch[1], 16);
-                          bgG = parseInt(bgHexMatch[2], 16);
-                          bgB = parseInt(bgHexMatch[3], 16);
-                        }
-
-                        const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
-                        const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
-                        const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
-
-                        return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
-                      };
-
-                      const flameColor = getFlameColor(hypeColor, colors.background);
-
-                      return (
-                        <View key={number} style={styles.wheelBoxContainer}>
-                          <View style={[
-                            styles.wheelBox,
-                            { backgroundColor: hypeColor }
-                          ]}>
-                            <FontAwesome6
-                              name="fire-flame-curved"
-                              size={24}
-                              color={flameColor}
-                              style={{ position: 'absolute' }}
-                            />
-                            <Text style={styles.wheelBoxText}>{number}</Text>
-                          </View>
-                        </View>
-                      );
-                    })}
-                  </Animated.View>
-                </View>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Row of selectable flames (1-10) */}
-        <View style={[styles.flameContainer, { marginTop: 5 }]}>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
-            const isSelected = level <= (selectedHype || 0);
-            const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
-
-            return (
-              <TouchableOpacity
-                key={level}
-                onPress={() => handleHypeSelection(level)}
-                style={styles.flameButton}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <View style={{ width: 32, alignItems: 'center' }}>
-                  {isSelected ? (
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={32}
-                      color={flameColor}
-                    />
-                  ) : (
-                    <Image
-                      source={require('../assets/flame-hollow-alpha-colored.png')}
-                      style={{ width: 32, height: 32 }}
-                      resizeMode="contain"
-                    />
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
         </View>
       </View>
 

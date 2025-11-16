@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(.gitignore)"
+      "Bash(.gitignore)",
+      "Bash(PORT=3008 pnpm dev:*)",
+      "Bash(npx expo start:*)",
+      "Bash(docker ps:*)",
+      "Bash(curl:*)",
+      "Bash(eas build:*)",
+      "Bash(node -e:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []
