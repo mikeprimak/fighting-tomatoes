@@ -24,6 +24,7 @@ import { apiService } from '../services/api';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 import PredictionBarChart from './PredictionBarChart';
 import PredictionPieChart from './PredictionPieChart';
+import HypeDistributionChart from './HypeDistributionChart';
 import FightDetailsSection from './FightDetailsSection';
 import { useFightStats } from '../hooks/useFightStats';
 import { PreFightCommentCard } from './PreFightCommentCard';
@@ -1127,10 +1128,12 @@ export default function UpcomingFightDetailScreen({
           Community Data
         </Text>
 
-        {/* First row: Hype box and pie chart aligned horizontally */}
+        {/* Community Data Layout: Left column (hype box + distribution chart) and right column (pie chart) */}
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: 10 }}>
-          {/* Community Hype Box */}
-          {(() => {
+          {/* Left column: Aggregate hype box (top) + distribution chart (bottom) */}
+          <View style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+            {/* Community Hype Box */}
+            {(() => {
             const hypeColor = aggregateStats?.communityAverageHype
               ? getHypeHeatmapColor(aggregateStats.communityAverageHype)
               : colors.border;
@@ -1244,6 +1247,15 @@ export default function UpcomingFightDetailScreen({
               </View>
             );
           })()}
+
+            {/* Hype Distribution Chart - below aggregate hype box */}
+            {aggregateStats?.hypeDistribution && (
+              <HypeDistributionChart
+                distribution={aggregateStats.hypeDistribution}
+                totalPredictions={aggregateStats.totalPredictions || 0}
+              />
+            )}
+          </View>
 
           {/* Community Predictions Pie Chart - always visible */}
           {displayPredictionStats && displayPredictionStats.fighter1MethodPredictions && displayPredictionStats.fighter2MethodPredictions && (
