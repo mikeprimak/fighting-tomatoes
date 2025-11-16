@@ -166,8 +166,12 @@ export default function UpcomingFightDetailScreen({
   const [shouldRenderPredictions, setShouldRenderPredictions] = useState(false);
   const [shouldShowMethodSubdivisions, setShouldShowMethodSubdivisions] = useState(false);
 
-  // Fade animation for aggregate hype box
+  // Fade animation for aggregate hype box (initial reveal)
   const aggregateHypeFadeAnim = useRef(new Animated.Value(0)).current;
+  // Transition animation for data updates (after reveal)
+  const dataTransitionAnim = useRef(new Animated.Value(1)).current;
+  // Track if this is the first render to avoid animating on mount
+  const isFirstRender = useRef(true);
 
   // Trigger slow fade-in ONLY the first time user makes hype prediction
   useEffect(() => {
@@ -191,6 +195,58 @@ export default function UpcomingFightDetailScreen({
       setHasRevealedHype(true);
     }
   }, [selectedHype]);
+
+  // Smooth transition when aggregate stats change (after initial reveal)
+  const avgHype = aggregateStats?.communityAverageHype;
+  const hypeDistKey = aggregateStats?.hypeDistribution ? JSON.stringify(aggregateStats.hypeDistribution) : '';
+  const prevAvgHype = useRef(avgHype);
+  const prevHypeDistKey = useRef(hypeDistKey);
+
+  useEffect(() => {
+    // Skip animation on first render (when data loads initially)
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      prevAvgHype.current = avgHype;
+      prevHypeDistKey.current = hypeDistKey;
+      console.log('[Hype Animation] First render - skipping animation');
+      return;
+    }
+
+    // Check if data actually changed
+    const dataChanged = prevAvgHype.current !== avgHype || prevHypeDistKey.current !== hypeDistKey;
+
+    console.log('[Hype Animation] Data check:', {
+      hasRevealedHype,
+      hasAggregateStats: !!aggregateStats,
+      dataChanged,
+      prevAvgHype: prevAvgHype.current,
+      newAvgHype: avgHype,
+    });
+
+    // Only animate if revealed and data actually changed
+    if (hasRevealedHype && aggregateStats && dataChanged) {
+      console.log('[Hype Animation] Starting transition animation');
+      // Quick fade out and back in for smooth data update
+      Animated.sequence([
+        Animated.timing(dataTransitionAnim, {
+          toValue: 0,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(dataTransitionAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        console.log('[Hype Animation] Animation complete');
+      });
+    }
+
+    // Update refs
+    prevAvgHype.current = avgHype;
+    prevHypeDistKey.current = hypeDistKey;
+  }, [avgHype, hypeDistKey]);
 
   // Fetch both prediction stats and aggregate stats in a single API call
   const { data: fightStatsData } = useQuery({
@@ -1216,7 +1272,7 @@ export default function UpcomingFightDetailScreen({
                       position: 'absolute',
                       width: 40,
                       height: 40,
-                      opacity: aggregateHypeFadeAnim,
+                      opacity: Animated.multiply(aggregateHypeFadeAnim, dataTransitionAnim),
                     }}>
                       <View style={{
                         width: 40,
@@ -1253,6 +1309,9 @@ export default function UpcomingFightDetailScreen({
               <HypeDistributionChart
                 distribution={aggregateStats.hypeDistribution}
                 totalPredictions={aggregateStats.totalPredictions || 0}
+                hasRevealedHype={hasRevealedHype}
+                fadeAnim={aggregateHypeFadeAnim}
+                dataTransitionAnim={dataTransitionAnim}
               />
             )}
           </View>

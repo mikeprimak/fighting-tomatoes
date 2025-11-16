@@ -1,11 +1,14 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Animated } from 'react-native';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 
 interface HypeDistributionChartProps {
   // Distribution of hype scores 1-10
   distribution: Record<number, number>;
   totalPredictions: number;
+  hasRevealedHype: boolean; // Only show colored bars if user has made hype prediction
+  fadeAnim: Animated.Value; // Shared fade animation value from parent (initial reveal)
+  dataTransitionAnim: Animated.Value; // Smooth transition for data updates
 }
 
 /**
@@ -15,6 +18,9 @@ interface HypeDistributionChartProps {
 export default function HypeDistributionChart({
   distribution,
   totalPredictions,
+  hasRevealedHype,
+  fadeAnim,
+  dataTransitionAnim,
 }: HypeDistributionChartProps) {
   // Chart dimensions - match pie chart height (160px)
   const chartHeight = 160;
@@ -40,26 +46,30 @@ export default function HypeDistributionChart({
           alignItems: 'center',
           height: (chartHeight - 20) / 10, // Divide height by 10 scores
           marginBottom: hype < 10 ? barGap : 0,
+          position: 'relative',
         }}
       >
-        {count > 0 ? (
-          // Show colored bar if there's data
-          <View
+        {/* Grey circle - always visible */}
+        <View
+          style={{
+            position: 'absolute',
+            width: 4,
+            height: 4,
+            borderRadius: 2,
+            backgroundColor: '#808080',
+          }}
+        />
+
+        {/* Colored bar - fades in on top when revealed */}
+        {hasRevealedHype && count > 0 && (
+          <Animated.View
             style={{
+              position: 'absolute',
               width: barHeight,
               height: barWidth,
               backgroundColor: color,
               borderRadius: 1,
-            }}
-          />
-        ) : (
-          // Show small grey circle if no data
-          <View
-            style={{
-              width: 4,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: '#808080',
+              opacity: Animated.multiply(fadeAnim, dataTransitionAnim),
             }}
           />
         )}
