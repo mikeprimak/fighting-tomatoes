@@ -1186,36 +1186,10 @@ export default function UpcomingFightDetailScreen({
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <FontAwesome name="users" size={19} color={colors.textSecondary} />
                 </View>
-                {hasRevealedHype ? (
-                  // Show colored box with hype value when user has revealed community data - fades in slowly on first reveal
-                  <Animated.View style={{ opacity: aggregateHypeFadeAnim }}>
-                    <View style={{
-                      width: 40,
-                      height: 40,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      borderRadius: 8,
-                      backgroundColor: hypeColor,
-                    }}>
-                      <FontAwesome6
-                        name="fire-flame-curved"
-                        size={24}
-                        color={flameColor}
-                        style={{ position: 'absolute' }}
-                      />
-                      <Text style={{
-                        color: '#FFFFFF',
-                        fontSize: 14,
-                        fontWeight: 'bold',
-                        textAlign: 'center',
-                      }}>
-                        {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
-                      </Text>
-                    </View>
-                  </Animated.View>
-                ) : (
-                  // Show grey placeholder when user hasn't revealed community data yet
+                <View style={{ position: 'relative', width: 40, height: 40 }}>
+                  {/* Grey placeholder - always visible until fully revealed */}
                   <View style={{
+                    position: 'absolute',
                     width: 40,
                     height: 40,
                     justifyContent: 'center',
@@ -1232,7 +1206,41 @@ export default function UpcomingFightDetailScreen({
                       style={{ position: 'absolute', opacity: 0.5 }}
                     />
                   </View>
-                )}
+
+                  {/* Colored box - fades in on top of placeholder when revealed */}
+                  {hasRevealedHype && (
+                    <Animated.View style={{
+                      position: 'absolute',
+                      width: 40,
+                      height: 40,
+                      opacity: aggregateHypeFadeAnim,
+                    }}>
+                      <View style={{
+                        width: 40,
+                        height: 40,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRadius: 8,
+                        backgroundColor: hypeColor,
+                      }}>
+                        <FontAwesome6
+                          name="fire-flame-curved"
+                          size={24}
+                          color={flameColor}
+                          style={{ position: 'absolute' }}
+                        />
+                        <Text style={{
+                          color: '#FFFFFF',
+                          fontSize: 14,
+                          fontWeight: 'bold',
+                          textAlign: 'center',
+                        }}>
+                          {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
+                        </Text>
+                      </View>
+                    </Animated.View>
+                  )}
+                </View>
               </View>
             );
           })()}
