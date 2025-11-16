@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text as RNText, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text as RNText, StyleSheet, Animated } from 'react-native';
 import Svg, { Path, Circle, G, Text } from 'react-native-svg';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
@@ -47,6 +47,21 @@ export default function PredictionPieChart({
 }: PredictionPieChartProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+
+  // Fade animation for pie chart colors (initial reveal when winner selected)
+  const pieChartFadeAnim = useRef(new Animated.Value(showColors ? 1 : 0)).current;
+
+  // Trigger 2-second fade-in when showColors becomes true (user makes first winner selection)
+  useEffect(() => {
+    if (showColors) {
+      // Fade in slowly
+      Animated.timing(pieChartFadeAnim, {
+        toValue: 1,
+        duration: 2000, // 2 seconds for very slow fade
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showColors]);
 
   // Calculate total predictions for each fighter
   const fighter1Total = fighter1Predictions.KO_TKO + fighter1Predictions.SUBMISSION + fighter1Predictions.DECISION;
@@ -349,7 +364,7 @@ export default function PredictionPieChart({
           </View>
         </View>
 
-      <View style={styles.chartWrapper}>
+      <Animated.View style={[styles.chartWrapper, { opacity: pieChartFadeAnim }]}>
         <Svg width={size} height={size}>
         <G>
           {showColors ? (
@@ -416,7 +431,7 @@ export default function PredictionPieChart({
           )}
         </G>
       </Svg>
-      </View>
+      </Animated.View>
       </View>
     </View>
   );
