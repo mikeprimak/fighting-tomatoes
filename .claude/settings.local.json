@@ -15,7 +15,10 @@
       "Bash(git checkout:*)",
       "Bash(npx expo install:*)",
       "Bash(npx tsc:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npx prisma generate:*)"
     ],
     "deny": [],
     "ask": []

@@ -139,6 +139,11 @@ export default function UpcomingFightDetailScreen({
   const [localFighter2Notification, setLocalFighter2Notification] = useState(fight.isFollowingFighter2);
   const [localNotificationReasons, setLocalNotificationReasons] = useState(fight.notificationReasons);
 
+  // Track community data reveal flags
+  const [hasRevealedHype, setHasRevealedHype] = useState(fight.hasRevealedHype ?? false);
+  const [hasRevealedWinner, setHasRevealedWinner] = useState(fight.hasRevealedWinner ?? false);
+  const [hasRevealedMethod, setHasRevealedMethod] = useState(fight.hasRevealedMethod ?? false);
+
   // Snapshot the fight data when menu opens to prevent re-renders during toggles
   const [menuFightSnapshot, setMenuFightSnapshot] = useState(fight);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -159,6 +164,32 @@ export default function UpcomingFightDetailScreen({
   const methodSubdivisionsFadeAnim = useRef(new Animated.Value(0)).current;
   const [shouldRenderPredictions, setShouldRenderPredictions] = useState(false);
   const [shouldShowMethodSubdivisions, setShouldShowMethodSubdivisions] = useState(false);
+
+  // Fade animation for aggregate hype box
+  const aggregateHypeFadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Trigger slow fade-in ONLY the first time user makes hype prediction
+  useEffect(() => {
+    if (hasRevealedHype) {
+      // Set to fully visible instantly (already revealed)
+      aggregateHypeFadeAnim.setValue(1);
+    }
+  }, []); // Run only once on mount
+
+  // Trigger slow fade-in when user makes their FIRST hype prediction
+  useEffect(() => {
+    if (selectedHype && !hasRevealedHype) {
+      // First prediction - fade in slowly
+      aggregateHypeFadeAnim.setValue(0);
+      Animated.timing(aggregateHypeFadeAnim, {
+        toValue: 1,
+        duration: 2000, // 2 seconds for very slow fade
+        useNativeDriver: true,
+      }).start();
+      // Mark as revealed
+      setHasRevealedHype(true);
+    }
+  }, [selectedHype]);
 
   // Fetch both prediction stats and aggregate stats in a single API call
   const { data: fightStatsData } = useQuery({
@@ -229,6 +260,11 @@ export default function UpcomingFightDetailScreen({
   // Animate layout changes when winner selection changes
   useEffect(() => {
     if (selectedWinner) {
+      // Mark as revealed when user makes first winner prediction
+      if (!hasRevealedWinner) {
+        setHasRevealedWinner(true);
+      }
+
       // Mount component if not already mounted
       if (!shouldRenderPredictions) {
         setShouldRenderPredictions(true);
@@ -245,7 +281,8 @@ export default function UpcomingFightDetailScreen({
         }).start();
       }
       // If already mounted (switching fighters), don't animate - just stay visible
-    } else {
+    } else if (!hasRevealedWinner) {
+      // Only hide if user hasn't revealed winner data yet
       // Trigger layout animation
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
@@ -265,6 +302,11 @@ export default function UpcomingFightDetailScreen({
   // Animate method subdivisions when method selection changes
   useEffect(() => {
     if (selectedMethod) {
+      // Mark as revealed when user makes first method prediction
+      if (!hasRevealedMethod) {
+        setHasRevealedMethod(true);
+      }
+
       // Show subdivisions if not already shown
       if (!shouldShowMethodSubdivisions) {
         setShouldShowMethodSubdivisions(true);
@@ -278,7 +320,8 @@ export default function UpcomingFightDetailScreen({
         }).start();
       }
       // If already shown (switching methods), don't animate - just stay visible
-    } else {
+    } else if (!hasRevealedMethod) {
+      // Only hide if user hasn't revealed method data yet
       // Fade out
       Animated.timing(methodSubdivisionsFadeAnim, {
         toValue: 0,
@@ -1143,29 +1186,53 @@ export default function UpcomingFightDetailScreen({
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <FontAwesome name="users" size={19} color={colors.textSecondary} />
                 </View>
-                <View style={{
-                  width: 40,
-                  height: 40,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderRadius: 8,
-                  backgroundColor: hypeColor,
-                }}>
-                  <FontAwesome6
-                    name="fire-flame-curved"
-                    size={24}
-                    color={flameColor}
-                    style={{ position: 'absolute' }}
-                  />
-                  <Text style={{
-                    color: '#FFFFFF',
-                    fontSize: 14,
-                    fontWeight: 'bold',
-                    textAlign: 'center',
+                {hasRevealedHype ? (
+                  // Show colored box with hype value when user has revealed community data - fades in slowly on first reveal
+                  <Animated.View style={{ opacity: aggregateHypeFadeAnim }}>
+                    <View style={{
+                      width: 40,
+                      height: 40,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderRadius: 8,
+                      backgroundColor: hypeColor,
+                    }}>
+                      <FontAwesome6
+                        name="fire-flame-curved"
+                        size={24}
+                        color={flameColor}
+                        style={{ position: 'absolute' }}
+                      />
+                      <Text style={{
+                        color: '#FFFFFF',
+                        fontSize: 14,
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                      }}>
+                        {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
+                      </Text>
+                    </View>
+                  </Animated.View>
+                ) : (
+                  // Show grey placeholder when user hasn't revealed community data yet
+                  <View style={{
+                    width: 40,
+                    height: 40,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderRadius: 8,
+                    backgroundColor: 'transparent',
+                    borderWidth: 1,
+                    borderColor: colors.textSecondary,
                   }}>
-                    {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
-                  </Text>
-                </View>
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={20}
+                      color={colors.textSecondary}
+                      style={{ position: 'absolute', opacity: 0.5 }}
+                    />
+                  </View>
+                )}
               </View>
             );
           })()}
@@ -1182,6 +1249,8 @@ export default function UpcomingFightDetailScreen({
               fighter1Predictions={displayPredictionStats.fighter1MethodPredictions}
               fighter2Predictions={displayPredictionStats.fighter2MethodPredictions}
               totalPredictions={displayPredictionStats.totalPredictions}
+              showColors={hasRevealedWinner}
+              showLabels={hasRevealedMethod}
             />
           )}
         </View>

@@ -23,6 +23,9 @@ interface PredictionPieChartProps {
     DECISION: number;
   };
   totalPredictions: number;
+  // Control flags for progressive reveal
+  showColors?: boolean; // Show red/blue colors (requires winner selection)
+  showLabels?: boolean; // Show method labels (requires method selection)
 }
 
 /**
@@ -39,6 +42,8 @@ export default function PredictionPieChart({
   fighter1Predictions,
   fighter2Predictions,
   totalPredictions,
+  showColors = true,
+  showLabels = true,
 }: PredictionPieChartProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -288,54 +293,68 @@ export default function PredictionPieChart({
       <View style={styles.chartWrapper}>
         <Svg width={size} height={size}>
         <G>
-          {/* Draw pie slices */}
-          {slices.map((slice, index) => {
-            const labelPos = getLabelPosition(slice.startAngle, slice.endAngle);
-            const sliceAngle = slice.endAngle - slice.startAngle;
+          {showColors ? (
+            <>
+              {/* Draw pie slices with colors */}
+              {slices.map((slice, index) => {
+                const labelPos = getLabelPosition(slice.startAngle, slice.endAngle);
+                const sliceAngle = slice.endAngle - slice.startAngle;
 
-            return (
-              <G key={`slice-${index}`}>
-                {/* Pie slice */}
-                <Path
-                  d={createPieSlice(slice.startAngle, slice.endAngle, slice.color, slice.isHighlighted)}
-                  fill={slice.color}
-                  stroke="#FFFFFF"
-                  strokeWidth={1}
-                  strokeOpacity={0.2}
-                />
+                return (
+                  <G key={`slice-${index}`}>
+                    {/* Pie slice */}
+                    <Path
+                      d={createPieSlice(slice.startAngle, slice.endAngle, slice.color, slice.isHighlighted)}
+                      fill={slice.color}
+                      stroke="#FFFFFF"
+                      strokeWidth={1}
+                      strokeOpacity={0.2}
+                    />
 
-                {/* Label text - only show if slice is large enough (> 15 degrees) */}
-                {sliceAngle > 15 && (
-                  <Text
-                    x={labelPos.x - (slice.isHighlighted ? 6 : 0)}
-                    y={labelPos.y}
-                    fill="#FFFFFF"
-                    fontSize="16"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    alignmentBaseline="middle"
-                  >
-                    {getMethodLabel(slice.method)}
-                  </Text>
-                )}
-              </G>
-            );
-          })}
+                    {/* Label text - only show if showLabels is true and slice is large enough */}
+                    {showLabels && sliceAngle > 15 && (
+                      <Text
+                        x={labelPos.x - (slice.isHighlighted ? 6 : 0)}
+                        y={labelPos.y}
+                        fill="#FFFFFF"
+                        fontSize="16"
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        alignmentBaseline="middle"
+                      >
+                        {getMethodLabel(slice.method)}
+                      </Text>
+                    )}
+                  </G>
+                );
+              })}
 
-          {/* Draw all user icons on top layer */}
-          {slices.map((slice, index) => {
-            const labelPos = getLabelPosition(slice.startAngle, slice.endAngle);
-            const sliceAngle = slice.endAngle - slice.startAngle;
+              {/* Draw all user icons on top layer - only if showLabels is true */}
+              {showLabels && slices.map((slice, index) => {
+                const labelPos = getLabelPosition(slice.startAngle, slice.endAngle);
+                const sliceAngle = slice.endAngle - slice.startAngle;
 
-            return slice.isHighlighted && sliceAngle > 15 ? (
-              <Path
-                key={`icon-${index}`}
-                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                fill="#F5C518"
-                transform={`translate(${labelPos.x + 8}, ${labelPos.y - 12}) scale(0.83)`}
-              />
-            ) : null;
-          })}
+                return slice.isHighlighted && sliceAngle > 15 ? (
+                  <Path
+                    key={`icon-${index}`}
+                    d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                    fill="#F5C518"
+                    transform={`translate(${labelPos.x + 8}, ${labelPos.y - 12}) scale(0.83)`}
+                  />
+                ) : null;
+              })}
+            </>
+          ) : (
+            /* Draw single border circle when colors not shown */
+            <Circle
+              cx={centerX}
+              cy={centerY}
+              r={radius}
+              fill="none"
+              stroke="#FFFFFF"
+              strokeWidth={2}
+            />
+          )}
         </G>
       </Svg>
       </View>

@@ -376,6 +376,11 @@ model FightPrediction {
   // Status
   isLocked        Boolean   @default(false) // locked when fight starts
 
+  // Community data visibility - tracks when user has unlocked each section
+  hasRevealedHype   Boolean   @default(false) // unlocked after first hype prediction
+  hasRevealedWinner Boolean   @default(false) // unlocked after first winner prediction
+  hasRevealedMethod Boolean   @default(false) // unlocked after first method prediction
+
   // Timestamps
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

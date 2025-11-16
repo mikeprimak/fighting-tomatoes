@@ -221,6 +221,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
             predictedWinner: true,
             predictedMethod: true,
             predictedRound: true,
+            hasRevealedHype: true,
+            hasRevealedWinner: true,
+            hasRevealedMethod: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -291,6 +294,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
         // Transform user prediction (take the first/only prediction)
         if (fight.predictions && fight.predictions.length > 0) {
           transformed.userHypePrediction = fight.predictions[0].predictedRating;
+          transformed.hasRevealedHype = fight.predictions[0].hasRevealedHype;
+          transformed.hasRevealedWinner = fight.predictions[0].hasRevealedWinner;
+          transformed.hasRevealedMethod = fight.predictions[0].hasRevealedMethod;
         }
 
         // Add fighter follow info and notification reasons
@@ -413,6 +419,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
               predictedWinner: true,
               predictedMethod: true,
               predictedRound: true,
+              hasRevealedHype: true,
+              hasRevealedWinner: true,
+              hasRevealedMethod: true,
               createdAt: true,
               updatedAt: true,
             },
@@ -468,6 +477,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
           transformedFight.userPredictedWinner = fightWithRelations.predictions[0].predictedWinner;
           transformedFight.userPredictedMethod = fightWithRelations.predictions[0].predictedMethod;
           transformedFight.userPredictedRound = fightWithRelations.predictions[0].predictedRound;
+          transformedFight.hasRevealedHype = fightWithRelations.predictions[0].hasRevealedHype;
+          transformedFight.hasRevealedWinner = fightWithRelations.predictions[0].hasRevealedWinner;
+          transformedFight.hasRevealedMethod = fightWithRelations.predictions[0].hasRevealedMethod;
           console.log('Found user prediction:', transformedFight.userHypePrediction);
         }
 
@@ -1905,6 +1917,27 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Create or update prediction
       console.log('🔴 About to upsert prediction...');
+
+      // Fetch existing prediction to check reveal flags
+      const existingPrediction = await fastify.prisma.fightPrediction.findUnique({
+        where: {
+          userId_fightId: {
+            userId: currentUserId,
+            fightId,
+          },
+        },
+        select: {
+          hasRevealedHype: true,
+          hasRevealedWinner: true,
+          hasRevealedMethod: true,
+        },
+      });
+
+      // Set reveal flags when user makes their first prediction of each type
+      const shouldRevealHype = predictedRating !== undefined && (!existingPrediction || !existingPrediction.hasRevealedHype);
+      const shouldRevealWinner = predictedWinner !== undefined && (!existingPrediction || !existingPrediction.hasRevealedWinner);
+      const shouldRevealMethod = predictedMethod !== undefined && (!existingPrediction || !existingPrediction.hasRevealedMethod);
+
       const prediction = await fastify.prisma.fightPrediction.upsert({
         where: {
           userId_fightId: {
@@ -1919,6 +1952,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
           predictedWinner: predictedWinner || null,
           predictedMethod: predictedMethod || null,
           predictedRound: predictedRound || null,
+          // Set reveal flags on first prediction
+          hasRevealedHype: shouldRevealHype,
+          hasRevealedWinner: shouldRevealWinner,
+          hasRevealedMethod: shouldRevealMethod,
         },
         update: {
           predictedRating: predictedRating || null,
@@ -1926,6 +1963,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
           predictedMethod: predictedMethod || null,
           predictedRound: predictedRound || null,
           updatedAt: new Date(),
+          // Once revealed, always stay revealed (only set to true, never false)
+          ...(shouldRevealHype && { hasRevealedHype: true }),
+          ...(shouldRevealWinner && { hasRevealedWinner: true }),
+          ...(shouldRevealMethod && { hasRevealedMethod: true }),
         },
         include: {
           user: {
