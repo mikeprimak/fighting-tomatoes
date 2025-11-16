@@ -8,7 +8,6 @@ interface HypeDistributionChartProps {
   totalPredictions: number;
   hasRevealedHype: boolean; // Only show colored bars if user has made hype prediction
   fadeAnim: Animated.Value; // Shared fade animation value from parent (initial reveal)
-  dataTransitionAnim: Animated.Value; // Smooth transition for data updates
 }
 
 /**
@@ -20,7 +19,6 @@ export default function HypeDistributionChart({
   totalPredictions,
   hasRevealedHype,
   fadeAnim,
-  dataTransitionAnim,
 }: HypeDistributionChartProps) {
   // Chart dimensions - match pie chart height (160px)
   const chartHeight = 160;
@@ -69,7 +67,7 @@ export default function HypeDistributionChart({
               height: barWidth,
               backgroundColor: color,
               borderRadius: 1,
-              opacity: Animated.multiply(fadeAnim, dataTransitionAnim),
+              opacity: fadeAnim,
             }}
           />
         )}
