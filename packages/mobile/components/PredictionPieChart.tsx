@@ -185,90 +185,127 @@ export default function PredictionPieChart({
 
   let currentAngle = 0;
 
-  // Fighter 2 slices (draw first - will appear on LEFT side)
-  if (fighter2Predictions.KO_TKO > 0) {
-    const angle = (fighter2Predictions.KO_TKO / totalPredictions) * 360;
-    slices.push({
-      startAngle: currentAngle,
-      endAngle: currentAngle + angle,
-      color: fighter2Colors.KO_TKO,
-      isHighlighted: selectedWinner === fighter2Id && selectedMethod === 'KO_TKO',
-      method: 'KO_TKO',
-      fighterId: fighter2Id,
-      count: fighter2Predictions.KO_TKO,
-    });
-    currentAngle += angle;
-  }
+  if (showLabels) {
+    // Show method subdivisions - 3 slices per fighter
+    // Fighter 2 slices (draw first - will appear on LEFT side)
+    if (fighter2Predictions.KO_TKO > 0) {
+      const angle = (fighter2Predictions.KO_TKO / totalPredictions) * 360;
+      slices.push({
+        startAngle: currentAngle,
+        endAngle: currentAngle + angle,
+        color: fighter2Colors.KO_TKO,
+        isHighlighted: selectedWinner === fighter2Id && selectedMethod === 'KO_TKO',
+        method: 'KO_TKO',
+        fighterId: fighter2Id,
+        count: fighter2Predictions.KO_TKO,
+      });
+      currentAngle += angle;
+    }
 
-  if (fighter2Predictions.SUBMISSION > 0) {
-    const angle = (fighter2Predictions.SUBMISSION / totalPredictions) * 360;
-    slices.push({
-      startAngle: currentAngle,
-      endAngle: currentAngle + angle,
-      color: fighter2Colors.SUBMISSION,
-      isHighlighted: selectedWinner === fighter2Id && selectedMethod === 'SUBMISSION',
-      method: 'SUBMISSION',
-      fighterId: fighter2Id,
-      count: fighter2Predictions.SUBMISSION,
-    });
-    currentAngle += angle;
-  }
+    if (fighter2Predictions.SUBMISSION > 0) {
+      const angle = (fighter2Predictions.SUBMISSION / totalPredictions) * 360;
+      slices.push({
+        startAngle: currentAngle,
+        endAngle: currentAngle + angle,
+        color: fighter2Colors.SUBMISSION,
+        isHighlighted: selectedWinner === fighter2Id && selectedMethod === 'SUBMISSION',
+        method: 'SUBMISSION',
+        fighterId: fighter2Id,
+        count: fighter2Predictions.SUBMISSION,
+      });
+      currentAngle += angle;
+    }
 
-  if (fighter2Predictions.DECISION > 0) {
-    const angle = (fighter2Predictions.DECISION / totalPredictions) * 360;
-    slices.push({
-      startAngle: currentAngle,
-      endAngle: currentAngle + angle,
-      color: fighter2Colors.DECISION,
-      isHighlighted: selectedWinner === fighter2Id && selectedMethod === 'DECISION',
-      method: 'DECISION',
-      fighterId: fighter2Id,
-      count: fighter2Predictions.DECISION,
-    });
-    currentAngle += angle;
-  }
+    if (fighter2Predictions.DECISION > 0) {
+      const angle = (fighter2Predictions.DECISION / totalPredictions) * 360;
+      slices.push({
+        startAngle: currentAngle,
+        endAngle: currentAngle + angle,
+        color: fighter2Colors.DECISION,
+        isHighlighted: selectedWinner === fighter2Id && selectedMethod === 'DECISION',
+        method: 'DECISION',
+        fighterId: fighter2Id,
+        count: fighter2Predictions.DECISION,
+      });
+      currentAngle += angle;
+    }
 
-  // Fighter 1 slices (draw second - will appear on RIGHT side)
-  if (fighter1Predictions.KO_TKO > 0) {
-    const angle = (fighter1Predictions.KO_TKO / totalPredictions) * 360;
-    slices.push({
-      startAngle: currentAngle,
-      endAngle: currentAngle + angle,
-      color: fighter1Colors.KO_TKO,
-      isHighlighted: selectedWinner === fighter1Id && selectedMethod === 'KO_TKO',
-      method: 'KO_TKO',
-      fighterId: fighter1Id,
-      count: fighter1Predictions.KO_TKO,
-    });
-    currentAngle += angle;
-  }
+    // Fighter 1 slices (draw second - will appear on RIGHT side)
+    if (fighter1Predictions.KO_TKO > 0) {
+      const angle = (fighter1Predictions.KO_TKO / totalPredictions) * 360;
+      slices.push({
+        startAngle: currentAngle,
+        endAngle: currentAngle + angle,
+        color: fighter1Colors.KO_TKO,
+        isHighlighted: selectedWinner === fighter1Id && selectedMethod === 'KO_TKO',
+        method: 'KO_TKO',
+        fighterId: fighter1Id,
+        count: fighter1Predictions.KO_TKO,
+      });
+      currentAngle += angle;
+    }
 
-  if (fighter1Predictions.SUBMISSION > 0) {
-    const angle = (fighter1Predictions.SUBMISSION / totalPredictions) * 360;
-    slices.push({
-      startAngle: currentAngle,
-      endAngle: currentAngle + angle,
-      color: fighter1Colors.SUBMISSION,
-      isHighlighted: selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION',
-      method: 'SUBMISSION',
-      fighterId: fighter1Id,
-      count: fighter1Predictions.SUBMISSION,
-    });
-    currentAngle += angle;
-  }
+    if (fighter1Predictions.SUBMISSION > 0) {
+      const angle = (fighter1Predictions.SUBMISSION / totalPredictions) * 360;
+      slices.push({
+        startAngle: currentAngle,
+        endAngle: currentAngle + angle,
+        color: fighter1Colors.SUBMISSION,
+        isHighlighted: selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION',
+        method: 'SUBMISSION',
+        fighterId: fighter1Id,
+        count: fighter1Predictions.SUBMISSION,
+      });
+      currentAngle += angle;
+    }
 
-  if (fighter1Predictions.DECISION > 0) {
-    const angle = (fighter1Predictions.DECISION / totalPredictions) * 360;
-    slices.push({
-      startAngle: currentAngle,
-      endAngle: currentAngle + angle,
-      color: fighter1Colors.DECISION,
-      isHighlighted: selectedWinner === fighter1Id && selectedMethod === 'DECISION',
-      method: 'DECISION',
-      fighterId: fighter1Id,
-      count: fighter1Predictions.DECISION,
-    });
-    currentAngle += angle;
+    if (fighter1Predictions.DECISION > 0) {
+      const angle = (fighter1Predictions.DECISION / totalPredictions) * 360;
+      slices.push({
+        startAngle: currentAngle,
+        endAngle: currentAngle + angle,
+        color: fighter1Colors.DECISION,
+        isHighlighted: selectedWinner === fighter1Id && selectedMethod === 'DECISION',
+        method: 'DECISION',
+        fighterId: fighter1Id,
+        count: fighter1Predictions.DECISION,
+      });
+      currentAngle += angle;
+    }
+  } else {
+    // Don't show method subdivisions - just 1 slice per fighter
+    const fighter2Total = fighter2Predictions.KO_TKO + fighter2Predictions.SUBMISSION + fighter2Predictions.DECISION;
+    const fighter1Total = fighter1Predictions.KO_TKO + fighter1Predictions.SUBMISSION + fighter1Predictions.DECISION;
+
+    // Fighter 2 single slice (LEFT side) - use base blue color
+    if (fighter2Total > 0) {
+      const angle = (fighter2Total / totalPredictions) * 360;
+      slices.push({
+        startAngle: currentAngle,
+        endAngle: currentAngle + angle,
+        color: fighter2Colors.DECISION, // Use one consistent color
+        isHighlighted: selectedWinner === fighter2Id,
+        method: 'ALL', // Not subdivided by method
+        fighterId: fighter2Id,
+        count: fighter2Total,
+      });
+      currentAngle += angle;
+    }
+
+    // Fighter 1 single slice (RIGHT side) - use base red color
+    if (fighter1Total > 0) {
+      const angle = (fighter1Total / totalPredictions) * 360;
+      slices.push({
+        startAngle: currentAngle,
+        endAngle: currentAngle + angle,
+        color: fighter1Colors.DECISION, // Use one consistent color
+        isHighlighted: selectedWinner === fighter1Id,
+        method: 'ALL', // Not subdivided by method
+        fighterId: fighter1Id,
+        count: fighter1Total,
+      });
+      currentAngle += angle;
+    }
   }
 
   return (
