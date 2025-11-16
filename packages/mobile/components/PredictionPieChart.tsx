@@ -294,11 +294,11 @@ export default function PredictionPieChart({
             const sliceAngle = slice.endAngle - slice.startAngle;
 
             return (
-              <G key={index}>
+              <G key={`slice-${index}`}>
                 {/* Pie slice */}
                 <Path
                   d={createPieSlice(slice.startAngle, slice.endAngle, slice.color, slice.isHighlighted)}
-                  fill={slice.isHighlighted ? '#F5C518' : slice.color}
+                  fill={slice.color}
                   stroke="#FFFFFF"
                   strokeWidth={1}
                   strokeOpacity={0.2}
@@ -307,9 +307,9 @@ export default function PredictionPieChart({
                 {/* Label text - only show if slice is large enough (> 15 degrees) */}
                 {sliceAngle > 15 && (
                   <Text
-                    x={labelPos.x}
+                    x={labelPos.x - (slice.isHighlighted ? 6 : 0)}
                     y={labelPos.y}
-                    fill={slice.isHighlighted ? '#000' : '#FFFFFF'}
+                    fill="#FFFFFF"
                     fontSize="16"
                     fontWeight="bold"
                     textAnchor="middle"
@@ -320,6 +320,21 @@ export default function PredictionPieChart({
                 )}
               </G>
             );
+          })}
+
+          {/* Draw all user icons on top layer */}
+          {slices.map((slice, index) => {
+            const labelPos = getLabelPosition(slice.startAngle, slice.endAngle);
+            const sliceAngle = slice.endAngle - slice.startAngle;
+
+            return slice.isHighlighted && sliceAngle > 15 ? (
+              <Path
+                key={`icon-${index}`}
+                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                fill="#F5C518"
+                transform={`translate(${labelPos.x + 8}, ${labelPos.y - 12}) scale(0.83)`}
+              />
+            ) : null;
           })}
         </G>
       </Svg>
