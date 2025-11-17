@@ -349,11 +349,11 @@ export default function PredictionPieChart({
   return (
     <View style={styles.container}>
       <View style={styles.innerContainer}>
-        {/* Fighter names always visible, percentages only show after winner prediction */}
+        {/* Fighter names - always show, but grey before winner prediction, white with underlines after */}
         <View style={styles.legendTop}>
           <View style={{ flexShrink: 1, marginRight: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <RNText style={[styles.legendText, { color: '#FFFFFF' }]} numberOfLines={1} ellipsizeMode="tail">
+              <RNText style={[styles.legendText, { color: showColors ? '#FFFFFF' : colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
                 {showColors && `${fighter1Percentage}% `}{fighter1Name}
               </RNText>
               {/* Show user icon if fighter1 is selected winner but no method chosen */}
@@ -366,11 +366,12 @@ export default function PredictionPieChart({
                 </Svg>
               )}
             </View>
-            <View style={styles.underlineRed} />
+            {/* Underline only shows after winner prediction */}
+            {showColors && <View style={styles.underlineRed} />}
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <RNText style={[styles.legendText, styles.legendTextRight, { color: '#FFFFFF' }]} numberOfLines={1} ellipsizeMode="tail">
+              <RNText style={[styles.legendText, styles.legendTextRight, { color: showColors ? '#FFFFFF' : colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
                 {showColors && `${fighter2Percentage}% `}{fighter2Name}
               </RNText>
               {/* Show user icon if fighter2 is selected winner but no method chosen */}
@@ -383,7 +384,8 @@ export default function PredictionPieChart({
                 </Svg>
               )}
             </View>
-            <View style={styles.underlineBlue} />
+            {/* Underline only shows after winner prediction */}
+            {showColors && <View style={styles.underlineBlue} />}
           </View>
         </View>
 
