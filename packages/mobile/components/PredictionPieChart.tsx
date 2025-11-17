@@ -51,6 +51,10 @@ export default function PredictionPieChart({
   // Fade animation for pie chart colors (initial reveal when winner selected)
   const pieChartFadeAnim = useRef(new Animated.Value(showColors ? 1 : 0)).current;
 
+  // Fade animations for crossfade between base and subdivided charts
+  const basePieOpacity = useRef(new Animated.Value(showLabels ? 0 : 1)).current;
+  const subdividedPieOpacity = useRef(new Animated.Value(showLabels ? 1 : 0)).current;
+
   // Trigger 2-second fade-in when showColors becomes true (user makes first winner selection)
   useEffect(() => {
     if (showColors) {
@@ -62,6 +66,25 @@ export default function PredictionPieChart({
       }).start();
     }
   }, [showColors]);
+
+  // Trigger 2-second crossfade when showLabels becomes true (user makes first method selection)
+  useEffect(() => {
+    if (showLabels) {
+      // Crossfade: fade in subdivided chart while fading out base chart
+      Animated.parallel([
+        Animated.timing(basePieOpacity, {
+          toValue: 0,
+          duration: 2000, // 2 seconds for very slow fade
+          useNativeDriver: true,
+        }),
+        Animated.timing(subdividedPieOpacity, {
+          toValue: 1,
+          duration: 2000, // 2 seconds for very slow fade
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [showLabels]);
 
   // Calculate total predictions for each fighter
   const fighter1Total = fighter1Predictions.KO_TKO + fighter1Predictions.SUBMISSION + fighter1Predictions.DECISION;
@@ -365,72 +388,98 @@ export default function PredictionPieChart({
         </View>
 
       <Animated.View style={[styles.chartWrapper, { opacity: pieChartFadeAnim }]}>
-        <Svg width={size} height={size}>
-        <G>
-          {showColors ? (
-            <>
-              {/* Draw pie slices with colors */}
-              {slices.map((slice, index) => {
-                const labelPos = getLabelPosition(slice.startAngle, slice.endAngle);
-                const sliceAngle = slice.endAngle - slice.startAngle;
-
-                return (
-                  <G key={`slice-${index}`}>
-                    {/* Pie slice */}
-                    <Path
-                      d={createPieSlice(slice.startAngle, slice.endAngle, slice.color, slice.isHighlighted)}
-                      fill={slice.color}
-                      stroke="#FFFFFF"
-                      strokeWidth={1}
-                      strokeOpacity={0.2}
-                    />
-
-                    {/* Label text - only show if showLabels is true and slice is large enough */}
-                    {showLabels && sliceAngle > 15 && (
-                      <Text
-                        x={labelPos.x - (slice.isHighlighted ? 6 : 0)}
-                        y={labelPos.y}
-                        fill="#FFFFFF"
-                        fontSize="16"
-                        fontWeight="bold"
-                        textAnchor="middle"
-                        alignmentBaseline="middle"
-                      >
-                        {getMethodLabel(slice.method)}
-                      </Text>
-                    )}
-                  </G>
-                );
-              })}
-
-              {/* Draw all user icons on top layer - only if showLabels is true */}
-              {showLabels && slices.map((slice, index) => {
-                const labelPos = getLabelPosition(slice.startAngle, slice.endAngle);
-                const sliceAngle = slice.endAngle - slice.startAngle;
-
-                return slice.isHighlighted && sliceAngle > 15 ? (
-                  <Path
-                    key={`icon-${index}`}
-                    d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-                    fill="#F5C518"
-                    transform={`translate(${labelPos.x + 8}, ${labelPos.y - 12}) scale(0.83)`}
+        <View style={{ position: 'relative', width: size, height: size }}>
+          {/* Base pie chart - fades out when method selected */}
+          <Animated.View style={{ position: 'absolute', opacity: basePieOpacity }}>
+            <Svg width={size} height={size}>
+              <G>
+                {showColors ? (
+                  <>
+                    {slices.map((slice, index) => (
+                      <Path
+                        key={`base-slice-${index}`}
+                        d={createPieSlice(slice.startAngle, slice.endAngle, slice.color, slice.isHighlighted)}
+                        fill={slice.color}
+                        stroke="#FFFFFF"
+                        strokeWidth={1}
+                        strokeOpacity={0.2}
+                      />
+                    ))}
+                  </>
+                ) : (
+                  <Circle
+                    cx={centerX}
+                    cy={centerY}
+                    r={radius}
+                    fill="none"
+                    stroke="#FFFFFF"
+                    strokeWidth={2}
                   />
-                ) : null;
-              })}
-            </>
-          ) : (
-            /* Draw single border circle when colors not shown */
-            <Circle
-              cx={centerX}
-              cy={centerY}
-              r={radius}
-              fill="none"
-              stroke="#FFFFFF"
-              strokeWidth={2}
-            />
-          )}
-        </G>
-      </Svg>
+                )}
+              </G>
+            </Svg>
+          </Animated.View>
+
+          {/* Subdivided pie chart - fades in when method selected */}
+          <Animated.View style={{ position: 'absolute', opacity: subdividedPieOpacity }}>
+            <Svg width={size} height={size}>
+              <G>
+                {showColors && (
+                  <>
+                    {/* Draw pie slices with colors */}
+                    {slices.map((slice, index) => {
+                      const labelPos = getLabelPosition(slice.startAngle, slice.endAngle);
+                      const sliceAngle = slice.endAngle - slice.startAngle;
+
+                      return (
+                        <G key={`slice-${index}`}>
+                          {/* Pie slice */}
+                          <Path
+                            d={createPieSlice(slice.startAngle, slice.endAngle, slice.color, slice.isHighlighted)}
+                            fill={slice.color}
+                            stroke="#FFFFFF"
+                            strokeWidth={1}
+                            strokeOpacity={0.2}
+                          />
+
+                          {/* Label text - only show if slice is large enough */}
+                          {sliceAngle > 15 && (
+                            <Text
+                              x={labelPos.x - (slice.isHighlighted ? 6 : 0)}
+                              y={labelPos.y}
+                              fill="#FFFFFF"
+                              fontSize="16"
+                              fontWeight="bold"
+                              textAnchor="middle"
+                              alignmentBaseline="middle"
+                            >
+                              {getMethodLabel(slice.method)}
+                            </Text>
+                          )}
+                        </G>
+                      );
+                    })}
+
+                    {/* Draw all user icons on top layer */}
+                    {slices.map((slice, index) => {
+                      const labelPos = getLabelPosition(slice.startAngle, slice.endAngle);
+                      const sliceAngle = slice.endAngle - slice.startAngle;
+
+                      return slice.isHighlighted && sliceAngle > 15 ? (
+                        <Path
+                          key={`icon-${index}`}
+                          d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                          fill="#F5C518"
+                          transform={`translate(${labelPos.x + 8}, ${labelPos.y - 12}) scale(0.83)`}
+                        />
+                      ) : null;
+                    })}
+                  </>
+                )}
+              </G>
+            </Svg>
+          </Animated.View>
+        </View>
       </Animated.View>
       </View>
     </View>

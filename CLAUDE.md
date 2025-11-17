@@ -13,6 +13,18 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 
 **Critical Ports**: Backend 3008, Expo 8083, PostgreSQL 5433, Mobile API `http://10.0.0.53:3008/api`
 
+**⚠️ STARTUP DEBUGGING CHECKLIST (Check FIRST)**:
+1. **Network connectivity**: Ensure phone and computer are on the SAME WiFi network
+2. **Zombie processes**: Check for stale Node processes blocking ports
+3. **Firewall**: Windows Firewall may block Metro port 8083
+
+**Killing Zombie Processes (Windows)**:
+1. List all Node processes: `powershell -Command "Get-Process node | Select-Object Id, ProcessName, StartTime"`
+2. Check port usage: `netstat -ano | findstr ":3008"` (backend) or `findstr ":8083"` (Expo)
+3. Identify blocker: `powershell -Command "Get-CimInstance Win32_Process -Filter 'ProcessId = <PID>' | Select-Object CommandLine"`
+4. Kill zombie (may need admin): `powershell -Command "Stop-Process -Id <PID> -Force"`
+5. **IMPORTANT**: Verify it's a Node.js process before killing - DO NOT kill Claude Code (PID shown in process list)
+
 ## Stack
 
 **Monorepo**: backend (Fastify, Prisma, PostgreSQL), mobile (React Native Expo, Expo Router, React Query)
