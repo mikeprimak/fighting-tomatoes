@@ -1037,6 +1037,8 @@ export default function UpcomingFightDetailScreen({
             fighter2Predictions={displayPredictionStats.fighter2MethodPredictions}
             totalPredictions={displayPredictionStats.totalPredictions}
             winnerPredictions={displayPredictionStats.winnerPredictions}
+            showColors={hasRevealedWinner}
+            showLabels={hasRevealedMethod}
           />
         )}
       </View>

@@ -1,0 +1,151 @@
+          {/* Community Predictions Bar - always visible */}
+          {displayPredictionStats && displayPredictionStats.winnerPredictions && (
+            <View style={{
+              flex: 1,
+            }}>
+              <View style={{
+                height: 40,
+                flexDirection: 'row',
+                borderRadius: 8,
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: colors.border,
+              }}>
+                {/* Fighter 1 side */}
+                <View style={{
+                  flex: displayPredictionStats.winnerPredictions.fighter1.percentage,
+                  flexDirection: 'row',
+                  backgroundColor: colors.background,
+                }}>
+                  {/* Fighter 1 method subdivisions - always show if data exists */}
+                  {displayPredictionStats.fighter1MethodPredictions && (
+                    <View style={{ flexDirection: 'row', flex: 1 }}>
+                      {displayPredictionStats.fighter1MethodPredictions.KO_TKO > 0 && (
+                            <View style={{
+                              flex: displayPredictionStats.fighter1MethodPredictions.KO_TKO,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              borderRightWidth: 1,
+                              borderRightColor: colors.border,
+                              backgroundColor: selectedWinner === fight.fighter1Id && selectedMethod === 'KO_TKO' ? '#F5C518' : 'transparent',
+                            }}>
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id && selectedMethod === 'KO_TKO' ? '#000' : colors.text }}>
+                                KO
+                              </Text>
+                            </View>
+                          )}
+                          {displayPredictionStats.fighter1MethodPredictions.SUBMISSION > 0 && (
+                            <View style={{
+                              flex: displayPredictionStats.fighter1MethodPredictions.SUBMISSION,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              borderRightWidth: 1,
+                              borderRightColor: colors.border,
+                              backgroundColor: selectedWinner === fight.fighter1Id && selectedMethod === 'SUBMISSION' ? '#F5C518' : 'transparent',
+                            }}>
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id && selectedMethod === 'SUBMISSION' ? '#000' : colors.text }}>
+                                SUB
+                              </Text>
+                            </View>
+                          )}
+                          {displayPredictionStats.fighter1MethodPredictions.DECISION > 0 && (
+                            <View style={{
+                              flex: displayPredictionStats.fighter1MethodPredictions.DECISION,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              backgroundColor: selectedWinner === fight.fighter1Id && selectedMethod === 'DECISION' ? '#F5C518' : 'transparent',
+                            }}>
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: selectedWinner === fight.fighter1Id && selectedMethod === 'DECISION' ? '#000' : colors.text }}>
+                                DEC
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      )}
+                    </View>
+
+                    {/* Fighter 2 side */}
+                    <View style={{
+                      flex: displayPredictionStats.winnerPredictions.fighter2.percentage,
+                      flexDirection: 'row',
+                      backgroundColor: '#FFFFFF',
+                    }}>
+                      {/* Fighter 2 method subdivisions - always show if data exists */}
+                      {displayPredictionStats.fighter2MethodPredictions && (
+                        <View style={{ flexDirection: 'row', flex: 1 }}>
+                          {displayPredictionStats.fighter2MethodPredictions.KO_TKO > 0 && (
+                            <View style={{
+                              flex: displayPredictionStats.fighter2MethodPredictions.KO_TKO,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              borderRightWidth: 1,
+                              borderRightColor: colors.border,
+                              backgroundColor: selectedWinner === fight.fighter2Id && selectedMethod === 'KO_TKO' ? '#F5C518' : 'transparent',
+                            }}>
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: '#000' }}>
+                                KO
+                              </Text>
+                            </View>
+                          )}
+                          {displayPredictionStats.fighter2MethodPredictions.SUBMISSION > 0 && (
+                            <View style={{
+                              flex: displayPredictionStats.fighter2MethodPredictions.SUBMISSION,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              borderRightWidth: 1,
+                              borderRightColor: colors.border,
+                              backgroundColor: selectedWinner === fight.fighter2Id && selectedMethod === 'SUBMISSION' ? '#F5C518' : 'transparent',
+                            }}>
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: '#000' }}>
+                                SUB
+                              </Text>
+                            </View>
+                          )}
+                          {displayPredictionStats.fighter2MethodPredictions.DECISION > 0 && (
+                            <View style={{
+                              flex: displayPredictionStats.fighter2MethodPredictions.DECISION,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              backgroundColor: selectedWinner === fight.fighter2Id && selectedMethod === 'DECISION' ? '#F5C518' : 'transparent',
+                            }}>
+                              <Text style={{ fontSize: 10, fontWeight: '600', color: '#000' }}>
+                                DEC
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      )}
+                    </View>
+                  </View>
+            </View>
+          )}
+        </View>
+
+        {/* Second row: Number of hype scores and percentages */}
+        <View style={{ flexDirection: 'row', marginTop: 4, gap: 20 }}>
+          {/* Hype scores count */}
+          <View style={{ marginLeft: 30, alignItems: 'center', width: 40 }}>
+            <Text style={{
+              fontSize: 11,
+              color: colors.textSecondary,
+            }}>
+              ({displayPredictionStats?.totalPredictions || 0})
+            </Text>
+          </View>
+
+          {/* Percentages below bar chart */}
+          {displayPredictionStats?.winnerPredictions && (
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                  {displayPredictionStats.winnerPredictions.fighter1.percentage}% {fight.fighter1.lastName}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textSecondary }}>
+                  {displayPredictionStats.winnerPredictions.fighter2.percentage}% {fight.fighter2.lastName}
+                </Text>
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
+

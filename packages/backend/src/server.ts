@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
 import fastifyMultipart from '@fastify/multipart';
 import path from 'path';
+
 import { PrismaClient } from '@prisma/client';
 import authPlugin from './middleware/auth.fastify';
 import { registerRoutes } from './routes';

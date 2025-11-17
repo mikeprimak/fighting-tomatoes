@@ -32,6 +32,9 @@ interface PredictionBarChartProps {
       percentage: number;
     };
   };
+  // Control flags for progressive reveal
+  showColors?: boolean; // Show colors and percentages (requires winner selection)
+  showLabels?: boolean; // Show method labels (requires method selection)
 }
 
 /**
@@ -49,13 +52,32 @@ export default function PredictionBarChart({
   fighter2Predictions,
   totalPredictions,
   winnerPredictions,
+  showColors = true,
+  showLabels = true,
 }: PredictionBarChartProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
+  // If no colors revealed, show grey outline only
+  if (!showColors) {
+    return (
+      <View style={styles.container}>
+        <View
+          style={{
+            height: 40,
+            borderRadius: 8,
+            borderWidth: 2,
+            borderColor: '#808080',
+            backgroundColor: 'transparent',
+          }}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      {/* Community Predictions Bar - always visible */}
+      {/* Community Predictions Bar - progressive reveal */}
       {winnerPredictions && (
         <View style={{ flex: 1 }}>
           <View
@@ -76,8 +98,8 @@ export default function PredictionBarChart({
                 backgroundColor: colors.background,
               }}
             >
-              {/* Fighter 1 method subdivisions - always show if data exists */}
-              {fighter1Predictions && (
+              {/* Fighter 1 method subdivisions - show if labels revealed or as plain bars */}
+              {fighter1Predictions && showLabels ? (
                 <View style={{ flexDirection: 'row', flex: 1 }}>
                   {fighter1Predictions.KO_TKO > 0 && (
                     <View
@@ -162,6 +184,8 @@ export default function PredictionBarChart({
                     </View>
                   )}
                 </View>
+              ) : (
+                <View style={{ flex: 1 }} />
               )}
             </View>
 
@@ -173,8 +197,8 @@ export default function PredictionBarChart({
                 backgroundColor: '#A0A0A0',
               }}
             >
-              {/* Fighter 2 method subdivisions - always show if data exists */}
-              {fighter2Predictions && (
+              {/* Fighter 2 method subdivisions - show if labels revealed or as plain bars */}
+              {fighter2Predictions && showLabels ? (
                 <View style={{ flexDirection: 'row', flex: 1 }}>
                   {fighter2Predictions.KO_TKO > 0 && (
                     <View
@@ -226,6 +250,8 @@ export default function PredictionBarChart({
                     </View>
                   )}
                 </View>
+              ) : (
+                <View style={{ flex: 1 }} />
               )}
             </View>
           </View>
