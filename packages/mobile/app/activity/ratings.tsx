@@ -290,7 +290,19 @@ export default function RatingsActivityScreen() {
                       // Sort by event date ascending (soonest first)
                       const dateA = new Date(a.event.date).getTime();
                       const dateB = new Date(b.event.date).getTime();
-                      return dateA - dateB;
+                      if (dateA !== dateB) {
+                        return dateA - dateB;
+                      }
+
+                      // If same date, group by event
+                      if (a.event.id !== b.event.id) {
+                        return a.event.id.localeCompare(b.event.id);
+                      }
+
+                      // If same event, sort by orderOnCard descending (main event first)
+                      const orderA = a.orderOnCard ?? 999;
+                      const orderB = b.orderOnCard ?? 999;
+                      return orderA - orderB;
                     });
                   return upcomingFights.length > 0 ? (
                     <View style={styles.sectionContainer}>
@@ -315,7 +327,19 @@ export default function RatingsActivityScreen() {
                       // Sort by event date descending (most recent first)
                       const dateA = new Date(a.event.date).getTime();
                       const dateB = new Date(b.event.date).getTime();
-                      return dateB - dateA;
+                      if (dateA !== dateB) {
+                        return dateB - dateA;
+                      }
+
+                      // If same date, group by event
+                      if (a.event.id !== b.event.id) {
+                        return a.event.id.localeCompare(b.event.id);
+                      }
+
+                      // If same event, sort by orderOnCard descending (main event first)
+                      const orderA = a.orderOnCard ?? 999;
+                      const orderB = b.orderOnCard ?? 999;
+                      return orderA - orderB;
                     });
                   return pastFights.length > 0 ? (
                     <View style={styles.sectionContainer}>
