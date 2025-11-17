@@ -1,180 +1,252 @@
 import React from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
-import { FontAwesome6 } from '@expo/vector-icons';
+import { View, Text, StyleSheet } from 'react-native';
+import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
-import { getHypeHeatmapColor } from '../utils/heatmap';
-
-interface PredictionStats {
-  totalPredictions: number;
-  averageHype: number;
-  winnerPredictions: {
-    fighter1: { count: number; percentage: number };
-    fighter2: { count: number; percentage: number };
-  };
-  fighter1MethodPredictions: {
-    KO_TKO: number;
-    SUBMISSION: number;
-    DECISION: number;
-  };
-  fighter2MethodPredictions: {
-    KO_TKO: number;
-    SUBMISSION: number;
-    DECISION: number;
-  };
-}
 
 interface PredictionBarChartProps {
-  predictionStats: PredictionStats;
   fighter1Name: string;
   fighter2Name: string;
+  fighter1Id: string;
+  fighter2Id: string;
+  selectedWinner?: string;
+  selectedMethod?: string;
+  // Prediction stats for each fighter and method
+  fighter1Predictions: {
+    KO_TKO: number;
+    SUBMISSION: number;
+    DECISION: number;
+  };
+  fighter2Predictions: {
+    KO_TKO: number;
+    SUBMISSION: number;
+    DECISION: number;
+  };
+  totalPredictions: number;
+  winnerPredictions: {
+    fighter1: {
+      count: number;
+      percentage: number;
+    };
+    fighter2: {
+      count: number;
+      percentage: number;
+    };
+  };
 }
 
+/**
+ * PredictionBarChart - Displays community predictions as a horizontal bar chart
+ * Shows winner split and method subdivisions for each fighter
+ */
 export default function PredictionBarChart({
-  predictionStats,
   fighter1Name,
   fighter2Name,
+  fighter1Id,
+  fighter2Id,
+  selectedWinner,
+  selectedMethod,
+  fighter1Predictions,
+  fighter2Predictions,
+  totalPredictions,
+  winnerPredictions,
 }: PredictionBarChartProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
-  if (!predictionStats || predictionStats.totalPredictions === 0) {
-    return null;
-  }
-
-  const renderBarSegment = (
-    method: 'KO_TKO' | 'SUBMISSION' | 'DECISION',
-    count: number,
-    totalPredictions: number
-  ) => {
-    const widthPercent = (count / totalPredictions) * 100;
-
-    // Determine text based on width
-    let text = '';
-    if (method === 'KO_TKO') {
-      if (widthPercent > 10) text = 'KO';
-      else if (widthPercent > 5) text = 'K';
-    } else if (method === 'SUBMISSION') {
-      if (widthPercent > 10) text = 'SUB';
-      else if (widthPercent > 5) text = 'S';
-    } else if (method === 'DECISION') {
-      if (widthPercent > 10) text = 'DEC';
-      else if (widthPercent > 5) text = 'D';
-    }
-
-    // Determine background color
-    let backgroundColor = '#F5C518'; // KO/TKO - full yellow
-    if (method === 'SUBMISSION') backgroundColor = '#F5C518CC'; // 80% opacity
-    if (method === 'DECISION') backgroundColor = '#F5C5184D'; // 30% opacity
-
-    return (
-      <View
-        key={method}
-        style={[
-          styles.barSegment,
-          {
-            width: `${widthPercent}%`,
-            backgroundColor,
-          }
-        ]}
-      >
-        {text !== '' && (
-          <Text style={styles.barSegmentText}>{text}</Text>
-        )}
-      </View>
-    );
-  };
-
   return (
-    <View style={styles.chartContainer}>
-      {/* Fighter 1 Bar */}
-      <View style={styles.chartRow}>
-        <Text style={[styles.fighterLabel, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-          {fighter1Name}
-        </Text>
-        <View style={styles.barContainer}>
-          <View style={styles.stackedBar}>
-            {renderBarSegment('KO_TKO', predictionStats.fighter1MethodPredictions.KO_TKO, predictionStats.totalPredictions)}
-            {renderBarSegment('SUBMISSION', predictionStats.fighter1MethodPredictions.SUBMISSION, predictionStats.totalPredictions)}
-            {renderBarSegment('DECISION', predictionStats.fighter1MethodPredictions.DECISION, predictionStats.totalPredictions)}
-          </View>
-          <Text style={[styles.percentageLabel, { color: colors.text }]}>
-            {predictionStats.winnerPredictions.fighter1.percentage.toFixed(0)}%
-          </Text>
-        </View>
-      </View>
+    <View style={styles.container}>
+      {/* Community Predictions Bar - always visible */}
+      {winnerPredictions && (
+        <View style={{ flex: 1 }}>
+          <View
+            style={{
+              height: 40,
+              flexDirection: 'row',
+              borderRadius: 8,
+              overflow: 'hidden',
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}
+          >
+            {/* Fighter 1 side */}
+            <View
+              style={{
+                flex: winnerPredictions.fighter1.percentage,
+                flexDirection: 'row',
+                backgroundColor: colors.background,
+              }}
+            >
+              {/* Fighter 1 method subdivisions - always show if data exists */}
+              {fighter1Predictions && (
+                <View style={{ flexDirection: 'row', flex: 1 }}>
+                  {fighter1Predictions.KO_TKO > 0 && (
+                    <View
+                      style={{
+                        flex: fighter1Predictions.KO_TKO,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRightWidth: 1,
+                        borderRightColor: colors.border,
+                        backgroundColor:
+                          selectedWinner === fighter1Id && selectedMethod === 'KO_TKO'
+                            ? '#F5C518'
+                            : 'transparent',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: '600',
+                          color:
+                            selectedWinner === fighter1Id && selectedMethod === 'KO_TKO'
+                              ? '#000'
+                              : colors.text,
+                        }}
+                      >
+                        KO
+                      </Text>
+                    </View>
+                  )}
+                  {fighter1Predictions.SUBMISSION > 0 && (
+                    <View
+                      style={{
+                        flex: fighter1Predictions.SUBMISSION,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRightWidth: 1,
+                        borderRightColor: colors.border,
+                        backgroundColor:
+                          selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION'
+                            ? '#F5C518'
+                            : 'transparent',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: '600',
+                          color:
+                            selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION'
+                              ? '#000'
+                              : colors.text,
+                        }}
+                      >
+                        SUB
+                      </Text>
+                    </View>
+                  )}
+                  {fighter1Predictions.DECISION > 0 && (
+                    <View
+                      style={{
+                        flex: fighter1Predictions.DECISION,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor:
+                          selectedWinner === fighter1Id && selectedMethod === 'DECISION'
+                            ? '#F5C518'
+                            : 'transparent',
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: '600',
+                          color:
+                            selectedWinner === fighter1Id && selectedMethod === 'DECISION'
+                              ? '#000'
+                              : colors.text,
+                        }}
+                      >
+                        DEC
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
 
-      {/* Fighter 2 Bar */}
-      <View style={styles.chartRow}>
-        <Text style={[styles.fighterLabel, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-          {fighter2Name}
-        </Text>
-        <View style={styles.barContainer}>
-          <View style={styles.stackedBar}>
-            {renderBarSegment('KO_TKO', predictionStats.fighter2MethodPredictions.KO_TKO, predictionStats.totalPredictions)}
-            {renderBarSegment('SUBMISSION', predictionStats.fighter2MethodPredictions.SUBMISSION, predictionStats.totalPredictions)}
-            {renderBarSegment('DECISION', predictionStats.fighter2MethodPredictions.DECISION, predictionStats.totalPredictions)}
+            {/* Fighter 2 side */}
+            <View
+              style={{
+                flex: winnerPredictions.fighter2.percentage,
+                flexDirection: 'row',
+                backgroundColor: '#FFFFFF',
+              }}
+            >
+              {/* Fighter 2 method subdivisions - always show if data exists */}
+              {fighter2Predictions && (
+                <View style={{ flexDirection: 'row', flex: 1 }}>
+                  {fighter2Predictions.KO_TKO > 0 && (
+                    <View
+                      style={{
+                        flex: fighter2Predictions.KO_TKO,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRightWidth: 1,
+                        borderRightColor: colors.border,
+                        backgroundColor:
+                          selectedWinner === fighter2Id && selectedMethod === 'KO_TKO'
+                            ? '#F5C518'
+                            : 'transparent',
+                      }}
+                    >
+                      <Text style={{ fontSize: 10, fontWeight: '600', color: '#000' }}>KO</Text>
+                    </View>
+                  )}
+                  {fighter2Predictions.SUBMISSION > 0 && (
+                    <View
+                      style={{
+                        flex: fighter2Predictions.SUBMISSION,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRightWidth: 1,
+                        borderRightColor: colors.border,
+                        backgroundColor:
+                          selectedWinner === fighter2Id && selectedMethod === 'SUBMISSION'
+                            ? '#F5C518'
+                            : 'transparent',
+                      }}
+                    >
+                      <Text style={{ fontSize: 10, fontWeight: '600', color: '#000' }}>SUB</Text>
+                    </View>
+                  )}
+                  {fighter2Predictions.DECISION > 0 && (
+                    <View
+                      style={{
+                        flex: fighter2Predictions.DECISION,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backgroundColor:
+                          selectedWinner === fighter2Id && selectedMethod === 'DECISION'
+                            ? '#F5C518'
+                            : 'transparent',
+                      }}
+                    >
+                      <Text style={{ fontSize: 10, fontWeight: '600', color: '#000' }}>DEC</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </View>
           </View>
-          <Text style={[styles.percentageLabel, { color: colors.text }]}>
-            {predictionStats.winnerPredictions.fighter2.percentage.toFixed(0)}%
-          </Text>
-        </View>
-      </View>
 
+          {/* Percentages below bar chart */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+            <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+              {winnerPredictions.fighter1.percentage}% {fighter1Name}
+            </Text>
+            <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+              {winnerPredictions.fighter2.percentage}% {fighter2Name}
+            </Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  chartContainer: {
-    marginTop: 4,
-  },
-  chartRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  fighterLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    width: 100,
-  },
-  barContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stackedBar: {
-    flex: 1,
-    height: 24,
-    flexDirection: 'row',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  barSegment: {
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  barSegmentText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#000',
-  },
-  percentageLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    width: 40,
-    textAlign: 'right',
-  },
-  hypeChartValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 4,
-  },
-  hypeChartCount: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 4,
+  container: {
+    width: '100%',
   },
 });

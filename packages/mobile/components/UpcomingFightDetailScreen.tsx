@@ -23,7 +23,6 @@ import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 import PredictionBarChart from './PredictionBarChart';
-import PredictionPieChart from './PredictionPieChart';
 import HypeDistributionChart from './HypeDistributionChart';
 import FightDetailsSection from './FightDetailsSection';
 import { useFightStats } from '../hooks/useFightStats';
@@ -898,8 +897,19 @@ export default function UpcomingFightDetailScreen({
     >
 
 
+      {/* My Picks Section Divider */}
+      <View style={[styles.sectionDivider, { marginTop: 0 }]}>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        <View style={{ flexShrink: 0 }}>
+          <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+            My Picks
+          </Text>
+        </View>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+      </View>
+
       {/* Who Do You Think Will Win? */}
-      <View style={styles.sectionNoBorder}>
+      <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
         <View style={styles.userInputTitleRow}>
           <View style={styles.yellowSideLine} />
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -1134,16 +1144,18 @@ export default function UpcomingFightDetailScreen({
       {/* Visual Break - Separator between user input and community sections */}
       <View style={styles.sectionDivider}>
         <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-          Community Insights
-        </Text>
+        <View style={{ flexShrink: 0 }}>
+          <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+            Community Hype
+          </Text>
+        </View>
         <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
       </View>
 
       {/* Community Data */}
       <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
         {/* Community Data Layout: Vertical stack */}
-        <View style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8, marginTop: 0 }}>
+        <View style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 18, marginTop: 0 }}>
           {/* Aggregate hype box and distribution chart - side by side */}
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 0 }}>
             {/* Community Hype Box */}
@@ -1274,36 +1286,56 @@ export default function UpcomingFightDetailScreen({
               </View>
             )}
           </View>
-
-          {/* Community Predictions Pie Chart - always visible */}
-          {displayPredictionStats && displayPredictionStats.fighter1MethodPredictions && displayPredictionStats.fighter2MethodPredictions && (
-            <PredictionPieChart
-              fighter1Name={fight.fighter1.lastName}
-              fighter2Name={fight.fighter2.lastName}
-              fighter1Id={fight.fighter1Id}
-              fighter2Id={fight.fighter2Id}
-              selectedWinner={selectedWinner}
-              selectedMethod={selectedMethod}
-              fighter1Predictions={displayPredictionStats.fighter1MethodPredictions}
-              fighter2Predictions={displayPredictionStats.fighter2MethodPredictions}
-              totalPredictions={displayPredictionStats.totalPredictions}
-              showColors={hasRevealedWinner}
-              showLabels={hasRevealedMethod}
-            />
-          )}
         </View>
       </View>
 
+      {/* Community Predictions Section Divider */}
+      <View style={[styles.sectionDivider, { marginTop: -8 }]}>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        <View style={{ flexShrink: 0 }}>
+          <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+            Community Predictions
+          </Text>
+        </View>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+      </View>
+
+      {/* Community Predictions Data */}
+      <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
+        {/* Community Predictions Bar Chart - always visible */}
+        {displayPredictionStats && displayPredictionStats.fighter1MethodPredictions && displayPredictionStats.fighter2MethodPredictions && displayPredictionStats.winnerPredictions && (
+          <PredictionBarChart
+            fighter1Name={fight.fighter1.lastName}
+            fighter2Name={fight.fighter2.lastName}
+            fighter1Id={fight.fighter1Id}
+            fighter2Id={fight.fighter2Id}
+            selectedWinner={selectedWinner}
+            selectedMethod={selectedMethod}
+            fighter1Predictions={displayPredictionStats.fighter1MethodPredictions}
+            fighter2Predictions={displayPredictionStats.fighter2MethodPredictions}
+            totalPredictions={displayPredictionStats.totalPredictions}
+            winnerPredictions={displayPredictionStats.winnerPredictions}
+          />
+        )}
+      </View>
+
+      {/* Comments Section Divider */}
+      <View style={[styles.sectionDivider, { marginTop: -8 }]}>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        <View style={{ flexShrink: 0 }}>
+          <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+            Comments
+          </Text>
+        </View>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+      </View>
+
       {/* Comments */}
-      <View style={[styles.sectionNoBorder, { marginTop: -8 }]}>
+      <View style={[styles.sectionNoBorder, { marginTop: 22 }]}>
         {/* Title row with Add Comment / Cancel button */}
         <View style={styles.commentHeaderRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Ionicons name="chatbubbles" size={16} color={colors.textSecondary} />
-            <Text style={[styles.communitySectionTitle, { color: colors.textSecondary, marginBottom: 0 }]}>
-              Comments
-            </Text>
-            {!preFightCommentsData?.userComment && !isEditingComment && !showCommentForm && (
+          <View style={{ flex: 1 }} />
+          {!preFightCommentsData?.userComment && !isEditingComment && !showCommentForm && (
             <Button
               onPress={() => setShowCommentForm(!showCommentForm)}
               variant="outline"
@@ -1312,7 +1344,6 @@ export default function UpcomingFightDetailScreen({
                 borderWidth: 1,
                 borderColor: colors.border,
                 backgroundColor: colors.background,
-                marginLeft: 8,
               }}
               textStyle={{
                 color: colors.text,
@@ -1321,7 +1352,6 @@ export default function UpcomingFightDetailScreen({
               + Add
             </Button>
           )}
-          </View>
           {!preFightCommentsData?.userComment && !isEditingComment && showCommentForm && (
             <Button
               onPress={() => setShowCommentForm(!showCommentForm)}
