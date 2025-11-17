@@ -58,7 +58,8 @@ export default function FollowedFightersScreen() {
   const unfollowMutation = useMutation({
     mutationFn: (fighterId: string) => apiService.unfollowFighter(fighterId),
     onSuccess: () => {
-      // Don't invalidate queries immediately - let the local state handle visibility
+      // Invalidate all related queries to ensure data is fresh
+      queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
       queryClient.invalidateQueries({ queryKey: ['fighters'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
     },
