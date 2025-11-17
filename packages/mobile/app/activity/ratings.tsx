@@ -318,7 +318,7 @@ export default function RatingsActivityScreen() {
                       return dateB - dateA;
                     });
                   return pastFights.length > 0 ? (
-                    <View style={[styles.sectionContainer}>
+                    <View style={styles.sectionContainer}>
                       <Text style={[styles.sectionTitle, { color: colors.text }]}>Past Fights</Text>
                       {pastFights.map((fight: FightData) => (
                         <UpcomingFightCard
