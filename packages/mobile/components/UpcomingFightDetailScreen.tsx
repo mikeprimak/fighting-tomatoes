@@ -1053,7 +1053,7 @@ export default function UpcomingFightDetailScreen({
       </View>
 
       {/* How Hyped? */}
-      <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
+      <View style={[styles.sectionNoBorder, { marginTop: 29 }]}>
         <View style={styles.userInputTitleRow}>
           <View style={styles.yellowSideLine} />
           <Text style={[styles.sectionTitle, { color: colors.text }]}>

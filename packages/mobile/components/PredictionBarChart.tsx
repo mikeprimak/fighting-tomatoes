@@ -170,7 +170,7 @@ export default function PredictionBarChart({
               style={{
                 flex: winnerPredictions.fighter2.percentage,
                 flexDirection: 'row',
-                backgroundColor: '#FFFFFF',
+                backgroundColor: '#A0A0A0',
               }}
             >
               {/* Fighter 2 method subdivisions - always show if data exists */}
