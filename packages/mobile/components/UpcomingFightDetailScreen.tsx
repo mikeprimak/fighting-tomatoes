@@ -898,7 +898,7 @@ export default function UpcomingFightDetailScreen({
 
 
       {/* My Picks Section Divider */}
-      <View style={[styles.sectionDivider, { marginTop: 0 }]}>
+      <View style={[styles.sectionDivider, { marginTop: 15 }]}>
         <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         <View style={{ flexShrink: 0 }}>
           <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
