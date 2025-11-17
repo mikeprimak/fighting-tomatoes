@@ -16,18 +16,21 @@ function TabBarIcon(props: {
 }
 
 /**
- * Header Logo Component
+ * Header Logo Component - Boxing glove icon to the left of the title
  */
-function HeaderLogo() {
+function HeaderLogo({ title }: { title: string }) {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <Image
-        source={require('../assets/Fight-Crew-Logo-No-Background-fills-space.png')}
-        style={{ width: 32, height: 32, marginRight: 8 }}
+        source={require('../assets/app-icon.png')}
+        style={{ width: 48, height: 48, marginRight: 14 }}
         resizeMode="contain"
       />
-      <Text style={{ fontSize: 18, fontWeight: '600', color: '#F5C518' }}>
-        Fight Crew
+      <Text style={{ fontSize: 18, fontWeight: '600', color: colors.text }}>
+        {title}
       </Text>
     </View>
   );
@@ -159,7 +162,7 @@ export function FightCrewAppTabBar() {
               Upcoming
             </Text>
           ),
-          headerTitle: 'Upcoming Events',
+          headerTitle: () => <HeaderLogo title="Upcoming Events" />,
         }}
       />
       <Tabs.Screen
@@ -172,7 +175,7 @@ export function FightCrewAppTabBar() {
             </Text>
           ),
           tabBarIcon: ({ color }) => <FontAwesome name="star" size={24} style={{ marginBottom: -3 }} color={color} />,
-          headerTitle: 'Past Events',
+          headerTitle: () => <HeaderLogo title="Past Events" />,
         }}
       />
       <Tabs.Screen
@@ -191,7 +194,7 @@ export function FightCrewAppTabBar() {
               resizeMode="contain"
             />
           ),
-          headerTitle: 'Good Fights',
+          headerTitle: () => <HeaderLogo title="Good Fights" />,
         }}
       />
       <Tabs.Screen
@@ -199,7 +202,7 @@ export function FightCrewAppTabBar() {
         options={{
           title: 'News',
           tabBarIcon: ({ color }) => <TabBarIcon name="newspaper-o" color={color} />,
-          headerTitle: 'News',
+          headerTitle: () => <HeaderLogo title="News" />,
         }}
       />
       <Tabs.Screen
@@ -207,7 +210,7 @@ export function FightCrewAppTabBar() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
-          headerTitle: 'Profile',
+          headerTitle: () => <HeaderLogo title="Profile" />,
         }}
       />
     </Tabs>
