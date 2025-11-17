@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
+import { Stack, useFocusEffect } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -38,15 +38,24 @@ export default function FollowedFightersScreen() {
   const queryClient = useQueryClient();
   const [localUnfollows, setLocalUnfollows] = useState<Set<string>>(new Set());
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['followedFighters'],
     queryFn: () => apiService.getFollowedFighters(),
   });
 
+  // Refetch followed fighters when screen comes into focus and clear local unfollows
+  useFocusEffect(
+    React.useCallback(() => {
+      refetch();
+      setLocalUnfollows(new Set());
+    }, [refetch])
+  );
+
   const followMutation = useMutation({
     mutationFn: (fighterId: string) => apiService.followFighter(fighterId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
+      // Refetch to show newly followed fighter immediately
+      refetch();
       queryClient.invalidateQueries({ queryKey: ['fighters'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
     },
@@ -58,8 +67,7 @@ export default function FollowedFightersScreen() {
   const unfollowMutation = useMutation({
     mutationFn: (fighterId: string) => apiService.unfollowFighter(fighterId),
     onSuccess: () => {
-      // Invalidate all related queries to ensure data is fresh
-      queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
+      // Don't refetch here - let local state handle visibility until navigation away
       queryClient.invalidateQueries({ queryKey: ['fighters'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
     },
