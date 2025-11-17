@@ -1011,8 +1011,49 @@ export default function UpcomingFightDetailScreen({
         </View>
       </View>
 
+      {/* Community Predictions Section Divider */}
+      <View style={[styles.sectionDivider, { marginTop: -8 }]}>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        <View style={{ flexShrink: 0 }}>
+          <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+            Community Predictions
+          </Text>
+        </View>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+      </View>
+
+      {/* Community Predictions Data */}
+      <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
+        {/* Community Predictions Bar Chart - always visible */}
+        {displayPredictionStats && displayPredictionStats.fighter1MethodPredictions && displayPredictionStats.fighter2MethodPredictions && displayPredictionStats.winnerPredictions && (
+          <PredictionBarChart
+            fighter1Name={fight.fighter1.lastName}
+            fighter2Name={fight.fighter2.lastName}
+            fighter1Id={fight.fighter1Id}
+            fighter2Id={fight.fighter2Id}
+            selectedWinner={selectedWinner}
+            selectedMethod={selectedMethod}
+            fighter1Predictions={displayPredictionStats.fighter1MethodPredictions}
+            fighter2Predictions={displayPredictionStats.fighter2MethodPredictions}
+            totalPredictions={displayPredictionStats.totalPredictions}
+            winnerPredictions={displayPredictionStats.winnerPredictions}
+          />
+        )}
+      </View>
+
+      {/* My Hype Section Divider */}
+      <View style={[styles.sectionDivider, { marginTop: -8 }]}>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        <View style={{ flexShrink: 0 }}>
+          <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+            My Hype
+          </Text>
+        </View>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+      </View>
+
       {/* How Hyped? */}
-      <View style={[styles.sectionNoBorder, { marginTop: -20 }]}>
+      <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
         <View style={styles.userInputTitleRow}>
           <View style={styles.yellowSideLine} />
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -1287,36 +1328,6 @@ export default function UpcomingFightDetailScreen({
             )}
           </View>
         </View>
-      </View>
-
-      {/* Community Predictions Section Divider */}
-      <View style={[styles.sectionDivider, { marginTop: -8 }]}>
-        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        <View style={{ flexShrink: 0 }}>
-          <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-            Community Predictions
-          </Text>
-        </View>
-        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-      </View>
-
-      {/* Community Predictions Data */}
-      <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
-        {/* Community Predictions Bar Chart - always visible */}
-        {displayPredictionStats && displayPredictionStats.fighter1MethodPredictions && displayPredictionStats.fighter2MethodPredictions && displayPredictionStats.winnerPredictions && (
-          <PredictionBarChart
-            fighter1Name={fight.fighter1.lastName}
-            fighter2Name={fight.fighter2.lastName}
-            fighter1Id={fight.fighter1Id}
-            fighter2Id={fight.fighter2Id}
-            selectedWinner={selectedWinner}
-            selectedMethod={selectedMethod}
-            fighter1Predictions={displayPredictionStats.fighter1MethodPredictions}
-            fighter2Predictions={displayPredictionStats.fighter2MethodPredictions}
-            totalPredictions={displayPredictionStats.totalPredictions}
-            winnerPredictions={displayPredictionStats.winnerPredictions}
-          />
-        )}
       </View>
 
       {/* Comments Section Divider */}
