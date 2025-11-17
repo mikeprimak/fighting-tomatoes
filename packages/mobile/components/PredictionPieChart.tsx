@@ -101,7 +101,7 @@ export default function PredictionPieChart({
   const fighter2Percentage = totalPredictions > 0 ? Math.round((fighter2Total / totalPredictions) * 100) : 0;
 
   // Helper function to mix color with red tint
-  const mixWithRed = (baseColor: string): string => {
+  const mixWithRed = (baseColor: string, tintStrength: number = 0.1): string => {
     // Parse base color (hex)
     const hexMatch = baseColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
     if (!hexMatch) return baseColor;
@@ -115,10 +115,10 @@ export default function PredictionPieChart({
     const redG = 0;
     const redB = 0;
 
-    // Mix 90% base + 10% red for mild tint
-    const mixedR = Math.round(baseR * 0.9 + redR * 0.1);
-    const mixedG = Math.round(baseG * 0.9 + redG * 0.1);
-    const mixedB = Math.round(baseB * 0.9 + redB * 0.1);
+    // Mix with specified tint strength
+    const mixedR = Math.round(baseR * (1 - tintStrength) + redR * tintStrength);
+    const mixedG = Math.round(baseG * (1 - tintStrength) + redG * tintStrength);
+    const mixedB = Math.round(baseB * (1 - tintStrength) + redB * tintStrength);
 
     return `#${mixedR.toString(16).padStart(2, '0')}${mixedG.toString(16).padStart(2, '0')}${mixedB.toString(16).padStart(2, '0')}`;
   };
@@ -137,7 +137,7 @@ export default function PredictionPieChart({
   };
 
   // Helper function to mix color with blue tint
-  const mixWithBlue = (baseColor: string): string => {
+  const mixWithBlue = (baseColor: string, tintStrength: number = 0.1): string => {
     // Parse base color (hex)
     const hexMatch = baseColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
     if (!hexMatch) return baseColor;
@@ -151,10 +151,10 @@ export default function PredictionPieChart({
     const blueG = 0;
     const blueB = 255;
 
-    // Mix 90% base + 10% blue for mild tint
-    const mixedR = Math.round(baseR * 0.9 + blueR * 0.1);
-    const mixedG = Math.round(baseG * 0.9 + blueG * 0.1);
-    const mixedB = Math.round(baseB * 0.9 + blueB * 0.1);
+    // Mix with specified tint strength
+    const mixedR = Math.round(baseR * (1 - tintStrength) + blueR * tintStrength);
+    const mixedG = Math.round(baseG * (1 - tintStrength) + blueG * tintStrength);
+    const mixedB = Math.round(baseB * (1 - tintStrength) + blueB * tintStrength);
 
     return `#${mixedR.toString(16).padStart(2, '0')}${mixedG.toString(16).padStart(2, '0')}${mixedB.toString(16).padStart(2, '0')}`;
   };
@@ -366,8 +366,8 @@ export default function PredictionPieChart({
                 </Svg>
               )}
             </View>
-            {/* Underline only shows after winner prediction */}
-            {showColors && <View style={styles.underlineRed} />}
+            {/* Underline only shows after winner prediction - use stronger tint for visibility */}
+            {showColors && <View style={[styles.underlineBase, { backgroundColor: mixWithRed(baseColors.DECISION, 0.35) }]} />}
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -384,8 +384,8 @@ export default function PredictionPieChart({
                 </Svg>
               )}
             </View>
-            {/* Underline only shows after winner prediction */}
-            {showColors && <View style={styles.underlineBlue} />}
+            {/* Underline only shows after winner prediction - use stronger tint for visibility */}
+            {showColors && <View style={[styles.underlineBase, { backgroundColor: mixWithBlue(baseColors.DECISION, 0.35) }]} />}
           </View>
         </View>
 
@@ -450,7 +450,8 @@ export default function PredictionPieChart({
                               x={labelPos.x - (slice.isHighlighted ? 6 : 0)}
                               y={labelPos.y}
                               fill="#FFFFFF"
-                              fontSize="16"
+                              fillOpacity={0.8}
+                              fontSize="14"
                               fontWeight="bold"
                               textAnchor="middle"
                               alignmentBaseline="middle"
@@ -508,17 +509,9 @@ const styles = StyleSheet.create({
   legendTextRight: {
     textAlign: 'right', // Align right fighter name to the right
   },
-  underlineRed: {
-    width: 50,
+  underlineBase: {
+    width: '100%',
     height: 2,
-    backgroundColor: '#FF0000',
-    alignSelf: 'center',
-    marginTop: 2,
-  },
-  underlineBlue: {
-    width: 50,
-    height: 2,
-    backgroundColor: '#0000FF',
     alignSelf: 'center',
     marginTop: 2,
   },
