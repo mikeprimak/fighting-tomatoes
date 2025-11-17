@@ -2716,6 +2716,39 @@ export async function fightRoutes(fastify: FastifyInstance) {
         return transformed;
       });
 
+      // Add notification data for each fight if user is authenticated
+      if (currentUserId) {
+        // Get fighter follows for all fights
+        const allFighterIds = transformedFights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]);
+        const uniqueFighterIds = [...new Set(allFighterIds)];
+
+        const followedFighters = await fastify.prisma.userFighterFollow.findMany({
+          where: {
+            userId: currentUserId,
+            fighterId: { in: uniqueFighterIds },
+          },
+          select: {
+            fighterId: true,
+          },
+        });
+
+        const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
+
+        // Add notification data for each fight
+        for (const fight of transformedFights) {
+          // Add fighter follow status
+          fight.isFollowingFighter1 = followedFighterIds.has(fight.fighter1Id) || undefined;
+          fight.isFollowingFighter2 = followedFighterIds.has(fight.fighter2Id) || undefined;
+
+          // Get comprehensive notification reasons using the unified rule engine
+          const notificationReasons = await notificationRuleEngine.getNotificationReasonsForFight(
+            currentUserId,
+            fight.id
+          );
+          fight.notificationReasons = notificationReasons;
+        }
+      }
+
       // Filter by rating/hype if sortBy is a rated-X option
       let filteredFights = transformedFights;
       if (query.sortBy.startsWith('rated-')) {
