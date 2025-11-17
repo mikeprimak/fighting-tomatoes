@@ -12,7 +12,7 @@ interface HypeDistributionChartProps {
 
 /**
  * HypeDistributionChart - Displays distribution of community hype scores
- * Vertical bar chart with hype score (1-10) on Y-axis and count on X-axis
+ * Horizontal bar chart with hype score (1-10) on X-axis and count on Y-axis
  */
 export default function HypeDistributionChart({
   distribution,
@@ -20,37 +20,40 @@ export default function HypeDistributionChart({
   hasRevealedHype,
   fadeAnim,
 }: HypeDistributionChartProps) {
-  // Chart dimensions - match pie chart height (160px)
-  const chartHeight = 160;
-  const chartWidth = 83; // 74px + 9px = 83px total (increased horizontal extent)
-  const barWidth = 6; // Vertical thickness of bars (back to original)
-  const barGap = 1;
+  // Chart dimensions - horizontal layout
+  const chartWidth = 296; // Width for 10 bars - wider to fill space
+  const chartHeight = 55; // Compact height
+  const barWidth = 8; // Horizontal thickness of bars - slightly thicker
+  const barGap = 2;
 
   // Find max count for scaling
   const maxCount = Math.max(...Object.values(distribution), 1);
 
-  // Create bars for hype scores 1-10 (bottom to top)
+  // Create bars for hype scores 1-10 (left to right)
   const bars = [];
   for (let hype = 1; hype <= 10; hype++) {
     const count = distribution[hype] || 0;
-    const barHeight = maxCount > 0 ? (count / maxCount) * (chartWidth - 10) : 0;
+    const barHeight = maxCount > 0 ? (count / maxCount) * (chartHeight - 10) : 0;
     const color = getHypeHeatmapColor(hype); // Use correct heatmap colors
 
     bars.push(
       <View
         key={hype}
         style={{
-          flexDirection: 'row',
+          flexDirection: 'column',
           alignItems: 'center',
-          height: (chartHeight - 20) / 10, // Divide height by 10 scores
-          marginBottom: hype < 10 ? barGap : 0,
+          justifyContent: 'flex-end',
+          width: (chartWidth - 20) / 10, // Divide width by 10 scores
+          marginRight: hype < 10 ? barGap : 0,
           position: 'relative',
+          height: chartHeight - 10,
         }}
       >
-        {/* Grey circle - always visible */}
+        {/* Grey circle - always visible at bottom */}
         <View
           style={{
             position: 'absolute',
+            bottom: 0,
             width: 4,
             height: 4,
             borderRadius: 2,
@@ -58,13 +61,12 @@ export default function HypeDistributionChart({
           }}
         />
 
-        {/* Colored bar - fades in on top when revealed */}
+        {/* Colored bar - grows upward when revealed */}
         {hasRevealedHype && count > 0 && (
           <Animated.View
             style={{
-              position: 'absolute',
-              width: barHeight,
-              height: barWidth,
+              width: barWidth,
+              height: barHeight,
               backgroundColor: color,
               borderRadius: 1,
               opacity: fadeAnim,
@@ -77,9 +79,9 @@ export default function HypeDistributionChart({
 
   return (
     <View style={styles.container}>
-      {/* Chart area - bars from bottom (1) to top (10) */}
+      {/* Chart area - bars from left (1) to right (10) */}
       <View style={styles.chartArea}>
-        {bars.reverse()} {/* Reverse to show 10 at top, 1 at bottom */}
+        {bars}
       </View>
     </View>
   );
@@ -89,12 +91,15 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 160,
-    width: 83, // Increased by 9px for wider horizontal bars
+    height: 55,
+    width: 296,
   },
   chartArea: {
     flex: 1,
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    alignItems: 'flex-end',
+    paddingHorizontal: 10,
+    paddingBottom: 5,
   },
 });

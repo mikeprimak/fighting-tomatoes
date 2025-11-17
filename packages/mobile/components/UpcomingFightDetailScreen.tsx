@@ -1142,10 +1142,10 @@ export default function UpcomingFightDetailScreen({
 
       {/* Community Data */}
       <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
-        {/* Community Data Layout: Left column (hype box + distribution chart) and right column (pie chart) */}
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: 0 }}>
-          {/* Left column: Aggregate hype box (top) + distribution chart (bottom) */}
-          <View style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+        {/* Community Data Layout: Vertical stack */}
+        <View style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8, marginTop: 0 }}>
+          {/* Aggregate hype box and distribution chart - side by side */}
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 0 }}>
             {/* Community Hype Box */}
             {(() => {
             const hypeColor = aggregateStats?.communityAverageHype
@@ -1264,12 +1264,14 @@ export default function UpcomingFightDetailScreen({
 
             {/* Hype Distribution Chart - below aggregate hype box */}
             {aggregateStats?.hypeDistribution && (
-              <HypeDistributionChart
-                distribution={aggregateStats.hypeDistribution}
-                totalPredictions={aggregateStats.totalPredictions || 0}
-                hasRevealedHype={hasRevealedHype}
-                fadeAnim={aggregateHypeFadeAnim}
-              />
+              <View style={{ marginTop: -6 }}>
+                <HypeDistributionChart
+                  distribution={aggregateStats.hypeDistribution}
+                  totalPredictions={aggregateStats.totalPredictions || 0}
+                  hasRevealedHype={hasRevealedHype}
+                  fadeAnim={aggregateHypeFadeAnim}
+                />
+              </View>
             )}
           </View>
 
