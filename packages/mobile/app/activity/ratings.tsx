@@ -284,7 +284,14 @@ export default function RatingsActivityScreen() {
 
                 {/* Upcoming Fights Section */}
                 {(() => {
-                  const upcomingFights = data.fights.filter((f: FightData) => f.status === 'upcoming');
+                  const upcomingFights = data.fights
+                    .filter((f: FightData) => f.status === 'upcoming')
+                    .sort((a, b) => {
+                      // Sort by event date ascending (soonest first)
+                      const dateA = new Date(a.event.date).getTime();
+                      const dateB = new Date(b.event.date).getTime();
+                      return dateA - dateB;
+                    });
                   return upcomingFights.length > 0 ? (
                     <View style={styles.sectionContainer}>
                       <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Fights</Text>
@@ -302,9 +309,16 @@ export default function RatingsActivityScreen() {
 
                 {/* Past Fights Section */}
                 {(() => {
-                  const pastFights = data.fights.filter((f: FightData) => f.status === 'completed');
+                  const pastFights = data.fights
+                    .filter((f: FightData) => f.status === 'completed')
+                    .sort((a, b) => {
+                      // Sort by event date descending (most recent first)
+                      const dateA = new Date(a.event.date).getTime();
+                      const dateB = new Date(b.event.date).getTime();
+                      return dateB - dateA;
+                    });
                   return pastFights.length > 0 ? (
-                    <View style={styles.sectionContainer}>
+                    <View style={[styles.sectionContainer}>
                       <Text style={[styles.sectionTitle, { color: colors.text }]}>Past Fights</Text>
                       {pastFights.map((fight: FightData) => (
                         <UpcomingFightCard
