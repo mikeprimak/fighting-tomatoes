@@ -213,3 +213,61 @@ export async function toggleFightNotificationOverride(
 
   return { willBeNotified: enabled, affectedMatches };
 }
+
+/**
+ * Manages the "Pre-Event Report" notification rule
+ * Creates/activates or deactivates the rule based on the enabled flag
+ * This sends a notification 6 hours before an event with hyped fights and followed fighters
+ */
+export async function managePreEventReportRule(
+  userId: string,
+  enabled: boolean
+): Promise<void> {
+  const RULE_NAME = 'Pre-Event Report';
+  const NOTIFY_HOURS_BEFORE = 6 * 60; // 6 hours in minutes
+
+  // Check if rule already exists
+  const existingRule = await prisma.userNotificationRule.findFirst({
+    where: {
+      userId,
+      name: RULE_NAME,
+    },
+  });
+
+  if (existingRule) {
+    // Update existing rule
+    await prisma.userNotificationRule.update({
+      where: { id: existingRule.id },
+      data: { isActive: enabled },
+    });
+  } else if (enabled) {
+    // Create new rule (only if enabled)
+    await prisma.userNotificationRule.create({
+      data: {
+        userId,
+        name: RULE_NAME,
+        conditions: { isPreEventReport: true },
+        notifyMinutesBefore: NOTIFY_HOURS_BEFORE,
+        priority: 1, // Low priority - this is informational
+        isActive: true,
+      },
+    });
+  }
+}
+
+/**
+ * Check if a user has an active pre-event report rule
+ */
+export async function hasPreEventReportRule(userId: string): Promise<boolean> {
+  const RULE_NAME = 'Pre-Event Report';
+
+  const rule = await prisma.userNotificationRule.findFirst({
+    where: {
+      userId,
+      name: RULE_NAME,
+      isActive: true,
+    },
+  });
+
+  return !!rule;
+}

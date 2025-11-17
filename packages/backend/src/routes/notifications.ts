@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
 import { authenticateUser } from '../middleware/auth';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
+import { managePreEventReportRule, hasPreEventReportRule } from '../services/notificationRuleHelpers';
 
 const prisma = new PrismaClient();
 
@@ -13,6 +14,7 @@ const registerTokenSchema = z.object({
 const updatePreferencesSchema = z.object({
   notificationsEnabled: z.boolean().optional(),
   notifyHypedFights: z.boolean().optional(),
+  notifyPreEventReport: z.boolean().optional(),
   // Legacy fields removed - all notifications now managed via rules
 });
 
@@ -162,10 +164,19 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         },
       });
 
+      // Check if user has the "Pre-Event Report" notification rule active
+      const preEventReportRule = await prisma.userNotificationRule.findFirst({
+        where: {
+          userId,
+          name: 'Pre-Event Report',
+        },
+      });
+
       return reply.send({
         preferences: {
           ...user,
           notifyHypedFights: hypedFightsRule?.isActive ?? false,
+          notifyPreEventReport: preEventReportRule?.isActive ?? false,
           // Legacy fields removed - all notifications now managed via rules
         },
       });
@@ -184,8 +195,8 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         const preferences = updatePreferencesSchema.parse(request.body);
         const userId = request.user!.id;
 
-        // Extract notifyHypedFights from preferences (handled via rules)
-        const { notifyHypedFights, ...userPreferences } = preferences;
+        // Extract rule-based preferences from user preferences
+        const { notifyHypedFights, notifyPreEventReport, ...userPreferences } = preferences;
 
         // Update basic user preferences
         const updatedUser = await prisma.user.update({
@@ -201,11 +212,23 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
           await manageHypedFightsRule(userId, notifyHypedFights);
         }
 
-        // Get current state of Hyped Fights rule for response
+        // Handle Pre-Event Report notification rule
+        if (notifyPreEventReport !== undefined) {
+          await managePreEventReportRule(userId, notifyPreEventReport);
+        }
+
+        // Get current state of notification rules for response
         const hypedFightsRule = await prisma.userNotificationRule.findFirst({
           where: {
             userId,
             name: 'Hyped Fights',
+          },
+        });
+
+        const preEventReportRule = await prisma.userNotificationRule.findFirst({
+          where: {
+            userId,
+            name: 'Pre-Event Report',
           },
         });
 
@@ -214,6 +237,7 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
           preferences: {
             ...updatedUser,
             notifyHypedFights: hypedFightsRule?.isActive ?? false,
+            notifyPreEventReport: preEventReportRule?.isActive ?? false,
           },
         });
       } catch (error: any) {
@@ -282,6 +306,55 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         message: 'Test notification sent',
         result,
       });
+    }
+  );
+
+  /**
+   * Test pre-event report notification (development only)
+   * POST /api/notifications/test-pre-event-report
+   * Body: { eventId: string }
+   */
+  fastify.post(
+    '/test-pre-event-report',
+    { preHandler: authenticateUser },
+    async (request, reply) => {
+      const userId = request.user!.id;
+      const body = request.body as any;
+      const eventId = body?.eventId;
+
+      if (!eventId) {
+        return reply.status(400).send({
+          error: 'eventId is required in request body',
+        });
+      }
+
+      console.log(`[Test Pre-Event Report] Request from user ${userId} for event ${eventId}`);
+
+      // Check if user has pre-event report rule enabled
+      const hasRule = await hasPreEventReportRule(userId);
+      if (!hasRule) {
+        return reply.status(400).send({
+          error: 'User does not have pre-event report notifications enabled',
+          hint: 'Enable it in notification settings first',
+        });
+      }
+
+      const { sendPreEventReports } = await import('../services/preEventReportService');
+
+      try {
+        const result = await sendPreEventReports(eventId);
+
+        return reply.send({
+          message: 'Pre-event report sent',
+          result,
+        });
+      } catch (error: any) {
+        console.error('[Test Pre-Event Report] Error:', error);
+        return reply.status(500).send({
+          error: 'Failed to send pre-event report',
+          details: error.message,
+        });
+      }
     }
   );
 
