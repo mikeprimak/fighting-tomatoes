@@ -900,9 +900,12 @@ export default function UpcomingFightDetailScreen({
 
       {/* Who Do You Think Will Win? */}
       <View style={styles.sectionNoBorder}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Who do you think will win?
-        </Text>
+        <View style={styles.userInputTitleContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Who do you think will win?
+          </Text>
+          <View style={styles.yellowUnderline} />
+        </View>
         <View style={styles.fighterButtons}>
           <TouchableOpacity
             style={[
@@ -964,9 +967,12 @@ export default function UpcomingFightDetailScreen({
 
       {/* How will it end? */}
       <View style={[styles.sectionNoBorder, { marginTop: -4 }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          How will it end?
-        </Text>
+        <View style={styles.userInputTitleContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            How will it end?
+          </Text>
+          <View style={styles.yellowUnderline} />
+        </View>
         <View style={styles.methodButtons}>
           {(['KO_TKO', 'SUBMISSION', 'DECISION'] as const).map((method) => {
             return (
@@ -997,9 +1003,12 @@ export default function UpcomingFightDetailScreen({
 
       {/* How Hyped? */}
       <View style={[styles.sectionNoBorder, { marginTop: -18 }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          How hyped are you?
-        </Text>
+        <View style={styles.userInputTitleContainer}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            How hyped are you?
+          </Text>
+          <View style={styles.yellowUnderline} />
+        </View>
 
         {/* User's hype selection row */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 10 }}>
@@ -1122,11 +1131,23 @@ export default function UpcomingFightDetailScreen({
         </View>
       </View>
 
-      {/* Community Data */}
-      <View style={[styles.sectionNoBorder, { marginTop: -8 }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Community Data
+      {/* Visual Break - Separator between user input and community sections */}
+      <View style={styles.sectionDivider}>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+          Community Insights
         </Text>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+      </View>
+
+      {/* Community Data */}
+      <View style={[styles.sectionNoBorder, { marginTop: 8 }]}>
+        <View style={styles.communityTitleContainer}>
+          <FontAwesome name="users" size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
+          <Text style={[styles.communitySectionTitle, { color: colors.textSecondary }]}>
+            Community Data
+          </Text>
+        </View>
 
         {/* Community Data Layout: Left column (hype box + distribution chart) and right column (pie chart) */}
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: 10 }}>
@@ -1283,7 +1304,8 @@ export default function UpcomingFightDetailScreen({
         {/* Title row with Add Comment / Cancel button */}
         <View style={styles.commentHeaderRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
+            <Ionicons name="chatbubbles" size={16} color={colors.textSecondary} />
+            <Text style={[styles.communitySectionTitle, { color: colors.textSecondary, marginBottom: 0 }]}>
               Comments
             </Text>
             {!preFightCommentsData?.userComment && !isEditingComment && !showCommentForm && (
@@ -1534,6 +1556,43 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+  },
+  userInputTitleContainer: {
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  yellowUnderline: {
+    width: '80%',
+    height: 2,
+    backgroundColor: '#F5C518',
+    marginTop: 4,
+    borderRadius: 1,
+  },
+  sectionDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginVertical: 20,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  communityTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  communitySectionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
   },
   headerRow: {
     flexDirection: 'row',
