@@ -114,10 +114,13 @@ export default function SettingsScreen() {
   const sendTestNotification = async () => {
     setSaving(true);
     try {
-      await apiService.sendTestNotification();
-      showSuccess('Test notification sent! Check your device.');
-    } catch (error) {
-      showError('Failed to send test notification');
+      // Use upcoming UFC Fight Night event ID
+      const eventId = '6c137e3d-c5b5-4d5b-bf07-91c01db27097';
+      await apiService.sendTestPreEventReport(eventId);
+      showSuccess('Test pre-event report sent! Check your device.');
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to send test notification';
+      showError(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -314,11 +317,14 @@ export default function SettingsScreen() {
             ) : (
               <>
                 <FontAwesome name="paper-plane" size={16} color="#fff" style={{ marginRight: 8 }} />
-                <Text style={styles.testButtonText}>Send Test Notification</Text>
+                <Text style={styles.testButtonText}>Send Test Pre-Event</Text>
               </>
             )}
           </TouchableOpacity>
           <Text style={[styles.sectionDescription, { color: colors.textSecondary, marginTop: 8 }]}>
+            Sends a test pre-event report for UFC Fight Night Tsarukyan vs. Hooker
+          </Text>
+          <Text style={[styles.sectionDescription, { color: colors.textSecondary, marginTop: 4 }]}>
             Test your notification settings
           </Text>
         </View>

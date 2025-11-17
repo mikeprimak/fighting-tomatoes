@@ -710,6 +710,13 @@ class ApiService {
     });
   }
 
+  async sendTestPreEventReport(eventId: string): Promise<void> {
+    return this.makeRequest('/notifications/test-pre-event-report', {
+      method: 'POST',
+      body: JSON.stringify({ eventId }),
+    });
+  }
+
   // Fight follow/notification methods
   async followFight(fightId: string): Promise<{ message: string; isFollowing: boolean }> {
     return this.makeRequest(`/fights/${fightId}/follow`, {
