@@ -166,8 +166,7 @@ function EventSection({ event }: { event: Event }) {
         includeUserData: isAuthenticated,
         limit: 50,
       });
-      // Sort fights by orderOnCard (highest first for reverse chronological order)
-      response.fights.sort((a: Fight, b: Fight) => b.orderOnCard - a.orderOnCard);
+      // Don't sort here - let each card section handle its own sort order
       return response;
     },
     staleTime: 5 * 60 * 1000,
@@ -236,7 +235,7 @@ function EventSection({ event }: { event: Event }) {
                     </Text>
                   </View>
                 </View>
-                {mainCard.map((fight: Fight) => (
+                {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
                   <CompletedFightCard
                     key={fight.id}
                     fight={fight}
@@ -278,7 +277,7 @@ function EventSection({ event }: { event: Event }) {
                     </Text>
                   </View>
                 </View>
-                {prelims.map((fight: Fight) => (
+                {[...prelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
                   <CompletedFightCard
                     key={fight.id}
                     fight={fight}
@@ -299,7 +298,7 @@ function EventSection({ event }: { event: Event }) {
                     </Text>
                   </View>
                 </View>
-                {earlyPrelims.map((fight: Fight) => (
+                {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
                   <CompletedFightCard
                     key={fight.id}
                     fight={fight}

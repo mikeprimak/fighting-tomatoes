@@ -58,7 +58,7 @@ export default function PredictionBarChart({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
-  // If no colors revealed, show grey outline only
+  // If no colors revealed, show grey outline only with invisible placeholders
   if (!showColors) {
     return (
       <View style={styles.container}>
@@ -71,6 +71,15 @@ export default function PredictionBarChart({
             backgroundColor: 'transparent',
           }}
         />
+        {/* Invisible placeholders to reserve space for percentage names */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+          <Text style={{ fontSize: 14, opacity: 0 }}>
+            0% {fighter1Name}
+          </Text>
+          <Text style={{ fontSize: 14, opacity: 0 }}>
+            0% {fighter2Name}
+          </Text>
+        </View>
       </View>
     );
   }
