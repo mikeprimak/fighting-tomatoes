@@ -298,7 +298,7 @@ export default function SettingsScreen() {
           </View>
 
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-            Get a notification the morning of events breaking down which fights are most hyped and whether any fighters you follow are fighting.
+            Get a notification 6 hours before events with the most hyped fights and fighters you follow.
           </Text>
         </View>
 
