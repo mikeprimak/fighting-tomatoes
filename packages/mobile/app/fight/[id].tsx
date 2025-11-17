@@ -72,14 +72,23 @@ export default function FightDetailScreen() {
   const { fight } = fightData;
   const isComplete = fight.isComplete;
 
-  const renderMenuButton = () => (
-    <TouchableOpacity
-      onPress={() => setDetailsMenuVisible(true)}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-    >
-      <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
-    </TouchableOpacity>
-  );
+  const renderMenuButton = () => {
+    // Show bell if any notification is active for this fight
+    const hasNotification = fight.isFollowing || fight.isFollowingFighter1 || fight.isFollowingFighter2 || fight.isHypedFight;
+
+    return (
+      <TouchableOpacity
+        onPress={() => setDetailsMenuVisible(true)}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
+      >
+        {hasNotification && (
+          <FontAwesome name="bell" size={18} color={colors.tint} />
+        )}
+        <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>

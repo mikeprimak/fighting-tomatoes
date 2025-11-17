@@ -980,7 +980,9 @@ export default function UpcomingFightDetailScreen({
         <View style={styles.userInputTitleRow}>
           <View style={styles.yellowSideLine} />
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            How will it end?
+            {selectedWinner
+              ? `How will ${selectedWinner === fight.fighter1Id ? fight.fighter1.lastName : fight.fighter2.lastName} win?`
+              : 'How will it end?'}
           </Text>
         </View>
         <View style={styles.methodButtons}>
