@@ -900,11 +900,11 @@ export default function UpcomingFightDetailScreen({
 
       {/* Who Do You Think Will Win? */}
       <View style={styles.sectionNoBorder}>
-        <View style={styles.userInputTitleContainer}>
+        <View style={styles.userInputTitleRow}>
+          <View style={styles.yellowSideLine} />
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Who do you think will win?
           </Text>
-          <View style={styles.yellowUnderline} />
         </View>
         <View style={styles.fighterButtons}>
           <TouchableOpacity
@@ -966,12 +966,12 @@ export default function UpcomingFightDetailScreen({
       </View>
 
       {/* How will it end? */}
-      <View style={[styles.sectionNoBorder, { marginTop: -4 }]}>
-        <View style={styles.userInputTitleContainer}>
+      <View style={[styles.sectionNoBorder, { marginTop: -20 }]}>
+        <View style={styles.userInputTitleRow}>
+          <View style={styles.yellowSideLine} />
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             How will it end?
           </Text>
-          <View style={styles.yellowUnderline} />
         </View>
         <View style={styles.methodButtons}>
           {(['KO_TKO', 'SUBMISSION', 'DECISION'] as const).map((method) => {
@@ -1002,18 +1002,18 @@ export default function UpcomingFightDetailScreen({
       </View>
 
       {/* How Hyped? */}
-      <View style={[styles.sectionNoBorder, { marginTop: -18 }]}>
-        <View style={styles.userInputTitleContainer}>
+      <View style={[styles.sectionNoBorder, { marginTop: -20 }]}>
+        <View style={styles.userInputTitleRow}>
+          <View style={styles.yellowSideLine} />
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             How hyped are you?
           </Text>
-          <View style={styles.yellowUnderline} />
         </View>
 
         {/* User's hype selection row */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: -10 }}>
           {/* User icon and hype wheel */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginLeft: 2 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 10 }}>
               <FontAwesome name="user" size={20} color={colors.textSecondary} />
             </View>
@@ -1141,16 +1141,9 @@ export default function UpcomingFightDetailScreen({
       </View>
 
       {/* Community Data */}
-      <View style={[styles.sectionNoBorder, { marginTop: 8 }]}>
-        <View style={styles.communityTitleContainer}>
-          <FontAwesome name="users" size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
-          <Text style={[styles.communitySectionTitle, { color: colors.textSecondary }]}>
-            Community Data
-          </Text>
-        </View>
-
+      <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
         {/* Community Data Layout: Left column (hype box + distribution chart) and right column (pie chart) */}
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: 0 }}>
           {/* Left column: Aggregate hype box (top) + distribution chart (bottom) */}
           <View style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
             {/* Community Hype Box */}
@@ -1205,7 +1198,7 @@ export default function UpcomingFightDetailScreen({
               <View style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                gap: 11,
+                gap: 6,
               }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <FontAwesome name="users" size={19} color={colors.textSecondary} />
@@ -1553,26 +1546,27 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 0,
   },
-  userInputTitleContainer: {
+  userInputTitleRow: {
+    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    gap: 8,
   },
-  yellowUnderline: {
-    width: '80%',
-    height: 2,
+  yellowSideLine: {
+    width: 3,
+    height: 20,
     backgroundColor: '#F5C518',
-    marginTop: 4,
-    borderRadius: 1,
+    borderRadius: 1.5,
   },
   sectionDivider: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 16,
-    marginVertical: 20,
+    marginVertical: -24,
     gap: 12,
   },
   dividerLine: {
@@ -1617,12 +1611,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   fighterButtonImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
   },
   fighterButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
   },
