@@ -8,6 +8,7 @@ import { PrismaClient } from '@prisma/client';
 import authPlugin from './middleware/auth.fastify';
 import { registerRoutes } from './routes';
 import { startBackgroundJobs, stopBackgroundJobs } from './services/backgroundJobs';
+import { initializeNotificationScheduler, stopNotificationScheduler } from './services/notificationScheduler';
 // import { startMetricsScheduler } from './services/metricsScheduler';
 // import type { ScheduledTask } from 'node-cron';
 
@@ -40,6 +41,9 @@ const gracefulShutdown = async (signal: string) => {
   try {
     // Stop background jobs
     stopBackgroundJobs();
+
+    // Stop notification scheduler
+    stopNotificationScheduler();
 
     // Stop metrics scheduler
     // if (metricsSchedulerTask) {
@@ -237,6 +241,9 @@ async function start() {
 
     // Start metrics scheduler
     // metricsSchedulerTask = startMetricsScheduler();
+
+    // Start notification scheduler (pre-event reports, etc.)
+    initializeNotificationScheduler();
 
     // Start background jobs (event completion checker, etc.)
     startBackgroundJobs();

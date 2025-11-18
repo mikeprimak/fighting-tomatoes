@@ -265,7 +265,27 @@ export async function checkAndSendPreEventReports(): Promise<void> {
   console.log(`[Pre-Event Report] Found ${upcomingEvents.length} events to send reports for`);
 
   for (const event of upcomingEvents) {
+    // Check if we already sent notifications for this event
+    const alreadySent = await prisma.sentPreEventNotification.findUnique({
+      where: { eventId: event.id },
+    });
+
+    if (alreadySent) {
+      console.log(`[Pre-Event Report] Already sent notifications for event: ${event.name}, skipping`);
+      continue;
+    }
+
     console.log(`[Pre-Event Report] Processing event: ${event.name} (${event.date})`);
-    await sendPreEventReports(event.id);
+    const result = await sendPreEventReports(event.id);
+
+    // Record that we sent notifications for this event (only if at least one was sent)
+    if (result.sent > 0) {
+      await prisma.sentPreEventNotification.create({
+        data: {
+          eventId: event.id,
+        },
+      });
+      console.log(`[Pre-Event Report] Recorded notification sent for event: ${event.name}`);
+    }
   }
 }

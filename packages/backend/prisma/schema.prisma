@@ -229,6 +229,7 @@ model Event {
   
   // Relations
   fights            Fight[]
+  sentPreEventNotifications SentPreEventNotification[]
 
   @@unique([name, date])
   @@unique([ufcUrl])
@@ -1146,4 +1147,18 @@ model UserFeedback {
   @@index([userId, createdAt])
   @@index([createdAt])
   @@map("user_feedback")
+}
+
+// ============== PRE-EVENT NOTIFICATIONS TRACKING ==============
+model SentPreEventNotification {
+  id        String   @id @default(uuid())
+
+  // Event relationship
+  eventId   String   @unique
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  // Timestamp
+  sentAt    DateTime @default(now())
+
+  @@map("sent_pre_event_notifications")
 }
