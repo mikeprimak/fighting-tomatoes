@@ -106,7 +106,10 @@ export function EventBannerCard({
             </View>
           )}
 
-          <View style={styles.dateOverlay}>
+          <View style={[
+            styles.dateOverlay,
+            !statusBadge && styles.dateOverlayRoundedLeft
+          ]}>
             <Text style={styles.dateText}>
               {formatDate(event.date, event.isComplete)}
             </Text>
@@ -166,6 +169,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 6,
     borderBottomRightRadius: 6,
     borderBottomLeftRadius: 0,
+  },
+  dateOverlayRoundedLeft: {
+    borderTopLeftRadius: 6,
+    borderBottomLeftRadius: 6,
   },
   dateText: {
     color: '#FFFFFF',
