@@ -83,7 +83,9 @@ export default function CommentsScreen() {
           ),
         };
       });
+      // Invalidate related caches
       queryClient.invalidateQueries({ queryKey: ['topComments'] });
+      queryClient.invalidateQueries({ queryKey: ['fightReviews', variables.fightId] });
     },
     onError: (err, variables, context: any) => {
       if (context?.previousComments) {

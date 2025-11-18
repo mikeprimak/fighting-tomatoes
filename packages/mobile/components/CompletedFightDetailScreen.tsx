@@ -522,6 +522,8 @@ export default function CompletedFightDetailScreen({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      // Also invalidate the top comments cache
+      queryClient.invalidateQueries({ queryKey: ['topComments'] });
     },
   });
 

@@ -182,6 +182,8 @@ export default function CommunityScreen() {
           ),
         };
       });
+      // Also invalidate the fight-specific reviews cache
+      queryClient.invalidateQueries({ queryKey: ['fightReviews', variables.fightId] });
     },
     onError: (err, variables, context: any) => {
       // Rollback on error
