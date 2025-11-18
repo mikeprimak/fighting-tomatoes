@@ -143,6 +143,66 @@ await manualCheckPreEventReports();
 - Query database: `SELECT * FROM sent_pre_event_notifications ORDER BY "sentAt" DESC;`
 - Verify no duplicates: Each eventId should appear only once
 
+## Data Scrapers
+
+### UFC Scraper
+**Status**: ✅ Complete - Daily automated scraper
+**File**: `services/scrapeAllUFCData.js`
+
+**Features**:
+- Scrapes `ufc.com/events` for upcoming events
+- Extracts fight cards with fighter details (names, ranks, countries, odds)
+- Downloads event banners and fighter headshots
+- Saves to `scraped-data/` (events, athletes JSON)
+- Images stored in `public/images/events/` and `public/images/athletes/`
+
+**Data Extracted**:
+- Events: name, date, venue, location, banner image
+- Fights: weight class, title status, card type (Main/Prelims/Early), start times
+- Fighters: names, records, ranks, countries, headshot URLs, athlete page URLs
+
+**Automation**: Runs daily at 12pm EST via cron job
+
+### ONE FC Scraper
+**Status**: ✅ Complete - Manual/automated scraper
+**File**: `services/scrapeAllOneFCData.js`
+
+**Features**:
+- Scrapes `onefc.com/events` for upcoming events
+- Extracts fight cards from event detail pages
+- Downloads athlete images and event banners
+- Saves to `scraped-data/onefc/` (events, athletes JSON)
+- Images stored in `public/images/events/onefc/` and `public/images/athletes/onefc/`
+
+**Data Extracted**:
+- Events: name, date/timestamp, venue, city, country, banner image
+- Fights: weight class, discipline (MMA/Muay Thai/Kickboxing/Grappling), championship status
+- Fighters: names, records (W-L-D), profile images, athlete page URLs
+
+**Key Differences from UFC**:
+- Event selectors: `.simple-post-card.is-event` (vs `.l-listing__item`)
+- Fight structure: `.event-matchup` with `.versus` text format
+- No prelims split: All fights on "Main Card"
+- Weight class includes discipline: "Bantamweight MMA", "Featherweight Muay Thai"
+- Timestamp-based dates: Unix timestamps provided directly
+
+**Usage**:
+```bash
+# Manual run
+cd packages/backend && node src/services/scrapeAllOneFCData.js
+
+# Automated mode (faster)
+SCRAPER_MODE=automated node src/services/scrapeAllOneFCData.js
+```
+
+**Output Structure**:
+- `scraped-data/onefc/events-{timestamp}.json`
+- `scraped-data/onefc/athletes-{timestamp}.json`
+- `scraped-data/onefc/latest-events.json` (always current)
+- `scraped-data/onefc/latest-athletes.json` (always current)
+
+**Test Results**: Successfully scraped 8 events, 10 fights, 20 athletes in 115s
+
 ## Recent Features
 
 ### Search (Nov 2025)

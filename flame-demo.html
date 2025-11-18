@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flame Icon Demo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .demo-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #2a2a2a;
+            border-radius: 8px;
+        }
+        .flame-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .flame-icon {
+            font-size: 28px;
+        }
+        .label {
+            font-weight: bold;
+            min-width: 150px;
+        }
+        h2 {
+            color: #F5C518;
+        }
+        .comparison {
+            display: flex;
+            gap: 40px;
+            margin-top: 30px;
+        }
+        .comparison-box {
+            flex: 1;
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .star-demo {
+            display: flex;
+            gap: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Flame & Star Icon Comparison</h1>
+
+    <div class="demo-section">
+        <h2>Flame Icons (fire-flame-curved)</h2>
+
+        <div class="flame-row">
+            <span class="label">Solid (Full):</span>
+            <i class="fa-solid fa-fire-flame-curved flame-icon" style="color: #ff6b35;"></i>
+            <span>← This is what you're seeing for "full" flames</span>
+        </div>
+
+        <div class="flame-row">
+            <span class="label">Regular (Outline):</span>
+            <i class="fa-regular fa-fire-flame-curved flame-icon" style="color: #ff6b35;"></i>
+            <span>← This should be "half" flame but looks the same!</span>
+        </div>
+
+        <div class="flame-row">
+            <span class="label">Regular at 60% opacity:</span>
+            <i class="fa-regular fa-fire-flame-curved flame-icon" style="color: #ff6b35; opacity: 0.6;"></i>
+            <span>← Possible workaround for "half"</span>
+        </div>
+
+        <div class="flame-row">
+            <span class="label">Empty (gray):</span>
+            <i class="fa-regular fa-fire-flame-curved flame-icon" style="color: #808080;"></i>
+            <span>← Empty flame</span>
+        </div>
+    </div>
+
+    <div class="demo-section">
+        <h2>Star Icons (for comparison - stars HAVE half version)</h2>
+
+        <div class="flame-row">
+            <span class="label">Full Star:</span>
+            <i class="fa-solid fa-star flame-icon" style="color: #ff6b35;"></i>
+            <span>← Fully filled</span>
+        </div>
+
+        <div class="flame-row">
+            <span class="label">Half Star:</span>
+            <i class="fa-regular fa-star-half-stroke flame-icon" style="color: #ff6b35;"></i>
+            <span>← TRUE half-filled (left side filled)</span>
+        </div>
+
+        <div class="flame-row">
+            <span class="label">Empty Star:</span>
+            <i class="fa-regular fa-star flame-icon" style="color: #808080;"></i>
+            <span>← Empty outline</span>
+        </div>
+    </div>
+
+    <div class="comparison">
+        <div class="comparison-box">
+            <h2>Current Problem: Rating 7.5</h2>
+            <h3>Stars (Working Correctly):</h3>
+            <div class="star-demo">
+                <i class="fa-solid fa-star" style="color: #ff3b30; font-size: 28px;"></i>
+                <i class="fa-solid fa-star" style="color: #ff4d40; font-size: 28px;"></i>
+                <i class="fa-solid fa-star" style="color: #ff5f50; font-size: 28px;"></i>
+                <i class="fa-solid fa-star" style="color: #ff7160; font-size: 28px;"></i>
+                <i class="fa-solid fa-star" style="color: #ff8370; font-size: 28px;"></i>
+                <i class="fa-solid fa-star" style="color: #ff9580; font-size: 28px;"></i>
+                <i class="fa-solid fa-star" style="color: #ffa790; font-size: 28px;"></i>
+                <i class="fa-regular fa-star-half-stroke" style="color: #ffb9a0; font-size: 28px;"></i>
+                <i class="fa-regular fa-star" style="color: #808080; font-size: 28px;"></i>
+                <i class="fa-regular fa-star" style="color: #808080; font-size: 28px;"></i>
+            </div>
+            <p>7 full + 1 HALF + 2 empty = 7.5 ✓</p>
+
+            <h3>Flames (NOT Working - no half icon exists):</h3>
+            <div class="star-demo">
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ff3b30; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ff4d40; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ff5f50; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ff7160; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ff8370; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ff9580; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ffa790; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ffb9a0; font-size: 28px;"></i>
+                <i class="fa-regular fa-fire-flame-curved" style="color: #808080; font-size: 28px;"></i>
+                <i class="fa-regular fa-fire-flame-curved" style="color: #808080; font-size: 28px;"></i>
+            </div>
+            <p>Shows 8 full flames (WRONG) - "regular" looks same as "solid"</p>
+        </div>
+
+        <div class="comparison-box">
+            <h2>Proposed Solution: Use Opacity</h2>
+            <h3>Flames with opacity for half:</h3>
+            <div class="star-demo">
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ff3b30; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ff4d40; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ff5f50; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ff7160; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ff8370; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ff9580; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ffa790; font-size: 28px;"></i>
+                <i class="fa-solid fa-fire-flame-curved" style="color: #ffb9a0; font-size: 28px; opacity: 0.5;"></i>
+                <i class="fa-regular fa-fire-flame-curved" style="color: #808080; font-size: 28px;"></i>
+                <i class="fa-regular fa-fire-flame-curved" style="color: #808080; font-size: 28px;"></i>
+            </div>
+            <p>7 full + 1 at 50% opacity + 2 empty = visually 7.5 ✓</p>
+        </div>
+    </div>
+
+</body>
+</html>

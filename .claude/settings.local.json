@@ -39,7 +39,10 @@
       "Bash(npm --version:*)",
       "Bash(git restore:*)",
       "Bash(copy:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(node:*)",
+      "Bash(echo:*)",
+      "Bash(src/server.ts)"
     ],
     "deny": [],
     "ask": []

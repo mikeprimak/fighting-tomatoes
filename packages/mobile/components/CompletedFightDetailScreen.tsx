@@ -826,10 +826,22 @@ export default function CompletedFightDetailScreen({
         }}
       >
 
+        {/* My Rating Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 15 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0 }}>
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              My Rating
+            </Text>
+          </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
         {/* Inline Rating Section */}
-        <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 0 }]}>
-          <View style={styles.headerRow}>
-            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Rate This Fight</Text>
+        <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 20 }]}>
+          <View style={styles.userInputTitleRow}>
+            <View style={styles.yellowSideLine} />
+            <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>Rate This Fight</Text>
           </View>
 
           {/* Large display star with wheel animation */}
@@ -2472,5 +2484,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  sectionDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginVertical: -24,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  userInputTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    gap: 8,
+  },
+  yellowSideLine: {
+    width: 3,
+    height: 20,
+    backgroundColor: '#F5C518',
+    borderRadius: 1.5,
   },
 });
