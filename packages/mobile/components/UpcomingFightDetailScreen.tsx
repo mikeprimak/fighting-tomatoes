@@ -645,6 +645,8 @@ export default function UpcomingFightDetailScreen({
           comments: updatedComments,
         };
       });
+      // Also invalidate the top pre-flight comments cache
+      queryClient.invalidateQueries({ queryKey: ['topPreFightComments'] });
     },
     onError: (err: any, commentId, context: any) => {
       // Rollback on error

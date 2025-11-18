@@ -84,7 +84,9 @@ export default function PreFightCommentsScreen() {
           ),
         };
       });
+      // Invalidate related caches
       queryClient.invalidateQueries({ queryKey: ['topPreFightComments'] });
+      queryClient.invalidateQueries({ queryKey: ['preFightComments', variables.fightId] });
     },
     onError: (err, variables, context: any) => {
       if (context?.previousComments) {
@@ -199,6 +201,7 @@ export default function PreFightCommentsScreen() {
           renderItem={({ item }) => (
             <PreFightCommentCard
               comment={item}
+              onPress={() => router.push(`/fight/${item.fight.id}` as any)}
               onUpvote={() => upvoteMutation.mutate({ fightId: item.fight.id, commentId: item.id })}
               onFlag={() => handleFlagComment(item.fight.id, item.id)}
               isUpvoting={upvotingCommentId === item.id}

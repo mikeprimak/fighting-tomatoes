@@ -241,6 +241,8 @@ export default function CommunityScreen() {
           ),
         };
       });
+      // Also invalidate the fight-specific pre-flight comments cache
+      queryClient.invalidateQueries({ queryKey: ['preFightComments', variables.fightId] });
     },
     onError: (err, variables, context: any) => {
       // Rollback on error
@@ -793,6 +795,7 @@ export default function CommunityScreen() {
               <PreFightCommentCard
                 key={comment.id}
                 comment={comment}
+                onPress={() => router.push(`/fight/${comment.fight.id}` as any)}
                 onUpvote={() => upvotePreFightCommentMutation.mutate({ fightId: comment.fight.id, commentId: comment.id })}
                 isUpvoting={upvotingCommentId === comment.id}
                 isAuthenticated={isAuthenticated}

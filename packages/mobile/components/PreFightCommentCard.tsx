@@ -14,7 +14,14 @@ interface PreFightCommentCardProps {
     user: {
       displayName: string;
     };
+    fight?: {
+      id: string;
+      fighter1Name: string;
+      fighter2Name: string;
+      eventName: string;
+    };
   };
+  onPress?: () => void;
   onUpvote?: () => void;
   onFlag?: () => void;
   onEdit?: () => void;
@@ -26,6 +33,7 @@ interface PreFightCommentCardProps {
 
 export function PreFightCommentCard({
   comment,
+  onPress,
   onUpvote,
   onFlag,
   onEdit,
@@ -38,17 +46,23 @@ export function PreFightCommentCard({
   const colors = Colors[colorScheme ?? 'light'];
 
   return (
-    <View
+    <TouchableOpacity
       style={[
         styles.commentCard,
         { backgroundColor: colors.background, borderColor: colors.border },
       ]}
+      onPress={onPress}
+      disabled={!onPress}
+      activeOpacity={onPress ? 0.7 : 1}
     >
       <View style={styles.commentContainer}>
         {/* Left side: Upvote button */}
         <TouchableOpacity
           style={styles.upvoteButton}
-          onPress={onUpvote}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            onUpvote?.();
+          }}
           disabled={!isAuthenticated || isUpvoting || !onUpvote}
         >
           <FontAwesome
@@ -84,7 +98,10 @@ export function PreFightCommentCard({
               )}
               {showMyComment && onEdit && (
                 <TouchableOpacity
-                  onPress={onEdit}
+                  onPress={(e) => {
+                    e?.stopPropagation?.();
+                    onEdit?.();
+                  }}
                   style={styles.editButton}
                 >
                   <FontAwesome
@@ -99,7 +116,10 @@ export function PreFightCommentCard({
               )}
               {onFlag && !showMyComment && (
                 <TouchableOpacity
-                  onPress={onFlag}
+                  onPress={(e) => {
+                    e?.stopPropagation?.();
+                    onFlag?.();
+                  }}
                   disabled={!isAuthenticated || isFlagging}
                   style={styles.flagButton}
                 >
@@ -117,9 +137,23 @@ export function PreFightCommentCard({
           <Text style={[styles.commentContent, { color: colors.textSecondary }]}>
             {comment.content}
           </Text>
+
+          {/* Fight info at bottom */}
+          <View style={styles.fightInfo}>
+            {comment.fight && (
+              <>
+                <Text style={[styles.fightText, { color: colors.textSecondary }]}>
+                  {comment.fight.fighter1Name} vs {comment.fight.fighter2Name}
+                </Text>
+                <Text style={[styles.eventText, { color: colors.textSecondary }]}>
+                  {comment.fight.eventName}
+                </Text>
+              </>
+            )}
+          </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -180,6 +214,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 12,
+  },
+  fightInfo: {
+    gap: 2,
+    marginBottom: 8,
+    alignItems: 'flex-end',
+  },
+  fightText: {
+    fontSize: 12,
+    textAlign: 'right',
+  },
+  eventText: {
+    fontSize: 12,
+    textAlign: 'right',
   },
   upvoteButton: {
     flexDirection: 'column',
