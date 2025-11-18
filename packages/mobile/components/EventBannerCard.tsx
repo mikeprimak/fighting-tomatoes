@@ -176,8 +176,8 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   name: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
   },
   statusBadgeText: {
     color: '#FFFFFF',
