@@ -99,9 +99,18 @@ export function addNotificationReceivedListener(
   return Notifications.addNotificationReceivedListener(callback);
 }
 
+/**
+ * Get the last notification response (for app opened via notification)
+ */
+export async function getLastNotificationResponseAsync() {
+  initializeNotifications();
+  return await Notifications.getLastNotificationResponseAsync();
+}
+
 export const notificationService = {
   requestNotificationPermissions,
   registerPushToken,
   addNotificationResponseListener,
   addNotificationReceivedListener,
+  getLastNotificationResponseAsync,
 };

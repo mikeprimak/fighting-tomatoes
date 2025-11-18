@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,10 +13,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { FightDisplayCard, EventBannerCard } from '../../../components';
 import { useAuth } from '../../../store/AuthContext';
+import { useNotification } from '../../../store/NotificationContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 interface Event {
@@ -55,17 +57,26 @@ export default function UpcomingEventsScreen() {
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
-  const params = useLocalSearchParams();
+  const { preEventMessage, setPreEventMessage } = useNotification();
 
-  // State for notification banner
-  const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
+  // Check AsyncStorage for pending notification message on mount
+  useEffect(() => {
+    const checkPendingMessage = async () => {
+      try {
+        const pendingMessage = await AsyncStorage.getItem('pendingPreEventMessage');
+        if (pendingMessage) {
+          console.log('[Events Screen] Found pending message from AsyncStorage:', pendingMessage);
+          setPreEventMessage(pendingMessage);
+          // Clear it from storage after reading
+          await AsyncStorage.removeItem('pendingPreEventMessage');
+        }
+      } catch (error) {
+        console.error('[Events Screen] Error checking AsyncStorage:', error);
+      }
+    };
 
-  // Check for pre-event notification params
-  React.useEffect(() => {
-    if (params.preEventMessage && typeof params.preEventMessage === 'string') {
-      setNotificationMessage(params.preEventMessage);
-    }
-  }, [params.preEventMessage]);
+    checkPendingMessage();
+  }, [setPreEventMessage]);
 
   // Refetch fight data when screen comes into focus
   useFocusEffect(
@@ -248,17 +259,17 @@ export default function UpcomingEventsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Pre-Event Notification Banner */}
-        {notificationMessage && (
+        {preEventMessage && (
           <View style={[styles.notificationBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
             <View style={styles.notificationIconContainer}>
               <FontAwesome name="bell" size={20} color={colors.primary} />
             </View>
             <Text style={[styles.notificationText, { color: colors.text }]}>
-              {notificationMessage}
+              {preEventMessage}
             </Text>
             <TouchableOpacity
               style={styles.dismissButton}
-              onPress={() => setNotificationMessage(null)}
+              onPress={() => setPreEventMessage(null)}
             >
               <FontAwesome name="times" size={18} color={colors.textSecondary} />
             </TouchableOpacity>
