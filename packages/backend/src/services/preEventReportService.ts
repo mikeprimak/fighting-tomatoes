@@ -71,14 +71,14 @@ async function generatePreEventReport(
   // Calculate average hype for each fight from predictions
   const fightsWithHype = await Promise.all(
     event.fights.map(async (fight) => {
-      const hypePredictions = await prisma.userHypePrediction.findMany({
+      const hypePredictions = await prisma.userPrediction.findMany({
         where: { fightId: fight.id },
         select: { hypeScore: true },
       });
 
       const averageHype =
         hypePredictions.length > 0
-          ? hypePredictions.reduce((sum, p) => sum + p.hypeScore, 0) /
+          ? hypePredictions.reduce((sum: number, p: any) => sum + (p.hypeScore || 0), 0) /
             hypePredictions.length
           : 0;
 
