@@ -82,27 +82,25 @@ export default function ProfileScreen() {
   const styles = createStyles(colors);
 
   // Render star rating display (out of 10) with heatmap colors
+  // Rounds to nearest whole number
   const renderStarRating = (rating: number) => {
     const stars = [];
     const maxStars = 10;
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
+    const fullStars = Math.round(rating);
 
     for (let i = 0; i < maxStars; i++) {
       const starValue = i + 1;
       const starColor = getHypeHeatmapColor(starValue);
 
       if (i < fullStars) {
+        // Full star
         stars.push(
           <FontAwesome key={i} name="star" size={28} color={starColor} />
         );
-      } else if (i === fullStars && hasHalfStar) {
-        stars.push(
-          <FontAwesome key={i} name="star-half-o" size={28} color={starColor} />
-        );
       } else {
+        // Empty star
         stars.push(
-          <FontAwesome key={i} name="star-o" size={28} color={colors.textSecondary} style={{ opacity: 0.3 }} />
+          <FontAwesome key={i} name="star-o" size={28} color={colors.textSecondary} />
         );
       }
     }
@@ -110,22 +108,25 @@ export default function ProfileScreen() {
   };
 
   // Render flame hype display (out of 10) with heatmap colors
+  // Rounds to nearest whole number
   const renderFlameRating = (rating: number) => {
     const flames = [];
     const maxFlames = 10;
-    const fullFlames = Math.floor(rating);
+    const fullFlames = Math.round(rating);
 
     for (let i = 0; i < maxFlames; i++) {
       const flameValue = i + 1;
       const flameColor = getHypeHeatmapColor(flameValue);
 
       if (i < fullFlames) {
+        // Full flame
         flames.push(
           <FontAwesome6 key={i} name="fire-flame-curved" size={28} color={flameColor} solid />
         );
       } else {
+        // Empty flame
         flames.push(
-          <FontAwesome6 key={i} name="fire-flame-curved" size={28} color={colors.textSecondary} style={{ opacity: 0.3 }} />
+          <FontAwesome6 key={i} name="fire-flame-curved" size={28} color={colors.textSecondary} />
         );
       }
     }
