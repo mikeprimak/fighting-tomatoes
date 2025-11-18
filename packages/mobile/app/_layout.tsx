@@ -71,10 +71,21 @@ function RootLayoutNav() {
   useEffect(() => {
     const subscription = notificationService.addNotificationResponseListener((response) => {
       const data = response.notification.request.content.data;
+      const body = response.notification.request.content.body;
       console.log('Notification tapped:', data);
 
       // Navigate based on notification data
-      if (data.screen === 'community') {
+      if (data.type === 'preEventReport') {
+        // Store notification data in query params for events screen to display
+        router.push({
+          pathname: '/(tabs)/events',
+          params: {
+            preEventMessage: body,
+            eventId: data.eventId,
+            eventName: data.eventName,
+          }
+        });
+      } else if (data.screen === 'community') {
         router.push('/(tabs)/community');
       } else if (data.fightId) {
         router.push(`/fight/${data.fightId}`);

@@ -210,6 +210,8 @@ export async function sendPreEventReports(eventId: string): Promise<{
         data: {
           type: 'preEventReport',
           eventId,
+          eventName: reportData.eventName,
+          screen: 'events', // Navigate to events screen
         },
       });
 

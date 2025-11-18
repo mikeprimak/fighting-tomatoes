@@ -7,11 +7,12 @@ import {
   StyleSheet,
   Image,
   StatusBar,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { FightDisplayCard, EventBannerCard } from '../../../components';
@@ -54,6 +55,17 @@ export default function UpcomingEventsScreen() {
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const params = useLocalSearchParams();
+
+  // State for notification banner
+  const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
+
+  // Check for pre-event notification params
+  React.useEffect(() => {
+    if (params.preEventMessage && typeof params.preEventMessage === 'string') {
+      setNotificationMessage(params.preEventMessage);
+    }
+  }, [params.preEventMessage]);
 
   // Refetch fight data when screen comes into focus
   useFocusEffect(
@@ -235,6 +247,24 @@ export default function UpcomingEventsScreen() {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
+        {/* Pre-Event Notification Banner */}
+        {notificationMessage && (
+          <View style={[styles.notificationBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+            <View style={styles.notificationIconContainer}>
+              <FontAwesome name="bell" size={20} color={colors.primary} />
+            </View>
+            <Text style={[styles.notificationText, { color: colors.text }]}>
+              {notificationMessage}
+            </Text>
+            <TouchableOpacity
+              style={styles.dismissButton}
+              onPress={() => setNotificationMessage(null)}
+            >
+              <FontAwesome name="times" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {upcomingEvents.map((event: Event, index: number) => (
           <EventSection
             key={event.id}
@@ -508,6 +538,29 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  notificationBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+  },
+  notificationIconContainer: {
+    marginTop: 2,
+  },
+  notificationText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  dismissButton: {
+    padding: 4,
+    marginTop: -2,
   },
   eventSection: {
     marginBottom: 32,
