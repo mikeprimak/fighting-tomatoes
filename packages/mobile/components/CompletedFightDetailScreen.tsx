@@ -95,6 +95,9 @@ interface Fight {
 interface CompletedFightDetailScreenProps {
   fight: Fight;
   onRatingSuccess?: () => void;
+  renderMenuButton?: () => React.ReactNode;
+  detailsMenuVisible?: boolean;
+  setDetailsMenuVisible?: (visible: boolean) => void;
 }
 
 // Comprehensive fight descriptors organized by rating tiers (from RateFightModal)
@@ -268,7 +271,13 @@ const getFighterPlaceholderImage = (fighterId: string) => {
   return images[index];
 };
 
-export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: CompletedFightDetailScreenProps) {
+export default function CompletedFightDetailScreen({
+  fight,
+  onRatingSuccess,
+  renderMenuButton,
+  detailsMenuVisible: externalDetailsMenuVisible,
+  setDetailsMenuVisible: externalSetDetailsMenuVisible
+}: CompletedFightDetailScreenProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
@@ -280,7 +289,12 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
   const [animateMyRating, setAnimateMyRating] = useState(false);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [reviewToFlag, setReviewToFlag] = useState<string | null>(null);
-  const [detailsMenuVisible, setDetailsMenuVisible] = useState(false);
+
+  // Use external state if provided, otherwise use internal state
+  const [internalDetailsMenuVisible, setInternalDetailsMenuVisible] = useState(false);
+  const detailsMenuVisible = externalDetailsMenuVisible !== undefined ? externalDetailsMenuVisible : internalDetailsMenuVisible;
+  const setDetailsMenuVisible = externalSetDetailsMenuVisible || setInternalDetailsMenuVisible;
+
   const [predictionTab, setPredictionTab] = useState<'mine' | 'community'>('mine');
   const [commentsTab, setCommentsTab] = useState<'postfight' | 'prefight'>('postfight');
   const [hasLocallyRevealed, setHasLocallyRevealed] = useState(false);
@@ -814,12 +828,6 @@ export default function CompletedFightDetailScreen({ fight, onRatingSuccess }: C
         <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 0 }]}>
           <View style={styles.headerRow}>
             <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Rate This Fight</Text>
-            <TouchableOpacity
-              onPress={() => setDetailsMenuVisible(true)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
           </View>
 
           {/* Large display star with wheel animation */}

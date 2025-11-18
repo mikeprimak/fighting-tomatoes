@@ -73,8 +73,8 @@ export default function FightDetailScreen() {
   const isComplete = fight.isComplete;
 
   const renderMenuButton = () => {
-    // Show bell if any notification is active for this fight
-    const hasNotification = fight.isFollowing || fight.isFollowingFighter1 || fight.isFollowingFighter2 || fight.isHypedFight;
+    // Show bell only for upcoming fights if any notification is active
+    const hasNotification = !isComplete && (fight.isFollowing || fight.isFollowingFighter1 || fight.isFollowingFighter2 || fight.isHypedFight);
 
     return (
       <TouchableOpacity
@@ -94,12 +94,18 @@ export default function FightDetailScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
       <DetailScreenHeader
         title={fight ? `${fight.fighter1.lastName} vs ${fight.fighter2.lastName}` : 'Fight Details'}
-        rightIcon={!isComplete ? renderMenuButton() : undefined}
+        rightIcon={renderMenuButton()}
       />
 
       {/* Route to appropriate component based on fight state */}
       {isComplete ? (
-        <CompletedFightDetailScreen fight={fight} onRatingSuccess={handleSuccess} />
+        <CompletedFightDetailScreen
+          fight={fight}
+          onRatingSuccess={handleSuccess}
+          renderMenuButton={renderMenuButton}
+          detailsMenuVisible={detailsMenuVisible}
+          setDetailsMenuVisible={setDetailsMenuVisible}
+        />
       ) : (
         <UpcomingFightDetailScreen
           fight={fight}
