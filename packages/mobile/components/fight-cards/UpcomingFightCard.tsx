@@ -465,7 +465,7 @@ export default function UpcomingFightCard({
             )}
           </View>
 
-          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -15 : 2 }]}>
+          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -18 : 2 }]}>
             {/* Fighter names with centered "vs" */}
             <View style={styles.fighterNamesContainer}>
               {/* Fighter 1 - Left half */}
@@ -555,7 +555,7 @@ export default function UpcomingFightCard({
               <Text
                 style={{
                   position: 'absolute',
-                  bottom: -16,
+                  bottom: -19,
                   left: 0,
                   right: 0,
                   color: colors.textSecondary,
