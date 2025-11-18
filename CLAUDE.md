@@ -92,6 +92,57 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 
 **Files**: `android/app/build.gradle`, `android/build.gradle`, `routes/notifications.ts`
 
+### Automated Pre-Event Notification Scheduler
+**Status**: ✅ Complete - Hourly cron job with deduplication tracking
+
+**How It Works**:
+1. **Hourly Check**: Cron job runs every hour at :00 minutes (e.g., 1:00, 2:00, 3:00)
+2. **Time Window**: Looks for events starting between 5-6 hours from current time
+3. **Deduplication**: Checks `SentPreEventNotification` table to prevent re-sending
+4. **Send Reports**: For each qualifying event (not already sent):
+   - Finds all users with active "Pre-Event Report" notification rules
+   - Generates personalized report (hyped fights + followed fighters)
+   - Sends push notification with deep link to events screen
+   - Records send in database to prevent duplicates
+5. **Lifecycle**: Initializes on server startup, stops gracefully on shutdown
+
+**Database Schema**:
+- `SentPreEventNotification`: Tracks sent notifications
+  - `id` (UUID), `eventId` (unique), `sentAt` (timestamp)
+  - Foreign key cascade: deletes when parent event is removed
+  - Migration: `20251117000000_add_sent_pre_event_notifications`
+
+**Key Implementation Details**:
+- **Cron Pattern**: `'0 * * * *'` = At minute 0 of every hour
+- **5-6 Hour Window**: Events between 5-6 hours qualify (ensures one send per event)
+- **Deduplication**: `prisma.sentPreEventNotification.findUnique({ where: { eventId } })`
+- **Recording Sends**: Only records if `result.sent > 0` (at least one notification sent)
+- **Log Messages**:
+  - Startup: `[Notification Scheduler] Initialized - will check for pre-event reports every hour`
+  - Hourly: `[Pre-Event Report] Checking for events starting between [time1] and [time2]`
+  - Skip: `[Pre-Event Report] Already sent notifications for event: [name], skipping`
+
+**Key Files**:
+- `services/notificationScheduler.ts`: Cron job management, initialization/shutdown
+- `services/preEventReportService.ts:242-291`: `checkAndSendPreEventReports()` function
+- `server.ts:246`: Scheduler initialization on startup
+- `server.ts:46`: Scheduler shutdown on SIGTERM/SIGINT
+- `prisma/schema.prisma:1152-1164`: SentPreEventNotification model
+
+**Dependencies**: `node-cron` (^3.0.3), `@types/node-cron` (^3.0.11)
+
+**Manual Testing**:
+```javascript
+// In server.ts or via API endpoint:
+import { manualCheckPreEventReports } from './services/notificationScheduler';
+await manualCheckPreEventReports();
+```
+
+**Monitoring**:
+- Check server logs for hourly execution messages
+- Query database: `SELECT * FROM sent_pre_event_notifications ORDER BY "sentAt" DESC;`
+- Verify no duplicates: Each eventId should appear only once
+
 ## Recent Features
 
 ### Search (Nov 2025)
