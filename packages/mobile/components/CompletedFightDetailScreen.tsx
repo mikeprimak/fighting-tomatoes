@@ -321,7 +321,7 @@ export default function CompletedFightDetailScreen({
 
   // Animation values for wheel animation (large star display) - Initialize based on existing rating
   const wheelAnimation = useRef(new Animated.Value(
-    fight.userRating ? (10 - fight.userRating) * 120 : 1200
+    fight.userRating ? (10 - fight.userRating) * 52 : 520
   )).current;
   const starColorAnimation = useRef(new Animated.Value(fight.userRating ? 1 : 0)).current;
 
@@ -659,7 +659,7 @@ export default function CompletedFightDetailScreen({
   const animateToNumber = (targetNumber: number) => {
     wheelAnimation.stopAnimation();
 
-    const targetPosition = targetNumber === 0 ? 1200 : (10 - targetNumber) * 120;
+    const targetPosition = targetNumber === 0 ? 520 : (10 - targetNumber) * 52;
 
     Animated.timing(wheelAnimation, {
       toValue: targetPosition,
@@ -844,73 +844,78 @@ export default function CompletedFightDetailScreen({
             <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>Rate This Fight</Text>
           </View>
 
-          {/* Large display star with wheel animation */}
-          <View style={styles.displayStarContainer}>
-            <View style={styles.animatedStarContainer}>
-              <View style={{ position: 'relative', marginTop: 24 }}>
-                {/* Display star with heatmap color */}
-                <FontAwesome
-                  name="star"
-                  size={80}
-                  color={rating > 0 ? getHypeHeatmapColor(rating) : '#666666'}
-                />
+          {/* User's rating selection row */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: -10 }}>
+            {/* User icon and rating box */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginLeft: 2 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 10 }}>
+                <FontAwesome name="user" size={20} color={colors.textSecondary} />
               </View>
-              <View style={styles.wheelContainer}>
-                <Animated.View style={[
-                  styles.wheelNumbers,
-                  {
-                    transform: [{
-                      translateY: wheelAnimation.interpolate({
-                        inputRange: [0, 1200],
-                        outputRange: [475, -725],
-                      })
-                    }]
-                  }
-                ]}>
-                  {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => (
-                    <Text key={number} style={[styles.wheelNumber, { color: colors.text }]}>
-                      {number}
-                    </Text>
-                  ))}
-                </Animated.View>
+              <View style={[styles.displayFlameContainer, { marginTop: 10 }]}>
+                <View style={styles.animatedFlameContainer}>
+                  <View style={styles.wheelContainer} pointerEvents="none">
+                    <Animated.View style={[
+                      styles.wheelNumbers,
+                      {
+                        transform: [{
+                          translateY: wheelAnimation.interpolate({
+                            inputRange: [0, 520],
+                            outputRange: [156, -364],
+                          })
+                        }]
+                      }
+                    ]}>
+                      {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
+                        const ratingColor = getHypeHeatmapColor(number);
+                        const flameColor = getFlameColor(ratingColor, colors.background);
 
-                {/* Smooth top gradient fade */}
-                <LinearGradient
-                  colors={[colors.background, `${colors.background}DD`, `${colors.background}99`, `${colors.background}44`, 'transparent']}
-                  style={[styles.fadeOverlay, { top: -3, height: 38 }]}
-                  pointerEvents="none"
-                />
-
-                {/* Smooth bottom gradient fade */}
-                <LinearGradient
-                  colors={['transparent', `${colors.background}44`, `${colors.background}99`, `${colors.background}DD`, colors.background, colors.background]}
-                  style={[styles.fadeOverlay, { bottom: -12, height: 25 }]}
-                  pointerEvents="none"
-                />
+                        return (
+                          <View key={number} style={styles.wheelBoxContainer}>
+                            <View style={[
+                              styles.wheelBox,
+                              { backgroundColor: ratingColor }
+                            ]}>
+                              <FontAwesome
+                                name="star"
+                                size={24}
+                                color={flameColor}
+                                style={{ position: 'absolute' }}
+                              />
+                              <Text style={styles.wheelBoxText}>{number}</Text>
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </Animated.View>
+                  </View>
+                </View>
               </View>
             </View>
-          </View>
 
-          {/* Star Rating (1-10) */}
-          <View style={styles.inlineStarContainer}>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
-              const isSelected = level <= rating;
-              const starColor = isSelected ? getHypeHeatmapColor(level) : '#666666';
+            {/* Row of selectable stars (1-10) */}
+            <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: -12, marginTop: -5 }]}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
+                const isSelected = level <= rating;
+                const starColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
 
-              return (
-                <TouchableOpacity
-                  key={level}
-                  onPress={() => handleSetRating(level)}
-                  style={styles.inlineStarButton}
-                >
-                  <FontAwesome
-                    name="star"
-                    size={32}
-                    color={starColor}
-                  />
-                </TouchableOpacity>
-              );
-            })}
+                return (
+                  <TouchableOpacity
+                    key={level}
+                    onPress={() => handleSetRating(level)}
+                    style={styles.flameButton}
+                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                  >
+                    <View style={{ width: 26, alignItems: 'center' }}>
+                      <FontAwesome
+                        name={isSelected ? "star" : "star-o"}
+                        size={26}
+                        color={starColor}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
 
           {/* Tags */}
@@ -2225,11 +2230,7 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   wheelContainer: {
-    position: 'absolute',
-    top: 20,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -2249,6 +2250,45 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
     minWidth: 120,
+  },
+  wheelBoxContainer: {
+    height: 52,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wheelBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  wheelBoxText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  displayFlameContainer: {
+    alignItems: 'center',
+    marginBottom: 1,
+    marginTop: -23,
+    paddingBottom: 10,
+  },
+  animatedFlameContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 52,
+  },
+  flameContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    marginTop: -15,
+  },
+  flameButton: {
+    padding: 2,
   },
   fadeOverlay: {
     position: 'absolute',
