@@ -608,6 +608,8 @@ class ApiService {
     }>;
     userHypeScore: number | null;
     communityAverageHype: number | null;
+    hypeDistribution: Record<number, number>;
+    ratingDistribution: Record<number, number>;
   }> {
     const result = await this.makeRequest<any>(`/fights/${fightId}/aggregate-stats`);
 

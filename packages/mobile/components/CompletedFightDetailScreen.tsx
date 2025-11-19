@@ -21,7 +21,7 @@ import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { getHypeHeatmapColor, getFlameColor } from '../utils/heatmap';
-import { FlagReviewModal, CommentCard } from '.';
+import { FlagReviewModal, CommentCard, RatingDistributionChart } from '.';
 import { useAuth } from '../store/AuthContext';
 import { usePredictionAnimation } from '../store/PredictionAnimationContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
@@ -504,7 +504,7 @@ export default function CompletedFightDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightTags', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
-      queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] }); // This fetches both prediction and aggregate stats
       queryClient.invalidateQueries({ queryKey: ['eventFights', fight.event.id] });
       queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });
       onRatingSuccess?.();
@@ -917,8 +917,138 @@ export default function CompletedFightDetailScreen({
               })}
             </View>
           </View>
+        </View>
 
-          {/* Tags */}
+        {/* Community Rating Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: -34 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0 }}>
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              Community Rating
+            </Text>
+          </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
+        {/* Community Rating Data */}
+        <View style={[styles.sectionNoBorder, { marginTop: 16 }]}>
+          {/* Community Rating Layout: Horizontal */}
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 0 }}>
+            {/* Community Rating Box */}
+            {(() => {
+              const ratingColor = fight.averageRating > 0
+                ? getHypeHeatmapColor(Math.round(fight.averageRating))
+                : colors.border;
+
+              // Mix 70% heatmap color with 30% background color for star icon
+              const getStarColor = (ratingColor: string, bgColor: string): string => {
+                // Parse rating color (RGB or hex)
+                const ratingRgbaMatch = ratingColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+                const ratingHexMatch = ratingColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+
+                let ratingR = 0, ratingG = 0, ratingB = 0;
+                if (ratingRgbaMatch) {
+                  ratingR = parseInt(ratingRgbaMatch[1]);
+                  ratingG = parseInt(ratingRgbaMatch[2]);
+                  ratingB = parseInt(ratingRgbaMatch[3]);
+                } else if (ratingHexMatch) {
+                  ratingR = parseInt(ratingHexMatch[1], 16);
+                  ratingG = parseInt(ratingHexMatch[2], 16);
+                  ratingB = parseInt(ratingHexMatch[3], 16);
+                }
+
+                // Parse background color (RGB or hex)
+                const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+                const bgHexMatch = bgColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+
+                let bgR = 0, bgG = 0, bgB = 0;
+                if (bgRgbaMatch) {
+                  bgR = parseInt(bgRgbaMatch[1]);
+                  bgG = parseInt(bgRgbaMatch[2]);
+                  bgB = parseInt(bgRgbaMatch[3]);
+                } else if (bgHexMatch) {
+                  bgR = parseInt(bgHexMatch[1], 16);
+                  bgG = parseInt(bgHexMatch[2], 16);
+                  bgB = parseInt(bgHexMatch[3], 16);
+                }
+
+                // Mix 70% rating + 30% background
+                const mixedR = Math.round(ratingR * 0.7 + bgR * 0.3);
+                const mixedG = Math.round(ratingG * 0.7 + bgG * 0.3);
+                const mixedB = Math.round(ratingB * 0.7 + bgB * 0.3);
+
+                return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
+              };
+
+              const starColor = getStarColor(ratingColor, colors.background);
+
+              return (
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <FontAwesome name="users" size={19} color={colors.textSecondary} />
+                  </View>
+                  <View style={{
+                    width: 40,
+                    height: 40,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderRadius: 8,
+                    backgroundColor: ratingColor,
+                  }}>
+                    <FontAwesome
+                      name="star"
+                      size={24}
+                      color={starColor}
+                      style={{ position: 'absolute' }}
+                    />
+                    <Text style={{
+                      color: '#FFFFFF',
+                      fontSize: 14,
+                      fontWeight: 'bold',
+                      textAlign: 'center',
+                    }}>
+                      {fight.averageRating
+                        ? fight.averageRating % 1 === 0
+                          ? fight.averageRating.toString()
+                          : fight.averageRating.toFixed(1)
+                        : '0'}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })()}
+
+            {/* Rating Distribution Chart */}
+            {aggregateStats?.ratingDistribution && (
+              <View style={{ marginTop: -6 }}>
+                <RatingDistributionChart
+                  distribution={aggregateStats.ratingDistribution}
+                  totalRatings={totalRatings}
+                />
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Tags */}
+        {aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
+          <View style={[styles.sectionNoBorder, { marginTop: 16 }]}>
+            <View style={styles.communityTagsContainer}>
+              {aggregateStats.topTags.slice(0, 3).map((tagData: any, index: number) => (
+                <Text key={index} style={[styles.communityTagText, { color: colors.textSecondary }]}>
+                  #{tagData.name}
+                </Text>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* User-entered tappable tags */}
+        <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 20 }]}>
           {displayedTags.length > 0 && (
             <View style={styles.inlineTagsSection}>
               <View style={styles.inlineTagsContainer}>
@@ -954,46 +1084,6 @@ export default function CompletedFightDetailScreen({
               </View>
             </View>
           )}
-        </View>
-
-        {/* Community Stats */}
-        <View style={styles.sectionNoBorder}>
-          <View style={styles.communityRatingHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Community Rating</Text>
-            <Text style={[styles.communityRatingCount, { color: colors.textSecondary }]}>
-              ({totalRatings} {totalRatings === 1 ? 'rating' : 'ratings'})
-            </Text>
-          </View>
-
-          <View style={styles.communityStatsContainer}>
-            <View style={styles.communityRatingSection}>
-            <FontAwesome
-              name="star"
-              size={48}
-              color={fight.averageRating > 0 ? getHypeHeatmapColor(Math.round(fight.averageRating)) : '#666666'}
-            />
-            <Text style={[styles.communityStatsValue, { color: colors.text }]}>
-              {fight.averageRating
-                ? fight.averageRating % 1 === 0
-                  ? fight.averageRating.toString()
-                  : fight.averageRating.toFixed(1)
-                : '0'}
-            </Text>
-          </View>
-
-          {/* Tags */}
-          {aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
-            <View style={styles.communityTagsSection}>
-              <View style={styles.communityTagsContainer}>
-                {aggregateStats.topTags.slice(0, 3).map((tagData: any, index: number) => (
-                  <Text key={index} style={[styles.communityTagText, { color: colors.textSecondary }]}>
-                    #{tagData.name}
-                  </Text>
-                ))}
-              </View>
-            </View>
-          )}
-          </View>
         </View>
 
         {/* What Happened */}

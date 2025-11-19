@@ -2417,6 +2417,21 @@ export async function fightRoutes(fastify: FastifyInstance) {
         hypeDistribution[hype] = hypePredictions.filter(p => p.predictedRating === hype).length;
       }
 
+      // 9. Get rating distribution (1-10 scale) for completed fights
+      const fightRatings = await fastify.prisma.fightRating.findMany({
+        where: {
+          fightId,
+        },
+        select: {
+          rating: true,
+        },
+      });
+
+      const ratingDistribution: Record<number, number> = {};
+      for (let rating = 1; rating <= 10; rating++) {
+        ratingDistribution[rating] = fightRatings.filter(r => r.rating === rating && r.rating > 0).length;
+      }
+
       return reply.send({
         fightId,
         reviewCount,
@@ -2428,6 +2443,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         userHypeScore,
         communityAverageHype,
         hypeDistribution,
+        ratingDistribution,
       });
 
     } catch (error) {
