@@ -1125,45 +1125,97 @@ export default function CompletedFightDetailScreen({
 
         {/* Tags Content */}
         <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 20 }]}>
-          {displayedTags.length > 0 && (
-            <View style={styles.inlineTagsSection}>
-              <View style={styles.inlineTagsContainer}>
-                {displayedTags.map((tag) => {
-                  const isSelected = selectedTags.includes(tag.id);
-                  return (
-                    <Animated.View
-                      key={tag.id}
-                      style={{ opacity: isSelected ? 1 : tagsOpacity }}
-                    >
-                      <TouchableOpacity
-                        onPress={() => handleToggleTag(tag.id)}
-                        style={[
-                          styles.inlineTagButton,
-                          {
-                            backgroundColor: isSelected ? colors.primary : colors.background,
-                            borderColor: colors.border,
-                          }
-                        ]}
-                      >
-                        <Text style={[
-                          styles.inlineTagText,
-                          {
-                            color: isSelected ? colors.textOnAccent : colors.text
-                          }
-                        ]}>
-                          {tag.name}{tag.count > 0 ? ` (${tag.count})` : ''}
-                        </Text>
-                      </TouchableOpacity>
-                    </Animated.View>
-                  );
-                })}
+          {displayedTags.length > 0 && (() => {
+            const tagsWithVotes = displayedTags.filter(tag => tag.count > 0);
+            const tagsWithoutVotes = displayedTags.filter(tag => tag.count === 0);
+
+            return (
+              <View style={styles.inlineTagsSection}>
+                {/* Tags with votes */}
+                {tagsWithVotes.length > 0 && (
+                  <View style={styles.inlineTagsContainer}>
+                    {tagsWithVotes.map((tag) => {
+                      const isSelected = selectedTags.includes(tag.id);
+                      return (
+                        <Animated.View
+                          key={tag.id}
+                          style={{ opacity: isSelected ? 1 : tagsOpacity }}
+                        >
+                          <TouchableOpacity
+                            onPress={() => handleToggleTag(tag.id)}
+                            style={[
+                              styles.inlineTagButton,
+                              {
+                                backgroundColor: isSelected ? colors.primary : colors.background,
+                                borderColor: colors.border,
+                              }
+                            ]}
+                          >
+                            <Text style={[
+                              styles.inlineTagText,
+                              {
+                                color: isSelected ? colors.textOnAccent : colors.text
+                              }
+                            ]}>
+                              {tag.name} ({tag.count})
+                            </Text>
+                          </TouchableOpacity>
+                        </Animated.View>
+                      );
+                    })}
+                  </View>
+                )}
+
+                {/* Separator with "Other Choices" label */}
+                {tagsWithVotes.length > 0 && tagsWithoutVotes.length > 0 && (
+                  <View style={{ marginTop: 16, marginBottom: 16 }}>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '600', textTransform: 'uppercase' }}>
+                      Other Choices
+                    </Text>
+                  </View>
+                )}
+
+                {/* Tags without votes */}
+                {tagsWithoutVotes.length > 0 && (
+                  <View style={styles.inlineTagsContainer}>
+                    {tagsWithoutVotes.map((tag) => {
+                      const isSelected = selectedTags.includes(tag.id);
+                      return (
+                        <Animated.View
+                          key={tag.id}
+                          style={{ opacity: isSelected ? 1 : tagsOpacity }}
+                        >
+                          <TouchableOpacity
+                            onPress={() => handleToggleTag(tag.id)}
+                            style={[
+                              styles.inlineTagButton,
+                              {
+                                backgroundColor: isSelected ? colors.primary : colors.background,
+                                borderColor: colors.border,
+                              }
+                            ]}
+                          >
+                            <Text style={[
+                              styles.inlineTagText,
+                              {
+                                color: isSelected ? colors.textOnAccent : colors.text
+                              }
+                            ]}>
+                              {tag.name}
+                            </Text>
+                          </TouchableOpacity>
+                        </Animated.View>
+                      );
+                    })}
+                  </View>
+                )}
               </View>
-            </View>
-          )}
+            );
+          })()}
         </View>
 
         {/* Outcome Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 15 }]}>
+        <View style={[styles.sectionDivider, { marginTop: -22 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <View style={{ flexShrink: 0 }}>
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
