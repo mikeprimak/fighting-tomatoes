@@ -276,10 +276,11 @@ const getAvailableTagsForRating = (
       normalizeTagName(ct.name) === tag.id ||
       normalizeTagName(ct.name) === normalizeTagName(tag.name)
     );
+    // If selected, ensure count is at least 1 (to account for user's own vote)
     return {
       id: tag.id,
       name: tag.name,
-      count: communityTag?.count || 0
+      count: Math.max(1, communityTag?.count || 0)
     };
   });
 
@@ -1337,6 +1338,26 @@ export default function CompletedFightDetailScreen({
               {!fight.userReview && !isEditingComment && showCommentForm && (
                 <Button
                   onPress={handleToggleCommentForm}
+                  variant="outline"
+                  size="small"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                  }}
+                  textStyle={{
+                    color: colors.text,
+                  }}
+                >
+                  Cancel
+                </Button>
+              )}
+              {isEditingComment && (
+                <Button
+                  onPress={() => {
+                    setIsEditingComment(false);
+                    setComment(fight.userReview?.content || '');
+                  }}
                   variant="outline"
                   size="small"
                   style={{
