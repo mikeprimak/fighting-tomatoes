@@ -372,7 +372,6 @@ export default function CompletedFightDetailScreen({
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
-  const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [commentToFlag, setCommentToFlag] = useState<string | null>(null);
 
   // Inline rating state - Initialize once with existing data, then manage locally
