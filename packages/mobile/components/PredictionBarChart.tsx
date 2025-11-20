@@ -378,12 +378,40 @@ export default function PredictionBarChart({
 
           {/* Percentages below bar chart */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-            <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-              {winnerPredictions.fighter1.percentage}% {fighter1Name}
-            </Text>
-            <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-              {winnerPredictions.fighter2.percentage}% {fighter2Name}
-            </Text>
+            <View>
+              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                {winnerPredictions.fighter1.percentage}% {fighter1Name}
+              </Text>
+              {selectedWinner === fighter1Id && !selectedMethod && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    bottom: -1,
+                    left: 0,
+                    right: 0,
+                    height: 2,
+                    backgroundColor: '#F5C518',
+                  }}
+                />
+              )}
+            </View>
+            <View>
+              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                {winnerPredictions.fighter2.percentage}% {fighter2Name}
+              </Text>
+              {selectedWinner === fighter2Id && !selectedMethod && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    bottom: -1,
+                    left: 0,
+                    right: 0,
+                    height: 2,
+                    backgroundColor: '#F5C518',
+                  }}
+                />
+              )}
+            </View>
           </View>
         </View>
       )}

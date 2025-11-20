@@ -22,3 +22,4 @@ export { EventBannerCard } from './EventBannerCard';
 export { default as Button } from './Button';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 export { default as RatingDistributionChart } from './RatingDistributionChart';
+export { default as PredictionBarChart } from './PredictionBarChart';

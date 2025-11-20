@@ -1232,21 +1232,15 @@ export default function CompletedFightDetailScreen({
             <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, marginTop: 20, textAlign: 'center' }]}>
               Outcome data not yet available.
             </Text>
-          ) : isOutcomeRevealed ? (
-            <Text style={[styles.whatHappenedPromptText, { color: colors.text, marginTop: 20, marginBottom: 12, textAlign: 'left', fontStyle: 'normal', fontSize: 14 }]}>
-              Winner: {fight.winner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName} by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
-              {fight.round && !fight.method?.includes('Decision') && ` in Round ${fight.round}`}
-              {fight.time && ` ${fight.time}`}
-            </Text>
-          ) : (
+          ) : !isOutcomeRevealed ? (
             <TouchableOpacity onPress={handleRevealOutcome} style={{ marginTop: 20 }}>
               <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center' }]}>
                 Rate fight or <Text style={{ color: '#F5C518' }}>tap here</Text> to show outcome.
               </Text>
             </TouchableOpacity>
-          )}
+          ) : null}
 
-          <View style={[styles.whatHappenedContainer, { marginTop: -3 }]}>
+          <View style={[styles.whatHappenedContainer, { marginTop: 16, alignItems: 'flex-start' }]}>
             {/* Fighter 1 */}
             <View style={styles.whatHappenedFighter}>
               <View style={[
@@ -1265,6 +1259,15 @@ export default function CompletedFightDetailScreen({
               <Text style={[styles.whatHappenedName, { color: colors.text }]}>
                 {fight.fighter1.firstName} {fight.fighter1.lastName}
               </Text>
+              {isOutcomeRevealed && fight.winner === fight.fighter1.id ? (
+                <Text style={{ color: '#22c55e', fontSize: 13, marginTop: 4, textAlign: 'center', fontWeight: '600' }}>
+                  by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
+                  {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
+                  {fight.time && ` ${fight.time}`}
+                </Text>
+              ) : isOutcomeRevealed ? (
+                <View style={{ height: 20 }} />
+              ) : null}
             </View>
 
             {/* Fighter 2 */}
@@ -1285,6 +1288,15 @@ export default function CompletedFightDetailScreen({
               <Text style={[styles.whatHappenedName, { color: colors.text }]}>
                 {fight.fighter2.firstName} {fight.fighter2.lastName}
               </Text>
+              {isOutcomeRevealed && fight.winner === fight.fighter2.id ? (
+                <Text style={{ color: '#22c55e', fontSize: 13, marginTop: 4, textAlign: 'center', fontWeight: '600' }}>
+                  by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
+                  {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
+                  {fight.time && ` ${fight.time}`}
+                </Text>
+              ) : isOutcomeRevealed ? (
+                <View style={{ height: 20 }} />
+              ) : null}
             </View>
           </View>
 
