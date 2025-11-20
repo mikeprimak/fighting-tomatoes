@@ -23,6 +23,7 @@ import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { getHypeHeatmapColor, getFlameColor } from '../utils/heatmap';
 import { FlagReviewModal, CommentCard, RatingDistributionChart } from '.';
+import HypeDistributionChart from './HypeDistributionChart';
 import { useAuth } from '../store/AuthContext';
 import { usePredictionAnimation } from '../store/PredictionAnimationContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
@@ -439,6 +440,18 @@ export default function CompletedFightDetailScreen({
   const testPredictionStats = {
     totalPredictions: 100,
     averageHype: 8.5,
+    hypeDistribution: {
+      1: 2,
+      2: 3,
+      3: 5,
+      4: 8,
+      5: 10,
+      6: 12,
+      7: 15,
+      8: 18,
+      9: 15,
+      10: 12,
+    },
     winnerPredictions: {
       fighter1: { id: fight.fighter1.id, name: `${fight.fighter1.firstName} ${fight.fighter1.lastName}`, predictions: 55, percentage: 55 },
       fighter2: { id: fight.fighter2.id, name: `${fight.fighter2.firstName} ${fight.fighter2.lastName}`, predictions: 45, percentage: 45 },
@@ -463,8 +476,8 @@ export default function CompletedFightDetailScreen({
     fighter2RoundPredictions: {},
   };
 
-  // Override with test data
-  const predictionStats = testPredictionStats;
+  // Use fetched data instead of test data
+  const predictionStats = fetchedPredictionStats;
 
   // Fetch tags
   const { data: tagsData } = useQuery({
@@ -1557,26 +1570,76 @@ export default function CompletedFightDetailScreen({
 
           {/* My Hype */}
           <View style={{ marginTop: 32 }}>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 8 }]}>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
               My Hype
             </Text>
-            <Text style={[styles.predictionText, { color: colors.text }]}>
-              {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined
-                ? `${fight.userHypePrediction}/10`
-                : 'No hype rating'}
-            </Text>
+            {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && fight.userHypePrediction > 0 ? (
+              <View style={[
+                styles.userHypeSquare,
+                {
+                  backgroundColor: getHypeHeatmapColor(fight.userHypePrediction),
+                }
+              ]}>
+                <View style={{ position: 'absolute' }}>
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={24}
+                    color={getFlameColor(getHypeHeatmapColor(fight.userHypePrediction), colors.background)}
+                  />
+                </View>
+                <Text style={styles.hypeSquareText}>
+                  {Math.round(fight.userHypePrediction).toString()}
+                </Text>
+              </View>
+            ) : (
+              <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
+                No hype rating
+              </Text>
+            )}
           </View>
 
           {/* Community Hype */}
           <View style={{ marginTop: 24 }}>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 8 }]}>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
               Community Hype
             </Text>
-            <Text style={[styles.predictionText, { color: colors.text }]}>
-              {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined
-                ? `${predictionStats.averageHype.toFixed(1)}/10`
-                : 'No community hype data'}
-            </Text>
+            {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                <View style={[
+                  styles.userHypeSquare,
+                  {
+                    backgroundColor: getHypeHeatmapColor(predictionStats.averageHype),
+                  }
+                ]}>
+                  <View style={{ position: 'absolute' }}>
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={24}
+                      color={getFlameColor(getHypeHeatmapColor(predictionStats.averageHype), colors.background)}
+                    />
+                  </View>
+                  <Text style={styles.hypeSquareText}>
+                    {predictionStats.averageHype.toFixed(1)}
+                  </Text>
+                </View>
+
+                {/* Hype Distribution Chart */}
+                {predictionStats?.hypeDistribution && (
+                  <View style={{ flex: 1 }}>
+                    <HypeDistributionChart
+                      distribution={predictionStats.hypeDistribution}
+                      totalPredictions={predictionStats.totalPredictions || 0}
+                      hasRevealedHype={true}
+                      fadeAnim={new Animated.Value(1)}
+                    />
+                  </View>
+                )}
+              </View>
+            ) : (
+              <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
+                No community hype data
+              </Text>
+            )}
           </View>
 
           {/* Pre-Fight Hype Comments */}
@@ -2705,5 +2768,18 @@ const styles = StyleSheet.create({
     height: 20,
     backgroundColor: '#F5C518',
     borderRadius: 1.5,
+  },
+  userHypeSquare: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  hypeSquareText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
