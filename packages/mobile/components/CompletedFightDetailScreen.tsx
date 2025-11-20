@@ -24,7 +24,7 @@ import { apiService } from '../services/api';
 import { getHypeHeatmapColor, getFlameColor } from '../utils/heatmap';
 import { FlagReviewModal, CommentCard, RatingDistributionChart } from '.';
 import HypeDistributionChart from './HypeDistributionChart';
-import PreFightCommentCard from './PreFightCommentCard';
+import { PreFightCommentCard } from './PreFightCommentCard';
 import { useAuth } from '../store/AuthContext';
 import { usePredictionAnimation } from '../store/PredictionAnimationContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
