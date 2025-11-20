@@ -28,6 +28,7 @@ import { usePredictionAnimation } from '../store/PredictionAnimationContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
 import PredictionBarChart from './PredictionBarChart';
+import Button from './Button';
 import FightDetailsSection from './FightDetailsSection';
 import { useFightStats } from '../hooks/useFightStats';
 import FightDetailsMenu from './FightDetailsMenu';
@@ -1240,7 +1241,7 @@ export default function CompletedFightDetailScreen({
             </TouchableOpacity>
           ) : null}
 
-          <View style={[styles.whatHappenedContainer, { marginTop: 16, alignItems: 'flex-start' }]}>
+          <View style={[styles.whatHappenedContainer, { marginTop: 25, alignItems: 'flex-start' }]}>
             {/* Fighter 1 */}
             <View style={styles.whatHappenedFighter}>
               <View style={[
@@ -1299,16 +1300,203 @@ export default function CompletedFightDetailScreen({
               ) : null}
             </View>
           </View>
+        </View>
 
-          {/* Predictions Section Divider */}
-          <View style={[styles.sectionDivider, { marginTop: 20 }]}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <View style={{ flexShrink: 0 }}>
-              <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-                Predictions
-              </Text>
+        {/* Comments Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 10 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0 }}>
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              Comments
+            </Text>
+          </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
+        {/* Comments Section - Add Button */}
+        <View style={[styles.sectionNoBorder, { marginTop: 22 }]}>
+            <View style={styles.commentHeaderRow}>
+              <View style={{ flex: 1 }} />
+              {!fight.userReview && !isEditingComment && !showCommentForm && (
+                <Button
+                  onPress={handleToggleCommentForm}
+                  variant="outline"
+                  size="small"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                  }}
+                  textStyle={{
+                    color: colors.text,
+                  }}
+                >
+                  + Add
+                </Button>
+              )}
+              {!fight.userReview && !isEditingComment && showCommentForm && (
+                <Button
+                  onPress={handleToggleCommentForm}
+                  variant="outline"
+                  size="small"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                  }}
+                  textStyle={{
+                    color: colors.text,
+                  }}
+                >
+                  Cancel
+                </Button>
+              )}
             </View>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+
+            {/* Post-Fight Reviews Content */}
+            {/* Show comment input when showCommentForm is true (for new comments) OR when editing */}
+            {((showCommentForm && !fight.userReview) || isEditingComment) && (
+                  <View ref={commentInputRef} collapsable={false} style={{ marginTop: 16 }}>
+                    <View style={[
+                      styles.commentInputContainer,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                      }
+                    ]}>
+                      <TextInput
+                        style={[
+                          styles.commentInput,
+                          { color: colors.text }
+                        ]}
+                        placeholder="Write a review... (optional)"
+                        placeholderTextColor={colors.textSecondary}
+                        multiline
+                        numberOfLines={4}
+                        maxLength={500}
+                        value={comment}
+                        onChangeText={setComment}
+                        onFocus={handleCommentFocus}
+                      />
+                    </View>
+                    <TouchableOpacity
+                      style={[
+                        styles.saveCommentButton,
+                        {
+                          backgroundColor: (fight.userReview || comment.trim().length > 0) ? colors.tint : colors.card,
+                        }
+                      ]}
+                      disabled={updateUserDataMutation.isPending}
+                      onPress={handleSaveComment}
+                    >
+                      <Text style={[
+                        styles.saveCommentButtonText,
+                        { color: (fight.userReview || comment.trim().length > 0) ? '#000' : colors.text }
+                      ]}>
+                        {updateUserDataMutation.isPending ? 'Saving...' : 'Save Comment'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+            {/* User's review first (if exists and not editing) */}
+            {fight.userReview && !isEditingComment && (
+              <View style={{ marginTop: 16 }}>
+              <CommentCard
+                comment={{
+                  id: fight.userReview.id,
+                  content: fight.userReview.content,
+                  rating: fight.userReview.rating,
+                  upvotes: fight.userReview.upvotes || 0,
+                  userHasUpvoted: fight.userReview.userHasUpvoted,
+                  user: {
+                    displayName: user?.displayName || 'You',
+                  },
+                }}
+                onEdit={() => setIsEditingComment(true)}
+                onUpvote={() => upvoteMutation.mutate({ reviewId: fight.userReview.id })}
+                isUpvoting={upvoteMutation.isPending}
+                isAuthenticated={isAuthenticated}
+                showMyReview={true}
+              />
+              </View>
+            )}
+
+            {/* Other reviews with infinite scroll */}
+            {reviewsData?.pages[0]?.reviews && reviewsData.pages[0]?.reviews.length > 0 ? (
+              <View style={{ marginTop: 16 }}>
+                {reviewsData.pages.flatMap(page =>
+                  page.reviews.filter((review: any) => review.userId !== user?.id)
+                ).map((review: any) => (
+                  <CommentCard
+                    key={review.id}
+                    comment={{
+                      id: review.id,
+                      content: review.content,
+                      rating: review.rating,
+                      upvotes: review.upvotes || 0,
+                      userHasUpvoted: review.userHasUpvoted,
+                      user: {
+                        displayName: review.user.displayName || `${review.user.firstName} ${review.user.lastName}`,
+                      },
+                    }}
+                    onUpvote={() => upvoteMutation.mutate({ reviewId: review.id })}
+                    onFlag={() => handleFlagReview(review.id)}
+                    isUpvoting={upvoteMutation.isPending}
+                    isFlagging={flagReviewMutation.isPending && reviewToFlag === review.id}
+                    isAuthenticated={isAuthenticated}
+                  />
+                ))}
+
+                {/* Load more button */}
+                {hasNextPage && (
+                  <TouchableOpacity
+                    style={[styles.loadMoreButton, { backgroundColor: colors.primary }]}
+                    onPress={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                  >
+                    {isFetchingNextPage ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.loadMoreButtonText}>Load More</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
+            ) : !fight.userReview && (
+              <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
+                No reviews yet. Be the first to review this fight!
+              </Text>
+            )}
+        </View>
+
+        {/* Pre-Flight Insights Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 10 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0 }}>
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              Pre-Fight Insights
+            </Text>
+          </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
+        {/* Pre-Fight Insights Content */}
+        <View style={styles.sectionNoBorder}>
+          {/* My Prediction Subtitle */}
+          <View style={{ marginTop: 40 }}>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
+              My Prediction
+            </Text>
+            {fight.userPredictedWinner && fight.userPredictedMethod ? (
+              <Text style={[styles.predictionText, { color: colors.text }]}>
+                I predicted {fight.userPredictedWinner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName} to win by {fight.userPredictedMethod.charAt(0).toUpperCase() + fight.userPredictedMethod.slice(1).toLowerCase()}.
+              </Text>
+            ) : (
+              <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
+                No prediction made
+              </Text>
+            )}
           </View>
 
           {/* Community Predictions Bar Chart */}
@@ -1322,7 +1510,10 @@ export default function CompletedFightDetailScreen({
               fighter2Id: fight.fighter2.id,
             });
             return (
-              <View style={{ marginTop: 40 }}>
+              <View style={{ marginTop: 24 }}>
+                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 20 }]}>
+                  Community Predictions
+                </Text>
                 <PredictionBarChart
                   fighter1Name={fight.fighter1.lastName}
                   fighter2Name={fight.fighter2.lastName}
@@ -1342,6 +1533,34 @@ export default function CompletedFightDetailScreen({
               </View>
             );
           })()}
+
+          {/* Pre-Fight Hype Comments */}
+          <View style={{ marginTop: 32 }}>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
+              Pre-Fight Hype
+            </Text>
+            {preFightCommentsData && preFightCommentsData.comments && preFightCommentsData.comments.length > 0 ? (
+              preFightCommentsData.comments.map((comment: any) => (
+                <View key={comment.id} style={styles.preFightCommentCard}>
+                  <View style={styles.preFightCommentHeader}>
+                    <Text style={[styles.preFightCommentUser, { color: colors.text }]}>
+                      {comment.user.displayName || `${comment.user.firstName} ${comment.user.lastName}`}
+                    </Text>
+                    <Text style={[styles.preFightCommentDate, { color: colors.textSecondary }]}>
+                      {new Date(comment.createdAt).toLocaleDateString()}
+                    </Text>
+                  </View>
+                  <Text style={[styles.preFightCommentContent, { color: colors.text }]}>
+                    {comment.content}
+                  </Text>
+                </View>
+              ))
+            ) : (
+              <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
+                No pre-fight comments yet.
+              </Text>
+            )}
+          </View>
         </View>
 
         {/* Split Score Row - HIDDEN */}
@@ -1650,203 +1869,6 @@ export default function CompletedFightDetailScreen({
           </View>
         )}
 
-        {/* Comments */}
-        <View style={styles.sectionNoBorder}>
-          {/* Title row with Add Comment / Cancel button */}
-          <View style={styles.commentHeaderRow}>
-            <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>Comments</Text>
-            {!fight.userReview && !isEditingComment && (
-              <TouchableOpacity
-                onPress={handleToggleCommentForm}
-                style={styles.addCommentButton}
-              >
-                <Text style={[styles.addCommentButtonText, { color: colors.tint }]}>
-                  {showCommentForm ? 'Cancel' : 'Add Comment'}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Tab Buttons */}
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              style={[
-                styles.tabButton,
-                { borderColor: colors.border },
-                commentsTab === 'postfight' && { backgroundColor: colors.primary }
-              ]}
-              onPress={() => setCommentsTab('postfight')}
-            >
-              <Text style={[
-                styles.tabButtonText,
-                { color: commentsTab === 'postfight' ? colors.textOnAccent : colors.text }
-              ]}>
-                Post-Fight Reviews
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.tabButton,
-                { borderColor: colors.border },
-                commentsTab === 'prefight' && { backgroundColor: colors.primary }
-              ]}
-              onPress={() => setCommentsTab('prefight')}
-            >
-              <Text style={[
-                styles.tabButtonText,
-                { color: commentsTab === 'prefight' ? colors.textOnAccent : colors.text }
-              ]}>
-                Pre-Fight Hype
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Tab Content */}
-          {commentsTab === 'postfight' ? (
-            <>
-              {/* Show comment input when showCommentForm is true (for new comments) OR when editing */}
-              {((showCommentForm && !fight.userReview) || isEditingComment) && (
-                <View ref={commentInputRef} collapsable={false} style={{ marginTop: 16 }}>
-                  <View style={[
-                    styles.commentInputContainer,
-                    {
-                      backgroundColor: colors.card,
-                      borderColor: colors.border,
-                    }
-                  ]}>
-                    <TextInput
-                      style={[
-                        styles.commentInput,
-                        { color: colors.text }
-                      ]}
-                      placeholder="Write a review... (optional)"
-                      placeholderTextColor={colors.textSecondary}
-                      multiline
-                      numberOfLines={4}
-                      maxLength={500}
-                      value={comment}
-                      onChangeText={setComment}
-                      onFocus={handleCommentFocus}
-                    />
-                  </View>
-                  <TouchableOpacity
-                    style={[
-                      styles.saveCommentButton,
-                      {
-                        backgroundColor: (fight.userReview || comment.trim().length > 0) ? colors.tint : colors.card,
-                      }
-                    ]}
-                    disabled={updateUserDataMutation.isPending}
-                    onPress={handleSaveComment}
-                  >
-                    <Text style={[
-                      styles.saveCommentButtonText,
-                      { color: (fight.userReview || comment.trim().length > 0) ? '#000' : colors.text }
-                    ]}>
-                      {updateUserDataMutation.isPending ? 'Saving...' : 'Save Comment'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-          {/* User's review first (if exists and not editing) */}
-          {fight.userReview && !isEditingComment && (
-            <View style={{ marginTop: 16 }}>
-            <CommentCard
-              comment={{
-                id: fight.userReview.id,
-                content: fight.userReview.content,
-                rating: fight.userReview.rating,
-                upvotes: fight.userReview.upvotes || 0,
-                userHasUpvoted: fight.userReview.userHasUpvoted,
-                user: {
-                  displayName: user?.displayName || 'You',
-                },
-              }}
-              onEdit={() => setIsEditingComment(true)}
-              onUpvote={() => upvoteMutation.mutate({ reviewId: fight.userReview.id })}
-              isUpvoting={upvoteMutation.isPending}
-              isAuthenticated={isAuthenticated}
-              showMyReview={true}
-            />
-            </View>
-          )}
-
-          {/* Other reviews with infinite scroll */}
-          {reviewsData?.pages[0]?.reviews && reviewsData.pages[0]?.reviews.length > 0 ? (
-            <View style={{ marginTop: 16 }}>
-              {reviewsData.pages.flatMap(page =>
-                page.reviews.filter((review: any) => review.userId !== user?.id)
-              ).map((review: any) => (
-                <CommentCard
-                  key={review.id}
-                  comment={{
-                    id: review.id,
-                    content: review.content,
-                    rating: review.rating,
-                    upvotes: review.upvotes || 0,
-                    userHasUpvoted: review.userHasUpvoted,
-                    user: {
-                      displayName: review.user.displayName || `${review.user.firstName} ${review.user.lastName}`,
-                    },
-                  }}
-                  onUpvote={() => upvoteMutation.mutate({ reviewId: review.id })}
-                  onFlag={() => handleFlagReview(review.id)}
-                  isUpvoting={upvoteMutation.isPending}
-                  isFlagging={flagReviewMutation.isPending && reviewToFlag === review.id}
-                  isAuthenticated={isAuthenticated}
-                />
-              ))}
-
-              {/* Load more button */}
-              {hasNextPage && (
-                <TouchableOpacity
-                  style={[styles.loadMoreButton, { backgroundColor: colors.primary }]}
-                  onPress={() => fetchNextPage()}
-                  disabled={isFetchingNextPage}
-                >
-                  {isFetchingNextPage ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.loadMoreButtonText}>Load More</Text>
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
-          ) : !fight.userReview && (
-            <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
-              No reviews yet. Be the first to review this fight!
-            </Text>
-          )}
-            </>
-          ) : (
-            <>
-              {/* Pre-Fight Comments */}
-              {preFightCommentsData && preFightCommentsData.comments && preFightCommentsData.comments.length > 0 ? (
-                preFightCommentsData.comments.map((comment: any) => (
-                  <View key={comment.id} style={styles.preFightCommentCard}>
-                    <View style={styles.preFightCommentHeader}>
-                      <Text style={[styles.preFightCommentUser, { color: colors.text }]}>
-                        {comment.user.displayName || `${comment.user.firstName} ${comment.user.lastName}`}
-                      </Text>
-                      <Text style={[styles.preFightCommentDate, { color: colors.textSecondary }]}>
-                        {new Date(comment.createdAt).toLocaleDateString()}
-                      </Text>
-                    </View>
-                    <Text style={[styles.preFightCommentContent, { color: colors.text }]}>
-                      {comment.content}
-                    </Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
-                  No pre-fight comments yet.
-                </Text>
-              )}
-            </>
-          )}
-        </View>
-
       </ScrollView>
 
       {/* Modals */}
@@ -1917,6 +1939,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
+  },
+  sectionSubtitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  predictionText: {
+    fontSize: 15,
+    marginBottom: 4,
   },
   headerRow: {
     flexDirection: 'row',
