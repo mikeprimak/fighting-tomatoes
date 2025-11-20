@@ -1555,6 +1555,30 @@ export default function CompletedFightDetailScreen({
             );
           })()}
 
+          {/* My Hype */}
+          <View style={{ marginTop: 32 }}>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 8 }]}>
+              My Hype
+            </Text>
+            <Text style={[styles.predictionText, { color: colors.text }]}>
+              {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined
+                ? `${fight.userHypePrediction}/10`
+                : 'No hype rating'}
+            </Text>
+          </View>
+
+          {/* Community Hype */}
+          <View style={{ marginTop: 24 }}>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 8 }]}>
+              Community Hype
+            </Text>
+            <Text style={[styles.predictionText, { color: colors.text }]}>
+              {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined
+                ? `${predictionStats.averageHype.toFixed(1)}/10`
+                : 'No community hype data'}
+            </Text>
+          </View>
+
           {/* Pre-Fight Hype Comments */}
           <View style={{ marginTop: 32 }}>
             <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
