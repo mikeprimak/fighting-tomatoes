@@ -1642,10 +1642,10 @@ export default function CompletedFightDetailScreen({
             )}
           </View>
 
-          {/* Pre-Fight Hype Comments */}
+          {/* Pre-Fight Comments */}
           <View style={{ marginTop: 32 }}>
             <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
-              Pre-Fight Hype
+              Pre-Fight Comments
             </Text>
             {preFightCommentsData && preFightCommentsData.comments && preFightCommentsData.comments.length > 0 ? (
               preFightCommentsData.comments.map((comment: any) => (
