@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
+import { FontAwesome } from '@expo/vector-icons';
 
 interface PredictionBarChartProps {
   fighter1Name: string;
@@ -35,6 +36,9 @@ interface PredictionBarChartProps {
   // Control flags for progressive reveal
   showColors?: boolean; // Show colors and percentages (requires winner selection)
   showLabels?: boolean; // Show method labels (requires method selection)
+  // Actual outcome (for completed fights)
+  actualWinner?: string | null;
+  actualMethod?: string | null;
 }
 
 /**
@@ -54,6 +58,8 @@ export default function PredictionBarChart({
   winnerPredictions,
   showColors = true,
   showLabels = true,
+  actualWinner,
+  actualMethod,
 }: PredictionBarChartProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -89,6 +95,111 @@ export default function PredictionBarChart({
       {/* Community Predictions Bar - progressive reveal */}
       {winnerPredictions && (
         <View style={{ flex: 1 }}>
+          {/* Checkmark overlay - positioned above the bar chart */}
+          {actualWinner && actualMethod && (
+            <View style={{ height: 28, marginBottom: -14, zIndex: 10, overflow: 'visible' }}>
+              <View style={{ flexDirection: 'row', height: 28, overflow: 'visible' }}>
+                {/* Fighter 1 checkmark area */}
+                <View style={{ flex: winnerPredictions.fighter1.percentage, flexDirection: 'row', overflow: 'visible' }}>
+                  {actualWinner === fighter1Id && fighter1Predictions && (
+                    <>
+                      {actualMethod === 'KO_TKO' && fighter1Predictions.KO_TKO > 0 && (
+                        <View style={{ flex: fighter1Predictions.KO_TKO, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 2 }}>
+                          <View style={{ backgroundColor: '#fff', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
+                            <FontAwesome name="check-circle" size={24} color="#22c55e" solid />
+                          </View>
+                        </View>
+                      )}
+                      {actualMethod === 'KO_TKO' && fighter1Predictions.SUBMISSION > 0 && (
+                        <View style={{ flex: fighter1Predictions.SUBMISSION }} />
+                      )}
+                      {actualMethod === 'KO_TKO' && fighter1Predictions.DECISION > 0 && (
+                        <View style={{ flex: fighter1Predictions.DECISION }} />
+                      )}
+
+                      {actualMethod === 'SUBMISSION' && fighter1Predictions.KO_TKO > 0 && (
+                        <View style={{ flex: fighter1Predictions.KO_TKO }} />
+                      )}
+                      {actualMethod === 'SUBMISSION' && fighter1Predictions.SUBMISSION > 0 && (
+                        <View style={{ flex: fighter1Predictions.SUBMISSION, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 2 }}>
+                          <View style={{ backgroundColor: '#fff', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
+                            <FontAwesome name="check-circle" size={24} color="#22c55e" solid />
+                          </View>
+                        </View>
+                      )}
+                      {actualMethod === 'SUBMISSION' && fighter1Predictions.DECISION > 0 && (
+                        <View style={{ flex: fighter1Predictions.DECISION }} />
+                      )}
+
+                      {actualMethod === 'DECISION' && fighter1Predictions.KO_TKO > 0 && (
+                        <View style={{ flex: fighter1Predictions.KO_TKO }} />
+                      )}
+                      {actualMethod === 'DECISION' && fighter1Predictions.SUBMISSION > 0 && (
+                        <View style={{ flex: fighter1Predictions.SUBMISSION }} />
+                      )}
+                      {actualMethod === 'DECISION' && fighter1Predictions.DECISION > 0 && (
+                        <View style={{ flex: fighter1Predictions.DECISION, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 2 }}>
+                          <View style={{ backgroundColor: '#fff', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
+                            <FontAwesome name="check-circle" size={24} color="#22c55e" solid />
+                          </View>
+                        </View>
+                      )}
+                    </>
+                  )}
+                </View>
+
+                {/* Fighter 2 checkmark area */}
+                <View style={{ flex: winnerPredictions.fighter2.percentage, flexDirection: 'row', overflow: 'visible' }}>
+                  {actualWinner === fighter2Id && fighter2Predictions && (
+                    <>
+                      {actualMethod === 'KO_TKO' && fighter2Predictions.KO_TKO > 0 && (
+                        <View style={{ flex: fighter2Predictions.KO_TKO, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 2 }}>
+                          <View style={{ backgroundColor: '#fff', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
+                            <FontAwesome name="check-circle" size={24} color="#22c55e" solid />
+                          </View>
+                        </View>
+                      )}
+                      {actualMethod === 'KO_TKO' && fighter2Predictions.SUBMISSION > 0 && (
+                        <View style={{ flex: fighter2Predictions.SUBMISSION }} />
+                      )}
+                      {actualMethod === 'KO_TKO' && fighter2Predictions.DECISION > 0 && (
+                        <View style={{ flex: fighter2Predictions.DECISION }} />
+                      )}
+
+                      {actualMethod === 'SUBMISSION' && fighter2Predictions.KO_TKO > 0 && (
+                        <View style={{ flex: fighter2Predictions.KO_TKO }} />
+                      )}
+                      {actualMethod === 'SUBMISSION' && fighter2Predictions.SUBMISSION > 0 && (
+                        <View style={{ flex: fighter2Predictions.SUBMISSION, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 2 }}>
+                          <View style={{ backgroundColor: '#fff', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
+                            <FontAwesome name="check-circle" size={24} color="#22c55e" solid />
+                          </View>
+                        </View>
+                      )}
+                      {actualMethod === 'SUBMISSION' && fighter2Predictions.DECISION > 0 && (
+                        <View style={{ flex: fighter2Predictions.DECISION }} />
+                      )}
+
+                      {actualMethod === 'DECISION' && fighter2Predictions.KO_TKO > 0 && (
+                        <View style={{ flex: fighter2Predictions.KO_TKO }} />
+                      )}
+                      {actualMethod === 'DECISION' && fighter2Predictions.SUBMISSION > 0 && (
+                        <View style={{ flex: fighter2Predictions.SUBMISSION }} />
+                      )}
+                      {actualMethod === 'DECISION' && fighter2Predictions.DECISION > 0 && (
+                        <View style={{ flex: fighter2Predictions.DECISION, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 2 }}>
+                          <View style={{ backgroundColor: '#fff', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
+                            <FontAwesome name="check-circle" size={24} color="#22c55e" solid />
+                          </View>
+                        </View>
+                      )}
+                    </>
+                  )}
+                </View>
+              </View>
+            </View>
+          )}
+
           <View
             style={{
               height: 40,
