@@ -1575,11 +1575,11 @@ export default function CompletedFightDetailScreen({
                   </TouchableOpacity>
                 )}
               </View>
-            ) : !fight.userReview && (
+            ) : !fight.userReview ? (
               <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
                 No reviews yet. Be the first to review this fight!
               </Text>
-            )}
+            ) : null}
         </View>
 
         {/* Pre-Flight Insights Section Divider */}
