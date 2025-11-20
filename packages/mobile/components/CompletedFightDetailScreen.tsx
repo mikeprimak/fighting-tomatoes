@@ -722,7 +722,7 @@ export default function CompletedFightDetailScreen({
   // Pre-flight comment upvote mutation
   const upvotePreFightCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
-      return apiService.upvotePreFightComment(commentId);
+      return apiService.togglePreFightCommentUpvote(fight.id, commentId);
     },
     onMutate: async (commentId) => {
       setUpvotingCommentId(commentId);
@@ -781,7 +781,7 @@ export default function CompletedFightDetailScreen({
 
   const submitFlagComment = (reason: string) => {
     if (commentToFlag) {
-      apiService.flagPreFightComment(commentToFlag, reason)
+      apiService.flagPreFightComment(fight.id, commentToFlag, reason)
         .then(() => {
           setFlagModalVisible(false);
           setCommentToFlag(null);
