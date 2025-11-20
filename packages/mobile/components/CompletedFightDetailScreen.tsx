@@ -24,6 +24,7 @@ import { apiService } from '../services/api';
 import { getHypeHeatmapColor, getFlameColor } from '../utils/heatmap';
 import { FlagReviewModal, CommentCard, RatingDistributionChart } from '.';
 import HypeDistributionChart from './HypeDistributionChart';
+import PreFightCommentCard from './PreFightCommentCard';
 import { useAuth } from '../store/AuthContext';
 import { usePredictionAnimation } from '../store/PredictionAnimationContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
@@ -366,10 +367,13 @@ export default function CompletedFightDetailScreen({
   const setDetailsMenuVisible = externalSetDetailsMenuVisible || setInternalDetailsMenuVisible;
 
   const [predictionTab, setPredictionTab] = useState<'mine' | 'community'>('mine');
-  const [commentsTab, setCommentsTab] = useState<'postfight' | 'prefight'>('postfight');
+  const [commentsTab, setCommentsTab] = useState<'postfight' | 'preflight'>('postfight');
   const [hasLocallyRevealed, setHasLocallyRevealed] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [isEditingComment, setIsEditingComment] = useState(false);
+  const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
+  const [flagModalVisible, setFlagModalVisible] = useState(false);
+  const [commentToFlag, setCommentToFlag] = useState<string | null>(null);
 
   // Inline rating state - Initialize once with existing data, then manage locally
   const [rating, setRating] = useState(() => {
@@ -715,6 +719,80 @@ export default function CompletedFightDetailScreen({
 
   // Computed value: outcome is revealed if user rated OR tapped reveal OR backend says it's revealed
   const isOutcomeRevealed = rating > 0 || hasLocallyRevealed || fight.hasRevealedOutcome;
+
+  // Pre-flight comment upvote mutation
+  const upvotePreFightCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      return apiService.upvotePreFightComment(commentId);
+    },
+    onMutate: async (commentId) => {
+      setUpvotingCommentId(commentId);
+
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['preFightComments', fight.id] });
+      const previousComments = queryClient.getQueryData(['preFightComments', fight.id]);
+
+      // Optimistic update
+      queryClient.setQueryData(['preFightComments', fight.id], (old: any) => {
+        if (!old) return old;
+
+        const updatedComments = old.comments.map((c: any) =>
+          c.id === commentId
+            ? { ...c, upvotes: c.userHasUpvoted ? c.upvotes - 1 : c.upvotes + 1, userHasUpvoted: !c.userHasUpvoted }
+            : c
+        );
+
+        return { ...old, comments: updatedComments };
+      });
+
+      return { previousComments };
+    },
+    onSuccess: (data, commentId) => {
+      // Update with actual server response
+      queryClient.setQueryData(['preFightComments', fight.id], (old: any) => {
+        if (!old) return old;
+
+        const updatedComments = old.comments.map((c: any) =>
+          c.id === commentId
+            ? { ...c, upvotes: data.upvotes, userHasUpvoted: data.userHasUpvoted }
+            : c
+        );
+
+        return { ...old, comments: updatedComments };
+      });
+      setUpvotingCommentId(null);
+    },
+    onError: (err: any, commentId, context: any) => {
+      // Rollback on error
+      if (context?.previousComments) {
+        queryClient.setQueryData(['preFightComments', fight.id], context.previousComments);
+      }
+      setUpvotingCommentId(null);
+    },
+  });
+
+  const handleUpvoteComment = (commentId: string) => {
+    upvotePreFightCommentMutation.mutate(commentId);
+  };
+
+  const handleFlagComment = (commentId: string) => {
+    setCommentToFlag(commentId);
+    setFlagModalVisible(true);
+  };
+
+  const submitFlagComment = (reason: string) => {
+    if (commentToFlag) {
+      apiService.flagPreFightComment(commentToFlag, reason)
+        .then(() => {
+          setFlagModalVisible(false);
+          setCommentToFlag(null);
+          showSuccess('Comment flagged successfully');
+        })
+        .catch((error: any) => {
+          showError(error?.error || 'Failed to flag comment');
+        });
+    }
+  };
 
   const handleFlagReview = (reviewId: string) => {
     setReviewToFlag(reviewId);
@@ -1648,21 +1726,28 @@ export default function CompletedFightDetailScreen({
               Pre-Fight Comments
             </Text>
             {preFightCommentsData && preFightCommentsData.comments && preFightCommentsData.comments.length > 0 ? (
-              preFightCommentsData.comments.map((comment: any) => (
-                <View key={comment.id} style={styles.preFightCommentCard}>
-                  <View style={styles.preFightCommentHeader}>
-                    <Text style={[styles.preFightCommentUser, { color: colors.text }]}>
-                      {comment.user.displayName || `${comment.user.firstName} ${comment.user.lastName}`}
-                    </Text>
-                    <Text style={[styles.preFightCommentDate, { color: colors.textSecondary }]}>
-                      {new Date(comment.createdAt).toLocaleDateString()}
-                    </Text>
-                  </View>
-                  <Text style={[styles.preFightCommentContent, { color: colors.text }]}>
-                    {comment.content}
-                  </Text>
-                </View>
-              ))
+              <View style={{ marginTop: 10 }}>
+                {preFightCommentsData.comments.map((comment: any) => (
+                  <PreFightCommentCard
+                    key={comment.id}
+                    comment={{
+                      id: comment.id,
+                      content: comment.content,
+                      hypeRating: comment.hypeRating,
+                      upvotes: comment.upvotes || 0,
+                      userHasUpvoted: comment.userHasUpvoted || false,
+                      user: {
+                        displayName: comment.user.displayName,
+                      },
+                    }}
+                    onUpvote={() => handleUpvoteComment(comment.id)}
+                    onFlag={() => handleFlagComment(comment.id)}
+                    isUpvoting={upvotingCommentId === comment.id}
+                    isAuthenticated={isAuthenticated}
+                    showMyComment={false}
+                  />
+                ))}
+              </View>
             ) : (
               <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
                 No pre-fight comments yet.
@@ -1982,8 +2067,11 @@ export default function CompletedFightDetailScreen({
       {/* Modals */}
       <FlagReviewModal
         visible={flagModalVisible}
-        onClose={() => setFlagModalVisible(false)}
-        onSubmit={submitFlagReview}
+        onClose={() => {
+          setFlagModalVisible(false);
+          setCommentToFlag(null);
+        }}
+        onSubmit={commentToFlag ? submitFlagComment : submitFlagReview}
         isLoading={flagReviewMutation.isPending}
         colorScheme={colorScheme}
       />
