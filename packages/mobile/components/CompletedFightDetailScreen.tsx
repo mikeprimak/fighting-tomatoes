@@ -13,6 +13,7 @@ import {
   Easing,
   Platform,
   Keyboard,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -232,8 +233,13 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return shuffled;
 };
 
-// Function to get available tags based on rating
-const getAvailableTagsForRating = (rating: number, selectedTags: string[]) => {
+// Function to get available tags based on rating and community data
+const getAvailableTagsForRating = (
+  rating: number,
+  selectedTags: string[],
+  communityTags: Array<{ name: string; count: number }> = []
+): Array<{ id: string; name: string; count: number }> => {
+  // Determine eligible tags based on rating tier
   let eligibleTags: typeof ALL_FIGHT_TAGS = [];
 
   if (rating >= 9) {
@@ -258,26 +264,63 @@ const getAvailableTagsForRating = (rating: number, selectedTags: string[]) => {
     );
   }
 
-  // Include already selected tags
-  const selectedTagObjects = ALL_FIGHT_TAGS.filter(tag => selectedTags.includes(tag.id));
-  const mustIncludeTags = selectedTagObjects;
+  const MAX_TAGS = 14;
 
-  // Remove selected tags from pool
-  const unselectedEligibleTags = eligibleTags.filter(tag => !selectedTags.includes(tag.id));
+  // Helper function to normalize tag names for matching
+  const normalizeTagName = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
 
-  // Limit to 7 tags for clean layout
-  const CONSERVATIVE_MAX_TAGS = 7;
-  const selectedCount = mustIncludeTags.length;
-  const remainingSlots = Math.max(0, Math.min(CONSERVATIVE_MAX_TAGS - selectedCount, unselectedEligibleTags.length));
+  // 1. Always include user's selected tags (with their community counts if available)
+  const selectedTagObjects = ALL_FIGHT_TAGS.filter(tag => selectedTags.includes(tag.id)).map(tag => {
+    const communityTag = communityTags.find(ct =>
+      normalizeTagName(ct.name) === tag.id ||
+      normalizeTagName(ct.name) === normalizeTagName(tag.name)
+    );
+    return {
+      id: tag.id,
+      name: tag.name,
+      count: communityTag?.count || 0
+    };
+  });
 
-  let randomlySelectedTags: typeof ALL_FIGHT_TAGS = [];
-  if (remainingSlots > 0 && unselectedEligibleTags.length > 0) {
-    const shuffled = shuffleArray(unselectedEligibleTags);
-    randomlySelectedTags = shuffled.slice(0, remainingSlots);
+  // 2. Get top 14 community tags that match rating tier
+  const eligibleTagIds = new Set(eligibleTags.map(t => t.id));
+  const topCommunityTags = communityTags
+    .map(ct => {
+      const tag = ALL_FIGHT_TAGS.find(t =>
+        normalizeTagName(ct.name) === t.id ||
+        normalizeTagName(ct.name) === normalizeTagName(t.name)
+      );
+      return tag ? { id: tag.id, name: tag.name, count: ct.count } : null;
+    })
+    .filter((tag): tag is { id: string; name: string; count: number } =>
+      tag !== null &&
+      eligibleTagIds.has(tag.id) &&
+      !selectedTags.includes(tag.id)
+    )
+    .slice(0, 14);
+
+  // 3. Fill remaining slots with random rating-appropriate tags
+  const usedTagIds = new Set([
+    ...selectedTagObjects.map(t => t.id),
+    ...topCommunityTags.map(t => t.id)
+  ]);
+
+  const remainingEligibleTags = eligibleTags
+    .filter(tag => !usedTagIds.has(tag.id))
+    .map(tag => ({ id: tag.id, name: tag.name, count: 0 }));
+
+  const totalSoFar = selectedTagObjects.length + topCommunityTags.length;
+  const remainingSlots = Math.max(0, MAX_TAGS - totalSoFar);
+
+  let randomTags: Array<{ id: string; name: string; count: number }> = [];
+  if (remainingSlots > 0 && remainingEligibleTags.length > 0) {
+    const shuffled = shuffleArray(remainingEligibleTags);
+    randomTags = shuffled.slice(0, remainingSlots);
   }
 
-  const allTags = [...mustIncludeTags, ...randomlySelectedTags];
-  return allTags.slice(0, CONSERVATIVE_MAX_TAGS);
+  // Combine: selected tags + top community tags + random filler tags
+  const allTags = [...selectedTagObjects, ...topCommunityTags, ...randomTags];
+  return allTags.slice(0, MAX_TAGS);
 };
 
 // Placeholder image selection for fighters
@@ -370,7 +413,7 @@ export default function CompletedFightDetailScreen({
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // State for displayed tags (delayed update for smooth animation)
-  const [displayedTags, setDisplayedTags] = useState<string[]>([]);
+  const [displayedTags, setDisplayedTags] = useState<Array<{ id: string; name: string; count: number }>>([]);
 
   // Fetch both prediction stats and aggregate stats in a single API call
   const { data: fightStatsData } = useQuery({
@@ -456,10 +499,11 @@ export default function CompletedFightDetailScreen({
     staleTime: 60 * 1000,
   });
 
-  // Calculate available tags based on current rating
+  // Calculate available tags based on current rating and community data
   const availableTags = React.useMemo(() => {
-    return getAvailableTagsForRating(rating, selectedTags);
-  }, [rating, tagRandomSeed]);
+    const communityTags = aggregateStats?.topTags || [];
+    return getAvailableTagsForRating(rating, selectedTags, communityTags);
+  }, [rating, selectedTags, tagRandomSeed, aggregateStats?.topTags]);
 
   // Initialize displayed tags on first render
   useEffect(() => {
@@ -725,11 +769,21 @@ export default function CompletedFightDetailScreen({
   };
 
   const handleToggleTag = (tagId: string) => {
-    const newTags = selectedTags.includes(tagId)
-      ? selectedTags.filter(id => id !== tagId)
-      : [...selectedTags, tagId];
+    const isSelecting = !selectedTags.includes(tagId);
+    const newTags = isSelecting
+      ? [...selectedTags, tagId]
+      : selectedTags.filter(id => id !== tagId);
 
     setSelectedTags(newTags);
+
+    // Optimistically update the displayed tag counts
+    setDisplayedTags(prevTags =>
+      prevTags.map(tag =>
+        tag.id === tagId
+          ? { ...tag, count: Math.max(0, tag.count + (isSelecting ? 1 : -1)) }
+          : tag
+      )
+    );
 
     // Immediate save for tags
     setTimeout(() => {
@@ -1097,7 +1151,7 @@ export default function CompletedFightDetailScreen({
                             color: isSelected ? colors.textOnAccent : colors.text
                           }
                         ]}>
-                          {tag.name}
+                          {tag.name}{tag.count > 0 ? ` (${tag.count})` : ''}
                         </Text>
                       </TouchableOpacity>
                     </Animated.View>
