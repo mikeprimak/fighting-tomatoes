@@ -100,6 +100,30 @@ interface CompletedFightDetailScreenProps {
   setDetailsMenuVisible?: (visible: boolean) => void;
 }
 
+// Normalize method from database format to prediction format
+const normalizeMethod = (method: string | null | undefined): string | null => {
+  if (!method) return null;
+
+  const upperMethod = method.toUpperCase();
+
+  // Check for KO/TKO variations
+  if (upperMethod.includes('KO') || upperMethod.includes('TKO')) {
+    return 'KO_TKO';
+  }
+
+  // Check for Submission variations
+  if (upperMethod.includes('SUBMISSION')) {
+    return 'SUBMISSION';
+  }
+
+  // Check for Decision variations
+  if (upperMethod.includes('DECISION')) {
+    return 'DECISION';
+  }
+
+  return null;
+};
+
 // Comprehensive fight descriptors organized by rating tiers (from RateFightModal)
 const ALL_FIGHT_TAGS = [
   // EXCELLENT FIGHTS (9-10)
@@ -931,7 +955,7 @@ export default function CompletedFightDetailScreen({
         </View>
 
         {/* Community Rating Data */}
-        <View style={[styles.sectionNoBorder, { marginTop: 16 }]}>
+        <View style={[styles.sectionNoBorder, { marginTop: 26 }]}>
           {/* Community Rating Layout: Horizontal */}
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 0 }}>
             {/* Community Rating Box */}
@@ -1034,20 +1058,18 @@ export default function CompletedFightDetailScreen({
           </View>
         </View>
 
-        {/* Tags */}
-        {aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
-          <View style={[styles.sectionNoBorder, { marginTop: 16 }]}>
-            <View style={styles.communityTagsContainer}>
-              {aggregateStats.topTags.slice(0, 3).map((tagData: any, index: number) => (
-                <Text key={index} style={[styles.communityTagText, { color: colors.textSecondary }]}>
-                  #{tagData.name}
-                </Text>
-              ))}
-            </View>
+        {/* Tags Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: -22 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0 }}>
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              TAGS
+            </Text>
           </View>
-        )}
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
 
-        {/* User-entered tappable tags */}
+        {/* Tags Content */}
         <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 20 }]}>
           {displayedTags.length > 0 && (
             <View style={styles.inlineTagsSection}>
@@ -1086,11 +1108,39 @@ export default function CompletedFightDetailScreen({
           )}
         </View>
 
-        {/* What Happened */}
-        <View style={styles.sectionNoBorder}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>What Happened</Text>
+        {/* Outcome Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 15 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0 }}>
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              OUTCOME
+            </Text>
+          </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
 
-          <View style={styles.whatHappenedContainer}>
+        {/* Outcome Content */}
+        <View style={styles.sectionNoBorder}>
+          {/* Outcome Text with Label */}
+          {!fight.winner ? (
+            <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, marginTop: 20, textAlign: 'center' }]}>
+              Outcome data not yet available.
+            </Text>
+          ) : isOutcomeRevealed ? (
+            <Text style={[styles.whatHappenedPromptText, { color: colors.text, marginTop: 20, marginBottom: 12, textAlign: 'left', fontStyle: 'normal', fontSize: 14 }]}>
+              Winner: {fight.winner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName} by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
+              {fight.round && !fight.method?.includes('Decision') && ` in Round ${fight.round}`}
+              {fight.time && ` ${fight.time}`}
+            </Text>
+          ) : (
+            <TouchableOpacity onPress={handleRevealOutcome} style={{ marginTop: 20 }}>
+              <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center' }]}>
+                Rate fight or <Text style={{ color: '#F5C518' }}>tap here</Text> to show outcome.
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <View style={[styles.whatHappenedContainer, { marginTop: -3 }]}>
             {/* Fighter 1 */}
             <View style={styles.whatHappenedFighter}>
               <View style={[
@@ -1106,16 +1156,10 @@ export default function CompletedFightDetailScreen({
                   style={styles.whatHappenedImage}
                 />
               </View>
-              <Text style={[styles.whatHappenedFirstName, { color: colors.text }]}>
-                {fight.fighter1.firstName}
-              </Text>
-              <Text style={[styles.whatHappenedLastName, { color: colors.text }]}>
-                {fight.fighter1.lastName}
+              <Text style={[styles.whatHappenedName, { color: colors.text }]}>
+                {fight.fighter1.firstName} {fight.fighter1.lastName}
               </Text>
             </View>
-
-            {/* VS */}
-            <Text style={[styles.whatHappenedVs, { color: colors.textSecondary }]}>vs</Text>
 
             {/* Fighter 2 */}
             <View style={styles.whatHappenedFighter}>
@@ -1132,187 +1176,54 @@ export default function CompletedFightDetailScreen({
                   style={styles.whatHappenedImage}
                 />
               </View>
-              <Text style={[styles.whatHappenedFirstName, { color: colors.text }]}>
-                {fight.fighter2.firstName}
-              </Text>
-              <Text style={[styles.whatHappenedLastName, { color: colors.text }]}>
-                {fight.fighter2.lastName}
+              <Text style={[styles.whatHappenedName, { color: colors.text }]}>
+                {fight.fighter2.firstName} {fight.fighter2.lastName}
               </Text>
             </View>
           </View>
 
-          {/* Winner Text, No Data Message, or Prompt */}
-          {!fight.winner ? (
-            <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary }]}>
-              Outcome data not yet available.
-            </Text>
-          ) : isOutcomeRevealed ? (
-            <Text style={[styles.whatHappenedWinnerText, { color: '#22c55e' }]}>
-              {fight.winner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName} by {fight.method || 'Unknown'}
-              {fight.round && ` in Round ${fight.round}`}
-              {fight.time && ` ${fight.time}`}
-            </Text>
-          ) : (
-            <TouchableOpacity onPress={handleRevealOutcome}>
-              <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary }]}>
-                Rate fight or <Text style={{ color: '#F5C518' }}>tap here</Text> to show outcome.
+          {/* Predictions Section Divider */}
+          <View style={[styles.sectionDivider, { marginTop: 20 }]}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <View style={{ flexShrink: 0 }}>
+              <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+                Predictions
               </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* The Predictions */}
-        <View style={styles.sectionNoBorder}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>The Predictions</Text>
-
-          {/* Tab Buttons */}
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              style={[
-                styles.tabButton,
-                { borderColor: colors.border },
-                predictionTab === 'mine' && { backgroundColor: colors.primary }
-              ]}
-              onPress={() => setPredictionTab('mine')}
-            >
-              <Text style={[
-                styles.tabButtonText,
-                { color: predictionTab === 'mine' ? colors.textOnAccent : colors.text }
-              ]}>
-                My Predictions
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.tabButton,
-                { borderColor: colors.border },
-                predictionTab === 'community' && { backgroundColor: colors.primary }
-              ]}
-              onPress={() => setPredictionTab('community')}
-            >
-              <Text style={[
-                styles.tabButtonText,
-                { color: predictionTab === 'community' ? colors.textOnAccent : colors.text }
-              ]}>
-                Community
-              </Text>
-            </TouchableOpacity>
+            </View>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
 
-          {/* Tab Content */}
-          {predictionTab === 'mine' ? (
-            <View style={styles.tabContent}>
-              {/* My Hype */}
-              <View style={styles.predictionRow}>
-                <Text style={[styles.predictionLabel, { color: colors.textSecondary }]}>Hype:</Text>
-                {fight.userHypePrediction ? (
-                  <View style={[styles.hypeBox, { backgroundColor: getHypeHeatmapColor(fight.userHypePrediction) }]}>
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={24}
-                      color={getFlameColor(getHypeHeatmapColor(fight.userHypePrediction), colors.background)}
-                      style={{ position: 'absolute' }}
-                    />
-                    <Text style={styles.hypeBoxText}>
-                      {fight.userHypePrediction}
-                    </Text>
-                  </View>
-                ) : (
-                  <Text style={[styles.predictionValue, { color: colors.textSecondary, fontStyle: 'italic' }]}>
-                    Not entered
-                  </Text>
-                )}
+          {/* Community Predictions Bar Chart */}
+          {predictionStats && predictionStats.fighter1MethodPredictions && predictionStats.fighter2MethodPredictions && predictionStats.winnerPredictions && (() => {
+            const normalized = normalizeMethod(fight.method);
+            console.log('[CompletedFight] Passing to chart:', {
+              winner: fight.winner,
+              method: fight.method,
+              normalized,
+              fighter1Id: fight.fighter1.id,
+              fighter2Id: fight.fighter2.id,
+            });
+            return (
+              <View style={{ marginTop: 40 }}>
+                <PredictionBarChart
+                  fighter1Name={fight.fighter1.lastName}
+                  fighter2Name={fight.fighter2.lastName}
+                  fighter1Id={fight.fighter1.id}
+                  fighter2Id={fight.fighter2.id}
+                  selectedWinner={fight.userPredictedWinner || null}
+                  selectedMethod={fight.userPredictedMethod || null}
+                  fighter1Predictions={predictionStats.fighter1MethodPredictions}
+                  fighter2Predictions={predictionStats.fighter2MethodPredictions}
+                  totalPredictions={predictionStats.totalPredictions}
+                  winnerPredictions={predictionStats.winnerPredictions}
+                  showColors={true}
+                  showLabels={true}
+                  actualWinner={fight.winner}
+                  actualMethod={normalized}
+                />
               </View>
-
-              {/* My Winner */}
-              <View style={styles.predictionRow}>
-                <Text style={[styles.predictionLabel, { color: colors.textSecondary }]}>Winner:</Text>
-                {fight.userPredictedWinner ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={[styles.predictionValue, { color: colors.text }]}>
-                      {fight.userPredictedWinner === fight.fighter1.id
-                        ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
-                        : `${fight.fighter2.firstName} ${fight.fighter2.lastName}`}
-                    </Text>
-                    {/* Only show correctness indicator if outcome is revealed */}
-                    {isOutcomeRevealed && (
-                      fight.userPredictedWinner === fight.winner ? (
-                        <FontAwesome name="check-circle" size={16} color="#22c55e" style={{ marginLeft: 8 }} />
-                      ) : (
-                        <FontAwesome name="times-circle" size={16} color={colors.textSecondary} style={{ marginLeft: 8 }} />
-                      )
-                    )}
-                  </View>
-                ) : (
-                  <Text style={[styles.predictionValue, { color: colors.textSecondary, fontStyle: 'italic' }]}>
-                    No prediction
-                  </Text>
-                )}
-              </View>
-
-              {/* My Method */}
-              <View style={styles.predictionRow}>
-                <Text style={[styles.predictionLabel, { color: colors.textSecondary }]}>Method:</Text>
-                {fight.userPredictedMethod ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={[styles.predictionValue, { color: colors.text }]}>
-                      {fight.userPredictedMethod === 'KO_TKO' ? 'KO/TKO' : fight.userPredictedMethod}
-                    </Text>
-                    {/* Only show correctness indicator if outcome is revealed */}
-                    {isOutcomeRevealed && (
-                      fight.userPredictedMethod === fight.method ? (
-                        <FontAwesome name="check-circle" size={16} color="#22c55e" style={{ marginLeft: 8 }} />
-                      ) : (
-                        <FontAwesome name="times-circle" size={16} color={colors.textSecondary} style={{ marginLeft: 8 }} />
-                      )
-                    )}
-                  </View>
-                ) : (
-                  <Text style={[styles.predictionValue, { color: colors.textSecondary, fontStyle: 'italic' }]}>
-                    No prediction
-                  </Text>
-                )}
-              </View>
-            </View>
-          ) : (
-            <View style={styles.tabContent}>
-              {/* Community Hype */}
-              <View style={styles.predictionRow}>
-                <Text style={[styles.predictionLabel, { color: colors.textSecondary }]}>Average Hype:</Text>
-                {predictionStats?.averageHype ? (
-                  <View style={[styles.hypeBox, { backgroundColor: getHypeHeatmapColor(predictionStats.averageHype) }]}>
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={24}
-                      color={getFlameColor(getHypeHeatmapColor(predictionStats.averageHype), colors.background)}
-                      style={{ position: 'absolute' }}
-                    />
-                    <Text style={styles.hypeBoxText}>
-                      {predictionStats.averageHype.toFixed(1)}
-                    </Text>
-                  </View>
-                ) : (
-                  <Text style={[styles.predictionValue, { color: colors.textSecondary, fontStyle: 'italic' }]}>
-                    No data
-                  </Text>
-                )}
-              </View>
-
-              {/* Community Winner Predictions */}
-              {predictionStats?.winnerPredictions && (
-                <View style={{ marginTop: 12 }}>
-                  <Text style={[styles.predictionLabel, { color: colors.textSecondary, marginBottom: 8 }]}>
-                    Winner Predictions:
-                  </Text>
-                  <PredictionBarChart
-                    predictionStats={predictionStats}
-                    fighter1Name={fight.fighter1.lastName}
-                    fighter2Name={fight.fighter2.lastName}
-                  />
-                </View>
-              )}
-            </View>
-          )}
+            );
+          })()}
         </View>
 
         {/* Split Score Row - HIDDEN */}
@@ -1600,40 +1511,6 @@ export default function CompletedFightDetailScreen({
             </View>
           )}
         </View>}
-
-        {/* Rating Distribution */}
-        <View style={styles.communityRatingsSection}>
-          <Text style={[styles.communityRatingsTitle, { color: colors.text }]}>
-            Rating Distribution
-          </Text>
-          <View style={styles.distributionContainer}>
-            {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((score) => {
-              const count = ratingDistribution[score] || 0;
-              const percentage = totalRatings > 0 ? (count / totalRatings) * 100 : 0;
-              const barWidth = totalRatings > 0 ? (count / maxCount) * 100 : 0;
-
-              return (
-                <View key={score} style={styles.distributionRow}>
-                  <Text style={[styles.distributionScore, { color: colors.text }]}>{score}</Text>
-                  <View style={styles.distributionBarContainer}>
-                    <View
-                      style={[
-                        styles.distributionBar,
-                        {
-                          width: `${barWidth}%`,
-                          backgroundColor: '#F5C518',
-                        },
-                      ]}
-                    />
-                  </View>
-                  <Text style={[styles.distributionCount, { color: colors.textSecondary }]}>
-                    {count} ({percentage.toFixed(0)}%)
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
 
         {/* Tags */}
         {fight.topTags && fight.topTags.length > 0 && (
@@ -2465,15 +2342,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginTop: 16,
     marginBottom: 12,
+    gap: 16,
   },
   whatHappenedFighter: {
     alignItems: 'center',
     flex: 1,
   },
   whatHappenedImageContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     overflow: 'hidden',
     marginBottom: 8,
   },
@@ -2481,19 +2359,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  whatHappenedFirstName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 2,
-  },
-  whatHappenedLastName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  whatHappenedVs: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginHorizontal: 12,
+  whatHappenedName: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   whatHappenedWinnerText: {
     fontSize: 16,
