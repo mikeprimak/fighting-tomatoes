@@ -1161,16 +1161,29 @@ export default function UpcomingFightDetailScreen({
         </View>
       </View>
 
-      {/* Community Predictions Section Divider */}
-      <View style={[styles.sectionDivider, { marginTop: -8 }]}>
-        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        <View style={{ flexShrink: 0 }}>
-          <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-            Community Predictions
-          </Text>
+      {/* Community Data Container */}
+      <View style={[
+        styles.communityDataContainer,
+        {
+          backgroundColor: colorScheme === 'dark' ? 'rgba(59, 130, 246, 0.05)' : 'rgba(59, 130, 246, 0.08)',
+          borderLeftColor: '#3B82F6',
+        }
+      ]}>
+        {/* Badge Header */}
+        <View style={styles.communityDataBadge}>
+          <Text style={styles.communityDataBadgeText}>👥 Community Data</Text>
         </View>
-        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-      </View>
+
+        {/* Community Predictions Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 15 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0 }}>
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              Community Predictions
+            </Text>
+          </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
 
       {/* Community Predictions Data */}
       <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
@@ -1193,16 +1206,16 @@ export default function UpcomingFightDetailScreen({
         )}
       </View>
 
-      {/* Visual Break - Separator between user input and community sections */}
-      <View style={styles.sectionDivider}>
-        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        <View style={{ flexShrink: 0 }}>
-          <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-            Community Hype
-          </Text>
+        {/* Community Hype Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: -8 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0 }}>
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              Community Hype
+            </Text>
+          </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
-        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-      </View>
 
       {/* Community Data */}
       <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
@@ -1338,6 +1351,7 @@ export default function UpcomingFightDetailScreen({
               </View>
             )}
           </View>
+        </View>
         </View>
       </View>
 
@@ -1640,6 +1654,32 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#000',
+    letterSpacing: 0.3,
+  },
+  communityDataContainer: {
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingLeft: 4,
+    paddingRight: 4,
+    borderRadius: 16,
+    borderLeftWidth: 4,
+  },
+  communityDataBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginBottom: 8,
+    marginLeft: 10,
+  },
+  communityDataBadgeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#fff',
     letterSpacing: 0.3,
   },
   sectionDivider: {
