@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
@@ -36,6 +36,63 @@ export default function FightDetailScreen() {
   const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: ['fight', id] });
   };
+
+  // Mutation for toggling fight notification with proper optimistic updates
+  const toggleNotificationMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      return apiService.toggleFightNotification(id as string, enabled);
+    },
+    onMutate: async (enabled) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['fight', id, isAuthenticated] });
+
+      // Snapshot the previous value
+      const previousFight = queryClient.getQueryData(['fight', id, isAuthenticated]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(['fight', id, isAuthenticated], (old: any) => {
+        if (!old?.fight) return old;
+
+        return {
+          ...old,
+          fight: {
+            ...old.fight,
+            notificationReasons: enabled
+              ? {
+                  willBeNotified: true,
+                  reasons: [
+                    ...(old.fight.notificationReasons?.reasons || []).filter((r: any) => r.isActive && r.type !== 'manual'),
+                    {
+                      type: 'manual' as const,
+                      source: 'Manual Fight Follow',
+                      isActive: true,
+                    },
+                  ],
+                }
+              : {
+                  willBeNotified: false,
+                  reasons: (old.fight.notificationReasons?.reasons || []).map((r: any) =>
+                    r.type === 'manual' ? { ...r, isActive: false } : r
+                  ),
+                },
+          },
+        };
+      });
+
+      return { previousFight };
+    },
+    onError: (err, enabled, context: any) => {
+      // Rollback on error
+      if (context?.previousFight) {
+        queryClient.setQueryData(['fight', id, isAuthenticated], context.previousFight);
+      }
+      console.error('Failed to toggle notification:', err);
+    },
+    onSettled: () => {
+      // Refetch to ensure we have the latest data
+      queryClient.invalidateQueries({ queryKey: ['fight', id, isAuthenticated] });
+    },
+  });
 
   if (fightLoading) {
     return (
@@ -72,21 +129,45 @@ export default function FightDetailScreen() {
   const { fight } = fightData;
   const isComplete = fight.isComplete;
 
+  // Toggle fight notification using mutation
+  const handleToggleNotification = () => {
+    const hasManualNotification = fight.notificationReasons?.reasons?.some(
+      (r: any) => r.type === 'manual' && r.isActive
+    );
+
+    toggleNotificationMutation.mutate(!hasManualNotification);
+  };
+
   const renderMenuButton = () => {
-    // Show bell only for upcoming fights if any notification is active
-    const hasNotification = !isComplete && (fight.isFollowing || fight.isFollowingFighter1 || fight.isFollowingFighter2 || fight.isHypedFight);
+    // For upcoming fights, check if manual notification is set
+    const hasManualNotification = !isComplete && fight.notificationReasons?.reasons?.some(
+      (r: any) => r.type === 'manual' && r.isActive
+    );
 
     return (
-      <TouchableOpacity
-        onPress={() => setDetailsMenuVisible(true)}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}
-      >
-        {hasNotification && (
-          <FontAwesome name="bell" size={18} color={colors.tint} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+        {/* Bell icon - always visible for upcoming fights, tappable to toggle notification */}
+        {!isComplete && (
+          <TouchableOpacity
+            onPress={handleToggleNotification}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <FontAwesome
+              name={hasManualNotification ? "bell" : "bell-o"}
+              size={18}
+              color={hasManualNotification ? colors.tint : colors.text}
+            />
+          </TouchableOpacity>
         )}
-        <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
-      </TouchableOpacity>
+
+        {/* Three dots menu - separate from bell */}
+        <TouchableOpacity
+          onPress={() => setDetailsMenuVisible(true)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
+        </TouchableOpacity>
+      </View>
     );
   };
 
