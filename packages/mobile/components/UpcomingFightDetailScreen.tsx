@@ -1041,131 +1041,122 @@ export default function UpcomingFightDetailScreen({
 
         {/* How Hyped? */}
         <View style={[styles.sectionNoBorder, { marginTop: 29 }]}>
-          <View style={styles.userInputTitleRow}>
+          <View style={[styles.userInputTitleRow, { alignItems: 'center' }]}>
             <View style={styles.yellowSideLine} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               How hyped are you?
             </Text>
-          </View>
+            {/* Spinning number wheel inline with title */}
+            <View style={[styles.displayFlameContainer, { marginTop: 10, marginBottom: 0, marginLeft: 8, paddingBottom: 0 }]}>
+              <View style={styles.animatedFlameContainer}>
+                <View style={styles.wheelContainer} pointerEvents="none">
+                  <Animated.View style={[
+                    styles.wheelNumbers,
+                    {
+                      transform: [{
+                        translateY: wheelAnimation.interpolate({
+                          inputRange: [0, 520],
+                          outputRange: [156, -364],
+                        })
+                      }]
+                    }
+                  ]}>
+                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
+                      const hypeColor = getHypeHeatmapColor(number);
 
-          {/* User's hype selection row */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: -10 }}>
-            {/* User icon and hype wheel */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginLeft: 2 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 10 }}>
-                <FontAwesome name="user" size={20} color={colors.textSecondary} />
-              </View>
-              <View style={[styles.displayFlameContainer, { marginTop: 10 }]}>
-                <View style={styles.animatedFlameContainer}>
-                  <View style={styles.wheelContainer} pointerEvents="none">
-                    <Animated.View style={[
-                      styles.wheelNumbers,
-                      {
-                        transform: [{
-                          translateY: wheelAnimation.interpolate({
-                            inputRange: [0, 520],
-                            outputRange: [156, -364],
-                          })
-                        }]
-                      }
-                    ]}>
-                      {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
-                        const hypeColor = getHypeHeatmapColor(number);
+                      // Calculate flame color (same logic as Community area)
+                      const getFlameColor = (hypeColor: string, bgColor: string) => {
+                        const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                        const hypeHexMatch = hypeColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
 
-                        // Calculate flame color (same logic as Community area)
-                        const getFlameColor = (hypeColor: string, bgColor: string) => {
-                          const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                          const hypeHexMatch = hypeColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
+                        let hypeR = 0, hypeG = 0, hypeB = 0;
+                        if (hypeRgbaMatch) {
+                          hypeR = parseInt(hypeRgbaMatch[1]);
+                          hypeG = parseInt(hypeRgbaMatch[2]);
+                          hypeB = parseInt(hypeRgbaMatch[3]);
+                        } else if (hypeHexMatch) {
+                          hypeR = parseInt(hypeHexMatch[1], 16);
+                          hypeG = parseInt(hypeHexMatch[2], 16);
+                          hypeB = parseInt(hypeHexMatch[3], 16);
+                        }
 
-                          let hypeR = 0, hypeG = 0, hypeB = 0;
-                          if (hypeRgbaMatch) {
-                            hypeR = parseInt(hypeRgbaMatch[1]);
-                            hypeG = parseInt(hypeRgbaMatch[2]);
-                            hypeB = parseInt(hypeRgbaMatch[3]);
-                          } else if (hypeHexMatch) {
-                            hypeR = parseInt(hypeHexMatch[1], 16);
-                            hypeG = parseInt(hypeHexMatch[2], 16);
-                            hypeB = parseInt(hypeHexMatch[3], 16);
-                          }
+                        const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+                        const bgHexMatch = bgColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
 
-                          const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                          const bgHexMatch = bgColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
+                        let bgR = 0, bgG = 0, bgB = 0;
+                        if (bgRgbaMatch) {
+                          bgR = parseInt(bgRgbaMatch[1]);
+                          bgG = parseInt(bgRgbaMatch[2]);
+                          bgB = parseInt(bgRgbaMatch[3]);
+                        } else if (bgHexMatch) {
+                          bgR = parseInt(bgHexMatch[1], 16);
+                          bgG = parseInt(bgHexMatch[2], 16);
+                          bgB = parseInt(bgHexMatch[3], 16);
+                        }
 
-                          let bgR = 0, bgG = 0, bgB = 0;
-                          if (bgRgbaMatch) {
-                            bgR = parseInt(bgRgbaMatch[1]);
-                            bgG = parseInt(bgRgbaMatch[2]);
-                            bgB = parseInt(bgRgbaMatch[3]);
-                          } else if (bgHexMatch) {
-                            bgR = parseInt(bgHexMatch[1], 16);
-                            bgG = parseInt(bgHexMatch[2], 16);
-                            bgB = parseInt(bgHexMatch[3], 16);
-                          }
+                        const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
+                        const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
+                        const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
 
-                          const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
-                          const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
-                          const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
+                        return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
+                      };
 
-                          return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
-                        };
+                      const flameColor = getFlameColor(hypeColor, colors.background);
 
-                        const flameColor = getFlameColor(hypeColor, colors.background);
-
-                        return (
-                          <View key={number} style={styles.wheelBoxContainer}>
-                            <View style={[
-                              styles.wheelBox,
-                              { backgroundColor: hypeColor }
-                            ]}>
-                              <FontAwesome6
-                                name="fire-flame-curved"
-                                size={24}
-                                color={flameColor}
-                                style={{ position: 'absolute' }}
-                              />
-                              <Text style={styles.wheelBoxText}>{number}</Text>
-                            </View>
+                      return (
+                        <View key={number} style={styles.wheelBoxContainer}>
+                          <View style={[
+                            styles.wheelBox,
+                            { backgroundColor: hypeColor }
+                          ]}>
+                            <FontAwesome6
+                              name="fire-flame-curved"
+                              size={24}
+                              color={flameColor}
+                              style={{ position: 'absolute' }}
+                            />
+                            <Text style={styles.wheelBoxText}>{number}</Text>
                           </View>
-                        );
-                      })}
-                    </Animated.View>
-                  </View>
+                        </View>
+                      );
+                    })}
+                  </Animated.View>
                 </View>
               </View>
             </View>
+          </View>
 
-            {/* Row of selectable flames (1-10) */}
-            <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: -12, marginTop: -5 }]}>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
-              const isSelected = level <= (selectedHype || 0);
-              const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
+          {/* Row of selectable flames (1-10) */}
+          <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5 }]}>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
+            const isSelected = level <= (selectedHype || 0);
+            const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
 
-              return (
-                <TouchableOpacity
-                  key={level}
-                  onPress={() => handleHypeSelection(level)}
-                  style={styles.flameButton}
-                  hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                >
-                  <View style={{ width: 26, alignItems: 'center' }}>
-                    {isSelected ? (
-                      <FontAwesome6
-                        name="fire-flame-curved"
-                        size={26}
-                        color={flameColor}
-                      />
-                    ) : (
-                      <Image
-                        source={require('../assets/flame-hollow-alpha-colored.png')}
-                        style={{ width: 26, height: 26 }}
-                        resizeMode="contain"
-                      />
-                    )}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-            </View>
+            return (
+              <TouchableOpacity
+                key={level}
+                onPress={() => handleHypeSelection(level)}
+                style={styles.flameButton}
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              >
+                <View style={{ width: 26, alignItems: 'center' }}>
+                  {isSelected ? (
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={26}
+                      color={flameColor}
+                    />
+                  ) : (
+                    <Image
+                      source={require('../assets/flame-hollow-alpha-colored.png')}
+                      style={{ width: 26, height: 26 }}
+                      resizeMode="contain"
+                    />
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
           </View>
         </View>
       </View>
