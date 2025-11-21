@@ -21,7 +21,7 @@ export default function HypeDistributionChart({
   fadeAnim,
 }: HypeDistributionChartProps) {
   // Chart dimensions - horizontal layout
-  const chartWidth = 296; // Width for 10 bars - wider to fill space
+  const chartWidth = 250; // Reduced width to fit in container padding
   const chartHeight = 55; // Compact height
   const barWidth = 8; // Horizontal thickness of bars - slightly thicker
   const barGap = 2;
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 55,
-    width: 296,
+    width: 250,
   },
   chartArea: {
     flex: 1,

@@ -1127,7 +1127,7 @@ export default function UpcomingFightDetailScreen({
           </View>
 
           {/* Row of selectable flames (1-10) */}
-          <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5 }]}>
+          <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: -13, height: 36 }]}>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
             const isSelected = level <= (selectedHype || 0);
             const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
