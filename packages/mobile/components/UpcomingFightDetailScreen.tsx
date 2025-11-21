@@ -1367,7 +1367,7 @@ export default function UpcomingFightDetailScreen({
       </View>
 
       {/* Comments */}
-      <View style={[styles.sectionNoBorder, { marginTop: 22 }]}>
+      <View style={[styles.sectionNoBorder, { marginTop: 18 }]}>
         {/* Title row with Add Comment / Cancel button */}
         <View style={styles.commentHeaderRow}>
           <View style={{ flex: 1 }} />

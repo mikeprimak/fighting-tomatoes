@@ -996,32 +996,36 @@ export default function CompletedFightDetailScreen({
         }}
       >
 
-        {/* My Rating Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 15 }]}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0 }}>
-            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              My Rating
-            </Text>
-          </View>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        </View>
-
-        {/* Inline Rating Section */}
-        <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 20 }]}>
-          <View style={styles.userInputTitleRow}>
-            <View style={styles.yellowSideLine} />
-            <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>Rate This Fight</Text>
+        {/* User Rating Container */}
+        <View style={[
+          styles.userRatingContainer,
+          {
+            backgroundColor: colorScheme === 'dark' ? 'rgba(245, 197, 24, 0.05)' : 'rgba(245, 197, 24, 0.08)',
+            borderLeftColor: '#F5C518',
+          }
+        ]}>
+          {/* Badge Header */}
+          <View style={styles.userRatingBadge}>
+            <Text style={styles.userRatingBadgeText}>⭐ Your Rating</Text>
           </View>
 
-          {/* User's rating selection row */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20, marginTop: -10 }}>
-            {/* User icon and rating box */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginLeft: 2 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 10 }}>
-                <FontAwesome name="user" size={20} color={colors.textSecondary} />
-              </View>
-              <View style={[styles.displayFlameContainer, { marginTop: 10 }]}>
+          {/* My Rating Section Divider */}
+          <View style={[styles.sectionDivider, { marginTop: 15 }]}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <View style={{ flexShrink: 0 }}>
+              <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+                My Rating
+              </Text>
+            </View>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          </View>
+
+          {/* Inline Rating Section */}
+          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 20 }]}>
+            <View style={[styles.userInputTitleRow, { alignItems: 'center' }]}>
+              <View style={styles.yellowSideLine} />
+              <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>Rate This Fight</Text>
+              <View style={[styles.displayFlameContainer, { marginTop: 10, marginBottom: 0, marginLeft: 8, paddingBottom: 0 }]}>
                 <View style={styles.animatedFlameContainer}>
                   <View style={styles.wheelContainer} pointerEvents="none">
                     <Animated.View style={[
@@ -1063,7 +1067,7 @@ export default function CompletedFightDetailScreen({
             </View>
 
             {/* Row of selectable stars (1-10) */}
-            <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: -12, marginTop: -5 }]}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -5, width: '100%' }}>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
                 const isSelected = level <= rating;
                 const starColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
@@ -1072,19 +1076,75 @@ export default function CompletedFightDetailScreen({
                   <TouchableOpacity
                     key={level}
                     onPress={() => handleSetRating(level)}
-                    style={styles.flameButton}
                     hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
                   >
-                    <View style={{ width: 26, alignItems: 'center' }}>
-                      <FontAwesome
-                        name={isSelected ? "star" : "star-o"}
-                        size={26}
-                        color={starColor}
-                      />
-                    </View>
+                    <FontAwesome
+                      name={isSelected ? "star" : "star-o"}
+                      size={26}
+                      color={starColor}
+                    />
                   </TouchableOpacity>
                 );
               })}
+            </View>
+          </View>
+
+          {/* Tag This Fight Section */}
+          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 0, paddingTop: 0 }]}>
+            <View style={styles.userInputTitleRow}>
+              <View style={styles.yellowSideLine} />
+              <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>Tag This Fight</Text>
+            </View>
+
+            {/* Tags Content */}
+            <View style={{ marginTop: 12 }}>
+              {displayedTags.length > 0 && (() => {
+                // Separate user-selected tags and unselected tags
+                const userSelectedTags = displayedTags.filter(tag => selectedTags.includes(tag.id));
+                const unselectedTags = displayedTags.filter(tag => !selectedTags.includes(tag.id));
+
+                // Sort unselected tags by vote count (highest first)
+                const sortedUnselectedTags = unselectedTags.sort((a, b) => b.count - a.count);
+
+                // Combine: user-selected first, then sorted by votes
+                const orderedTags = [...userSelectedTags, ...sortedUnselectedTags];
+
+                return (
+                  <View style={styles.inlineTagsSection}>
+                    <View style={styles.inlineTagsContainer}>
+                      {orderedTags.map((tag) => {
+                        const isSelected = selectedTags.includes(tag.id);
+                        return (
+                          <Animated.View
+                            key={tag.id}
+                            style={{ opacity: isSelected ? 1 : tagsOpacity }}
+                          >
+                            <TouchableOpacity
+                              onPress={() => handleToggleTag(tag.id)}
+                              style={[
+                                styles.inlineTagButton,
+                                {
+                                  backgroundColor: isSelected ? colors.primary : colors.background,
+                                  borderColor: colors.border,
+                                }
+                              ]}
+                            >
+                              <Text style={[
+                                styles.inlineTagText,
+                                {
+                                  color: isSelected ? colors.textOnAccent : colors.text
+                                }
+                              ]}>
+                                {tag.count > 0 ? `${tag.name} (${tag.count})` : tag.name}
+                              </Text>
+                            </TouchableOpacity>
+                          </Animated.View>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              })()}
             </View>
           </View>
         </View>
@@ -1202,108 +1262,6 @@ export default function CompletedFightDetailScreen({
               </View>
             )}
           </View>
-        </View>
-
-        {/* Tags Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: -22 }]}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0 }}>
-            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              TAGS
-            </Text>
-          </View>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        </View>
-
-        {/* Tags Content */}
-        <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 20 }]}>
-          {displayedTags.length > 0 && (() => {
-            const tagsWithVotes = displayedTags.filter(tag => tag.count > 0);
-            const tagsWithoutVotes = displayedTags.filter(tag => tag.count === 0);
-
-            return (
-              <View style={styles.inlineTagsSection}>
-                {/* Tags with votes */}
-                {tagsWithVotes.length > 0 && (
-                  <View style={styles.inlineTagsContainer}>
-                    {tagsWithVotes.map((tag) => {
-                      const isSelected = selectedTags.includes(tag.id);
-                      return (
-                        <Animated.View
-                          key={tag.id}
-                          style={{ opacity: isSelected ? 1 : tagsOpacity }}
-                        >
-                          <TouchableOpacity
-                            onPress={() => handleToggleTag(tag.id)}
-                            style={[
-                              styles.inlineTagButton,
-                              {
-                                backgroundColor: isSelected ? colors.primary : colors.background,
-                                borderColor: colors.border,
-                              }
-                            ]}
-                          >
-                            <Text style={[
-                              styles.inlineTagText,
-                              {
-                                color: isSelected ? colors.textOnAccent : colors.text
-                              }
-                            ]}>
-                              {tag.name} ({tag.count})
-                            </Text>
-                          </TouchableOpacity>
-                        </Animated.View>
-                      );
-                    })}
-                  </View>
-                )}
-
-                {/* Separator with "Other Choices" label */}
-                {tagsWithVotes.length > 0 && tagsWithoutVotes.length > 0 && (
-                  <View style={{ marginTop: 16, marginBottom: 16 }}>
-                    <Text style={{ fontSize: 12, color: colors.textSecondary, fontWeight: '600', textTransform: 'uppercase' }}>
-                      Other Choices
-                    </Text>
-                  </View>
-                )}
-
-                {/* Tags without votes */}
-                {tagsWithoutVotes.length > 0 && (
-                  <View style={styles.inlineTagsContainer}>
-                    {tagsWithoutVotes.map((tag) => {
-                      const isSelected = selectedTags.includes(tag.id);
-                      return (
-                        <Animated.View
-                          key={tag.id}
-                          style={{ opacity: isSelected ? 1 : tagsOpacity }}
-                        >
-                          <TouchableOpacity
-                            onPress={() => handleToggleTag(tag.id)}
-                            style={[
-                              styles.inlineTagButton,
-                              {
-                                backgroundColor: isSelected ? colors.primary : colors.background,
-                                borderColor: colors.border,
-                              }
-                            ]}
-                          >
-                            <Text style={[
-                              styles.inlineTagText,
-                              {
-                                color: isSelected ? colors.textOnAccent : colors.text
-                              }
-                            ]}>
-                              {tag.name}
-                            </Text>
-                          </TouchableOpacity>
-                        </Animated.View>
-                      );
-                    })}
-                  </View>
-                )}
-              </View>
-            );
-          })()}
         </View>
 
         {/* Outcome Section Divider */}
@@ -2868,5 +2826,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  userRatingContainer: {
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingLeft: 4,
+    paddingRight: 4,
+    borderRadius: 16,
+    borderLeftWidth: 4,
+  },
+  userRatingBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F5C518',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginBottom: 8,
+    marginLeft: 10,
+  },
+  userRatingBadgeText: {
+    color: '#000',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
