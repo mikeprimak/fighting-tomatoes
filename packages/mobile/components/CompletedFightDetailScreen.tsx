@@ -267,7 +267,7 @@ const getAvailableTagsForRating = (
     );
   }
 
-  const MAX_TAGS = 14;
+  const MAX_TAGS = 12;
 
   // Helper function to normalize tag names for matching
   const normalizeTagName = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
@@ -1021,7 +1021,7 @@ export default function CompletedFightDetailScreen({
           </View>
 
           {/* Inline Rating Section */}
-          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 20 }]}>
+          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 13 }]}>
             <View style={[styles.userInputTitleRow, { alignItems: 'center' }]}>
               <View style={styles.yellowSideLine} />
               <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>Rate This Fight</Text>
@@ -1147,6 +1147,87 @@ export default function CompletedFightDetailScreen({
               })()}
             </View>
           </View>
+
+          {/* My Pre-Fight Predictions Section */}
+          {(fight.userPredictedWinner || fight.userHypePrediction) && (
+            <>
+              {/* My Pre-Fight Section Divider */}
+              <View style={[styles.sectionDivider, { marginTop: -20 }]}>
+                <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+                <View style={{ flexShrink: 0 }}>
+                  <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+                    My Pre-Fight
+                  </Text>
+                </View>
+                <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+              </View>
+
+              <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 47, paddingTop: 0 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  {/* Left: My Prediction */}
+                  <View style={styles.userInputTitleRow}>
+                    <View style={styles.yellowSideLine} />
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>My Prediction</Text>
+                  </View>
+
+                  {/* Right: My Hype */}
+                  <View style={styles.userInputTitleRow}>
+                    <View style={styles.yellowSideLine} />
+                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>My Hype</Text>
+                  </View>
+                </View>
+
+              <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                {/* Left: Winner and Method Prediction */}
+                {fight.userPredictedWinner && fight.userPredictedMethod ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    {/* Fighter Headshot */}
+                    <Image
+                      source={
+                        fight.userPredictedWinner === fight.fighter1.id
+                          ? (fight.fighter1.profileImage ? { uri: fight.fighter1.profileImage } : getFighterPlaceholderImage(fight.fighter1.id))
+                          : (fight.fighter2.profileImage ? { uri: fight.fighter2.profileImage } : getFighterPlaceholderImage(fight.fighter2.id))
+                      }
+                      style={{ width: 50, height: 50, borderRadius: 25 }}
+                    />
+                    {/* Fighter Name and Method */}
+                    <View>
+                      <Text style={[styles.predictionText, { color: colors.text, fontWeight: '600', marginBottom: 2 }]}>
+                        {fight.userPredictedWinner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName}
+                      </Text>
+                      <Text style={[styles.predictionText, { color: colors.textSecondary, fontSize: 13 }]}>
+                        by {fight.userPredictedMethod.charAt(0).toUpperCase() + fight.userPredictedMethod.slice(1).toLowerCase().replace('_', '/')}
+                      </Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View />
+                )}
+
+                {/* Right: Hype Prediction aligned under "My Hype" */}
+                {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && fight.userHypePrediction > 0 && (
+                  <View style={[
+                    styles.userHypeSquare,
+                    {
+                      backgroundColor: getHypeHeatmapColor(fight.userHypePrediction),
+                    }
+                  ]}>
+                    <View style={{ position: 'absolute' }}>
+                      <FontAwesome6
+                        name="fire-flame-curved"
+                        size={24}
+                        color={getFlameColor(getHypeHeatmapColor(fight.userHypePrediction), colors.background)}
+                      />
+                    </View>
+                    <Text style={styles.hypeSquareText}>
+                      {Math.round(fight.userHypePrediction).toString()}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            </>
+          )}
         </View>
 
         {/* Community Rating Section Divider */}
