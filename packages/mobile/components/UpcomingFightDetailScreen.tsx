@@ -1356,7 +1356,7 @@ export default function UpcomingFightDetailScreen({
       </View>
 
       {/* Comments Section Divider */}
-      <View style={[styles.sectionDivider, { marginTop: -8 }]}>
+      <View style={[styles.sectionDivider, { marginTop: 7 }]}>
         <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         <View style={{ flexShrink: 0 }}>
           <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>

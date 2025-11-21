@@ -42,7 +42,11 @@
       "Bash(cp:*)",
       "Bash(node:*)",
       "Bash(echo:*)",
-      "Bash(src/server.ts)"
+      "Bash(src/server.ts)",
+      "Bash(timeout /t 3 /nobreak)",
+      "Bash(cat:*)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(pnpm dev)"
     ],
     "deny": [],
     "ask": []

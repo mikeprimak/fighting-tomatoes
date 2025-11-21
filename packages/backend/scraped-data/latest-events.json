@@ -120,17 +120,17 @@
           "startTime": "2:30 PM"
         },
         {
-          "fightId": "12464",
+          "fightId": "12526",
           "order": 5,
           "cardType": "Main Card",
           "weightClass": "Heavyweight",
           "isTitle": false,
           "fighterA": {
-            "name": "Serghei Spivac",
-            "rank": "#7",
-            "country": "Moldova",
+            "name": "Waldo Cortes Acosta",
+            "rank": "#6",
+            "country": "Dominican Republic",
             "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/sergey-spivak-0"
+            "athleteUrl": "https://www.ufc.com/athlete/waldo-cortes-acosta"
           },
           "fighterB": {
             "name": "Shamil Gaziev",
@@ -201,7 +201,7 @@
           "fighterB": {
             "name": "Saygid Izagakhmaev",
             "rank": "",
-            "country": "",
+            "country": "Russia",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/saygid-izagakhmaev"
           },
@@ -742,8 +742,29 @@
           }
         },
         {
-          "fightId": "12519",
+          "fightId": "fight-3",
           "order": 3,
+          "cardType": "Main Card",
+          "weightClass": "Welterweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Neil Magny",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/neil-magny"
+          },
+          "fighterB": {
+            "name": "",
+            "rank": "",
+            "country": "",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/node/152819"
+          }
+        },
+        {
+          "fightId": "12519",
+          "order": 4,
           "cardType": "Main Card",
           "weightClass": "Heavyweight",
           "isTitle": false,
@@ -764,7 +785,7 @@
         },
         {
           "fightId": "12520",
-          "order": 4,
+          "order": 5,
           "cardType": "Main Card",
           "weightClass": "Featherweight",
           "isTitle": false,
@@ -785,7 +806,7 @@
         },
         {
           "fightId": "12511",
-          "order": 5,
+          "order": 6,
           "cardType": "Main Card",
           "weightClass": "Women's Strawweight",
           "isTitle": false,
@@ -806,7 +827,7 @@
         },
         {
           "fightId": "12521",
-          "order": 6,
+          "order": 7,
           "cardType": "Main Card",
           "weightClass": "Featherweight",
           "isTitle": false,
@@ -827,7 +848,7 @@
         },
         {
           "fightId": "12522",
-          "order": 7,
+          "order": 8,
           "cardType": "Main Card",
           "weightClass": "Middleweight",
           "isTitle": false,
@@ -848,7 +869,7 @@
         },
         {
           "fightId": "12512",
-          "order": 8,
+          "order": 9,
           "cardType": "Main Card",
           "weightClass": "Women's Bantamweight",
           "isTitle": false,
@@ -869,7 +890,7 @@
         },
         {
           "fightId": "12510",
-          "order": 9,
+          "order": 10,
           "cardType": "Main Card",
           "weightClass": "Women's Flyweight",
           "isTitle": false,
