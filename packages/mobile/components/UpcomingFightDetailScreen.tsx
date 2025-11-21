@@ -1029,7 +1029,7 @@ export default function UpcomingFightDetailScreen({
         </View>
 
         {/* My Hype Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: -8 }]}>
+        <View style={[styles.sectionDivider, { marginTop: 2 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <View style={{ flexShrink: 0 }}>
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
@@ -1040,7 +1040,7 @@ export default function UpcomingFightDetailScreen({
         </View>
 
         {/* How Hyped? */}
-        <View style={[styles.sectionNoBorder, { marginTop: 29 }]}>
+        <View style={[styles.sectionNoBorder, { marginTop: 17 }]}>
           <View style={[styles.userInputTitleRow, { alignItems: 'center' }]}>
             <View style={styles.yellowSideLine} />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
