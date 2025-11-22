@@ -1002,7 +1002,7 @@ export default function CompletedFightDetailScreen({
           {
             backgroundColor: colorScheme === 'dark' ? 'rgba(34, 197, 94, 0.05)' : 'rgba(34, 197, 94, 0.08)',
             borderLeftColor: '#22c55e',
-            marginTop: 13,
+            marginTop: 22,
           }
         ]}>
           {/* Badge Header */}
@@ -1056,7 +1056,7 @@ export default function CompletedFightDetailScreen({
               </Text>
             )}
 
-            <View style={[styles.whatHappenedContainer, { marginTop: !fight.winner ? 0 : 25, alignItems: 'flex-start', marginBottom: 0 }]}>
+            <View style={[styles.whatHappenedContainer, { marginTop: !fight.winner ? 0 : 27, alignItems: 'flex-start', marginBottom: 0 }]}>
               {/* Fighter 1 */}
               <View style={styles.whatHappenedFighter}>
                 <View style={[
@@ -1135,7 +1135,7 @@ export default function CompletedFightDetailScreen({
           </View>
 
           {/* My Rating Section Divider */}
-          <View style={[styles.sectionDivider, { marginTop: 15 }]}>
+          <View style={[styles.sectionDivider, { marginTop: 16 }]}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
             <View style={{ flexShrink: 0 }}>
               <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
@@ -1413,7 +1413,7 @@ export default function CompletedFightDetailScreen({
           </View>
 
           {/* Community Rating Section Divider */}
-          <View style={[styles.sectionDivider, { marginTop: 15 }]}>
+          <View style={[styles.sectionDivider, { marginTop: 17 }]}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
             <View style={{ flexShrink: 0 }}>
               <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
@@ -1519,7 +1519,7 @@ export default function CompletedFightDetailScreen({
           </View>
 
           {/* Community Hype Section Divider */}
-          <View style={[styles.sectionDivider, { marginTop: 15 }]}>
+          <View style={[styles.sectionDivider, { marginTop: -11 }]}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
             <View style={{ flexShrink: 0 }}>
               <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
@@ -1530,7 +1530,7 @@ export default function CompletedFightDetailScreen({
           </View>
 
           {/* Community Hype Data */}
-          <View style={[styles.sectionNoBorder, { marginTop: 26 }]}>
+          <View style={[styles.sectionNoBorder, { marginTop: 33 }]}>
             {/* Community Hype Layout: Horizontal */}
             {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
@@ -1617,7 +1617,7 @@ export default function CompletedFightDetailScreen({
         </View>
 
         {/* Comments Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 10 }]}>
+        <View style={[styles.sectionDivider, { marginTop: 20 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <View style={{ flexShrink: 0 }}>
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
