@@ -1518,48 +1518,23 @@ export default function CompletedFightDetailScreen({
             </View>
           </View>
 
-          {/* Community Predictions Bar Chart */}
-          {predictionStats && predictionStats.fighter1MethodPredictions && predictionStats.fighter2MethodPredictions && predictionStats.winnerPredictions && (() => {
-            const normalized = normalizeMethod(fight.method);
-            console.log('[CompletedFight] Passing to chart:', {
-              winner: fight.winner,
-              method: fight.method,
-              normalized,
-              fighter1Id: fight.fighter1.id,
-              fighter2Id: fight.fighter2.id,
-            });
-            return (
-              <View style={[styles.sectionNoBorder, { marginTop: 24 }]}>
-                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 20 }]}>
-                  Community Predictions
-                </Text>
-                <PredictionBarChart
-                  fighter1Name={fight.fighter1.lastName}
-                  fighter2Name={fight.fighter2.lastName}
-                  fighter1Id={fight.fighter1.id}
-                  fighter2Id={fight.fighter2.id}
-                  selectedWinner={fight.userPredictedWinner || null}
-                  selectedMethod={fight.userPredictedMethod || null}
-                  fighter1Predictions={predictionStats.fighter1MethodPredictions}
-                  fighter2Predictions={predictionStats.fighter2MethodPredictions}
-                  totalPredictions={predictionStats.totalPredictions}
-                  winnerPredictions={predictionStats.winnerPredictions}
-                  showColors={true}
-                  showLabels={true}
-                  actualWinner={fight.winner}
-                  actualMethod={normalized}
-                />
-              </View>
-            );
-          })()}
+          {/* Community Hype Section Divider */}
+          <View style={[styles.sectionDivider, { marginTop: 15 }]}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <View style={{ flexShrink: 0 }}>
+              <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+                Community Hype
+              </Text>
+            </View>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          </View>
 
-          {/* Community Hype */}
-          <View style={[styles.sectionNoBorder, { marginTop: 24 }]}>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
-              Community Hype
-            </Text>
+          {/* Community Hype Data */}
+          <View style={[styles.sectionNoBorder, { marginTop: 26 }]}>
+            {/* Community Hype Layout: Horizontal */}
             {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                {/* Community Hype Box */}
                 <View style={[
                   styles.userHypeSquare,
                   {
@@ -1596,6 +1571,49 @@ export default function CompletedFightDetailScreen({
               </Text>
             )}
           </View>
+
+          {/* Community Predictions Section Divider */}
+          <View style={[styles.sectionDivider, { marginTop: -5 }]}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <View style={{ flexShrink: 0 }}>
+              <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+                Community Predictions
+              </Text>
+            </View>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          </View>
+
+          {/* Community Predictions Bar Chart */}
+          {predictionStats && predictionStats.fighter1MethodPredictions && predictionStats.fighter2MethodPredictions && predictionStats.winnerPredictions && (() => {
+            const normalized = normalizeMethod(fight.method);
+            console.log('[CompletedFight] Passing to chart:', {
+              winner: fight.winner,
+              method: fight.method,
+              normalized,
+              fighter1Id: fight.fighter1.id,
+              fighter2Id: fight.fighter2.id,
+            });
+            return (
+              <View style={[styles.sectionNoBorder, { marginTop: 26 }]}>
+                <PredictionBarChart
+                  fighter1Name={fight.fighter1.lastName}
+                  fighter2Name={fight.fighter2.lastName}
+                  fighter1Id={fight.fighter1.id}
+                  fighter2Id={fight.fighter2.id}
+                  selectedWinner={fight.userPredictedWinner || null}
+                  selectedMethod={fight.userPredictedMethod || null}
+                  fighter1Predictions={predictionStats.fighter1MethodPredictions}
+                  fighter2Predictions={predictionStats.fighter2MethodPredictions}
+                  totalPredictions={predictionStats.totalPredictions}
+                  winnerPredictions={predictionStats.winnerPredictions}
+                  showColors={true}
+                  showLabels={true}
+                  actualWinner={fight.winner}
+                  actualMethod={normalized}
+                />
+              </View>
+            );
+          })()}
         </View>
 
         {/* Comments Section Divider */}

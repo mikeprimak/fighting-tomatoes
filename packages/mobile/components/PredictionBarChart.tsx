@@ -90,6 +90,32 @@ export default function PredictionBarChart({
     );
   }
 
+  // TEMPORARY HARDCODED DATA FOR DEBUGGING
+  const debugWinnerPredictions = {
+    fighter1: {
+      count: 30,
+      percentage: 40,
+    },
+    fighter2: {
+      count: 45,
+      percentage: 60,
+    },
+  };
+
+  // Use debug data temporarily
+  const activeWinnerPredictions = debugWinnerPredictions;
+
+  // Determine which side has higher prediction percentage
+  const fighter1HasMajority = activeWinnerPredictions.fighter1.percentage > activeWinnerPredictions.fighter2.percentage;
+  const fighter2HasMajority = activeWinnerPredictions.fighter2.percentage > activeWinnerPredictions.fighter1.percentage;
+
+  // Debug alert
+  if (showColors) {
+    const debugInfo = `F1: ${activeWinnerPredictions.fighter1.percentage}% (majority: ${fighter1HasMajority})\nF2: ${activeWinnerPredictions.fighter2.percentage}% (majority: ${fighter2HasMajority})`;
+    console.log('[PredictionBarChart Debug]', debugInfo);
+    // Alert.alert('Debug Predictions', debugInfo); // Uncomment to see alert
+  }
+
   return (
     <View style={styles.container}>
       {/* Community Predictions Bar - progressive reveal */}
@@ -99,7 +125,7 @@ export default function PredictionBarChart({
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
             <View>
               <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                {winnerPredictions.fighter1.percentage}% {fighter1Name}
+                {activeWinnerPredictions.fighter1.percentage}% {fighter1Name}
               </Text>
               {selectedWinner === fighter1Id && !selectedMethod && (
                 <View
@@ -116,7 +142,7 @@ export default function PredictionBarChart({
             </View>
             <View>
               <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                {winnerPredictions.fighter2.percentage}% {fighter2Name}
+                {activeWinnerPredictions.fighter2.percentage}% {fighter2Name}
               </Text>
               {selectedWinner === fighter2Id && !selectedMethod && (
                 <View
@@ -138,7 +164,7 @@ export default function PredictionBarChart({
             <View style={{ height: 28, marginBottom: -14, zIndex: 10, overflow: 'visible' }}>
               <View style={{ flexDirection: 'row', height: 28, overflow: 'visible' }}>
                 {/* Fighter 1 checkmark area */}
-                <View style={{ flex: winnerPredictions.fighter1.percentage, flexDirection: 'row', overflow: 'visible' }}>
+                <View style={{ flex: activeWinnerPredictions.fighter1.percentage, flexDirection: 'row', overflow: 'visible' }}>
                   {actualWinner === fighter1Id && fighter1Predictions && (
                     <>
                       {actualMethod === 'KO_TKO' && fighter1Predictions.KO_TKO > 0 && (
@@ -187,7 +213,7 @@ export default function PredictionBarChart({
                 </View>
 
                 {/* Fighter 2 checkmark area */}
-                <View style={{ flex: winnerPredictions.fighter2.percentage, flexDirection: 'row', overflow: 'visible' }}>
+                <View style={{ flex: activeWinnerPredictions.fighter2.percentage, flexDirection: 'row', overflow: 'visible' }}>
                   {actualWinner === fighter2Id && fighter2Predictions && (
                     <>
                       {actualMethod === 'KO_TKO' && fighter2Predictions.KO_TKO > 0 && (
@@ -251,9 +277,9 @@ export default function PredictionBarChart({
             {/* Fighter 1 side */}
             <View
               style={{
-                flex: winnerPredictions.fighter1.percentage,
+                flex: activeWinnerPredictions.fighter1.percentage,
                 flexDirection: 'row',
-                backgroundColor: colors.background,
+                backgroundColor: fighter1HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? '#2A2A2A' : '#F5F5F5'),
               }}
             >
               {/* Fighter 1 method subdivisions - show if labels revealed or as plain bars */}
@@ -267,20 +293,14 @@ export default function PredictionBarChart({
                         alignItems: 'center',
                         borderRightWidth: 1,
                         borderRightColor: colors.border,
-                        backgroundColor:
-                          selectedWinner === fighter1Id && selectedMethod === 'KO_TKO'
-                            ? '#F5C518'
-                            : 'transparent',
+                        backgroundColor: 'transparent',
                       }}
                     >
                       <Text
                         style={{
                           fontSize: 10,
                           fontWeight: '600',
-                          color:
-                            selectedWinner === fighter1Id && selectedMethod === 'KO_TKO'
-                              ? '#000'
-                              : colors.text,
+                          color: fighter1HasMajority ? '#000' : '#FFF',
                         }}
                       >
                         KO
@@ -295,20 +315,14 @@ export default function PredictionBarChart({
                         alignItems: 'center',
                         borderRightWidth: 1,
                         borderRightColor: colors.border,
-                        backgroundColor:
-                          selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION'
-                            ? '#F5C518'
-                            : 'transparent',
+                        backgroundColor: 'transparent',
                       }}
                     >
                       <Text
                         style={{
                           fontSize: 10,
                           fontWeight: '600',
-                          color:
-                            selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION'
-                              ? '#000'
-                              : colors.text,
+                          color: fighter1HasMajority ? '#000' : '#FFF',
                         }}
                       >
                         SUB
@@ -321,20 +335,14 @@ export default function PredictionBarChart({
                         flex: fighter1Predictions.DECISION,
                         justifyContent: 'center',
                         alignItems: 'center',
-                        backgroundColor:
-                          selectedWinner === fighter1Id && selectedMethod === 'DECISION'
-                            ? '#F5C518'
-                            : 'transparent',
+                        backgroundColor: 'transparent',
                       }}
                     >
                       <Text
                         style={{
                           fontSize: 10,
                           fontWeight: '600',
-                          color:
-                            selectedWinner === fighter1Id && selectedMethod === 'DECISION'
-                              ? '#000'
-                              : colors.text,
+                          color: fighter1HasMajority ? '#000' : '#FFF',
                         }}
                       >
                         DEC
@@ -350,9 +358,9 @@ export default function PredictionBarChart({
             {/* Fighter 2 side */}
             <View
               style={{
-                flex: winnerPredictions.fighter2.percentage,
+                flex: activeWinnerPredictions.fighter2.percentage,
                 flexDirection: 'row',
-                backgroundColor: '#A0A0A0',
+                backgroundColor: fighter2HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? '#2A2A2A' : '#F5F5F5'),
               }}
             >
               {/* Fighter 2 method subdivisions - show if labels revealed or as plain bars */}
@@ -366,13 +374,10 @@ export default function PredictionBarChart({
                         alignItems: 'center',
                         borderRightWidth: 1,
                         borderRightColor: colors.border,
-                        backgroundColor:
-                          selectedWinner === fighter2Id && selectedMethod === 'KO_TKO'
-                            ? '#F5C518'
-                            : 'transparent',
+                        backgroundColor: 'transparent',
                       }}
                     >
-                      <Text style={{ fontSize: 10, fontWeight: '600', color: '#000' }}>KO</Text>
+                      <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>KO</Text>
                     </View>
                   )}
                   {fighter2Predictions.SUBMISSION > 0 && (
@@ -383,13 +388,10 @@ export default function PredictionBarChart({
                         alignItems: 'center',
                         borderRightWidth: 1,
                         borderRightColor: colors.border,
-                        backgroundColor:
-                          selectedWinner === fighter2Id && selectedMethod === 'SUBMISSION'
-                            ? '#F5C518'
-                            : 'transparent',
+                        backgroundColor: 'transparent',
                       }}
                     >
-                      <Text style={{ fontSize: 10, fontWeight: '600', color: '#000' }}>SUB</Text>
+                      <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>SUB</Text>
                     </View>
                   )}
                   {fighter2Predictions.DECISION > 0 && (
@@ -398,13 +400,10 @@ export default function PredictionBarChart({
                         flex: fighter2Predictions.DECISION,
                         justifyContent: 'center',
                         alignItems: 'center',
-                        backgroundColor:
-                          selectedWinner === fighter2Id && selectedMethod === 'DECISION'
-                            ? '#F5C518'
-                            : 'transparent',
+                        backgroundColor: 'transparent',
                       }}
                     >
-                      <Text style={{ fontSize: 10, fontWeight: '600', color: '#000' }}>DEC</Text>
+                      <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>DEC</Text>
                     </View>
                   )}
                 </View>
