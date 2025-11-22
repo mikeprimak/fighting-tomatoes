@@ -996,6 +996,120 @@ export default function CompletedFightDetailScreen({
         }}
       >
 
+        {/* Winner Container */}
+        <View style={[
+          styles.userRatingContainer,
+          {
+            backgroundColor: colorScheme === 'dark' ? 'rgba(34, 197, 94, 0.05)' : 'rgba(34, 197, 94, 0.08)',
+            borderLeftColor: '#22c55e',
+            marginTop: 8,
+          }
+        ]}>
+          {/* Badge Header */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10 }}>
+            <View style={[styles.userRatingBadge, { backgroundColor: '#22c55e' }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <FontAwesome name="trophy" size={14} color="#000" />
+                <Text style={styles.userRatingBadgeText}>Winner</Text>
+              </View>
+            </View>
+
+            {fight.winner && !isOutcomeRevealed && (
+              <TouchableOpacity
+                onPress={handleRevealOutcome}
+                style={{
+                  backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 12,
+                }}
+              >
+                <Text style={{ color: '#000', fontSize: 12, fontWeight: '600' }}>Reveal Winner</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Winner Section Divider */}
+          <View style={[styles.sectionDivider, { marginTop: 15 }]}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <View style={{ flexShrink: 0 }}>
+              <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+                WINNER
+              </Text>
+            </View>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          </View>
+
+          {/* Winner Content */}
+          <View style={[styles.sectionNoBorder, { marginBottom: 0, paddingBottom: 0 }]}>
+            {!fight.winner && (
+              <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, marginTop: 20, textAlign: 'center' }]}>
+                Outcome data not yet available.
+              </Text>
+            )}
+
+            <View style={[styles.whatHappenedContainer, { marginTop: !fight.winner ? 0 : 25, alignItems: 'flex-start', marginBottom: 0 }]}>
+              {/* Fighter 1 */}
+              <View style={styles.whatHappenedFighter}>
+                <View style={[
+                  styles.whatHappenedImageContainer,
+                  isOutcomeRevealed && fight.winner === fight.fighter1.id && { borderColor: '#22c55e', borderWidth: 3 }
+                ]}>
+                  <Image
+                    source={
+                      fight.fighter1.profileImage
+                        ? { uri: fight.fighter1.profileImage }
+                        : getFighterPlaceholderImage(fight.fighter1.id)
+                    }
+                    style={styles.whatHappenedImage}
+                  />
+                </View>
+                <Text style={[styles.whatHappenedName, { color: colors.text }]}>
+                  {fight.fighter1.firstName} {fight.fighter1.lastName}
+                </Text>
+                {isOutcomeRevealed && fight.winner === fight.fighter1.id ? (
+                  <Text style={{ color: '#22c55e', fontSize: 13, marginTop: 4, textAlign: 'center', fontWeight: '600' }}>
+                    by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
+                    {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
+                    {fight.time && ` ${fight.time}`}
+                  </Text>
+                ) : isOutcomeRevealed ? (
+                  <View style={{ height: 20 }} />
+                ) : null}
+              </View>
+
+              {/* Fighter 2 */}
+              <View style={styles.whatHappenedFighter}>
+                <View style={[
+                  styles.whatHappenedImageContainer,
+                  isOutcomeRevealed && fight.winner === fight.fighter2.id && { borderColor: '#22c55e', borderWidth: 3 }
+                ]}>
+                  <Image
+                    source={
+                      fight.fighter2.profileImage
+                        ? { uri: fight.fighter2.profileImage }
+                        : getFighterPlaceholderImage(fight.fighter2.id)
+                    }
+                    style={styles.whatHappenedImage}
+                  />
+                </View>
+                <Text style={[styles.whatHappenedName, { color: colors.text }]}>
+                  {fight.fighter2.firstName} {fight.fighter2.lastName}
+                </Text>
+                {isOutcomeRevealed && fight.winner === fight.fighter2.id ? (
+                  <Text style={{ color: '#22c55e', fontSize: 13, marginTop: 4, textAlign: 'center', fontWeight: '600' }}>
+                    by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
+                    {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
+                    {fight.time && ` ${fight.time}`}
+                  </Text>
+                ) : isOutcomeRevealed ? (
+                  <View style={{ height: 20 }} />
+                ) : null}
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* User Rating Container */}
         <View style={[
           styles.userRatingContainer,
@@ -1345,93 +1459,6 @@ export default function CompletedFightDetailScreen({
                 />
               </View>
             )}
-          </View>
-        </View>
-
-        {/* Outcome Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: -22 }]}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0 }}>
-            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              OUTCOME
-            </Text>
-          </View>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        </View>
-
-        {/* Outcome Content */}
-        <View style={styles.sectionNoBorder}>
-          {/* Outcome Text with Label */}
-          {!fight.winner ? (
-            <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, marginTop: 20, textAlign: 'center' }]}>
-              Outcome data not yet available.
-            </Text>
-          ) : !isOutcomeRevealed ? (
-            <TouchableOpacity onPress={handleRevealOutcome} style={{ marginTop: 20 }}>
-              <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center' }]}>
-                Rate fight or <Text style={{ color: '#F5C518' }}>tap here</Text> to show outcome.
-              </Text>
-            </TouchableOpacity>
-          ) : null}
-
-          <View style={[styles.whatHappenedContainer, { marginTop: 25, alignItems: 'flex-start' }]}>
-            {/* Fighter 1 */}
-            <View style={styles.whatHappenedFighter}>
-              <View style={[
-                styles.whatHappenedImageContainer,
-                isOutcomeRevealed && fight.winner === fight.fighter1.id && { borderColor: '#22c55e', borderWidth: 3 }
-              ]}>
-                <Image
-                  source={
-                    fight.fighter1.profileImage
-                      ? { uri: fight.fighter1.profileImage }
-                      : getFighterPlaceholderImage(fight.fighter1.id)
-                  }
-                  style={styles.whatHappenedImage}
-                />
-              </View>
-              <Text style={[styles.whatHappenedName, { color: colors.text }]}>
-                {fight.fighter1.firstName} {fight.fighter1.lastName}
-              </Text>
-              {isOutcomeRevealed && fight.winner === fight.fighter1.id ? (
-                <Text style={{ color: '#22c55e', fontSize: 13, marginTop: 4, textAlign: 'center', fontWeight: '600' }}>
-                  by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
-                  {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
-                  {fight.time && ` ${fight.time}`}
-                </Text>
-              ) : isOutcomeRevealed ? (
-                <View style={{ height: 20 }} />
-              ) : null}
-            </View>
-
-            {/* Fighter 2 */}
-            <View style={styles.whatHappenedFighter}>
-              <View style={[
-                styles.whatHappenedImageContainer,
-                isOutcomeRevealed && fight.winner === fight.fighter2.id && { borderColor: '#22c55e', borderWidth: 3 }
-              ]}>
-                <Image
-                  source={
-                    fight.fighter2.profileImage
-                      ? { uri: fight.fighter2.profileImage }
-                      : getFighterPlaceholderImage(fight.fighter2.id)
-                  }
-                  style={styles.whatHappenedImage}
-                />
-              </View>
-              <Text style={[styles.whatHappenedName, { color: colors.text }]}>
-                {fight.fighter2.firstName} {fight.fighter2.lastName}
-              </Text>
-              {isOutcomeRevealed && fight.winner === fight.fighter2.id ? (
-                <Text style={{ color: '#22c55e', fontSize: 13, marginTop: 4, textAlign: 'center', fontWeight: '600' }}>
-                  by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
-                  {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
-                  {fight.time && ` ${fight.time}`}
-                </Text>
-              ) : isOutcomeRevealed ? (
-                <View style={{ height: 20 }} />
-              ) : null}
-            </View>
           </View>
         </View>
 
