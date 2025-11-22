@@ -456,31 +456,31 @@ export default function CompletedFightDetailScreen({
       10: 12,
     },
     winnerPredictions: {
-      fighter1: { id: fight.fighter1.id, name: `${fight.fighter1.firstName} ${fight.fighter1.lastName}`, predictions: 55, percentage: 55 },
-      fighter2: { id: fight.fighter2.id, name: `${fight.fighter2.firstName} ${fight.fighter2.lastName}`, predictions: 45, percentage: 45 },
+      fighter1: { id: fight.fighter1.id, name: `${fight.fighter1.firstName} ${fight.fighter1.lastName}`, predictions: 65, percentage: 65, count: 65 },
+      fighter2: { id: fight.fighter2.id, name: `${fight.fighter2.firstName} ${fight.fighter2.lastName}`, predictions: 35, percentage: 35, count: 35 },
     },
     methodPredictions: {
-      DECISION: 30,
-      KO_TKO: 45,
-      SUBMISSION: 25,
+      DECISION: 25,
+      KO_TKO: 35,
+      SUBMISSION: 40,
     },
     roundPredictions: {},
     fighter1MethodPredictions: {
+      KO_TKO: 15,
+      SUBMISSION: 35,
       DECISION: 15,
-      KO_TKO: 30,
-      SUBMISSION: 10,
     },
     fighter1RoundPredictions: {},
     fighter2MethodPredictions: {
-      DECISION: 15,
-      KO_TKO: 15,
-      SUBMISSION: 15,
+      KO_TKO: 20,
+      SUBMISSION: 5,
+      DECISION: 10,
     },
     fighter2RoundPredictions: {},
   };
 
-  // Use fetched data instead of test data
-  const predictionStats = fetchedPredictionStats;
+  // Use TEST data to visualize bar chart changes
+  const predictionStats = testPredictionStats;
 
   // Fetch tags
   const { data: tagsData } = useQuery({

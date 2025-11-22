@@ -2189,6 +2189,15 @@ export async function fightRoutes(fastify: FastifyInstance) {
         fighter2Rounds[round] = fighter2MethodPredictions.filter(p => (p as any).predictedRound === round).length;
       }
 
+      // Calculate percentages ensuring they add up to 100%
+      let fighter1Percentage = 0;
+      let fighter2Percentage = 0;
+
+      if (totalPredictions > 0) {
+        fighter1Percentage = Math.round((fighter1Predictions / totalPredictions) * 100);
+        fighter2Percentage = 100 - fighter1Percentage; // Ensure they add up to 100%
+      }
+
       return reply.send({
         fightId,
         totalPredictions,
@@ -2199,13 +2208,15 @@ export async function fightRoutes(fastify: FastifyInstance) {
             id: fight.fighter1Id,
             name: `${fight.fighter1.firstName} ${fight.fighter1.lastName}`,
             predictions: fighter1Predictions,
-            percentage: totalPredictions > 0 ? Math.round((fighter1Predictions / totalPredictions) * 100) : 0,
+            percentage: fighter1Percentage,
+            count: fighter1Predictions,
           },
           fighter2: {
             id: fight.fighter2Id,
             name: `${fight.fighter2.firstName} ${fight.fighter2.lastName}`,
             predictions: fighter2Predictions,
-            percentage: totalPredictions > 0 ? Math.round((fighter2Predictions / totalPredictions) * 100) : 0,
+            percentage: fighter2Percentage,
+            count: fighter2Predictions,
           },
         },
         methodPredictions: methodBreakdown,

@@ -95,8 +95,8 @@ export default function PredictionBarChart({
   const fighter2HasMajority = winnerPredictions.fighter2.percentage > winnerPredictions.fighter1.percentage;
 
   // Calculate background colors
-  const fighter1BgColor = fighter1HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? '#2A2A2A' : '#F5F5F5');
-  const fighter2BgColor = fighter2HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? '#2A2A2A' : '#F5F5F5');
+  const fighter1BgColor = fighter1HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? '#3A3A3A' : '#6B7280');
+  const fighter2BgColor = fighter2HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? '#3A3A3A' : '#6B7280');
 
   return (
     <View style={styles.container}>
@@ -140,111 +140,6 @@ export default function PredictionBarChart({
               )}
             </View>
           </View>
-
-          {/* Checkmark overlay - positioned above the bar chart */}
-          {actualWinner && actualMethod && (
-            <View style={{ height: 28, marginBottom: -14, zIndex: 10, overflow: 'visible' }}>
-              <View style={{ flexDirection: 'row', height: 28, overflow: 'visible' }}>
-                {/* Fighter 1 checkmark area */}
-                <View style={{ flex: winnerPredictions.fighter1.percentage, flexDirection: 'row', overflow: 'visible' }}>
-                  {actualWinner === fighter1Id && fighter1Predictions && (
-                    <>
-                      {actualMethod === 'KO_TKO' && fighter1Predictions.KO_TKO > 0 && (
-                        <View style={{ flex: fighter1Predictions.KO_TKO, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 2 }}>
-                          <View style={{ backgroundColor: '#fff', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-                            <FontAwesome name="check-circle" size={24} color="#22c55e" solid />
-                          </View>
-                        </View>
-                      )}
-                      {actualMethod === 'KO_TKO' && fighter1Predictions.SUBMISSION > 0 && (
-                        <View style={{ flex: fighter1Predictions.SUBMISSION }} />
-                      )}
-                      {actualMethod === 'KO_TKO' && fighter1Predictions.DECISION > 0 && (
-                        <View style={{ flex: fighter1Predictions.DECISION }} />
-                      )}
-
-                      {actualMethod === 'SUBMISSION' && fighter1Predictions.KO_TKO > 0 && (
-                        <View style={{ flex: fighter1Predictions.KO_TKO }} />
-                      )}
-                      {actualMethod === 'SUBMISSION' && fighter1Predictions.SUBMISSION > 0 && (
-                        <View style={{ flex: fighter1Predictions.SUBMISSION, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 2 }}>
-                          <View style={{ backgroundColor: '#fff', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-                            <FontAwesome name="check-circle" size={24} color="#22c55e" solid />
-                          </View>
-                        </View>
-                      )}
-                      {actualMethod === 'SUBMISSION' && fighter1Predictions.DECISION > 0 && (
-                        <View style={{ flex: fighter1Predictions.DECISION }} />
-                      )}
-
-                      {actualMethod === 'DECISION' && fighter1Predictions.KO_TKO > 0 && (
-                        <View style={{ flex: fighter1Predictions.KO_TKO }} />
-                      )}
-                      {actualMethod === 'DECISION' && fighter1Predictions.SUBMISSION > 0 && (
-                        <View style={{ flex: fighter1Predictions.SUBMISSION }} />
-                      )}
-                      {actualMethod === 'DECISION' && fighter1Predictions.DECISION > 0 && (
-                        <View style={{ flex: fighter1Predictions.DECISION, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 2 }}>
-                          <View style={{ backgroundColor: '#fff', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-                            <FontAwesome name="check-circle" size={24} color="#22c55e" solid />
-                          </View>
-                        </View>
-                      )}
-                    </>
-                  )}
-                </View>
-
-                {/* Fighter 2 checkmark area */}
-                <View style={{ flex: winnerPredictions.fighter2.percentage, flexDirection: 'row', overflow: 'visible' }}>
-                  {actualWinner === fighter2Id && fighter2Predictions && (
-                    <>
-                      {actualMethod === 'KO_TKO' && fighter2Predictions.KO_TKO > 0 && (
-                        <View style={{ flex: fighter2Predictions.KO_TKO, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 2 }}>
-                          <View style={{ backgroundColor: '#fff', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-                            <FontAwesome name="check-circle" size={24} color="#22c55e" solid />
-                          </View>
-                        </View>
-                      )}
-                      {actualMethod === 'KO_TKO' && fighter2Predictions.SUBMISSION > 0 && (
-                        <View style={{ flex: fighter2Predictions.SUBMISSION }} />
-                      )}
-                      {actualMethod === 'KO_TKO' && fighter2Predictions.DECISION > 0 && (
-                        <View style={{ flex: fighter2Predictions.DECISION }} />
-                      )}
-
-                      {actualMethod === 'SUBMISSION' && fighter2Predictions.KO_TKO > 0 && (
-                        <View style={{ flex: fighter2Predictions.KO_TKO }} />
-                      )}
-                      {actualMethod === 'SUBMISSION' && fighter2Predictions.SUBMISSION > 0 && (
-                        <View style={{ flex: fighter2Predictions.SUBMISSION, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 2 }}>
-                          <View style={{ backgroundColor: '#fff', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-                            <FontAwesome name="check-circle" size={24} color="#22c55e" solid />
-                          </View>
-                        </View>
-                      )}
-                      {actualMethod === 'SUBMISSION' && fighter2Predictions.DECISION > 0 && (
-                        <View style={{ flex: fighter2Predictions.DECISION }} />
-                      )}
-
-                      {actualMethod === 'DECISION' && fighter2Predictions.KO_TKO > 0 && (
-                        <View style={{ flex: fighter2Predictions.KO_TKO }} />
-                      )}
-                      {actualMethod === 'DECISION' && fighter2Predictions.SUBMISSION > 0 && (
-                        <View style={{ flex: fighter2Predictions.SUBMISSION }} />
-                      )}
-                      {actualMethod === 'DECISION' && fighter2Predictions.DECISION > 0 && (
-                        <View style={{ flex: fighter2Predictions.DECISION, alignItems: 'center', justifyContent: 'flex-start', paddingHorizontal: 2 }}>
-                          <View style={{ backgroundColor: '#fff', borderRadius: 14, width: 28, height: 28, alignItems: 'center', justifyContent: 'center' }}>
-                            <FontAwesome name="check-circle" size={24} color="#22c55e" solid />
-                          </View>
-                        </View>
-                      )}
-                    </>
-                  )}
-                </View>
-              </View>
-            </View>
-          )}
 
           <View
             style={{
