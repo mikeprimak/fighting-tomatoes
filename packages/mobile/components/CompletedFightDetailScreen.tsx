@@ -1017,14 +1017,22 @@ export default function CompletedFightDetailScreen({
             {fight.winner && !isOutcomeRevealed && (
               <TouchableOpacity
                 onPress={handleRevealOutcome}
-                style={{
-                  backgroundColor: 'rgba(34, 197, 94, 0.6)',
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 12,
-                }}
+                style={[
+                  styles.inlineTagButton,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                  }
+                ]}
               >
-                <Text style={{ color: '#000', fontSize: 12, fontWeight: '600' }}>Reveal Winner</Text>
+                <Text style={[
+                  styles.inlineTagText,
+                  {
+                    color: colors.text
+                  }
+                ]}>
+                  Reveal Winner
+                </Text>
               </TouchableOpacity>
             )}
           </View>
