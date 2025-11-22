@@ -1002,7 +1002,7 @@ export default function CompletedFightDetailScreen({
           {
             backgroundColor: colorScheme === 'dark' ? 'rgba(34, 197, 94, 0.05)' : 'rgba(34, 197, 94, 0.08)',
             borderLeftColor: '#22c55e',
-            marginTop: 8,
+            marginTop: 13,
           }
         ]}>
           {/* Badge Header */}
@@ -1249,7 +1249,7 @@ export default function CompletedFightDetailScreen({
                               style={[
                                 styles.inlineTagButton,
                                 {
-                                  backgroundColor: isSelected ? colors.primary : colors.background,
+                                  backgroundColor: isSelected ? colors.primary : 'transparent',
                                   borderColor: colors.border,
                                 }
                               ]}
@@ -1257,7 +1257,7 @@ export default function CompletedFightDetailScreen({
                               <Text style={[
                                 styles.inlineTagText,
                                 {
-                                  color: isSelected ? colors.textOnAccent : colors.text
+                                  color: isSelected ? colors.textOnAccent : colors.textSecondary
                                 }
                               ]}>
                                 {tag.count > 0 ? `${tag.name} (${tag.count})` : tag.name}
@@ -1804,70 +1804,6 @@ export default function CompletedFightDetailScreen({
             ) : null}
         </View>
 
-        {/* Pre-Flight Insights Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 10 }]}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0 }}>
-            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              Pre-Fight Insights
-            </Text>
-          </View>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        </View>
-
-        {/* Pre-Fight Insights Content */}
-        <View style={styles.sectionNoBorder}>
-          {/* My Prediction Subtitle */}
-          <View style={{ marginTop: 40 }}>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
-              My Prediction
-            </Text>
-            {fight.userPredictedWinner && fight.userPredictedMethod ? (
-              <Text style={[styles.predictionText, { color: colors.text }]}>
-                I predicted {fight.userPredictedWinner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName} to win by {fight.userPredictedMethod.charAt(0).toUpperCase() + fight.userPredictedMethod.slice(1).toLowerCase()}.
-              </Text>
-            ) : (
-              <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
-                No prediction made
-              </Text>
-            )}
-          </View>
-
-          {/* Pre-Fight Comments */}
-          <View style={{ marginTop: 32 }}>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
-              Pre-Fight Comments
-            </Text>
-            {preFightCommentsData && preFightCommentsData.comments && preFightCommentsData.comments.length > 0 ? (
-              <View style={{ marginTop: 10 }}>
-                {preFightCommentsData.comments.map((comment: any) => (
-                  <PreFightCommentCard
-                    key={comment.id}
-                    comment={{
-                      id: comment.id,
-                      content: comment.content,
-                      hypeRating: comment.hypeRating,
-                      upvotes: comment.upvotes || 0,
-                      userHasUpvoted: comment.userHasUpvoted || false,
-                      user: {
-                        displayName: comment.user.displayName,
-                      },
-                    }}
-                    onUpvote={() => handleUpvoteComment(comment.id)}
-                    onFlag={() => handleFlagComment(comment.id)}
-                    isUpvoting={upvotingCommentId === comment.id}
-                    isAuthenticated={isAuthenticated}
-                    showMyComment={false}
-                  />
-                ))}
-              </View>
-            ) : (
-              <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
-                No pre-fight comments yet.
-              </Text>
-            )}
-          </View>
-        </View>
 
         {/* Split Score Row - HIDDEN */}
         {false && <View style={styles.splitScoreRow}>
@@ -3005,7 +2941,7 @@ const styles = StyleSheet.create({
   },
   userRatingBadgeText: {
     color: '#000',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
   communityDataContainer: {
@@ -3030,7 +2966,7 @@ const styles = StyleSheet.create({
   },
   communityDataBadgeText: {
     color: '#000',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
 });
