@@ -1426,7 +1426,7 @@ export default function CompletedFightDetailScreen({
           {/* Community Rating Data */}
           <View style={[styles.sectionNoBorder, { marginTop: 26 }]}>
             {/* Community Rating Layout: Horizontal */}
-            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 0 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, paddingRight: 60 }}>
               {/* Community Rating Box */}
               {(() => {
                 const ratingColor = fight.averageRating > 0
@@ -1477,47 +1477,38 @@ export default function CompletedFightDetailScreen({
 
                 return (
                   <View style={{
-                    flexDirection: 'row',
+                    width: 40,
+                    height: 40,
+                    justifyContent: 'center',
                     alignItems: 'center',
-                    gap: 6,
+                    borderRadius: 8,
+                    backgroundColor: ratingColor,
                   }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <FontAwesome name="users" size={19} color={colors.textSecondary} />
-                    </View>
-                    <View style={{
-                      width: 40,
-                      height: 40,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      borderRadius: 8,
-                      backgroundColor: ratingColor,
+                    <FontAwesome
+                      name="star"
+                      size={24}
+                      color={starColor}
+                      style={{ position: 'absolute' }}
+                    />
+                    <Text style={{
+                      color: '#FFFFFF',
+                      fontSize: 14,
+                      fontWeight: 'bold',
+                      textAlign: 'center',
                     }}>
-                      <FontAwesome
-                        name="star"
-                        size={24}
-                        color={starColor}
-                        style={{ position: 'absolute' }}
-                      />
-                      <Text style={{
-                        color: '#FFFFFF',
-                        fontSize: 14,
-                        fontWeight: 'bold',
-                        textAlign: 'center',
-                      }}>
-                        {fight.averageRating
-                          ? fight.averageRating % 1 === 0
-                            ? fight.averageRating.toString()
-                            : fight.averageRating.toFixed(1)
-                          : '0'}
-                      </Text>
-                    </View>
+                      {fight.averageRating
+                        ? fight.averageRating % 1 === 0
+                          ? fight.averageRating.toString()
+                          : fight.averageRating.toFixed(1)
+                        : '0'}
+                    </Text>
                   </View>
                 );
               })()}
 
               {/* Rating Distribution Chart */}
               {aggregateStats?.ratingDistribution && (
-                <View style={{ marginTop: -6 }}>
+                <View style={{ flex: 1 }}>
                   <RatingDistributionChart
                     distribution={aggregateStats.ratingDistribution}
                     totalRatings={totalRatings}

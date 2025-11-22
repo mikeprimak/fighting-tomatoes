@@ -18,7 +18,7 @@ export default function RatingDistributionChart({
   totalRatings,
 }: RatingDistributionChartProps) {
   // Chart dimensions - horizontal layout
-  const chartWidth = 296; // Width for 10 bars - wider to fill space
+  const chartWidth = 281; // Width for 10 bars - narrower to fit screen
   const chartHeight = 55; // Compact height
   const barWidth = 8; // Horizontal thickness of bars - slightly thicker
   const barGap = 2;
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 55,
-    width: 296,
+    width: 281,
   },
   chartArea: {
     flex: 1,
