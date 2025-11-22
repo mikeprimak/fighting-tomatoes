@@ -905,6 +905,7 @@ export default function UpcomingFightDetailScreen({
         {
           backgroundColor: colorScheme === 'dark' ? 'rgba(245, 197, 24, 0.05)' : 'rgba(245, 197, 24, 0.08)',
           borderLeftColor: '#F5C518',
+          marginTop: 22,
         }
       ]}>
         {/* Badge Header */}

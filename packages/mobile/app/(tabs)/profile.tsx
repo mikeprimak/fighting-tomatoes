@@ -183,13 +183,6 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Profile Header */}
-        <View style={styles.header}>
-          <Text style={[styles.name, { color: colors.text }]}>
-            {user?.displayName || user?.firstName || 'User'}
-          </Text>
-        </View>
-
         {/* Predictions Section */}
         <View style={[styles.predictionsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text, textAlign: 'center' }]}>Fight Predictions</Text>

@@ -421,9 +421,11 @@ function EventSection({
           {mainCard.length > 0 && (
             <View style={styles.cardSection}>
               <View style={styles.sectionHeader}>
-                {/* Left Column Header - Group Icon / HYPE */}
+                {/* Left Column Header - ALL HYPE */}
                 <View style={styles.columnHeaders}>
-                  <FontAwesome name="users" size={16} color={colors.textSecondary} />
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    ALL
+                  </Text>
                   <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
                     HYPE
                   </Text>
@@ -441,9 +443,11 @@ function EventSection({
                   )}
                 </View>
 
-                {/* Right Column Header - User Icon / HYPE */}
+                {/* Right Column Header - MY HYPE */}
                 <View style={styles.columnHeadersRight}>
-                  <FontAwesome name="user" size={16} color={colors.textSecondary} />
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    MY
+                  </Text>
                   <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
                     HYPE
                   </Text>

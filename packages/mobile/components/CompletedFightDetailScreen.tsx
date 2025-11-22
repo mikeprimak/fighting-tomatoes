@@ -1040,10 +1040,14 @@ export default function CompletedFightDetailScreen({
           {/* Winner Section Divider */}
           <View style={[styles.sectionDivider, { marginTop: 15 }]}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <View style={{ flexShrink: 0 }}>
+            <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 4 }} />
+              <FontAwesome name="trophy" size={12} color={colors.textSecondary} />
+              <View style={{ width: 4 }} />
               <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
                 WINNER
               </Text>
+              <View style={{ width: 4 }} />
             </View>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
@@ -1137,10 +1141,14 @@ export default function CompletedFightDetailScreen({
           {/* My Rating Section Divider */}
           <View style={[styles.sectionDivider, { marginTop: 16 }]}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <View style={{ flexShrink: 0 }}>
+            <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 4 }} />
+              <FontAwesome name="star" size={12} color={colors.textSecondary} />
+              <View style={{ width: 4 }} />
               <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
                 My Rating
               </Text>
+              <View style={{ width: 4 }} />
             </View>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
@@ -1279,10 +1287,14 @@ export default function CompletedFightDetailScreen({
               {/* My Pre-Fight Section Divider */}
               <View style={[styles.sectionDivider, { marginTop: -20 }]}>
                 <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-                <View style={{ flexShrink: 0 }}>
+                <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <View style={{ width: 4 }} />
+                  <FontAwesome name="history" size={12} color={colors.textSecondary} />
+                  <View style={{ width: 4 }} />
                   <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
                     My Pre-Fight Data
                   </Text>
+                  <View style={{ width: 4 }} />
                 </View>
                 <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
               </View>
@@ -1415,10 +1427,14 @@ export default function CompletedFightDetailScreen({
           {/* Community Rating Section Divider */}
           <View style={[styles.sectionDivider, { marginTop: 17 }]}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <View style={{ flexShrink: 0 }}>
+            <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 4 }} />
+              <FontAwesome name="star" size={12} color={colors.textSecondary} />
+              <View style={{ width: 4 }} />
               <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
                 Community Rating
               </Text>
+              <View style={{ width: 4 }} />
             </View>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
@@ -1521,10 +1537,14 @@ export default function CompletedFightDetailScreen({
           {/* Community Hype Section Divider */}
           <View style={[styles.sectionDivider, { marginTop: -11 }]}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <View style={{ flexShrink: 0 }}>
+            <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 4 }} />
+              <FontAwesome6 name="fire-flame-curved" size={12} color={colors.textSecondary} />
+              <View style={{ width: 4 }} />
               <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
                 Community Hype
               </Text>
+              <View style={{ width: 4 }} />
             </View>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
@@ -1575,10 +1595,14 @@ export default function CompletedFightDetailScreen({
           {/* Community Predictions Section Divider */}
           <View style={[styles.sectionDivider, { marginTop: -5 }]}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <View style={{ flexShrink: 0 }}>
+            <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 4 }} />
+              <FontAwesome name="percent" size={12} color={colors.textSecondary} />
+              <View style={{ width: 4 }} />
               <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
                 Community Predictions
               </Text>
+              <View style={{ width: 4 }} />
             </View>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
@@ -1600,6 +1624,8 @@ export default function CompletedFightDetailScreen({
                   fighter2Name={fight.fighter2.lastName}
                   fighter1Id={fight.fighter1.id}
                   fighter2Id={fight.fighter2.id}
+                  fighter1Image={fight.fighter1.profileImage}
+                  fighter2Image={fight.fighter2.profileImage}
                   selectedWinner={fight.userPredictedWinner || null}
                   selectedMethod={fight.userPredictedMethod || null}
                   fighter1Predictions={predictionStats.fighter1MethodPredictions}
@@ -1619,10 +1645,14 @@ export default function CompletedFightDetailScreen({
         {/* Comments Section Divider */}
         <View style={[styles.sectionDivider, { marginTop: 20 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0 }}>
+          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 4 }} />
+            <FontAwesome name="comment" size={12} color={colors.textSecondary} />
+            <View style={{ width: 4 }} />
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
               Comments
             </Text>
+            <View style={{ width: 4 }} />
           </View>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>

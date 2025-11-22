@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, Image, ImageSourcePropType } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { FontAwesome } from '@expo/vector-icons';
@@ -9,6 +9,8 @@ interface PredictionBarChartProps {
   fighter2Name: string;
   fighter1Id: string;
   fighter2Id: string;
+  fighter1Image?: string | null;
+  fighter2Image?: string | null;
   selectedWinner?: string;
   selectedMethod?: string;
   // Prediction stats for each fighter and method
@@ -50,6 +52,8 @@ export default function PredictionBarChart({
   fighter2Name,
   fighter1Id,
   fighter2Id,
+  fighter1Image,
+  fighter2Image,
   selectedWinner,
   selectedMethod,
   fighter1Predictions,
@@ -63,6 +67,11 @@ export default function PredictionBarChart({
 }: PredictionBarChartProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+
+  // Placeholder image - use default fighter image if no image available
+  const getFighterPlaceholder = () => {
+    return require('../assets/fighters/fighter-default-alpha.png');
+  };
 
   // If no colors revealed, show grey outline only with invisible placeholders
   if (!showColors) {
@@ -103,41 +112,55 @@ export default function PredictionBarChart({
       {/* Community Predictions Bar - progressive reveal */}
       {winnerPredictions && (
         <View style={{ flex: 1 }}>
-          {/* Percentages above bar chart */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-            <View>
-              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                {winnerPredictions.fighter1.percentage}% {fighter1Name}
-              </Text>
-              {selectedWinner === fighter1Id && !selectedMethod && (
-                <View
-                  style={{
-                    position: 'absolute',
-                    bottom: -1,
-                    left: 0,
-                    right: 0,
-                    height: 2,
-                    backgroundColor: '#F5C518',
-                  }}
-                />
-              )}
+          {/* Fighter headshots and percentages above bar chart */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+            {/* Fighter 1 */}
+            <View style={{ alignItems: 'flex-start' }}>
+              <Image
+                source={
+                  fighter1Image
+                    ? { uri: fighter1Image }
+                    : getFighterPlaceholder()
+                }
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  marginBottom: 4,
+                }}
+              />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                  {winnerPredictions.fighter1.percentage}% {fighter1Name}
+                </Text>
+                {selectedWinner === fighter1Id && !selectedMethod && (
+                  <FontAwesome name="user" size={12} color="#F5C518" />
+                )}
+              </View>
             </View>
-            <View>
-              <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-                {winnerPredictions.fighter2.percentage}% {fighter2Name}
-              </Text>
-              {selectedWinner === fighter2Id && !selectedMethod && (
-                <View
-                  style={{
-                    position: 'absolute',
-                    bottom: -1,
-                    left: 0,
-                    right: 0,
-                    height: 2,
-                    backgroundColor: '#F5C518',
-                  }}
-                />
-              )}
+            {/* Fighter 2 */}
+            <View style={{ alignItems: 'flex-end' }}>
+              <Image
+                source={
+                  fighter2Image
+                    ? { uri: fighter2Image }
+                    : getFighterPlaceholder()
+                }
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  marginBottom: 4,
+                }}
+              />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                  {winnerPredictions.fighter2.percentage}% {fighter2Name}
+                </Text>
+                {selectedWinner === fighter2Id && !selectedMethod && (
+                  <FontAwesome name="user" size={12} color="#F5C518" />
+                )}
+              </View>
             </View>
           </View>
 
@@ -162,70 +185,163 @@ export default function PredictionBarChart({
               {/* Fighter 1 method subdivisions - show if labels revealed or as plain bars */}
               {fighter1Predictions && showLabels ? (
                 <View style={{ flexDirection: 'row', flex: 1 }}>
-                  {fighter1Predictions.KO_TKO > 0 && (
-                    <View
-                      style={{
-                        flex: fighter1Predictions.KO_TKO,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRightWidth: 1,
-                        borderRightColor: colors.border,
-                        backgroundColor: 'transparent',
-                      }}
-                    >
-                      <Text
+                  {fighter1Predictions.KO_TKO > 0 && (() => {
+                    const methodPercentage = (fighter1Predictions.KO_TKO / winnerPredictions.fighter1.count) * 100;
+                    const label = methodPercentage < 15 ? 'K' : 'KO';
+                    const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'KO_TKO';
+                    const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'KO_TKO';
+                    return (
+                      <View
                         style={{
-                          fontSize: 10,
-                          fontWeight: '600',
-                          color: fighter1HasMajority ? '#000' : '#FFF',
+                          flex: fighter1Predictions.KO_TKO,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderRightWidth: 1,
+                          borderRightColor: colors.border,
+                          backgroundColor: 'transparent',
+                          position: 'relative',
                         }}
                       >
-                        KO
-                      </Text>
-                    </View>
-                  )}
-                  {fighter1Predictions.SUBMISSION > 0 && (
-                    <View
-                      style={{
-                        flex: fighter1Predictions.SUBMISSION,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRightWidth: 1,
-                        borderRightColor: colors.border,
-                        backgroundColor: 'transparent',
-                      }}
-                    >
-                      <Text
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            fontWeight: '600',
+                            color: fighter1HasMajority ? '#000' : '#FFF',
+                          }}
+                        >
+                          {label}
+                        </Text>
+                        {(isUserPrediction || isActualOutcome) && (
+                          <View style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            flexDirection: 'row',
+                            gap: 3,
+                          }}>
+                            {isUserPrediction && (
+                              <FontAwesome name="user" size={10} color="#F5C518" />
+                            )}
+                            {isActualOutcome && (
+                              <View style={{
+                                width: 9,
+                                height: 9,
+                                borderRadius: 4.5,
+                                backgroundColor: '#000',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                              }}>
+                                <FontAwesome name="check-circle" size={10} color="#4CAF50" />
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })()}
+                  {fighter1Predictions.SUBMISSION > 0 && (() => {
+                    const methodPercentage = (fighter1Predictions.SUBMISSION / winnerPredictions.fighter1.count) * 100;
+                    const label = methodPercentage < 15 ? 'S' : 'SUB';
+                    const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION';
+                    const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'SUBMISSION';
+                    return (
+                      <View
                         style={{
-                          fontSize: 10,
-                          fontWeight: '600',
-                          color: fighter1HasMajority ? '#000' : '#FFF',
+                          flex: fighter1Predictions.SUBMISSION,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderRightWidth: 1,
+                          borderRightColor: colors.border,
+                          backgroundColor: 'transparent',
+                          position: 'relative',
                         }}
                       >
-                        SUB
-                      </Text>
-                    </View>
-                  )}
-                  {fighter1Predictions.DECISION > 0 && (
-                    <View
-                      style={{
-                        flex: fighter1Predictions.DECISION,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        backgroundColor: 'transparent',
-                      }}
-                    >
-                      <Text
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            fontWeight: '600',
+                            color: fighter1HasMajority ? '#000' : '#FFF',
+                          }}
+                        >
+                          {label}
+                        </Text>
+                        {(isUserPrediction || isActualOutcome) && (
+                          <View style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            flexDirection: 'row',
+                            gap: 3,
+                          }}>
+                            {isUserPrediction && (
+                              <FontAwesome name="user" size={10} color="#F5C518" />
+                            )}
+                            {isActualOutcome && (
+                              <View style={{
+                                width: 9,
+                                height: 9,
+                                borderRadius: 4.5,
+                                backgroundColor: '#000',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                              }}>
+                                <FontAwesome name="check-circle" size={10} color="#4CAF50" />
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })()}
+                  {fighter1Predictions.DECISION > 0 && (() => {
+                    const methodPercentage = (fighter1Predictions.DECISION / winnerPredictions.fighter1.count) * 100;
+                    const label = methodPercentage < 15 ? 'D' : 'DEC';
+                    const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'DECISION';
+                    const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'DECISION';
+                    return (
+                      <View
                         style={{
-                          fontSize: 10,
-                          fontWeight: '600',
-                          color: fighter1HasMajority ? '#000' : '#FFF',
+                          flex: fighter1Predictions.DECISION,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          backgroundColor: 'transparent',
+                          position: 'relative',
                         }}
                       >
-                        DEC
-                      </Text>
-                    </View>
-                  )}
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            fontWeight: '600',
+                            color: fighter1HasMajority ? '#000' : '#FFF',
+                          }}
+                        >
+                          {label}
+                        </Text>
+                        {(isUserPrediction || isActualOutcome) && (
+                          <View style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            flexDirection: 'row',
+                            gap: 3,
+                          }}>
+                            {isUserPrediction && (
+                              <FontAwesome name="user" size={10} color="#F5C518" />
+                            )}
+                            {isActualOutcome && (
+                              <View style={{
+                                width: 9,
+                                height: 9,
+                                borderRadius: 4.5,
+                                backgroundColor: '#000',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                              }}>
+                                <FontAwesome name="check-circle" size={10} color="#4CAF50" />
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })()}
                 </View>
               ) : (
                 <View style={{ flex: 1 }} />
@@ -243,46 +359,139 @@ export default function PredictionBarChart({
               {/* Fighter 2 method subdivisions - show if labels revealed or as plain bars */}
               {fighter2Predictions && showLabels ? (
                 <View style={{ flexDirection: 'row', flex: 1 }}>
-                  {fighter2Predictions.KO_TKO > 0 && (
-                    <View
-                      style={{
-                        flex: fighter2Predictions.KO_TKO,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRightWidth: 1,
-                        borderRightColor: colors.border,
-                        backgroundColor: 'transparent',
-                      }}
-                    >
-                      <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>KO</Text>
-                    </View>
-                  )}
-                  {fighter2Predictions.SUBMISSION > 0 && (
-                    <View
-                      style={{
-                        flex: fighter2Predictions.SUBMISSION,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRightWidth: 1,
-                        borderRightColor: colors.border,
-                        backgroundColor: 'transparent',
-                      }}
-                    >
-                      <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>SUB</Text>
-                    </View>
-                  )}
-                  {fighter2Predictions.DECISION > 0 && (
-                    <View
-                      style={{
-                        flex: fighter2Predictions.DECISION,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        backgroundColor: 'transparent',
-                      }}
-                    >
-                      <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>DEC</Text>
-                    </View>
-                  )}
+                  {fighter2Predictions.KO_TKO > 0 && (() => {
+                    const methodPercentage = (fighter2Predictions.KO_TKO / winnerPredictions.fighter2.count) * 100;
+                    const label = methodPercentage < 15 ? 'K' : 'KO';
+                    const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'KO_TKO';
+                    const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'KO_TKO';
+                    return (
+                      <View
+                        style={{
+                          flex: fighter2Predictions.KO_TKO,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderRightWidth: 1,
+                          borderRightColor: colors.border,
+                          backgroundColor: 'transparent',
+                          position: 'relative',
+                        }}
+                      >
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>{label}</Text>
+                        {(isUserPrediction || isActualOutcome) && (
+                          <View style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            flexDirection: 'row',
+                            gap: 3,
+                          }}>
+                            {isUserPrediction && (
+                              <FontAwesome name="user" size={10} color="#F5C518" />
+                            )}
+                            {isActualOutcome && (
+                              <View style={{
+                                width: 9,
+                                height: 9,
+                                borderRadius: 4.5,
+                                backgroundColor: '#000',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                              }}>
+                                <FontAwesome name="check-circle" size={10} color="#4CAF50" />
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })()}
+                  {fighter2Predictions.SUBMISSION > 0 && (() => {
+                    const methodPercentage = (fighter2Predictions.SUBMISSION / winnerPredictions.fighter2.count) * 100;
+                    const label = methodPercentage < 15 ? 'S' : 'SUB';
+                    const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'SUBMISSION';
+                    const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'SUBMISSION';
+                    return (
+                      <View
+                        style={{
+                          flex: fighter2Predictions.SUBMISSION,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderRightWidth: 1,
+                          borderRightColor: colors.border,
+                          backgroundColor: 'transparent',
+                          position: 'relative',
+                        }}
+                      >
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>{label}</Text>
+                        {(isUserPrediction || isActualOutcome) && (
+                          <View style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            flexDirection: 'row',
+                            gap: 3,
+                          }}>
+                            {isUserPrediction && (
+                              <FontAwesome name="user" size={10} color="#F5C518" />
+                            )}
+                            {isActualOutcome && (
+                              <View style={{
+                                width: 9,
+                                height: 9,
+                                borderRadius: 4.5,
+                                backgroundColor: '#000',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                              }}>
+                                <FontAwesome name="check-circle" size={10} color="#4CAF50" />
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })()}
+                  {fighter2Predictions.DECISION > 0 && (() => {
+                    const methodPercentage = (fighter2Predictions.DECISION / winnerPredictions.fighter2.count) * 100;
+                    const label = methodPercentage < 15 ? 'D' : 'DEC';
+                    const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'DECISION';
+                    const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'DECISION';
+                    return (
+                      <View
+                        style={{
+                          flex: fighter2Predictions.DECISION,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          backgroundColor: 'transparent',
+                          position: 'relative',
+                        }}
+                      >
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>{label}</Text>
+                        {(isUserPrediction || isActualOutcome) && (
+                          <View style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            flexDirection: 'row',
+                            gap: 3,
+                          }}>
+                            {isUserPrediction && (
+                              <FontAwesome name="user" size={10} color="#F5C518" />
+                            )}
+                            {isActualOutcome && (
+                              <View style={{
+                                width: 9,
+                                height: 9,
+                                borderRadius: 4.5,
+                                backgroundColor: '#000',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                              }}>
+                                <FontAwesome name="check-circle" size={10} color="#4CAF50" />
+                              </View>
+                            )}
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })()}
                 </View>
               ) : (
                 <View style={{ flex: 1 }} />

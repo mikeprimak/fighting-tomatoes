@@ -4,6 +4,7 @@ import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { Tabs, useRouter, usePathname } from 'expo-router';
 import { useColorScheme, Text, View, Image } from 'react-native';
 import { Colors } from '../constants/Colors';
+import { useAuth } from '../store/AuthContext';
 
 /**
  * Tab Bar Icon Component
@@ -113,6 +114,7 @@ export default function TabBar({ tabs, defaultHeaderTitle, children }: TabBarPro
 export function FightCrewAppTabBar() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { user } = useAuth();
 
   return (
     <Tabs
@@ -210,7 +212,7 @@ export function FightCrewAppTabBar() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
-          headerTitle: () => <HeaderLogo title="Profile" />,
+          headerTitle: () => <HeaderLogo title={user?.displayName || 'Profile'} />,
         }}
       />
     </Tabs>

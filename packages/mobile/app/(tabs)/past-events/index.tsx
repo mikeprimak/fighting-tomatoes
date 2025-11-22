@@ -193,7 +193,14 @@ function EventSection({ event }: { event: Event }) {
   return (
     <View style={styles.eventSection}>
       {/* Event Header with Banner and Info */}
-      <EventBannerCard event={event} />
+      <EventBannerCard
+        event={event}
+        statusBadge={{
+          text: 'COMPLETED',
+          backgroundColor: '#22C55E',
+          textColor: '#FFFFFF',
+        }}
+      />
 
       {/* Fights Container */}
       <View style={styles.fightsContainer}>

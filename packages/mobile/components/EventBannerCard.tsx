@@ -169,6 +169,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 6,
     borderBottomRightRadius: 6,
     borderBottomLeftRadius: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   dateOverlayRoundedLeft: {
     borderTopLeftRadius: 6,
@@ -176,8 +178,8 @@ const styles = StyleSheet.create({
   },
   dateText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
   },
   info: {
     padding: 16,

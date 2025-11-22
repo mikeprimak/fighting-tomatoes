@@ -26,6 +26,7 @@ import HotPredictionCard from '../../components/fight-cards/HotPredictionCard';
 import EvenPredictionCard from '../../components/fight-cards/EvenPredictionCard';
 import FighterCard from '../../components/FighterCard';
 import { PreFightCommentCard } from '../../components/PreFightCommentCard';
+import { getHypeHeatmapColor } from '../../utils/heatmap';
 
 interface Event {
   id: string;
@@ -61,6 +62,46 @@ export default function CommunityScreen() {
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [reviewToFlag, setReviewToFlag] = useState<{ fightId: string; reviewId: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Mix 70% heatmap color with 30% background color for icon (same as CompletedFightCard)
+  const getIconColor = (heatmapColor: string, bgColor: string): string => {
+    // Parse heatmap color (RGB or hex)
+    const heatmapRgbaMatch = heatmapColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    const heatmapHexMatch = heatmapColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+
+    let heatmapR = 0, heatmapG = 0, heatmapB = 0;
+    if (heatmapRgbaMatch) {
+      heatmapR = parseInt(heatmapRgbaMatch[1]);
+      heatmapG = parseInt(heatmapRgbaMatch[2]);
+      heatmapB = parseInt(heatmapRgbaMatch[3]);
+    } else if (heatmapHexMatch) {
+      heatmapR = parseInt(heatmapHexMatch[1], 16);
+      heatmapG = parseInt(heatmapHexMatch[2], 16);
+      heatmapB = parseInt(heatmapHexMatch[3], 16);
+    }
+
+    // Parse background color
+    const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    const bgHexMatch = bgColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+
+    let bgR = 255, bgG = 255, bgB = 255;
+    if (bgRgbaMatch) {
+      bgR = parseInt(bgRgbaMatch[1]);
+      bgG = parseInt(bgRgbaMatch[2]);
+      bgB = parseInt(bgRgbaMatch[3]);
+    } else if (bgHexMatch) {
+      bgR = parseInt(bgHexMatch[1], 16);
+      bgG = parseInt(bgHexMatch[2], 16);
+      bgB = parseInt(bgHexMatch[3], 16);
+    }
+
+    // Mix 70% heatmap + 30% background
+    const mixedR = Math.round(heatmapR * 0.7 + bgR * 0.3);
+    const mixedG = Math.round(heatmapG * 0.7 + bgG * 0.3);
+    const mixedB = Math.round(heatmapB * 0.7 + bgB * 0.3);
+
+    return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
+  };
 
   // Fetch events from API
   const { data: eventsData, isLoading } = useQuery({
@@ -134,6 +175,29 @@ export default function CommunityScreen() {
     queryFn: () => apiService.getHotFighters(),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+
+  // Fetch classic fight of the day (hardcoded for now - Della Maddalena vs Makhachev)
+  const classicFightId = 'bfa5eaa2-e58f-4d17-9c34-77bd8f5d33d1';
+  const { data: classicFightResponse, isLoading: isClassicFightLoading } = useQuery({
+    queryKey: ['classicFight', classicFightId, isAuthenticated],
+    queryFn: () => apiService.getFight(classicFightId),
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - classic fights don't change often
+  });
+
+  const classicFightData = classicFightResponse?.fight;
+
+  // Debug logging for classic fight data
+  React.useEffect(() => {
+    if (classicFightData) {
+      console.log('[Community] Classic Fight Data:', {
+        id: classicFightData.id,
+        averageRating: classicFightData.averageRating,
+        averageHype: classicFightData.averageHype,
+        fighter1: classicFightData.fighter1?.firstName,
+        fighter2: classicFightData.fighter2?.firstName,
+      });
+    }
+  }, [classicFightData]);
 
   // Upvote mutation
   const upvoteMutation = useMutation({
@@ -498,6 +562,54 @@ export default function CommunityScreen() {
       fontSize: 15,
       fontWeight: '600',
     },
+    classicFightContainer: {
+      overflow: 'hidden',
+      marginBottom: 12,
+    },
+    classicFightImage: {
+      width: '100%',
+      height: 200,
+    },
+    classicFightOverlay: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      padding: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    classicRatingBox: {
+      width: 50,
+      height: 50,
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+      position: 'relative',
+    },
+    classicRatingText: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#FFFFFF',
+      position: 'relative',
+      zIndex: 1,
+    },
+    classicFightInfo: {
+      flex: 1,
+    },
+    classicFightTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: '#FFFFFF',
+      marginBottom: 4,
+    },
+    classicFightEvent: {
+      fontSize: 12,
+      fontWeight: '500',
+      color: '#CCCCCC',
+    },
   });
 
   // Placeholder sections for community features
@@ -566,14 +678,79 @@ export default function CommunityScreen() {
           </View>
         </View>
 
+        {/* Classic Fight Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', height: 48 }}>
+              <FontAwesome
+                name="trophy"
+                size={40}
+                color={colorScheme === 'dark' ? '#6B7280' : '#9CA3AF'}
+                style={{ opacity: 0.4 }}
+              />
+              <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>Classic Fight</Text>
+            </View>
+          </View>
+
+          {/* Fight Thumbnail */}
+          <TouchableOpacity
+            style={styles.classicFightContainer}
+            onPress={() => router.push(`/fight/${classicFightId}` as any)}
+          >
+            <Image
+              source={require('../../assets/ufc-jiri-glover.jpg')}
+              style={styles.classicFightImage}
+              resizeMode="cover"
+            />
+            <View style={styles.classicFightOverlay}>
+              {/* Rating Box on the left */}
+              {classicFightData && (() => {
+                const ratingColor = getHypeHeatmapColor(classicFightData.averageRating || 0);
+                const starColor = getIconColor(ratingColor, colors.background);
+                return (
+                  <View style={[styles.classicRatingBox, { backgroundColor: ratingColor }]}>
+                    <FontAwesome
+                      name="star"
+                      size={20}
+                      color={starColor}
+                      style={{ position: 'absolute' }}
+                    />
+                    <Text style={styles.classicRatingText}>
+                      {classicFightData.averageRating ? classicFightData.averageRating.toFixed(1) : '0.0'}
+                    </Text>
+                  </View>
+                );
+              })()}
+
+              {/* Fight Info on the right */}
+              <View style={styles.classicFightInfo}>
+                <Text style={styles.classicFightTitle}>
+                  {classicFightData?.fighter1?.firstName && classicFightData?.fighter2?.firstName ?
+                    `${classicFightData.fighter1.firstName} ${classicFightData.fighter1.lastName} vs ${classicFightData.fighter2.firstName} ${classicFightData.fighter2.lastName}`
+                    : 'Loading...'
+                  }
+                </Text>
+                <Text style={styles.classicFightEvent}>
+                  {classicFightData?.event?.name || 'Loading event...'}
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         {/* Top Upcoming Fights Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top Upcoming Fights</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', height: 48 }}>
+              <FontAwesome6
+                name="fire-flame-curved"
+                size={40}
+                color={colorScheme === 'dark' ? '#6B7280' : '#9CA3AF'}
+                style={{ opacity: 0.4 }}
+              />
+              <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>Hype Fights</Text>
+            </View>
           </View>
-          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            Upcoming fights with lots of hype
-          </Text>
           <View style={[styles.sectionHeader, { marginBottom: 12 }]}>
             {/* Left Column Header - ALL / HYPE */}
             <View style={styles.columnHeadersUpcoming}>
@@ -631,11 +808,16 @@ export default function CommunityScreen() {
         {/* Top Recent Fights Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top Recent Fights</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', height: 48 }}>
+              <FontAwesome
+                name="star"
+                size={40}
+                color={colorScheme === 'dark' ? '#6B7280' : '#9CA3AF'}
+                style={{ opacity: 0.4 }}
+              />
+              <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>Top Fights</Text>
+            </View>
           </View>
-          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            Recent fights that delivered entertainment
-          </Text>
           <View style={[styles.sectionHeader, { marginBottom: 12 }]}>
             {/* Left Column Header - ALL / RATINGS */}
             <View style={styles.columnHeadersCompleted}>
@@ -679,180 +861,190 @@ export default function CommunityScreen() {
           )}
         </View>
 
-        {/* Hot Predictions Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Hot Predictions</Text>
-          </View>
-          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            Lots of predictions are coming in on these fights
-          </Text>
-          {isHotPredictionsLoading ? (
-            <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
-              <ActivityIndicator size="small" color={colors.primary} />
+        {/* Hot Predictions Section - HIDDEN */}
+        {false && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Hot Predictions</Text>
             </View>
-          ) : hotPredictions && hotPredictions.data.length > 0 ? (
-            hotPredictions.data.map((fight: any) => (
-              <HotPredictionCard
-                key={fight.id}
-                fight={fight}
-                onPress={() => router.push(`/fight/${fight.id}` as any)}
-              />
-            ))
-          ) : (
-            <View style={styles.card}>
-              <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
-                No hot predictions found
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Even Predictions Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Even Predictions</Text>
-          </View>
-          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            The crowd is split on who will win these fights
-          </Text>
-          {isEvenPredictionsLoading ? (
-            <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
-              <ActivityIndicator size="small" color={colors.primary} />
-            </View>
-          ) : evenPredictions && evenPredictions.data.length > 0 ? (
-            evenPredictions.data.map((fight: any) => (
-              <EvenPredictionCard
-                key={fight.id}
-                fight={fight}
-                onPress={() => router.push(`/fight/${fight.id}` as any)}
-              />
-            ))
-          ) : (
-            <View style={styles.card}>
-              <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
-                No even predictions found
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Hot Fighters Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Hot Fighters</Text>
-          </View>
-          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            Fighters who always entertain
-          </Text>
-          {isHotFightersLoading ? (
-            <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
-              <ActivityIndicator size="small" color={colors.primary} />
-            </View>
-          ) : hotFighters && (hotFighters.data.recent.length > 0 || hotFighters.data.upcoming.length > 0) ? (
-            <>
-              {[...hotFighters.data.recent, ...hotFighters.data.upcoming].map((fighterData: any) => (
-                <FighterCard
-                  key={fighterData.fighter.id}
-                  fighter={fighterData.fighter}
-                  avgRating={fighterData.avgRating}
-                  fightCount={fighterData.fightCount}
-                  lastFightDate={fighterData.lastFightDate}
-                  nextFightDate={fighterData.nextFightDate}
-                  onPress={() => router.push(`/fighter/${fighterData.fighter.id}` as any)}
+            <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
+              Lots of predictions are coming in on these fights
+            </Text>
+            {isHotPredictionsLoading ? (
+              <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : hotPredictions && hotPredictions.data.length > 0 ? (
+              hotPredictions.data.map((fight: any) => (
+                <HotPredictionCard
+                  key={fight.id}
+                  fight={fight}
+                  onPress={() => router.push(`/fight/${fight.id}` as any)}
                 />
-              ))}
-            </>
-          ) : (
-            <View style={styles.card}>
-              <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
-                No hot fighters found
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Pre-Fight Comments Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top Pre-Fight Comments</Text>
-            <TouchableOpacity
-              style={styles.seeAllButton}
-              onPress={() => router.push('/pre-fight-comments' as any)}
-            >
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.card}>
+                <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
+                  No hot predictions found
+                </Text>
+              </View>
+            )}
           </View>
-          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            Top pre-fight hype for upcoming fights
-          </Text>
+        )}
 
-          {isTopPreFightCommentsLoading ? (
-            <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
-              <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={[styles.cardSubtext, { marginTop: 8 }]}>Loading comments...</Text>
+        {/* Even Predictions Section - HIDDEN */}
+        {false && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Even Predictions</Text>
             </View>
-          ) : topPreFightCommentsData && topPreFightCommentsData.data.length > 0 ? (
-            topPreFightCommentsData.data.map((comment) => (
-              <PreFightCommentCard
-                key={comment.id}
-                comment={comment}
-                onPress={() => router.push(`/fight/${comment.fight.id}` as any)}
-                onUpvote={() => upvotePreFightCommentMutation.mutate({ fightId: comment.fight.id, commentId: comment.id })}
-                isUpvoting={upvotingCommentId === comment.id}
-                isAuthenticated={isAuthenticated}
-              />
-            ))
-          ) : (
-            <View style={styles.card}>
-              <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
-                No pre-fight comments yet
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Top Post-Fight Comments Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top Post-Fight Comments</Text>
-            <TouchableOpacity
-              style={styles.seeAllButton}
-              onPress={() => router.push('/comments' as any)}
-            >
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
+            <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
+              The crowd is split on who will win these fights
+            </Text>
+            {isEvenPredictionsLoading ? (
+              <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : evenPredictions && evenPredictions.data.length > 0 ? (
+              evenPredictions.data.map((fight: any) => (
+                <EvenPredictionCard
+                  key={fight.id}
+                  fight={fight}
+                  onPress={() => router.push(`/fight/${fight.id}` as any)}
+                />
+              ))
+            ) : (
+              <View style={styles.card}>
+                <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
+                  No even predictions found
+                </Text>
+              </View>
+            )}
           </View>
-          <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
-            Recent hot takes from our community.
-          </Text>
+        )}
 
-          {isTopCommentsLoading ? (
-            <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
-              <ActivityIndicator size="small" color={colors.primary} />
-              <Text style={[styles.cardSubtext, { marginTop: 8 }]}>Loading comments...</Text>
+        {/* Hot Fighters Section - HIDDEN */}
+        {false && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Hot Fighters</Text>
             </View>
-          ) : topCommentsData && topCommentsData.data.length > 0 ? (
-            topCommentsData.data.map((comment) => (
-              <CommentCard
-                key={comment.id}
-                comment={comment}
-                onPress={() => router.push(`/fight/${comment.fight.id}` as any)}
-                onUpvote={() => upvoteMutation.mutate({ fightId: comment.fight.id, reviewId: comment.id })}
-                onFlag={() => handleFlagReview(comment.fight.id, comment.id)}
-                isUpvoting={upvotingCommentId === comment.id}
-                isFlagging={flagReviewMutation.isPending && reviewToFlag?.reviewId === comment.id}
-                isAuthenticated={isAuthenticated}
-              />
-            ))
-          ) : (
-            <View style={styles.card}>
-              <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
-                No comments yet
-              </Text>
+            <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
+              Fighters who always entertain
+            </Text>
+            {isHotFightersLoading ? (
+              <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
+                <ActivityIndicator size="small" color={colors.primary} />
+              </View>
+            ) : hotFighters && (hotFighters.data.recent.length > 0 || hotFighters.data.upcoming.length > 0) ? (
+              <>
+                {[...hotFighters.data.recent, ...hotFighters.data.upcoming].map((fighterData: any) => (
+                  <FighterCard
+                    key={fighterData.fighter.id}
+                    fighter={fighterData.fighter}
+                    avgRating={fighterData.avgRating}
+                    fightCount={fighterData.fightCount}
+                    lastFightDate={fighterData.lastFightDate}
+                    nextFightDate={fighterData.nextFightDate}
+                    onPress={() => router.push(`/fighter/${fighterData.fighter.id}` as any)}
+                  />
+                ))}
+              </>
+            ) : (
+              <View style={styles.card}>
+                <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
+                  No hot fighters found
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Pre-Fight Comments Section - HIDDEN */}
+        {false && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Top Pre-Fight Comments</Text>
+              <TouchableOpacity
+                style={styles.seeAllButton}
+                onPress={() => router.push('/pre-fight-comments' as any)}
+              >
+                <Text style={styles.seeAllText}>See All</Text>
+              </TouchableOpacity>
             </View>
-          )}
-        </View>
+            <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
+              Top pre-fight hype for upcoming fights
+            </Text>
+
+            {isTopPreFightCommentsLoading ? (
+              <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={[styles.cardSubtext, { marginTop: 8 }]}>Loading comments...</Text>
+              </View>
+            ) : topPreFightCommentsData && topPreFightCommentsData.data.length > 0 ? (
+              topPreFightCommentsData.data.map((comment) => (
+                <PreFightCommentCard
+                  key={comment.id}
+                  comment={comment}
+                  onPress={() => router.push(`/fight/${comment.fight.id}` as any)}
+                  onUpvote={() => upvotePreFightCommentMutation.mutate({ fightId: comment.fight.id, commentId: comment.id })}
+                  isUpvoting={upvotingCommentId === comment.id}
+                  isAuthenticated={isAuthenticated}
+                />
+              ))
+            ) : (
+              <View style={styles.card}>
+                <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
+                  No pre-fight comments yet
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Top Post-Fight Comments Section - HIDDEN */}
+        {false && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Top Post-Fight Comments</Text>
+              <TouchableOpacity
+                style={styles.seeAllButton}
+                onPress={() => router.push('/comments' as any)}
+              >
+                <Text style={styles.seeAllText}>See All</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.cardSubtext, { marginBottom: 12 }]}>
+              Recent hot takes from our community.
+            </Text>
+
+            {isTopCommentsLoading ? (
+              <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={[styles.cardSubtext, { marginTop: 8 }]}>Loading comments...</Text>
+              </View>
+            ) : topCommentsData && topCommentsData.data.length > 0 ? (
+              topCommentsData.data.map((comment) => (
+                <CommentCard
+                  key={comment.id}
+                  comment={comment}
+                  onPress={() => router.push(`/fight/${comment.fight.id}` as any)}
+                  onUpvote={() => upvoteMutation.mutate({ fightId: comment.fight.id, reviewId: comment.id })}
+                  onFlag={() => handleFlagReview(comment.fight.id, comment.id)}
+                  isUpvoting={upvotingCommentId === comment.id}
+                  isFlagging={flagReviewMutation.isPending && reviewToFlag?.reviewId === comment.id}
+                  isAuthenticated={isAuthenticated}
+                />
+              ))
+            ) : (
+              <View style={styles.card}>
+                <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
+                  No comments yet
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </ScrollView>
 
       {/* Modals */}
