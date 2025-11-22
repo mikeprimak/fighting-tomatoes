@@ -1304,7 +1304,7 @@ export default function CompletedFightDetailScreen({
 
               <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 {/* Left: Winner and Method Prediction */}
-                {fight.userPredictedWinner && fight.userPredictedMethod ? (
+                {fight.userPredictedWinner ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     {/* Fighter Headshot */}
                     <Image
@@ -1317,12 +1317,53 @@ export default function CompletedFightDetailScreen({
                     />
                     {/* Fighter Name and Method */}
                     <View>
-                      <Text style={[styles.predictionText, { color: colors.text, fontWeight: '600', marginBottom: 2 }]}>
-                        {fight.userPredictedWinner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName}
-                      </Text>
-                      <Text style={[styles.predictionText, { color: colors.textSecondary, fontSize: 13 }]}>
-                        by {fight.userPredictedMethod.charAt(0).toUpperCase() + fight.userPredictedMethod.slice(1).toLowerCase().replace('_', '/')}
-                      </Text>
+                      {/* Winner Row with Accuracy Icon */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <Text style={[styles.predictionText, { color: colors.text, fontWeight: '600' }]}>
+                          {fight.userPredictedWinner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName}
+                        </Text>
+                        {(() => {
+                          const isWinnerCorrect = fight.winner === fight.userPredictedWinner;
+                          return (
+                            <FontAwesome
+                              name={isWinnerCorrect ? "check-circle" : "times-circle"}
+                              size={16}
+                              color={isWinnerCorrect ? "#4CAF50" : "#F44336"}
+                            />
+                          );
+                        })()}
+                      </View>
+                      {/* Method Row with Accuracy Icon - only show if method was predicted */}
+                      {fight.userPredictedMethod && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={[styles.predictionText, { color: colors.textSecondary, fontSize: 13 }]}>
+                            by {fight.userPredictedMethod.charAt(0).toUpperCase() + fight.userPredictedMethod.slice(1).toLowerCase().replace('_', '/')}
+                          </Text>
+                          {(() => {
+                            const isWinnerCorrect = fight.winner === fight.userPredictedWinner;
+                            const normalizedActualMethod = normalizeMethod(fight.method);
+                            const normalizedPredictedMethod = fight.userPredictedMethod?.toUpperCase();
+                            const methodMatchesActual = normalizedActualMethod === normalizedPredictedMethod;
+
+                            // Icon color logic:
+                            // - If winner wrong: gray checkmark (irrelevant, doesn't count)
+                            // - If winner correct: green checkmark (correct) or red X (incorrect)
+                            const methodIconColor = !isWinnerCorrect
+                              ? colors.textSecondary // gray if winner wrong (irrelevant)
+                              : (methodMatchesActual ? "#4CAF50" : "#F44336"); // green/red if winner correct
+
+                            const methodIcon = methodMatchesActual ? "check-circle" : "times-circle";
+
+                            return (
+                              <FontAwesome
+                                name={methodIcon}
+                                size={14}
+                                color={methodIconColor}
+                              />
+                            );
+                          })()}
+                        </View>
+                      )}
                     </View>
                   </View>
                 ) : (
@@ -1355,117 +1396,213 @@ export default function CompletedFightDetailScreen({
           )}
         </View>
 
-        {/* Community Rating Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 15 }]}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0 }}>
-            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              Community Rating
-            </Text>
+        {/* Community Data Container */}
+        <View style={[
+          styles.communityDataContainer,
+          {
+            backgroundColor: colorScheme === 'dark' ? 'rgba(131, 180, 243, 0.05)' : 'rgba(131, 180, 243, 0.08)',
+            borderLeftColor: '#83B4F3',
+          }
+        ]}>
+          {/* Badge Header */}
+          <View style={styles.communityDataBadge}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <FontAwesome name="users" size={14} color="#000" />
+              <Text style={styles.communityDataBadgeText}>Community Data</Text>
+            </View>
           </View>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        </View>
 
-        {/* Community Rating Data */}
-        <View style={[styles.sectionNoBorder, { marginTop: 26 }]}>
-          {/* Community Rating Layout: Horizontal */}
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 0 }}>
-            {/* Community Rating Box */}
-            {(() => {
-              const ratingColor = fight.averageRating > 0
-                ? getHypeHeatmapColor(Math.round(fight.averageRating))
-                : colors.border;
+          {/* Community Rating Section Divider */}
+          <View style={[styles.sectionDivider, { marginTop: 15 }]}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <View style={{ flexShrink: 0 }}>
+              <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+                Community Rating
+              </Text>
+            </View>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          </View>
 
-              // Mix 70% heatmap color with 30% background color for star icon
-              const getStarColor = (ratingColor: string, bgColor: string): string => {
-                // Parse rating color (RGB or hex)
-                const ratingRgbaMatch = ratingColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-                const ratingHexMatch = ratingColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+          {/* Community Rating Data */}
+          <View style={[styles.sectionNoBorder, { marginTop: 26 }]}>
+            {/* Community Rating Layout: Horizontal */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 0 }}>
+              {/* Community Rating Box */}
+              {(() => {
+                const ratingColor = fight.averageRating > 0
+                  ? getHypeHeatmapColor(Math.round(fight.averageRating))
+                  : colors.border;
 
-                let ratingR = 0, ratingG = 0, ratingB = 0;
-                if (ratingRgbaMatch) {
-                  ratingR = parseInt(ratingRgbaMatch[1]);
-                  ratingG = parseInt(ratingRgbaMatch[2]);
-                  ratingB = parseInt(ratingRgbaMatch[3]);
-                } else if (ratingHexMatch) {
-                  ratingR = parseInt(ratingHexMatch[1], 16);
-                  ratingG = parseInt(ratingHexMatch[2], 16);
-                  ratingB = parseInt(ratingHexMatch[3], 16);
-                }
+                // Mix 70% heatmap color with 30% background color for star icon
+                const getStarColor = (ratingColor: string, bgColor: string): string => {
+                  // Parse rating color (RGB or hex)
+                  const ratingRgbaMatch = ratingColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+                  const ratingHexMatch = ratingColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
 
-                // Parse background color (RGB or hex)
-                const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-                const bgHexMatch = bgColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+                  let ratingR = 0, ratingG = 0, ratingB = 0;
+                  if (ratingRgbaMatch) {
+                    ratingR = parseInt(ratingRgbaMatch[1]);
+                    ratingG = parseInt(ratingRgbaMatch[2]);
+                    ratingB = parseInt(ratingRgbaMatch[3]);
+                  } else if (ratingHexMatch) {
+                    ratingR = parseInt(ratingHexMatch[1], 16);
+                    ratingG = parseInt(ratingHexMatch[2], 16);
+                    ratingB = parseInt(ratingHexMatch[3], 16);
+                  }
 
-                let bgR = 0, bgG = 0, bgB = 0;
-                if (bgRgbaMatch) {
-                  bgR = parseInt(bgRgbaMatch[1]);
-                  bgG = parseInt(bgRgbaMatch[2]);
-                  bgB = parseInt(bgRgbaMatch[3]);
-                } else if (bgHexMatch) {
-                  bgR = parseInt(bgHexMatch[1], 16);
-                  bgG = parseInt(bgHexMatch[2], 16);
-                  bgB = parseInt(bgHexMatch[3], 16);
-                }
+                  // Parse background color (RGB or hex)
+                  const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+                  const bgHexMatch = bgColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
 
-                // Mix 70% rating + 30% background
-                const mixedR = Math.round(ratingR * 0.7 + bgR * 0.3);
-                const mixedG = Math.round(ratingG * 0.7 + bgG * 0.3);
-                const mixedB = Math.round(ratingB * 0.7 + bgB * 0.3);
+                  let bgR = 0, bgG = 0, bgB = 0;
+                  if (bgRgbaMatch) {
+                    bgR = parseInt(bgRgbaMatch[1]);
+                    bgG = parseInt(bgRgbaMatch[2]);
+                    bgB = parseInt(bgRgbaMatch[3]);
+                  } else if (bgHexMatch) {
+                    bgR = parseInt(bgHexMatch[1], 16);
+                    bgG = parseInt(bgHexMatch[2], 16);
+                    bgB = parseInt(bgHexMatch[3], 16);
+                  }
 
-                return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
-              };
+                  // Mix 70% rating + 30% background
+                  const mixedR = Math.round(ratingR * 0.7 + bgR * 0.3);
+                  const mixedG = Math.round(ratingG * 0.7 + bgG * 0.3);
+                  const mixedB = Math.round(ratingB * 0.7 + bgB * 0.3);
 
-              const starColor = getStarColor(ratingColor, colors.background);
+                  return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
+                };
 
-              return (
-                <View style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 6,
-                }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <FontAwesome name="users" size={19} color={colors.textSecondary} />
-                  </View>
+                const starColor = getStarColor(ratingColor, colors.background);
+
+                return (
                   <View style={{
-                    width: 40,
-                    height: 40,
-                    justifyContent: 'center',
+                    flexDirection: 'row',
                     alignItems: 'center',
-                    borderRadius: 8,
-                    backgroundColor: ratingColor,
+                    gap: 6,
                   }}>
-                    <FontAwesome
-                      name="star"
-                      size={24}
-                      color={starColor}
-                      style={{ position: 'absolute' }}
-                    />
-                    <Text style={{
-                      color: '#FFFFFF',
-                      fontSize: 14,
-                      fontWeight: 'bold',
-                      textAlign: 'center',
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <FontAwesome name="users" size={19} color={colors.textSecondary} />
+                    </View>
+                    <View style={{
+                      width: 40,
+                      height: 40,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderRadius: 8,
+                      backgroundColor: ratingColor,
                     }}>
-                      {fight.averageRating
-                        ? fight.averageRating % 1 === 0
-                          ? fight.averageRating.toString()
-                          : fight.averageRating.toFixed(1)
-                        : '0'}
-                    </Text>
+                      <FontAwesome
+                        name="star"
+                        size={24}
+                        color={starColor}
+                        style={{ position: 'absolute' }}
+                      />
+                      <Text style={{
+                        color: '#FFFFFF',
+                        fontSize: 14,
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                      }}>
+                        {fight.averageRating
+                          ? fight.averageRating % 1 === 0
+                            ? fight.averageRating.toString()
+                            : fight.averageRating.toFixed(1)
+                          : '0'}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              );
-            })()}
+                );
+              })()}
 
-            {/* Rating Distribution Chart */}
-            {aggregateStats?.ratingDistribution && (
-              <View style={{ marginTop: -6 }}>
-                <RatingDistributionChart
-                  distribution={aggregateStats.ratingDistribution}
-                  totalRatings={totalRatings}
+              {/* Rating Distribution Chart */}
+              {aggregateStats?.ratingDistribution && (
+                <View style={{ marginTop: -6 }}>
+                  <RatingDistributionChart
+                    distribution={aggregateStats.ratingDistribution}
+                    totalRatings={totalRatings}
+                  />
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Community Predictions Bar Chart */}
+          {predictionStats && predictionStats.fighter1MethodPredictions && predictionStats.fighter2MethodPredictions && predictionStats.winnerPredictions && (() => {
+            const normalized = normalizeMethod(fight.method);
+            console.log('[CompletedFight] Passing to chart:', {
+              winner: fight.winner,
+              method: fight.method,
+              normalized,
+              fighter1Id: fight.fighter1.id,
+              fighter2Id: fight.fighter2.id,
+            });
+            return (
+              <View style={[styles.sectionNoBorder, { marginTop: 24 }]}>
+                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 20 }]}>
+                  Community Predictions
+                </Text>
+                <PredictionBarChart
+                  fighter1Name={fight.fighter1.lastName}
+                  fighter2Name={fight.fighter2.lastName}
+                  fighter1Id={fight.fighter1.id}
+                  fighter2Id={fight.fighter2.id}
+                  selectedWinner={fight.userPredictedWinner || null}
+                  selectedMethod={fight.userPredictedMethod || null}
+                  fighter1Predictions={predictionStats.fighter1MethodPredictions}
+                  fighter2Predictions={predictionStats.fighter2MethodPredictions}
+                  totalPredictions={predictionStats.totalPredictions}
+                  winnerPredictions={predictionStats.winnerPredictions}
+                  showColors={true}
+                  showLabels={true}
+                  actualWinner={fight.winner}
+                  actualMethod={normalized}
                 />
               </View>
+            );
+          })()}
+
+          {/* Community Hype */}
+          <View style={[styles.sectionNoBorder, { marginTop: 24 }]}>
+            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
+              Community Hype
+            </Text>
+            {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                <View style={[
+                  styles.userHypeSquare,
+                  {
+                    backgroundColor: getHypeHeatmapColor(predictionStats.averageHype),
+                  }
+                ]}>
+                  <View style={{ position: 'absolute' }}>
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={24}
+                      color={getFlameColor(getHypeHeatmapColor(predictionStats.averageHype), colors.background)}
+                    />
+                  </View>
+                  <Text style={styles.hypeSquareText}>
+                    {predictionStats.averageHype.toFixed(1)}
+                  </Text>
+                </View>
+
+                {/* Hype Distribution Chart */}
+                {predictionStats?.hypeDistribution && (
+                  <View style={{ flex: 1 }}>
+                    <HypeDistributionChart
+                      distribution={predictionStats.hypeDistribution}
+                      totalPredictions={predictionStats.totalPredictions || 0}
+                      hasRevealedHype={true}
+                      fadeAnim={new Animated.Value(1)}
+                    />
+                  </View>
+                )}
+              </View>
+            ) : (
+              <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
+                No community hype data
+              </Text>
             )}
           </View>
         </View>
@@ -1683,115 +1820,6 @@ export default function CompletedFightDetailScreen({
             ) : (
               <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
                 No prediction made
-              </Text>
-            )}
-          </View>
-
-          {/* Community Predictions Bar Chart */}
-          {predictionStats && predictionStats.fighter1MethodPredictions && predictionStats.fighter2MethodPredictions && predictionStats.winnerPredictions && (() => {
-            const normalized = normalizeMethod(fight.method);
-            console.log('[CompletedFight] Passing to chart:', {
-              winner: fight.winner,
-              method: fight.method,
-              normalized,
-              fighter1Id: fight.fighter1.id,
-              fighter2Id: fight.fighter2.id,
-            });
-            return (
-              <View style={{ marginTop: 24 }}>
-                <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 20 }]}>
-                  Community Predictions
-                </Text>
-                <PredictionBarChart
-                  fighter1Name={fight.fighter1.lastName}
-                  fighter2Name={fight.fighter2.lastName}
-                  fighter1Id={fight.fighter1.id}
-                  fighter2Id={fight.fighter2.id}
-                  selectedWinner={fight.userPredictedWinner || null}
-                  selectedMethod={fight.userPredictedMethod || null}
-                  fighter1Predictions={predictionStats.fighter1MethodPredictions}
-                  fighter2Predictions={predictionStats.fighter2MethodPredictions}
-                  totalPredictions={predictionStats.totalPredictions}
-                  winnerPredictions={predictionStats.winnerPredictions}
-                  showColors={true}
-                  showLabels={true}
-                  actualWinner={fight.winner}
-                  actualMethod={normalized}
-                />
-              </View>
-            );
-          })()}
-
-          {/* My Hype */}
-          <View style={{ marginTop: 32 }}>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
-              My Hype
-            </Text>
-            {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && fight.userHypePrediction > 0 ? (
-              <View style={[
-                styles.userHypeSquare,
-                {
-                  backgroundColor: getHypeHeatmapColor(fight.userHypePrediction),
-                }
-              ]}>
-                <View style={{ position: 'absolute' }}>
-                  <FontAwesome6
-                    name="fire-flame-curved"
-                    size={24}
-                    color={getFlameColor(getHypeHeatmapColor(fight.userHypePrediction), colors.background)}
-                  />
-                </View>
-                <Text style={styles.hypeSquareText}>
-                  {Math.round(fight.userHypePrediction).toString()}
-                </Text>
-              </View>
-            ) : (
-              <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
-                No hype rating
-              </Text>
-            )}
-          </View>
-
-          {/* Community Hype */}
-          <View style={{ marginTop: 24 }}>
-            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary, marginBottom: 16 }]}>
-              Community Hype
-            </Text>
-            {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                <View style={[
-                  styles.userHypeSquare,
-                  {
-                    backgroundColor: getHypeHeatmapColor(predictionStats.averageHype),
-                  }
-                ]}>
-                  <View style={{ position: 'absolute' }}>
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={24}
-                      color={getFlameColor(getHypeHeatmapColor(predictionStats.averageHype), colors.background)}
-                    />
-                  </View>
-                  <Text style={styles.hypeSquareText}>
-                    {predictionStats.averageHype.toFixed(1)}
-                  </Text>
-                </View>
-
-                {/* Hype Distribution Chart */}
-                {predictionStats?.hypeDistribution && (
-                  <View style={{ flex: 1 }}>
-                    <HypeDistributionChart
-                      distribution={predictionStats.hypeDistribution}
-                      totalPredictions={predictionStats.totalPredictions || 0}
-                      hasRevealedHype={true}
-                      fadeAnim={new Animated.Value(1)}
-                    />
-                  </View>
-                )}
-              </View>
-            ) : (
-              <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
-                No community hype data
               </Text>
             )}
           </View>
@@ -2967,6 +2995,31 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   userRatingBadgeText: {
+    color: '#000',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  communityDataContainer: {
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 16,
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingLeft: 4,
+    paddingRight: 4,
+    borderRadius: 16,
+    borderLeftWidth: 4,
+  },
+  communityDataBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#83B4F3',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginBottom: 8,
+    marginLeft: 10,
+  },
+  communityDataBadgeText: {
     color: '#000',
     fontSize: 12,
     fontWeight: '600',
