@@ -267,7 +267,7 @@ const getAvailableTagsForRating = (
     );
   }
 
-  const MAX_TAGS = 12;
+  const MAX_TAGS = 10;
 
   // Helper function to normalize tag names for matching
   const normalizeTagName = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
@@ -1006,7 +1006,10 @@ export default function CompletedFightDetailScreen({
         ]}>
           {/* Badge Header */}
           <View style={styles.userRatingBadge}>
-            <Text style={styles.userRatingBadgeText}>⭐ Your Rating</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <FontAwesome name="star" size={14} color="#000" />
+              <Text style={styles.userRatingBadgeText}>Your Rating</Text>
+            </View>
           </View>
 
           {/* My Rating Section Divider */}
@@ -1156,7 +1159,7 @@ export default function CompletedFightDetailScreen({
                 <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
                 <View style={{ flexShrink: 0 }}>
                   <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-                    My Pre-Fight
+                    My Pre-Fight Data
                   </Text>
                 </View>
                 <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
@@ -1231,7 +1234,7 @@ export default function CompletedFightDetailScreen({
         </View>
 
         {/* Community Rating Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: -34 }]}>
+        <View style={[styles.sectionDivider, { marginTop: 15 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <View style={{ flexShrink: 0 }}>
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
