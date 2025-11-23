@@ -62,6 +62,8 @@ export default function CommunityScreen() {
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [reviewToFlag, setReviewToFlag] = useState<{ fightId: string; reviewId: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [hypeFightsPeriod, setHypeFightsPeriod] = useState<'week' | 'month' | '3months'>('week');
+  const [topFightsPeriod, setTopFightsPeriod] = useState<'week' | 'month' | '3months' | 'year' | 'all'>('week');
 
   // Mix 70% heatmap color with 30% background color for icon (same as CompletedFightCard)
   const getIconColor = (heatmapColor: string, bgColor: string): string => {
@@ -141,17 +143,61 @@ export default function CommunityScreen() {
     refetchOnMount: 'always',
   });
 
-  // Fetch top upcoming fights
-  const { data: topUpcomingFights, isLoading: isTopUpcomingLoading } = useQuery({
-    queryKey: ['topUpcomingFights', isAuthenticated],
-    queryFn: () => apiService.getTopUpcomingFights(),
+  // Pre-fetch all upcoming fight periods to prevent layout jumping
+  useQuery({
+    queryKey: ['topUpcomingFights', isAuthenticated, 'week'],
+    queryFn: () => apiService.getTopUpcomingFights('week'),
+    staleTime: 5 * 60 * 1000,
+  });
+  useQuery({
+    queryKey: ['topUpcomingFights', isAuthenticated, 'month'],
+    queryFn: () => apiService.getTopUpcomingFights('month'),
+    staleTime: 5 * 60 * 1000,
+  });
+  useQuery({
+    queryKey: ['topUpcomingFights', isAuthenticated, '3months'],
+    queryFn: () => apiService.getTopUpcomingFights('3months'),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Pre-fetch all recent fight periods to prevent layout jumping
+  useQuery({
+    queryKey: ['topRecentFights', isAuthenticated, 'week'],
+    queryFn: () => apiService.getTopRecentFights('week'),
+    staleTime: 5 * 60 * 1000,
+  });
+  useQuery({
+    queryKey: ['topRecentFights', isAuthenticated, 'month'],
+    queryFn: () => apiService.getTopRecentFights('month'),
+    staleTime: 5 * 60 * 1000,
+  });
+  useQuery({
+    queryKey: ['topRecentFights', isAuthenticated, '3months'],
+    queryFn: () => apiService.getTopRecentFights('3months'),
+    staleTime: 5 * 60 * 1000,
+  });
+  useQuery({
+    queryKey: ['topRecentFights', isAuthenticated, 'year'],
+    queryFn: () => apiService.getTopRecentFights('year'),
+    staleTime: 5 * 60 * 1000,
+  });
+  useQuery({
+    queryKey: ['topRecentFights', isAuthenticated, 'all'],
+    queryFn: () => apiService.getTopRecentFights('all'),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch top upcoming fights (active period)
+  const { data: topUpcomingFights, isFetching: isTopUpcomingFetching } = useQuery({
+    queryKey: ['topUpcomingFights', isAuthenticated, hypeFightsPeriod],
+    queryFn: () => apiService.getTopUpcomingFights(hypeFightsPeriod),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  // Fetch top recent fights
-  const { data: topRecentFights, isLoading: isTopRecentLoading } = useQuery({
-    queryKey: ['topRecentFights', isAuthenticated],
-    queryFn: () => apiService.getTopRecentFights(),
+  // Fetch top recent fights (active period)
+  const { data: topRecentFights, isFetching: isTopRecentFetching } = useQuery({
+    queryKey: ['topRecentFights', isAuthenticated, topFightsPeriod],
+    queryFn: () => apiService.getTopRecentFights(topFightsPeriod),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
@@ -610,6 +656,33 @@ export default function CommunityScreen() {
       fontWeight: '500',
       color: '#CCCCCC',
     },
+    filterTabsContainer: {
+      flexDirection: 'row',
+      marginHorizontal: 16,
+      marginBottom: 12,
+      gap: 6,
+      flexWrap: 'wrap',
+    },
+    filterTab: {
+      paddingHorizontal: 8,
+      paddingVertical: 5,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: 'transparent',
+    },
+    filterTabActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.border,
+    },
+    filterTabText: {
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
+    filterTabTextActive: {
+      color: colors.textOnAccent,
+    },
   });
 
   // Placeholder sections for community features
@@ -751,6 +824,35 @@ export default function CommunityScreen() {
               <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>Hype Fights</Text>
             </View>
           </View>
+
+          {/* Time Period Filter Tabs */}
+          <View style={styles.filterTabsContainer}>
+            <TouchableOpacity
+              style={[styles.filterTab, hypeFightsPeriod === 'week' && styles.filterTabActive]}
+              onPress={() => setHypeFightsPeriod('week')}
+            >
+              <Text style={[styles.filterTabText, hypeFightsPeriod === 'week' && styles.filterTabTextActive]}>
+                This Week
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterTab, hypeFightsPeriod === 'month' && styles.filterTabActive]}
+              onPress={() => setHypeFightsPeriod('month')}
+            >
+              <Text style={[styles.filterTabText, hypeFightsPeriod === 'month' && styles.filterTabTextActive]}>
+                This Month
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterTab, hypeFightsPeriod === '3months' && styles.filterTabActive]}
+              onPress={() => setHypeFightsPeriod('3months')}
+            >
+              <Text style={[styles.filterTabText, hypeFightsPeriod === '3months' && styles.filterTabTextActive]}>
+                3 Months
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={[styles.sectionHeader, { marginBottom: 12 }]}>
             {/* Left Column Header - ALL / HYPE */}
             <View style={styles.columnHeadersUpcoming}>
@@ -772,11 +874,11 @@ export default function CommunityScreen() {
               </Text>
             </View>
           </View>
-          {isTopUpcomingLoading ? (
+          {!topUpcomingFights ? (
             <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
               <ActivityIndicator size="small" color={colors.primary} />
             </View>
-          ) : topUpcomingFights && topUpcomingFights.data.length > 0 ? (
+          ) : topUpcomingFights.data.length > 0 ? (
             topUpcomingFights.data.map((fight: any) => {
               if (fight.id === '68606cbb-5e84-4bba-8c80-9bdd2e691994') {
                 console.log('[Community Screen] Shevchenko vs Zhang fight data:', {
@@ -818,6 +920,51 @@ export default function CommunityScreen() {
               <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>Top Fights</Text>
             </View>
           </View>
+
+          {/* Time Period Filter Tabs */}
+          <View style={styles.filterTabsContainer}>
+            <TouchableOpacity
+              style={[styles.filterTab, topFightsPeriod === 'week' && styles.filterTabActive]}
+              onPress={() => setTopFightsPeriod('week')}
+            >
+              <Text style={[styles.filterTabText, topFightsPeriod === 'week' && styles.filterTabTextActive]}>
+                Week
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterTab, topFightsPeriod === 'month' && styles.filterTabActive]}
+              onPress={() => setTopFightsPeriod('month')}
+            >
+              <Text style={[styles.filterTabText, topFightsPeriod === 'month' && styles.filterTabTextActive]}>
+                Month
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterTab, topFightsPeriod === '3months' && styles.filterTabActive]}
+              onPress={() => setTopFightsPeriod('3months')}
+            >
+              <Text style={[styles.filterTabText, topFightsPeriod === '3months' && styles.filterTabTextActive]}>
+                3 Months
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterTab, topFightsPeriod === 'year' && styles.filterTabActive]}
+              onPress={() => setTopFightsPeriod('year')}
+            >
+              <Text style={[styles.filterTabText, topFightsPeriod === 'year' && styles.filterTabTextActive]}>
+                Year
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterTab, topFightsPeriod === 'all' && styles.filterTabActive]}
+              onPress={() => setTopFightsPeriod('all')}
+            >
+              <Text style={[styles.filterTabText, topFightsPeriod === 'all' && styles.filterTabTextActive]}>
+                All Time
+              </Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={[styles.sectionHeader, { marginBottom: 12 }]}>
             {/* Left Column Header - ALL / RATINGS */}
             <View style={styles.columnHeadersCompleted}>
@@ -839,11 +986,11 @@ export default function CommunityScreen() {
               </Text>
             </View>
           </View>
-          {isTopRecentLoading ? (
+          {!topRecentFights ? (
             <View style={[styles.card, { alignItems: 'center', padding: 24 }]}>
               <ActivityIndicator size="small" color={colors.primary} />
             </View>
-          ) : topRecentFights && topRecentFights.data.length > 0 ? (
+          ) : topRecentFights.data.length > 0 ? (
             topRecentFights.data.map((fight: any) => (
               <CompletedFightCard
                 key={fight.id}

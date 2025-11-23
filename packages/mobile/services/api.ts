@@ -942,12 +942,12 @@ class ApiService {
     return this.makeRequest(`/community/comments?sortBy=${sortBy}`);
   }
 
-  async getTopUpcomingFights(): Promise<{ data: Fight[] }> {
-    return this.makeRequest('/community/top-upcoming-fights');
+  async getTopUpcomingFights(period: string = 'week'): Promise<{ data: Fight[] }> {
+    return this.makeRequest(`/community/top-upcoming-fights?period=${period}`);
   }
 
-  async getTopRecentFights(): Promise<{ data: Fight[] }> {
-    return this.makeRequest('/community/top-recent-fights');
+  async getTopRecentFights(period: string = 'week'): Promise<{ data: Fight[] }> {
+    return this.makeRequest(`/community/top-recent-fights?period=${period}`);
   }
 
   async getHotPredictions(): Promise<{

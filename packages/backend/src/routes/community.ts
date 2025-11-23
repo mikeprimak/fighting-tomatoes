@@ -281,10 +281,27 @@ export default async function communityRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const userId = request.user?.id;
-      console.log('[Top Upcoming Fights] userId:', userId);
+      const { period = 'week' } = request.query as { period?: string };
+      console.log('[Top Upcoming Fights] userId:', userId, 'period:', period);
+
+      // Calculate time range based on period
       const now = new Date();
-      const twentyDaysFromNow = new Date();
-      twentyDaysFromNow.setDate(now.getDate() + 20);
+      const endDate = new Date();
+
+      switch (period) {
+        case 'week':
+          endDate.setDate(now.getDate() + 7);
+          break;
+        case 'month':
+          endDate.setMonth(now.getMonth() + 1);
+          break;
+        case '3months':
+          endDate.setMonth(now.getMonth() + 3);
+          break;
+        default:
+          // Default to week if invalid period
+          endDate.setDate(now.getDate() + 7);
+      }
 
       // Get fights with their predictions to calculate average hype
       const fights = await fastify.prisma.fight.findMany({
@@ -292,7 +309,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           event: {
             date: {
               gte: now,
-              lte: twentyDaysFromNow,
+              lte: endDate,
             },
           },
           hasStarted: false,
@@ -387,7 +404,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           return transformed;
         })
         .sort((a: any, b: any) => b.averageHype - a.averageHype)
-        .slice(0, 7);
+        .slice(0, 10);
 
       console.log('[Top Upcoming Fights] Returning data for first fight:', {
         id: fightsWithHype[0]?.id,
@@ -411,15 +428,39 @@ export default async function communityRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const userId = request.user?.id;
+      const { period = 'week' } = request.query as { period?: string };
+
+      // Calculate time range based on period
       const now = new Date();
-      const twentyDaysAgo = new Date();
-      twentyDaysAgo.setDate(now.getDate() - 20);
+      const startDate = new Date();
+
+      switch (period) {
+        case 'week':
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case 'month':
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+        case '3months':
+          startDate.setMonth(now.getMonth() - 3);
+          break;
+        case 'year':
+          startDate.setFullYear(now.getFullYear() - 1);
+          break;
+        case 'all':
+          // Set to a very old date to get all fights
+          startDate.setFullYear(2000, 0, 1);
+          break;
+        default:
+          // Default to week if invalid period
+          startDate.setDate(now.getDate() - 7);
+      }
 
       const fights = await fastify.prisma.fight.findMany({
         where: {
           event: {
             date: {
-              gte: twentyDaysAgo,
+              gte: startDate,
               lte: now,
             },
           },
@@ -444,7 +485,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         orderBy: {
           averageRating: 'desc',
         },
-        take: 7,
+        take: 10,
       });
 
       // Get user's fighter follows if authenticated
