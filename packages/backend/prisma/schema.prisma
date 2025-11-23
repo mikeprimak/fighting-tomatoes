@@ -393,38 +393,42 @@ model FightPrediction {
 // ============== REVIEWS ==============
 model FightReview {
   id              String    @id @default(uuid())
-  
+
   // Relationships
   userId          String
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   fightId         String
   fight           Fight     @relation(fields: [fightId], references: [id], onDelete: Cascade)
-  
+
+  // Nested comments support (1 level deep)
+  parentReviewId  String?
+  parentReview    FightReview?  @relation("FightReviewReplies", fields: [parentReviewId], references: [id], onDelete: Cascade)
+  replies         FightReview[] @relation("FightReviewReplies")
+
   // Review content
   content         String
-  rating          Int       // 1-10 (might duplicate FightRating)
-  
+  rating          Int?      // 1-10 (optional for replies, required for top-level)
+
   // Media links (for media users)
   articleUrl      String?
   articleTitle    String?
-  
+
   // Moderation
   isReported      Boolean   @default(false)
   isHidden        Boolean   @default(false)
-  
+
   // Vote counts
   upvotes         Int       @default(0)
   downvotes       Int       @default(0)
-  
+
   // Timestamps
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  
+
   // Relations
   votes           ReviewVote[]
   reports         ReviewReport[]
-  
-  @@unique([userId, fightId])
+
   @@map("fight_reviews")
 }
 
@@ -437,6 +441,11 @@ model PreFightComment {
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   fightId         String
   fight           Fight     @relation(fields: [fightId], references: [id], onDelete: Cascade)
+
+  // Nested comments support (1 level deep)
+  parentCommentId String?
+  parentComment   PreFightComment?  @relation("PreFightCommentReplies", fields: [parentCommentId], references: [id], onDelete: Cascade)
+  replies         PreFightComment[] @relation("PreFightCommentReplies")
 
   // Comment content
   content         String    @db.Text
@@ -451,7 +460,6 @@ model PreFightComment {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  @@unique([userId, fightId])
   @@map("pre_fight_comments")
 }
 

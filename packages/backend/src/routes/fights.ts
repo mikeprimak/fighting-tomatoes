@@ -825,7 +825,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // POST /api/fights/:id/review - Create or update a review
+  // POST /api/fights/:id/review - Create or update a top-level review (with rating)
   fastify.post('/fights/:id/review', {
     preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
@@ -861,29 +861,41 @@ export async function fightRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Create or update review
-      const review = await fastify.prisma.fightReview.upsert({
+      // Find existing top-level review
+      const existingReview = await fastify.prisma.fightReview.findFirst({
         where: {
-          userId_fightId: {
-            userId: currentUserId,
-            fightId,
-          },
-        },
-        create: {
           userId: currentUserId,
           fightId,
-          content,
-          rating,
-          articleUrl,
-          articleTitle,
-        },
-        update: {
-          content,
-          rating,
-          articleUrl,
-          articleTitle,
+          parentReviewId: null,
         },
       });
+
+      let review;
+      if (existingReview) {
+        // Update existing top-level review
+        review = await fastify.prisma.fightReview.update({
+          where: { id: existingReview.id },
+          data: {
+            content,
+            rating,
+            articleUrl,
+            articleTitle,
+          },
+        });
+      } else {
+        // Create new top-level review
+        review = await fastify.prisma.fightReview.create({
+          data: {
+            userId: currentUserId,
+            fightId,
+            content,
+            rating,
+            articleUrl,
+            articleTitle,
+            parentReviewId: null,
+          },
+        });
+      }
 
       return reply.code(201).send({
         review,
@@ -906,7 +918,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // PUT /api/fights/:id/review - Update existing review
+  // PUT /api/fights/:id/review - Update existing top-level review
   fastify.put('/fights/:id/review', {
     preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
@@ -924,13 +936,12 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Check if review already exists
-      const existingReview = await fastify.prisma.fightReview.findUnique({
+      // Find existing top-level review
+      const existingReview = await fastify.prisma.fightReview.findFirst({
         where: {
-          userId_fightId: {
-            userId: currentUserId,
-            fightId,
-          },
+          userId: currentUserId,
+          fightId,
+          parentReviewId: null,
         },
       });
 
@@ -952,33 +963,34 @@ export async function fightRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Update review
-      const review = await fastify.prisma.fightReview.upsert({
-        where: {
-          userId_fightId: {
+      let review;
+      if (existingReview) {
+        // Update existing top-level review
+        review = await fastify.prisma.fightReview.update({
+          where: { id: existingReview.id },
+          data: {
+            content,
+            rating,
+            articleUrl,
+            articleTitle,
+          },
+        });
+      } else {
+        // Create new top-level review with auto-upvote
+        review = await fastify.prisma.fightReview.create({
+          data: {
             userId: currentUserId,
             fightId,
+            content,
+            rating,
+            articleUrl,
+            articleTitle,
+            parentReviewId: null,
+            upvotes: 1, // Auto-upvote on creation
           },
-        },
-        create: {
-          userId: currentUserId,
-          fightId,
-          content,
-          rating,
-          articleUrl,
-          articleTitle,
-          upvotes: 1, // Auto-upvote on creation
-        },
-        update: {
-          content,
-          rating,
-          articleUrl,
-          articleTitle,
-        },
-      });
+        });
 
-      // If this is a new review, create an auto-upvote
-      if (!existingReview) {
+        // Create auto-upvote
         await fastify.prisma.reviewVote.create({
           data: {
             userId: currentUserId,
@@ -1002,6 +1014,118 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       console.error('Update review error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // POST /api/fights/:id/reviews/:reviewId/reply - Create a reply to a review
+  fastify.post('/fights/:id/reviews/:reviewId/reply', {
+    preHandler: [authenticateUser, requireEmailVerification],
+  }, async (request, reply) => {
+    try {
+      const { id: fightId, reviewId: parentReviewId } = request.params as { id: string; reviewId: string };
+      const { content } = request.body as { content: string };
+      const currentUserId = (request as any).user.id;
+
+      // Validate content
+      if (!content || content.trim().length === 0) {
+        return reply.code(400).send({
+          error: 'Comment content is required',
+          code: 'CONTENT_REQUIRED',
+        });
+      }
+
+      if (content.length > 500) {
+        return reply.code(400).send({
+          error: 'Comment must be 500 characters or less',
+          code: 'CONTENT_TOO_LONG',
+        });
+      }
+
+      // Check if fight exists
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Check if parent review exists and is a top-level review
+      const parentReview = await fastify.prisma.fightReview.findUnique({
+        where: { id: parentReviewId },
+      });
+
+      if (!parentReview) {
+        return reply.code(404).send({
+          error: 'Parent review not found',
+          code: 'PARENT_REVIEW_NOT_FOUND',
+        });
+      }
+
+      if (parentReview.parentReviewId !== null) {
+        return reply.code(400).send({
+          error: 'Cannot reply to a reply. Only one level of nesting is allowed.',
+          code: 'INVALID_NESTING_LEVEL',
+        });
+      }
+
+      if (parentReview.fightId !== fightId) {
+        return reply.code(400).send({
+          error: 'Parent review does not belong to this fight',
+          code: 'REVIEW_FIGHT_MISMATCH',
+        });
+      }
+
+      // Check if user already replied to this review
+      const existingReply = await fastify.prisma.fightReview.findFirst({
+        where: {
+          userId: currentUserId,
+          fightId,
+          parentReviewId,
+        },
+      });
+
+      if (existingReply) {
+        return reply.code(400).send({
+          error: 'You have already replied to this review',
+          code: 'REPLY_ALREADY_EXISTS',
+        });
+      }
+
+      // Create reply (no rating required for replies)
+      const replyReview = await fastify.prisma.fightReview.create({
+        data: {
+          userId: currentUserId,
+          fightId,
+          content: content.trim(),
+          parentReviewId,
+          rating: null, // Replies don't have ratings
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              displayName: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+              isMedia: true,
+              mediaOrganization: true,
+            },
+          },
+        },
+      });
+
+      return reply.code(201).send({
+        review: replyReview,
+        message: 'Reply created successfully',
+      });
+    } catch (error) {
+      console.error('Create review reply error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1124,7 +1248,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // POST /api/fights/:id/pre-fight-comment - Create or update a pre-fight comment
+  // POST /api/fights/:id/pre-fight-comment - Create or update a pre-fight comment (top-level only)
   fastify.post('/fights/:id/pre-fight-comment', {
     preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
@@ -1133,12 +1257,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const { content } = request.body as { content: string };
       const currentUserId = (request as any).user.id;
 
-      // If content is empty, delete the comment
+      // If content is empty, delete the top-level comment
       if (!content || content.trim().length === 0) {
         await fastify.prisma.preFightComment.deleteMany({
           where: {
             userId: currentUserId,
             fightId,
+            parentCommentId: null, // Only delete top-level comment
           },
         });
 
@@ -1171,21 +1296,159 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Create or update pre-fight comment
-      const comment = await fastify.prisma.preFightComment.upsert({
+      // Find existing top-level comment
+      const existingComment = await fastify.prisma.preFightComment.findFirst({
         where: {
-          userId_fightId: {
+          userId: currentUserId,
+          fightId,
+          parentCommentId: null,
+        },
+      });
+
+      let comment;
+      if (existingComment) {
+        // Update existing top-level comment
+        comment = await fastify.prisma.preFightComment.update({
+          where: { id: existingComment.id },
+          data: { content: content.trim() },
+          include: {
+            user: {
+              select: {
+                id: true,
+                displayName: true,
+                firstName: true,
+                lastName: true,
+                avatar: true,
+              },
+            },
+          },
+        });
+      } else {
+        // Create new top-level comment
+        comment = await fastify.prisma.preFightComment.create({
+          data: {
             userId: currentUserId,
             fightId,
+            content: content.trim(),
+            parentCommentId: null,
           },
+          include: {
+            user: {
+              select: {
+                id: true,
+                displayName: true,
+                firstName: true,
+                lastName: true,
+                avatar: true,
+              },
+            },
+          },
+        });
+      }
+
+      return reply.code(201).send({
+        comment,
+        message: 'Pre-fight comment saved successfully',
+      });
+    } catch (error) {
+      console.error('Create pre-fight comment error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // POST /api/fights/:id/pre-fight-comments/:commentId/reply - Create a reply to a pre-fight comment
+  fastify.post('/fights/:id/pre-fight-comments/:commentId/reply', {
+    preHandler: [authenticateUser, requireEmailVerification],
+  }, async (request, reply) => {
+    try {
+      const { id: fightId, commentId: parentCommentId } = request.params as { id: string; commentId: string };
+      const { content } = request.body as { content: string };
+      const currentUserId = (request as any).user.id;
+
+      // Validate content
+      if (!content || content.trim().length === 0) {
+        return reply.code(400).send({
+          error: 'Comment content is required',
+          code: 'CONTENT_REQUIRED',
+        });
+      }
+
+      if (content.length > 500) {
+        return reply.code(400).send({
+          error: 'Comment must be 500 characters or less',
+          code: 'CONTENT_TOO_LONG',
+        });
+      }
+
+      // Check if fight exists
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Check if fight has already started
+      if (fight.hasStarted) {
+        return reply.code(400).send({
+          error: 'Cannot comment on a fight that has already started',
+          code: 'FIGHT_STARTED',
+        });
+      }
+
+      // Check if parent comment exists and is a top-level comment
+      const parentComment = await fastify.prisma.preFightComment.findUnique({
+        where: { id: parentCommentId },
+      });
+
+      if (!parentComment) {
+        return reply.code(404).send({
+          error: 'Parent comment not found',
+          code: 'PARENT_COMMENT_NOT_FOUND',
+        });
+      }
+
+      if (parentComment.parentCommentId !== null) {
+        return reply.code(400).send({
+          error: 'Cannot reply to a reply. Only one level of nesting is allowed.',
+          code: 'INVALID_NESTING_LEVEL',
+        });
+      }
+
+      if (parentComment.fightId !== fightId) {
+        return reply.code(400).send({
+          error: 'Parent comment does not belong to this fight',
+          code: 'COMMENT_FIGHT_MISMATCH',
+        });
+      }
+
+      // Check if user already replied to this comment
+      const existingReply = await fastify.prisma.preFightComment.findFirst({
+        where: {
+          userId: currentUserId,
+          fightId,
+          parentCommentId,
         },
-        create: {
+      });
+
+      if (existingReply) {
+        return reply.code(400).send({
+          error: 'You have already replied to this comment',
+          code: 'REPLY_ALREADY_EXISTS',
+        });
+      }
+
+      // Create reply
+      const replyComment = await fastify.prisma.preFightComment.create({
+        data: {
           userId: currentUserId,
           fightId,
           content: content.trim(),
-        },
-        update: {
-          content: content.trim(),
+          parentCommentId,
         },
         include: {
           user: {
@@ -1201,11 +1464,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       return reply.code(201).send({
-        comment,
-        message: 'Pre-fight comment saved successfully',
+        comment: replyComment,
+        message: 'Reply created successfully',
       });
     } catch (error) {
-      console.error('Create pre-fight comment error:', error);
+      console.error('Create pre-fight comment reply error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1213,7 +1476,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // GET /api/fights/:id/pre-fight-comments - Get all pre-fight comments for a fight
+  // GET /api/fights/:id/pre-fight-comments - Get all pre-fight comments for a fight (with nested replies)
   fastify.get('/fights/:id/pre-fight-comments', { preHandler: optionalAuth }, async (request, reply) => {
     try {
       const { id: fightId } = request.params as { id: string };
@@ -1228,7 +1491,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Get all pre-fight comments with user hype ratings
+      // Get all pre-fight comments (both top-level and replies) with nested structure
       const comments = await fastify.prisma.preFightComment.findMany({
         where: {
           fightId,
@@ -1243,18 +1506,39 @@ export async function fightRoutes(fastify: FastifyInstance) {
               avatar: true,
             },
           },
+          replies: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  displayName: true,
+                  firstName: true,
+                  lastName: true,
+                  avatar: true,
+                },
+              },
+            },
+            orderBy: {
+              createdAt: 'asc', // Replies ordered oldest first
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
         },
       });
 
-      // Get hype ratings for all commenters
-      const commenterIds = comments.map(c => c.userId);
+      // Get hype ratings for all commenters (including replies)
+      const allCommenterIds = new Set<string>();
+      comments.forEach(c => {
+        allCommenterIds.add(c.userId);
+        c.replies.forEach((r: any) => allCommenterIds.add(r.userId));
+      });
+
       const predictions = await fastify.prisma.fightPrediction.findMany({
         where: {
           fightId,
-          userId: { in: commenterIds },
+          userId: { in: Array.from(allCommenterIds) },
         },
         select: {
           userId: true,
@@ -1268,11 +1552,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
       // Get user's upvotes if authenticated
       let userUpvotes: Set<string> = new Set();
       if (currentUserId) {
-        const commentIds = comments.map(c => c.id);
+        const allCommentIds = [
+          ...comments.map(c => c.id),
+          ...comments.flatMap(c => c.replies.map((r: any) => r.id))
+        ];
         const votes = await fastify.prisma.preFightCommentVote.findMany({
           where: {
             userId: currentUserId,
-            commentId: { in: commentIds },
+            commentId: { in: allCommentIds },
           },
           select: {
             commentId: true,
@@ -1281,16 +1568,34 @@ export async function fightRoutes(fastify: FastifyInstance) {
         userUpvotes = new Set(votes.map(v => v.commentId));
       }
 
-      // Add hype ratings and upvote info to comments
+      // Add hype ratings and upvote info to comments and replies
       const commentsWithHype = comments.map(comment => ({
         ...comment,
         hypeRating: hypeMap.get(comment.userId) || null,
         userHasUpvoted: userUpvotes.has(comment.id),
+        replyCount: comment.replies.length,
+        replies: comment.replies.map((reply: any) => ({
+          ...reply,
+          hypeRating: hypeMap.get(reply.userId) || null,
+          userHasUpvoted: userUpvotes.has(reply.id),
+        })),
       }));
 
+      // Filter only top-level comments (no parent)
+      const topLevelComments = commentsWithHype.filter(c => !c.parentCommentId);
+
+      // Find user's top-level comment and their replies
+      let userTopLevelComment = null;
+      let userReplies: any[] = [];
+      if (currentUserId) {
+        userTopLevelComment = topLevelComments.find(c => c.userId === currentUserId) || null;
+        userReplies = commentsWithHype.filter(c => c.userId === currentUserId && c.parentCommentId);
+      }
+
       return reply.code(200).send({
-        comments: commentsWithHype,
-        userComment: currentUserId ? commentsWithHype.find(c => c.userId === currentUserId) : null,
+        comments: topLevelComments,
+        userComment: userTopLevelComment,
+        userReplies,
       });
     } catch (error) {
       console.error('Get pre-fight comments error:', error);
@@ -1374,7 +1679,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // GET /api/fights/:id/reviews - Get paginated reviews for a fight
+  // GET /api/fights/:id/reviews - Get paginated reviews for a fight (with nested replies)
   fastify.get('/fights/:id/reviews', { preHandler: optionalAuth }, async (request, reply) => {
     try {
       const { id: fightId } = request.params as { id: string };
@@ -1392,19 +1697,21 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Get total count
+      // Get total count of top-level reviews only
       const total = await fastify.prisma.fightReview.count({
         where: {
           fightId,
           isHidden: false,
+          parentReviewId: null,
         },
       });
 
-      // Get reviews with pagination
+      // Get top-level reviews with pagination and nested replies
       const reviews = await fastify.prisma.fightReview.findMany({
         where: {
           fightId,
           isHidden: false,
+          parentReviewId: null, // Only top-level reviews
         },
         include: {
           user: {
@@ -1428,6 +1735,37 @@ export async function fightRoutes(fastify: FastifyInstance) {
               reporterId: currentUserId,
             },
           } : false,
+          replies: {
+            where: {
+              isHidden: false,
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  displayName: true,
+                  firstName: true,
+                  lastName: true,
+                  avatar: true,
+                  isMedia: true,
+                  mediaOrganization: true,
+                },
+              },
+              votes: currentUserId ? {
+                where: {
+                  userId: currentUserId,
+                },
+              } : false,
+              reports: currentUserId ? {
+                where: {
+                  reporterId: currentUserId,
+                },
+              } : false,
+            },
+            orderBy: {
+              createdAt: 'asc', // Replies ordered oldest first
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -1441,8 +1779,16 @@ export async function fightRoutes(fastify: FastifyInstance) {
         ...review,
         userHasUpvoted: currentUserId && review.votes?.length > 0 && review.votes[0].isUpvote,
         userHasFlagged: currentUserId && review.reports?.length > 0,
+        replyCount: review.replies.length,
         votes: undefined, // Remove votes array from response
         reports: undefined, // Remove reports array from response
+        replies: review.replies.map((reply: any) => ({
+          ...reply,
+          userHasUpvoted: currentUserId && reply.votes?.length > 0 && reply.votes[0].isUpvote,
+          userHasFlagged: currentUserId && reply.reports?.length > 0,
+          votes: undefined,
+          reports: undefined,
+        })),
       }));
 
       return reply.code(200).send({
@@ -1614,12 +1960,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
         },
       });
 
-      const previousReview = await fastify.prisma.fightReview.findUnique({
+      const previousReview = await fastify.prisma.fightReview.findFirst({
         where: {
-          userId_fightId: {
-            userId: currentUserId,
-            fightId,
-          },
+          userId: currentUserId,
+          fightId,
+          parentReviewId: null, // Only top-level reviews
         },
       });
 
@@ -1708,25 +2053,35 @@ export async function fightRoutes(fastify: FastifyInstance) {
             });
           }
 
-          // Upsert review
-          const fightReview = await fastify.prisma.fightReview.upsert({
+          // Find existing top-level review or create new one
+          const existingTopLevelReview = await fastify.prisma.fightReview.findFirst({
             where: {
-              userId_fightId: {
-                userId: currentUserId,
-                fightId,
-              },
-            },
-            create: {
               userId: currentUserId,
               fightId,
-              content: review,
-              rating: effectiveRating,
-            },
-            update: {
-              content: review,
-              rating: effectiveRating,
+              parentReviewId: null,
             },
           });
+
+          let fightReview;
+          if (existingTopLevelReview) {
+            fightReview = await fastify.prisma.fightReview.update({
+              where: { id: existingTopLevelReview.id },
+              data: {
+                content: review,
+                rating: effectiveRating,
+              },
+            });
+          } else {
+            fightReview = await fastify.prisma.fightReview.create({
+              data: {
+                userId: currentUserId,
+                fightId,
+                content: review,
+                rating: effectiveRating,
+                parentReviewId: null,
+              },
+            });
+          }
           resultData.review = {
             id: fightReview.id,
             content: review,
