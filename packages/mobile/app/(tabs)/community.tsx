@@ -751,66 +751,6 @@ export default function CommunityScreen() {
           </View>
         </View>
 
-        {/* Classic Fight Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', height: 48 }}>
-              <FontAwesome
-                name="trophy"
-                size={40}
-                color={colorScheme === 'dark' ? '#6B7280' : '#9CA3AF'}
-                style={{ opacity: 0.4 }}
-              />
-              <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>Classic Fight</Text>
-            </View>
-          </View>
-
-          {/* Fight Thumbnail */}
-          <TouchableOpacity
-            style={styles.classicFightContainer}
-            onPress={() => router.push(`/fight/${classicFightId}` as any)}
-          >
-            <Image
-              source={require('../../assets/ufc-jiri-glover.jpg')}
-              style={styles.classicFightImage}
-              resizeMode="cover"
-            />
-            <View style={styles.classicFightOverlay}>
-              {/* Rating Box on the left */}
-              {classicFightData && (() => {
-                const ratingColor = getHypeHeatmapColor(classicFightData.averageRating || 0);
-                const starColor = getIconColor(ratingColor, colors.background);
-                return (
-                  <View style={[styles.classicRatingBox, { backgroundColor: ratingColor }]}>
-                    <FontAwesome
-                      name="star"
-                      size={20}
-                      color={starColor}
-                      style={{ position: 'absolute' }}
-                    />
-                    <Text style={styles.classicRatingText}>
-                      {classicFightData.averageRating ? classicFightData.averageRating.toFixed(1) : '0.0'}
-                    </Text>
-                  </View>
-                );
-              })()}
-
-              {/* Fight Info on the right */}
-              <View style={styles.classicFightInfo}>
-                <Text style={styles.classicFightTitle}>
-                  {classicFightData?.fighter1?.firstName && classicFightData?.fighter2?.firstName ?
-                    `${classicFightData.fighter1.firstName} ${classicFightData.fighter1.lastName} vs ${classicFightData.fighter2.firstName} ${classicFightData.fighter2.lastName}`
-                    : 'Loading...'
-                  }
-                </Text>
-                <Text style={styles.classicFightEvent}>
-                  {classicFightData?.event?.name || 'Loading event...'}
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </View>
-
         {/* Top Upcoming Fights Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -830,6 +770,7 @@ export default function CommunityScreen() {
             <TouchableOpacity
               style={[styles.filterTab, hypeFightsPeriod === 'week' && styles.filterTabActive]}
               onPress={() => setHypeFightsPeriod('week')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.filterTabText, hypeFightsPeriod === 'week' && styles.filterTabTextActive]}>
                 This Week
@@ -838,6 +779,7 @@ export default function CommunityScreen() {
             <TouchableOpacity
               style={[styles.filterTab, hypeFightsPeriod === 'month' && styles.filterTabActive]}
               onPress={() => setHypeFightsPeriod('month')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.filterTabText, hypeFightsPeriod === 'month' && styles.filterTabTextActive]}>
                 This Month
@@ -846,6 +788,7 @@ export default function CommunityScreen() {
             <TouchableOpacity
               style={[styles.filterTab, hypeFightsPeriod === '3months' && styles.filterTabActive]}
               onPress={() => setHypeFightsPeriod('3months')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.filterTabText, hypeFightsPeriod === '3months' && styles.filterTabTextActive]}>
                 3 Months
@@ -926,6 +869,7 @@ export default function CommunityScreen() {
             <TouchableOpacity
               style={[styles.filterTab, topFightsPeriod === 'week' && styles.filterTabActive]}
               onPress={() => setTopFightsPeriod('week')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.filterTabText, topFightsPeriod === 'week' && styles.filterTabTextActive]}>
                 Week
@@ -934,6 +878,7 @@ export default function CommunityScreen() {
             <TouchableOpacity
               style={[styles.filterTab, topFightsPeriod === 'month' && styles.filterTabActive]}
               onPress={() => setTopFightsPeriod('month')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.filterTabText, topFightsPeriod === 'month' && styles.filterTabTextActive]}>
                 Month
@@ -942,6 +887,7 @@ export default function CommunityScreen() {
             <TouchableOpacity
               style={[styles.filterTab, topFightsPeriod === '3months' && styles.filterTabActive]}
               onPress={() => setTopFightsPeriod('3months')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.filterTabText, topFightsPeriod === '3months' && styles.filterTabTextActive]}>
                 3 Months
@@ -950,6 +896,7 @@ export default function CommunityScreen() {
             <TouchableOpacity
               style={[styles.filterTab, topFightsPeriod === 'year' && styles.filterTabActive]}
               onPress={() => setTopFightsPeriod('year')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.filterTabText, topFightsPeriod === 'year' && styles.filterTabTextActive]}>
                 Year
@@ -958,6 +905,7 @@ export default function CommunityScreen() {
             <TouchableOpacity
               style={[styles.filterTab, topFightsPeriod === 'all' && styles.filterTabActive]}
               onPress={() => setTopFightsPeriod('all')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.filterTabText, topFightsPeriod === 'all' && styles.filterTabTextActive]}>
                 All Time
@@ -1006,6 +954,66 @@ export default function CommunityScreen() {
               </Text>
             </View>
           )}
+        </View>
+
+        {/* Classic Fight Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', height: 48 }}>
+              <FontAwesome
+                name="trophy"
+                size={40}
+                color={colorScheme === 'dark' ? '#6B7280' : '#9CA3AF'}
+                style={{ opacity: 0.4 }}
+              />
+              <Text style={[styles.sectionTitle, { marginLeft: 8 }]}>Classic Fight</Text>
+            </View>
+          </View>
+
+          {/* Fight Thumbnail */}
+          <TouchableOpacity
+            style={styles.classicFightContainer}
+            onPress={() => router.push(`/fight/${classicFightId}` as any)}
+          >
+            <Image
+              source={require('../../assets/ufc-jiri-glover.jpg')}
+              style={styles.classicFightImage}
+              resizeMode="cover"
+            />
+            <View style={styles.classicFightOverlay}>
+              {/* Rating Box on the left */}
+              {classicFightData && (() => {
+                const ratingColor = getHypeHeatmapColor(classicFightData.averageRating || 0);
+                const starColor = getIconColor(ratingColor, colors.background);
+                return (
+                  <View style={[styles.classicRatingBox, { backgroundColor: ratingColor }]}>
+                    <FontAwesome
+                      name="star"
+                      size={20}
+                      color={starColor}
+                      style={{ position: 'absolute' }}
+                    />
+                    <Text style={styles.classicRatingText}>
+                      {classicFightData.averageRating ? classicFightData.averageRating.toFixed(1) : '0.0'}
+                    </Text>
+                  </View>
+                );
+              })()}
+
+              {/* Fight Info on the right */}
+              <View style={styles.classicFightInfo}>
+                <Text style={styles.classicFightTitle}>
+                  {classicFightData?.fighter1?.firstName && classicFightData?.fighter2?.firstName ?
+                    `${classicFightData.fighter1.firstName} ${classicFightData.fighter1.lastName} vs ${classicFightData.fighter2.firstName} ${classicFightData.fighter2.lastName}`
+                    : 'Loading...'
+                  }
+                </Text>
+                <Text style={styles.classicFightEvent}>
+                  {classicFightData?.event?.name || 'Loading event...'}
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Hot Predictions Section - HIDDEN */}
