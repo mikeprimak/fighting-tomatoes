@@ -1004,6 +1004,31 @@ class ApiService {
     });
   }
 
+  async createPreFightCommentReply(fightId: string, commentId: string, content: string): Promise<{
+    comment: {
+      id: string;
+      userId: string;
+      fightId: string;
+      content: string;
+      parentCommentId: string;
+      createdAt: string;
+      updatedAt: string;
+      user: {
+        id: string;
+        displayName: string;
+        firstName: string;
+        lastName: string;
+        avatar: string | null;
+      };
+    };
+    message: string;
+  }> {
+    return this.makeRequest(`/fights/${fightId}/pre-fight-comments/${commentId}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
   async getFightPreFightComments(fightId: string): Promise<{
     comments: Array<{
       id: string;

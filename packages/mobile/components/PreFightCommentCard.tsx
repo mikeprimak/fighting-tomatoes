@@ -25,6 +25,7 @@ interface PreFightCommentCardProps {
   onUpvote?: () => void;
   onFlag?: () => void;
   onEdit?: () => void;
+  onReply?: () => void;
   isUpvoting?: boolean;
   isFlagging?: boolean;
   isAuthenticated?: boolean;
@@ -37,6 +38,7 @@ export function PreFightCommentCard({
   onUpvote,
   onFlag,
   onEdit,
+  onReply,
   isUpvoting = false,
   isFlagging = false,
   isAuthenticated = false,
@@ -138,6 +140,29 @@ export function PreFightCommentCard({
             {comment.content}
           </Text>
 
+          {/* Reply button - bottom right */}
+          {onReply && !showMyComment && (
+            <View style={styles.replyButtonContainer}>
+              <TouchableOpacity
+                onPress={(e) => {
+                  e?.stopPropagation?.();
+                  onReply?.();
+                }}
+                disabled={!isAuthenticated}
+                style={styles.replyButton}
+              >
+                <FontAwesome
+                  name="reply"
+                  size={12}
+                  color={colors.textSecondary}
+                />
+                <Text style={[styles.replyButtonText, { color: colors.textSecondary }]}>
+                  Reply
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Fight info at bottom */}
           <View style={styles.fightInfo}>
             {comment.fight && (
@@ -213,7 +238,23 @@ const styles = StyleSheet.create({
   commentContent: {
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: 8,
+  },
+  replyButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 8,
+  },
+  replyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  replyButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   fightInfo: {
     gap: 2,

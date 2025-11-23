@@ -129,6 +129,10 @@ export default function UpcomingFightDetailScreen({
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [commentToFlag, setCommentToFlag] = useState<string | null>(null);
   const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
+
+  // Reply state
+  const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState<string>('');
   // Use external state if provided, otherwise use local state
   const [localDetailsMenuVisible, setLocalDetailsMenuVisible] = useState(false);
   const detailsMenuVisible = externalDetailsMenuVisible !== undefined ? externalDetailsMenuVisible : localDetailsMenuVisible;
@@ -486,6 +490,22 @@ export default function UpcomingFightDetailScreen({
         error?.message || 'Please try again later',
         'error'
       );
+    },
+  });
+
+  // Reply to pre-fight comment
+  const saveReplyMutation = useMutation({
+    mutationFn: async ({ commentId, content }: { commentId: string; content: string }) => {
+      return apiService.createPreFightCommentReply(fight.id, commentId, content);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
+      setReplyingToCommentId(null);
+      setReplyText('');
+    },
+    onError: (error: any) => {
+      console.error('Failed to save reply:', error);
+      showError(error?.message || 'Failed to save reply. Please try again later');
     },
   });
 
@@ -1513,24 +1533,126 @@ export default function UpcomingFightDetailScreen({
           {preFightCommentsData.comments
             .filter((c: any) => c.id !== preFightCommentsData.userComment?.id)
             .map((comment: any) => (
-              <PreFightCommentCard
-                key={comment.id}
-                comment={{
-                  id: comment.id,
-                  content: comment.content,
-                  hypeRating: comment.hypeRating,
-                  upvotes: comment.upvotes || 0,
-                  userHasUpvoted: comment.userHasUpvoted || false,
-                  user: {
-                    displayName: comment.user.displayName,
-                  },
-                }}
-                onUpvote={() => handleUpvoteComment(comment.id)}
-                onFlag={() => handleFlagComment(comment.id)}
-                isUpvoting={upvotingCommentId === comment.id}
-                isAuthenticated={isAuthenticated}
-                showMyComment={false}
-              />
+              <React.Fragment key={comment.id}>
+                <PreFightCommentCard
+                  comment={{
+                    id: comment.id,
+                    content: comment.content,
+                    hypeRating: comment.hypeRating,
+                    upvotes: comment.upvotes || 0,
+                    userHasUpvoted: comment.userHasUpvoted || false,
+                    user: {
+                      displayName: comment.user.displayName,
+                    },
+                  }}
+                  onUpvote={() => handleUpvoteComment(comment.id)}
+                  onFlag={() => handleFlagComment(comment.id)}
+                  onReply={() => setReplyingToCommentId(comment.id)}
+                  isUpvoting={upvotingCommentId === comment.id}
+                  isAuthenticated={isAuthenticated}
+                  showMyComment={false}
+                />
+
+                {/* Reply form - shown when replying to this comment */}
+                {replyingToCommentId === comment.id && (
+                  <View style={{ marginLeft: 40, marginTop: 8, marginBottom: 12 }}>
+                    <View style={[
+                      styles.commentInputContainer,
+                      {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                      }
+                    ]}>
+                      <TextInput
+                        style={[
+                          styles.commentInput,
+                          { color: colors.text }
+                        ]}
+                        placeholder="Write your reply..."
+                        placeholderTextColor={colors.textSecondary}
+                        multiline
+                        numberOfLines={3}
+                        maxLength={500}
+                        value={replyText}
+                        onChangeText={setReplyText}
+                        autoFocus={true}
+                      />
+                    </View>
+                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                      <TouchableOpacity
+                        style={[
+                          styles.saveCommentButton,
+                          {
+                            flex: 1,
+                            backgroundColor: replyText.trim().length > 0 ? colors.tint : colors.card,
+                          }
+                        ]}
+                        disabled={saveReplyMutation.isPending || replyText.trim().length === 0}
+                        onPress={() => {
+                          if (replyText.trim()) {
+                            saveReplyMutation.mutate({ commentId: comment.id, content: replyText.trim() });
+                          }
+                        }}
+                      >
+                        <Text style={[
+                          styles.saveCommentButtonText,
+                          { color: replyText.trim().length > 0 ? '#000' : colors.text }
+                        ]}>
+                          {saveReplyMutation.isPending ? 'Saving...' : 'Submit Reply'}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.saveCommentButton,
+                          {
+                            flex: 1,
+                            backgroundColor: colors.card,
+                            borderWidth: 1,
+                            borderColor: colors.border,
+                          }
+                        ]}
+                        onPress={() => {
+                          setReplyingToCommentId(null);
+                          setReplyText('');
+                        }}
+                      >
+                        <Text style={[
+                          styles.saveCommentButtonText,
+                          { color: colors.text }
+                        ]}>
+                          Cancel
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+
+                {/* Display replies - with left margin */}
+                {comment.replies && comment.replies.length > 0 && (
+                  <View style={{ marginLeft: 40, marginTop: -8 }}>
+                    {comment.replies.map((reply: any) => (
+                      <PreFightCommentCard
+                        key={reply.id}
+                        comment={{
+                          id: reply.id,
+                          content: reply.content,
+                          hypeRating: reply.hypeRating,
+                          upvotes: reply.upvotes || 0,
+                          userHasUpvoted: reply.userHasUpvoted || false,
+                          user: {
+                            displayName: reply.user.displayName,
+                          },
+                        }}
+                        onUpvote={() => handleUpvoteComment(reply.id)}
+                        onFlag={() => handleFlagComment(reply.id)}
+                        isUpvoting={upvotingCommentId === reply.id}
+                        isAuthenticated={isAuthenticated}
+                        showMyComment={false}
+                      />
+                    ))}
+                  </View>
+                )}
+              </React.Fragment>
             ))}
           </View>
         )}
