@@ -205,6 +205,93 @@ SCRAPER_MODE=automated node src/services/scrapeAllOneFCData.js
 
 ## Recent Features
 
+### Nested Comments System (Nov 2025)
+**Status**: 🚧 In Progress - Backend complete, frontend complete, testing in progress
+**Branch**: `feature/nested-comments`
+
+**Implementation Summary**:
+- One-level nested comments for pre-fight comments and fight reviews
+- Users can reply to any comment, replies appear underneath parent
+- Visual nesting with 40px left margin indicates reply relationship
+
+**Database Schema** (Migration: `20251123012300_add_nested_comments_support`):
+- `PreFightComment.parentCommentId` → self-referencing foreign key
+- `FightReview.parentReviewId` → self-referencing foreign key
+- Removed unique constraints on `userId + fightId` (allows top-level + replies)
+- Made `FightReview.rating` nullable (replies don't need ratings)
+
+**Backend API** (`routes/fights.ts`):
+- `POST /api/fights/:id/pre-fight-comments/:commentId/reply` - Create reply
+- `POST /api/fights/:id/reviews/:reviewId/reply` - Create review reply
+- `GET /api/fights/:id/pre-fight-comments` - Returns nested structure with replies
+- `GET /api/fights/:id/reviews` - Returns nested structure with replies
+- Replies include: user info, hype ratings, upvote status, flag status
+
+**Frontend UI** (Mobile):
+- **PreFightCommentCard**: Reply button in bottom right corner
+  - Only shows for other users' comments (not "My Comment")
+  - FontAwesome reply icon + "Reply" text label
+- **UpcomingFightDetailScreen**: Full reply workflow
+  - Reply form appears inside comment boundary with 40px left margin
+  - TextInput (500 char max) + Submit/Cancel buttons
+  - Submit button turns yellow when text entered
+  - Auto-focus on form open
+  - Submitted replies display underneath parent with 40px left margin
+  - Replies support upvoting and flagging
+- **API Service**: `createPreFightCommentReply()` method
+
+**Key Files**:
+- Database: `prisma/schema.prisma`, `migrations/20251123012300_add_nested_comments_support/`
+- Backend: `routes/fights.ts:1396-1477` (reply creation), `routes/fights.ts:1479-1607` (nested fetching)
+- Frontend: `components/PreFightCommentCard.tsx:26,143-164,238-254`, `components/UpcomingFightDetailScreen.tsx:133-135,496-510,1536-1656`, `services/api.ts:1007-1030`
+
+**Commits**:
+- `8651a92` - Backend: Add nested comments support (schema + API)
+- `ae1c814` - Frontend: Add nested comments reply functionality to mobile UI
+
+**Next Steps to Complete**:
+1. **Testing & Validation**:
+   - Test reply creation on mobile device (tap Reply on Derp's "test" comment)
+   - Verify replies display with correct 40px left margin
+   - Test upvoting replies
+   - Test flagging replies
+   - Ensure reply form closes after successful submission
+
+2. **Comment Limits & Validation**:
+   - Add backend validation: max 10 replies per parent comment
+   - Add frontend UI feedback when reply limit reached
+   - Show reply count on parent comments (optional)
+
+3. **User Experience Improvements**:
+   - Add "Replying to @username" indicator in reply form header
+   - Consider collapsible replies if >3 replies on a comment
+   - Add scroll-to-reply behavior when reply form opens
+
+4. **Post-Fight Reviews**:
+   - Apply same reply functionality to CompletedFightDetailScreen
+   - Reuse reply form pattern for fight reviews
+   - Ensure consistency between pre-fight and post-fight comment systems
+
+5. **Edge Cases**:
+   - Handle deleted parent comments (cascade delete or orphan prevention)
+   - Prevent replying to replies (enforce 1-level depth)
+   - Handle long reply threads (UI performance)
+
+6. **Testing Checklist**:
+   - [ ] Create reply as authenticated user
+   - [ ] View replies as unauthenticated user
+   - [ ] Upvote a reply
+   - [ ] Flag a reply
+   - [ ] Cancel reply form without submitting
+   - [ ] Submit empty reply (should be disabled)
+   - [ ] Verify replies persist after app restart
+   - [ ] Test on both iOS and Android
+
+**Known Limitations**:
+- Only one level of nesting (replies cannot have replies)
+- No reply count indicator on parent comments yet
+- No notification system for reply activity yet
+
 ### Search (Nov 2025)
 - Global search: fighters, fights, events, promotions
 - Multi-word matching: "Jon Jones", "Jon UFC"
@@ -215,6 +302,7 @@ SCRAPER_MODE=automated node src/services/scrapeAllOneFCData.js
 - Users comment on upcoming fights (max 500 chars)
 - Upsert pattern: one comment per user per fight
 - API: `POST /api/fights/:id/pre-fight-comment`, `GET /api/fights/:id/pre-fight-comments`
+- **Now supports nested replies** (see Nested Comments System above)
 
 ### Performance Optimizations (Nov 2025)
 - Combined stats API calls using `Promise.all`
