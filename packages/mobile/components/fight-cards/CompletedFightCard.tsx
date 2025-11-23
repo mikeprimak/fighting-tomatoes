@@ -494,36 +494,74 @@ export default function CompletedFightCard({
         justifyContent: 'center',
       }]}>
           {/* Full-height community rating square on the left */}
-          <View style={[styles.ratingSquare, { backgroundColor: ratingBorderColor }]}>
-            <FontAwesome
-              name="star"
-              size={30}
-              color={starColor}
-              style={{ position: 'absolute' }}
-            />
-            <Text style={styles.ratingSquareText}>
-              {fight.averageRating !== undefined && fight.averageRating > 0
-                ? fight.averageRating.toFixed(1)
-                : '0.0'
-              }
-            </Text>
+          <View style={[
+            styles.ratingSquare,
+            {
+              backgroundColor: (fight.averageRating !== undefined && fight.averageRating > 0)
+                ? ratingBorderColor
+                : 'transparent',
+              borderWidth: (fight.averageRating !== undefined && fight.averageRating > 0)
+                ? 0
+                : 1,
+              borderColor: colors.textSecondary,
+            }
+          ]}>
+            {(fight.averageRating !== undefined && fight.averageRating > 0) ? (
+              <>
+                <FontAwesome
+                  name="star"
+                  size={30}
+                  color={starColor}
+                  style={{ position: 'absolute' }}
+                />
+                <Text style={styles.ratingSquareText}>
+                  {fight.averageRating.toFixed(1)}
+                </Text>
+              </>
+            ) : (
+              <FontAwesome
+                name="star"
+                size={20}
+                color={colors.textSecondary}
+                style={{ position: 'absolute', opacity: 0.5 }}
+              />
+            )}
           </View>
 
           {/* Full-height user rating square on the right */}
-          <View style={[styles.userRatingSquare, { backgroundColor: userRatingColor }]}>
-            <Animated.View style={{ position: 'absolute', transform: [{ scale: ratingScaleAnim }] }}>
+          <View style={[
+            styles.userRatingSquare,
+            {
+              backgroundColor: (fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0)
+                ? userRatingColor
+                : 'transparent',
+              borderWidth: (fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0)
+                ? 0
+                : 1,
+              borderColor: colors.textSecondary,
+            }
+          ]}>
+            {(fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0) ? (
+              <>
+                <Animated.View style={{ position: 'absolute', transform: [{ scale: ratingScaleAnim }] }}>
+                  <FontAwesome
+                    name="star"
+                    size={30}
+                    color={userStarColor}
+                  />
+                </Animated.View>
+                <Animated.Text style={[styles.ratingSquareText, { transform: [{ scale: ratingScaleAnim }] }]}>
+                  {Math.round(fight.userRating).toString()}
+                </Animated.Text>
+              </>
+            ) : (
               <FontAwesome
                 name="star"
-                size={30}
-                color={userStarColor}
+                size={20}
+                color={colors.textSecondary}
+                style={{ position: 'absolute', opacity: 0.5 }}
               />
-            </Animated.View>
-            <Animated.Text style={[styles.ratingSquareText, { transform: [{ scale: ratingScaleAnim }] }]}>
-              {fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0
-                ? Math.round(fight.userRating).toString()
-                : '0'
-              }
-            </Animated.Text>
+            )}
           </View>
 
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -18 : 2 }]}>
