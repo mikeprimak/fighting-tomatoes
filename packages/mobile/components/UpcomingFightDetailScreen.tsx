@@ -152,6 +152,7 @@ export default function UpcomingFightDetailScreen({
   const [menuFightSnapshot, setMenuFightSnapshot] = useState(fight);
   const scrollViewRef = useRef<ScrollView>(null);
   const commentInputRef = useRef<View>(null);
+  const replyInputRef = useRef<View>(null);
 
   // Keyboard height state for dynamic padding
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -908,6 +909,23 @@ export default function UpcomingFightDetailScreen({
     }, 300);
   };
 
+  const handleReplyClick = (commentId: string) => {
+    setReplyingToCommentId(commentId);
+    // Scroll to the reply input after a short delay to ensure keyboard is showing
+    setTimeout(() => {
+      replyInputRef.current?.measureLayout(
+        scrollViewRef.current as any,
+        (x, y) => {
+          scrollViewRef.current?.scrollTo({
+            y: y - 50, // Scroll with less offset to reveal buttons below
+            animated: true,
+          });
+        },
+        () => {} // Error callback
+      );
+    }, 300);
+  };
+
   return (
     <ScrollView
       ref={scrollViewRef}
@@ -1547,7 +1565,7 @@ export default function UpcomingFightDetailScreen({
                   }}
                   onUpvote={() => handleUpvoteComment(comment.id)}
                   onFlag={() => handleFlagComment(comment.id)}
-                  onReply={() => setReplyingToCommentId(comment.id)}
+                  onReply={() => handleReplyClick(comment.id)}
                   isUpvoting={upvotingCommentId === comment.id}
                   isAuthenticated={isAuthenticated}
                   showMyComment={false}
@@ -1555,7 +1573,7 @@ export default function UpcomingFightDetailScreen({
 
                 {/* Reply form - shown when replying to this comment */}
                 {replyingToCommentId === comment.id && (
-                  <View style={{ marginLeft: 40, marginTop: 8, marginBottom: 12 }}>
+                  <View ref={replyInputRef} collapsable={false} style={{ marginLeft: 40, marginTop: 8, marginBottom: 12 }}>
                     <View style={[
                       styles.commentInputContainer,
                       {
@@ -1629,7 +1647,7 @@ export default function UpcomingFightDetailScreen({
 
                 {/* Display replies - with left margin */}
                 {comment.replies && comment.replies.length > 0 && (
-                  <View style={{ marginLeft: 40, marginTop: -8 }}>
+                  <View style={{ marginLeft: 40, marginTop: replyingToCommentId === comment.id ? 50 : -8 }}>
                     {comment.replies.map((reply: any) => (
                       <PreFightCommentCard
                         key={reply.id}

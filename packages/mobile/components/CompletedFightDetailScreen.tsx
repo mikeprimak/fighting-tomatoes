@@ -418,6 +418,7 @@ export default function CompletedFightDetailScreen({
   const tagsOpacity = useRef(new Animated.Value(1)).current;
   const scrollViewRef = useRef<ScrollView>(null);
   const commentInputRef = useRef<View>(null);
+  const replyInputRef = useRef<View>(null);
 
   // Keyboard height state for dynamic padding
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -822,6 +823,23 @@ export default function CompletedFightDetailScreen({
     if (reviewToFlag) {
       flagReviewMutation.mutate({ reviewId: reviewToFlag, reason });
     }
+  };
+
+  const handleReplyClick = (reviewId: string) => {
+    setReplyingToReviewId(reviewId);
+    // Scroll to the reply input after a short delay to ensure keyboard is showing
+    setTimeout(() => {
+      replyInputRef.current?.measureLayout(
+        scrollViewRef.current as any,
+        (x, y) => {
+          scrollViewRef.current?.scrollTo({
+            y: y - 50, // Scroll with less offset to reveal buttons below
+            animated: true,
+          });
+        },
+        () => {} // Error callback
+      );
+    }, 300);
   };
 
   // Auto-save handler - only auto-saves rating and tags, NOT comment
@@ -1826,7 +1844,7 @@ export default function CompletedFightDetailScreen({
                       }}
                       onUpvote={() => upvoteMutation.mutate({ reviewId: review.id })}
                       onFlag={() => handleFlagReview(review.id)}
-                      onReply={() => setReplyingToReviewId(review.id)}
+                      onReply={() => handleReplyClick(review.id)}
                       isUpvoting={upvoteMutation.isPending}
                       isFlagging={flagReviewMutation.isPending && reviewToFlag === review.id}
                       isAuthenticated={isAuthenticated}
@@ -1834,7 +1852,7 @@ export default function CompletedFightDetailScreen({
 
                     {/* Reply form - shown when replying to this review */}
                     {replyingToReviewId === review.id && (
-                      <View style={{ marginLeft: 40, marginTop: 8, marginBottom: 12 }}>
+                      <View ref={replyInputRef} collapsable={false} style={{ marginLeft: 40, marginTop: 8, marginBottom: 12 }}>
                         <View style={[
                           styles.commentInputContainer,
                           {
@@ -1908,7 +1926,7 @@ export default function CompletedFightDetailScreen({
 
                     {/* Display replies - with left margin */}
                     {review.replies && review.replies.length > 0 && (
-                      <View style={{ marginLeft: 40, marginTop: -8 }}>
+                      <View style={{ marginLeft: 40, marginTop: replyingToReviewId === review.id ? 50 : -8 }}>
                         {review.replies.map((reply: any) => (
                           <CommentCard
                             key={reply.id}
