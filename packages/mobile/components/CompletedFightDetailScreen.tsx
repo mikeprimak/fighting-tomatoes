@@ -368,6 +368,9 @@ export default function CompletedFightDetailScreen({
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
   const [editReplyText, setEditReplyText] = useState<string>('');
 
+  // Frozen review order - prevents layout shifts when upvoting
+  const [frozenReviewOrder, setFrozenReviewOrder] = useState<string[]>([]);
+
   // Use external state if provided, otherwise use internal state
   const [internalDetailsMenuVisible, setInternalDetailsMenuVisible] = useState(false);
   const detailsMenuVisible = externalDetailsMenuVisible !== undefined ? externalDetailsMenuVisible : internalDetailsMenuVisible;
@@ -530,6 +533,18 @@ export default function CompletedFightDetailScreen({
     staleTime: 60 * 1000,
   });
 
+  // Freeze review order on initial load to prevent layout shifts from upvotes
+  useEffect(() => {
+    if (reviewsData?.pages && frozenReviewOrder.length === 0) {
+      const allReviewIds = reviewsData.pages.flatMap(page =>
+        page.reviews.map((review: any) => review.id)
+      );
+      if (allReviewIds.length > 0) {
+        setFrozenReviewOrder(allReviewIds);
+      }
+    }
+  }, [reviewsData]);
+
   // Calculate available tags based on current rating and community data
   const availableTags = React.useMemo(() => {
     const communityTags = aggregateStats?.topTags || [];
@@ -600,7 +615,7 @@ export default function CompletedFightDetailScreen({
       setPendingRatingAnimation(fight.id);
 
       // Only invalidate queries - no state updates that cause re-renders
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fight', fight.id, isAuthenticated] });
       queryClient.invalidateQueries({ queryKey: ['fightTags', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] }); // This fetches both prediction and aggregate stats
@@ -614,14 +629,94 @@ export default function CompletedFightDetailScreen({
     },
   });
 
-  // Upvote mutation
+  // Upvote mutation with optimistic updates to prevent layout shifts
   const upvoteMutation = useMutation({
     mutationFn: ({ reviewId }: { reviewId: string }) =>
       apiService.toggleReviewUpvote(fight.id, reviewId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
-      // Also invalidate the top comments cache
+    onMutate: async ({ reviewId }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['fightReviews', fight.id] });
+      await queryClient.cancelQueries({ queryKey: ['fight', fight.id, isAuthenticated] });
+
+      // Snapshot previous values
+      const previousReviews = queryClient.getQueryData(['fightReviews', fight.id]);
+      const previousFight = queryClient.getQueryData(['fight', fight.id, isAuthenticated]);
+
+      // Helper to toggle upvote on an item
+      const toggleUpvote = (item: any) => ({
+        ...item,
+        userHasUpvoted: !item.userHasUpvoted,
+        upvotes: item.userHasUpvoted ? Math.max(0, (item.upvotes || 1) - 1) : (item.upvotes || 0) + 1,
+      });
+
+      // Check if this is the user's own top-level review
+      const isUserOwnReview = fight.userReview?.id === reviewId;
+
+      if (isUserOwnReview) {
+        // Update the fight cache for user's own review (displayed from fight.userReview)
+        queryClient.setQueryData(['fight', fight.id, isAuthenticated], (old: any) => {
+          if (!old?.fight?.userReview) return old;
+          return {
+            ...old,
+            fight: {
+              ...old.fight,
+              userReview: toggleUpvote(old.fight.userReview),
+            },
+          };
+        });
+      } else {
+        // Update the reviews cache for other users' reviews and replies
+        queryClient.setQueryData(['fightReviews', fight.id], (old: any) => {
+          if (!old?.pages) return old;
+
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              reviews: page.reviews.map((review: any) => {
+                // Check if this top-level review is being upvoted
+                if (review.id === reviewId) {
+                  return toggleUpvote(review);
+                }
+
+                // If not the top-level review, check if any of its replies match
+                if (review.replies && review.replies.length > 0) {
+                  let replyUpdated = false;
+                  const updatedReplies = review.replies.map((reply: any) => {
+                    if (reply.id === reviewId) {
+                      replyUpdated = true;
+                      return toggleUpvote(reply);
+                    }
+                    return reply;
+                  });
+
+                  // Only return new object if a reply was actually updated
+                  if (replyUpdated) {
+                    return { ...review, replies: updatedReplies };
+                  }
+                }
+
+                // No changes needed for this review
+                return review;
+              }),
+            })),
+          };
+        });
+      }
+
+      return { previousReviews, previousFight };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousReviews) {
+        queryClient.setQueryData(['fightReviews', fight.id], context.previousReviews);
+      }
+      if (context?.previousFight) {
+        queryClient.setQueryData(['fight', fight.id, isAuthenticated], context.previousFight);
+      }
+    },
+    onSettled: () => {
+      // Only invalidate top comments cache (for other screens), not the reviews on this screen
       queryClient.invalidateQueries({ queryKey: ['topComments'] });
     },
   });
@@ -832,7 +927,7 @@ export default function CompletedFightDetailScreen({
     mutationFn: () => apiService.revealFightOutcome(fight.id),
     onSuccess: () => {
       // Invalidate fight query to refetch with updated hasRevealedOutcome
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fight', fight.id, isAuthenticated] });
     },
     onError: (error: any) => {
       showError(error?.error || 'Failed to reveal outcome');
@@ -1934,9 +2029,25 @@ export default function CompletedFightDetailScreen({
             {/* Other reviews with infinite scroll */}
             {reviewsData?.pages[0]?.reviews && reviewsData.pages[0]?.reviews.length > 0 ? (
               <View style={{ marginTop: 16 }}>
-                {reviewsData.pages.flatMap(page =>
-                  page.reviews.filter((review: any) => review.userId !== user?.id)
-                ).map((review: any) => {
+                {(() => {
+                  // Get all reviews and filter out user's own
+                  const allReviews = reviewsData.pages.flatMap(page =>
+                    page.reviews.filter((review: any) => review.userId !== user?.id)
+                  );
+                  // Sort by frozen order to prevent layout shifts from upvotes
+                  const sortedReviews = frozenReviewOrder.length > 0
+                    ? [...allReviews].sort((a, b) => {
+                        const aIndex = frozenReviewOrder.indexOf(a.id);
+                        const bIndex = frozenReviewOrder.indexOf(b.id);
+                        // New reviews (not in frozen order) go at the end
+                        if (aIndex === -1 && bIndex === -1) return 0;
+                        if (aIndex === -1) return 1;
+                        if (bIndex === -1) return -1;
+                        return aIndex - bIndex;
+                      })
+                    : allReviews;
+                  return sortedReviews;
+                })().map((review: any) => {
                   // Check if user has already replied to this review
                   const userHasReplied = review.replies?.some((reply: any) => reply.user?.id === user?.id);
 
