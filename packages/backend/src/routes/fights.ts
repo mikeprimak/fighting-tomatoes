@@ -1760,17 +1760,32 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Add hype ratings and upvote info to comments and replies
-      const commentsWithHype = comments.map(comment => ({
-        ...comment,
-        hypeRating: hypeMap.get(comment.userId) || null,
-        userHasUpvoted: userUpvotes.has(comment.id),
-        replyCount: comment.replies.length,
-        replies: comment.replies.map((reply: any) => ({
-          ...reply,
-          hypeRating: hypeMap.get(reply.userId) || null,
-          userHasUpvoted: userUpvotes.has(reply.id),
-        })),
-      }));
+      const commentsWithHype = comments.map(comment => {
+        // Sort replies: user's reply first, then chronological
+        const sortedReplies = comment.replies
+          .map((reply: any) => ({
+            ...reply,
+            hypeRating: hypeMap.get(reply.userId) || null,
+            userHasUpvoted: userUpvotes.has(reply.id),
+          }))
+          .sort((a: any, b: any) => {
+            // User's own reply always appears first
+            if (currentUserId) {
+              if (a.userId === currentUserId && b.userId !== currentUserId) return -1;
+              if (a.userId !== currentUserId && b.userId === currentUserId) return 1;
+            }
+            // Otherwise sort by creation time (oldest first)
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          });
+
+        return {
+          ...comment,
+          hypeRating: hypeMap.get(comment.userId) || null,
+          userHasUpvoted: userUpvotes.has(comment.id),
+          replyCount: comment.replies.length,
+          replies: sortedReplies,
+        };
+      });
 
       // Filter only top-level comments (no parent)
       const topLevelComments = commentsWithHype.filter(c => !c.parentCommentId);
@@ -1974,21 +1989,36 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       // Transform reviews to include userHasUpvoted and userHasFlagged flags
-      const transformedReviews = reviews.map((review: any) => ({
-        ...review,
-        userHasUpvoted: currentUserId && review.votes?.length > 0 && review.votes[0].isUpvote,
-        userHasFlagged: currentUserId && review.reports?.length > 0,
-        replyCount: review.replies.length,
-        votes: undefined, // Remove votes array from response
-        reports: undefined, // Remove reports array from response
-        replies: review.replies.map((reply: any) => ({
-          ...reply,
-          userHasUpvoted: currentUserId && reply.votes?.length > 0 && reply.votes[0].isUpvote,
-          userHasFlagged: currentUserId && reply.reports?.length > 0,
-          votes: undefined,
-          reports: undefined,
-        })),
-      }));
+      const transformedReviews = reviews.map((review: any) => {
+        // Transform and sort replies: user's reply first, then chronological
+        const transformedReplies = review.replies
+          .map((reply: any) => ({
+            ...reply,
+            userHasUpvoted: currentUserId && reply.votes?.length > 0 && reply.votes[0].isUpvote,
+            userHasFlagged: currentUserId && reply.reports?.length > 0,
+            votes: undefined,
+            reports: undefined,
+          }))
+          .sort((a: any, b: any) => {
+            // User's own reply always appears first
+            if (currentUserId) {
+              if (a.userId === currentUserId && b.userId !== currentUserId) return -1;
+              if (a.userId !== currentUserId && b.userId === currentUserId) return 1;
+            }
+            // Otherwise sort by creation time (oldest first)
+            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          });
+
+        return {
+          ...review,
+          userHasUpvoted: currentUserId && review.votes?.length > 0 && review.votes[0].isUpvote,
+          userHasFlagged: currentUserId && review.reports?.length > 0,
+          replyCount: review.replies.length,
+          votes: undefined, // Remove votes array from response
+          reports: undefined, // Remove reports array from response
+          replies: transformedReplies,
+        };
+      });
       
 
       // Sort reviews by quality thread score
