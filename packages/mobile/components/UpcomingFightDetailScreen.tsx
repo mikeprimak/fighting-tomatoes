@@ -509,7 +509,7 @@ export default function UpcomingFightDetailScreen({
 
       // Show alert if user has reached the comment limit
       if (data?.reachedCommentLimit) {
-        showError('You have now reached the maximum comments allowed for one fight (5)');
+        showSuccess('You have now reached the maximum comments allowed for one fight (5)');
       }
     },
     onError: (error: any) => {
