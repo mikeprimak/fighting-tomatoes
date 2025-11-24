@@ -1790,7 +1790,7 @@ export default function CompletedFightDetailScreen({
                           styles.commentInput,
                           { color: colors.text }
                         ]}
-                        placeholder="Write a review... (optional)"
+                        placeholder="Comment on this fight."
                         placeholderTextColor={colors.textSecondary}
                         multiline
                         numberOfLines={4}
