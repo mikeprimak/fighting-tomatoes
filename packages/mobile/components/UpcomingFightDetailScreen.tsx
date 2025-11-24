@@ -529,6 +529,38 @@ export default function UpcomingFightDetailScreen({
     },
   });
 
+  // Handler for saving reply edits (with delete confirmation)
+  const handleSaveReplyEdit = async (replyId: string, originalContent: string) => {
+    // Check if user is trying to delete the reply
+    const isDeletingReply = originalContent && !editReplyText.trim();
+
+    // Confirm deletion if user is removing their reply
+    if (isDeletingReply) {
+      showConfirm(
+        'Are you sure you want to delete your reply?',
+        () => {
+          // User confirmed deletion - save empty string to delete
+          editReplyMutation.mutate({ commentId: replyId, content: '' });
+        },
+        'Delete Reply',
+        'Delete',
+        'Cancel',
+        true // destructive style
+      );
+      return;
+    }
+
+    // If no text entered and it's not a deletion scenario, just cancel
+    if (!editReplyText.trim()) {
+      setEditingReplyId(null);
+      setEditReplyText('');
+      return;
+    }
+
+    // Save the edited reply
+    editReplyMutation.mutate({ commentId: replyId, content: editReplyText.trim() });
+  };
+
   // Manual save handler for comment
   const handleSaveComment = async () => {
     // Check if user is trying to delete an existing comment
@@ -1750,18 +1782,18 @@ export default function UpcomingFightDetailScreen({
                                   style={[
                                     styles.saveCommentButton,
                                     {
-                                      backgroundColor: editReplyText.trim().length > 0 ? colors.tint : colors.card,
+                                      backgroundColor: editReplyText.trim().length > 0 || reply.content ? colors.tint : colors.card,
                                       flex: 1,
                                     }
                                   ]}
-                                  disabled={editReplyText.trim().length === 0 || editReplyMutation.isPending}
+                                  disabled={editReplyMutation.isPending}
                                   onPress={() => {
-                                    editReplyMutation.mutate({ commentId: reply.id, content: editReplyText });
+                                    handleSaveReplyEdit(reply.id, reply.content);
                                   }}
                                 >
                                   <Text style={[
                                     styles.saveCommentButtonText,
-                                    { color: editReplyText.trim().length > 0 ? '#000' : colors.text }
+                                    { color: editReplyText.trim().length > 0 || reply.content ? '#000' : colors.text }
                                   ]}>
                                     Save
                                   </Text>
