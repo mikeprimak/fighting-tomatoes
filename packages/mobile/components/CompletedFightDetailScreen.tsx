@@ -1945,7 +1945,7 @@ export default function CompletedFightDetailScreen({
 
                     {/* Display replies - with left margin */}
                     {review.replies && review.replies.length > 0 && (
-                      <View style={{ marginLeft: 40, marginTop: replyingToReviewId === review.id ? 50 : 0 }}>
+                      <View style={{ marginLeft: 40, marginTop: replyingToReviewId === review.id ? 50 : 0, marginBottom: 20 }}>
                         {review.replies.map((reply: any) => {
                           const isMyReply = reply.user?.id === user?.id;
                           return (
