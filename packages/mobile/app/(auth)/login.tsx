@@ -92,6 +92,18 @@ export default function LoginScreen() {
     setStatus('Poop credentials filled');
   };
 
+  const fillNeonCredentials = () => {
+    setEmail('neon@fightingtomatoes.com');
+    setPassword('password123');
+    setStatus('Neon credentials filled');
+  };
+
+  const fillTimeCredentials = () => {
+    setEmail('time@fightingtomatoes.com');
+    setPassword('password123');
+    setStatus('Time credentials filled');
+  };
+
   const styles = createStyles(colors);
 
   return (
@@ -181,6 +193,24 @@ export default function LoginScreen() {
           >
             <Text style={styles.devButtonText}>
               💩 Fill Poop Credentials (Dev)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={fillNeonCredentials}
+          >
+            <Text style={styles.devButtonText}>
+              🌟 Fill Neon Credentials (Dev)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={fillTimeCredentials}
+          >
+            <Text style={styles.devButtonText}>
+              ⏰ Fill Time Credentials (Dev)
             </Text>
           </TouchableOpacity>
 

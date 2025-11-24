@@ -134,13 +134,60 @@ async function main() {
       mediaWebsite: 'https://espn.com/mma',
       points: 750,
       level: 4,
+    },
+    {
+      email: 'derp@fightingtomatoes.com',
+      password: hashedPassword,
+      displayName: 'Derp',
+      isEmailVerified: true,
+      authProvider: AuthProvider.EMAIL,
+      points: 50,
+      level: 1,
+    },
+    {
+      email: 'fart@fightingtomatoes.com',
+      password: hashedPassword,
+      displayName: 'Fart',
+      isEmailVerified: true,
+      authProvider: AuthProvider.EMAIL,
+      points: 75,
+      level: 1,
+    },
+    {
+      email: 'poop@fightingtomatoes.com',
+      password: hashedPassword,
+      displayName: 'Poop',
+      isEmailVerified: true,
+      authProvider: AuthProvider.EMAIL,
+      points: 60,
+      level: 1,
+    },
+    {
+      email: 'neon@fightingtomatoes.com',
+      password: hashedPassword,
+      displayName: 'Neon',
+      isEmailVerified: true,
+      authProvider: AuthProvider.EMAIL,
+      points: 80,
+      level: 1,
+    },
+    {
+      email: 'time@fightingtomatoes.com',
+      password: hashedPassword,
+      displayName: 'Time',
+      isEmailVerified: true,
+      authProvider: AuthProvider.EMAIL,
+      points: 90,
+      level: 1,
     }
   ]
 
   const users = []
   for (const userData of usersData) {
-    const user = await prisma.user.create({
-      data: userData,
+    const user = await prisma.user.upsert({
+      where: { email: userData.email },
+      update: {},
+      create: userData,
     })
     users.push(user)
   }
