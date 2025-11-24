@@ -104,6 +104,42 @@ export default function LoginScreen() {
     setStatus('Time credentials filled');
   };
 
+  const fillOneCredentials = () => {
+    setEmail('one@fightingtomatoes.com');
+    setPassword('password123');
+    setStatus('One credentials filled');
+  };
+
+  const fillTwoCredentials = () => {
+    setEmail('two@fightingtomatoes.com');
+    setPassword('password123');
+    setStatus('Two credentials filled');
+  };
+
+  const fillThreeCredentials = () => {
+    setEmail('three@fightingtomatoes.com');
+    setPassword('password123');
+    setStatus('Three credentials filled');
+  };
+
+  const fillFourCredentials = () => {
+    setEmail('four@fightingtomatoes.com');
+    setPassword('password123');
+    setStatus('Four credentials filled');
+  };
+
+  const fillFiveCredentials = () => {
+    setEmail('five@fightingtomatoes.com');
+    setPassword('password123');
+    setStatus('Five credentials filled');
+  };
+
+  const fillSixCredentials = () => {
+    setEmail('six@fightingtomatoes.com');
+    setPassword('password123');
+    setStatus('Six credentials filled');
+  };
+
   const styles = createStyles(colors);
 
   return (
@@ -211,6 +247,60 @@ export default function LoginScreen() {
           >
             <Text style={styles.devButtonText}>
               ⏰ Fill Time Credentials (Dev)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={fillOneCredentials}
+          >
+            <Text style={styles.devButtonText}>
+              1️⃣ Fill One Credentials (Dev)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={fillTwoCredentials}
+          >
+            <Text style={styles.devButtonText}>
+              2️⃣ Fill Two Credentials (Dev)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={fillThreeCredentials}
+          >
+            <Text style={styles.devButtonText}>
+              3️⃣ Fill Three Credentials (Dev)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={fillFourCredentials}
+          >
+            <Text style={styles.devButtonText}>
+              4️⃣ Fill Four Credentials (Dev)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={fillFiveCredentials}
+          >
+            <Text style={styles.devButtonText}>
+              5️⃣ Fill Five Credentials (Dev)
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.devButton}
+            onPress={fillSixCredentials}
+          >
+            <Text style={styles.devButtonText}>
+              6️⃣ Fill Six Credentials (Dev)
             </Text>
           </TouchableOpacity>
 
