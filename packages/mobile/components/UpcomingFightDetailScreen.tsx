@@ -1666,7 +1666,7 @@ export default function UpcomingFightDetailScreen({
 
                 {/* Display replies - with left margin */}
                 {comment.replies && comment.replies.length > 0 && (
-                  <View style={{ marginLeft: 40, marginTop: replyingToCommentId === comment.id ? 50 : -8 }}>
+                  <View style={{ marginLeft: 40, marginTop: replyingToCommentId === comment.id ? 50 : 8 }}>
                     {comment.replies.map((reply: any) => {
                       const isMyReply = reply.user?.id === user?.id;
                       return (
