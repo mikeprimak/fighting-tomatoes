@@ -1132,7 +1132,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       return reply.code(201).send({
-        review: replyReview,
+        review: {
+          ...replyReview,
+          userHasUpvoted: true, // User auto-upvoted their own reply
+        },
         message: 'Reply created successfully',
       });
     } catch (error) {
@@ -1459,7 +1462,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       return reply.code(201).send({
-        comment,
+        comment: {
+          ...comment,
+          userHasUpvoted: true, // User auto-upvoted their own comment
+        },
         message: 'Pre-fight comment saved successfully',
       });
     } catch (error) {
@@ -1585,7 +1591,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       return reply.code(201).send({
-        comment: replyComment,
+        comment: {
+          ...replyComment,
+          userHasUpvoted: true, // User auto-upvoted their own reply
+        },
         message: 'Reply created successfully',
       });
     } catch (error) {
