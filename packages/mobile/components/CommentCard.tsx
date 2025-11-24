@@ -100,9 +100,9 @@ export function CommentCard({
                   <FontAwesome
                     name="edit"
                     size={12}
-                    color={colors.tint}
+                    color={colors.textSecondary}
                   />
-                  <Text style={[styles.editButtonText, { color: colors.tint }]}>
+                  <Text style={[styles.editButtonText, { color: colors.textSecondary }]}>
                     Edit
                   </Text>
                 </TouchableOpacity>
@@ -198,6 +198,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
   },
   inlineRating: {
     flexDirection: 'row',
@@ -237,10 +238,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+    gap: 8,
   },
   reviewAuthor: {
     fontSize: 14,
     fontWeight: '700',
+    flex: 1,
+    flexShrink: 1,
   },
   reviewRating: {
     flexDirection: 'row',

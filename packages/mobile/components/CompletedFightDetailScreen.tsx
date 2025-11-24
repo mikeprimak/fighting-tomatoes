@@ -706,7 +706,15 @@ export default function CompletedFightDetailScreen({
     },
     onError: (error: any) => {
       console.error('Failed to save reply:', error);
-      showError(error?.message || 'Failed to save reply. Please try again later');
+
+      // Check for specific error codes and show appropriate messages
+      if (error?.code === 'USER_MAX_COMMENTS_REACHED') {
+        showError("You've reached the maximum of 5 comments posted on this fight");
+      } else if (error?.code === 'MAX_REPLIES_REACHED') {
+        showError('This review has reached the maximum number of replies (10)');
+      } else {
+        showError(error?.error || error?.message || 'Failed to save reply. Please try again later');
+      }
     },
   });
 

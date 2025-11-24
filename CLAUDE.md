@@ -611,8 +611,9 @@ SCRAPER_MODE=automated node src/services/scrapeAllOneFCData.js
    - Ensure reply form closes after successful submission
 
 2. **Comment Limits & Validation**:
-   - Add backend validation: max 10 replies per parent comment
-   - Add frontend UI feedback when reply limit reached
+   - ✅ Backend validation: max 10 replies per parent comment
+   - ✅ Backend validation: max 5 total comments/replies per user per fight
+   - ✅ Frontend toast messages for both limit types
    - Show reply count on parent comments (optional)
 
 3. **User Experience Improvements**:
@@ -694,6 +695,53 @@ User's own comments and replies were showing static hype/rating values from the 
 - `packages/mobile/components/CompletedFightDetailScreen.tsx:2028` - Reply rating uses `isMyReply ? rating : (reply.rating || 0)`
 
 **Result**: User's comments now accurately reflect their current predictions/ratings in real-time without page refresh.
+
+### Comment and Reply Limits (Nov 2025)
+**Status**: ✅ Complete - Spam prevention for comments and replies
+**Branch**: `feature/nested-comments`
+
+**Implementation Summary**:
+To prevent spam and ensure no single user dominates the discussion on any fight, two limits have been implemented:
+
+**Limits Enforced**:
+1. **Max 10 replies per parent comment** - Prevents any single comment thread from becoming unwieldy
+2. **Max 5 total comments/replies per user per fight** - Prevents one user from replying to every comment
+
+**Backend Validation** (`routes/fights.ts`):
+- Pre-flight comments (upcoming fights):
+  - Lines 1568-1580: Check reply count on parent comment (max 10)
+  - Lines 1582-1595: Check user's total comments on fight (max 5)
+- Fight reviews (completed fights):
+  - Lines 1100-1112: Check reply count on parent review (max 10)
+  - Lines 1114-1127: Check user's total reviews on fight (max 5)
+
+**Error Codes**:
+- `MAX_REPLIES_REACHED`: Parent comment/review has 10 replies
+- `USER_MAX_COMMENTS_REACHED`: User has 5 comments/replies on fight
+
+**Frontend Toast Messages**:
+- `UpcomingFightDetailScreen.tsx:514-517`: Displays toast when limit reached
+- `CompletedFightDetailScreen.tsx:711-714`: Displays toast when limit reached
+- Message: "You've reached the maximum of 5 comments posted on this fight"
+- Message: "This comment has reached the maximum number of replies (10)"
+
+**User Experience**:
+- Toast appears when user attempts to save their Nth (limit) comment/reply
+- Clear error message explains which limit was reached
+- Prevents form submission when limit is reached
+
+**Key Files**:
+- `packages/backend/src/routes/fights.ts:1568-1595` (pre-fight limits)
+- `packages/backend/src/routes/fights.ts:1100-1127` (post-fight limits)
+- `packages/mobile/components/UpcomingFightDetailScreen.tsx:510-521` (error handling)
+- `packages/mobile/components/CompletedFightDetailScreen.tsx:707-718` (error handling)
+
+**Testing Checklist**:
+- [ ] User reaches 5 total comments on a fight (shows toast)
+- [ ] User tries to reply to comment with 10 replies (shows toast)
+- [ ] Error messages are clear and actionable
+- [ ] Form submission is prevented when limit reached
+- [ ] Works on both upcoming and completed fights
 
 ### Search (Nov 2025)
 - Global search: fighters, fights, events, promotions
