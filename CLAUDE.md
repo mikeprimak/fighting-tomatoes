@@ -720,27 +720,33 @@ To prevent spam and ensure no single user dominates the discussion on any fight,
 - `USER_MAX_COMMENTS_REACHED`: User has 5 comments/replies on fight
 
 **Frontend Toast Messages**:
-- `UpcomingFightDetailScreen.tsx:514-517`: Displays toast when limit reached
-- `CompletedFightDetailScreen.tsx:711-714`: Displays toast when limit reached
-- Message: "You've reached the maximum of 5 comments posted on this fight"
-- Message: "This comment has reached the maximum number of replies (10)"
+- `UpcomingFightDetailScreen.tsx:511-513`: Success toast after saving 5th comment
+- `CompletedFightDetailScreen.tsx:708-710`: Success toast after saving 5th comment
+- `UpcomingFightDetailScreen.tsx:518-521`: Error toast when attempting 6th comment
+- `CompletedFightDetailScreen.tsx:715-718`: Error toast when attempting 6th comment
+- Success message: "You have now reached the maximum comments allowed for one fight (5)"
+- Error message (when blocked): "You've reached the maximum of 5 comments posted on this fight"
+- Error message (reply limit): "This comment has reached the maximum number of replies (10)"
 
 **User Experience**:
-- Toast appears when user attempts to save their Nth (limit) comment/reply
-- Clear error message explains which limit was reached
-- Prevents form submission when limit is reached
+- **After saving 5th comment**: Success toast informs user they've reached the limit
+- **When attempting 6th comment**: Error toast prevents submission and explains limit
+- Backend returns `reachedCommentLimit: true` flag after successful save
+- Clear messages explain which limit was reached
 
 **Key Files**:
-- `packages/backend/src/routes/fights.ts:1568-1595` (pre-fight limits)
-- `packages/backend/src/routes/fights.ts:1100-1127` (post-fight limits)
-- `packages/mobile/components/UpcomingFightDetailScreen.tsx:510-521` (error handling)
-- `packages/mobile/components/CompletedFightDetailScreen.tsx:707-718` (error handling)
+- `packages/backend/src/routes/fights.ts:1656-1671` (pre-flight reply response with limit flag)
+- `packages/backend/src/routes/fights.ts:1163-1178` (fight review reply response with limit flag)
+- `packages/backend/src/routes/fights.ts:1611-1624` (pre-flight validation checks)
+- `packages/backend/src/routes/fights.ts:1114-1127` (fight review validation checks)
+- `packages/mobile/components/UpcomingFightDetailScreen.tsx:505-514` (success + error handling)
+- `packages/mobile/components/CompletedFightDetailScreen.tsx:702-711` (success + error handling)
 
 **Testing Checklist**:
-- [ ] User reaches 5 total comments on a fight (shows toast)
-- [ ] User tries to reply to comment with 10 replies (shows toast)
-- [ ] Error messages are clear and actionable
-- [ ] Form submission is prevented when limit reached
+- [x] User saves 5th comment (shows success toast: "You have now reached...")
+- [ ] User attempts 6th comment (shows error toast: "You've reached...")
+- [ ] User tries to reply to comment with 10 replies (shows error toast)
+- [ ] Messages are clear and actionable
 - [ ] Works on both upcoming and completed fights
 
 ### Search (Nov 2025)

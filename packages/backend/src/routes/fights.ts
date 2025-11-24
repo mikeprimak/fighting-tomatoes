@@ -1160,12 +1160,21 @@ export async function fightRoutes(fastify: FastifyInstance) {
         },
       });
 
+      // Check if user has now reached the limit after saving
+      const totalReviewsAfterSave = await fastify.prisma.fightReview.count({
+        where: {
+          userId: currentUserId,
+          fightId,
+        },
+      });
+
       return reply.code(201).send({
         review: {
           ...replyReview,
           userHasUpvoted: true, // User auto-upvoted their own reply
         },
         message: 'Reply created successfully',
+        reachedCommentLimit: totalReviewsAfterSave >= 5,
       });
     } catch (error) {
       console.error('Create review reply error:', error);
@@ -1653,12 +1662,21 @@ export async function fightRoutes(fastify: FastifyInstance) {
         },
       });
 
+      // Check if user has now reached the limit after saving
+      const totalCommentsAfterSave = await fastify.prisma.preFightComment.count({
+        where: {
+          userId: currentUserId,
+          fightId,
+        },
+      });
+
       return reply.code(201).send({
         comment: {
           ...replyComment,
           userHasUpvoted: true, // User auto-upvoted their own reply
         },
         message: 'Reply created successfully',
+        reachedCommentLimit: totalCommentsAfterSave >= 5,
       });
     } catch (error) {
       console.error('Create pre-fight comment reply error:', error);

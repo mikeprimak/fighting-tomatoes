@@ -699,10 +699,15 @@ export default function CompletedFightDetailScreen({
     mutationFn: async ({ reviewId, content }: { reviewId: string; content: string }) => {
       return apiService.createFightReviewReply(fight.id, reviewId, content);
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
       setReplyingToReviewId(null);
       setReplyText('');
+
+      // Show alert if user has reached the comment limit
+      if (data?.reachedCommentLimit) {
+        showError('You have now reached the maximum comments allowed for one fight (5)');
+      }
     },
     onError: (error: any) => {
       console.error('Failed to save reply:', error);

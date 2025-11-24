@@ -502,10 +502,15 @@ export default function UpcomingFightDetailScreen({
     mutationFn: async ({ commentId, content }: { commentId: string; content: string }) => {
       return apiService.createPreFightCommentReply(fight.id, commentId, content);
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
       setReplyingToCommentId(null);
       setReplyText('');
+
+      // Show alert if user has reached the comment limit
+      if (data?.reachedCommentLimit) {
+        showError('You have now reached the maximum comments allowed for one fight (5)');
+      }
     },
     onError: (error: any) => {
       console.error('Failed to save reply:', error);
