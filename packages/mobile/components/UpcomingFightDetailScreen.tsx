@@ -507,9 +507,9 @@ export default function UpcomingFightDetailScreen({
       setReplyingToCommentId(null);
       setReplyText('');
 
-      // Show alert if user has reached the comment limit
+      // Show toast if user has reached the comment limit
       if (data?.reachedCommentLimit) {
-        showSuccess('You have now reached the maximum comments allowed for one fight (5)');
+        showToast('You have now reached the maximum comments allowed for one fight (5)');
       }
     },
     onError: (error: any) => {

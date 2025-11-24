@@ -380,6 +380,11 @@ export default function CompletedFightDetailScreen({
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
   const [commentToFlag, setCommentToFlag] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string>('');
+
+  // Animation for toast notification
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTranslateY = useRef(new Animated.Value(50)).current;
 
   // Inline rating state - Initialize once with existing data, then manage locally
   const [rating, setRating] = useState(() => {
@@ -694,6 +699,44 @@ export default function CompletedFightDetailScreen({
     // Native keyboard behavior will handle scrolling when input is focused
   };
 
+  // Toast notification animation
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    toastOpacity.setValue(0);
+    toastTranslateY.setValue(50);
+
+    Animated.parallel([
+      Animated.timing(toastOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(toastTranslateY, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Auto-dismiss after 2 seconds
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(toastOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(toastTranslateY, {
+          toValue: 50,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setToastMessage('');
+      });
+    }, 2000);
+  };
+
   // Reply to review mutation
   const saveReplyMutation = useMutation({
     mutationFn: async ({ reviewId, content }: { reviewId: string; content: string }) => {
@@ -704,9 +747,9 @@ export default function CompletedFightDetailScreen({
       setReplyingToReviewId(null);
       setReplyText('');
 
-      // Show alert if user has reached the comment limit
+      // Show toast if user has reached the comment limit
       if (data?.reachedCommentLimit) {
-        showSuccess('You have now reached the maximum comments allowed for one fight (5)');
+        showToast('You have now reached the maximum comments allowed for one fight (5)');
       }
     },
     onError: (error: any) => {
@@ -2446,6 +2489,24 @@ export default function CompletedFightDetailScreen({
 
       <CustomAlert {...alertState} onDismiss={hideAlert} />
 
+      {/* Toast Notification */}
+      {toastMessage !== '' && (
+        <Animated.View
+          style={[
+            styles.toastContainer,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              opacity: toastOpacity,
+              transform: [{ translateY: toastTranslateY }],
+            },
+          ]}
+        >
+          <FontAwesome name="bell" size={16} color="#10b981" />
+          <Text style={[styles.toastText, { color: '#fff' }]}>{toastMessage}</Text>
+        </Animated.View>
+      )}
+
       {/* Fight Details Menu */}
       <FightDetailsMenu
         fight={fight}
@@ -3287,5 +3348,24 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 14,
     fontWeight: '600',
+  },
+  toastContainer: {
+    position: 'absolute',
+    bottom: 40,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    zIndex: 1000,
+  },
+  toastText: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
   },
 });
