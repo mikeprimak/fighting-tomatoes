@@ -1037,7 +1037,7 @@ export default function UpcomingFightDetailScreen({
               style={[
                 styles.fighterButton,
                 {
-                  backgroundColor: selectedWinner === fight.fighter1.id ? '#F5C518' : colors.background,
+                  backgroundColor: selectedWinner === fight.fighter1.id ? '#F5C518' : 'transparent',
                   borderColor: colors.border,
                 }
               ]}
@@ -1065,7 +1065,7 @@ export default function UpcomingFightDetailScreen({
               style={[
                 styles.fighterButton,
                 {
-                  backgroundColor: selectedWinner === fight.fighter2.id ? '#F5C518' : colors.background,
+                  backgroundColor: selectedWinner === fight.fighter2.id ? '#F5C518' : 'transparent',
                   borderColor: colors.border,
                 }
               ]}
@@ -1109,7 +1109,7 @@ export default function UpcomingFightDetailScreen({
                   style={[
                     styles.methodButton,
                     {
-                      backgroundColor: selectedMethod === method ? '#F5C518' : colors.background,
+                      backgroundColor: selectedMethod === method ? '#F5C518' : 'transparent',
                       borderColor: colors.border,
                     }
                   ]}
@@ -1295,6 +1295,8 @@ export default function UpcomingFightDetailScreen({
             fighter2Name={fight.fighter2.lastName}
             fighter1Id={fight.fighter1Id}
             fighter2Id={fight.fighter2Id}
+            fighter1Image={fight.fighter1.profileImage}
+            fighter2Image={fight.fighter2.profileImage}
             selectedWinner={selectedWinner}
             selectedMethod={selectedMethod}
             fighter1Predictions={displayPredictionStats.fighter1MethodPredictions}
