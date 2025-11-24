@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { WeightClass, Sport, Gender, ActivityType, PredictionMethod } from '@prisma/client';
 import { authenticateUser, requireEmailVerification, optionalAuth } from '../middleware/auth';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
+import { calculateQualityThreadScore } from '../utils/commentSorting';
 
 // Request/Response schemas using Zod for validation
 const CreateFightSchema = z.object({
@@ -1583,17 +1584,25 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Filter only top-level comments (no parent)
       const topLevelComments = commentsWithHype.filter(c => !c.parentCommentId);
+      
+      // Sort comments by quality thread score
+      const sortedComments = topLevelComments
+        .map(comment => ({
+          ...comment,
+          threadScore: calculateQualityThreadScore(comment)
+        }))
+        .sort((a, b) => b.threadScore - a.threadScore);
 
       // Find user's top-level comment and their replies
       let userTopLevelComment = null;
       let userReplies: any[] = [];
       if (currentUserId) {
-        userTopLevelComment = topLevelComments.find(c => c.userId === currentUserId) || null;
+        userTopLevelComment = sortedComments.find(c => c.userId === currentUserId) || null;
         userReplies = commentsWithHype.filter(c => c.userId === currentUserId && c.parentCommentId);
       }
 
       return reply.code(200).send({
-        comments: topLevelComments,
+        comments: sortedComments,
         userComment: userTopLevelComment,
         userReplies,
       });
@@ -1790,9 +1799,18 @@ export async function fightRoutes(fastify: FastifyInstance) {
           reports: undefined,
         })),
       }));
+      
+
+      // Sort reviews by quality thread score
+      const sortedReviews = transformedReviews
+        .map(review => ({
+          ...review,
+          threadScore: calculateQualityThreadScore(review)
+        }))
+        .sort((a, b) => b.threadScore - a.threadScore);
 
       return reply.code(200).send({
-        reviews: transformedReviews,
+        reviews: sortedReviews,
         pagination: {
           page,
           limit,

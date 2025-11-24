@@ -292,6 +292,32 @@ SCRAPER_MODE=automated node src/services/scrapeAllOneFCData.js
 - No reply count indicator on parent comments yet
 - No notification system for reply activity yet
 
+### Quality Thread Scoring for Comments (Nov 2025)
+**Status**: ✅ Complete - Algorithm implemented and working
+**Branch**: `feature/nested-comments`
+
+**Implementation Summary**:
+Comments and reviews with nested replies are now sorted by a quality thread score that considers both the parent comment and its replies. This surfaces the most valuable discussions to the top.
+
+**Algorithm Details**:
+- **Base score**: Parent comment upvotes
+- **Reply quality**: Square root of total reply upvotes × 2 (diminishing returns prevents spam)
+- **Engagement bonus**: Log(reply count + 1) × 1.5 (rewards active discussion)
+- **Exceptional multiplier**: 1.5x boost if any reply has 3x more upvotes than parent (surfaces hidden gems)
+- **No time decay**: Most comments happen within days of fight announcement
+
+**Key Files**:
+- `packages/backend/src/utils/commentSorting.ts` - Core algorithm
+- `packages/backend/src/routes/fights.ts:6` - Import statement
+- `packages/backend/src/routes/fights.ts:1589-1594` - Pre-fight comments sorting
+- `packages/backend/src/routes/fights.ts:1805-1810` - Fight reviews sorting
+
+**Testing Checklist**:
+- [ ] Verify high-quality threads (good parent + good replies) rank at top
+- [ ] Verify threads with exceptional replies surface even with weak parent comments
+- [ ] Verify engagement (many replies) provides reasonable boost
+- [ ] Compare ordering with simple upvote count to validate improvement
+
 ### Search (Nov 2025)
 - Global search: fighters, fights, events, promotions
 - Multi-word matching: "Jon Jones", "Jon UFC"

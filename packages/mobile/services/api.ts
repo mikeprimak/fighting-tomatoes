@@ -1029,6 +1029,32 @@ class ApiService {
     });
   }
 
+  async createFightReviewReply(fightId: string, reviewId: string, content: string): Promise<{
+    review: {
+      id: string;
+      userId: string;
+      fightId: string;
+      content: string;
+      rating: number | null;
+      parentReviewId: string;
+      createdAt: string;
+      updatedAt: string;
+      user: {
+        id: string;
+        displayName: string;
+        firstName: string;
+        lastName: string;
+        avatar: string | null;
+      };
+    };
+    message: string;
+  }> {
+    return this.makeRequest(`/fights/${fightId}/reviews/${reviewId}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
+
   async getFightPreFightComments(fightId: string): Promise<{
     comments: Array<{
       id: string;

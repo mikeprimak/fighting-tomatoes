@@ -25,6 +25,7 @@ interface CommentCardProps {
   onUpvote?: () => void;
   onFlag?: () => void;
   onEdit?: () => void;
+  onReply?: () => void;
   isUpvoting?: boolean;
   isFlagging?: boolean;
   isAuthenticated?: boolean;
@@ -37,6 +38,7 @@ export function CommentCard({
   onUpvote,
   onFlag,
   onEdit,
+  onReply,
   isUpvoting = false,
   isFlagging = false,
   isAuthenticated = false,
@@ -127,6 +129,29 @@ export function CommentCard({
             {comment.content}
           </Text>
 
+          {/* Reply button - bottom right */}
+          {onReply && !showMyReview && (
+            <View style={styles.replyButtonContainer}>
+              <TouchableOpacity
+                onPress={(e) => {
+                  e?.stopPropagation?.();
+                  onReply?.();
+                }}
+                disabled={!isAuthenticated}
+                style={styles.replyButton}
+              >
+                <FontAwesome
+                  name="reply"
+                  size={12}
+                  color={colors.textSecondary}
+                />
+                <Text style={[styles.replyButtonText, { color: colors.textSecondary }]}>
+                  Reply
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Fight info at bottom */}
           <View style={styles.fightInfo}>
             {comment.fight && (
@@ -190,6 +215,21 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   editButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  replyButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 8,
+  },
+  replyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    padding: 4,
+  },
+  replyButtonText: {
     fontSize: 12,
     fontWeight: '600',
   },
