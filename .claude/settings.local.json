@@ -47,7 +47,17 @@
       "Bash(cat:*)",
       "Bash(timeout /t 5 /nobreak)",
       "Bash(pnpm dev)",
-      "Bash(dir \"C:\\Users\\avoca\\fight-mobile-app\")"
+      "Bash(dir \"C:\\Users\\avoca\\fight-mobile-app\")",
+      "Bash(for pid in 4748 14668 3764 2328 1664 14264 15640 2024 16704)",
+      "Bash(do powershell -Command \"Get-CimInstance Win32_Process -Filter \"\"ProcessId = $pid\"\" | Select-Object ProcessId, ParentProcessId\")",
+      "Bash(done)",
+      "Bash(wmic cpu get loadpercentage:*)",
+      "Bash(wmic OS:*)",
+      "Bash(wmic process:*)",
+      "Bash(systeminfo:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(git diff:*)",
+      "Bash(timeout /t 2 /nobreak)"
     ],
     "deny": [],
     "ask": []

@@ -1055,6 +1055,55 @@ class ApiService {
     });
   }
 
+  async updatePreFightComment(fightId: string, commentId: string, content: string): Promise<{
+    comment: {
+      id: string;
+      userId: string;
+      fightId: string;
+      content: string;
+      createdAt: string;
+      updatedAt: string;
+      user: {
+        id: string;
+        displayName: string;
+        firstName: string;
+        lastName: string;
+        avatar: string | null;
+      };
+    };
+    message: string;
+  }> {
+    return this.makeRequest(`/fights/${fightId}/pre-fight-comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content }),
+    });
+  }
+
+  async updateFightReview(fightId: string, reviewId: string, content: string): Promise<{
+    review: {
+      id: string;
+      userId: string;
+      fightId: string;
+      content: string;
+      rating: number | null;
+      createdAt: string;
+      updatedAt: string;
+      user: {
+        id: string;
+        displayName: string;
+        firstName: string;
+        lastName: string;
+        avatar: string | null;
+      };
+    };
+    message: string;
+  }> {
+    return this.makeRequest(`/fights/${fightId}/reviews/${reviewId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content }),
+    });
+  }
+
   async getFightPreFightComments(fightId: string): Promise<{
     comments: Array<{
       id: string;

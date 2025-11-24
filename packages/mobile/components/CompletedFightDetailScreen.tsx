@@ -364,6 +364,9 @@ export default function CompletedFightDetailScreen({
   // Reply state
   const [replyingToReviewId, setReplyingToReviewId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState<string>('');
+  // Edit reply state
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+  const [editReplyText, setEditReplyText] = useState<string>('');
 
   // Use external state if provided, otherwise use internal state
   const [internalDetailsMenuVisible, setInternalDetailsMenuVisible] = useState(false);
@@ -704,6 +707,22 @@ export default function CompletedFightDetailScreen({
     onError: (error: any) => {
       console.error('Failed to save reply:', error);
       showError(error?.message || 'Failed to save reply. Please try again later');
+    },
+  });
+
+  const editReplyMutation = useMutation({
+    mutationFn: async ({ reviewId, content }: { reviewId: string; content: string }) => {
+      return apiService.updateFightReview(fight.id, reviewId, content);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
+      setEditingReplyId(null);
+      setEditReplyText('');
+      showSuccess('Reply updated successfully');
+    },
+    onError: (error: any) => {
+      console.error('Failed to update reply:', error);
+      showError(error?.message || 'Failed to update reply. Please try again later');
     },
   });
 
@@ -1927,25 +1946,106 @@ export default function CompletedFightDetailScreen({
                     {/* Display replies - with left margin */}
                     {review.replies && review.replies.length > 0 && (
                       <View style={{ marginLeft: 40, marginTop: replyingToReviewId === review.id ? 50 : -8 }}>
-                        {review.replies.map((reply: any) => (
-                          <CommentCard
-                            key={reply.id}
-                            comment={{
-                              id: reply.id,
-                              content: reply.content,
-                              rating: reply.rating || 0,
-                              upvotes: reply.upvotes || 0,
-                              userHasUpvoted: reply.userHasUpvoted || false,
-                              user: {
-                                displayName: reply.user.displayName || `${reply.user.firstName} ${reply.user.lastName}`,
-                              },
-                            }}
-                            onUpvote={() => upvoteMutation.mutate({ reviewId: reply.id })}
-                            onFlag={() => handleFlagReview(reply.id)}
-                            isUpvoting={upvoteMutation.isPending}
-                            isAuthenticated={isAuthenticated}
-                          />
-                        ))}
+                        {review.replies.map((reply: any) => {
+                          const isMyReply = reply.user?.id === user?.id;
+                          return (
+                            <React.Fragment key={reply.id}>
+                              {editingReplyId === reply.id ? (
+                                // Edit form for reply
+                                <View style={{ marginBottom: 12 }}>
+                                  <View style={[
+                                    styles.commentInputContainer,
+                                    {
+                                      backgroundColor: colors.card,
+                                      borderColor: colors.border,
+                                    }
+                                  ]}>
+                                    <TextInput
+                                      style={[
+                                        styles.commentInput,
+                                        { color: colors.text }
+                                      ]}
+                                      placeholder="Edit your reply..."
+                                      placeholderTextColor={colors.textSecondary}
+                                      multiline
+                                      numberOfLines={4}
+                                      maxLength={500}
+                                      value={editReplyText}
+                                      onChangeText={setEditReplyText}
+                                      autoFocus={true}
+                                    />
+                                  </View>
+                                  <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                                    <TouchableOpacity
+                                      style={[
+                                        styles.saveCommentButton,
+                                        {
+                                          backgroundColor: editReplyText.trim().length > 0 ? colors.tint : colors.card,
+                                          flex: 1,
+                                        }
+                                      ]}
+                                      disabled={editReplyText.trim().length === 0 || editReplyMutation.isPending}
+                                      onPress={() => {
+                                        editReplyMutation.mutate({ reviewId: reply.id, content: editReplyText });
+                                      }}
+                                    >
+                                      <Text style={[
+                                        styles.saveCommentButtonText,
+                                        { color: editReplyText.trim().length > 0 ? '#000' : colors.text }
+                                      ]}>
+                                        Save
+                                      </Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                      style={[
+                                        styles.saveCommentButton,
+                                        {
+                                          backgroundColor: colors.card,
+                                          borderWidth: 1,
+                                          borderColor: colors.border,
+                                          flex: 1,
+                                        }
+                                      ]}
+                                      onPress={() => {
+                                        setEditingReplyId(null);
+                                        setEditReplyText('');
+                                      }}
+                                    >
+                                      <Text style={[
+                                        styles.saveCommentButtonText,
+                                        { color: colors.text }
+                                      ]}>
+                                        Cancel
+                                      </Text>
+                                    </TouchableOpacity>
+                                  </View>
+                                </View>
+                              ) : (
+                                <CommentCard
+                                  comment={{
+                                    id: reply.id,
+                                    content: reply.content,
+                                    rating: reply.rating || 0,
+                                    upvotes: reply.upvotes || 0,
+                                    userHasUpvoted: reply.userHasUpvoted || false,
+                                    user: {
+                                      displayName: reply.user.displayName || `${reply.user.firstName} ${reply.user.lastName}`,
+                                    },
+                                  }}
+                                  onUpvote={() => upvoteMutation.mutate({ reviewId: reply.id })}
+                                  onFlag={() => handleFlagReview(reply.id)}
+                                  onEdit={isMyReply ? () => {
+                                    setEditingReplyId(reply.id);
+                                    setEditReplyText(reply.content);
+                                  } : undefined}
+                                  isUpvoting={upvoteMutation.isPending}
+                                  isAuthenticated={isAuthenticated}
+                                  showMyReview={isMyReply}
+                                />
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
                       </View>
                     )}
                   </React.Fragment>

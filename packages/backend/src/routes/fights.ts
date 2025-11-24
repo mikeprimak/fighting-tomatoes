@@ -1134,6 +1134,98 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // PUT /api/fights/:id/reviews/:reviewId - Update a review (reply only)
+  fastify.put('/fights/:id/reviews/:reviewId', {
+    preHandler: [authenticateUser, requireEmailVerification],
+  }, async (request, reply) => {
+    try {
+      const { id: fightId, reviewId } = request.params as { id: string; reviewId: string };
+      const { content } = request.body as { content: string };
+      const currentUserId = (request as any).user.id;
+
+      if (!content || content.trim().length === 0) {
+        return reply.code(400).send({
+          error: 'Content is required',
+          code: 'CONTENT_REQUIRED',
+        });
+      }
+
+      if (content.length > 500) {
+        return reply.code(400).send({
+          error: 'Review must be 500 characters or less',
+          code: 'CONTENT_TOO_LONG',
+        });
+      }
+
+      // Check if fight exists
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Find the review to update
+      const existingReview = await fastify.prisma.fightReview.findUnique({
+        where: { id: reviewId },
+      });
+
+      if (!existingReview) {
+        return reply.code(404).send({
+          error: 'Review not found',
+          code: 'REVIEW_NOT_FOUND',
+        });
+      }
+
+      // Verify ownership
+      if (existingReview.userId !== currentUserId) {
+        return reply.code(403).send({
+          error: 'You can only edit your own reviews',
+          code: 'FORBIDDEN',
+        });
+      }
+
+      // Verify it belongs to this fight
+      if (existingReview.fightId !== fightId) {
+        return reply.code(400).send({
+          error: 'Review does not belong to this fight',
+          code: 'REVIEW_FIGHT_MISMATCH',
+        });
+      }
+
+      // Update the review
+      const updatedReview = await fastify.prisma.fightReview.update({
+        where: { id: reviewId },
+        data: { content: content.trim() },
+        include: {
+          user: {
+            select: {
+              id: true,
+              displayName: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+              isMedia: true,
+              mediaOrganization: true,
+            },
+          },
+        },
+      });
+
+      return reply.code(200).send({
+        review: updatedReview,
+        message: 'Review updated successfully',
+      });
+    } catch (error) {
+      console.error('Update review error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
   // POST /api/fights/:id/tags - Apply tags to a fight
   fastify.post('/fights/:id/tags', {
     preHandler: [authenticateUser, requireEmailVerification],
@@ -1470,6 +1562,104 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
     } catch (error) {
       console.error('Create pre-fight comment reply error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // PUT /api/fights/:id/pre-fight-comments/:commentId - Update a pre-fight comment (reply only)
+  fastify.put('/fights/:id/pre-fight-comments/:commentId', {
+    preHandler: [authenticateUser, requireEmailVerification],
+  }, async (request, reply) => {
+    try {
+      const { id: fightId, commentId } = request.params as { id: string; commentId: string };
+      const { content } = request.body as { content: string };
+      const currentUserId = (request as any).user.id;
+
+      if (!content || content.trim().length === 0) {
+        return reply.code(400).send({
+          error: 'Content is required',
+          code: 'CONTENT_REQUIRED',
+        });
+      }
+
+      if (content.length > 500) {
+        return reply.code(400).send({
+          error: 'Comment must be 500 characters or less',
+          code: 'CONTENT_TOO_LONG',
+        });
+      }
+
+      // Check if fight exists
+      const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Check if fight has already started
+      if (fight.hasStarted) {
+        return reply.code(400).send({
+          error: 'Cannot edit comment on a fight that has already started',
+          code: 'FIGHT_STARTED',
+        });
+      }
+
+      // Find the comment to update
+      const existingComment = await fastify.prisma.preFightComment.findUnique({
+        where: { id: commentId },
+      });
+
+      if (!existingComment) {
+        return reply.code(404).send({
+          error: 'Comment not found',
+          code: 'COMMENT_NOT_FOUND',
+        });
+      }
+
+      // Verify ownership
+      if (existingComment.userId !== currentUserId) {
+        return reply.code(403).send({
+          error: 'You can only edit your own comments',
+          code: 'FORBIDDEN',
+        });
+      }
+
+      // Verify it belongs to this fight
+      if (existingComment.fightId !== fightId) {
+        return reply.code(400).send({
+          error: 'Comment does not belong to this fight',
+          code: 'COMMENT_FIGHT_MISMATCH',
+        });
+      }
+
+      // Update the comment
+      const updatedComment = await fastify.prisma.preFightComment.update({
+        where: { id: commentId },
+        data: { content: content.trim() },
+        include: {
+          user: {
+            select: {
+              id: true,
+              displayName: true,
+              firstName: true,
+              lastName: true,
+              avatar: true,
+            },
+          },
+        },
+      });
+
+      return reply.code(200).send({
+        comment: updatedComment,
+        message: 'Comment updated successfully',
+      });
+    } catch (error) {
+      console.error('Update pre-fight comment error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',

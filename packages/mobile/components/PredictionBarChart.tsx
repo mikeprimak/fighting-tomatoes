@@ -190,6 +190,7 @@ export default function PredictionBarChart({
                     const label = methodPercentage < 15 ? 'K' : 'KO';
                     const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'KO_TKO';
                     const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'KO_TKO';
+                    const showIconsBelow = methodPercentage < 20;
                     return (
                       <View
                         style={{
@@ -199,7 +200,8 @@ export default function PredictionBarChart({
                           borderRightWidth: 1,
                           borderRightColor: colors.border,
                           backgroundColor: 'transparent',
-                          position: 'relative',
+                          flexDirection: showIconsBelow ? 'column' : 'row',
+                          gap: showIconsBelow ? 2 : 3,
                         }}
                       >
                         <Text
@@ -213,8 +215,6 @@ export default function PredictionBarChart({
                         </Text>
                         {(isUserPrediction || isActualOutcome) && (
                           <View style={{
-                            position: 'absolute',
-                            bottom: 0,
                             flexDirection: 'row',
                             gap: 3,
                           }}>
@@ -243,6 +243,7 @@ export default function PredictionBarChart({
                     const label = methodPercentage < 15 ? 'S' : 'SUB';
                     const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION';
                     const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'SUBMISSION';
+                    const showIconsBelow = methodPercentage < 20;
                     return (
                       <View
                         style={{
@@ -252,7 +253,8 @@ export default function PredictionBarChart({
                           borderRightWidth: 1,
                           borderRightColor: colors.border,
                           backgroundColor: 'transparent',
-                          position: 'relative',
+                          flexDirection: showIconsBelow ? 'column' : 'row',
+                          gap: showIconsBelow ? 2 : 3,
                         }}
                       >
                         <Text
@@ -266,8 +268,6 @@ export default function PredictionBarChart({
                         </Text>
                         {(isUserPrediction || isActualOutcome) && (
                           <View style={{
-                            position: 'absolute',
-                            bottom: 0,
                             flexDirection: 'row',
                             gap: 3,
                           }}>
@@ -296,6 +296,7 @@ export default function PredictionBarChart({
                     const label = methodPercentage < 15 ? 'D' : 'DEC';
                     const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'DECISION';
                     const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'DECISION';
+                    const showIconsBelow = methodPercentage < 20;
                     return (
                       <View
                         style={{
@@ -303,7 +304,8 @@ export default function PredictionBarChart({
                           justifyContent: 'center',
                           alignItems: 'center',
                           backgroundColor: 'transparent',
-                          position: 'relative',
+                          flexDirection: showIconsBelow ? 'column' : 'row',
+                          gap: showIconsBelow ? 2 : 3,
                         }}
                       >
                         <Text
@@ -317,8 +319,6 @@ export default function PredictionBarChart({
                         </Text>
                         {(isUserPrediction || isActualOutcome) && (
                           <View style={{
-                            position: 'absolute',
-                            bottom: 0,
                             flexDirection: 'row',
                             gap: 3,
                           }}>
@@ -364,6 +364,7 @@ export default function PredictionBarChart({
                     const label = methodPercentage < 15 ? 'K' : 'KO';
                     const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'KO_TKO';
                     const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'KO_TKO';
+                    const showIconsBelow = methodPercentage < 20;
                     return (
                       <View
                         style={{
@@ -373,14 +374,13 @@ export default function PredictionBarChart({
                           borderRightWidth: 1,
                           borderRightColor: colors.border,
                           backgroundColor: 'transparent',
-                          position: 'relative',
+                          flexDirection: showIconsBelow ? 'column' : 'row',
+                          gap: showIconsBelow ? 2 : 3,
                         }}
                       >
                         <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>{label}</Text>
                         {(isUserPrediction || isActualOutcome) && (
                           <View style={{
-                            position: 'absolute',
-                            bottom: 0,
                             flexDirection: 'row',
                             gap: 3,
                           }}>
@@ -409,6 +409,7 @@ export default function PredictionBarChart({
                     const label = methodPercentage < 15 ? 'S' : 'SUB';
                     const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'SUBMISSION';
                     const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'SUBMISSION';
+                    const showIconsBelow = methodPercentage < 20;
                     return (
                       <View
                         style={{
@@ -418,14 +419,13 @@ export default function PredictionBarChart({
                           borderRightWidth: 1,
                           borderRightColor: colors.border,
                           backgroundColor: 'transparent',
-                          position: 'relative',
+                          flexDirection: showIconsBelow ? 'column' : 'row',
+                          gap: showIconsBelow ? 2 : 3,
                         }}
                       >
                         <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>{label}</Text>
                         {(isUserPrediction || isActualOutcome) && (
                           <View style={{
-                            position: 'absolute',
-                            bottom: 0,
                             flexDirection: 'row',
                             gap: 3,
                           }}>
@@ -454,6 +454,7 @@ export default function PredictionBarChart({
                     const label = methodPercentage < 15 ? 'D' : 'DEC';
                     const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'DECISION';
                     const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'DECISION';
+                    const showIconsBelow = methodPercentage < 20;
                     return (
                       <View
                         style={{
@@ -461,14 +462,13 @@ export default function PredictionBarChart({
                           justifyContent: 'center',
                           alignItems: 'center',
                           backgroundColor: 'transparent',
-                          position: 'relative',
+                          flexDirection: showIconsBelow ? 'column' : 'row',
+                          gap: showIconsBelow ? 2 : 3,
                         }}
                       >
                         <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>{label}</Text>
                         {(isUserPrediction || isActualOutcome) && (
                           <View style={{
-                            position: 'absolute',
-                            bottom: 0,
                             flexDirection: 'row',
                             gap: 3,
                           }}>
