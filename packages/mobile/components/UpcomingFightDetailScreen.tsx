@@ -590,22 +590,13 @@ export default function UpcomingFightDetailScreen({
       return;
     }
 
-    // Check if this is a new comment (not editing existing)
-    const isNewComment = !preFightCommentsData?.userComment && preFightComment.trim();
-
     try {
       // Save the comment - this returns the created/updated comment
-      const response = await saveCommentMutation.mutateAsync(preFightComment.trim());
+      // Note: Backend auto-upvotes new top-level comments
+      await saveCommentMutation.mutateAsync(preFightComment.trim());
 
       // Invalidate queries to refresh the comment list
       await queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
-
-      // If it's a new comment, auto-upvote it
-      if (isNewComment && response?.comment?.id) {
-        const commentId = response.comment.id;
-        // Auto-upvote the newly created comment
-        await upvotePreFightCommentMutation.mutateAsync(commentId);
-      }
 
       // Exit edit mode and hide form after successful save
       setIsEditingComment(false);

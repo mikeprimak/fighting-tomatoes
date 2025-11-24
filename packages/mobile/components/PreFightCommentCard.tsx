@@ -202,6 +202,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
   },
   inlineRating: {
     flexDirection: 'row',
@@ -226,10 +227,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+    gap: 8,
   },
   commentAuthor: {
     fontSize: 14,
     fontWeight: '700',
+    flex: 1,
+    flexShrink: 1,
   },
   commentRatingText: {
     fontSize: 14,
