@@ -636,16 +636,37 @@ export default function UpcomingFightDetailScreen({
             }
           : old.userComment;
 
-        // Update comments array
-        const updatedComments = old.comments.map((comment: any) =>
-          comment.id === commentId
-            ? {
-                ...comment,
-                userHasUpvoted: !comment.userHasUpvoted,
-                upvotes: comment.userHasUpvoted ? comment.upvotes - 1 : comment.upvotes + 1,
-              }
-            : comment
-        );
+        // Update comments array (including nested replies)
+        const updatedComments = old.comments.map((comment: any) => {
+          // Check if the comment itself is being upvoted
+          if (comment.id === commentId) {
+            return {
+              ...comment,
+              userHasUpvoted: !comment.userHasUpvoted,
+              upvotes: comment.userHasUpvoted ? comment.upvotes - 1 : comment.upvotes + 1,
+            };
+          }
+
+          // Check if any reply is being upvoted
+          if (comment.replies && comment.replies.length > 0) {
+            const updatedReplies = comment.replies.map((reply: any) =>
+              reply.id === commentId
+                ? {
+                    ...reply,
+                    userHasUpvoted: !reply.userHasUpvoted,
+                    upvotes: reply.userHasUpvoted ? reply.upvotes - 1 : reply.upvotes + 1,
+                  }
+                : reply
+            );
+
+            // Only return updated comment if a reply was actually updated
+            if (updatedReplies.some((r: any, i: number) => r !== comment.replies[i])) {
+              return { ...comment, replies: updatedReplies };
+            }
+          }
+
+          return comment;
+        });
 
         return {
           ...old,
@@ -669,15 +690,37 @@ export default function UpcomingFightDetailScreen({
             }
           : old.userComment;
 
-        const updatedComments = old.comments.map((comment: any) =>
-          comment.id === commentId
-            ? {
-                ...comment,
-                userHasUpvoted: data.userHasUpvoted,
-                upvotes: data.upvotes,
-              }
-            : comment
-        );
+        // Update comments array (including nested replies)
+        const updatedComments = old.comments.map((comment: any) => {
+          // Check if the comment itself was upvoted
+          if (comment.id === commentId) {
+            return {
+              ...comment,
+              userHasUpvoted: data.userHasUpvoted,
+              upvotes: data.upvotes,
+            };
+          }
+
+          // Check if any reply was upvoted
+          if (comment.replies && comment.replies.length > 0) {
+            const updatedReplies = comment.replies.map((reply: any) =>
+              reply.id === commentId
+                ? {
+                    ...reply,
+                    userHasUpvoted: data.userHasUpvoted,
+                    upvotes: data.upvotes,
+                  }
+                : reply
+            );
+
+            // Only return updated comment if a reply was actually updated
+            if (updatedReplies.some((r: any, i: number) => r !== comment.replies[i])) {
+              return { ...comment, replies: updatedReplies };
+            }
+          }
+
+          return comment;
+        });
 
         return {
           ...old,
