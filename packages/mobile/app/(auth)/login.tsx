@@ -8,6 +8,7 @@ import {
   Platform,
   Keyboard,
   KeyboardEvent,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../store/AuthContext';
@@ -144,11 +145,16 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={[styles.content, { marginBottom: keyboardHeight }]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>🥊</Text>
-          <Text style={styles.subtitle}>FightCrewApp</Text>
-        </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={[styles.content, { marginBottom: keyboardHeight }]}>
+          <View style={styles.header}>
+            <Text style={styles.title}>🥊</Text>
+            <Text style={styles.subtitle}>FightCrewApp</Text>
+          </View>
 
         {/* Status Display */}
         {status ? (
@@ -315,7 +321,8 @@ export default function LoginScreen() {
             New? <Text style={[styles.signUpLinkText, { color: colors.tint }]}>Sign Up</Text>
           </Text>
         </TouchableOpacity>
-      </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -325,10 +332,17 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
   content: {
     flex: 1,
     padding: 24,
     justifyContent: 'center',
+    minHeight: '100%',
   },
   header: {
     alignItems: 'center',
