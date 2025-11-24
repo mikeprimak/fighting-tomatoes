@@ -307,7 +307,7 @@ export default function LiveFightCard({
         justifyContent: 'center',
         backgroundColor: '#F5C518', // Pure primary yellow
         marginTop: 10,
-        marginBottom: 10,
+        marginBottom: 20,
       }]}>
           {/* Live Now Strip at Top */}
           <View style={styles.liveNowStrip}>

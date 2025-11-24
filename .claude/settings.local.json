@@ -57,7 +57,13 @@
       "Bash(systeminfo:*)",
       "Bash(docker-compose restart:*)",
       "Bash(git diff:*)",
-      "Bash(timeout /t 2 /nobreak)"
+      "Bash(timeout /t 2 /nobreak)",
+      "Bash(dir /s C:Usersavocafight-mobile-appnode_modules 2)",
+      "Bash(nul)",
+      "Bash(dir /s C:Usersavocafight-mobile-apppackagesmobilenode_modules 2)",
+      "Bash(git count-objects:*)",
+      "Bash(git gc:*)",
+      "Bash(npx ts-node:*)"
     ],
     "deny": [],
     "ask": []

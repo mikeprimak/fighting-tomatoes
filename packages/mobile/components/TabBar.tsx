@@ -5,6 +5,7 @@ import { Tabs, useRouter, usePathname } from 'expo-router';
 import { useColorScheme, Text, View, Image } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { useAuth } from '../store/AuthContext';
+import { useHasLiveEvent } from '../hooks/useHasLiveEvent';
 
 /**
  * Tab Bar Icon Component
@@ -115,6 +116,7 @@ export function FightCrewAppTabBar() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
+  const hasLiveEvent = useHasLiveEvent();
 
   return (
     <Tabs
@@ -146,12 +148,26 @@ export function FightCrewAppTabBar() {
         options={{
           title: 'Upcoming Events',
           tabBarIcon: ({ color, focused }) => (
-            <FontAwesome6
-              name="fire-flame-curved"
-              size={24}
-              style={{ marginBottom: -3 }}
-              color={color}
-            />
+            <View style={{ position: 'relative', justifyContent: 'center', alignItems: 'center' }}>
+              {hasLiveEvent ? (
+                <View
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 6,
+                    backgroundColor: '#FF0000',
+                    marginBottom: -3,
+                  }}
+                />
+              ) : (
+                <FontAwesome6
+                  name="fire-flame-curved"
+                  size={24}
+                  style={{ marginBottom: -3 }}
+                  color={color}
+                />
+              )}
+            </View>
           ),
           tabBarLabel: ({ color }) => (
             <Text
@@ -161,7 +177,7 @@ export function FightCrewAppTabBar() {
                 textAlign: 'center',
               }}
             >
-              Upcoming
+              {hasLiveEvent ? 'Live' : 'Upcoming'}
             </Text>
           ),
           headerTitle: () => <HeaderLogo title="Upcoming Events" />,
