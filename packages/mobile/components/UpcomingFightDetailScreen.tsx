@@ -1614,7 +1614,11 @@ export default function UpcomingFightDetailScreen({
           {/* All other comments */}
           {preFightCommentsData.comments
             .filter((c: any) => c.id !== preFightCommentsData.userComment?.id)
-            .map((comment: any) => (
+            .map((comment: any) => {
+              // Check if user has already replied to this comment
+              const userHasReplied = comment.replies?.some((reply: any) => reply.user?.id === user?.id);
+
+              return (
               <React.Fragment key={comment.id}>
                 <PreFightCommentCard
                   comment={{
@@ -1629,7 +1633,7 @@ export default function UpcomingFightDetailScreen({
                   }}
                   onUpvote={() => handleUpvoteComment(comment.id)}
                   onFlag={() => handleFlagComment(comment.id)}
-                  onReply={() => handleReplyClick(comment.id)}
+                  onReply={userHasReplied ? undefined : () => handleReplyClick(comment.id)}
                   isUpvoting={upvotingCommentId === comment.id}
                   isAuthenticated={isAuthenticated}
                   showMyComment={false}
@@ -1815,7 +1819,8 @@ export default function UpcomingFightDetailScreen({
                   </View>
                 )}
               </React.Fragment>
-            ))}
+            );
+          })}
           </View>
         )}
       </View>
