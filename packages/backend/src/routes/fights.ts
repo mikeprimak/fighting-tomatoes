@@ -1097,7 +1097,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Create reply (no rating required for replies)
+      // Create reply with auto-upvote (no rating required for replies)
       const replyReview = await fastify.prisma.fightReview.create({
         data: {
           userId: currentUserId,
@@ -1105,6 +1105,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           content: content.trim(),
           parentReviewId,
           rating: null, // Replies don't have ratings
+          upvotes: 1, // Auto-upvote on creation
         },
         include: {
           user: {
@@ -1118,6 +1119,15 @@ export async function fightRoutes(fastify: FastifyInstance) {
               mediaOrganization: true,
             },
           },
+        },
+      });
+
+      // Create auto-upvote vote record
+      await fastify.prisma.reviewVote.create({
+        data: {
+          userId: currentUserId,
+          reviewId: replyReview.id,
+          isUpvote: true,
         },
       });
 
@@ -1417,13 +1427,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
           },
         });
       } else {
-        // Create new top-level comment
+        // Create new top-level comment with auto-upvote
         comment = await fastify.prisma.preFightComment.create({
           data: {
             userId: currentUserId,
             fightId,
             content: content.trim(),
             parentCommentId: null,
+            upvotes: 1, // Auto-upvote on creation
           },
           include: {
             user: {
@@ -1435,6 +1446,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
                 avatar: true,
               },
             },
+          },
+        });
+
+        // Create auto-upvote vote record
+        await fastify.prisma.preFightCommentVote.create({
+          data: {
+            userId: currentUserId,
+            commentId: comment.id,
           },
         });
       }
@@ -1535,13 +1554,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Create reply
+      // Create reply with auto-upvote
       const replyComment = await fastify.prisma.preFightComment.create({
         data: {
           userId: currentUserId,
           fightId,
           content: content.trim(),
           parentCommentId,
+          upvotes: 1, // Auto-upvote on creation
         },
         include: {
           user: {
@@ -1553,6 +1573,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
               avatar: true,
             },
           },
+        },
+      });
+
+      // Create auto-upvote vote record
+      await fastify.prisma.preFightCommentVote.create({
+        data: {
+          userId: currentUserId,
+          commentId: replyComment.id,
         },
       });
 
