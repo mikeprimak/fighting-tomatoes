@@ -1880,7 +1880,11 @@ export default function CompletedFightDetailScreen({
               <View style={{ marginTop: 16 }}>
                 {reviewsData.pages.flatMap(page =>
                   page.reviews.filter((review: any) => review.userId !== user?.id)
-                ).map((review: any) => (
+                ).map((review: any) => {
+                  // Check if user has already replied to this review
+                  const userHasReplied = review.replies?.some((reply: any) => reply.user?.id === user?.id);
+
+                  return (
                   <React.Fragment key={review.id}>
                     <CommentCard
                       comment={{
@@ -1895,7 +1899,7 @@ export default function CompletedFightDetailScreen({
                       }}
                       onUpvote={() => upvoteMutation.mutate({ reviewId: review.id })}
                       onFlag={() => handleFlagReview(review.id)}
-                      onReply={() => handleReplyClick(review.id)}
+                      onReply={userHasReplied ? undefined : () => handleReplyClick(review.id)}
                       isUpvoting={upvoteMutation.isPending}
                       isFlagging={flagReviewMutation.isPending && reviewToFlag === review.id}
                       isAuthenticated={isAuthenticated}
@@ -2081,7 +2085,8 @@ export default function CompletedFightDetailScreen({
                       </View>
                     )}
                   </React.Fragment>
-                ))}
+                  );
+                })}
 
                 {/* Load more button */}
                 {hasNextPage && (
