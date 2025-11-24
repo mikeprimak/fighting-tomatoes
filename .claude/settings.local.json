@@ -63,7 +63,8 @@
       "Bash(dir /s C:Usersavocafight-mobile-apppackagesmobilenode_modules 2)",
       "Bash(git count-objects:*)",
       "Bash(git gc:*)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Bash(npm run type-check:*)"
     ],
     "deny": [],
     "ask": []

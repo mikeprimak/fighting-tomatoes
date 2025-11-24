@@ -1818,7 +1818,7 @@ export default function UpcomingFightDetailScreen({
                               comment={{
                                 id: reply.id,
                                 content: reply.content,
-                                hypeRating: reply.hypeRating,
+                                hypeRating: isMyReply ? selectedHype : reply.hypeRating,
                                 upvotes: reply.upvotes || 0,
                                 userHasUpvoted: reply.userHasUpvoted || false,
                                 user: {

@@ -1827,7 +1827,7 @@ export default function CompletedFightDetailScreen({
                 comment={{
                   id: fight.userReview.id,
                   content: fight.userReview.content,
-                  rating: fight.userReview.rating,
+                  rating: rating,
                   upvotes: fight.userReview.upvotes || 0,
                   userHasUpvoted: fight.userReview.userHasUpvoted,
                   user: {
@@ -2025,7 +2025,7 @@ export default function CompletedFightDetailScreen({
                                   comment={{
                                     id: reply.id,
                                     content: reply.content,
-                                    rating: reply.rating || 0,
+                                    rating: isMyReply ? rating : (reply.rating || 0),
                                     upvotes: reply.upvotes || 0,
                                     userHasUpvoted: reply.userHasUpvoted || false,
                                     user: {
