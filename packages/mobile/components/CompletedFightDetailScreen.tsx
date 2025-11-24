@@ -718,7 +718,7 @@ export default function CompletedFightDetailScreen({
       }),
     ]).start();
 
-    // Auto-dismiss after 2 seconds
+    // Auto-dismiss after 3.5 seconds
     setTimeout(() => {
       Animated.parallel([
         Animated.timing(toastOpacity, {
@@ -734,7 +734,7 @@ export default function CompletedFightDetailScreen({
       ]).start(() => {
         setToastMessage('');
       });
-    }, 2000);
+    }, 3500);
   };
 
   // Reply to review mutation

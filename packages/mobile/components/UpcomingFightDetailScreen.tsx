@@ -801,7 +801,7 @@ export default function UpcomingFightDetailScreen({
       }),
     ]).start();
 
-    // Auto-dismiss after 2 seconds
+    // Auto-dismiss after 3.5 seconds
     setTimeout(() => {
       Animated.parallel([
         Animated.timing(toastOpacity, {
@@ -817,7 +817,7 @@ export default function UpcomingFightDetailScreen({
       ]).start(() => {
         setToastMessage('');
       });
-    }, 2000);
+    }, 3500);
   };
 
   // Toggle fight notification mutation
