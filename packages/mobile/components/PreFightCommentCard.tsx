@@ -86,7 +86,7 @@ export function PreFightCommentCard({
         <View style={styles.commentContentContainer}>
           {/* Header: Username and Hype Rating/Flag */}
           <View style={styles.commentHeader}>
-            <Text style={[styles.commentAuthor, { color: showMyComment ? '#83B4F3' : '#FFFFFF' }]}>
+            <Text style={[styles.commentAuthor, { color: showMyComment ? '#F5C518' : '#FFFFFF' }]}>
               {comment.user.displayName}
             </Text>
             <View style={styles.ratingFlagContainer}>

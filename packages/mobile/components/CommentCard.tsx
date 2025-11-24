@@ -51,8 +51,7 @@ export function CommentCard({
     <TouchableOpacity
       style={[
         styles.reviewCard,
-        { backgroundColor: colors.background, borderColor: showMyReview ? '#83B4F3' : colors.border },
-        showMyReview && styles.myReviewCard
+        { backgroundColor: colors.background, borderColor: colors.border },
       ]}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
@@ -83,7 +82,7 @@ export function CommentCard({
         <View style={styles.reviewContentContainer}>
           {/* Header: Username and Rating/Flag */}
           <View style={styles.reviewHeader}>
-            <Text style={[styles.reviewAuthor, { color: '#FFFFFF' }]}>
+            <Text style={[styles.reviewAuthor, { color: showMyReview ? '#F5C518' : '#FFFFFF' }]}>
               {showMyReview ? 'My Review' : comment.user.displayName}
             </Text>
             <View style={styles.ratingFlagContainer}>
