@@ -83,7 +83,7 @@ export function CommentCard({
           {/* Header: Username and Rating/Flag */}
           <View style={styles.reviewHeader}>
             <Text style={[styles.reviewAuthor, { color: showMyReview ? '#F5C518' : '#FFFFFF' }]}>
-              {showMyReview ? 'My Review' : comment.user.displayName}
+              {comment.user.displayName}
             </Text>
             <View style={styles.ratingFlagContainer}>
               <View style={styles.inlineRating}>
