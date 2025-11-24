@@ -1156,20 +1156,6 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const { content } = request.body as { content: string };
       const currentUserId = (request as any).user.id;
 
-      if (!content || content.trim().length === 0) {
-        return reply.code(400).send({
-          error: 'Content is required',
-          code: 'CONTENT_REQUIRED',
-        });
-      }
-
-      if (content.length > 500) {
-        return reply.code(400).send({
-          error: 'Review must be 500 characters or less',
-          code: 'CONTENT_TOO_LONG',
-        });
-      }
-
       // Check if fight exists
       const fight = await fastify.prisma.fight.findUnique({ where: { id: fightId } });
       if (!fight) {
@@ -1204,6 +1190,25 @@ export async function fightRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({
           error: 'Review does not belong to this fight',
           code: 'REVIEW_FIGHT_MISMATCH',
+        });
+      }
+
+      // If content is empty, delete the reply
+      if (!content || content.trim().length === 0) {
+        await fastify.prisma.fightReview.delete({
+          where: { id: reviewId },
+        });
+
+        return reply.code(200).send({
+          message: 'Reply deleted successfully',
+        });
+      }
+
+      // Validate content length
+      if (content.length > 500) {
+        return reply.code(400).send({
+          error: 'Review must be 500 characters or less',
+          code: 'CONTENT_TOO_LONG',
         });
       }
 
