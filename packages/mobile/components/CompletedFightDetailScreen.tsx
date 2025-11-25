@@ -3233,9 +3233,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   whatHappenedImageContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     overflow: 'hidden',
     marginBottom: 8,
   },
