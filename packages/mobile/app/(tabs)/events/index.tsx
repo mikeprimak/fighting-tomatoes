@@ -676,7 +676,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 2,
-    marginLeft: -11, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
+    marginLeft: -10, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
     width: 40, // Match width of heatmap square
     justifyContent: 'center', // Center text within the column
   },
@@ -684,7 +684,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 2,
-    marginRight: -11, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
+    marginRight: -10, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
     width: 40, // Match width of heatmap square
     justifyContent: 'center', // Center text within the column
   },
