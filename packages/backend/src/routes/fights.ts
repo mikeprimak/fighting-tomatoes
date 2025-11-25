@@ -139,6 +139,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Basic include object
       const include: any = {
+        _count: {
+          select: {
+            preFightComments: true,
+          },
+        },
         event: {
           select: {
             id: true,
@@ -229,6 +234,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
             updatedAt: true,
           },
         };
+
+        include.preFightComments = {
+          where: { userId: currentUserId },
+          select: {
+            id: true,
+          },
+        };
       } else {
         console.log('Skipping user data processing:', {
           includeUserData: query.includeUserData,
@@ -272,6 +284,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const transformedFights = await Promise.all(fights.map(async (fight: any) => {
         const transformed = { ...fight };
 
+        // Add comment count
+        transformed.commentCount = fight._count?.preFightComments || 0;
+
         // Transform user rating (take the first/only rating)
         if (fight.ratings && fight.ratings.length > 0) {
           transformed.userRating = fight.ratings[0].rating;
@@ -298,6 +313,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
           transformed.hasRevealedHype = fight.predictions[0].hasRevealedHype;
           transformed.hasRevealedWinner = fight.predictions[0].hasRevealedWinner;
           transformed.hasRevealedMethod = fight.predictions[0].hasRevealedMethod;
+        }
+
+        // Transform user pre-fight comments count
+        if (fight.preFightComments && fight.preFightComments.length > 0) {
+          transformed.userCommentCount = fight.preFightComments.length;
         }
 
         // Add fighter follow info and notification reasons
@@ -3253,6 +3273,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const fights = await fastify.prisma.fight.findMany({
         where,
         include: {
+          _count: {
+            select: {
+              preFightComments: true,
+            },
+          },
           event: {
             select: {
               id: true,
@@ -3374,6 +3399,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
         // Add aggregate hype stats
         transformed.averageHype = hypeStats?.averageHype || 0;
         transformed.totalPredictions = hypeStats?.totalPredictions || 0;
+
+        // Add comment count
+        transformed.commentCount = fight._count?.preFightComments || 0;
 
         // Calculate fight status based on isComplete and hasStarted flags
         if (fight.isComplete) {

@@ -445,6 +445,18 @@ export default function UpcomingFightCard({
             </View>
           </View>
 
+          {/* User comment indicator - to the left of user hype square */}
+          {fight.userCommentCount > 0 && (
+            <View style={styles.userCommentIndicator}>
+              <FontAwesome name="comment" size={12} color={colors.textSecondary} />
+              {fight.userCommentCount > 1 && (
+                <Text style={[styles.userCommentCount, { color: colors.textSecondary }]}>
+                  {fight.userCommentCount}
+                </Text>
+              )}
+            </View>
+          )}
+
           {/* Full-height user hype square on the right */}
           <View style={[
             styles.userHypeSquare,
@@ -985,5 +997,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  userCommentIndicator: {
+    position: 'absolute',
+    top: 22,
+    right: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  userCommentCount: {
+    fontSize: 11,
+    fontWeight: '500',
   },
 });
