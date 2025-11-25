@@ -524,7 +524,7 @@ export default function UpcomingFightCard({
               {/* "vs" text or bell icon - Absolutely centered */}
               <View style={styles.vsContainer}>
                 {fight.notificationReasons?.willBeNotified ? (
-                  <FontAwesome name="bell" size={14} color="#F5C518" />
+                  <FontAwesome name="bell" size={14} color="#F5C518" style={{ marginLeft: -4 }} />
                 ) : (
                   <Text style={[styles.vsText, { color: colors.textSecondary }]}>•</Text>
                 )}
