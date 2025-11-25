@@ -498,37 +498,26 @@ export default function UpcomingFightCard({
             <View style={styles.fighterNamesContainer}>
               {/* Fighter 1 - Left half */}
               <View style={styles.fighter1Container}>
-                <View style={{ alignSelf: 'flex-end', position: 'relative' }}>
+                <View style={[
+                  { alignSelf: 'flex-end', position: 'relative' },
+                  aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && styles.predictedWinnerContainer,
+                  aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && { paddingLeft: 20 }
+                ]}>
                   <Text
-                    style={[styles.fighterName, { color: colors.textSecondary, textAlign: 'right', fontWeight: '400' }]}
+                    style={[
+                      styles.fighterName,
+                      { textAlign: 'right', fontWeight: '400' },
+                      aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
+                        ? { color: '#000' }
+                        : { color: colors.textSecondary }
+                    ]}
                     numberOfLines={2}
                   >
-                    {fight.fighter1.firstName}{'\n'}<Text style={{ color: colors.text, fontWeight: '700' }}>{fight.fighter1.lastName}</Text>
+                    {fight.fighter1.firstName}{'\n'}<Text style={{
+                      fontWeight: '700',
+                      color: aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` ? '#000' : colors.text
+                    }}>{fight.fighter1.lastName}</Text>
                   </Text>
-                  {false && aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
-                    <>
-                      <Animated.View
-                        style={{
-                          position: 'absolute',
-                          bottom: -4.5,
-                          left: 0,
-                          right: 0,
-                          height: 2,
-                          backgroundColor: '#F5C518',
-                          transform: [{ scaleX: underlineScaleAnim }],
-                        }}
-                      />
-                      {aggregateStats?.userPrediction?.method && (
-                        <View style={styles.checkmarkContainer}>
-                          <View style={[styles.checkmarkIcon, { backgroundColor: colors.background }]}>
-                            <Text style={{ color: '#F5C518', fontSize: 9, fontWeight: '700' }}>
-                              {formatMethod(aggregateStats.userPrediction.method)}
-                            </Text>
-                          </View>
-                        </View>
-                      )}
-                    </>
-                  )}
                 </View>
               </View>
 
@@ -543,37 +532,26 @@ export default function UpcomingFightCard({
 
               {/* Fighter 2 - Right half */}
               <View style={styles.fighter2Container}>
-                <View style={{ alignSelf: 'flex-start', position: 'relative' }}>
+                <View style={[
+                  { alignSelf: 'flex-start', position: 'relative' },
+                  aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && styles.predictedWinnerContainer,
+                  aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && { paddingRight: 20 }
+                ]}>
                   <Text
-                    style={[styles.fighterName, { color: colors.textSecondary, textAlign: 'left', fontWeight: '400' }]}
+                    style={[
+                      styles.fighterName,
+                      { textAlign: 'left', fontWeight: '400' },
+                      aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}`
+                        ? { color: '#000' }
+                        : { color: colors.textSecondary }
+                    ]}
                     numberOfLines={2}
                   >
-                    {fight.fighter2.firstName}{'\n'}<Text style={{ color: colors.text, fontWeight: '700' }}>{fight.fighter2.lastName}</Text>
+                    {fight.fighter2.firstName}{'\n'}<Text style={{
+                      fontWeight: '700',
+                      color: aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` ? '#000' : colors.text
+                    }}>{fight.fighter2.lastName}</Text>
                   </Text>
-                  {false && aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
-                    <>
-                      <Animated.View
-                        style={{
-                          position: 'absolute',
-                          bottom: -4.5,
-                          left: 0,
-                          right: 0,
-                          height: 2,
-                          backgroundColor: '#F5C518',
-                          transform: [{ scaleX: underlineScaleAnim }],
-                        }}
-                      />
-                      {aggregateStats?.userPrediction?.method && (
-                        <View style={styles.checkmarkContainer}>
-                          <View style={[styles.checkmarkIcon, { backgroundColor: colors.background }]}>
-                            <Text style={{ color: '#F5C518', fontSize: 9, fontWeight: '700' }}>
-                              {formatMethod(aggregateStats.userPrediction.method)}
-                            </Text>
-                          </View>
-                        </View>
-                      )}
-                    </>
-                  )}
                 </View>
               </View>
             </View>
@@ -1009,5 +987,11 @@ const styles = StyleSheet.create({
   userCommentCount: {
     fontSize: 11,
     fontWeight: '500',
+  },
+  predictedWinnerContainer: {
+    backgroundColor: '#F5C518',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
 });
