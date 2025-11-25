@@ -388,10 +388,10 @@ export default function UpcomingFightCard({
       <View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
-        paddingLeft: 56, // 40px square + 16px padding
+        paddingLeft: 60, // 44px square + 16px padding
         paddingVertical: 4, // Minimal vertical padding
-        paddingRight: 56, // 40px square + 16px padding
-        minHeight: 40, // Minimum height to ensure content fits
+        paddingRight: 60, // 44px square + 16px padding
+        minHeight: 44, // Minimum height
         justifyContent: 'center',
       }]}>
           {/* Full-height community hype square on the left */}
@@ -427,6 +427,22 @@ export default function UpcomingFightCard({
                 style={{ position: 'absolute', opacity: 0.5 }}
               />
             )}
+          </View>
+
+          {/* Hype rating count and comment count - to the right of community hype box */}
+          <View style={styles.hypeCountContainer}>
+            <View style={styles.countRow}>
+              <FontAwesome name="users" size={10} color={colors.textSecondary} />
+              <Text style={[styles.hypeCountValue, { color: colors.textSecondary }]}>
+                {predictionStats?.totalPredictions || 0}
+              </Text>
+            </View>
+            <View style={styles.countRow}>
+              <FontAwesome name="comment" size={10} color={colors.textSecondary} />
+              <Text style={[styles.hypeCountValue, { color: colors.textSecondary }]}>
+                {fight.commentCount || 0}
+              </Text>
+            </View>
           </View>
 
           {/* Full-height user hype square on the right */}
@@ -465,19 +481,19 @@ export default function UpcomingFightCard({
             )}
           </View>
 
-          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -18 : 2 }]}>
+          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -24 : -4 }]}>
             {/* Fighter names with centered "vs" */}
             <View style={styles.fighterNamesContainer}>
               {/* Fighter 1 - Left half */}
               <View style={styles.fighter1Container}>
                 <View style={{ alignSelf: 'flex-end', position: 'relative' }}>
                   <Text
-                    style={[styles.fighterName, { color: colors.text, textAlign: 'right' }]}
-                    numberOfLines={1}
+                    style={[styles.fighterName, { color: colors.textSecondary, textAlign: 'right', fontWeight: '400' }]}
+                    numberOfLines={2}
                   >
-                    {cleanFighterName(getFighterName(fight.fighter1))}
+                    {fight.fighter1.firstName}{'\n'}<Text style={{ color: colors.text, fontWeight: '700' }}>{fight.fighter1.lastName}</Text>
                   </Text>
-                  {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
+                  {false && aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
                     <>
                       <Animated.View
                         style={{
@@ -509,7 +525,7 @@ export default function UpcomingFightCard({
                 {fight.notificationReasons?.willBeNotified ? (
                   <FontAwesome name="bell" size={14} color="#F5C518" />
                 ) : (
-                  <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
+                  <Text style={[styles.vsText, { color: colors.textSecondary }]}>•</Text>
                 )}
               </View>
 
@@ -517,12 +533,12 @@ export default function UpcomingFightCard({
               <View style={styles.fighter2Container}>
                 <View style={{ alignSelf: 'flex-start', position: 'relative' }}>
                   <Text
-                    style={[styles.fighterName, { color: colors.text, textAlign: 'left' }]}
-                    numberOfLines={1}
+                    style={[styles.fighterName, { color: colors.textSecondary, textAlign: 'left', fontWeight: '400' }]}
+                    numberOfLines={2}
                   >
-                    {cleanFighterName(getFighterName(fight.fighter2))}
+                    {fight.fighter2.firstName}{'\n'}<Text style={{ color: colors.text, fontWeight: '700' }}>{fight.fighter2.lastName}</Text>
                   </Text>
-                  {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
+                  {false && aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
                     <>
                       <Animated.View
                         style={{
@@ -781,7 +797,7 @@ const styles = StyleSheet.create({
   vsContainer: {
     position: 'absolute',
     left: '50%',
-    transform: [{ translateX: -10 }],
+    transform: [{ translateX: -5 }],
     zIndex: 1,
   },
   fighterNamesVs: {
@@ -931,18 +947,35 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
+  },
+  hypeCountContainer: {
+    position: 'absolute',
+    top: 4,
+    left: 50,
+    height: 44,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+  },
+  hypeCountValue: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
   },
   userHypeSquare: {
     position: 'absolute',
     top: 0,
     right: 0,
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
