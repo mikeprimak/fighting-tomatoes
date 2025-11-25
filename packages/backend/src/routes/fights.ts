@@ -1097,20 +1097,6 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Check if parent review has reached max replies (10)
-      const replyCount = await fastify.prisma.fightReview.count({
-        where: {
-          parentReviewId,
-        },
-      });
-
-      if (replyCount >= 10) {
-        return reply.code(400).send({
-          error: 'This review has reached the maximum number of replies (10)',
-          code: 'MAX_REPLIES_REACHED',
-        });
-      }
-
       // Check if user has reached max total reviews/replies on this fight (5)
       const userTotalReviews = await fastify.prisma.fightReview.count({
         where: {
@@ -1600,20 +1586,6 @@ export async function fightRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({
           error: 'You have already replied to this comment',
           code: 'REPLY_ALREADY_EXISTS',
-        });
-      }
-
-      // Check if parent comment has reached max replies (10)
-      const replyCount = await fastify.prisma.preFightComment.count({
-        where: {
-          parentCommentId,
-        },
-      });
-
-      if (replyCount >= 10) {
-        return reply.code(400).send({
-          error: 'This comment has reached the maximum number of replies (10)',
-          code: 'MAX_REPLIES_REACHED',
         });
       }
 

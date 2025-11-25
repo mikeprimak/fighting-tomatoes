@@ -129,6 +129,8 @@ export default function UpcomingFightDetailScreen({
   const [flagModalVisible, setFlagModalVisible] = useState(false);
   const [commentToFlag, setCommentToFlag] = useState<string | null>(null);
   const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
+  const INITIAL_REPLIES_SHOWN = 3;
 
   // Reply state
   const [replyingToCommentId, setReplyingToCommentId] = useState<string | null>(null);
@@ -1750,110 +1752,127 @@ export default function UpcomingFightDetailScreen({
                 )}
 
                 {/* Display replies - with left margin */}
-                {comment.replies && comment.replies.length > 0 && (
-                  <View style={{ marginLeft: 40, marginTop: replyingToCommentId === comment.id ? 50 : 0, marginBottom: 20 }}>
-                    {comment.replies.map((reply: any) => {
-                      const isMyReply = reply.user?.id === user?.id;
-                      return (
-                        <React.Fragment key={reply.id}>
-                          {editingReplyId === reply.id ? (
-                            // Edit form for reply
-                            <View style={{ marginBottom: 12 }}>
-                              <View style={[
-                                styles.commentInputContainer,
-                                {
-                                  backgroundColor: colors.card,
-                                  borderColor: colors.border,
-                                }
-                              ]}>
-                                <TextInput
-                                  style={[
-                                    styles.commentInput,
-                                    { color: colors.text }
-                                  ]}
-                                  placeholder="Edit your reply..."
-                                  placeholderTextColor={colors.textSecondary}
-                                  multiline
-                                  numberOfLines={4}
-                                  maxLength={500}
-                                  value={editReplyText}
-                                  onChangeText={setEditReplyText}
-                                  autoFocus={true}
-                                />
+                {comment.replies && comment.replies.length > 0 && (() => {
+                  const isExpanded = expandedReplies[comment.id] || false;
+                  const repliesToShow = isExpanded ? comment.replies : comment.replies.slice(0, INITIAL_REPLIES_SHOWN);
+                  const hiddenCount = comment.replies.length - INITIAL_REPLIES_SHOWN;
+
+                  return (
+                    <View style={{ marginLeft: 40, marginTop: replyingToCommentId === comment.id ? 50 : 0, marginBottom: 20 }}>
+                      {repliesToShow.map((reply: any) => {
+                        const isMyReply = reply.user?.id === user?.id;
+                        return (
+                          <React.Fragment key={reply.id}>
+                            {editingReplyId === reply.id ? (
+                              // Edit form for reply
+                              <View style={{ marginBottom: 12 }}>
+                                <View style={[
+                                  styles.commentInputContainer,
+                                  {
+                                    backgroundColor: colors.card,
+                                    borderColor: colors.border,
+                                  }
+                                ]}>
+                                  <TextInput
+                                    style={[
+                                      styles.commentInput,
+                                      { color: colors.text }
+                                    ]}
+                                    placeholder="Edit your reply..."
+                                    placeholderTextColor={colors.textSecondary}
+                                    multiline
+                                    numberOfLines={4}
+                                    maxLength={500}
+                                    value={editReplyText}
+                                    onChangeText={setEditReplyText}
+                                    autoFocus={true}
+                                  />
+                                </View>
+                                <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                                  <TouchableOpacity
+                                    style={[
+                                      styles.saveCommentButton,
+                                      {
+                                        backgroundColor: editReplyText.trim().length > 0 || reply.content ? colors.tint : colors.card,
+                                        flex: 1,
+                                      }
+                                    ]}
+                                    disabled={editReplyMutation.isPending}
+                                    onPress={() => {
+                                      handleSaveReplyEdit(reply.id, reply.content);
+                                    }}
+                                  >
+                                    <Text style={[
+                                      styles.saveCommentButtonText,
+                                      { color: editReplyText.trim().length > 0 || reply.content ? '#000' : colors.text }
+                                    ]}>
+                                      Save
+                                    </Text>
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    style={[
+                                      styles.saveCommentButton,
+                                      {
+                                        backgroundColor: colors.card,
+                                        borderWidth: 1,
+                                        borderColor: colors.border,
+                                        flex: 1,
+                                      }
+                                    ]}
+                                    onPress={() => {
+                                      setEditingReplyId(null);
+                                      setEditReplyText('');
+                                    }}
+                                  >
+                                    <Text style={[
+                                      styles.saveCommentButtonText,
+                                      { color: colors.text }
+                                    ]}>
+                                      Cancel
+                                    </Text>
+                                  </TouchableOpacity>
+                                </View>
                               </View>
-                              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                                <TouchableOpacity
-                                  style={[
-                                    styles.saveCommentButton,
-                                    {
-                                      backgroundColor: editReplyText.trim().length > 0 || reply.content ? colors.tint : colors.card,
-                                      flex: 1,
-                                    }
-                                  ]}
-                                  disabled={editReplyMutation.isPending}
-                                  onPress={() => {
-                                    handleSaveReplyEdit(reply.id, reply.content);
-                                  }}
-                                >
-                                  <Text style={[
-                                    styles.saveCommentButtonText,
-                                    { color: editReplyText.trim().length > 0 || reply.content ? '#000' : colors.text }
-                                  ]}>
-                                    Save
-                                  </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                  style={[
-                                    styles.saveCommentButton,
-                                    {
-                                      backgroundColor: colors.card,
-                                      borderWidth: 1,
-                                      borderColor: colors.border,
-                                      flex: 1,
-                                    }
-                                  ]}
-                                  onPress={() => {
-                                    setEditingReplyId(null);
-                                    setEditReplyText('');
-                                  }}
-                                >
-                                  <Text style={[
-                                    styles.saveCommentButtonText,
-                                    { color: colors.text }
-                                  ]}>
-                                    Cancel
-                                  </Text>
-                                </TouchableOpacity>
-                              </View>
-                            </View>
-                          ) : (
-                            <PreFightCommentCard
-                              comment={{
-                                id: reply.id,
-                                content: reply.content,
-                                hypeRating: isMyReply ? selectedHype : reply.hypeRating,
-                                upvotes: reply.upvotes || 0,
-                                userHasUpvoted: reply.userHasUpvoted || false,
-                                user: {
-                                  displayName: reply.user.displayName,
-                                },
-                              }}
-                              onUpvote={() => handleUpvoteComment(reply.id)}
-                              onFlag={() => handleFlagComment(reply.id)}
-                              onEdit={isMyReply ? () => {
-                                setEditingReplyId(reply.id);
-                                setEditReplyText(reply.content);
-                              } : undefined}
-                              isUpvoting={upvotingCommentId === reply.id}
-                              isAuthenticated={isAuthenticated}
-                              showMyComment={isMyReply}
-                            />
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </View>
-                )}
+                            ) : (
+                              <PreFightCommentCard
+                                comment={{
+                                  id: reply.id,
+                                  content: reply.content,
+                                  hypeRating: isMyReply ? selectedHype : reply.hypeRating,
+                                  upvotes: reply.upvotes || 0,
+                                  userHasUpvoted: reply.userHasUpvoted || false,
+                                  user: {
+                                    displayName: reply.user.displayName,
+                                  },
+                                }}
+                                onUpvote={() => handleUpvoteComment(reply.id)}
+                                onFlag={() => handleFlagComment(reply.id)}
+                                onEdit={isMyReply ? () => {
+                                  setEditingReplyId(reply.id);
+                                  setEditReplyText(reply.content);
+                                } : undefined}
+                                isUpvoting={upvotingCommentId === reply.id}
+                                isAuthenticated={isAuthenticated}
+                                showMyComment={isMyReply}
+                              />
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                      {/* Show more/less replies button */}
+                      {hiddenCount > 0 && (
+                        <TouchableOpacity
+                          onPress={() => setExpandedReplies(prev => ({ ...prev, [comment.id]: !isExpanded }))}
+                          style={{ marginTop: 8, paddingVertical: 8 }}
+                        >
+                          <Text style={{ color: colors.tint, fontSize: 14, fontWeight: '500' }}>
+                            {isExpanded ? 'Show less replies' : `Show ${hiddenCount} more ${hiddenCount === 1 ? 'reply' : 'replies'}`}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                })()}
               </React.Fragment>
             );
           })}
