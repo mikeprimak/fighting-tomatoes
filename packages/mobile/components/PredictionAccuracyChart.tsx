@@ -188,6 +188,7 @@ export default function PredictionAccuracyChart({
 const styles = StyleSheet.create({
   container: {
     marginTop: 12,
+    marginLeft: -10,
   },
   emptyContainer: {
     paddingVertical: 20,

@@ -345,7 +345,7 @@ export default function ProfileScreen() {
 
         {/* Average Hype */}
         <View style={[styles.averageRatingCard]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 4 }}>
             <FontAwesome6
               name="fire-flame-curved"
               size={40}
@@ -353,8 +353,8 @@ export default function ProfileScreen() {
               style={{ opacity: 0.4 }}
             />
             <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8, marginBottom: 0 }]}>My Average Hype</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 14, marginLeft: 8 }}>({user?.totalHype || 0} fights)</Text>
           </View>
+          <Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 12 }}>{user?.totalHype || 0} fights</Text>
           {/* Hype Box + Distribution Chart - Horizontal Layout */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
             {/* Colored Hype Box */}
@@ -393,7 +393,7 @@ export default function ProfileScreen() {
 
         {/* Average Rating */}
         <View style={[styles.averageRatingCard]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 4 }}>
             <FontAwesome
               name="star"
               size={40}
@@ -401,8 +401,8 @@ export default function ProfileScreen() {
               style={{ opacity: 0.4 }}
             />
             <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8, marginBottom: 0 }]}>My Average Rating</Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 14, marginLeft: 8 }}>({user?.totalRatings || 0} fights)</Text>
           </View>
+          <Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 12 }}>{user?.totalRatings || 0} fights</Text>
           {/* Rating Box + Distribution Chart - Horizontal Layout */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
             {/* Colored Rating Box */}
