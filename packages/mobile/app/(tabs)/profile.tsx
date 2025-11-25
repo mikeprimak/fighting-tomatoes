@@ -143,7 +143,7 @@ export default function ProfileScreen() {
     // If there's no data, show empty chart with message
     const hasData = Object.keys(dataToUse).length > 0;
     const maxCount = hasData ? Math.max(...Object.values(dataToUse), 1) : 1;
-    const maxBarHeight = 70; // Maximum bar height in pixels
+    const maxBarHeight = 45; // Maximum bar height in pixels
 
     return (
       <View>
@@ -171,7 +171,7 @@ export default function ProfileScreen() {
                     ]}
                   />
                 </View>
-                <Text style={[styles.barLabel, { color: colors.textSecondary }]}>{rating}</Text>
+                
               </View>
             );
           })}
@@ -184,8 +184,16 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Predictions Section */}
-        <View style={[styles.predictionsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text, textAlign: 'center' }]}>Fight Predictions</Text>
+        <View style={[styles.predictionsCard]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 8 }}>
+            <FontAwesome
+              name="trophy"
+              size={40}
+              color={colorScheme === 'dark' ? '#6B7280' : '#9CA3AF'}
+              style={{ opacity: 0.4 }}
+            />
+            <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8, marginBottom: 0 }]}>My Fight Predictions</Text>
+          </View>
 
           {/* Winner Predictions */}
           <View style={styles.predictionRow}>
@@ -211,47 +219,99 @@ export default function ProfileScreen() {
         </View>
 
         {/* Average Hype */}
-        <View style={[styles.averageRatingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Average Hype</Text>
-          <View style={styles.flamesContainer}>
-            {renderFlameRating(user?.averageHype || 0)}
+        <View style={[styles.averageRatingCard]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 8 }}>
+            <FontAwesome6
+              name="fire-flame-curved"
+              size={40}
+              color={colorScheme === 'dark' ? '#6B7280' : '#9CA3AF'}
+              style={{ opacity: 0.4 }}
+            />
+            <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8, marginBottom: 0 }]}>My Average Hype</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 14, marginLeft: 8 }}>({user?.totalHype || 0} fights)</Text>
           </View>
-          <Text style={[styles.ratingValue, { color: colors.text, marginTop: 8 }]}>
-            {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'} / 10
-          </Text>
-          <Text style={[styles.fightsRatedText, { color: colors.textSecondary, marginTop: 4 }]}>
-            {user?.totalHype || 0} fight{user?.totalHype === 1 ? '' : 's'} hyped
-          </Text>
+          {/* Hype Box + Distribution Chart - Horizontal Layout */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+            {/* Colored Hype Box */}
+            <View style={{
+              width: 40,
+              height: 40,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderRadius: 8,
+              backgroundColor: getHypeHeatmapColor(Math.round(user?.averageHype || 0)),
+            }}>
+              <FontAwesome6
+                name="fire-flame-curved"
+                size={24}
+                color={getHypeHeatmapColor(Math.round(user?.averageHype || 0))}
+                style={{ position: 'absolute', opacity: 0.5 }}
+              />
+              <Text style={{
+                color: '#FFFFFF',
+                fontSize: 14,
+                fontWeight: 'bold',
+                textAlign: 'center',
+              }}>
+                {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'}
+              </Text>
+            </View>
 
-          {/* Hype Distribution Chart */}
-          <View style={styles.distributionContainer}>
-            <Text style={[styles.distributionLabel, { color: colors.textSecondary, marginTop: 12, marginBottom: 8 }]}>
-              Hype Distribution
-            </Text>
-            {renderDistributionChart(user?.hypeDistribution || {}, 'hype')}
+            {/* Distribution Chart */}
+            <View style={{ flex: 1, marginTop: -12 }}>
+              {renderDistributionChart(user?.hypeDistribution || {}, 'hype')}
+            </View>
           </View>
+
+          
         </View>
 
         {/* Average Rating */}
-        <View style={[styles.averageRatingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Average Rating</Text>
-          <View style={styles.starsContainer}>
-            {renderStarRating(user?.averageRating || 0)}
+        <View style={[styles.averageRatingCard]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 8 }}>
+            <FontAwesome
+              name="star"
+              size={40}
+              color={colorScheme === 'dark' ? '#6B7280' : '#9CA3AF'}
+              style={{ opacity: 0.4 }}
+            />
+            <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8, marginBottom: 0 }]}>My Average Rating</Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 14, marginLeft: 8 }}>({user?.totalRatings || 0} fights)</Text>
           </View>
-          <Text style={[styles.ratingValue, { color: colors.text, marginTop: 8 }]}>
-            {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'} / 10
-          </Text>
-          <Text style={[styles.fightsRatedText, { color: colors.textSecondary, marginTop: 4 }]}>
-            {user?.totalRatings || 0} fight{user?.totalRatings === 1 ? '' : 's'} rated
-          </Text>
+          {/* Rating Box + Distribution Chart - Horizontal Layout */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+            {/* Colored Rating Box */}
+            <View style={{
+              width: 40,
+              height: 40,
+              justifyContent: 'center',
+              alignItems: 'center',
+              borderRadius: 8,
+              backgroundColor: getHypeHeatmapColor(Math.round(user?.averageRating || 0)),
+            }}>
+              <FontAwesome
+                name="star"
+                size={24}
+                color={getHypeHeatmapColor(Math.round(user?.averageRating || 0))}
+                style={{ position: 'absolute', opacity: 0.5 }}
+              />
+              <Text style={{
+                color: '#FFFFFF',
+                fontSize: 14,
+                fontWeight: 'bold',
+                textAlign: 'center',
+              }}>
+                {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'}
+              </Text>
+            </View>
 
-          {/* Rating Distribution Chart */}
-          <View style={styles.distributionContainer}>
-            <Text style={[styles.distributionLabel, { color: colors.textSecondary, marginTop: 12, marginBottom: 8 }]}>
-              Rating Distribution
-            </Text>
-            {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
+            {/* Distribution Chart */}
+            <View style={{ flex: 1, marginTop: -12 }}>
+              {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
+            </View>
           </View>
+
+          
         </View>
 
         {/* Actions */}
@@ -361,16 +421,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 12,
   },
   averageRatingCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
+    paddingVertical: 16,
     marginBottom: 24,
   },
   predictionsCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    paddingVertical: 16,
     marginBottom: 24,
   },
   sectionTitle: {
@@ -428,7 +483,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    height: 100,
+    height: 55,
     paddingHorizontal: 4,
   },
   barContainer: {
@@ -439,13 +494,13 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   barWrapper: {
     width: '100%',
-    height: 70,
+    height: 45,
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
   bar: {
-    width: '80%',
-    borderRadius: 2,
+    width: 14,
+    borderRadius: 1,
     minHeight: 2,
   },
   barLabel: {
