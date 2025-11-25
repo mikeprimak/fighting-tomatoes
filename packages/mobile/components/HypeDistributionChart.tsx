@@ -20,10 +20,10 @@ export default function HypeDistributionChart({
   hasRevealedHype,
   fadeAnim,
 }: HypeDistributionChartProps) {
-  // Chart dimensions - horizontal layout
-  const chartWidth = 250; // Reduced width to fit in container padding
+  // Chart dimensions - horizontal layout (matches RatingDistributionChart)
+  const chartWidth = 281; // Width for 10 bars - matches rating chart
   const chartHeight = 55; // Compact height
-  const barWidth = 8; // Horizontal thickness of bars - slightly thicker
+  const barWidth = 14; // Horizontal thickness of bars
   const barGap = 2;
 
   // Find max count for scaling
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 55,
-    width: 250,
+    width: 281,
   },
   chartArea: {
     flex: 1,

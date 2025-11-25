@@ -123,14 +123,14 @@ export default function PredictionBarChart({
                     : getFighterPlaceholder()
                 }
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
                   marginBottom: 4,
                 }}
               />
               <View>
-                <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                <Text style={{ fontSize: 14, color: '#FFFFFF' }}>
                   {winnerPredictions.fighter1.percentage}% {fighter1Name}
                 </Text>
                 {selectedWinner === fighter1Id && !selectedMethod && (
@@ -152,14 +152,14 @@ export default function PredictionBarChart({
                     : getFighterPlaceholder()
                 }
                 style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 20,
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
                   marginBottom: 4,
                 }}
               />
               <View>
-                <Text style={{ fontSize: 14, color: colors.textSecondary }}>
+                <Text style={{ fontSize: 14, color: '#FFFFFF' }}>
                   {winnerPredictions.fighter2.percentage}% {fighter2Name}
                 </Text>
                 {selectedWinner === fighter2Id && !selectedMethod && (

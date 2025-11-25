@@ -20,7 +20,7 @@ export default function RatingDistributionChart({
   // Chart dimensions - horizontal layout
   const chartWidth = 281; // Width for 10 bars - narrower to fit screen
   const chartHeight = 55; // Compact height
-  const barWidth = 8; // Horizontal thickness of bars - slightly thicker
+  const barWidth = 14; // Horizontal thickness of bars
   const barGap = 2;
 
   // Find max count for scaling
