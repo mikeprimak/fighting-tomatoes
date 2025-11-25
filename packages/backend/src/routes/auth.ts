@@ -39,6 +39,7 @@ router.post('/refresh-token', generalLimiter, AuthController.refreshToken)
 
 // Protected routes
 router.get('/profile', authenticateToken, AuthController.getProfile)
+router.get('/profile/prediction-accuracy', authenticateToken, AuthController.getPredictionAccuracyByEvent)
 router.put('/profile', authenticateToken, generalLimiter, AuthController.updateProfile)
 router.post('/logout', authenticateToken, AuthController.logout)
 

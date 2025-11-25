@@ -1277,6 +1277,42 @@ class ApiService {
       }),
     });
   }
+
+  /**
+   * Get user's prediction accuracy grouped by event
+   * @param timeFilter - 'lastEvent' | 'month' | '3months' | 'year' | 'allTime'
+   */
+  async getPredictionAccuracyByEvent(timeFilter: string = '3months'): Promise<{
+    accuracyByEvent: Array<{
+      eventId: string;
+      eventName: string;
+      eventDate: string;
+      correct: number;
+      incorrect: number;
+    }>;
+    totalEvents: number;
+    totalPredictions: number;
+    totalCorrect: number;
+    totalIncorrect: number;
+  }> {
+    return this.makeRequest(`/auth/profile/prediction-accuracy?timeFilter=${timeFilter}`);
+  }
+
+  /**
+   * Get user's global standing/ranking based on prediction accuracy
+   * @param timeFilter - 'lastEvent' | 'month' | '3months' | 'year' | 'allTime'
+   */
+  async getGlobalStanding(timeFilter: string = '3months'): Promise<{
+    position: number | null;
+    totalUsers: number;
+    hasRanking: boolean;
+    correctPredictions?: number;
+    totalPredictions?: number;
+    accuracy?: number;
+    message?: string;
+  }> {
+    return this.makeRequest(`/auth/profile/global-standing?timeFilter=${timeFilter}`);
+  }
 }
 
 export const apiService = new ApiService();

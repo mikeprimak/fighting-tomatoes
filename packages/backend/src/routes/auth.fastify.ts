@@ -840,6 +840,286 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // GET /api/auth/profile/prediction-accuracy - Get prediction accuracy by event
+  fastify.get('/profile/prediction-accuracy', async (request, reply) => {
+    try {
+      const authorization = request.headers.authorization;
+
+      if (!authorization || !authorization.startsWith('Bearer ')) {
+        return reply.code(401).send({
+          error: 'Authorization token required',
+          code: 'MISSING_TOKEN',
+        });
+      }
+
+      const token = authorization.substring(7);
+      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const userId = decoded.userId;
+
+      // Get timeFilter from query params (default: 3months)
+      const { timeFilter = '3months' } = request.query as { timeFilter?: string };
+
+      // Calculate date filter based on timeFilter
+      let dateFilter: Date | null = null;
+      let lastEventOnly = false;
+
+      if (timeFilter === 'lastEvent') {
+        lastEventOnly = true;
+      } else if (timeFilter === 'month') {
+        dateFilter = new Date();
+        dateFilter.setMonth(dateFilter.getMonth() - 1);
+      } else if (timeFilter === '3months') {
+        dateFilter = new Date();
+        dateFilter.setMonth(dateFilter.getMonth() - 3);
+      } else if (timeFilter === 'year') {
+        dateFilter = new Date();
+        dateFilter.setFullYear(dateFilter.getFullYear() - 1);
+      }
+      // 'allTime' = no date filter (dateFilter stays null)
+
+      // Build the where clause
+      const whereClause: any = {
+        userId,
+        predictedWinner: { not: null },
+        fight: {
+          winner: { not: null },
+        }
+      };
+
+      if (dateFilter) {
+        whereClause.fight.event = { date: { gte: dateFilter } };
+      }
+
+      // Get all predictions for this user where the fight has a result
+      const predictions = await fastify.prisma.fightPrediction.findMany({
+        where: whereClause,
+        include: {
+          fight: {
+            select: {
+              id: true,
+              winner: true,
+              event: {
+                select: {
+                  id: true,
+                  name: true,
+                  date: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          fight: {
+            event: {
+              date: 'asc'
+            }
+          }
+        }
+      });
+
+      // Group predictions by event
+      const eventMap = new Map<string, {
+        eventId: string,
+        eventName: string,
+        eventDate: Date,
+        correct: number,
+        incorrect: number
+      }>();
+
+      for (const prediction of predictions) {
+        const event = prediction.fight.event;
+        const isCorrect = prediction.predictedWinner === prediction.fight.winner;
+
+        if (!eventMap.has(event.id)) {
+          eventMap.set(event.id, {
+            eventId: event.id,
+            eventName: event.name,
+            eventDate: event.date,
+            correct: 0,
+            incorrect: 0
+          });
+        }
+
+        const eventStats = eventMap.get(event.id)!;
+        if (isCorrect) {
+          eventStats.correct++;
+        } else {
+          eventStats.incorrect++;
+        }
+      }
+
+      // Convert to array and sort by date
+      let accuracyByEvent = Array.from(eventMap.values())
+        .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+
+      // If lastEventOnly, only keep the most recent event
+      if (lastEventOnly && accuracyByEvent.length > 0) {
+        accuracyByEvent = [accuracyByEvent[accuracyByEvent.length - 1]];
+      }
+
+      return reply.code(200).send({
+        accuracyByEvent,
+        totalEvents: accuracyByEvent.length,
+        totalPredictions: accuracyByEvent.reduce((sum, e) => sum + e.correct + e.incorrect, 0),
+        totalCorrect: accuracyByEvent.reduce((sum, e) => sum + e.correct, 0),
+        totalIncorrect: accuracyByEvent.reduce((sum, e) => sum + e.incorrect, 0)
+      });
+
+    } catch (error: any) {
+      request.log.error('Get prediction accuracy error:', error);
+      if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+        return reply.code(401).send({
+          error: 'Invalid token',
+          code: 'INVALID_TOKEN',
+        });
+      }
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'PREDICTION_ACCURACY_FETCH_FAILED',
+      });
+    }
+  });
+
+  // GET /api/auth/profile/global-standing - Get user's global ranking based on prediction accuracy
+  fastify.get('/profile/global-standing', async (request, reply) => {
+    try {
+      const authorization = request.headers.authorization;
+
+      if (!authorization || !authorization.startsWith('Bearer ')) {
+        return reply.code(401).send({
+          error: 'Authorization token required',
+          code: 'MISSING_TOKEN',
+        });
+      }
+
+      const token = authorization.substring(7);
+      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const userId = decoded.userId;
+
+      // Get timeFilter from query params (default: 3months)
+      const { timeFilter = '3months' } = request.query as { timeFilter?: string };
+
+      // Calculate date filter based on timeFilter
+      let dateFilter: Date | null = null;
+      let lastEventId: string | null = null;
+
+      if (timeFilter === 'lastEvent') {
+        // Find the most recent completed event
+        const lastEvent = await fastify.prisma.event.findFirst({
+          where: {
+            fights: {
+              some: { winner: { not: null } }
+            }
+          },
+          orderBy: { date: 'desc' },
+          select: { id: true }
+        });
+        lastEventId = lastEvent?.id || null;
+      } else if (timeFilter === 'month') {
+        dateFilter = new Date();
+        dateFilter.setMonth(dateFilter.getMonth() - 1);
+      } else if (timeFilter === '3months') {
+        dateFilter = new Date();
+        dateFilter.setMonth(dateFilter.getMonth() - 3);
+      } else if (timeFilter === 'year') {
+        dateFilter = new Date();
+        dateFilter.setFullYear(dateFilter.getFullYear() - 1);
+      }
+      // 'allTime' = no date filter
+
+      // Build where clause
+      const whereClause: any = {
+        predictedWinner: { not: null },
+        fight: { winner: { not: null } }
+      };
+
+      if (lastEventId) {
+        whereClause.fight.eventId = lastEventId;
+      } else if (dateFilter) {
+        whereClause.fight.event = { date: { gte: dateFilter } };
+      }
+
+      // Get all predictions on completed fights with winners
+      const allPredictions = await fastify.prisma.fightPrediction.findMany({
+        where: whereClause,
+        select: {
+          userId: true,
+          predictedWinner: true,
+          fight: { select: { winner: true } }
+        }
+      });
+
+      // Group by user and calculate accuracy
+      const userStatsMap = new Map<string, { correct: number; total: number }>();
+
+      for (const prediction of allPredictions) {
+        const isCorrect = prediction.predictedWinner === prediction.fight.winner;
+
+        if (!userStatsMap.has(prediction.userId)) {
+          userStatsMap.set(prediction.userId, { correct: 0, total: 0 });
+        }
+
+        const stats = userStatsMap.get(prediction.userId)!;
+        stats.total++;
+        if (isCorrect) stats.correct++;
+      }
+
+      // Convert to array and sort by accuracy (then by total predictions as tiebreaker)
+      const sortedUsers = Array.from(userStatsMap.entries())
+        .map(([id, stats]) => ({
+          userId: id,
+          correct: stats.correct,
+          total: stats.total,
+          accuracy: stats.total > 0 ? stats.correct / stats.total : 0
+        }))
+        .sort((a, b) => {
+          if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
+          return b.total - a.total;
+        });
+
+      // Find the current user's position
+      const totalUsers = sortedUsers.length;
+      const userIndex = sortedUsers.findIndex(u => u.userId === userId);
+
+      if (userIndex === -1) {
+        // User has no predictions yet
+        return reply.code(200).send({
+          position: null,
+          totalUsers,
+          hasRanking: false,
+          message: 'Make predictions on upcoming fights to get ranked!'
+        });
+      }
+
+      const position = userIndex + 1;
+      const userStats = sortedUsers[userIndex];
+
+      return reply.code(200).send({
+        position,
+        totalUsers,
+        hasRanking: true,
+        correctPredictions: userStats.correct,
+        totalPredictions: userStats.total,
+        accuracy: Math.round(userStats.accuracy * 100)
+      });
+
+    } catch (error: any) {
+      request.log.error('Get global standing error:', error);
+      if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+        return reply.code(401).send({
+          error: 'Invalid token',
+          code: 'INVALID_TOKEN',
+        });
+      }
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'GLOBAL_STANDING_FETCH_FAILED',
+      });
+    }
+  });
+
   // GET /api/auth/check-displayname - Check if display name is available
   fastify.get('/check-displayname', async (request, reply) => {
     try {

@@ -599,4 +599,106 @@ export class AuthController {
       })
     }
   }
+
+
+  /**
+   * Get user's prediction accuracy grouped by event (last 3 months)
+   * Returns correct/incorrect prediction counts per event for diverging bar chart
+   */
+  static async getPredictionAccuracyByEvent(req: AuthRequest, res: Response) {
+    try {
+      const userId = req.user!.userId
+
+      // Get events from last 3 months that have completed fights
+      const threeMonthsAgo = new Date()
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+
+      // Get all predictions for this user where the fight has a result (winner is set)
+      // and the event was in the last 3 months
+      const predictions = await prisma.fightPrediction.findMany({
+        where: {
+          userId,
+          predictedWinner: { not: null },
+          fight: {
+            winner: { not: null }, // Fight has a result
+            event: {
+              date: { gte: threeMonthsAgo }
+            }
+          }
+        },
+        include: {
+          fight: {
+            select: {
+              id: true,
+              winner: true,
+              event: {
+                select: {
+                  id: true,
+                  name: true,
+                  date: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          fight: {
+            event: {
+              date: 'asc'
+            }
+          }
+        }
+      })
+
+      // Group predictions by event
+      const eventMap = new Map<string, {
+        eventId: string,
+        eventName: string,
+        eventDate: Date,
+        correct: number,
+        incorrect: number
+      }>()
+
+      for (const prediction of predictions) {
+        const event = prediction.fight.event
+        const isCorrect = prediction.predictedWinner === prediction.fight.winner
+
+        if (!eventMap.has(event.id)) {
+          eventMap.set(event.id, {
+            eventId: event.id,
+            eventName: event.name,
+            eventDate: event.date,
+            correct: 0,
+            incorrect: 0
+          })
+        }
+
+        const eventStats = eventMap.get(event.id)!
+        if (isCorrect) {
+          eventStats.correct++
+        } else {
+          eventStats.incorrect++
+        }
+      }
+
+      // Convert to array and sort by date
+      const accuracyByEvent = Array.from(eventMap.values())
+        .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
+
+      res.json({
+        accuracyByEvent,
+        totalEvents: accuracyByEvent.length,
+        totalPredictions: predictions.length,
+        totalCorrect: accuracyByEvent.reduce((sum, e) => sum + e.correct, 0),
+        totalIncorrect: accuracyByEvent.reduce((sum, e) => sum + e.incorrect, 0)
+      })
+
+    } catch (error) {
+      console.error('Get prediction accuracy error:', error)
+      res.status(500).json({
+        error: 'Internal server error',
+        code: 'PREDICTION_ACCURACY_FETCH_FAILED'
+      })
+    }
+  }
 }

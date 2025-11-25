@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -15,12 +15,83 @@ import { useAuth } from '../../store/AuthContext';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { CustomAlert } from '../../components/CustomAlert';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
+import { api } from '../../services/api';
+import PredictionAccuracyChart from '../../components/PredictionAccuracyChart';
+
+interface EventAccuracy {
+  eventId: string;
+  eventName: string;
+  eventDate: string;
+  correct: number;
+  incorrect: number;
+}
+
+// Helper to get ordinal suffix (1st, 2nd, 3rd, 4th, etc.)
+const getOrdinalSuffix = (n: number): string => {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};
 
 export default function ProfileScreen() {
   const { user, logout, refreshUserData } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { alertState, showConfirm, showError, hideAlert } = useCustomAlert();
+
+  // Prediction accuracy data state
+  const [predictionAccuracy, setPredictionAccuracy] = useState<{
+    accuracyByEvent: EventAccuracy[];
+    totalCorrect: number;
+    totalIncorrect: number;
+  }>({ accuracyByEvent: [], totalCorrect: 0, totalIncorrect: 0 });
+
+  // Global standing data state
+  const [globalStanding, setGlobalStanding] = useState<{
+    position: number | null;
+    totalUsers: number;
+    hasRanking: boolean;
+  }>({ position: null, totalUsers: 0, hasRanking: false });
+
+  // Time filter state
+  const [timeFilter, setTimeFilter] = useState<string>('3months');
+  const timeFilterOptions = [
+    { key: 'lastEvent', label: 'Last Event' },
+    { key: 'month', label: 'Month' },
+    { key: '3months', label: '3 Months' },
+    { key: 'year', label: 'Year' },
+    { key: 'allTime', label: 'All Time' },
+  ];
+
+  // Fetch prediction accuracy and global standing data
+  useEffect(() => {
+    const fetchPredictionData = async () => {
+      try {
+        const [accuracyData, standingData] = await Promise.all([
+          api.getPredictionAccuracyByEvent(timeFilter),
+          api.getGlobalStanding(timeFilter),
+        ]);
+
+        setPredictionAccuracy({
+          accuracyByEvent: accuracyData.accuracyByEvent,
+          totalCorrect: accuracyData.totalCorrect,
+          totalIncorrect: accuracyData.totalIncorrect,
+        });
+
+        setGlobalStanding({
+          position: standingData.position,
+          totalUsers: standingData.totalUsers,
+          hasRanking: standingData.hasRanking,
+        });
+      } catch (error) {
+        console.error('Failed to fetch prediction data:', error);
+      }
+    };
+
+    if (user) {
+      fetchPredictionData();
+    }
+  }, [user?.id, timeFilter]);
 
   // Auto-refresh user data if averageRating or averageHype is missing (from old cached data)
   // OR if distributions are empty (to get real data)
@@ -195,27 +266,81 @@ export default function ProfileScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8, marginBottom: 0 }]}>My Fight Predictions</Text>
           </View>
 
-          {/* Winner Predictions */}
-          <View style={styles.predictionRow}>
-            <View style={styles.predictionInfo}>
-              <FontAwesome name="trophy" size={20} color={colors.primary} />
-              <Text style={[styles.predictionLabel, { color: colors.text, marginLeft: 8 }]}>Winner Predictions:</Text>
-            </View>
-            <Text style={[styles.predictionValue, { color: colors.text }]}>
-              {user?.winnerAccuracy ? `${user.winnerAccuracy.toFixed(0)}%` : '0%'} ({user?.correctWinnerPredictions || 0}/{user?.completedWinnerPredictions || 0})
-            </Text>
+          {/* Time Filter Buttons */}
+          <View style={styles.filterTabsContainer}>
+            {timeFilterOptions.map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                onPress={() => setTimeFilter(option.key)}
+                style={[styles.filterTab, timeFilter === option.key && styles.filterTabActive]}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={[styles.filterTabText, timeFilter === option.key && styles.filterTabTextActive]}>
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
-          {/* Method Predictions */}
-          <View style={styles.predictionRow}>
-            <View style={styles.predictionInfo}>
-              <FontAwesome6 name="bullseye" size={20} color={colors.primary} />
-              <Text style={[styles.predictionLabel, { color: colors.text, marginLeft: 8 }]}>Winner + Method Predictions:</Text>
+          {/* Two stat boxes side by side */}
+          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+            {/* Prediction Accuracy - bordered */}
+            <View style={{
+              flex: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 8,
+              padding: 12,
+            }}>
+              <Text style={[styles.predictionLabel, { color: colors.text }]}>Prediction{'\n'}Accuracy</Text>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
+                  {(predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect) > 0
+                    ? `${Math.round((predictionAccuracy.totalCorrect / (predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect)) * 100)}%`
+                    : '—'}
+                </Text>
+                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                  ({predictionAccuracy.totalCorrect}/{predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect})
+                </Text>
+              </View>
             </View>
-            <Text style={[styles.predictionValue, { color: colors.text }]}>
-              {user?.methodAccuracy ? `${user.methodAccuracy.toFixed(0)}%` : '0%'} ({user?.correctMethodPredictions || 0}/{user?.completedMethodPredictions || 0})
-            </Text>
+
+            {/* Global Standing - bordered */}
+            <View style={{
+              flex: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 8,
+              padding: 12,
+            }}>
+              <Text style={[styles.predictionLabel, { color: colors.text }]}>Global{'\n'}Standing</Text>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
+                  {globalStanding.hasRanking
+                    ? getOrdinalSuffix(globalStanding.position!)
+                    : '—'}
+                </Text>
+                {globalStanding.hasRanking && globalStanding.totalUsers > 0 && (
+                  <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                    top {Math.round((globalStanding.position! / globalStanding.totalUsers) * 100)}%
+                  </Text>
+                )}
+              </View>
+            </View>
           </View>
+
+          {/* Prediction Accuracy Chart */}
+          <PredictionAccuracyChart
+            data={predictionAccuracy.accuracyByEvent}
+            totalCorrect={predictionAccuracy.totalCorrect}
+            totalIncorrect={predictionAccuracy.totalIncorrect}
+          />
         </View>
 
         {/* Average Hype */}
@@ -540,5 +665,30 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  filterTabsContainer: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  filterTab: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterTabActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.border,
+  },
+  filterTabText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+  filterTabTextActive: {
+    color: colors.textOnAccent,
   },
 }); 
