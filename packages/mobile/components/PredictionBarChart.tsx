@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, Alert, Image, ImageSourcePropType } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
-import { FontAwesome } from '@expo/vector-icons';
 
 interface PredictionBarChartProps {
   fighter1Name: string;
@@ -104,8 +103,9 @@ export default function PredictionBarChart({
   const fighter2HasMajority = winnerPredictions.fighter2.percentage > winnerPredictions.fighter1.percentage;
 
   // Calculate background colors
-  const fighter1BgColor = fighter1HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? '#3A3A3A' : '#6B7280');
-  const fighter2BgColor = fighter2HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? '#3A3A3A' : '#6B7280');
+  // Majority side gets full blue (#83B4F3), minority side gets same muted blue as Community Data container
+  const fighter1BgColor = fighter1HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? 'rgba(131, 180, 243, 0.2)' : 'rgba(131, 180, 243, 0.25)');
+  const fighter2BgColor = fighter2HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? 'rgba(131, 180, 243, 0.2)' : 'rgba(131, 180, 243, 0.25)');
 
   return (
     <View style={styles.container}>
@@ -129,12 +129,17 @@ export default function PredictionBarChart({
                   marginBottom: 4,
                 }}
               />
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View>
                 <Text style={{ fontSize: 14, color: colors.textSecondary }}>
                   {winnerPredictions.fighter1.percentage}% {fighter1Name}
                 </Text>
                 {selectedWinner === fighter1Id && !selectedMethod && (
-                  <FontAwesome name="user" size={12} color="#F5C518" />
+                  <View style={{
+                    height: 2,
+                    backgroundColor: '#F5C518',
+                    borderRadius: 1,
+                    marginTop: 2,
+                  }} />
                 )}
               </View>
             </View>
@@ -153,12 +158,17 @@ export default function PredictionBarChart({
                   marginBottom: 4,
                 }}
               />
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View>
                 <Text style={{ fontSize: 14, color: colors.textSecondary }}>
                   {winnerPredictions.fighter2.percentage}% {fighter2Name}
                 </Text>
                 {selectedWinner === fighter2Id && !selectedMethod && (
-                  <FontAwesome name="user" size={12} color="#F5C518" />
+                  <View style={{
+                    height: 2,
+                    backgroundColor: '#F5C518',
+                    borderRadius: 1,
+                    marginTop: 2,
+                  }} />
                 )}
               </View>
             </View>
@@ -190,7 +200,6 @@ export default function PredictionBarChart({
                     const label = methodPercentage < 15 ? 'K' : 'KO';
                     const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'KO_TKO';
                     const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'KO_TKO';
-                    const showIconsBelow = methodPercentage < 20;
                     return (
                       <View
                         style={{
@@ -200,40 +209,40 @@ export default function PredictionBarChart({
                           borderRightWidth: 1,
                           borderRightColor: colors.border,
                           backgroundColor: 'transparent',
-                          flexDirection: showIconsBelow ? 'column' : 'row',
-                          gap: showIconsBelow ? 2 : 3,
                         }}
                       >
+                        {/* Green overline for actual outcome */}
+                        {isActualOutcome && (
+                          <View style={{
+                            position: 'absolute',
+                            top: 6,
+                            left: '25%',
+                            right: '25%',
+                            height: 2,
+                            backgroundColor: '#4CAF50',
+                            borderRadius: 1,
+                          }} />
+                        )}
                         <Text
                           style={{
                             fontSize: 10,
                             fontWeight: '600',
-                            color: fighter1HasMajority ? '#000' : '#FFF',
+                            color: fighter1HasMajority ? '#000' : '#83B4F3',
                           }}
                         >
                           {label}
                         </Text>
-                        {(isUserPrediction || isActualOutcome) && (
+                        {/* Yellow underline for user prediction */}
+                        {isUserPrediction && (
                           <View style={{
-                            flexDirection: 'row',
-                            gap: 3,
-                          }}>
-                            {isUserPrediction && (
-                              <FontAwesome name="user" size={10} color="#F5C518" />
-                            )}
-                            {isActualOutcome && (
-                              <View style={{
-                                width: 9,
-                                height: 9,
-                                borderRadius: 4.5,
-                                backgroundColor: '#000',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                              }}>
-                                <FontAwesome name="check-circle" size={10} color="#4CAF50" />
-                              </View>
-                            )}
-                          </View>
+                            position: 'absolute',
+                            bottom: 6,
+                            left: '25%',
+                            right: '25%',
+                            height: 2,
+                            backgroundColor: '#F5C518',
+                            borderRadius: 1,
+                          }} />
                         )}
                       </View>
                     );
@@ -243,7 +252,6 @@ export default function PredictionBarChart({
                     const label = methodPercentage < 15 ? 'S' : 'SUB';
                     const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION';
                     const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'SUBMISSION';
-                    const showIconsBelow = methodPercentage < 20;
                     return (
                       <View
                         style={{
@@ -253,40 +261,40 @@ export default function PredictionBarChart({
                           borderRightWidth: 1,
                           borderRightColor: colors.border,
                           backgroundColor: 'transparent',
-                          flexDirection: showIconsBelow ? 'column' : 'row',
-                          gap: showIconsBelow ? 2 : 3,
                         }}
                       >
+                        {/* Green overline for actual outcome */}
+                        {isActualOutcome && (
+                          <View style={{
+                            position: 'absolute',
+                            top: 6,
+                            left: '25%',
+                            right: '25%',
+                            height: 2,
+                            backgroundColor: '#4CAF50',
+                            borderRadius: 1,
+                          }} />
+                        )}
                         <Text
                           style={{
                             fontSize: 10,
                             fontWeight: '600',
-                            color: fighter1HasMajority ? '#000' : '#FFF',
+                            color: fighter1HasMajority ? '#000' : '#83B4F3',
                           }}
                         >
                           {label}
                         </Text>
-                        {(isUserPrediction || isActualOutcome) && (
+                        {/* Yellow underline for user prediction */}
+                        {isUserPrediction && (
                           <View style={{
-                            flexDirection: 'row',
-                            gap: 3,
-                          }}>
-                            {isUserPrediction && (
-                              <FontAwesome name="user" size={10} color="#F5C518" />
-                            )}
-                            {isActualOutcome && (
-                              <View style={{
-                                width: 9,
-                                height: 9,
-                                borderRadius: 4.5,
-                                backgroundColor: '#000',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                              }}>
-                                <FontAwesome name="check-circle" size={10} color="#4CAF50" />
-                              </View>
-                            )}
-                          </View>
+                            position: 'absolute',
+                            bottom: 6,
+                            left: '25%',
+                            right: '25%',
+                            height: 2,
+                            backgroundColor: '#F5C518',
+                            borderRadius: 1,
+                          }} />
                         )}
                       </View>
                     );
@@ -296,7 +304,6 @@ export default function PredictionBarChart({
                     const label = methodPercentage < 15 ? 'D' : 'DEC';
                     const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'DECISION';
                     const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'DECISION';
-                    const showIconsBelow = methodPercentage < 20;
                     return (
                       <View
                         style={{
@@ -304,40 +311,40 @@ export default function PredictionBarChart({
                           justifyContent: 'center',
                           alignItems: 'center',
                           backgroundColor: 'transparent',
-                          flexDirection: showIconsBelow ? 'column' : 'row',
-                          gap: showIconsBelow ? 2 : 3,
                         }}
                       >
+                        {/* Green overline for actual outcome */}
+                        {isActualOutcome && (
+                          <View style={{
+                            position: 'absolute',
+                            top: 6,
+                            left: '25%',
+                            right: '25%',
+                            height: 2,
+                            backgroundColor: '#4CAF50',
+                            borderRadius: 1,
+                          }} />
+                        )}
                         <Text
                           style={{
                             fontSize: 10,
                             fontWeight: '600',
-                            color: fighter1HasMajority ? '#000' : '#FFF',
+                            color: fighter1HasMajority ? '#000' : '#83B4F3',
                           }}
                         >
                           {label}
                         </Text>
-                        {(isUserPrediction || isActualOutcome) && (
+                        {/* Yellow underline for user prediction */}
+                        {isUserPrediction && (
                           <View style={{
-                            flexDirection: 'row',
-                            gap: 3,
-                          }}>
-                            {isUserPrediction && (
-                              <FontAwesome name="user" size={10} color="#F5C518" />
-                            )}
-                            {isActualOutcome && (
-                              <View style={{
-                                width: 9,
-                                height: 9,
-                                borderRadius: 4.5,
-                                backgroundColor: '#000',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                              }}>
-                                <FontAwesome name="check-circle" size={10} color="#4CAF50" />
-                              </View>
-                            )}
-                          </View>
+                            position: 'absolute',
+                            bottom: 6,
+                            left: '25%',
+                            right: '25%',
+                            height: 2,
+                            backgroundColor: '#F5C518',
+                            borderRadius: 1,
+                          }} />
                         )}
                       </View>
                     );
@@ -364,7 +371,6 @@ export default function PredictionBarChart({
                     const label = methodPercentage < 15 ? 'K' : 'KO';
                     const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'KO_TKO';
                     const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'KO_TKO';
-                    const showIconsBelow = methodPercentage < 20;
                     return (
                       <View
                         style={{
@@ -374,32 +380,32 @@ export default function PredictionBarChart({
                           borderRightWidth: 1,
                           borderRightColor: colors.border,
                           backgroundColor: 'transparent',
-                          flexDirection: showIconsBelow ? 'column' : 'row',
-                          gap: showIconsBelow ? 2 : 3,
                         }}
                       >
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>{label}</Text>
-                        {(isUserPrediction || isActualOutcome) && (
+                        {/* Green overline for actual outcome */}
+                        {isActualOutcome && (
                           <View style={{
-                            flexDirection: 'row',
-                            gap: 3,
-                          }}>
-                            {isUserPrediction && (
-                              <FontAwesome name="user" size={10} color="#F5C518" />
-                            )}
-                            {isActualOutcome && (
-                              <View style={{
-                                width: 9,
-                                height: 9,
-                                borderRadius: 4.5,
-                                backgroundColor: '#000',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                              }}>
-                                <FontAwesome name="check-circle" size={10} color="#4CAF50" />
-                              </View>
-                            )}
-                          </View>
+                            position: 'absolute',
+                            top: 6,
+                            left: '25%',
+                            right: '25%',
+                            height: 2,
+                            backgroundColor: '#4CAF50',
+                            borderRadius: 1,
+                          }} />
+                        )}
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
+                        {/* Yellow underline for user prediction */}
+                        {isUserPrediction && (
+                          <View style={{
+                            position: 'absolute',
+                            bottom: 6,
+                            left: '25%',
+                            right: '25%',
+                            height: 2,
+                            backgroundColor: '#F5C518',
+                            borderRadius: 1,
+                          }} />
                         )}
                       </View>
                     );
@@ -409,7 +415,6 @@ export default function PredictionBarChart({
                     const label = methodPercentage < 15 ? 'S' : 'SUB';
                     const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'SUBMISSION';
                     const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'SUBMISSION';
-                    const showIconsBelow = methodPercentage < 20;
                     return (
                       <View
                         style={{
@@ -419,32 +424,32 @@ export default function PredictionBarChart({
                           borderRightWidth: 1,
                           borderRightColor: colors.border,
                           backgroundColor: 'transparent',
-                          flexDirection: showIconsBelow ? 'column' : 'row',
-                          gap: showIconsBelow ? 2 : 3,
                         }}
                       >
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>{label}</Text>
-                        {(isUserPrediction || isActualOutcome) && (
+                        {/* Green overline for actual outcome */}
+                        {isActualOutcome && (
                           <View style={{
-                            flexDirection: 'row',
-                            gap: 3,
-                          }}>
-                            {isUserPrediction && (
-                              <FontAwesome name="user" size={10} color="#F5C518" />
-                            )}
-                            {isActualOutcome && (
-                              <View style={{
-                                width: 9,
-                                height: 9,
-                                borderRadius: 4.5,
-                                backgroundColor: '#000',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                              }}>
-                                <FontAwesome name="check-circle" size={10} color="#4CAF50" />
-                              </View>
-                            )}
-                          </View>
+                            position: 'absolute',
+                            top: 6,
+                            left: '25%',
+                            right: '25%',
+                            height: 2,
+                            backgroundColor: '#4CAF50',
+                            borderRadius: 1,
+                          }} />
+                        )}
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
+                        {/* Yellow underline for user prediction */}
+                        {isUserPrediction && (
+                          <View style={{
+                            position: 'absolute',
+                            bottom: 6,
+                            left: '25%',
+                            right: '25%',
+                            height: 2,
+                            backgroundColor: '#F5C518',
+                            borderRadius: 1,
+                          }} />
                         )}
                       </View>
                     );
@@ -454,7 +459,6 @@ export default function PredictionBarChart({
                     const label = methodPercentage < 15 ? 'D' : 'DEC';
                     const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'DECISION';
                     const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'DECISION';
-                    const showIconsBelow = methodPercentage < 20;
                     return (
                       <View
                         style={{
@@ -462,32 +466,32 @@ export default function PredictionBarChart({
                           justifyContent: 'center',
                           alignItems: 'center',
                           backgroundColor: 'transparent',
-                          flexDirection: showIconsBelow ? 'column' : 'row',
-                          gap: showIconsBelow ? 2 : 3,
                         }}
                       >
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#FFF' }}>{label}</Text>
-                        {(isUserPrediction || isActualOutcome) && (
+                        {/* Green overline for actual outcome */}
+                        {isActualOutcome && (
                           <View style={{
-                            flexDirection: 'row',
-                            gap: 3,
-                          }}>
-                            {isUserPrediction && (
-                              <FontAwesome name="user" size={10} color="#F5C518" />
-                            )}
-                            {isActualOutcome && (
-                              <View style={{
-                                width: 9,
-                                height: 9,
-                                borderRadius: 4.5,
-                                backgroundColor: '#000',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                              }}>
-                                <FontAwesome name="check-circle" size={10} color="#4CAF50" />
-                              </View>
-                            )}
-                          </View>
+                            position: 'absolute',
+                            top: 6,
+                            left: '25%',
+                            right: '25%',
+                            height: 2,
+                            backgroundColor: '#4CAF50',
+                            borderRadius: 1,
+                          }} />
+                        )}
+                        <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
+                        {/* Yellow underline for user prediction */}
+                        {isUserPrediction && (
+                          <View style={{
+                            position: 'absolute',
+                            bottom: 6,
+                            left: '25%',
+                            right: '25%',
+                            height: 2,
+                            backgroundColor: '#F5C518',
+                            borderRadius: 1,
+                          }} />
                         )}
                       </View>
                     );
