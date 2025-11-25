@@ -487,10 +487,10 @@ export default function CompletedFightCard({
       <View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
-        paddingLeft: 56, // One 40px square + 16px padding
+        paddingLeft: 60, // 44px square + 16px padding
         paddingVertical: 4, // Minimal vertical padding
-        paddingRight: 56, // One 40px square + 16px padding
-        minHeight: 40, // Minimum height to ensure content fits
+        paddingRight: 60, // 44px square + 16px padding
+        minHeight: 44, // Minimum height
         justifyContent: 'center',
       }]}>
           {/* Full-height community rating square on the left */}
@@ -528,6 +528,34 @@ export default function CompletedFightCard({
             )}
           </View>
 
+          {/* Rating count and comment count - to the right of community rating box */}
+          <View style={styles.ratingCountContainer}>
+            <View style={styles.countRow}>
+              <FontAwesome name="users" size={10} color={colors.textSecondary} />
+              <Text style={[styles.ratingCountValue, { color: colors.textSecondary }]}>
+                {fight.totalRatings || 0}
+              </Text>
+            </View>
+            <View style={styles.countRow}>
+              <FontAwesome name="comment" size={10} color={colors.textSecondary} />
+              <Text style={[styles.ratingCountValue, { color: colors.textSecondary }]}>
+                {fight.totalReviews || 0}
+              </Text>
+            </View>
+          </View>
+
+          {/* User comment indicator - to the left of user rating square */}
+          {fight.userReviewCount > 0 && (
+            <View style={styles.userCommentIndicator}>
+              <FontAwesome name="comment" size={12} color={colors.textSecondary} />
+              {fight.userReviewCount > 1 && (
+                <Text style={[styles.userCommentCount, { color: colors.textSecondary }]}>
+                  {fight.userReviewCount}
+                </Text>
+              )}
+            </View>
+          )}
+
           {/* Full-height user rating square on the right */}
           <View style={[
             styles.userRatingSquare,
@@ -564,69 +592,63 @@ export default function CompletedFightCard({
             )}
           </View>
 
-          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -18 : 2 }]}>
-            {/* Fighter names with centered "vs" */}
+          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -24 : -4 }]}>
+            {/* Fighter names with centered dot */}
             <View style={styles.fighterNamesContainer}>
               {/* Fighter 1 - Left half */}
               <View style={styles.fighter1Container}>
-                <View
-                  style={[
-                    { alignSelf: 'flex-end', position: 'relative' },
-                    aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && {
-                      borderBottomWidth: 2,
-                      borderBottomColor: '#F5C518',
-                    }
-                  ]}
-                >
+                <View style={[
+                  { alignSelf: 'flex-end', position: 'relative' },
+                  aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && styles.predictedWinnerContainer,
+                  aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && { paddingLeft: 20 }
+                ]}>
                   <Text
-                    style={[styles.fighterName, { color: colors.text, textAlign: 'right' }]}
-                    numberOfLines={1}
+                    style={[
+                      styles.fighterName,
+                      { textAlign: 'right', fontWeight: '400' },
+                      aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
+                        ? { color: '#000' }
+                        : { color: colors.textSecondary }
+                    ]}
+                    numberOfLines={2}
                   >
-                    {cleanFighterName(getFighterName(fight.fighter1))}
+                    {fight.fighter1.firstName}{'\n'}<Text style={{
+                      fontWeight: '700',
+                      color: aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` ? '#000' : colors.text
+                    }}>{fight.fighter1.lastName}</Text>
                   </Text>
-                  {/* Checkmark for correct prediction */}
-                  {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` &&
-                   fight.winner === fight.fighter1.id && (
-                    <View style={styles.checkmarkContainer}>
-                      <View style={[styles.checkmarkIcon, { backgroundColor: colors.background }]}>
-                        <FontAwesome name="check" size={10} color="#F5C518" />
-                      </View>
-                    </View>
-                  )}
+                  {/* Checkmark for correct prediction - DISABLED */}
                 </View>
               </View>
 
-              {/* "vs" text - Absolutely centered */}
+              {/* Dot - Absolutely centered */}
               <View style={styles.vsContainer}>
-                <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
+                <Text style={[styles.vsText, { color: colors.textSecondary }]}>•</Text>
               </View>
 
               {/* Fighter 2 - Right half */}
               <View style={styles.fighter2Container}>
-                <View
-                  style={[
-                    { alignSelf: 'flex-start', position: 'relative' },
-                    aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && {
-                      borderBottomWidth: 2,
-                      borderBottomColor: '#F5C518',
-                    }
-                  ]}
-                >
+                <View style={[
+                  { alignSelf: 'flex-start', position: 'relative' },
+                  aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && styles.predictedWinnerContainer,
+                  aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && { paddingRight: 20 }
+                ]}>
                   <Text
-                    style={[styles.fighterName, { color: colors.text, textAlign: 'left' }]}
-                    numberOfLines={1}
+                    style={[
+                      styles.fighterName,
+                      { textAlign: 'left', fontWeight: '400' },
+                      aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}`
+                        ? { color: '#000' }
+                        : { color: colors.textSecondary }
+                    ]}
+                    numberOfLines={2}
                   >
-                    {cleanFighterName(getFighterName(fight.fighter2))}
+                    {fight.fighter2.firstName}{'\n'}<Text style={{
+                      fontWeight: '700',
+                      color: aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` ? '#000' : colors.text
+                    }}>{fight.fighter2.lastName}</Text>
                   </Text>
-                  {/* Checkmark for correct prediction */}
-                  {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` &&
-                   fight.winner === fight.fighter2.id && (
-                    <View style={styles.checkmarkContainer}>
-                      <View style={[styles.checkmarkIcon, { backgroundColor: colors.background }]}>
-                        <FontAwesome name="check" size={10} color="#F5C518" />
-                      </View>
-                    </View>
-                  )}
+                  {/* Checkmark for correct prediction - DISABLED */}
                 </View>
               </View>
             </View>
@@ -879,7 +901,7 @@ const styles = StyleSheet.create({
   vsContainer: {
     position: 'absolute',
     left: '50%',
-    transform: [{ translateX: -10 }],
+    transform: [{ translateX: -5 }],
     zIndex: 1,
   },
   fighterNamesVs: {
@@ -1027,8 +1049,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
@@ -1037,8 +1059,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: 0,
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
@@ -1048,5 +1070,40 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  ratingCountContainer: {
+    position: 'absolute',
+    top: 4,
+    left: 50,
+    height: 44,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+  },
+  ratingCountValue: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  userCommentIndicator: {
+    position: 'absolute',
+    top: 22,
+    right: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  userCommentCount: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  predictedWinnerContainer: {
+    backgroundColor: '#F5C518',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
 });

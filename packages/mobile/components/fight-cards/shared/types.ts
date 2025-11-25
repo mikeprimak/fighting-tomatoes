@@ -56,6 +56,16 @@ export interface FightData {
   isFollowingFighter2?: boolean;
   averageHype?: number;
   isHypedFight?: boolean;
+  // Comment/Review counts
+  commentCount?: number;
+  userCommentCount?: number;
+  reviewCount?: number;
+  userReviewCount?: number;
+  // Notification data
+  notificationReasons?: {
+    willBeNotified: boolean;
+    reasons?: string[];
+  };
 }
 
 export interface BaseFightCardProps {
