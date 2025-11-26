@@ -1266,7 +1266,7 @@ export default function UpcomingFightDetailScreen({
           </View>
 
           {/* Row of selectable flames (1-10) */}
-          <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: -13, height: 36 }]}>
+          <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: -13, height: 42, justifyContent: 'center' }]}>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
             const isSelected = level <= (selectedHype || 0);
             const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
@@ -1278,17 +1278,17 @@ export default function UpcomingFightDetailScreen({
                 style={styles.flameButton}
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
               >
-                <View style={{ width: 26, alignItems: 'center' }}>
+                <View style={{ width: 32, alignItems: 'center' }}>
                   {isSelected ? (
                     <FontAwesome6
                       name="fire-flame-curved"
-                      size={26}
+                      size={32}
                       color={flameColor}
                     />
                   ) : (
                     <Image
                       source={require('../assets/flame-hollow-alpha-colored.png')}
-                      style={{ width: 26, height: 26 }}
+                      style={{ width: 32, height: 32 }}
                       resizeMode="contain"
                     />
                   )}
@@ -2144,7 +2144,8 @@ const styles = StyleSheet.create({
     marginTop: -15,
   },
   flameButton: {
-    padding: 2,
+    paddingVertical: 2,
+    paddingHorizontal: 1.5,
   },
   scoreRow: {
     flexDirection: 'row',

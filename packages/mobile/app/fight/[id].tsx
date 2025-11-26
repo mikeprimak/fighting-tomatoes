@@ -88,9 +88,14 @@ export default function FightDetailScreen() {
       }
       console.error('Failed to toggle notification:', err);
     },
-    onSettled: () => {
-      // Refetch to ensure we have the latest data
-      queryClient.invalidateQueries({ queryKey: ['fight', id, isAuthenticated] });
+    onSuccess: () => {
+      // Only invalidate other queries that might show this fight's notification status
+      // Don't invalidate the current fight query as it would overwrite our optimistic update
+      queryClient.invalidateQueries({ queryKey: ['fights'] });
+      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
+      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
     },
   });
 
