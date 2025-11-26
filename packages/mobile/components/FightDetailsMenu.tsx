@@ -13,6 +13,7 @@ interface Fighter {
 interface Event {
   id: string;
   name: string;
+  date: string;
 }
 
 interface NotificationReasons {
@@ -47,6 +48,17 @@ interface FightDetailsMenuProps {
   onToggleFighterNotification?: (fighterId: string, enabled: boolean) => void;
   isTogglingFighterNotification?: boolean;
 }
+
+// Format event date for display
+const formatEventDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
 
 export default function FightDetailsMenu({
   fight,
@@ -100,7 +112,7 @@ export default function FightDetailsMenu({
               .filter(reason => reason.isActive)
               .map(reason => {
                 if (reason.type === 'manual') {
-                  return 'You manually enabled notifications for this fight';
+                  return 'You set a notification for this fight.';
                 } else if (reason.type === 'fighter') {
                   // Extract fighter ID from source string like "Fighter Follow: uuid"
                   const fighterId = reason.source.replace('Fighter Follow: ', '');
@@ -136,9 +148,6 @@ export default function FightDetailsMenu({
                             • {reason}
                           </Text>
                         ))}
-                        <Text style={[styles.toggleHintText, { color: colors.textSecondary, marginTop: 4 }]}>
-                          Toggle off to disable notifications for this fight
-                        </Text>
                       </View>
                     ) : (
                       <Text style={[styles.notificationSubtext, { color: colors.textSecondary }]}>
@@ -197,7 +206,7 @@ export default function FightDetailsMenu({
 
           {/* Event Link */}
           <TouchableOpacity
-            style={[styles.menuItem, { borderBottomWidth: 0 }]}
+            style={[styles.menuItem, { borderBottomColor: colors.border }]}
             onPress={() => handleNavigate(`/event/${fight.event.id}`)}
           >
             <View style={styles.menuItemContent}>
@@ -210,6 +219,16 @@ export default function FightDetailsMenu({
               </View>
             </View>
           </TouchableOpacity>
+
+          {/* Event Date */}
+          <View style={[styles.menuItem, { borderBottomWidth: 0 }]}>
+            <View style={styles.menuItemContent}>
+              <Text style={[styles.menuItemLabel, { color: colors.textSecondary }]}>Date</Text>
+              <Text style={[styles.menuItemValue, { color: colors.textSecondary }]}>
+                {formatEventDate(fight.event.date)}
+              </Text>
+            </View>
+          </View>
         </View>
       </TouchableOpacity>
     </Modal>
@@ -266,6 +285,10 @@ const styles = StyleSheet.create({
   menuItemValue: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  menuItemSubValue: {
+    fontSize: 12,
+    marginTop: 2,
   },
   notificationRow: {
     flexDirection: 'row',
