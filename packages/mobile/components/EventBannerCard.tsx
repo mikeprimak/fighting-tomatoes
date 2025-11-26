@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Image, StyleSheet, useWindowDimensions } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 
@@ -83,8 +83,19 @@ export function EventBannerCard({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { line1, line2 } = parseEventName(event.name);
+  const { width: screenWidth } = useWindowDimensions();
+  const [imageHeight, setImageHeight] = useState(200); // Default height until image loads
 
   const imageSource = event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id);
+
+  // Calculate height based on image's natural aspect ratio
+  const handleImageLoad = (e: any) => {
+    const { width, height } = e.nativeEvent.source;
+    if (width && height) {
+      const calculatedHeight = (screenWidth / width) * height;
+      setImageHeight(calculatedHeight);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -92,8 +103,9 @@ export function EventBannerCard({
       <View style={styles.bannerContainer}>
         <Image
           source={imageSource}
-          style={styles.banner}
-          resizeMode="cover"
+          style={[styles.banner, { height: imageHeight }]}
+          resizeMode="contain"
+          onLoad={handleImageLoad}
         />
 
         {/* Overlays on banner image - Bottom Left */}
@@ -134,11 +146,9 @@ const styles = StyleSheet.create({
   bannerContainer: {
     position: 'relative',
     width: '100%',
-    height: 200,
   },
   banner: {
     width: '100%',
-    height: 200,
   },
   bannerOverlays: {
     position: 'absolute',
