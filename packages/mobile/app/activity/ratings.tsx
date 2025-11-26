@@ -20,11 +20,12 @@ import { FightData } from '../../components/FightDisplayCardNew';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import { CommentCard, FlagReviewModal, CustomAlert } from '../../components';
+import { PreFightCommentCard } from '../../components/PreFightCommentCard';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { FontAwesome } from '@expo/vector-icons';
 
 type SortOption = 'newest' | 'rating' | 'aggregate' | 'upvotes' | 'rated-1' | 'rated-2' | 'rated-3' | 'rated-4' | 'rated-5' | 'rated-6' | 'rated-7' | 'rated-8' | 'rated-9' | 'rated-10';
-type FilterType = 'ratings' | 'hype' | 'comments';
+type FilterType = 'ratings' | 'hype' | 'comments' | 'preFightComments';
 
 export default function RatingsActivityScreen() {
   const colorScheme = useColorScheme();
@@ -62,12 +63,27 @@ export default function RatingsActivityScreen() {
     router.push(`/fight/${fight.id}` as any);
   };
 
-  // Upvote mutation for comments
+  // Upvote mutation for comments (FightReview)
   const upvoteMutation = useMutation({
     mutationFn: ({ fightId, reviewId }: { fightId: string; reviewId: string }) =>
       apiService.toggleReviewUpvote(fightId, reviewId),
     onMutate: async ({ reviewId }) => {
       setUpvotingCommentId(reviewId);
+    },
+    onSuccess: () => {
+      refetch();
+    },
+    onSettled: () => {
+      setUpvotingCommentId(null);
+    },
+  });
+
+  // Upvote mutation for pre-fight comments
+  const preFightUpvoteMutation = useMutation({
+    mutationFn: ({ fightId, commentId }: { fightId: string; commentId: string }) =>
+      apiService.togglePreFightCommentUpvote(fightId, commentId),
+    onMutate: async ({ commentId }) => {
+      setUpvotingCommentId(commentId);
     },
     onSuccess: () => {
       refetch();
@@ -110,15 +126,15 @@ export default function RatingsActivityScreen() {
     { value: 'ratings' as FilterType, label: 'My Ratings', icon: 'star' },
     { value: 'hype' as FilterType, label: 'My Hype', icon: 'fire' },
     { value: 'comments' as FilterType, label: 'My Comments', icon: 'comment' },
+    { value: 'preFightComments' as FilterType, label: 'My Pre-Fight Comments', icon: 'comments' },
   ];
 
   // Sort options change based on filter type
   const sortOptions = React.useMemo(() => {
-    if (filterType === 'comments') {
+    if (filterType === 'comments' || filterType === 'preFightComments') {
       return [
         { value: 'newest' as SortOption, label: 'Newest First', icon: 'clock-o' },
         { value: 'upvotes' as SortOption, label: 'Most Upvotes', icon: 'thumbs-up' },
-        { value: 'rating' as SortOption, label: 'My Fight Rating', icon: 'star' },
       ];
     }
 
@@ -373,31 +389,68 @@ export default function RatingsActivityScreen() {
                   }
 
                   // Render comment cards with wrapper (only for comments filter)
-                  if (filterType === 'comments' && item.userReview) {
+                  // Use userReviews (plural) to show all reviews including replies
+                  if (filterType === 'comments' && item.userReviews && item.userReviews.length > 0) {
                     return (
-                      <View style={styles.fightCardContainer}>
-                        <CommentCard
-                          comment={{
-                            ...item.userReview,
-                            user: {
-                              displayName: 'Me'
-                            },
-                            userHasUpvoted: item.userReview.userHasUpvoted || false,
-                            fight: {
-                              id: item.id,
-                              fighter1Name: `${item.fighter1.firstName} ${item.fighter1.lastName}`,
-                              fighter2Name: `${item.fighter2.firstName} ${item.fighter2.lastName}`,
-                              eventName: item.event.name,
-                            }
-                          }}
-                          onPress={() => router.push(`/fight/${item.id}` as any)}
-                          onUpvote={() => upvoteMutation.mutate({ fightId: item.id, reviewId: item.userReview.id })}
-                          onFlag={() => handleFlagReview(item.id, item.userReview.id)}
-                          isUpvoting={upvotingCommentId === item.userReview.id}
-                          isFlagging={flagReviewMutation.isPending && reviewToFlag?.reviewId === item.userReview.id}
-                          isAuthenticated={isAuthenticated}
-                          showMyReview={true}
-                        />
+                      <View>
+                        {item.userReviews.map((review: any) => (
+                          <View key={review.id} style={styles.fightCardContainer}>
+                            <CommentCard
+                              comment={{
+                                ...review,
+                                user: {
+                                  displayName: 'Me'
+                                },
+                                userHasUpvoted: review.userHasUpvoted || false,
+                                fight: {
+                                  id: item.id,
+                                  fighter1Name: `${item.fighter1.firstName} ${item.fighter1.lastName}`,
+                                  fighter2Name: `${item.fighter2.firstName} ${item.fighter2.lastName}`,
+                                  eventName: item.event.name,
+                                }
+                              }}
+                              onPress={() => router.push(`/fight/${item.id}` as any)}
+                              onUpvote={() => upvoteMutation.mutate({ fightId: item.id, reviewId: review.id })}
+                              onFlag={() => handleFlagReview(item.id, review.id)}
+                              isUpvoting={upvotingCommentId === review.id}
+                              isFlagging={flagReviewMutation.isPending && reviewToFlag?.reviewId === review.id}
+                              isAuthenticated={isAuthenticated}
+                              showMyReview={true}
+                            />
+                          </View>
+                        ))}
+                      </View>
+                    );
+                  }
+
+                  // Render pre-fight comment cards
+                  if (filterType === 'preFightComments' && item.preFightComments && item.preFightComments.length > 0) {
+                    return (
+                      <View>
+                        {item.preFightComments.map((comment: any) => (
+                          <View key={comment.id} style={styles.fightCardContainer}>
+                            <PreFightCommentCard
+                              comment={{
+                                ...comment,
+                                user: {
+                                  displayName: 'Me'
+                                },
+                                userHasUpvoted: comment.votes && comment.votes.length > 0,
+                                fight: {
+                                  id: item.id,
+                                  fighter1Name: `${item.fighter1.firstName} ${item.fighter1.lastName}`,
+                                  fighter2Name: `${item.fighter2.firstName} ${item.fighter2.lastName}`,
+                                  eventName: item.event.name,
+                                }
+                              }}
+                              onPress={() => router.push(`/fight/${item.id}` as any)}
+                              onUpvote={() => preFightUpvoteMutation.mutate({ fightId: item.id, commentId: comment.id })}
+                              isUpvoting={upvotingCommentId === comment.id}
+                              isAuthenticated={isAuthenticated}
+                              showMyComment={true}
+                            />
+                          </View>
+                        ))}
                       </View>
                     );
                   }

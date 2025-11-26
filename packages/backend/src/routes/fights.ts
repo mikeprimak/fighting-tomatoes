@@ -3179,7 +3179,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
     page: z.string().transform(val => parseInt(val) || 1).pipe(z.number().int().min(1)).default('1'),
     limit: z.string().transform(val => parseInt(val) || 20).pipe(z.number().int().min(1).max(50)).default('20'),
     sortBy: z.enum(['newest', 'rating', 'aggregate', 'upvotes', 'rated-1', 'rated-2', 'rated-3', 'rated-4', 'rated-5', 'rated-6', 'rated-7', 'rated-8', 'rated-9', 'rated-10']).default('newest'),
-    filterType: z.enum(['ratings', 'hype', 'comments']).default('ratings'),
+    filterType: z.enum(['ratings', 'hype', 'comments', 'preFightComments']).default('ratings'),
     tagFilter: z.string().optional(),
   });
 
@@ -3212,12 +3212,19 @@ export async function fightRoutes(fastify: FastifyInstance) {
         allFightIds = hypedFights.map(h => h.fightId);
         console.log('[DEBUG] Hype filter - found fight IDs:', allFightIds);
       } else if (query.filterType === 'comments') {
-        // Get fights where user has written reviews
+        // Get fights where user has written reviews (top-level OR replies)
         const reviewedFights = await fastify.prisma.fightReview.findMany({
           where: { userId: currentUserId },
           select: { fightId: true },
         });
         allFightIds = Array.from(new Set(reviewedFights.map(r => r.fightId)));
+      } else if (query.filterType === 'preFightComments') {
+        // Get fights where user has written pre-fight comments (top-level OR replies)
+        const preFightCommentedFights = await fastify.prisma.preFightComment.findMany({
+          where: { userId: currentUserId },
+          select: { fightId: true },
+        });
+        allFightIds = Array.from(new Set(preFightCommentedFights.map(c => c.fightId)));
       }
 
 
@@ -3328,6 +3335,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
               content: true,
               rating: true,
               upvotes: true,
+              parentReviewId: true,
               createdAt: true,
               updatedAt: true,
               votes: {
@@ -3359,6 +3367,23 @@ export async function fightRoutes(fastify: FastifyInstance) {
               predictedMethod: true,
               createdAt: true,
               updatedAt: true,
+            },
+          },
+          preFightComments: {
+            where: { userId: currentUserId },
+            select: {
+              id: true,
+              content: true,
+              upvotes: true,
+              parentCommentId: true,
+              createdAt: true,
+              updatedAt: true,
+              votes: {
+                where: { userId: currentUserId },
+                select: {
+                  id: true,
+                },
+              },
             },
           },
         },
@@ -3418,7 +3443,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           transformed.userRatingCreatedAt = fight.ratings[0].createdAt;
         }
 
-        // Transform user review
+        // Transform user review (keep single for backwards compatibility)
         if (fight.reviews && fight.reviews.length > 0) {
           const review = fight.reviews[0];
           const userHasUpvoted = review.votes && review.votes.length > 0 ? review.votes[0].isUpvote : false;
@@ -3431,6 +3456,17 @@ export async function fightRoutes(fastify: FastifyInstance) {
             createdAt: review.createdAt,
             userHasUpvoted,
           };
+
+          // Also return all user reviews (including replies) for the activity screen
+          transformed.userReviews = fight.reviews.map((r: any) => ({
+            id: r.id,
+            content: r.content,
+            rating: r.rating,
+            upvotes: r.upvotes,
+            createdAt: r.createdAt,
+            parentReviewId: r.parentReviewId,
+            userHasUpvoted: r.votes && r.votes.length > 0 ? r.votes[0].isUpvote : false,
+          }));
         }
 
         // Transform user tags
