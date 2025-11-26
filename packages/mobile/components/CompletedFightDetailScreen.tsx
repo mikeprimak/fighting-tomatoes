@@ -1310,6 +1310,7 @@ export default function CompletedFightDetailScreen({
                   isOutcomeRevealed && fight.winner === fight.fighter1.id && { borderColor: '#22c55e', borderWidth: 3 }
                 ]}>
                   <Image
+                    key={`fighter1-winner-${fight.fighter1.id}`}
                     source={
                       fight.fighter1.profileImage
                         ? { uri: fight.fighter1.profileImage }
@@ -1339,6 +1340,7 @@ export default function CompletedFightDetailScreen({
                   isOutcomeRevealed && fight.winner === fight.fighter2.id && { borderColor: '#22c55e', borderWidth: 3 }
                 ]}>
                   <Image
+                    key={`fighter2-winner-${fight.fighter2.id}`}
                     source={
                       fight.fighter2.profileImage
                         ? { uri: fight.fighter2.profileImage }
@@ -1442,7 +1444,7 @@ export default function CompletedFightDetailScreen({
             </View>
 
             {/* Row of selectable stars (1-10) */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: -5, width: '100%' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: -5, width: '100%' }}>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
                 const isSelected = level <= rating;
                 const starColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
@@ -1452,10 +1454,11 @@ export default function CompletedFightDetailScreen({
                     key={level}
                     onPress={() => handleSetRating(level)}
                     hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                    style={{ paddingHorizontal: 2.5 }}
                   >
                     <FontAwesome
                       name={isSelected ? "star" : "star-o"}
-                      size={26}
+                      size={31}
                       color={starColor}
                     />
                   </TouchableOpacity>
@@ -3257,10 +3260,11 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     overflow: 'hidden',
     marginBottom: 8,
+    backgroundColor: '#333',
   },
   whatHappenedImage: {
-    width: '100%',
-    height: '100%',
+    width: 80,
+    height: 80,
   },
   whatHappenedName: {
     fontSize: 14,
