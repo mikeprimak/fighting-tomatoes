@@ -1902,8 +1902,55 @@ export default function CompletedFightDetailScreen({
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
 
-        {/* Comments Section - Add Button */}
-        <View style={[styles.sectionNoBorder, { marginTop: 22 }]}>
+        {/* Comments Tab Toggle */}
+        <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginTop: 50, gap: 8 }}>
+          <TouchableOpacity
+            onPress={() => setCommentsTab('postfight')}
+            style={{
+              flex: 1,
+              paddingVertical: 8,
+              borderRadius: 6,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: commentsTab === 'postfight' ? colors.primary : 'transparent',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{
+              fontSize: 12,
+              fontWeight: '500',
+              color: commentsTab === 'postfight' ? colors.textOnAccent : colors.textSecondary,
+            }}>
+              Post-Fight
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setCommentsTab('preflight')}
+            style={{
+              flex: 1,
+              paddingVertical: 8,
+              borderRadius: 6,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: commentsTab === 'preflight' ? colors.primary : 'transparent',
+              alignItems: 'center',
+            }}
+          >
+            <Text style={{
+              fontSize: 12,
+              fontWeight: '500',
+              color: commentsTab === 'preflight' ? colors.textOnAccent : colors.textSecondary,
+            }}>
+              Pre-Fight
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Post-Fight Comments Section */}
+        {commentsTab === 'postfight' && (
+        <View style={[styles.sectionNoBorder, { marginTop: 10 }]}>
+            {/* Only show header row when a button is visible */}
+            {(!fight.userReview || isEditingComment) && (
             <View style={styles.commentHeaderRow}>
               <View style={{ flex: 1 }} />
               {!fight.userReview && !isEditingComment && !showCommentForm && (
@@ -1961,8 +2008,9 @@ export default function CompletedFightDetailScreen({
                 </Button>
               )}
             </View>
+            )}
 
-            {/* Post-Fight Reviews Content */}
+            {/* Post-Flight Reviews Content */}
             {/* Show comment input when showCommentForm is true (for new comments) OR when editing */}
             {((showCommentForm && !fight.userReview) || isEditingComment) && (
                   <View ref={commentInputRef} collapsable={false} style={{ marginTop: 16 }}>
@@ -2010,7 +2058,7 @@ export default function CompletedFightDetailScreen({
 
             {/* User's review first (if exists and not editing) */}
             {fight.userReview && !isEditingComment && (
-              <View style={{ marginTop: 16 }}>
+              <View style={{ marginTop: 0 }}>
               <CommentCard
                 comment={{
                   id: fight.userReview.id,
@@ -2033,7 +2081,7 @@ export default function CompletedFightDetailScreen({
 
             {/* Other reviews with infinite scroll */}
             {reviewsData?.pages[0]?.reviews && reviewsData.pages[0]?.reviews.length > 0 ? (
-              <View style={{ marginTop: 16 }}>
+              <View style={{ marginTop: 0 }}>
                 {(() => {
                   // Get all reviews and filter out user's own
                   const allReviews = reviewsData.pages.flatMap(page =>
@@ -2298,6 +2346,38 @@ export default function CompletedFightDetailScreen({
               </Text>
             ) : null}
         </View>
+        )}
+
+        {/* Pre-Flight Comments Section */}
+        {commentsTab === 'preflight' && (
+          <View style={[styles.sectionNoBorder, { marginTop: 10 }]}>
+            {preFightCommentsData && preFightCommentsData.comments && preFightCommentsData.comments.length > 0 ? (
+              <View style={{ marginTop: 0 }}>
+                {preFightCommentsData.comments.map((comment: any) => (
+                  <PreFightCommentCard
+                    key={comment.id}
+                    comment={{
+                      id: comment.id,
+                      content: comment.content,
+                      hypeRating: comment.hypeRating,
+                      upvotes: comment.upvotes || 0,
+                      userHasUpvoted: comment.userHasUpvoted || false,
+                      user: {
+                        displayName: comment.user.displayName,
+                      },
+                    }}
+                    isAuthenticated={isAuthenticated}
+                    showMyComment={comment.userId === user?.id}
+                  />
+                ))}
+              </View>
+            ) : (
+              <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
+                No pre-fight comments were made for this fight.
+              </Text>
+            )}
+          </View>
+        )}
 
 
         {/* Split Score Row - HIDDEN */}
