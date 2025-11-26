@@ -837,7 +837,7 @@ export default function CommunityScreen() {
                   key={fight.id}
                   fight={fight}
                   onPress={() => router.push(`/fight/${fight.id}` as any)}
-                  showEvent={true}
+                  showEvent={false}
                 />
               );
             })
@@ -944,7 +944,7 @@ export default function CommunityScreen() {
                 key={fight.id}
                 fight={fight}
                 onPress={() => router.push(`/fight/${fight.id}` as any)}
-                showEvent={true}
+                showEvent={false}
               />
             ))
           ) : (
@@ -956,7 +956,8 @@ export default function CommunityScreen() {
           )}
         </View>
 
-        {/* Classic Fight Section */}
+        {/* Classic Fight Section - HIDDEN */}
+        {false && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', height: 48 }}>
@@ -1015,6 +1016,7 @@ export default function CommunityScreen() {
             </View>
           </TouchableOpacity>
         </View>
+        )}
 
         {/* Hot Predictions Section - HIDDEN */}
         {false && (

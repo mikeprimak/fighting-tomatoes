@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, router } from 'expo-router';
+import { Stack, router, useFocusEffect } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -53,6 +53,13 @@ export default function RatingsActivityScreen() {
       });
     },
   });
+
+  // Refetch data when screen comes back into focus (e.g., after navigating back from fight detail)
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const handleFightPress = (fight: FightData) => {
     // Close any open dropdowns first
