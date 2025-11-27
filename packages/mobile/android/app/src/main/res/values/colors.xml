@@ -4,4 +4,5 @@
   <color name="colorPrimary">#023c69</color>
   <color name="colorPrimaryDark">#181818</color>
   <color name="activityBackground">#181818</color>
+  <color name="notification_icon_color">#F5C518</color>
 </resources>

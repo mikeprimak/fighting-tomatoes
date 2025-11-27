@@ -64,3 +64,25 @@ export const formatMethod = (method: string | null | undefined) => {
   if (method === 'SUBMISSION') return 'Submission';
   return method;
 };
+
+// Format event name for display on fight cards
+// - "UFC 322: Maddalena vs Makhachev" -> "UFC 322"
+// - "UFC Fight Night: Tsarukyan vs Hooker" -> "UFC Tsarukyan vs Hooker"
+export const formatEventName = (eventName: string) => {
+  if (!eventName) return eventName;
+
+  // Check if it's a numbered UFC event (e.g., "UFC 322: ...")
+  const numberedMatch = eventName.match(/^(UFC\s+\d+)/i);
+  if (numberedMatch) {
+    return numberedMatch[1];
+  }
+
+  // Check if it's a Fight Night event (e.g., "UFC Fight Night: Tsarukyan vs Hooker")
+  const fightNightMatch = eventName.match(/^UFC\s+Fight\s+Night[:\s]+(.+)$/i);
+  if (fightNightMatch) {
+    return `UFC ${fightNightMatch[1]}`;
+  }
+
+  // Return original name for other formats
+  return eventName;
+};

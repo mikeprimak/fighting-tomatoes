@@ -9,7 +9,7 @@ import { router } from 'expo-router';
 import { useAuth } from '../../store/AuthContext';
 import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
 import { BaseFightCardProps } from './shared/types';
-import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName } from './shared/utils';
+import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName, formatEventName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
@@ -493,7 +493,7 @@ export default function UpcomingFightCard({
             )}
           </View>
 
-          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -24 : -4 }]}>
+          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: -4 }]}>
             {/* Fighter names with centered "vs" */}
             <View style={styles.fighterNamesContainer}>
               {/* Fighter 1 - Left half */}
@@ -556,24 +556,22 @@ export default function UpcomingFightCard({
               </View>
             </View>
 
-            {/* Event text positioned absolutely below fighter names */}
-            {showEvent && (
-              <Text
-                style={{
-                  position: 'absolute',
-                  bottom: -19,
-                  left: 0,
-                  right: 0,
-                  color: colors.textSecondary,
-                  fontSize: 10,
-                  textAlign: 'center',
-                }}
-                numberOfLines={1}
-              >
-                {fight.event.name} • {formatDate(fight.event.date)}
-              </Text>
-            )}
           </View>
+
+          {/* Event text below fighter names - outside the container */}
+          {showEvent && (
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: 10,
+                textAlign: 'center',
+                marginTop: 2,
+              }}
+              numberOfLines={1}
+            >
+              {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
+            </Text>
+          )}
 
         {/* Status message */}
         {getUpcomingStatusMessage() && (

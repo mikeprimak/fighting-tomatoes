@@ -6,8 +6,18 @@ import { PrismaClient } from '@prisma/client'
 import { AuthRequest } from '../types/auth'
 import { JWTService } from '../utils/jwt'
 import { EmailService } from '../utils/email'
+import { OAuth2Client } from 'google-auth-library'
 
 const prisma = new PrismaClient()
+
+// Google OAuth client - initialized lazily
+let googleClient: OAuth2Client | null = null
+const getGoogleClient = () => {
+  if (!googleClient) {
+    googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+  }
+  return googleClient
+}
 
 // Validation schemas
 const registerSchema = z.object({
@@ -29,6 +39,10 @@ const updateProfileSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   avatar: z.string().optional()
+})
+
+const googleAuthSchema = z.object({
+  idToken: z.string().min(1, 'Google ID token is required')
 })
 
 export class AuthController {
@@ -70,7 +84,13 @@ export class AuthController {
       })
 
       // Send verification email
-    //   await EmailService.sendVerificationEmail(email, verificationToken, firstName)
+      try {
+        await EmailService.sendVerificationEmail(email, verificationToken, firstName)
+        console.log(`[Email] Verification email sent to ${email}`)
+      } catch (emailError) {
+        console.error('[Email] Failed to send verification email:', emailError)
+        // Don't fail registration if email fails - user can request resend
+      }
 
       // Generate tokens (user can use app but with limited features until verified)
       const tokenPayload = {
@@ -206,6 +226,140 @@ export class AuthController {
       res.status(500).json({
         error: 'Internal server error',
         code: 'LOGIN_FAILED'
+      })
+    }
+  }
+
+  static async googleAuth(req: AuthRequest, res: Response) {
+    try {
+      const validatedData = googleAuthSchema.parse(req.body)
+      const { idToken } = validatedData
+
+      // Verify the Google ID token
+      const client = getGoogleClient()
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      })
+
+      const payload = ticket.getPayload()
+      if (!payload || !payload.email) {
+        return res.status(400).json({
+          error: 'Invalid Google token',
+          code: 'INVALID_TOKEN'
+        })
+      }
+
+      const { email, given_name, family_name, picture, sub: googleId } = payload
+
+      // Check if user exists by email
+      let user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() }
+      })
+
+      if (user) {
+        // User exists - check if they signed up with a different provider
+        if (user.authProvider !== 'GOOGLE' && user.authProvider !== 'EMAIL') {
+          return res.status(409).json({
+            error: 'An account with this email already exists with a different sign-in method.',
+            code: 'ACCOUNT_EXISTS_DIFFERENT_PROVIDER'
+          })
+        }
+
+        // If user exists with EMAIL provider, update to GOOGLE (account linking)
+        if (user.authProvider === 'EMAIL' && !user.googleId) {
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              googleId,
+              authProvider: 'GOOGLE',
+              isEmailVerified: true, // Google accounts are pre-verified
+              avatar: user.avatar || picture, // Only update avatar if not already set
+              lastLoginAt: new Date()
+            }
+          })
+          console.log(`[Google Auth] Linked Google account to existing email user: ${email}`)
+        } else {
+          // Update last login
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() }
+          })
+        }
+      } else {
+        // Create new user with Google
+        const displayName = `${given_name || 'User'}${Math.floor(Math.random() * 10000)}`
+
+        user = await prisma.user.create({
+          data: {
+            email: email.toLowerCase(),
+            googleId,
+            authProvider: 'GOOGLE',
+            firstName: given_name || null,
+            lastName: family_name || null,
+            displayName,
+            avatar: picture || null,
+            isEmailVerified: true, // Google accounts are pre-verified
+          }
+        })
+        console.log(`[Google Auth] Created new user via Google: ${email}`)
+      }
+
+      // Check if account is active
+      if (!user.isActive) {
+        return res.status(403).json({
+          error: 'Account is disabled',
+          code: 'ACCOUNT_DISABLED'
+        })
+      }
+
+      // Generate tokens
+      const tokenPayload = {
+        userId: user.id,
+        email: user.email,
+        isEmailVerified: user.isEmailVerified
+      }
+
+      const tokens = JWTService.generateTokenPair(tokenPayload)
+
+      // Store refresh token
+      await prisma.refreshToken.create({
+        data: {
+          token: tokens.refreshToken,
+          userId: user.id,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        }
+      })
+
+      res.json({
+        message: 'Google authentication successful',
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          displayName: user.displayName,
+          avatar: user.avatar,
+          isEmailVerified: user.isEmailVerified,
+          isMedia: user.isMedia,
+          points: user.points,
+          level: user.level
+        },
+        tokens
+      })
+
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: error.errors
+        })
+      }
+
+      console.error('Google auth error:', error)
+      res.status(500).json({
+        error: 'Google authentication failed',
+        code: 'GOOGLE_AUTH_FAILED'
       })
     }
   }
@@ -459,6 +613,56 @@ export class AuthController {
       res.status(500).json({
         error: 'Internal server error',
         code: 'RESET_FAILED'
+      })
+    }
+  }
+
+  static async resendVerificationEmail(req: AuthRequest, res: Response) {
+    try {
+      const { email } = req.body
+
+      if (!email) {
+        return res.status(400).json({
+          error: 'Email is required',
+          code: 'EMAIL_MISSING'
+        })
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() }
+      })
+
+      // Always return success to prevent email enumeration
+      res.json({
+        message: 'If an account with that email exists and is not yet verified, a new verification email has been sent.'
+      })
+
+      if (user && !user.isEmailVerified) {
+        // Generate new verification token
+        const verificationToken = EmailService.generateVerificationToken()
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            emailVerificationToken: verificationToken,
+            emailVerificationExpires: verificationExpires
+          }
+        })
+
+        try {
+          await EmailService.sendVerificationEmail(email, verificationToken, user.firstName || undefined)
+          console.log(`[Email] Resent verification email to ${email}`)
+        } catch (emailError) {
+          console.error('[Email] Failed to resend verification email:', emailError)
+        }
+      }
+
+    } catch (error) {
+      console.error('Resend verification error:', error)
+      res.status(500).json({
+        error: 'Internal server error',
+        code: 'RESEND_FAILED'
       })
     }
   }

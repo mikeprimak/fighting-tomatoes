@@ -32,9 +32,11 @@ const generalLimiter = rateLimit({
 // Public routes
 router.post('/register', authLimiter, AuthController.register)
 router.post('/login', authLimiter, AuthController.login)
+router.post('/google', authLimiter, AuthController.googleAuth)
 router.get('/verify-email', generalLimiter, AuthController.verifyEmail)
 router.post('/request-password-reset', authLimiter, AuthController.requestPasswordReset)
 router.post('/reset-password', authLimiter, AuthController.resetPassword)
+router.post('/resend-verification', authLimiter, AuthController.resendVerificationEmail)
 router.post('/refresh-token', generalLimiter, AuthController.refreshToken)
 
 // Protected routes

@@ -23,6 +23,9 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+// Export for use in auth screens
+export { API_BASE_URL };
+
 interface Fight {
   id: string;
   orderOnCard: number;
