@@ -203,360 +203,98 @@ SCRAPER_MODE=automated node src/services/scrapeAllOneFCData.js
 
 **Test Results**: Successfully scraped 8 events, 10 fights, 20 athletes in 115s
 
-## Planned Features
-
-### Onboarding Flow Improvements (Nov 2025)
-**Status**: 📋 Planned - Refining user authentication and first-time experience
-**Branch**: TBD (suggest `feature/oauth-onboarding`)
-
-**Goals**:
-1. Add Google OAuth sign-in/sign-up
-2. Enable email verification for new users
-3. Refine onboarding UX for new and existing users
-4. Optional: Add biometric auth for returning users
-
----
-
-#### **Task 1: Email Verification**
-**Priority**: HIGH | **Complexity**: Low-Medium | **Estimated**: 4-6 hours
-
-**Backend Changes**:
-- **Enable email sending** (`authController.ts:73`):
-  - Uncomment `await EmailService.sendVerificationEmail(...)`
-  - Configure SMTP credentials in `.env`:
-    ```
-    SMTP_HOST=smtp.sendgrid.net
-    SMTP_PORT=587
-    SMTP_USER=apikey
-    SMTP_PASS=<your-sendgrid-api-key>
-    SMTP_FROM=noreply@fightcrewapp.com
-    ```
-  - Recommended services: SendGrid (free 100 emails/day), Mailgun, AWS SES
-- **Add resend verification endpoint** (`routes/auth.ts`):
-  - `POST /auth/resend-verification` - finds user by email, generates new token
-  - Rate limit: 3 requests per 15 minutes
-- **Optional enforcement** (`middleware/auth.ts`):
-  - Use existing `requireEmailVerification` middleware on critical routes
-  - Example: require verification for creating crews, posting reviews
-
-**Frontend Changes**:
-- **Verification pending screen** (`app/(auth)/verify-email-pending.tsx`):
-  - Show after registration: "We sent you an email!"
-  - Display user's email with option to edit
-  - "Resend Email" button (with cooldown timer)
-  - "Skip for now" button (navigates to main app)
-- **Verification success screen** (`app/(auth)/verify-email-success.tsx`):
-  - Handle deep link: `fightcrewapp://verify-email?token=xxx`
-  - Call `GET /auth/verify-email?token=xxx`
-  - Show success animation + "Email Verified!" message
-  - Auto-navigate to main app after 2s
-- **Verification banner** (persistent component):
-  - Show in tab bar/header if `user.isEmailVerified === false`
-  - Yellow banner: "Verify your email to unlock all features"
-  - Tap to open email app or resend verification
-
-**Testing Checklist**:
-- [ ] Registration sends verification email
-- [ ] Email contains correct verification link
-- [ ] Deep link opens app and verifies email
-- [ ] Expired tokens show error message
-- [ ] Resend verification works and updates token
-- [ ] Unverified users see banner in app
-- [ ] Verified users don't see banner
-
-**Files to Create/Modify**:
-- `packages/backend/src/controllers/authController.ts:73` (enable sending)
-- `packages/backend/src/routes/auth.ts` (add resend endpoint)
-- `packages/mobile/app/(auth)/verify-email-pending.tsx` (new)
-- `packages/mobile/app/(auth)/verify-email-success.tsx` (new)
-- `packages/mobile/components/VerificationBanner.tsx` (new)
-
----
-
-#### **Task 2: Google OAuth Sign-In**
-**Priority**: HIGH | **Complexity**: Medium | **Estimated**: 8-10 hours
-
-**Backend Changes**:
-- **Install dependencies**:
-  ```bash
-  cd packages/backend
-  pnpm add google-auth-library
-  ```
-- **Add Google OAuth route** (`routes/auth.ts`):
-  - `POST /auth/google` - accepts `{ idToken: string }`
-  - Verify token with Google's API: `OAuth2Client.verifyIdToken()`
-  - Extract user info: email, firstName, lastName, avatar
-  - Upsert user in database:
-    ```typescript
-    const user = await prisma.user.upsert({
-      where: { email },
-      update: { lastLoginAt: new Date() },
-      create: {
-        email,
-        googleId: payload.sub,
-        authProvider: 'GOOGLE',
-        firstName: payload.given_name,
-        lastName: payload.family_name,
-        avatar: payload.picture,
-        displayName: `${payload.given_name}${Math.floor(Math.random() * 1000)}`,
-        isEmailVerified: true, // Google accounts are pre-verified
-      }
-    });
-    ```
-  - Handle email conflicts: If email exists with `authProvider: EMAIL`, return error
-  - Generate JWT tokens and return to client
-- **Environment variables** (`.env`):
-  ```
-  GOOGLE_CLIENT_ID=<your-google-client-id>.apps.googleusercontent.com
-  GOOGLE_CLIENT_SECRET=<your-google-client-secret>
-  ```
-- **Update AuthController** (`controllers/authController.ts`):
-  - Add `static async googleAuth(req, res)` method
-  - Add validation schema for Google token
-
-**Frontend Changes**:
-- **Install dependencies**:
-  ```bash
-  cd packages/mobile
-  npx expo install expo-auth-session expo-web-browser
-  ```
-- **Configure Google OAuth** (`app.json`):
-  - Add iOS/Android client IDs from Google Cloud Console
-  - Configure redirect URIs: `fightcrewapp://google-auth`
-- **Update login screen** (`app/(auth)/login.tsx`):
-  - Add "Continue with Google" button (Google logo + text)
-  - Implement OAuth flow:
-    ```typescript
-    const [request, response, promptAsync] = Google.useAuthRequest({
-      iosClientId: 'YOUR_IOS_CLIENT_ID',
-      androidClientId: 'YOUR_ANDROID_CLIENT_ID',
-      webClientId: 'YOUR_WEB_CLIENT_ID',
-    });
-
-    useEffect(() => {
-      if (response?.type === 'success') {
-        const { id_token } = response.params;
-        loginWithGoogle(id_token);
-      }
-    }, [response]);
-    ```
-- **Update register screen** (`app/(auth)/register.tsx`):
-  - Add same "Continue with Google" button at top
-  - Add divider: "or sign up with email"
-- **Update AuthContext** (`store/AuthContext.tsx`):
-  - Add `loginWithGoogle(idToken: string)` method:
-    ```typescript
-    const loginWithGoogle = async (idToken: string) => {
-      const response = await fetch(`${API_BASE_URL}/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
-      });
-      // Handle response same as regular login
-    };
-    ```
-
-**Google Cloud Console Setup**:
-1. Create project at https://console.cloud.google.com
-2. Enable Google+ API
-3. Create OAuth 2.0 credentials:
-   - **Web client**: For backend verification
-   - **iOS client**: Bundle ID `com.fightcrewapp.mobile`
-   - **Android client**: Package name + SHA-1 certificate fingerprint
-4. Configure consent screen with app logo and privacy policy
-5. Add authorized redirect URIs: `fightcrewapp://google-auth`
-
-**Testing Checklist**:
-- [ ] "Continue with Google" button shows on login/register
-- [ ] Tapping button opens Google sign-in sheet
-- [ ] Selecting account sends idToken to backend
-- [ ] New users are created with Google profile data
-- [ ] Existing Google users can log in
-- [ ] Email conflict shows friendly error message
-- [ ] Avatar from Google is displayed in app
-- [ ] Test on iOS, Android, and web
-
-**Files to Create/Modify**:
-- `packages/backend/src/routes/auth.ts` (add /auth/google endpoint)
-- `packages/backend/src/controllers/authController.ts` (add googleAuth method)
-- `packages/backend/.env` (add Google credentials)
-- `packages/mobile/app/(auth)/login.tsx` (add Google button)
-- `packages/mobile/app/(auth)/register.tsx` (add Google button)
-- `packages/mobile/store/AuthContext.tsx` (add loginWithGoogle)
-- `packages/mobile/app.json` (add Google OAuth config)
-
-**Edge Cases to Handle**:
-- User signs up with email, later tries Google with same email → Link accounts or show error?
-- User deletes Google account → How to handle orphaned account?
-- Google token verification fails → Show "Sign in with Google failed" error
-- Network timeout during OAuth flow → Show retry button
-
----
-
-#### **Task 3: Refine Onboarding Flow**
-**Priority**: MEDIUM | **Complexity**: Medium-High | **Estimated**: 10-12 hours
-
-**New User Journey**:
-1. **Welcome/Landing Screen** (`app/(auth)/welcome.tsx`):
-   - App logo + tagline: "Rate Fights. Predict Winners. Join Crews."
-   - 3-4 feature highlights with icons:
-     - "Rate every UFC fight from 1-10"
-     - "Predict winners and earn points"
-     - "Follow your favorite fighters"
-     - "Join crews and compete with friends"
-   - Two CTA buttons:
-     - "Continue with Google" (primary, yellow)
-     - "Sign up with Email" (secondary, outlined)
-   - Bottom link: "Already have an account? Sign In"
-   - Optional: "Skip for now" (guest mode - browse only, no actions)
-
-2. **Simplified Registration** (`app/(auth)/register.tsx`):
-   - **Remove firstName/lastName fields** or make them truly optional
-   - Keep only: Email, Password, Confirm Password
-   - Add password strength indicator (weak/medium/strong)
-   - Add "Show Password" toggle button
-   - Move "Already have an account?" link to bottom
-   - Add terms/privacy checkbox:
-     - "I agree to the Terms of Service and Privacy Policy"
-     - Required before enabling "Create Account" button
-
-3. **Onboarding Tutorial** (`app/(auth)/onboarding-tutorial.tsx`):
-   - Optional: Show only on first launch after registration
-   - Swipeable carousel with 3-4 slides:
-     - Slide 1: "Rate Fights" - screenshot of rating UI
-     - Slide 2: "Make Predictions" - screenshot of prediction UI
-     - Slide 3: "Follow Fighters" - screenshot of fighter follow
-     - Slide 4: "Join Crews" - screenshot of crew chat
-   - Skip button in top-right corner
-   - Progress dots at bottom
-   - Final slide: "Get Started" button → main app
-
-4. **First-Time Setup** (optional steps after tutorial):
-   - **Notification Permission Prompt**:
-     - Custom screen explaining why notifications are useful
-     - "Enable Notifications" button → triggers system permission
-     - "Not Now" button → can enable later in settings
-   - **Follow Favorite Fighters** (optional):
-     - Show grid of 20 popular fighters with headshots
-     - Tap to select, counter at top: "3 selected"
-     - "Continue" button → follows selected fighters
-     - "Skip" button → can follow later
-
-**Existing User Improvements**:
-1. **Enhanced Login Screen** (`app/(auth)/login.tsx`):
-   - Add "Continue with Google" at top
-   - Add divider: "or sign in with email"
-   - Add "Forgot Password?" link below password field
-   - Remove dev credential buttons for production
-   - Add "Remember Me" checkbox (optional):
-     - Stores refresh token in secure storage
-     - Auto-logs in on app restart
-
-2. **Forgot Password Flow** (backend already supports!):
-   - **Reset Request Screen** (`app/(auth)/forgot-password.tsx`):
-     - Email input field
-     - "Send Reset Link" button
-     - Calls `POST /auth/request-password-reset`
-     - Success: "Check your email for reset instructions"
-   - **Reset Password Screen** (`app/(auth)/reset-password.tsx`):
-     - Handle deep link: `fightcrewapp://reset-password?token=xxx`
-     - New password + confirm password fields
-     - Password strength indicator
-     - Calls `POST /auth/reset-password` with token + new password
-     - Success: "Password updated!" → redirect to login
-
-3. **Biometric Authentication** (optional, nice-to-have):
-   - Install `expo-local-authentication`
-   - Add opt-in prompt after first login:
-     - "Enable Face ID / Touch ID for faster login?"
-     - Store encrypted refresh token in Keychain
-   - On app restart:
-     - Show biometric prompt instead of login screen
-     - On success, use stored refresh token to get access token
-   - Settings toggle to disable biometric auth
-
-**UI/UX Polish**:
-- **Loading States**:
-  - Skeleton screens while loading (fighters, events)
-  - Spinner on auth buttons during API calls
-  - Disable buttons to prevent double-tap
-- **Error Handling**:
-  - Toast notifications for network errors
-  - Inline validation errors (red text under inputs)
-  - Retry buttons for failed requests
-- **Animations**:
-  - Fade transitions between auth screens
-  - Slide-up animation for modals
-  - Success checkmark animation after verification
-- **Accessibility**:
-  - High contrast mode support
-  - Screen reader labels for all buttons
-  - Larger touch targets (min 44x44 points)
-
-**Testing Checklist**:
-- [ ] Welcome screen shows on first launch
-- [ ] Tutorial can be skipped or completed
-- [ ] Google sign-up creates account and skips email verification
-- [ ] Email sign-up goes through verification flow
-- [ ] Forgot password sends email and resets password
-- [ ] Biometric auth works on supported devices
-- [ ] Follow fighters on first launch (if implemented)
-- [ ] Notification permission prompt shows (if implemented)
-- [ ] Remember me keeps user logged in
-- [ ] All screens work in light and dark mode
-- [ ] Keyboard behavior works correctly on all forms
-
-**Files to Create**:
-- `packages/mobile/app/(auth)/welcome.tsx`
-- `packages/mobile/app/(auth)/onboarding-tutorial.tsx`
-- `packages/mobile/app/(auth)/forgot-password.tsx`
-- `packages/mobile/app/(auth)/reset-password.tsx`
-- `packages/mobile/components/PasswordStrengthIndicator.tsx`
-- `packages/mobile/hooks/useBiometricAuth.ts` (if implemented)
-
-**Files to Modify**:
-- `packages/mobile/app/(auth)/login.tsx` (add forgot password link, Google button)
-- `packages/mobile/app/(auth)/register.tsx` (simplify, add terms checkbox)
-- `packages/mobile/app/_layout.tsx` (handle first-launch routing)
-- `packages/mobile/store/AuthContext.tsx` (add biometric auth methods)
-
----
-
-#### **Implementation Order (Recommended)**
-
-**Phase 1: Quick Wins (1-2 days)**
-1. ✅ Simplify registration form (remove/make optional firstName/lastName)
-2. ✅ Add "Forgot Password?" link to login screen (backend ready!)
-3. ✅ Uncomment email verification sending in authController
-4. ✅ Configure SMTP credentials (SendGrid free tier)
-5. ✅ Test email verification end-to-end
-
-**Phase 2: OAuth Integration (2-3 days)**
-1. ✅ Set up Google Cloud Console project
-2. ✅ Implement backend `/auth/google` endpoint
-3. ✅ Install expo-auth-session in mobile
-4. ✅ Add "Continue with Google" buttons to login/register
-5. ✅ Test on iOS and Android devices
-
-**Phase 3: Onboarding Flow (3-4 days)**
-1. ✅ Create welcome/landing screen
-2. ✅ Build forgot password flow screens
-3. ✅ Add email verification pending/success screens
-4. ✅ Create onboarding tutorial carousel (optional)
-5. ✅ Add first-time setup screens (notifications, fighters)
-6. ✅ Polish UI with loading states and animations
-
-**Phase 4: Nice-to-Haves (optional)**
-1. ⭕ Biometric authentication
-2. ⭕ Remember me functionality
-3. ⭕ Account linking (Google + Email)
-4. ⭕ Social sign-in with Apple (required for App Store if Google is offered)
-
-**Total Estimated Time**: 6-9 days (1-2 weeks with testing/polish)
-
----
-
 ## Recent Features
+
+### Google Sign-In (Nov 2025)
+**Status**: ✅ WORKING - Tested on Android device
+**Branch**: `redesign-fight-card-components`
+
+**Implementation**:
+- Native Google Sign-In using `@react-native-google-signin/google-signin`
+- Backend Fastify route `POST /api/auth/google` verifies ID token
+- Creates new users or links existing email accounts to Google
+- Account picker shows every time (signOut before signIn)
+
+**Key Files**:
+- `packages/backend/src/routes/auth.fastify.ts` - `/google` endpoint (lines 1184-1400)
+- `packages/mobile/hooks/useGoogleAuth.ts` - Native Google Sign-In hook
+- `packages/mobile/components/GoogleSignInButton.tsx` - Reusable button component
+- `packages/mobile/app.json` - Added `@react-native-google-signin/google-signin` plugin
+
+**Configuration (Already Done)**:
+- Google Cloud Console project created
+- OAuth credentials: Web, iOS, Android client IDs
+- Web Client ID: `499367908516-f5qu2rjeot6iqnhld7o3tg71tqdqlngk.apps.googleusercontent.com`
+- Backend `.env`: `GOOGLE_CLIENT_ID` configured
+- Mobile `.env`: All three client IDs configured
+- EAS development build includes native Google Sign-In module
+
+**Testing Results** (Nov 26, 2025):
+- [x] "Continue with Google" button appears on login/register screens
+- [x] Tapping opens Google account picker (shows all Google accounts)
+- [x] Selecting account authenticates successfully
+- [x] New user created with Google profile data
+- [x] JWT tokens returned and stored correctly
+
+---
+
+### Onboarding Flow Screens (Nov 2025)
+**Status**: ✅ Code Complete - Email flows need testing
+**Branch**: `redesign-fight-card-components`
+
+**What Was Implemented**:
+1. **Welcome Screen** - Landing page with Google + Email sign-up options
+2. **Email Verification Flow** - Pending/success screens, verification banner
+3. **Forgot Password Flow** - Request reset + password reset screens
+
+**Key Files Created**:
+- `packages/mobile/app/(auth)/welcome.tsx` - Landing screen
+- `packages/mobile/app/(auth)/verify-email-pending.tsx` - Post-registration screen
+- `packages/mobile/app/(auth)/verify-email-success.tsx` - Deep link handler
+- `packages/mobile/app/(auth)/forgot-password.tsx` - Password reset request
+- `packages/mobile/app/(auth)/reset-password.tsx` - New password entry
+- `packages/mobile/components/VerificationBanner.tsx` - Banner for unverified users
+
+**Backend Configuration (Already Done)**:
+- SendGrid SMTP configured in `.env`
+- `SKIP_EMAIL_VERIFICATION=true` (flip to `false` to enable)
+
+---
+
+### TODO: Remaining Testing
+
+**Email Verification** (requires `SKIP_EMAIL_VERIFICATION=false`):
+- [ ] New registration sends verification email
+- [ ] "Resend Email" button works with cooldown
+- [ ] Deep link `?token=xxx` verifies email
+- [ ] VerificationBanner shows for unverified users
+
+**Forgot Password**:
+- [ ] "Forgot password?" link on login goes to forgot-password screen
+- [ ] Entering email sends reset link (requires SMTP config)
+- [ ] Reset password screen validates password strength
+- [ ] Password reset succeeds and redirects to login
+
+**Welcome Screen**:
+- [ ] Feature list displays correctly
+- [ ] Google sign-up button works
+- [ ] "Sign up with Email" goes to register screen
+- [ ] "Sign In" link goes to login screen
+
+---
+
+### TODO: Future Enhancements (Nice-to-Haves)
+
+- [ ] **Apple Sign-In** - Required for App Store if Google is offered
+- [ ] **Biometric Authentication** - Face ID / Touch ID for returning users
+- [ ] **Remember Me** - Auto-login with stored refresh token
+- [ ] **Onboarding Tutorial** - Swipeable carousel for first-time users
+- [ ] **Follow Fighters on Signup** - Grid of popular fighters to follow
+- [ ] **Notification Permission Prompt** - Custom screen explaining benefits
+- [ ] **Terms/Privacy Checkbox** - Required on registration form
+- [ ] **Remove Dev Login Buttons** - Hide test credentials in production
+
+---
 
 ### Nested Comments System (Nov 2025)
 **Status**: 🚧 In Progress - Backend complete, frontend complete, testing in progress
