@@ -20,6 +20,13 @@
       "backgroundColor": "#181818",
       "runtimeVersion": {
         "policy": "appVersion"
+      },
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["fightcrewapp"]
+          }
+        ]
       }
     },
     "android": {
@@ -65,7 +72,9 @@
           "color": "#F5C518",
           "sounds": []
         }
-      ]
+      ],
+      "expo-web-browser",
+      "@react-native-google-signin/google-signin"
     ],
     "scheme": "fightcrewapp",
     "extra": {

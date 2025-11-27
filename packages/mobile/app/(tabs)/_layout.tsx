@@ -1,10 +1,12 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { useAuth } from '../../store/AuthContext';
 import { Redirect } from 'expo-router';
 import { FightCrewAppTabBar } from '../../components';
+import { VerificationBanner } from '../../components/VerificationBanner';
 
 export default function TabLayout() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   // Show loading state while checking auth
   if (isLoading) {
@@ -16,5 +18,22 @@ export default function TabLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
-  return <FightCrewAppTabBar />;
+  return (
+    <View style={styles.container}>
+      {/* Show verification banner if user email is not verified */}
+      {user && !user.isEmailVerified && <VerificationBanner />}
+      <View style={styles.tabContainer}>
+        <FightCrewAppTabBar />
+      </View>
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  tabContainer: {
+    flex: 1,
+  },
+});

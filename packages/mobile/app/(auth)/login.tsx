@@ -15,6 +15,7 @@ import { useAuth } from '../../store/AuthContext';
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
+import { GoogleSignInButton } from '../../components/GoogleSignInButton';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -156,6 +157,21 @@ export default function LoginScreen() {
             <Text style={styles.subtitle}>FightCrewApp</Text>
           </View>
 
+        {/* Google Sign-In Button */}
+        <View style={styles.oauthContainer}>
+          <GoogleSignInButton
+            mode="signin"
+            onError={(err) => setStatus(`Google sign-in failed: ${err}`)}
+          />
+        </View>
+
+        {/* Divider */}
+        <View style={styles.dividerContainer}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or sign in with email</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
         {/* Status Display */}
         {status ? (
           <View style={styles.statusContainer}>
@@ -189,6 +205,12 @@ export default function LoginScreen() {
               secureTextEntry
               autoCapitalize="none"
             />
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={() => router.push('/(auth)/forgot-password')}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
@@ -430,5 +452,32 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   signUpLinkText: {
     fontWeight: '600',
+  },
+  oauthContainer: {
+    marginBottom: 16,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '500',
   },
 });

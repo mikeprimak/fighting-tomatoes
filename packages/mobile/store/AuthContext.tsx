@@ -41,6 +41,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (idToken: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
@@ -162,6 +163,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async (idToken: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Google authentication failed');
+      }
+
+      // Store tokens and user data
+      await AsyncStorage.setItem('accessToken', data.tokens.accessToken);
+      await AsyncStorage.setItem('refreshToken', data.tokens.refreshToken);
+      await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+
+      setAccessToken(data.tokens.accessToken);
+      setUser(data.user);
+
+      // Clear query cache to ensure fresh data for the new user
+      queryClient.clear();
+      console.log('Query cache cleared on Google login');
+
+      // Register push token
+      await notificationService.registerPushToken();
+
+      // Navigate to main app
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw error;
+    }
+  };
+
   const register = async (userData: RegisterData) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -195,8 +235,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Register push token
       await notificationService.registerPushToken();
 
-      // Navigate to main app
-      router.replace('/(tabs)');
+      // Navigate to email verification pending screen for email signups
+      // (Google signups are already verified and go straight to main app)
+      router.replace({
+        pathname: '/(auth)/verify-email-pending',
+        params: { email: userData.email },
+      });
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
@@ -333,6 +377,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     isAuthenticated,
     login,
+    loginWithGoogle,
     register,
     logout,
     refreshToken,

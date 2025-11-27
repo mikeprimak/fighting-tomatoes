@@ -1,6 +1,16 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
+
+// Google OAuth client (lazily initialized)
+let googleClient: OAuth2Client | null = null;
+function getGoogleClient(): OAuth2Client {
+  if (!googleClient) {
+    googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  }
+  return googleClient;
+}
 
 // Fastify-compatible auth routes
 // Fixed nullable fields in schema
@@ -1164,6 +1174,224 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
     } catch (error: any) {
       request.log.error('Check displayName error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Google OAuth endpoint
+  fastify.post('/google', {
+    schema: {
+      description: 'Authenticate with Google OAuth',
+      tags: ['auth'],
+      body: {
+        type: 'object',
+        required: ['idToken'],
+        properties: {
+          idToken: { type: 'string' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+            user: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                email: { type: 'string' },
+                firstName: { type: 'string', nullable: true },
+                lastName: { type: 'string', nullable: true },
+                displayName: { type: 'string' },
+                avatar: { type: 'string', nullable: true },
+                isEmailVerified: { type: 'boolean' },
+                isMedia: { type: 'boolean' },
+                points: { type: 'integer' },
+                level: { type: 'integer' },
+              },
+            },
+            tokens: {
+              type: 'object',
+              properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+              },
+            },
+          },
+        },
+        400: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        403: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        409: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { idToken } = request.body as { idToken: string };
+
+      if (!idToken) {
+        return reply.code(400).send({
+          error: 'ID token is required',
+          code: 'VALIDATION_ERROR',
+        });
+      }
+
+      // Verify the Google ID token
+      const client = getGoogleClient();
+      let payload;
+      try {
+        const ticket = await client.verifyIdToken({
+          idToken,
+          audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        payload = ticket.getPayload();
+      } catch (verifyError: any) {
+        request.log.error('Google token verification failed:', verifyError);
+        return reply.code(400).send({
+          error: 'Invalid Google token',
+          code: 'INVALID_TOKEN',
+        });
+      }
+
+      if (!payload || !payload.email) {
+        return reply.code(400).send({
+          error: 'Invalid Google token - no email in payload',
+          code: 'INVALID_TOKEN',
+        });
+      }
+
+      const { email, given_name, family_name, picture, sub: googleId } = payload;
+      const normalizedEmail = email.toLowerCase();
+
+      // Check if user exists by email
+      let user = await fastify.prisma.user.findUnique({
+        where: { email: normalizedEmail }
+      });
+
+      if (user) {
+        // User exists - check if they signed up with a different provider
+        if (user.authProvider !== 'GOOGLE' && user.authProvider !== 'EMAIL') {
+          return reply.code(409).send({
+            error: 'An account with this email already exists with a different sign-in method.',
+            code: 'ACCOUNT_EXISTS_DIFFERENT_PROVIDER',
+          });
+        }
+
+        // If user exists with EMAIL provider, update to GOOGLE (account linking)
+        if (user.authProvider === 'EMAIL' && !user.googleId) {
+          user = await fastify.prisma.user.update({
+            where: { id: user.id },
+            data: {
+              googleId,
+              authProvider: 'GOOGLE',
+              isEmailVerified: true, // Google accounts are pre-verified
+              avatar: user.avatar || picture, // Only update avatar if not already set
+              lastLoginAt: new Date()
+            }
+          });
+          request.log.info(`[Google Auth] Linked Google account to existing email user: ${normalizedEmail}`);
+        } else {
+          // Update last login
+          user = await fastify.prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() }
+          });
+        }
+      } else {
+        // Create new user with Google
+        const displayName = `${given_name || 'User'}${Math.floor(Math.random() * 10000)}`;
+
+        user = await fastify.prisma.user.create({
+          data: {
+            email: normalizedEmail,
+            googleId,
+            authProvider: 'GOOGLE',
+            firstName: given_name || null,
+            lastName: family_name || null,
+            displayName,
+            avatar: picture || null,
+            isEmailVerified: true, // Google accounts are pre-verified
+          }
+        });
+        request.log.info(`[Google Auth] Created new user via Google: ${normalizedEmail}`);
+      }
+
+      // Check if account is active
+      if (!user.isActive) {
+        return reply.code(403).send({
+          error: 'Account is disabled',
+          code: 'ACCOUNT_DISABLED',
+        });
+      }
+
+      // Generate tokens
+      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const accessToken = jwt.sign(
+        { userId: user.id, email: user.email, isEmailVerified: user.isEmailVerified },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      const refreshToken = jwt.sign(
+        { userId: user.id, type: 'refresh' },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      // Store refresh token in database
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      await fastify.prisma.refreshToken.create({
+        data: {
+          token: refreshToken,
+          userId: user.id,
+          expiresAt,
+        }
+      });
+
+      return reply.code(200).send({
+        message: 'Google authentication successful',
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          displayName: user.displayName,
+          avatar: user.avatar,
+          isEmailVerified: user.isEmailVerified,
+          isMedia: user.isMedia,
+          points: user.points,
+          level: user.level
+        },
+        tokens: {
+          accessToken,
+          refreshToken,
+        }
+      });
+
+    } catch (error: any) {
+      request.log.error('Google auth error:', error);
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',

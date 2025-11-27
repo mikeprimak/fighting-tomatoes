@@ -16,6 +16,7 @@ import { Colors } from '../../constants/Colors';
 import { useColorScheme } from 'react-native';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { CustomAlert } from '../../components/CustomAlert';
+import { GoogleSignInButton } from '../../components/GoogleSignInButton';
 
 export default function RegisterScreen() {
   const [formData, setFormData] = useState({
@@ -88,6 +89,21 @@ export default function RegisterScreen() {
               <Text style={styles.title}>🥊</Text>
               <Text style={styles.subtitle}>Join FightCrewApp</Text>
               <Text style={styles.tagline}>Start rating fights today</Text>
+            </View>
+
+            {/* Google Sign-Up Button */}
+            <View style={styles.oauthContainer}>
+              <GoogleSignInButton
+                mode="signup"
+                onError={(err) => showError(err, 'Google Sign-In Failed')}
+              />
+            </View>
+
+            {/* Divider */}
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or sign up with email</Text>
+              <View style={styles.dividerLine} />
             </View>
 
             {/* Registration Form */}
@@ -276,5 +292,23 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     color: colors.primary,
     fontWeight: '600',
+  },
+  oauthContainer: {
+    marginBottom: 16,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
 });
