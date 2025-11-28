@@ -114,6 +114,7 @@ async function start() {
         'exp://10.0.0.53:8081',       // Expo mobile development
         'exp://10.0.0.53:8083',       // Expo mobile development (current port)
         'exp://10.0.0.53:8087',       // Expo mobile development
+        'https://goodfights.app',     // Production landing pages (email verification, password reset)
       ],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
