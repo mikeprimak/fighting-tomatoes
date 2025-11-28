@@ -1316,6 +1316,21 @@ class ApiService {
   }> {
     return this.makeRequest(`/auth/profile/global-standing?timeFilter=${timeFilter}`);
   }
+
+  // ==================== EMAIL VERIFICATION ====================
+
+  /**
+   * Resend verification email to the user
+   * @param email - User's email address
+   */
+  async resendVerificationEmail(email: string): Promise<{
+    message: string;
+  }> {
+    return this.makeRequest('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
 }
 
 export const apiService = new ApiService();
