@@ -271,12 +271,12 @@ SCRAPER_MODE=automated node src/services/scrapeAllOneFCData.js
 ---
 
 ### Onboarding Flow Screens (Nov 2025)
-**Status**: ✅ Complete - All auth endpoints tested and working
+**Status**: ✅ Complete - Email verification tested and working end-to-end
 **Branch**: `redesign-fight-card-components`
 
 **What Was Implemented**:
 1. **Welcome Screen** - Landing page with Google + Email sign-up options
-2. **Email Verification Flow** - Pending/success screens, verification banner
+2. **Email Verification Flow** - Pending/success screens, verification banner with resend
 3. **Forgot Password Flow** - Request reset + password reset screens
 
 **Key Files Created**:
@@ -285,25 +285,47 @@ SCRAPER_MODE=automated node src/services/scrapeAllOneFCData.js
 - `packages/mobile/app/(auth)/verify-email-success.tsx` - Deep link handler
 - `packages/mobile/app/(auth)/forgot-password.tsx` - Password reset request
 - `packages/mobile/app/(auth)/reset-password.tsx` - New password entry
-- `packages/mobile/components/VerificationBanner.tsx` - Banner for unverified users
+- `packages/mobile/components/VerificationBanner.tsx` - Banner with resend button
+- `packages/mobile/services/api.ts` - `resendVerificationEmail()` method
 
-**Backend Configuration (Already Done)**:
-- SendGrid SMTP configured in `.env`
-- `SKIP_EMAIL_VERIFICATION=true` (flip to `false` to enable)
+**Web Landing Pages** (deployed to goodfights.app):
+- `verify-email.html` - Handles email verification links
+- `reset-password.html` - Handles password reset links
+
+**Backend Configuration**:
+- SendGrid SMTP configured in Render env vars
+- CORS allows `https://goodfights.app` in `server.ts` (NOT `cors.ts`)
+- No `SKIP_EMAIL_VERIFICATION` needed (emails always sent)
+
+**Render Environment Variables Required**:
+```
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USER=apikey
+SMTP_PASS=<your-sendgrid-api-key>
+SMTP_FROM=noreply@goodfights.app
+FRONTEND_URL=https://goodfights.app
+```
+
+**IMPORTANT - CORS Configuration**:
+- CORS is configured in `packages/backend/src/server.ts` using `@fastify/cors`
+- The file `packages/backend/src/middleware/cors.ts` is NOT used (Express middleware)
+- To add allowed origins, edit the `origin` array in `server.ts:103-118`
 
 ---
 
 ### TODO: Remaining Testing
 
-**Email Verification** (requires `SKIP_EMAIL_VERIFICATION=false`):
-- [ ] New registration sends verification email
-- [ ] "Resend Email" button works with cooldown
-- [ ] Deep link `?token=xxx` verifies email
-- [ ] VerificationBanner shows for unverified users
+**Email Verification** - ✅ COMPLETE (Nov 28, 2025):
+- [x] New registration sends verification email
+- [x] "Resend" button in banner works
+- [x] Verification link opens success page
+- [x] VerificationBanner shows for unverified users
+- [x] Banner disappears after verification (on app foreground)
 
 **Forgot Password**:
 - [ ] "Forgot password?" link on login goes to forgot-password screen
-- [ ] Entering email sends reset link (requires SMTP config)
+- [ ] Entering email sends reset link
 - [ ] Reset password screen validates password strength
 - [ ] Password reset succeeds and redirects to login
 
