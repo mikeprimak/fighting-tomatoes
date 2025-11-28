@@ -24,10 +24,11 @@
       "infoPlist": {
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["fightcrewapp"]
+            "CFBundleURLSchemes": ["goodfights", "fightcrewapp"]
           }
         ]
-      }
+      },
+      "associatedDomains": ["applinks:goodfights.app"]
     },
     "android": {
       "adaptiveIcon": {
@@ -47,7 +48,30 @@
           "action": "VIEW",
           "data": [
             {
+              "scheme": "goodfights"
+            },
+            {
               "scheme": "fightcrewapp"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "goodfights.app",
+              "pathPrefix": "/verify-email"
+            },
+            {
+              "scheme": "https",
+              "host": "goodfights.app",
+              "pathPrefix": "/reset-password"
             }
           ],
           "category": [
@@ -76,7 +100,7 @@
       "expo-web-browser",
       "@react-native-google-signin/google-signin"
     ],
-    "scheme": "fightcrewapp",
+    "scheme": "goodfights",
     "extra": {
       "router": {
         "origin": false
