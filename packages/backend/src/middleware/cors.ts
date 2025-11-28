@@ -10,6 +10,7 @@ const corsOptions = {
       'http://localhost:3000',
       'http://localhost:8081', // Expo default
       'exp://localhost:19000', // Expo development
+      'https://goodfights.app', // Landing pages for email verification/password reset
       process.env.FRONTEND_URL,
       process.env.MOBILE_APP_URL
     ].filter(Boolean)
