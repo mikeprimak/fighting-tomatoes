@@ -111,8 +111,9 @@ export default function TabBar({ tabs, defaultHeaderTitle, children }: TabBarPro
 
 /**
  * Pre-configured FightCrewApp Tab Bar
+ * @param skipHeaderSafeArea - When true, removes top safe area from header (used when banner is above)
  */
-export function FightCrewAppTabBar() {
+export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?: boolean }) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
@@ -135,6 +136,8 @@ export function FightCrewAppTabBar() {
         sceneStyle: {
           backgroundColor: colors.background,
         },
+        // When banner is visible above, skip top safe area (banner already handles it)
+        ...(skipHeaderSafeArea && { headerStatusBarHeight: 0 }),
       }}
     >
       <Tabs.Screen

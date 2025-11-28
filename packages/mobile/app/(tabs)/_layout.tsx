@@ -18,12 +18,14 @@ export default function TabLayout() {
     return <Redirect href="/(auth)/login" />;
   }
 
+  const showBanner = !!(user && !user.isEmailVerified);
+
   return (
     <View style={styles.container}>
       {/* Show verification banner if user email is not verified */}
-      {user && !user.isEmailVerified && <VerificationBanner />}
+      {showBanner && <VerificationBanner />}
       <View style={styles.tabContainer}>
-        <FightCrewAppTabBar />
+        <FightCrewAppTabBar skipHeaderSafeArea={showBanner} />
       </View>
     </View>
   );
