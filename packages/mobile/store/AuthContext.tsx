@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { Platform } from 'react-native';
+import { Platform, AppState, AppStateStatus } from 'react-native';
 import { AnalyticsService } from '../services/analytics';
 import { notificationService } from '../services/notificationService';
 import type { Notification, NotificationResponse } from 'expo-notifications';
@@ -42,6 +42,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
+  loginWithApple: (identityToken: string, email?: string, firstName?: string, lastName?: string) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
@@ -82,8 +83,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const appState = useRef(AppState.currentState);
 
   const isAuthenticated = !!user && !!accessToken;
+
+  // Internal refresh function for use in effects
+  const refreshUserDataInternal = async () => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      const data = await response.json();
+      if (response.ok && data.user) {
+        setUser(data.user);
+        await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
 
   // Initialize auth state on app start
   useEffect(() => {
@@ -98,6 +121,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.remove();
   }, []);
+
+  // Refresh user data when app comes to foreground
+  // This catches changes made externally (e.g., email verification via web)
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === 'active' &&
+        accessToken
+      ) {
+        console.log('App came to foreground, refreshing user data...');
+        await refreshUserDataInternal();
+      }
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [accessToken]);
 
   const initializeAuth = async () => {
     try {
@@ -198,6 +240,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.replace('/(tabs)');
     } catch (error) {
       console.error('Google login error:', error);
+      throw error;
+    }
+  };
+
+  const loginWithApple = async (identityToken: string, email?: string, firstName?: string, lastName?: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/apple`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ identityToken, email, firstName, lastName }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Apple authentication failed');
+      }
+
+      // Store tokens and user data
+      await AsyncStorage.setItem('accessToken', data.tokens.accessToken);
+      await AsyncStorage.setItem('refreshToken', data.tokens.refreshToken);
+      await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+
+      setAccessToken(data.tokens.accessToken);
+      setUser(data.user);
+
+      // Clear query cache to ensure fresh data for the new user
+      queryClient.clear();
+      console.log('Query cache cleared on Apple login');
+
+      // Register push token
+      await notificationService.registerPushToken();
+
+      // Navigate to main app
+      router.replace('/(tabs)');
+    } catch (error) {
+      console.error('Apple login error:', error);
       throw error;
     }
   };
@@ -378,6 +459,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAuthenticated,
     login,
     loginWithGoogle,
+    loginWithApple,
     register,
     logout,
     refreshToken,

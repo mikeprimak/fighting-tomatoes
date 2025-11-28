@@ -16,6 +16,7 @@ import { Colors } from '../../constants/Colors';
 import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
 import { GoogleSignInButton } from '../../components/GoogleSignInButton';
+import { AppleSignInButton } from '../../components/AppleSignInButton';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -157,8 +158,12 @@ export default function LoginScreen() {
             <Text style={styles.subtitle}>FightCrewApp</Text>
           </View>
 
-        {/* Google Sign-In Button */}
+        {/* OAuth Sign-In Buttons */}
         <View style={styles.oauthContainer}>
+          <AppleSignInButton
+            mode="signin"
+            onError={(err) => setStatus(`Apple sign-in failed: ${err}`)}
+          />
           <GoogleSignInButton
             mode="signin"
             onError={(err) => setStatus(`Google sign-in failed: ${err}`)}
@@ -455,6 +460,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   oauthContainer: {
     marginBottom: 16,
+    gap: 12,
   },
   dividerContainer: {
     flexDirection: 'row',

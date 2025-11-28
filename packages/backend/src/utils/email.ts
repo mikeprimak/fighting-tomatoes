@@ -23,16 +23,16 @@ export class EmailService {
     const mailOptions = {
       from: process.env.SMTP_FROM || 'noreply@fightcrewapp.com',
       to: email,
-      subject: 'Verify Your FightCrewApp Account',
+      subject: 'Verify Your Good Fights Account',
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-          <h1 style="color: #d32f2f;">Welcome to FightCrewApp!</h1>
-          
+          <h1 style="color: #d32f2f;">Welcome to Good Fights!</h1>
+
           <p>Hi ${firstName || 'there'},</p>
-          
-          <p>Thanks for joining FightCrewApp - the premier platform for rating combat sports fights!</p>
-          
-          <p>To complete your registration and start rating fights, please verify your email address:</p>
+
+          <p>Thanks for joining Good Fights - the premier platform for hyping and rating combat sports fights!</p>
+
+          <p>To complete your registration and start interacting, please verify your email address:</p>
           
           <div style="text-align: center; margin: 30px 0;">
             <a href="${verificationUrl}" 
@@ -48,17 +48,17 @@ export class EmailService {
           
           <p>Once verified, you can:</p>
           <ul>
-            <li>Rate fights from 1-10</li>
+            <li>Hype and Rate fights from 1-10</li>
             <li>Write reviews and get upvotes</li>
-            <li>Follow your favorite fighters</li>
+            <li>Follow your favorite fighters to know when they're fighting</li>
             <li>Get notifications for upcoming fights</li>
-            <li>Predict fight outcomes and earn points</li>
+            <li>Predict fight outcomes and compare your accuracy to a global leaderboard</li>
           </ul>
           
           <p>If you didn't create this account, you can safely ignore this email.</p>
           
           <p>Welcome to the community!</p>
-          <p>The FightCrewApp Team</p>
+          <p>The Good Fights Team</p>
         </div>
       `
     }
@@ -68,16 +68,16 @@ export class EmailService {
 
   static async sendPasswordResetEmail(email: string, token: string) {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`
-    
+
     const mailOptions = {
-      from: process.env.SMTP_FROM || 'noreply@fightcrewapp.com',
+      from: process.env.SMTP_FROM || 'noreply@goodfights.app',
       to: email,
-      subject: 'Reset Your FightCrewApp Password',
+      subject: 'Reset Your Good Fights Password',
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
           <h1 style="color: #d32f2f;">Password Reset Request</h1>
-          
-          <p>You requested a password reset for your FightCrewApp account.</p>
+
+          <p>You requested a password reset for your Good Fights account.</p>
           
           <p>Click the button below to reset your password:</p>
           
@@ -95,7 +95,7 @@ export class EmailService {
           
           <p>If you didn't request this reset, you can safely ignore this email.</p>
           
-          <p>The FightCrewApp Team</p>
+          <p>The Good Fights Team</p>
         </div>
       `
     }

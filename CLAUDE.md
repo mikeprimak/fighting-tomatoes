@@ -238,8 +238,40 @@ SCRAPER_MODE=automated node src/services/scrapeAllOneFCData.js
 
 ---
 
+### Apple Sign-In (Nov 2025)
+**Status**: ✅ Code Complete - Needs iOS testing
+**Branch**: `redesign-fight-card-components`
+
+**Implementation**:
+- Native Apple Sign-In using `expo-apple-authentication`
+- Backend Fastify route `POST /api/auth/apple` verifies identity token using `apple-signin-auth`
+- Creates new users or links existing email accounts to Apple
+- Only appears on iOS devices (Apple requirement)
+
+**Key Files**:
+- `packages/backend/src/routes/auth.fastify.ts` - `/apple` endpoint
+- `packages/mobile/hooks/useAppleAuth.ts` - Apple Sign-In hook
+- `packages/mobile/components/AppleSignInButton.tsx` - Reusable button component (iOS only)
+- `packages/mobile/store/AuthContext.tsx` - `loginWithApple` function
+
+**Apple Sign-In Specifics**:
+- Email and name only provided on FIRST sign-in (Apple privacy feature)
+- Subsequent sign-ins only have identity token
+- Backend stores Apple ID (`appleId`) to match returning users
+- Button follows Apple HIG: black on light mode, white on dark mode
+
+**Testing Checklist**:
+- [ ] "Continue with Apple" button appears on iOS login/register screens
+- [ ] Button hidden on Android (Apple Sign-In not available)
+- [ ] Tapping opens Apple Sign-In UI
+- [ ] New user created with Apple profile data
+- [ ] Returning Apple user (no email/name) still authenticates
+- [ ] JWT tokens returned and stored correctly
+
+---
+
 ### Onboarding Flow Screens (Nov 2025)
-**Status**: ✅ Code Complete - Email flows need testing
+**Status**: ✅ Complete - All auth endpoints tested and working
 **Branch**: `redesign-fight-card-components`
 
 **What Was Implemented**:
@@ -285,7 +317,7 @@ SCRAPER_MODE=automated node src/services/scrapeAllOneFCData.js
 
 ### TODO: Future Enhancements (Nice-to-Haves)
 
-- [ ] **Apple Sign-In** - Required for App Store if Google is offered
+- [x] **Apple Sign-In** - Required for App Store if Google is offered (Done Nov 2025)
 - [ ] **Biometric Authentication** - Face ID / Touch ID for returning users
 - [ ] **Remember Me** - Auto-login with stored refresh token
 - [ ] **Onboarding Tutorial** - Swipeable carousel for first-time users

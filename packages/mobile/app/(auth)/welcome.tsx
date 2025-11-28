@@ -12,6 +12,7 @@ import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { GoogleSignInButton } from '../../components/GoogleSignInButton';
+import { AppleSignInButton } from '../../components/AppleSignInButton';
 
 export default function WelcomeScreen() {
   const colorScheme = useColorScheme();
@@ -50,6 +51,9 @@ export default function WelcomeScreen() {
 
         {/* CTA Buttons */}
         <View style={styles.buttons}>
+          {/* Apple Sign-In Button (only shows on iOS) */}
+          <AppleSignInButton mode="signup" />
+
           {/* Google Sign-In Button */}
           <GoogleSignInButton mode="signup" />
 

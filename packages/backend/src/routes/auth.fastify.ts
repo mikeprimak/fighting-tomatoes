@@ -1,7 +1,10 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+// Auth routes with email verification, password reset, and Apple Sign-In
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
+import appleSignIn from 'apple-signin-auth';
+import { EmailService } from '../utils/email';
 
 // Google OAuth client (lazily initialized)
 let googleClient: OAuth2Client | null = null;
@@ -99,6 +102,11 @@ export async function authRoutes(fastify: FastifyInstance) {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 12);
 
+      // Generate email verification token if verification is enabled
+      const skipVerification = process.env.SKIP_EMAIL_VERIFICATION === 'true';
+      const verificationToken = skipVerification ? null : EmailService.generateVerificationToken();
+      const verificationExpires = skipVerification ? null : new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
       // Create user
       const user = await fastify.prisma.user.create({
         data: {
@@ -108,7 +116,9 @@ export async function authRoutes(fastify: FastifyInstance) {
           lastName,
           displayName: firstName ? `${firstName} ${lastName || ''}`.trim() : email.split('@')[0],
           authProvider: 'EMAIL',
-          isEmailVerified: process.env.SKIP_EMAIL_VERIFICATION === 'true',
+          isEmailVerified: skipVerification,
+          emailVerificationToken: verificationToken,
+          emailVerificationExpires: verificationExpires,
         },
         select: {
           id: true,
@@ -124,6 +134,18 @@ export async function authRoutes(fastify: FastifyInstance) {
           level: true,
         }
       });
+
+      // Send verification email if verification is enabled
+      if (!skipVerification && verificationToken) {
+        try {
+          await EmailService.sendVerificationEmail(email, verificationToken, firstName || undefined);
+          request.log.info(`[Email] Verification email sent to ${email}`);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          request.log.error(`[Email] Failed to send verification email: ${msg}`);
+          // Don't fail registration if email fails - user can request resend
+        }
+      }
 
       // Generate tokens
       const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -151,11 +173,16 @@ export async function authRoutes(fastify: FastifyInstance) {
         }
       });
 
+      const message = skipVerification
+        ? 'User registered successfully'
+        : 'Registration successful. Please check your email to verify your account.';
+
       return reply.code(201).send({
-        message: 'User registered successfully',
+        message,
         user,
         accessToken,
         refreshToken,
+        requiresVerification: !skipVerification,
       });
 
     } catch (error: any) {
@@ -1395,6 +1422,585 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Apple Sign-In endpoint
+  fastify.post('/apple', {
+    schema: {
+      description: 'Authenticate with Apple Sign-In',
+      tags: ['auth'],
+      body: {
+        type: 'object',
+        required: ['identityToken'],
+        properties: {
+          identityToken: { type: 'string' },
+          // User info is only provided on first sign-in
+          email: { type: 'string', nullable: true },
+          firstName: { type: 'string', nullable: true },
+          lastName: { type: 'string', nullable: true },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+            user: {
+              type: 'object',
+              properties: {
+                id: { type: 'string' },
+                email: { type: 'string' },
+                firstName: { type: 'string', nullable: true },
+                lastName: { type: 'string', nullable: true },
+                displayName: { type: 'string' },
+                avatar: { type: 'string', nullable: true },
+                isEmailVerified: { type: 'boolean' },
+                isMedia: { type: 'boolean' },
+                points: { type: 'integer' },
+                level: { type: 'integer' },
+              },
+            },
+            tokens: {
+              type: 'object',
+              properties: {
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+              },
+            },
+          },
+        },
+        400: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        403: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        409: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { identityToken, email: providedEmail, firstName: providedFirstName, lastName: providedLastName } = request.body as {
+        identityToken: string;
+        email?: string;
+        firstName?: string;
+        lastName?: string;
+      };
+
+      if (!identityToken) {
+        return reply.code(400).send({
+          error: 'Identity token is required',
+          code: 'VALIDATION_ERROR',
+        });
+      }
+
+      // Verify the Apple identity token
+      let applePayload;
+      try {
+        applePayload = await appleSignIn.verifyIdToken(identityToken, {
+          audience: process.env.APPLE_CLIENT_ID || 'com.fightcrewapp.mobile',
+          ignoreExpiration: false,
+        });
+      } catch (verifyError: any) {
+        request.log.error('Apple token verification failed:', verifyError);
+        return reply.code(400).send({
+          error: 'Invalid Apple token',
+          code: 'INVALID_TOKEN',
+        });
+      }
+
+      const { sub: appleId, email: tokenEmail } = applePayload;
+
+      // Email can come from token or be provided by client (first sign-in only)
+      const email = tokenEmail || providedEmail;
+
+      if (!email) {
+        // Try to find user by appleId if no email
+        const existingUser = await fastify.prisma.user.findUnique({
+          where: { appleId }
+        });
+
+        if (!existingUser) {
+          return reply.code(400).send({
+            error: 'Email is required for first sign-in',
+            code: 'EMAIL_REQUIRED',
+          });
+        }
+      }
+
+      const normalizedEmail = email?.toLowerCase();
+
+      // Check if user exists by appleId first, then by email
+      let user = await fastify.prisma.user.findUnique({
+        where: { appleId }
+      });
+
+      if (!user && normalizedEmail) {
+        user = await fastify.prisma.user.findUnique({
+          where: { email: normalizedEmail }
+        });
+      }
+
+      if (user) {
+        // User exists - check if they signed up with a different provider
+        if (user.authProvider !== 'APPLE' && user.authProvider !== 'EMAIL' && !user.appleId) {
+          return reply.code(409).send({
+            error: 'An account with this email already exists with a different sign-in method.',
+            code: 'ACCOUNT_EXISTS_DIFFERENT_PROVIDER',
+          });
+        }
+
+        // If user exists with EMAIL provider, update to APPLE (account linking)
+        if (user.authProvider === 'EMAIL' && !user.appleId) {
+          user = await fastify.prisma.user.update({
+            where: { id: user.id },
+            data: {
+              appleId,
+              authProvider: 'APPLE',
+              isEmailVerified: true, // Apple accounts are pre-verified
+              firstName: user.firstName || providedFirstName || null,
+              lastName: user.lastName || providedLastName || null,
+              lastLoginAt: new Date()
+            }
+          });
+          request.log.info(`[Apple Auth] Linked Apple account to existing email user: ${normalizedEmail}`);
+        } else if (!user.appleId) {
+          // Update user with appleId if not already set
+          user = await fastify.prisma.user.update({
+            where: { id: user.id },
+            data: {
+              appleId,
+              lastLoginAt: new Date()
+            }
+          });
+        } else {
+          // Update last login
+          user = await fastify.prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() }
+          });
+        }
+      } else if (normalizedEmail) {
+        // Create new user with Apple
+        const displayName = `${providedFirstName || 'User'}${Math.floor(Math.random() * 10000)}`;
+
+        user = await fastify.prisma.user.create({
+          data: {
+            email: normalizedEmail,
+            appleId,
+            authProvider: 'APPLE',
+            firstName: providedFirstName || null,
+            lastName: providedLastName || null,
+            displayName,
+            isEmailVerified: true, // Apple accounts are pre-verified
+          }
+        });
+        request.log.info(`[Apple Auth] Created new user via Apple: ${normalizedEmail}`);
+      } else {
+        return reply.code(400).send({
+          error: 'Unable to create account without email',
+          code: 'EMAIL_REQUIRED',
+        });
+      }
+
+      // Check if account is active
+      if (!user.isActive) {
+        return reply.code(403).send({
+          error: 'Account is disabled',
+          code: 'ACCOUNT_DISABLED',
+        });
+      }
+
+      // Generate tokens
+      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const accessToken = jwt.sign(
+        { userId: user.id, email: user.email, isEmailVerified: user.isEmailVerified },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      const refreshToken = jwt.sign(
+        { userId: user.id, type: 'refresh' },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      // Store refresh token in database
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      await fastify.prisma.refreshToken.create({
+        data: {
+          token: refreshToken,
+          userId: user.id,
+          expiresAt,
+        }
+      });
+
+      return reply.code(200).send({
+        message: 'Apple authentication successful',
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          displayName: user.displayName,
+          avatar: user.avatar,
+          isEmailVerified: user.isEmailVerified,
+          isMedia: user.isMedia,
+          points: user.points,
+          level: user.level
+        },
+        tokens: {
+          accessToken,
+          refreshToken,
+        }
+      });
+
+    } catch (error: any) {
+      request.log.error('Apple auth error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // Resend verification email endpoint
+  fastify.post('/resend-verification', {
+    schema: {
+      description: 'Resend email verification link',
+      tags: ['auth'],
+      body: {
+        type: 'object',
+        required: ['email'],
+        properties: {
+          email: { type: 'string', format: 'email' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { email } = request.body as { email: string };
+
+      if (!email) {
+        return reply.code(400).send({
+          error: 'Email is required',
+          code: 'EMAIL_MISSING',
+        });
+      }
+
+      const user = await fastify.prisma.user.findUnique({
+        where: { email: email.toLowerCase() }
+      });
+
+      // Always return success to prevent email enumeration
+      reply.code(200).send({
+        message: 'If an account with that email exists and is not yet verified, a new verification email has been sent.'
+      });
+
+      if (user && !user.isEmailVerified) {
+        // Generate new verification token
+        const verificationToken = EmailService.generateVerificationToken();
+        const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        await fastify.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            emailVerificationToken: verificationToken,
+            emailVerificationExpires: verificationExpires
+          }
+        });
+
+        try {
+          await EmailService.sendVerificationEmail(email, verificationToken, user.firstName !== null ? user.firstName : undefined);
+          request.log.info(`[Email] Resent verification email to ${email}`);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          request.log.error(`[Email] Failed to resend verification email: ${msg}`);
+        }
+      }
+
+    } catch (error: any) {
+      request.log.error('Resend verification error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'RESEND_FAILED',
+      });
+    }
+  });
+
+  // Verify email endpoint
+  fastify.get('/verify-email', {
+    schema: {
+      description: 'Verify email address with token',
+      tags: ['auth'],
+      querystring: {
+        type: 'object',
+        properties: {
+          token: { type: 'string' },
+        },
+        required: ['token'],
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+          },
+        },
+        400: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { token } = request.query as { token: string };
+
+      if (!token) {
+        return reply.code(400).send({
+          error: 'Verification token is required',
+          code: 'TOKEN_MISSING',
+        });
+      }
+
+      // Find user with valid token
+      const user = await fastify.prisma.user.findFirst({
+        where: {
+          emailVerificationToken: token,
+          emailVerificationExpires: {
+            gt: new Date()
+          }
+        }
+      });
+
+      if (!user) {
+        return reply.code(400).send({
+          error: 'Invalid or expired verification token',
+          code: 'TOKEN_INVALID',
+        });
+      }
+
+      // Update user as verified
+      await fastify.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          isEmailVerified: true,
+          emailVerificationToken: null,
+          emailVerificationExpires: null
+        }
+      });
+
+      request.log.info(`[Email] Email verified for user: ${user.email}`);
+
+      return reply.code(200).send({
+        message: 'Email verified successfully! You can now access all features.'
+      });
+
+    } catch (error: any) {
+      request.log.error('Email verification error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'VERIFICATION_FAILED',
+      });
+    }
+  });
+
+  // Request password reset endpoint
+  fastify.post('/request-password-reset', {
+    schema: {
+      description: 'Request password reset email',
+      tags: ['auth'],
+      body: {
+        type: 'object',
+        required: ['email'],
+        properties: {
+          email: { type: 'string', format: 'email' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { email } = request.body as { email: string };
+
+      if (!email) {
+        return reply.code(400).send({
+          error: 'Email is required',
+          code: 'EMAIL_MISSING',
+        });
+      }
+
+      const user = await fastify.prisma.user.findUnique({
+        where: { email: email.toLowerCase() }
+      });
+
+      // Always return success to prevent email enumeration
+      reply.code(200).send({
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
+
+      if (user) {
+        const resetToken = EmailService.generateVerificationToken();
+        const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+        await fastify.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            passwordResetToken: resetToken,
+            passwordResetExpires: resetExpires
+          }
+        });
+
+        try {
+          await EmailService.sendPasswordResetEmail(email, resetToken);
+          request.log.info(`[Email] Password reset email sent to ${email}`);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          request.log.error(`[Email] Failed to send password reset email: ${msg}`);
+        }
+      }
+
+    } catch (error: any) {
+      request.log.error('Password reset request error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'RESET_REQUEST_FAILED',
+      });
+    }
+  });
+
+  // Reset password endpoint
+  fastify.post('/reset-password', {
+    schema: {
+      description: 'Reset password with token',
+      tags: ['auth'],
+      body: {
+        type: 'object',
+        required: ['token', 'password'],
+        properties: {
+          token: { type: 'string' },
+          password: { type: 'string', minLength: 8 },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+          },
+        },
+        400: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+            details: { type: 'array' },
+          },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { token, password } = request.body as { token: string; password: string };
+
+      if (!token || !password) {
+        return reply.code(400).send({
+          error: 'Token and password are required',
+          code: 'MISSING_DATA',
+        });
+      }
+
+      // Validate password strength (uppercase, lowercase, number)
+      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+        return reply.code(400).send({
+          error: 'Password must contain uppercase, lowercase, and number',
+          code: 'PASSWORD_WEAK',
+        });
+      }
+
+      // Find user with valid reset token
+      const user = await fastify.prisma.user.findFirst({
+        where: {
+          passwordResetToken: token,
+          passwordResetExpires: {
+            gt: new Date()
+          }
+        }
+      });
+
+      if (!user) {
+        return reply.code(400).send({
+          error: 'Invalid or expired reset token',
+          code: 'TOKEN_INVALID',
+        });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(password, 12);
+
+      // Update password and clear reset token
+      await fastify.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          password: hashedPassword,
+          passwordResetToken: null,
+          passwordResetExpires: null
+        }
+      });
+
+      // Invalidate all existing refresh tokens for security
+      await fastify.prisma.refreshToken.deleteMany({
+        where: { userId: user.id }
+      });
+
+      request.log.info(`[Auth] Password reset successful for user: ${user.email}`);
+
+      return reply.code(200).send({
+        message: 'Password reset successful. Please log in with your new password.'
+      });
+
+    } catch (error: any) {
+      request.log.error('Password reset error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'RESET_FAILED',
       });
     }
   });
