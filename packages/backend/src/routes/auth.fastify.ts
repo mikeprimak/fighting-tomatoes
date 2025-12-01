@@ -1719,9 +1719,13 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
+      request.log.info(`[Resend Verification] Request for email: ${email}`);
+
       const user = await fastify.prisma.user.findUnique({
         where: { email: email.toLowerCase() }
       });
+
+      request.log.info(`[Resend Verification] User found: ${!!user}, isEmailVerified: ${user?.isEmailVerified}`);
 
       // IMPORTANT: Do all work BEFORE sending response
       // On serverless (Render), the function may terminate after response is sent
