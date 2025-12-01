@@ -1913,10 +1913,11 @@ export async function authRoutes(fastify: FastifyInstance) {
       tags: ['auth'],
       body: {
         type: 'object',
-        required: ['token', 'password'],
+        required: ['token'],
         properties: {
           token: { type: 'string' },
           password: { type: 'string', minLength: 8 },
+          newPassword: { type: 'string', minLength: 8 },
         },
       },
       response: {
@@ -1938,9 +1939,12 @@ export async function authRoutes(fastify: FastifyInstance) {
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const { token, password } = request.body as { token: string; password: string };
+      const { token, password, newPassword } = request.body as { token: string; password?: string; newPassword?: string };
 
-      if (!token || !password) {
+      // Accept either 'password' or 'newPassword' field
+      const actualPassword = password || newPassword;
+
+      if (!token || !actualPassword) {
         return reply.code(400).send({
           error: 'Token and password are required',
           code: 'MISSING_DATA',
@@ -1948,7 +1952,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Validate password strength (uppercase, lowercase, number)
-      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(actualPassword)) {
         return reply.code(400).send({
           error: 'Password must contain uppercase, lowercase, and number',
           code: 'PASSWORD_WEAK',
@@ -1973,7 +1977,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Hash new password
-      const hashedPassword = await bcrypt.hash(password, 12);
+      const hashedPassword = await bcrypt.hash(actualPassword, 12);
 
       // Update password and clear reset token
       await fastify.prisma.user.update({
