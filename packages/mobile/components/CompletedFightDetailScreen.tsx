@@ -1316,7 +1316,7 @@ export default function CompletedFightDetailScreen({
               <View style={styles.whatHappenedFighter}>
                 <View style={[
                   styles.whatHappenedImageContainer,
-                  isOutcomeRevealed && fight.winner === fight.fighter1.id && { borderColor: '#22c55e', borderWidth: 3 }
+                  { borderWidth: 3, borderColor: isOutcomeRevealed && fight.winner === fight.fighter1.id ? '#22c55e' : 'transparent' }
                 ]}>
                   <Image
                     key={`fighter1-winner-${fight.fighter1.id}`}
@@ -1331,22 +1331,22 @@ export default function CompletedFightDetailScreen({
                 <Text style={[styles.whatHappenedName, { color: colors.text }]}>
                   {fight.fighter1.firstName} {fight.fighter1.lastName}
                 </Text>
-                {isOutcomeRevealed && fight.winner === fight.fighter1.id ? (
-                  <Text style={{ color: '#22c55e', fontSize: 13, marginTop: 4, textAlign: 'center', fontWeight: '600' }}>
-                    by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
-                    {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
-                    {fight.time && ` ${fight.time}`}
-                  </Text>
-                ) : isOutcomeRevealed ? (
-                  <View style={{ height: 20 }} />
-                ) : null}
+                <View style={{ height: 24, marginTop: 4, justifyContent: 'center' }}>
+                  {isOutcomeRevealed && fight.winner === fight.fighter1.id && (
+                    <Text style={{ color: '#22c55e', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
+                      by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
+                      {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
+                      {fight.time && ` ${fight.time}`}
+                    </Text>
+                  )}
+                </View>
               </View>
 
               {/* Fighter 2 */}
               <View style={styles.whatHappenedFighter}>
                 <View style={[
                   styles.whatHappenedImageContainer,
-                  isOutcomeRevealed && fight.winner === fight.fighter2.id && { borderColor: '#22c55e', borderWidth: 3 }
+                  { borderWidth: 3, borderColor: isOutcomeRevealed && fight.winner === fight.fighter2.id ? '#22c55e' : 'transparent' }
                 ]}>
                   <Image
                     key={`fighter2-winner-${fight.fighter2.id}`}
@@ -1361,15 +1361,15 @@ export default function CompletedFightDetailScreen({
                 <Text style={[styles.whatHappenedName, { color: colors.text }]}>
                   {fight.fighter2.firstName} {fight.fighter2.lastName}
                 </Text>
-                {isOutcomeRevealed && fight.winner === fight.fighter2.id ? (
-                  <Text style={{ color: '#22c55e', fontSize: 13, marginTop: 4, textAlign: 'center', fontWeight: '600' }}>
-                    by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
-                    {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
-                    {fight.time && ` ${fight.time}`}
-                  </Text>
-                ) : isOutcomeRevealed ? (
-                  <View style={{ height: 20 }} />
-                ) : null}
+                <View style={{ height: 24, marginTop: 4, justifyContent: 'center' }}>
+                  {isOutcomeRevealed && fight.winner === fight.fighter2.id && (
+                    <Text style={{ color: '#22c55e', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
+                      by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
+                      {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
+                      {fight.time && ` ${fight.time}`}
+                    </Text>
+                  )}
+                </View>
               </View>
             </View>
           </View>
@@ -2825,9 +2825,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   fighterButtonImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
   fighterButtonText: {
     fontSize: 16,
@@ -3344,16 +3344,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   whatHappenedImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 106,
+    height: 106,
+    borderRadius: 53,
     overflow: 'hidden',
     marginBottom: 8,
     backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   whatHappenedImage: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
   },
   whatHappenedName: {
     fontSize: 14,
