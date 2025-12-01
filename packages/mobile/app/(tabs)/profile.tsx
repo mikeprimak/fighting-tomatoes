@@ -298,65 +298,73 @@ export default function ProfileScreen() {
           </View>
           <View style={{ height: 4 }} />
 
-          {/* Two stat boxes side by side */}
-          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-            {/* Prediction Accuracy - bordered */}
-            <View style={{
-              flex: 1,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: 8,
-              padding: 12,
-            }}>
-              <Text style={[styles.predictionLabel, { color: colors.text }]}>Prediction{'\n'}Accuracy</Text>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
-                  {(predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect) > 0
-                    ? `${Math.round((predictionAccuracy.totalCorrect / (predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect)) * 100)}%`
-                    : '—'}
-                </Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-                  ({predictionAccuracy.totalCorrect}/{predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect})
-                </Text>
-              </View>
-            </View>
+          {(predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect) === 0 ? (
+            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+              Make fight predictions on the "Upcoming" screen. Check in after the event to see how you did!
+            </Text>
+          ) : (
+            <>
+              {/* Two stat boxes side by side */}
+              <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+                {/* Prediction Accuracy - bordered */}
+                <View style={{
+                  flex: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: 8,
+                  padding: 12,
+                }}>
+                  <Text style={[styles.predictionLabel, { color: colors.text }]}>Prediction{'\n'}Accuracy</Text>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
+                      {(predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect) > 0
+                        ? `${Math.round((predictionAccuracy.totalCorrect / (predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect)) * 100)}%`
+                        : '—'}
+                    </Text>
+                    <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                      ({predictionAccuracy.totalCorrect}/{predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect})
+                    </Text>
+                  </View>
+                </View>
 
-            {/* Global Standing - bordered */}
-            <View style={{
-              flex: 1,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: 8,
-              padding: 12,
-            }}>
-              <Text style={[styles.predictionLabel, { color: colors.text }]}>Global{'\n'}Standing</Text>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
-                  {globalStanding.hasRanking
-                    ? getOrdinalSuffix(globalStanding.position!)
-                    : '—'}
-                </Text>
-                {globalStanding.hasRanking && globalStanding.totalUsers > 0 && (
-                  <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-                    top {Math.round((globalStanding.position! / globalStanding.totalUsers) * 100)}%
-                  </Text>
-                )}
+                {/* Global Standing - bordered */}
+                <View style={{
+                  flex: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: 8,
+                  padding: 12,
+                }}>
+                  <Text style={[styles.predictionLabel, { color: colors.text }]}>Global{'\n'}Standing</Text>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
+                      {globalStanding.hasRanking
+                        ? getOrdinalSuffix(globalStanding.position!)
+                        : '—'}
+                    </Text>
+                    {globalStanding.hasRanking && globalStanding.totalUsers > 0 && (
+                      <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                        top {Math.round((globalStanding.position! / globalStanding.totalUsers) * 100)}%
+                      </Text>
+                    )}
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
 
-          {/* Prediction Accuracy Chart */}
-          <PredictionAccuracyChart
-            data={predictionAccuracy.accuracyByEvent}
-            totalCorrect={predictionAccuracy.totalCorrect}
-            totalIncorrect={predictionAccuracy.totalIncorrect}
-          />
+              {/* Prediction Accuracy Chart */}
+              <PredictionAccuracyChart
+                data={predictionAccuracy.accuracyByEvent}
+                totalCorrect={predictionAccuracy.totalCorrect}
+                totalIncorrect={predictionAccuracy.totalIncorrect}
+              />
+            </>
+          )}
         </View>
 
         {/* Average Hype */}
@@ -386,42 +394,46 @@ export default function ProfileScreen() {
           </View>
           {/* Hype Box + Distribution Chart - Horizontal Layout */}
           <View style={{ height: 16 }} />
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            {/* Colored Hype Box with fight count */}
-            <View style={{ alignItems: 'center' }}>
-              <View style={{
-                width: 40,
-                height: 40,
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderRadius: 8,
-                backgroundColor: getHypeHeatmapColor(Math.round(user?.averageHype || 0)),
-              }}>
-                <FontAwesome6
-                  name="fire-flame-curved"
-                  size={24}
-                  color={getHypeHeatmapColor(Math.round(user?.averageHype || 0))}
-                  style={{ position: 'absolute', opacity: 0.5 }}
-                />
-                <Text style={{
-                  color: '#FFFFFF',
-                  fontSize: 14,
-                  fontWeight: 'bold',
-                  textAlign: 'center',
+          {!user?.totalHype ? (
+            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+              Choose how Hyped you are for upcoming fights on the "Upcoming" screen. You'll see your data here.
+            </Text>
+          ) : (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              {/* Colored Hype Box with fight count */}
+              <View style={{ alignItems: 'center' }}>
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderRadius: 8,
+                  backgroundColor: getHypeHeatmapColor(Math.round(user?.averageHype || 0)),
                 }}>
-                  {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'}
-                </Text>
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={24}
+                    color={getHypeHeatmapColor(Math.round(user?.averageHype || 0))}
+                    style={{ position: 'absolute', opacity: 0.5 }}
+                  />
+                  <Text style={{
+                    color: '#FFFFFF',
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                  }}>
+                    {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'}
+                  </Text>
+                </View>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>({user?.totalHype || 0} fights)</Text>
               </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>({user?.totalHype || 0} fights)</Text>
-            </View>
 
-            {/* Distribution Chart */}
-            <View style={{ flex: 1, marginTop: -12 }}>
-              {renderDistributionChart(user?.hypeDistribution || {}, 'hype')}
+              {/* Distribution Chart */}
+              <View style={{ flex: 1, marginTop: -12 }}>
+                {renderDistributionChart(user?.hypeDistribution || {}, 'hype')}
+              </View>
             </View>
-          </View>
-
-          
+          )}
         </View>
 
         {/* Average Rating */}
@@ -451,42 +463,46 @@ export default function ProfileScreen() {
           </View>
           {/* Rating Box + Distribution Chart - Horizontal Layout */}
           <View style={{ height: 16 }} />
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            {/* Colored Rating Box with fight count */}
-            <View style={{ alignItems: 'center' }}>
-              <View style={{
-                width: 40,
-                height: 40,
-                justifyContent: 'center',
-                alignItems: 'center',
-                borderRadius: 8,
-                backgroundColor: getHypeHeatmapColor(Math.round(user?.averageRating || 0)),
-              }}>
-                <FontAwesome
-                  name="star"
-                  size={24}
-                  color={getHypeHeatmapColor(Math.round(user?.averageRating || 0))}
-                  style={{ position: 'absolute', opacity: 0.5 }}
-                />
-                <Text style={{
-                  color: '#FFFFFF',
-                  fontSize: 14,
-                  fontWeight: 'bold',
-                  textAlign: 'center',
+          {!user?.totalRatings ? (
+            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+              Rate how much you liked fights on the "Past Events" screen.
+            </Text>
+          ) : (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              {/* Colored Rating Box with fight count */}
+              <View style={{ alignItems: 'center' }}>
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderRadius: 8,
+                  backgroundColor: getHypeHeatmapColor(Math.round(user?.averageRating || 0)),
                 }}>
-                  {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'}
-                </Text>
+                  <FontAwesome
+                    name="star"
+                    size={24}
+                    color={getHypeHeatmapColor(Math.round(user?.averageRating || 0))}
+                    style={{ position: 'absolute', opacity: 0.5 }}
+                  />
+                  <Text style={{
+                    color: '#FFFFFF',
+                    fontSize: 14,
+                    fontWeight: 'bold',
+                    textAlign: 'center',
+                  }}>
+                    {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'}
+                  </Text>
+                </View>
+                <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>({user?.totalRatings || 0} fights)</Text>
               </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>({user?.totalRatings || 0} fights)</Text>
-            </View>
 
-            {/* Distribution Chart */}
-            <View style={{ flex: 1, marginTop: -12 }}>
-              {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
+              {/* Distribution Chart */}
+              <View style={{ flex: 1, marginTop: -12 }}>
+                {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
+              </View>
             </View>
-          </View>
-
-          
+          )}
         </View>
 
         {/* Actions */}
