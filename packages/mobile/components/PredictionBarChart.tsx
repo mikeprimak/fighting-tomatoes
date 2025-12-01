@@ -78,7 +78,7 @@ export default function PredictionBarChart({
       <View style={styles.container}>
         <View
           style={{
-            height: 40,
+            height: 56,
             borderRadius: 8,
             borderWidth: 2,
             borderColor: '#808080',
@@ -106,6 +106,10 @@ export default function PredictionBarChart({
   // Majority side gets full blue (#83B4F3), minority side gets same muted blue as Community Data container
   const fighter1BgColor = fighter1HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? 'rgba(131, 180, 243, 0.2)' : 'rgba(131, 180, 243, 0.25)');
   const fighter2BgColor = fighter2HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? 'rgba(131, 180, 243, 0.2)' : 'rgba(131, 180, 243, 0.25)');
+
+  // Divider color - solid grey with hint of blue matching Community Data container bg
+  // Container uses rgba(59, 130, 246, 0.05) on dark bg, rgba(59, 130, 246, 0.08) on light
+  const dividerColor = colorScheme === 'dark' ? '#1a2230' : '#e8eef5';
 
   return (
     <View style={styles.container}>
@@ -176,12 +180,12 @@ export default function PredictionBarChart({
 
           <View
             style={{
-              height: 40,
+              height: 56,
               flexDirection: 'row',
               borderRadius: 8,
               overflow: 'hidden',
-              borderWidth: 1,
-              borderColor: colors.border,
+              borderWidth: 2,
+              borderColor: dividerColor,
             }}
           >
             {/* Fighter 1 side */}
@@ -190,6 +194,8 @@ export default function PredictionBarChart({
                 flex: winnerPredictions.fighter1.percentage,
                 flexDirection: 'row',
                 backgroundColor: fighter1BgColor,
+                borderRightWidth: 2,
+                borderRightColor: dividerColor,
               }}
             >
               {/* Fighter 1 method subdivisions - show if labels revealed or as plain bars */}
@@ -206,8 +212,8 @@ export default function PredictionBarChart({
                           flex: fighter1Predictions.KO_TKO,
                           justifyContent: 'center',
                           alignItems: 'center',
-                          borderRightWidth: 1,
-                          borderRightColor: colors.border,
+                          borderRightWidth: 2,
+                          borderRightColor: dividerColor,
                           backgroundColor: 'transparent',
                         }}
                       >
@@ -225,7 +231,7 @@ export default function PredictionBarChart({
                         )}
                         <Text
                           style={{
-                            fontSize: 10,
+                            fontSize: 14,
                             fontWeight: '600',
                             color: fighter1HasMajority ? '#000' : '#83B4F3',
                           }}
@@ -258,8 +264,8 @@ export default function PredictionBarChart({
                           flex: fighter1Predictions.SUBMISSION,
                           justifyContent: 'center',
                           alignItems: 'center',
-                          borderRightWidth: 1,
-                          borderRightColor: colors.border,
+                          borderRightWidth: 2,
+                          borderRightColor: dividerColor,
                           backgroundColor: 'transparent',
                         }}
                       >
@@ -277,7 +283,7 @@ export default function PredictionBarChart({
                         )}
                         <Text
                           style={{
-                            fontSize: 10,
+                            fontSize: 14,
                             fontWeight: '600',
                             color: fighter1HasMajority ? '#000' : '#83B4F3',
                           }}
@@ -327,7 +333,7 @@ export default function PredictionBarChart({
                         )}
                         <Text
                           style={{
-                            fontSize: 10,
+                            fontSize: 14,
                             fontWeight: '600',
                             color: fighter1HasMajority ? '#000' : '#83B4F3',
                           }}
@@ -377,8 +383,8 @@ export default function PredictionBarChart({
                           flex: fighter2Predictions.KO_TKO,
                           justifyContent: 'center',
                           alignItems: 'center',
-                          borderRightWidth: 1,
-                          borderRightColor: colors.border,
+                          borderRightWidth: 2,
+                          borderRightColor: dividerColor,
                           backgroundColor: 'transparent',
                         }}
                       >
@@ -394,7 +400,7 @@ export default function PredictionBarChart({
                             borderRadius: 1,
                           }} />
                         )}
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
                         {/* Yellow underline for user prediction */}
                         {isUserPrediction && (
                           <View style={{
@@ -421,8 +427,8 @@ export default function PredictionBarChart({
                           flex: fighter2Predictions.SUBMISSION,
                           justifyContent: 'center',
                           alignItems: 'center',
-                          borderRightWidth: 1,
-                          borderRightColor: colors.border,
+                          borderRightWidth: 2,
+                          borderRightColor: dividerColor,
                           backgroundColor: 'transparent',
                         }}
                       >
@@ -438,7 +444,7 @@ export default function PredictionBarChart({
                             borderRadius: 1,
                           }} />
                         )}
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
                         {/* Yellow underline for user prediction */}
                         {isUserPrediction && (
                           <View style={{
@@ -480,7 +486,7 @@ export default function PredictionBarChart({
                             borderRadius: 1,
                           }} />
                         )}
-                        <Text style={{ fontSize: 10, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
                         {/* Yellow underline for user prediction */}
                         {isUserPrediction && (
                           <View style={{

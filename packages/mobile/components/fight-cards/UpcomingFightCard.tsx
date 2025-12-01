@@ -412,8 +412,9 @@ export default function UpcomingFightCard({
               <>
                 <FontAwesome6
                   name="fire-flame-curved"
-                  size={14}
-                  color={flameColor}
+                  size={12}
+                  color="rgba(0,0,0,0.45)"
+                  style={{ position: 'absolute', top: 8 }}
                 />
                 <Text style={styles.hypeSquareNumber}>
                   {predictionStats.averageHype.toFixed(1)}
@@ -422,7 +423,7 @@ export default function UpcomingFightCard({
             ) : (
               <FontAwesome6
                 name="fire-flame-curved"
-                size={20}
+                size={24}
                 color={colors.textSecondary}
                 style={{ opacity: 0.5 }}
               />
@@ -472,11 +473,11 @@ export default function UpcomingFightCard({
           ]}>
             {(fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0) ? (
               <>
-                <Animated.View style={{ transform: [{ scale: hypeScaleAnim }] }}>
+                <Animated.View style={{ position: 'absolute', top: 8, transform: [{ scale: hypeScaleAnim }] }}>
                   <FontAwesome6
                     name="fire-flame-curved"
-                    size={14}
-                    color={userFlameColor}
+                    size={12}
+                    color="rgba(0,0,0,0.45)"
                   />
                 </Animated.View>
                 <Animated.Text style={[styles.hypeSquareNumber, { transform: [{ scale: hypeScaleAnim }] }]}>
@@ -486,7 +487,7 @@ export default function UpcomingFightCard({
             ) : (
               <FontAwesome6
                 name="fire-flame-curved"
-                size={20}
+                size={24}
                 color={colors.textSecondary}
                 style={{ opacity: 0.5 }}
               />
@@ -516,11 +517,13 @@ export default function UpcomingFightCard({
                   <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 2, gap: 4, minHeight: 16 }}>
                     {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.userPrediction?.method && (
                       <View style={styles.userMethodBadge}>
+                        <FontAwesome name="user" size={8} color="#F5C518" style={{ marginRight: 3 }} />
                         <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
                       </View>
                     )}
                     {aggregateStats?.communityPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.communityPrediction?.method && (
                       <View style={styles.communityMethodBadge}>
+                        <FontAwesome name="users" size={8} color="#4A90D9" style={{ marginRight: 3 }} />
                         <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
                       </View>
                     )}
@@ -557,11 +560,13 @@ export default function UpcomingFightCard({
                   <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 2, gap: 4, minHeight: 16 }}>
                     {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.userPrediction?.method && (
                       <View style={styles.userMethodBadge}>
+                        <FontAwesome name="user" size={8} color="#F5C518" style={{ marginRight: 3 }} />
                         <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
                       </View>
                     )}
                     {aggregateStats?.communityPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.communityPrediction?.method && (
                       <View style={styles.communityMethodBadge}>
+                        <FontAwesome name="users" size={8} color="#4A90D9" style={{ marginRight: 3 }} />
                         <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
                       </View>
                     )}
@@ -1006,7 +1011,7 @@ const styles = StyleSheet.create({
   },
   userCommentIndicator: {
     position: 'absolute',
-    top: 28, // Vertically centered with taller box
+    top: 4, // Aligned with numHypers on left side
     right: 50,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1029,6 +1034,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   userMethodBadgeText: {
     color: '#F5C518',
@@ -1042,6 +1049,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   communityMethodBadgeText: {
     color: '#4A90D9',
