@@ -1871,15 +1871,13 @@ export async function authRoutes(fastify: FastifyInstance) {
         where: { email: email.toLowerCase() }
       });
 
-      // Always return success to prevent email enumeration
-      reply.code(200).send({
-        message: 'If an account with that email exists, a password reset link has been sent.'
-      });
-
+      // IMPORTANT: Do all work BEFORE sending response
+      // On serverless (Render), the function may terminate after response is sent
       if (user) {
         const resetToken = EmailService.generateVerificationToken();
         const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
+        // Save token to database FIRST
         await fastify.prisma.user.update({
           where: { id: user.id },
           data: {
@@ -1887,7 +1885,9 @@ export async function authRoutes(fastify: FastifyInstance) {
             passwordResetExpires: resetExpires
           }
         });
+        request.log.info(`[Forgot Password] Token saved for user: ${email}`);
 
+        // Then send email
         try {
           await EmailService.sendPasswordResetEmail(email, resetToken);
           request.log.info(`[Email] Password reset email sent to ${email}`);
@@ -1896,6 +1896,11 @@ export async function authRoutes(fastify: FastifyInstance) {
           request.log.error(`[Email] Failed to send password reset email: ${msg}`);
         }
       }
+
+      // Always return success to prevent email enumeration (sent AFTER work is done)
+      return reply.code(200).send({
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      });
 
     } catch (error: any) {
       request.log.error('Password reset request error:', error);
