@@ -255,16 +255,31 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Predictions Section */}
-        <View style={[styles.predictionsCard]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 8 }}>
-            <FontAwesome
-              name="trophy"
-              size={40}
-              color={colorScheme === 'dark' ? '#6B7280' : '#9CA3AF'}
-              style={{ opacity: 0.4 }}
-            />
-            <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8, marginBottom: 0 }]}>My Fight Predictions</Text>
+        <View style={[
+          styles.predictionsCard,
+          {
+            backgroundColor: colorScheme === 'dark' ? 'rgba(34, 197, 94, 0.05)' : 'rgba(34, 197, 94, 0.08)',
+            borderLeftWidth: 4,
+            borderLeftColor: '#22c55e',
+            borderRadius: 16,
+            marginHorizontal: -8,
+            paddingHorizontal: 12,
+          }
+        ]}>
+          <View style={{
+            alignSelf: 'flex-start',
+            backgroundColor: '#22c55e',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 12,
+            marginBottom: 12,
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <FontAwesome name="trophy" size={14} color="#000" />
+              <Text style={{ color: '#000', fontSize: 14, fontWeight: '600' }}>My Fight Predictions</Text>
+            </View>
           </View>
+          <View style={{ height: 12 }} />
 
           {/* Time Filter Buttons */}
           <View style={styles.filterTabsContainer}>
@@ -281,6 +296,7 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             ))}
           </View>
+          <View style={{ height: 4 }} />
 
           {/* Two stat boxes side by side */}
           <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
@@ -344,42 +360,59 @@ export default function ProfileScreen() {
         </View>
 
         {/* Average Hype */}
-        <View style={[styles.averageRatingCard]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 4 }}>
-            <FontAwesome6
-              name="fire-flame-curved"
-              size={40}
-              color={colorScheme === 'dark' ? '#6B7280' : '#9CA3AF'}
-              style={{ opacity: 0.4 }}
-            />
-            <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8, marginBottom: 0 }]}>My Average Hype</Text>
+        <View style={[
+          styles.averageRatingCard,
+          {
+            backgroundColor: colorScheme === 'dark' ? 'rgba(245, 197, 24, 0.05)' : 'rgba(245, 197, 24, 0.08)',
+            borderLeftWidth: 4,
+            borderLeftColor: '#F5C518',
+            borderRadius: 16,
+            marginHorizontal: -8,
+            paddingHorizontal: 12,
+          }
+        ]}>
+          <View style={{
+            alignSelf: 'flex-start',
+            backgroundColor: '#F5C518',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 12,
+            marginBottom: 8,
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <FontAwesome6 name="fire-flame-curved" size={14} color="#000" />
+              <Text style={{ color: '#000', fontSize: 14, fontWeight: '600' }}>My Average Hype</Text>
+            </View>
           </View>
-          <Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 12 }}>{user?.totalHype || 0} fights</Text>
           {/* Hype Box + Distribution Chart - Horizontal Layout */}
+          <View style={{ height: 16 }} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            {/* Colored Hype Box */}
-            <View style={{
-              width: 40,
-              height: 40,
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderRadius: 8,
-              backgroundColor: getHypeHeatmapColor(Math.round(user?.averageHype || 0)),
-            }}>
-              <FontAwesome6
-                name="fire-flame-curved"
-                size={24}
-                color={getHypeHeatmapColor(Math.round(user?.averageHype || 0))}
-                style={{ position: 'absolute', opacity: 0.5 }}
-              />
-              <Text style={{
-                color: '#FFFFFF',
-                fontSize: 14,
-                fontWeight: 'bold',
-                textAlign: 'center',
+            {/* Colored Hype Box with fight count */}
+            <View style={{ alignItems: 'center' }}>
+              <View style={{
+                width: 40,
+                height: 40,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: 8,
+                backgroundColor: getHypeHeatmapColor(Math.round(user?.averageHype || 0)),
               }}>
-                {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'}
-              </Text>
+                <FontAwesome6
+                  name="fire-flame-curved"
+                  size={24}
+                  color={getHypeHeatmapColor(Math.round(user?.averageHype || 0))}
+                  style={{ position: 'absolute', opacity: 0.5 }}
+                />
+                <Text style={{
+                  color: '#FFFFFF',
+                  fontSize: 14,
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                }}>
+                  {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'}
+                </Text>
+              </View>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>({user?.totalHype || 0} fights)</Text>
             </View>
 
             {/* Distribution Chart */}
@@ -392,42 +425,59 @@ export default function ProfileScreen() {
         </View>
 
         {/* Average Rating */}
-        <View style={[styles.averageRatingCard]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', height: 48, marginBottom: 4 }}>
-            <FontAwesome
-              name="star"
-              size={40}
-              color={colorScheme === 'dark' ? '#6B7280' : '#9CA3AF'}
-              style={{ opacity: 0.4 }}
-            />
-            <Text style={[styles.sectionTitle, { color: colors.text, marginLeft: 8, marginBottom: 0 }]}>My Average Rating</Text>
+        <View style={[
+          styles.averageRatingCard,
+          {
+            backgroundColor: colorScheme === 'dark' ? 'rgba(245, 197, 24, 0.05)' : 'rgba(245, 197, 24, 0.08)',
+            borderLeftWidth: 4,
+            borderLeftColor: '#F5C518',
+            borderRadius: 16,
+            marginHorizontal: -8,
+            paddingHorizontal: 12,
+          }
+        ]}>
+          <View style={{
+            alignSelf: 'flex-start',
+            backgroundColor: '#F5C518',
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+            borderRadius: 12,
+            marginBottom: 8,
+          }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <FontAwesome name="star" size={14} color="#000" />
+              <Text style={{ color: '#000', fontSize: 14, fontWeight: '600' }}>My Average Rating</Text>
+            </View>
           </View>
-          <Text style={{ color: colors.textSecondary, fontSize: 14, marginBottom: 12 }}>{user?.totalRatings || 0} fights</Text>
           {/* Rating Box + Distribution Chart - Horizontal Layout */}
+          <View style={{ height: 16 }} />
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-            {/* Colored Rating Box */}
-            <View style={{
-              width: 40,
-              height: 40,
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderRadius: 8,
-              backgroundColor: getHypeHeatmapColor(Math.round(user?.averageRating || 0)),
-            }}>
-              <FontAwesome
-                name="star"
-                size={24}
-                color={getHypeHeatmapColor(Math.round(user?.averageRating || 0))}
-                style={{ position: 'absolute', opacity: 0.5 }}
-              />
-              <Text style={{
-                color: '#FFFFFF',
-                fontSize: 14,
-                fontWeight: 'bold',
-                textAlign: 'center',
+            {/* Colored Rating Box with fight count */}
+            <View style={{ alignItems: 'center' }}>
+              <View style={{
+                width: 40,
+                height: 40,
+                justifyContent: 'center',
+                alignItems: 'center',
+                borderRadius: 8,
+                backgroundColor: getHypeHeatmapColor(Math.round(user?.averageRating || 0)),
               }}>
-                {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'}
-              </Text>
+                <FontAwesome
+                  name="star"
+                  size={24}
+                  color={getHypeHeatmapColor(Math.round(user?.averageRating || 0))}
+                  style={{ position: 'absolute', opacity: 0.5 }}
+                />
+                <Text style={{
+                  color: '#FFFFFF',
+                  fontSize: 14,
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                }}>
+                  {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'}
+                </Text>
+              </View>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>({user?.totalRatings || 0} fights)</Text>
             </View>
 
             {/* Distribution Chart */}
