@@ -1987,10 +1987,12 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
-      request.log.info(`[Reset Password] Found user: ${user.email}, updating password...`);
+      request.log.info(`[Reset Password] Found user: ${user.email} (id: ${user.id}), updating password...`);
+      request.log.info(`[Reset Password] OLD password hash: ${user.password?.substring(0, 30)}...`);
 
       // Hash new password
       const hashedPassword = await bcrypt.hash(validPassword, 12);
+      request.log.info(`[Reset Password] NEW password hash: ${hashedPassword.substring(0, 30)}...`);
 
       // Update password and clear reset token
       const updatedUser = await fastify.prisma.user.update({
@@ -2002,7 +2004,14 @@ export async function authRoutes(fastify: FastifyInstance) {
         }
       });
 
-      request.log.info(`[Reset Password] Password updated for user: ${updatedUser.email}, token cleared: ${updatedUser.passwordResetToken === null}`);
+      request.log.info(`[Reset Password] Update returned - password hash: ${updatedUser.password?.substring(0, 30)}...`);
+
+      // VERIFY: Re-read from database to confirm update persisted
+      const verifyUser = await fastify.prisma.user.findUnique({
+        where: { id: user.id },
+        select: { password: true, passwordResetToken: true }
+      });
+      request.log.info(`[Reset Password] VERIFY after update - password hash: ${verifyUser?.password?.substring(0, 30)}..., token cleared: ${verifyUser?.passwordResetToken === null}`);
 
       // Invalidate all existing refresh tokens for security
       const deletedTokens = await fastify.prisma.refreshToken.deleteMany({
