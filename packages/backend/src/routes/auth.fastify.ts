@@ -1859,6 +1859,7 @@ export async function authRoutes(fastify: FastifyInstance) {
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { email } = request.body as { email: string };
+      request.log.info(`[Forgot Password] Request received for email: ${email}`);
 
       if (!email) {
         return reply.code(400).send({
@@ -1871,6 +1872,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         where: { email: email.toLowerCase() }
       });
 
+      request.log.info(`[Forgot Password] User found: ${user ? 'yes' : 'no'}`);
+
       // IMPORTANT: Do all work BEFORE sending response
       // On serverless (Render), the function may terminate after response is sent
       if (user) {
@@ -1878,6 +1881,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
         // Save token to database FIRST
+        request.log.info(`[Forgot Password] Saving token: ${resetToken.substring(0, 10)}... (length: ${resetToken.length})`);
         await fastify.prisma.user.update({
           where: { id: user.id },
           data: {
@@ -1885,7 +1889,14 @@ export async function authRoutes(fastify: FastifyInstance) {
             passwordResetExpires: resetExpires
           }
         });
+
+        // Verify token was saved
+        const verifyUser = await fastify.prisma.user.findUnique({
+          where: { id: user.id },
+          select: { passwordResetToken: true }
+        });
         request.log.info(`[Forgot Password] Token saved for user: ${email}`);
+        request.log.info(`[Forgot Password] Token verified in DB: ${verifyUser?.passwordResetToken?.substring(0, 10)}... (length: ${verifyUser?.passwordResetToken?.length})`);
 
         // Then send email
         try {
