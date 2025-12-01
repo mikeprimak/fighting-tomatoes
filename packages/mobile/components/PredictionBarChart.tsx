@@ -117,66 +117,91 @@ export default function PredictionBarChart({
       {winnerPredictions && (
         <View style={{ flex: 1 }}>
           {/* Fighter headshots and percentages above bar chart */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-            {/* Fighter 1 */}
-            <View style={{ alignItems: 'flex-start' }}>
-              <Image
-                source={
-                  fighter1Image
-                    ? { uri: fighter1Image }
-                    : getFighterPlaceholder()
-                }
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 28,
-                  marginBottom: 4,
-                }}
-              />
-              <View>
-                <Text style={{ fontSize: 14, color: '#FFFFFF' }}>
-                  {winnerPredictions.fighter1.percentage}% {fighter1Name}
-                </Text>
-                {selectedWinner === fighter1Id && !selectedMethod && (
-                  <View style={{
-                    height: 2,
-                    backgroundColor: '#F5C518',
-                    borderRadius: 1,
-                    marginTop: 2,
-                  }} />
-                )}
+          {(() => {
+            // Calculate image sizes based on deviation from 50%
+            // This creates more dramatic size differences for closer matchups
+            const baseSize = 68;
+            const scaleFactor = 0.6; // px per % deviation from 50%
+            const fighter1Size = Math.max(48, Math.min(88, baseSize + (winnerPredictions.fighter1.percentage - 50) * scaleFactor));
+            const fighter2Size = Math.max(48, Math.min(88, baseSize + (winnerPredictions.fighter2.percentage - 50) * scaleFactor));
+
+            return (
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, alignItems: 'flex-end' }}>
+                {/* Fighter 1 */}
+                <View style={{ alignItems: 'flex-start' }}>
+                  <View style={fighter1HasMajority ? {
+                    borderWidth: 3,
+                    borderColor: '#83B4F3',
+                    borderRadius: fighter1Size / 2 + 3,
+                    padding: 2,
+                    marginBottom: 4,
+                  } : { marginBottom: 4 }}>
+                    <Image
+                      source={
+                        fighter1Image
+                          ? { uri: fighter1Image }
+                          : getFighterPlaceholder()
+                      }
+                      style={{
+                        width: fighter1Size,
+                        height: fighter1Size,
+                        borderRadius: fighter1Size / 2,
+                      }}
+                    />
+                  </View>
+                  <View>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF' }}>
+                      {winnerPredictions.fighter1.percentage}% {fighter1Name}
+                    </Text>
+                    {selectedWinner === fighter1Id && !selectedMethod && (
+                      <View style={{
+                        height: 2,
+                        backgroundColor: '#F5C518',
+                        borderRadius: 1,
+                        marginTop: 2,
+                      }} />
+                    )}
+                  </View>
+                </View>
+                {/* Fighter 2 */}
+                <View style={{ alignItems: 'flex-end' }}>
+                  <View style={fighter2HasMajority ? {
+                    borderWidth: 3,
+                    borderColor: '#83B4F3',
+                    borderRadius: fighter2Size / 2 + 3,
+                    padding: 2,
+                    marginBottom: 4,
+                  } : { marginBottom: 4 }}>
+                    <Image
+                      source={
+                        fighter2Image
+                          ? { uri: fighter2Image }
+                          : getFighterPlaceholder()
+                      }
+                      style={{
+                        width: fighter2Size,
+                        height: fighter2Size,
+                        borderRadius: fighter2Size / 2,
+                      }}
+                    />
+                  </View>
+                  <View>
+                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF' }}>
+                      {winnerPredictions.fighter2.percentage}% {fighter2Name}
+                    </Text>
+                    {selectedWinner === fighter2Id && !selectedMethod && (
+                      <View style={{
+                        height: 2,
+                        backgroundColor: '#F5C518',
+                        borderRadius: 1,
+                        marginTop: 2,
+                      }} />
+                    )}
+                  </View>
+                </View>
               </View>
-            </View>
-            {/* Fighter 2 */}
-            <View style={{ alignItems: 'flex-end' }}>
-              <Image
-                source={
-                  fighter2Image
-                    ? { uri: fighter2Image }
-                    : getFighterPlaceholder()
-                }
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 28,
-                  marginBottom: 4,
-                }}
-              />
-              <View>
-                <Text style={{ fontSize: 14, color: '#FFFFFF' }}>
-                  {winnerPredictions.fighter2.percentage}% {fighter2Name}
-                </Text>
-                {selectedWinner === fighter2Id && !selectedMethod && (
-                  <View style={{
-                    height: 2,
-                    backgroundColor: '#F5C518',
-                    borderRadius: 1,
-                    marginTop: 2,
-                  }} />
-                )}
-              </View>
-            </View>
-          </View>
+            );
+          })()}
 
           <View
             style={{
@@ -203,7 +228,7 @@ export default function PredictionBarChart({
                 <View style={{ flexDirection: 'row', flex: 1 }}>
                   {fighter1Predictions.KO_TKO > 0 && (() => {
                     const methodPercentage = (fighter1Predictions.KO_TKO / winnerPredictions.fighter1.count) * 100;
-                    const label = methodPercentage < 15 ? 'K' : 'KO';
+                    const label = methodPercentage < 25 ? 'K' : 'KO';
                     const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'KO_TKO';
                     const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'KO_TKO';
                     return (
@@ -255,7 +280,7 @@ export default function PredictionBarChart({
                   })()}
                   {fighter1Predictions.SUBMISSION > 0 && (() => {
                     const methodPercentage = (fighter1Predictions.SUBMISSION / winnerPredictions.fighter1.count) * 100;
-                    const label = methodPercentage < 15 ? 'S' : 'SUB';
+                    const label = methodPercentage < 25 ? 'S' : 'SUB';
                     const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION';
                     const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'SUBMISSION';
                     return (
@@ -307,7 +332,7 @@ export default function PredictionBarChart({
                   })()}
                   {fighter1Predictions.DECISION > 0 && (() => {
                     const methodPercentage = (fighter1Predictions.DECISION / winnerPredictions.fighter1.count) * 100;
-                    const label = methodPercentage < 15 ? 'D' : 'DEC';
+                    const label = methodPercentage < 25 ? 'D' : 'DEC';
                     const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'DECISION';
                     const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'DECISION';
                     return (
@@ -374,7 +399,7 @@ export default function PredictionBarChart({
                 <View style={{ flexDirection: 'row', flex: 1 }}>
                   {fighter2Predictions.KO_TKO > 0 && (() => {
                     const methodPercentage = (fighter2Predictions.KO_TKO / winnerPredictions.fighter2.count) * 100;
-                    const label = methodPercentage < 15 ? 'K' : 'KO';
+                    const label = methodPercentage < 25 ? 'K' : 'KO';
                     const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'KO_TKO';
                     const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'KO_TKO';
                     return (
@@ -418,7 +443,7 @@ export default function PredictionBarChart({
                   })()}
                   {fighter2Predictions.SUBMISSION > 0 && (() => {
                     const methodPercentage = (fighter2Predictions.SUBMISSION / winnerPredictions.fighter2.count) * 100;
-                    const label = methodPercentage < 15 ? 'S' : 'SUB';
+                    const label = methodPercentage < 25 ? 'S' : 'SUB';
                     const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'SUBMISSION';
                     const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'SUBMISSION';
                     return (
@@ -462,7 +487,7 @@ export default function PredictionBarChart({
                   })()}
                   {fighter2Predictions.DECISION > 0 && (() => {
                     const methodPercentage = (fighter2Predictions.DECISION / winnerPredictions.fighter2.count) * 100;
-                    const label = methodPercentage < 15 ? 'D' : 'DEC';
+                    const label = methodPercentage < 25 ? 'D' : 'DEC';
                     const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'DECISION';
                     const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'DECISION';
                     return (
