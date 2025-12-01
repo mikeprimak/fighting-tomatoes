@@ -1723,11 +1723,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         where: { email: email.toLowerCase() }
       });
 
-      // Always return success to prevent email enumeration
-      reply.code(200).send({
-        message: 'If an account with that email exists and is not yet verified, a new verification email has been sent.'
-      });
-
+      // IMPORTANT: Do all work BEFORE sending response
+      // On serverless (Render), the function may terminate after response is sent
       if (user && !user.isEmailVerified) {
         // Generate new verification token
         const verificationToken = EmailService.generateVerificationToken();
@@ -1749,6 +1746,11 @@ export async function authRoutes(fastify: FastifyInstance) {
           request.log.error(`[Email] Failed to resend verification email: ${msg}`);
         }
       }
+
+      // Always return success to prevent email enumeration (sent AFTER work is done)
+      return reply.code(200).send({
+        message: 'If an account with that email exists and is not yet verified, a new verification email has been sent.'
+      });
 
     } catch (error: any) {
       request.log.error('Resend verification error:', error);
