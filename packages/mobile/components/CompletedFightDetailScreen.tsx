@@ -27,6 +27,7 @@ import HypeDistributionChart from './HypeDistributionChart';
 import { PreFightCommentCard } from './PreFightCommentCard';
 import { useAuth } from '../store/AuthContext';
 import { usePredictionAnimation } from '../store/PredictionAnimationContext';
+import { useVerification } from '../store/VerificationContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
 import PredictionBarChart from './PredictionBarChart';
@@ -355,6 +356,7 @@ export default function CompletedFightDetailScreen({
   const queryClient = useQueryClient();
   const { user, isAuthenticated, refreshUserData } = useAuth();
   const { setPendingRatingAnimation } = usePredictionAnimation();
+  const { requireVerification } = useVerification();
   const { alertState, showSuccess, showError, showConfirm, hideAlert } = useCustomAlert();
 
   const [animateMyRating, setAnimateMyRating] = useState(false);
@@ -725,6 +727,9 @@ export default function CompletedFightDetailScreen({
 
   // Manual save handler for comment
   const handleSaveComment = async () => {
+    // Require email verification
+    if (!requireVerification('post a review')) return;
+
     // Check if user is trying to delete an existing comment
     const isDeletingComment = fight.userReview && !comment.trim();
 
@@ -996,10 +1001,12 @@ export default function CompletedFightDetailScreen({
   });
 
   const handleUpvoteComment = (commentId: string) => {
+    if (!requireVerification('upvote a comment')) return;
     upvotePreFightCommentMutation.mutate(commentId);
   };
 
   const handleFlagComment = (commentId: string) => {
+    if (!requireVerification('flag a comment')) return;
     setCommentToFlag(commentId);
     setFlagModalVisible(true);
   };
@@ -1019,6 +1026,7 @@ export default function CompletedFightDetailScreen({
   };
 
   const handleFlagReview = (reviewId: string) => {
+    if (!requireVerification('flag a review')) return;
     setReviewToFlag(reviewId);
     setFlagModalVisible(true);
   };
@@ -1073,6 +1081,7 @@ export default function CompletedFightDetailScreen({
 
   // Handlers for rating and tags (immediate save) - Simplified like UpcomingFightDetailScreen
   const handleSetRating = (newRating: number) => {
+    if (!requireVerification('rate this fight')) return;
     const finalRating = rating === newRating ? 0 : newRating;
 
     setRating(finalRating);
@@ -1262,7 +1271,7 @@ export default function CompletedFightDetailScreen({
                 style={[
                   styles.inlineTagButton,
                   {
-                    backgroundColor: colors.background,
+                    backgroundColor: 'transparent',
                     borderColor: colors.border,
                   }
                 ]}

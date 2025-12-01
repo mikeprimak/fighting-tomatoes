@@ -773,7 +773,7 @@ export default function CommunityScreen() {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.filterTabText, hypeFightsPeriod === 'week' && styles.filterTabTextActive]}>
-                This Week
+                Upcoming This Week
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -872,7 +872,7 @@ export default function CommunityScreen() {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.filterTabText, topFightsPeriod === 'week' && styles.filterTabTextActive]}>
-                Week
+                Past Week
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
