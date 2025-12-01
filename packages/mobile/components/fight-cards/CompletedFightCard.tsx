@@ -598,26 +598,20 @@ export default function CompletedFightCard({
               {/* Fighter 1 - Left half */}
               <View style={styles.fighter1Container}>
                 <View style={[
-                  { alignSelf: 'flex-end', position: 'relative' },
-                  aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && styles.predictedWinnerContainer,
-                  aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && { paddingLeft: 20 }
+                  { alignSelf: 'flex-end', position: 'relative' }
                 ]}>
                   <Text
                     style={[
                       styles.fighterName,
-                      { textAlign: 'right', fontWeight: '400' },
-                      aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}`
-                        ? { color: '#000' }
-                        : { color: colors.textSecondary }
+                      { textAlign: 'right', fontWeight: '400', color: colors.textSecondary }
                     ]}
                     numberOfLines={2}
                   >
                     {fight.fighter1.firstName}{'\n'}<Text style={{
                       fontWeight: '700',
-                      color: aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` ? '#000' : colors.text
+                      color: colors.text
                     }}>{fight.fighter1.lastName}</Text>
                   </Text>
-                  {/* Checkmark for correct prediction - DISABLED */}
                 </View>
               </View>
 
@@ -629,26 +623,20 @@ export default function CompletedFightCard({
               {/* Fighter 2 - Right half */}
               <View style={styles.fighter2Container}>
                 <View style={[
-                  { alignSelf: 'flex-start', position: 'relative' },
-                  aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && styles.predictedWinnerContainer,
-                  aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && { paddingRight: 20 }
+                  { alignSelf: 'flex-start', position: 'relative' }
                 ]}>
                   <Text
                     style={[
                       styles.fighterName,
-                      { textAlign: 'left', fontWeight: '400' },
-                      aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}`
-                        ? { color: '#000' }
-                        : { color: colors.textSecondary }
+                      { textAlign: 'left', fontWeight: '400', color: colors.textSecondary }
                     ]}
                     numberOfLines={2}
                   >
                     {fight.fighter2.firstName}{'\n'}<Text style={{
                       fontWeight: '700',
-                      color: aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` ? '#000' : colors.text
+                      color: colors.text
                     }}>{fight.fighter2.lastName}</Text>
                   </Text>
-                  {/* Checkmark for correct prediction - DISABLED */}
                 </View>
               </View>
             </View>
