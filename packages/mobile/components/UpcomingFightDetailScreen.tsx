@@ -29,6 +29,7 @@ import { useFightStats } from '../hooks/useFightStats';
 import { PreFightCommentCard } from './PreFightCommentCard';
 import { useAuth } from '../store/AuthContext';
 import { usePredictionAnimation } from '../store/PredictionAnimationContext';
+import { useVerification } from '../store/VerificationContext';
 import { FlagReviewModal } from '.';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
@@ -112,6 +113,7 @@ export default function UpcomingFightDetailScreen({
   const queryClient = useQueryClient();
   const { isAuthenticated, user } = useAuth();
   const { setPendingAnimation } = usePredictionAnimation();
+  const { requireVerification } = useVerification();
   const { alertState, showSuccess, showError, showConfirm, hideAlert } = useCustomAlert();
 
   // Local state for selections (will be saved immediately on change)
@@ -148,10 +150,10 @@ export default function UpcomingFightDetailScreen({
   const [localFighter2Notification, setLocalFighter2Notification] = useState(fight.isFollowingFighter2);
   const [localNotificationReasons, setLocalNotificationReasons] = useState(fight.notificationReasons);
 
-  // Track community data reveal flags
-  const [hasRevealedHype, setHasRevealedHype] = useState(fight.hasRevealedHype ?? false);
-  const [hasRevealedWinner, setHasRevealedWinner] = useState(fight.hasRevealedWinner ?? false);
-  const [hasRevealedMethod, setHasRevealedMethod] = useState(fight.hasRevealedMethod ?? false);
+  // Community data is always visible (no reveal gating)
+  const hasRevealedHype = true;
+  const hasRevealedWinner = true;
+  const hasRevealedMethod = true;
 
   // Snapshot the fight data when menu opens to prevent re-renders during toggles
   const [menuFightSnapshot, setMenuFightSnapshot] = useState(fight);
@@ -169,37 +171,14 @@ export default function UpcomingFightDetailScreen({
   // Wheel animation for number display
   const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 52 : 520)).current;
 
-  // Simple fade animation for community predictions
-  const predictionsFadeAnim = useRef(new Animated.Value(0)).current;
-  const methodSubdivisionsFadeAnim = useRef(new Animated.Value(0)).current;
-  const [shouldRenderPredictions, setShouldRenderPredictions] = useState(false);
-  const [shouldShowMethodSubdivisions, setShouldShowMethodSubdivisions] = useState(false);
+  // Simple fade animation for community predictions (always visible now)
+  const predictionsFadeAnim = useRef(new Animated.Value(1)).current;
+  const methodSubdivisionsFadeAnim = useRef(new Animated.Value(1)).current;
+  const [shouldRenderPredictions, setShouldRenderPredictions] = useState(true);
+  const [shouldShowMethodSubdivisions, setShouldShowMethodSubdivisions] = useState(true);
 
-  // Fade animation for aggregate hype box (initial reveal)
-  const aggregateHypeFadeAnim = useRef(new Animated.Value(0)).current;
-
-  // Trigger slow fade-in ONLY the first time user makes hype prediction
-  useEffect(() => {
-    if (hasRevealedHype) {
-      // Set to fully visible instantly (already revealed)
-      aggregateHypeFadeAnim.setValue(1);
-    }
-  }, []); // Run only once on mount
-
-  // Trigger slow fade-in when user makes their FIRST hype prediction
-  useEffect(() => {
-    if (selectedHype && !hasRevealedHype) {
-      // First prediction - fade in slowly
-      aggregateHypeFadeAnim.setValue(0);
-      Animated.timing(aggregateHypeFadeAnim, {
-        toValue: 1,
-        duration: 2000, // 2 seconds for very slow fade
-        useNativeDriver: true,
-      }).start();
-      // Mark as revealed
-      setHasRevealedHype(true);
-    }
-  }, [selectedHype]);
+  // Fade animation for aggregate hype box (always visible now)
+  const aggregateHypeFadeAnim = useRef(new Animated.Value(1)).current;
 
   // Fetch both prediction stats and aggregate stats in a single API call
   const { data: fightStatsData } = useQuery({
@@ -267,83 +246,8 @@ export default function UpcomingFightDetailScreen({
     };
   }, []);
 
-  // Animate layout changes when winner selection changes
-  useEffect(() => {
-    if (selectedWinner) {
-      // Mark as revealed when user makes first winner prediction
-      if (!hasRevealedWinner) {
-        setHasRevealedWinner(true);
-      }
-
-      // Mount component if not already mounted
-      if (!shouldRenderPredictions) {
-        setShouldRenderPredictions(true);
-
-        // Trigger layout animation
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-
-        // Reset to 0 first, then animate to 1
-        predictionsFadeAnim.setValue(0);
-        Animated.timing(predictionsFadeAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }).start();
-      }
-      // If already mounted (switching fighters), don't animate - just stay visible
-    } else if (!hasRevealedWinner) {
-      // Only hide if user hasn't revealed winner data yet
-      // Trigger layout animation
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-
-      // Fade out, then unmount
-      Animated.timing(predictionsFadeAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (finished) {
-          setShouldRenderPredictions(false);
-        }
-      });
-    }
-  }, [selectedWinner]);
-
-  // Animate method subdivisions when method selection changes
-  useEffect(() => {
-    if (selectedMethod) {
-      // Mark as revealed when user makes first method prediction
-      if (!hasRevealedMethod) {
-        setHasRevealedMethod(true);
-      }
-
-      // Show subdivisions if not already shown
-      if (!shouldShowMethodSubdivisions) {
-        setShouldShowMethodSubdivisions(true);
-
-        // Reset to 0 first, then animate to 1
-        methodSubdivisionsFadeAnim.setValue(0);
-        Animated.timing(methodSubdivisionsFadeAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }).start();
-      }
-      // If already shown (switching methods), don't animate - just stay visible
-    } else if (!hasRevealedMethod) {
-      // Only hide if user hasn't revealed method data yet
-      // Fade out
-      Animated.timing(methodSubdivisionsFadeAnim, {
-        toValue: 0,
-        duration: 250,
-        useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (finished) {
-          setShouldShowMethodSubdivisions(false);
-        }
-      });
-    }
-  }, [selectedMethod]);
+  // Community data is always visible - no animation needed for reveal
+  // (Animations removed since data shows immediately)
 
   // HARDCODED TEST DATA - Remove this when done testing
   const testPredictionStats = {
@@ -578,6 +482,9 @@ export default function UpcomingFightDetailScreen({
 
   // Manual save handler for comment
   const handleSaveComment = async () => {
+    // Require email verification
+    if (!requireVerification('post a comment')) return;
+
     // Check if user is trying to delete an existing comment
     const isDeletingComment = preFightCommentsData?.userComment && !preFightComment.trim();
 
@@ -637,6 +544,7 @@ export default function UpcomingFightDetailScreen({
   });
 
   const handleFlagComment = (commentId: string) => {
+    if (!requireVerification('flag a comment')) return;
     setCommentToFlag(commentId);
     setFlagModalVisible(true);
   };
@@ -781,6 +689,7 @@ export default function UpcomingFightDetailScreen({
   });
 
   const handleUpvoteComment = (commentId: string) => {
+    if (!requireVerification('upvote a comment')) return;
     upvotePreFightCommentMutation.mutate(commentId);
   };
 
@@ -895,6 +804,7 @@ export default function UpcomingFightDetailScreen({
   });
 
   const handleToggleNotification = (enabled: boolean) => {
+    if (!requireVerification('follow this fight')) return;
     toggleNotificationMutation.mutate(enabled);
   };
 
@@ -936,6 +846,7 @@ export default function UpcomingFightDetailScreen({
   });
 
   const handleToggleFighterNotification = (fighterId: string, enabled: boolean) => {
+    if (!requireVerification('follow this fighter')) return;
     toggleFighterNotificationMutation.mutate({ fighterId, enabled });
   };
 
@@ -963,12 +874,14 @@ export default function UpcomingFightDetailScreen({
   };
 
   const handleWinnerSelection = (fighterId: string) => {
+    if (!requireVerification('make a prediction')) return;
     const newWinner = selectedWinner === fighterId ? null : fighterId;
     setSelectedWinner(newWinner);
     saveWinnerMutation.mutate(newWinner);
   };
 
   const handleHypeSelection = (level: number) => {
+    if (!requireVerification('rate hype')) return;
     // If tapping the same level, deselect (set to null)
     const newHype = selectedHype === level ? null : level;
     setSelectedHype(newHype);
@@ -977,6 +890,7 @@ export default function UpcomingFightDetailScreen({
   };
 
   const handleMethodSelection = (method: 'KO_TKO' | 'SUBMISSION' | 'DECISION') => {
+    if (!requireVerification('make a prediction')) return;
     // If tapping the same method, deselect (set to null)
     const newMethod = selectedMethod === method ? null : method;
     setSelectedMethod(newMethod);

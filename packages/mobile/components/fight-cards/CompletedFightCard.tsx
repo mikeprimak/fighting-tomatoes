@@ -612,7 +612,7 @@ export default function CompletedFightCard({
                     {fight.fighter1.lastName}
                   </Text>
                   {/* Prediction/Result badges below name */}
-                  <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 2, gap: 4 }}>
+                  <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 2, gap: 4, minHeight: 16 }}>
                     {fight.winner === fight.fighter1.id && fight.method && (
                       <View style={styles.winnerMethodBadge}>
                         <Text style={styles.winnerMethodBadgeText}>{formatMethod(fight.method)}</Text>
@@ -654,7 +654,7 @@ export default function CompletedFightCard({
                     {fight.fighter2.lastName}
                   </Text>
                   {/* Prediction/Result badges below name */}
-                  <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 2, gap: 4 }}>
+                  <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 2, gap: 4, minHeight: 16 }}>
                     {fight.winner === fight.fighter2.id && fight.method && (
                       <View style={styles.winnerMethodBadge}>
                         <Text style={styles.winnerMethodBadgeText}>{formatMethod(fight.method)}</Text>

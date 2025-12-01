@@ -513,7 +513,7 @@ export default function UpcomingFightCard({
                     {fight.fighter1.lastName}
                   </Text>
                   {/* Prediction badges below name */}
-                  <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 2, gap: 4 }}>
+                  <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 2, gap: 4, minHeight: 16 }}>
                     {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.userPrediction?.method && (
                       <View style={styles.userMethodBadge}>
                         <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
@@ -554,7 +554,7 @@ export default function UpcomingFightCard({
                     {fight.fighter2.lastName}
                   </Text>
                   {/* Prediction badges below name */}
-                  <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 2, gap: 4 }}>
+                  <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 2, gap: 4, minHeight: 16 }}>
                     {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.userPrediction?.method && (
                       <View style={styles.userMethodBadge}>
                         <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
