@@ -43,9 +43,10 @@ export default function CompletedFightCard({
   // Local formatMethod function for this component - shows "KO" instead of "KO/TKO"
   const formatMethod = (method: string | null | undefined) => {
     if (!method) return '';
-    if (method === 'KO_TKO') return 'KO';
-    if (method === 'DECISION') return 'DEC';
-    if (method === 'SUBMISSION') return 'SUB';
+    const upper = method.toUpperCase();
+    if (upper === 'KO_TKO' || upper === 'KO/TKO' || upper === 'KO' || upper === 'TKO') return 'KO';
+    if (upper === 'DECISION' || upper.startsWith('DECISION')) return 'DEC';
+    if (upper === 'SUBMISSION') return 'SUB';
     return method;
   };
 
@@ -490,7 +491,7 @@ export default function CompletedFightCard({
         paddingLeft: 60, // 44px square + 16px padding
         paddingVertical: 4, // Minimal vertical padding
         paddingRight: 60, // 44px square + 16px padding
-        minHeight: 44, // Minimum height
+        minHeight: 73, // Updated for taller boxes (44 * 1.66)
         justifyContent: 'center',
       }]}>
           {/* Full-height community rating square on the left */}
@@ -510,11 +511,10 @@ export default function CompletedFightCard({
               <>
                 <FontAwesome
                   name="star"
-                  size={30}
+                  size={14}
                   color={starColor}
-                  style={{ position: 'absolute' }}
                 />
-                <Text style={styles.ratingSquareText}>
+                <Text style={styles.ratingSquareNumber}>
                   {fight.averageRating.toFixed(1)}
                 </Text>
               </>
@@ -523,7 +523,7 @@ export default function CompletedFightCard({
                 name="star"
                 size={20}
                 color={colors.textSecondary}
-                style={{ position: 'absolute', opacity: 0.5 }}
+                style={{ opacity: 0.5 }}
               />
             )}
           </View>
@@ -571,14 +571,14 @@ export default function CompletedFightCard({
           ]}>
             {(fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0) ? (
               <>
-                <Animated.View style={{ position: 'absolute', transform: [{ scale: ratingScaleAnim }] }}>
+                <Animated.View style={{ transform: [{ scale: ratingScaleAnim }] }}>
                   <FontAwesome
                     name="star"
-                    size={30}
+                    size={14}
                     color={userStarColor}
                   />
                 </Animated.View>
-                <Animated.Text style={[styles.ratingSquareText, { transform: [{ scale: ratingScaleAnim }] }]}>
+                <Animated.Text style={[styles.ratingSquareNumber, { transform: [{ scale: ratingScaleAnim }] }]}>
                   {Math.round(fight.userRating).toString()}
                 </Animated.Text>
               </>
@@ -587,7 +587,7 @@ export default function CompletedFightCard({
                 name="star"
                 size={20}
                 color={colors.textSecondary}
-                style={{ position: 'absolute', opacity: 0.5 }}
+                style={{ opacity: 0.5 }}
               />
             )}
           </View>
@@ -600,28 +600,35 @@ export default function CompletedFightCard({
                 <View style={[
                   { alignSelf: 'flex-end', position: 'relative' }
                 ]}>
-                  {/* First name row with method badge */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
+                  {/* First name */}
+                  <Text style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary }]}>
+                    {fight.fighter1.firstName}
+                  </Text>
+                  {/* Last name */}
+                  <Text style={[
+                    styles.fighterLastName,
+                    { textAlign: 'right', color: colors.text }
+                  ]}>
+                    {fight.fighter1.lastName}
+                  </Text>
+                  {/* Prediction/Result badges below name */}
+                  <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 2, gap: 4 }}>
+                    {fight.winner === fight.fighter1.id && fight.method && (
+                      <View style={styles.winnerMethodBadge}>
+                        <Text style={styles.winnerMethodBadgeText}>{formatMethod(fight.method)}</Text>
+                      </View>
+                    )}
                     {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.userPrediction?.method && (
                       <View style={styles.userMethodBadge}>
                         <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
                       </View>
                     )}
-                    <Text style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary }]}>
-                      {fight.fighter1.firstName}
-                    </Text>
+                    {aggregateStats?.communityPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.communityPrediction?.method && (
+                      <View style={styles.communityMethodBadge}>
+                        <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
+                      </View>
+                    )}
                   </View>
-                  {/* Last name with underline if predicted */}
-                  <Text style={[
-                    styles.fighterName,
-                    { textAlign: 'right', fontWeight: '700', color: colors.text },
-                    aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && {
-                      textDecorationLine: 'underline',
-                      textDecorationColor: colors.text
-                    }
-                  ]}>
-                    {fight.fighter1.lastName}
-                  </Text>
                 </View>
               </View>
 
@@ -635,28 +642,35 @@ export default function CompletedFightCard({
                 <View style={[
                   { alignSelf: 'flex-start', position: 'relative' }
                 ]}>
-                  {/* First name row with method badge */}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }}>
-                    <Text style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary }]}>
-                      {fight.fighter2.firstName}
-                    </Text>
+                  {/* First name */}
+                  <Text style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary }]}>
+                    {fight.fighter2.firstName}
+                  </Text>
+                  {/* Last name */}
+                  <Text style={[
+                    styles.fighterLastName,
+                    { textAlign: 'left', color: colors.text }
+                  ]}>
+                    {fight.fighter2.lastName}
+                  </Text>
+                  {/* Prediction/Result badges below name */}
+                  <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 2, gap: 4 }}>
+                    {fight.winner === fight.fighter2.id && fight.method && (
+                      <View style={styles.winnerMethodBadge}>
+                        <Text style={styles.winnerMethodBadgeText}>{formatMethod(fight.method)}</Text>
+                      </View>
+                    )}
                     {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.userPrediction?.method && (
                       <View style={styles.userMethodBadge}>
                         <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
                       </View>
                     )}
+                    {aggregateStats?.communityPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.communityPrediction?.method && (
+                      <View style={styles.communityMethodBadge}>
+                        <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
+                      </View>
+                    )}
                   </View>
-                  {/* Last name with underline if predicted */}
-                  <Text style={[
-                    styles.fighterName,
-                    { textAlign: 'left', fontWeight: '700', color: colors.text },
-                    aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && {
-                      textDecorationLine: 'underline',
-                      textDecorationColor: colors.text
-                    }
-                  ]}>
-                    {fight.fighter2.lastName}
-                  </Text>
                 </View>
               </View>
             </View>
@@ -940,6 +954,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flexShrink: 1,
   },
+  fighterLastName: {
+    fontSize: 16,
+    fontWeight: '700',
+    flexShrink: 1,
+  },
   vsText: {
     fontSize: 13,
     fontWeight: '400',
@@ -1056,20 +1075,22 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     width: 44,
-    height: 44,
+    height: 73, // 66% taller (44 * 1.66)
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
+    gap: 2,
   },
   userRatingSquare: {
     position: 'absolute',
     top: 0,
     right: 0,
     width: 44,
-    height: 44,
+    height: 73, // 66% taller (44 * 1.66)
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
+    gap: 2,
   },
   ratingSquareText: {
     color: '#FFFFFF',
@@ -1077,11 +1098,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
+  ratingSquareNumber: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
   ratingCountContainer: {
     position: 'absolute',
     top: 4,
     left: 50,
-    height: 44,
+    height: 73, // Match taller box height
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
   },
@@ -1096,7 +1126,7 @@ const styles = StyleSheet.create({
   },
   userCommentIndicator: {
     position: 'absolute',
-    top: 22,
+    top: 28, // Vertically centered with taller box
     right: 50,
     flexDirection: 'row',
     alignItems: 'center',
@@ -1119,10 +1149,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 3,
-    marginHorizontal: 4,
   },
   userMethodBadgeText: {
     color: '#F5C518',
+    fontSize: 9,
+    fontWeight: '600',
+  },
+  communityMethodBadge: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#4A90D9',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  communityMethodBadgeText: {
+    color: '#4A90D9',
+    fontSize: 9,
+    fontWeight: '600',
+  },
+  winnerMethodBadge: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  winnerMethodBadgeText: {
+    color: '#4CAF50',
     fontSize: 9,
     fontWeight: '600',
   },
