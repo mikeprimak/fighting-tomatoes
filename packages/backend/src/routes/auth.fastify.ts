@@ -288,12 +288,17 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password);
+      request.log.info(`[Login] User: ${user.email}, password hash starts with: ${user.password.substring(0, 20)}...`);
+
       if (!isValidPassword) {
+        request.log.info(`[Login] Password check FAILED for user: ${user.email}`);
         return reply.code(401).send({
           error: 'Invalid credentials',
           code: 'INVALID_CREDENTIALS',
         });
       }
+
+      request.log.info(`[Login] Password check PASSED for user: ${user.email}`);
 
       // Update last login
       await fastify.prisma.user.update({
@@ -1859,7 +1864,6 @@ export async function authRoutes(fastify: FastifyInstance) {
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const { email } = request.body as { email: string };
-      request.log.info(`[Forgot Password] Request received for email: ${email}`);
 
       if (!email) {
         return reply.code(400).send({
@@ -1872,16 +1876,12 @@ export async function authRoutes(fastify: FastifyInstance) {
         where: { email: email.toLowerCase() }
       });
 
-      request.log.info(`[Forgot Password] User found: ${user ? 'yes' : 'no'}`);
-
       // IMPORTANT: Do all work BEFORE sending response
       // On serverless (Render), the function may terminate after response is sent
       if (user) {
         const resetToken = EmailService.generateVerificationToken();
         const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-        // Save token to database FIRST
-        request.log.info(`[Forgot Password] Saving token: ${resetToken.substring(0, 10)}... (length: ${resetToken.length})`);
         await fastify.prisma.user.update({
           where: { id: user.id },
           data: {
@@ -1890,21 +1890,12 @@ export async function authRoutes(fastify: FastifyInstance) {
           }
         });
 
-        // Verify token was saved
-        const verifyUser = await fastify.prisma.user.findUnique({
-          where: { id: user.id },
-          select: { passwordResetToken: true }
-        });
-        request.log.info(`[Forgot Password] Token saved for user: ${email}`);
-        request.log.info(`[Forgot Password] Token verified in DB: ${verifyUser?.passwordResetToken?.substring(0, 10)}... (length: ${verifyUser?.passwordResetToken?.length})`);
-
-        // Then send email
         try {
           await EmailService.sendPasswordResetEmail(email, resetToken);
-          request.log.info(`[Email] Password reset email sent to ${email}`);
+          request.log.info(`[Auth] Password reset email sent to ${email}`);
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          request.log.error(`[Email] Failed to send password reset email: ${msg}`);
+          request.log.error(`[Auth] Failed to send password reset email: ${msg}`);
         }
       }
 
@@ -1979,45 +1970,6 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Find user with valid reset token
-      request.log.info(`[Reset Password] Looking up token: ${token?.substring(0, 10)}... (length: ${token?.length})`);
-
-      // First check if ANY user has this token (regardless of expiry)
-      const userWithToken = await fastify.prisma.user.findFirst({
-        where: {
-          passwordResetToken: token,
-        },
-        select: {
-          id: true,
-          email: true,
-          passwordResetToken: true,
-          passwordResetExpires: true,
-        }
-      });
-
-      if (userWithToken) {
-        request.log.info(`[Reset Password] Found user with token: ${userWithToken.email}`);
-        request.log.info(`[Reset Password] Token expires: ${userWithToken.passwordResetExpires}`);
-        request.log.info(`[Reset Password] Current time: ${new Date()}`);
-        request.log.info(`[Reset Password] Token expired: ${userWithToken.passwordResetExpires && userWithToken.passwordResetExpires < new Date()}`);
-      } else {
-        request.log.info(`[Reset Password] No user found with this token`);
-
-        // Check if token might have extra characters or encoding issues
-        const allUsersWithResetTokens = await fastify.prisma.user.findMany({
-          where: {
-            passwordResetToken: { not: null }
-          },
-          select: {
-            email: true,
-            passwordResetToken: true,
-          }
-        });
-        request.log.info(`[Reset Password] Users with any reset token: ${allUsersWithResetTokens.length}`);
-        allUsersWithResetTokens.forEach(u => {
-          request.log.info(`[Reset Password] - ${u.email}: token starts with ${u.passwordResetToken?.substring(0, 10)}... (length: ${u.passwordResetToken?.length})`);
-        });
-      }
-
       const user = await fastify.prisma.user.findFirst({
         where: {
           passwordResetToken: token,
@@ -2028,17 +1980,20 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
       if (!user) {
+        request.log.info(`[Reset Password] No user found with valid token`);
         return reply.code(400).send({
           error: 'Invalid or expired reset token',
           code: 'TOKEN_INVALID',
         });
       }
 
+      request.log.info(`[Reset Password] Found user: ${user.email}, updating password...`);
+
       // Hash new password
       const hashedPassword = await bcrypt.hash(validPassword, 12);
 
       // Update password and clear reset token
-      await fastify.prisma.user.update({
+      const updatedUser = await fastify.prisma.user.update({
         where: { id: user.id },
         data: {
           password: hashedPassword,
@@ -2047,12 +2002,14 @@ export async function authRoutes(fastify: FastifyInstance) {
         }
       });
 
+      request.log.info(`[Reset Password] Password updated for user: ${updatedUser.email}, token cleared: ${updatedUser.passwordResetToken === null}`);
+
       // Invalidate all existing refresh tokens for security
-      await fastify.prisma.refreshToken.deleteMany({
+      const deletedTokens = await fastify.prisma.refreshToken.deleteMany({
         where: { userId: user.id }
       });
 
-      request.log.info(`[Auth] Password reset successful for user: ${user.email}`);
+      request.log.info(`[Reset Password] Deleted ${deletedTokens.count} refresh tokens for user: ${user.email}`);
 
       return reply.code(200).send({
         message: 'Password reset successful. Please log in with your new password.'
