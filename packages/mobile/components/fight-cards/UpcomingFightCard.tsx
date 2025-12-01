@@ -501,17 +501,27 @@ export default function UpcomingFightCard({
                 <View style={[
                   { alignSelf: 'flex-end', position: 'relative' }
                 ]}>
-                  <Text
-                    style={[
-                      styles.fighterName,
-                      { textAlign: 'right', fontWeight: '400', color: colors.textSecondary }
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {fight.fighter1.firstName}{'\n'}<Text style={{
-                      fontWeight: '700',
-                      color: colors.text
-                    }}>{fight.fighter1.lastName}</Text>
+                  {/* First name row with method badge */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
+                    {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.userPrediction?.method && (
+                      <View style={styles.userMethodBadge}>
+                        <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
+                      </View>
+                    )}
+                    <Text style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary }]}>
+                      {fight.fighter1.firstName}
+                    </Text>
+                  </View>
+                  {/* Last name with underline if predicted */}
+                  <Text style={[
+                    styles.fighterName,
+                    { textAlign: 'right', fontWeight: '700', color: colors.text },
+                    aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && {
+                      textDecorationLine: 'underline',
+                      textDecorationColor: colors.text
+                    }
+                  ]}>
+                    {fight.fighter1.lastName}
                   </Text>
                 </View>
               </View>
@@ -530,17 +540,27 @@ export default function UpcomingFightCard({
                 <View style={[
                   { alignSelf: 'flex-start', position: 'relative' }
                 ]}>
-                  <Text
-                    style={[
-                      styles.fighterName,
-                      { textAlign: 'left', fontWeight: '400', color: colors.textSecondary }
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {fight.fighter2.firstName}{'\n'}<Text style={{
-                      fontWeight: '700',
-                      color: colors.text
-                    }}>{fight.fighter2.lastName}</Text>
+                  {/* First name row with method badge */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start' }}>
+                    <Text style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary }]}>
+                      {fight.fighter2.firstName}
+                    </Text>
+                    {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.userPrediction?.method && (
+                      <View style={styles.userMethodBadge}>
+                        <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
+                      </View>
+                    )}
+                  </View>
+                  {/* Last name with underline if predicted */}
+                  <Text style={[
+                    styles.fighterName,
+                    { textAlign: 'left', fontWeight: '700', color: colors.text },
+                    aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && {
+                      textDecorationLine: 'underline',
+                      textDecorationColor: colors.text
+                    }
+                  ]}>
+                    {fight.fighter2.lastName}
                   </Text>
                 </View>
               </View>
@@ -981,5 +1001,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
+  },
+  userMethodBadge: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#F5C518',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+    marginHorizontal: 4,
+  },
+  userMethodBadgeText: {
+    color: '#F5C518',
+    fontSize: 9,
+    fontWeight: '600',
   },
 });
