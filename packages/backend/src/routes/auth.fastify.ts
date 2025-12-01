@@ -1951,8 +1951,11 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Type narrowing - actualPassword is definitely a string after the check above
+      const validPassword = actualPassword as string;
+
       // Validate password strength (uppercase, lowercase, number)
-      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(actualPassword)) {
+      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(validPassword)) {
         return reply.code(400).send({
           error: 'Password must contain uppercase, lowercase, and number',
           code: 'PASSWORD_WEAK',
@@ -1960,6 +1963,45 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Find user with valid reset token
+      request.log.info(`[Reset Password] Looking up token: ${token?.substring(0, 10)}... (length: ${token?.length})`);
+
+      // First check if ANY user has this token (regardless of expiry)
+      const userWithToken = await fastify.prisma.user.findFirst({
+        where: {
+          passwordResetToken: token,
+        },
+        select: {
+          id: true,
+          email: true,
+          passwordResetToken: true,
+          passwordResetExpires: true,
+        }
+      });
+
+      if (userWithToken) {
+        request.log.info(`[Reset Password] Found user with token: ${userWithToken.email}`);
+        request.log.info(`[Reset Password] Token expires: ${userWithToken.passwordResetExpires}`);
+        request.log.info(`[Reset Password] Current time: ${new Date()}`);
+        request.log.info(`[Reset Password] Token expired: ${userWithToken.passwordResetExpires && userWithToken.passwordResetExpires < new Date()}`);
+      } else {
+        request.log.info(`[Reset Password] No user found with this token`);
+
+        // Check if token might have extra characters or encoding issues
+        const allUsersWithResetTokens = await fastify.prisma.user.findMany({
+          where: {
+            passwordResetToken: { not: null }
+          },
+          select: {
+            email: true,
+            passwordResetToken: true,
+          }
+        });
+        request.log.info(`[Reset Password] Users with any reset token: ${allUsersWithResetTokens.length}`);
+        allUsersWithResetTokens.forEach(u => {
+          request.log.info(`[Reset Password] - ${u.email}: token starts with ${u.passwordResetToken?.substring(0, 10)}... (length: ${u.passwordResetToken?.length})`);
+        });
+      }
+
       const user = await fastify.prisma.user.findFirst({
         where: {
           passwordResetToken: token,
@@ -1977,7 +2019,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Hash new password
-      const hashedPassword = await bcrypt.hash(actualPassword, 12);
+      const hashedPassword = await bcrypt.hash(validPassword, 12);
 
       // Update password and clear reset token
       await fastify.prisma.user.update({
