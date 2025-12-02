@@ -1506,25 +1506,40 @@ export default function CompletedFightDetailScreen({
                             key={tag.id}
                             style={{ opacity: isSelected ? 1 : tagsOpacity }}
                           >
-                            <TouchableOpacity
-                              onPress={() => handleToggleTag(tag.id)}
-                              style={[
-                                styles.inlineTagButton,
-                                {
-                                  backgroundColor: isSelected ? colors.primary : 'transparent',
-                                  borderColor: colors.border,
-                                }
-                              ]}
-                            >
-                              <Text style={[
-                                styles.inlineTagText,
-                                {
-                                  color: isSelected ? colors.textOnAccent : colors.textSecondary
-                                }
-                              ]}>
-                                {tag.count > 0 ? `${tag.name} (${tag.count})` : tag.name}
-                              </Text>
-                            </TouchableOpacity>
+                            <View style={styles.tagWithBadge}>
+                              <TouchableOpacity
+                                onPress={() => handleToggleTag(tag.id)}
+                                style={[
+                                  styles.inlineTagButton,
+                                  {
+                                    backgroundColor: isSelected ? colors.primary : 'transparent',
+                                    borderColor: colors.border,
+                                  }
+                                ]}
+                              >
+                                <Text style={[
+                                  styles.inlineTagText,
+                                  {
+                                    color: isSelected ? colors.textOnAccent : colors.textSecondary
+                                  }
+                                ]}>
+                                  {tag.name}
+                                </Text>
+                              </TouchableOpacity>
+                              {tag.count > 0 && (
+                                <View style={[
+                                  styles.tagCountBadge,
+                                  {
+                                    backgroundColor: isSelected ? colors.primary : colors.card,
+                                    borderColor: isSelected ? colors.primary : colors.border
+                                  }
+                                ]}>
+                                  <Text style={[styles.tagCountBadgeText, { color: isSelected ? colors.textOnAccent : colors.textSecondary }]}>
+                                    {tag.count}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
                           </Animated.View>
                         );
                       })}
@@ -3144,6 +3159,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
+  tagWithBadge: {
+    position: 'relative',
+  },
+  tagCountBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  tagCountBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
   inlineCommentSection: {
     marginBottom: 12,
   },
@@ -3407,6 +3441,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 12,
+    marginBottom: 16,
   },
   saveCommentButtonText: {
     fontSize: 15,

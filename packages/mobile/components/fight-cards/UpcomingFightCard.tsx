@@ -514,16 +514,16 @@ export default function UpcomingFightCard({
                     {fight.fighter1.lastName}
                   </Text>
                   {/* Prediction badges below name */}
-                  <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 2, gap: 4, minHeight: 16 }}>
+                  <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 3, gap: 4, minHeight: 16 }}>
                     {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.userPrediction?.method && (
                       <View style={styles.userMethodBadge}>
-                        <FontAwesome name="user" size={10} color="#1a1a1a" style={{ marginRight: 3 }} />
+                        <FontAwesome name="user" size={10} color="#F5C518" style={{ marginRight: 3 }} />
                         <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
                       </View>
                     )}
                     {aggregateStats?.communityPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.communityPrediction?.method && (
                       <View style={styles.communityMethodBadge}>
-                        <FontAwesome name="users" size={10} color="#1a1a1a" style={{ marginRight: 3 }} />
+                        <FontAwesome name="users" size={10} color="#4A90D9" style={{ marginRight: 3 }} />
                         <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
                       </View>
                     )}
@@ -557,16 +557,16 @@ export default function UpcomingFightCard({
                     {fight.fighter2.lastName}
                   </Text>
                   {/* Prediction badges below name */}
-                  <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 2, gap: 4, minHeight: 16 }}>
+                  <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 3, gap: 4, minHeight: 16 }}>
                     {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.userPrediction?.method && (
                       <View style={styles.userMethodBadge}>
-                        <FontAwesome name="user" size={10} color="#1a1a1a" style={{ marginRight: 3 }} />
+                        <FontAwesome name="user" size={10} color="#F5C518" style={{ marginRight: 3 }} />
                         <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
                       </View>
                     )}
                     {aggregateStats?.communityPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.communityPrediction?.method && (
                       <View style={styles.communityMethodBadge}>
-                        <FontAwesome name="users" size={10} color="#1a1a1a" style={{ marginRight: 3 }} />
+                        <FontAwesome name="users" size={10} color="#4A90D9" style={{ marginRight: 3 }} />
                         <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
                       </View>
                     )}
@@ -1028,28 +1028,26 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   userMethodBadge: {
-    backgroundColor: '#F5C518',
-    paddingHorizontal: 4,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 1,
     paddingVertical: 1,
-    borderRadius: 3,
     flexDirection: 'row',
     alignItems: 'center',
   },
   userMethodBadgeText: {
-    color: '#1a1a1a',
+    color: '#F5C518',
     fontSize: 10,
     fontWeight: '600',
   },
   communityMethodBadge: {
-    backgroundColor: '#4A90D9',
-    paddingHorizontal: 4,
+    backgroundColor: 'transparent',
+    paddingHorizontal: 1,
     paddingVertical: 1,
-    borderRadius: 3,
     flexDirection: 'row',
     alignItems: 'center',
   },
   communityMethodBadgeText: {
-    color: '#1a1a1a',
+    color: '#4A90D9',
     fontSize: 10,
     fontWeight: '600',
   },

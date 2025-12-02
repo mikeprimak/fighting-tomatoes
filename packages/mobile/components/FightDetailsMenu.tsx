@@ -32,6 +32,8 @@ interface Fight {
   fighter1Id: string;
   fighter2Id: string;
   event: Event;
+  weightClass?: string | null;
+  isTitle?: boolean;
   isFollowingFighter1?: boolean;
   isFollowingFighter2?: boolean;
   notificationReasons?: NotificationReasons;
@@ -58,6 +60,14 @@ const formatEventDate = (dateString: string) => {
     day: 'numeric',
     year: 'numeric',
   });
+};
+
+// Format weight class for display
+const formatWeightClass = (weightClass: string) => {
+  return weightClass
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 };
 
 export default function FightDetailsMenu({
@@ -213,12 +223,24 @@ export default function FightDetailsMenu({
               <Text style={[styles.menuItemLabel, { color: colors.textSecondary }]}>Event</Text>
               <View style={styles.menuItemValueRow}>
                 <Text style={[styles.menuItemValue, { color: colors.text }]}>
-                  {fight.event.name}
+                  {fight.event.name.replace('Fight Night', 'FN')}
                 </Text>
                 <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
               </View>
             </View>
           </TouchableOpacity>
+
+          {/* Weight Class */}
+          {fight.weightClass && (
+            <View style={[styles.menuItem, { borderBottomColor: colors.border }]}>
+              <View style={styles.menuItemContent}>
+                <Text style={[styles.menuItemLabel, { color: colors.textSecondary }]}>Weight Class</Text>
+                <Text style={[styles.menuItemValue, { color: colors.textSecondary }]}>
+                  {fight.isTitle ? `${formatWeightClass(fight.weightClass)} Championship` : formatWeightClass(fight.weightClass)}
+                </Text>
+              </View>
+            </View>
+          )}
 
           {/* Event Date */}
           <View style={[styles.menuItem, { borderBottomWidth: 0 }]}>
