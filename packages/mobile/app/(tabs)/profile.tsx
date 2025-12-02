@@ -281,29 +281,28 @@ export default function ProfileScreen() {
           </View>
           <View style={{ height: 12 }} />
 
-          {/* Time Filter Buttons */}
-          <View style={styles.filterTabsContainer}>
-            {timeFilterOptions.map((option) => (
-              <TouchableOpacity
-                key={option.key}
-                onPress={() => setTimeFilter(option.key)}
-                style={[styles.filterTab, timeFilter === option.key && styles.filterTabActive]}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Text style={[styles.filterTabText, timeFilter === option.key && styles.filterTabTextActive]}>
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={{ height: 4 }} />
-
           {(predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect) === 0 ? (
             <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
               Make fight predictions on the "Upcoming" screen. Check in after the event to see how you did!
             </Text>
           ) : (
             <>
+              {/* Time Filter Buttons */}
+              <View style={styles.filterTabsContainer}>
+                {timeFilterOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option.key}
+                    onPress={() => setTimeFilter(option.key)}
+                    style={[styles.filterTab, timeFilter === option.key && styles.filterTabActive]}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={[styles.filterTabText, timeFilter === option.key && styles.filterTabTextActive]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={{ height: 4 }} />
               {/* Two stat boxes side by side */}
               <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
                 {/* Prediction Accuracy - bordered */}
