@@ -19,9 +19,9 @@ export default function RatingDistributionChart({
 }: RatingDistributionChartProps) {
   // Chart dimensions - horizontal layout
   const chartWidth = 281; // Width for 10 bars - narrower to fit screen
-  const chartHeight = 55; // Compact height
-  const barWidth = 14; // Horizontal thickness of bars
-  const barGap = 2;
+  const chartHeight = 73; // Match height of hype/rating box
+  const barWidth = 24; // Wider bars that almost touch
+  const barGap = 1;
 
   // Find max count for scaling
   const maxCount = Math.max(...Object.values(distribution), 1);
@@ -86,8 +86,8 @@ export default function RatingDistributionChart({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'center',
-    height: 55,
+    alignItems: 'flex-end',
+    height: 73,
     width: 281,
   },
   chartArea: {
@@ -96,6 +96,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     paddingHorizontal: 10,
-    paddingBottom: 5,
   },
 });

@@ -214,7 +214,7 @@ export default function ProfileScreen() {
     // If there's no data, show empty chart with message
     const hasData = Object.keys(dataToUse).length > 0;
     const maxCount = hasData ? Math.max(...Object.values(dataToUse), 1) : 1;
-    const maxBarHeight = 45; // Maximum bar height in pixels
+    const maxBarHeight = 73; // Maximum bar height to match colored box height
 
     return (
       <View>
@@ -399,12 +399,12 @@ export default function ProfileScreen() {
               Choose how Hyped you are for upcoming fights on the "Upcoming" screen. You'll see your data here.
             </Text>
           ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-              {/* Colored Hype Box with fight count */}
-              <View style={{ alignItems: 'center' }}>
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 16 }}>
+                {/* Colored Hype Box */}
                 <View style={{
-                  width: 40,
-                  height: 40,
+                  width: 44,
+                  height: 73,
                   justifyContent: 'center',
                   alignItems: 'center',
                   borderRadius: 8,
@@ -412,26 +412,29 @@ export default function ProfileScreen() {
                 }}>
                   <FontAwesome6
                     name="fire-flame-curved"
-                    size={24}
-                    color={getHypeHeatmapColor(Math.round(user?.averageHype || 0))}
-                    style={{ position: 'absolute', opacity: 0.5 }}
+                    size={16}
+                    color="rgba(0,0,0,0.45)"
+                    style={{ position: 'absolute', top: 6 }}
                   />
                   <Text style={{
                     color: '#FFFFFF',
-                    fontSize: 14,
+                    fontSize: 18,
                     fontWeight: 'bold',
                     textAlign: 'center',
+                    textShadowColor: 'rgba(0,0,0,0.7)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 3,
                   }}>
                     {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'}
                   </Text>
                 </View>
-                <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>({user?.totalHype || 0} fights)</Text>
-              </View>
 
-              {/* Distribution Chart */}
-              <View style={{ flex: 1, marginTop: -12 }}>
-                {renderDistributionChart(user?.hypeDistribution || {}, 'hype')}
+                {/* Distribution Chart */}
+                <View style={{ flex: 1 }}>
+                  {renderDistributionChart(user?.hypeDistribution || {}, 'hype')}
+                </View>
               </View>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>({user?.totalHype || 0} fights)</Text>
             </View>
           )}
         </View>
@@ -468,12 +471,12 @@ export default function ProfileScreen() {
               Rate how much you liked fights on the "Past Events" screen.
             </Text>
           ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-              {/* Colored Rating Box with fight count */}
-              <View style={{ alignItems: 'center' }}>
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 16 }}>
+                {/* Colored Rating Box */}
                 <View style={{
-                  width: 40,
-                  height: 40,
+                  width: 44,
+                  height: 73,
                   justifyContent: 'center',
                   alignItems: 'center',
                   borderRadius: 8,
@@ -481,26 +484,29 @@ export default function ProfileScreen() {
                 }}>
                   <FontAwesome
                     name="star"
-                    size={24}
-                    color={getHypeHeatmapColor(Math.round(user?.averageRating || 0))}
-                    style={{ position: 'absolute', opacity: 0.5 }}
+                    size={16}
+                    color="rgba(0,0,0,0.45)"
+                    style={{ position: 'absolute', top: 6 }}
                   />
                   <Text style={{
                     color: '#FFFFFF',
-                    fontSize: 14,
+                    fontSize: 18,
                     fontWeight: 'bold',
                     textAlign: 'center',
+                    textShadowColor: 'rgba(0,0,0,0.7)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 3,
                   }}>
                     {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'}
                   </Text>
                 </View>
-                <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>({user?.totalRatings || 0} fights)</Text>
-              </View>
 
-              {/* Distribution Chart */}
-              <View style={{ flex: 1, marginTop: -12 }}>
-                {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
+                {/* Distribution Chart */}
+                <View style={{ flex: 1 }}>
+                  {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
+                </View>
               </View>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>({user?.totalRatings || 0} fights)</Text>
             </View>
           )}
         </View>
@@ -674,23 +680,23 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    height: 55,
-    paddingHorizontal: 4,
+    height: 73,
   },
   barContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-end',
     height: '100%',
+    marginHorizontal: 0.5,
   },
   barWrapper: {
     width: '100%',
-    height: 45,
+    height: 73,
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
   bar: {
-    width: 14,
+    width: 24,
     borderRadius: 1,
     minHeight: 2,
   },

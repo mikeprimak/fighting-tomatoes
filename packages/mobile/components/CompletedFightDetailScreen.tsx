@@ -1644,13 +1644,12 @@ export default function CompletedFightDetailScreen({
                       backgroundColor: getHypeHeatmapColor(fight.userHypePrediction),
                     }
                   ]}>
-                    <View style={{ position: 'absolute' }}>
-                      <FontAwesome6
-                        name="fire-flame-curved"
-                        size={24}
-                        color={getFlameColor(getHypeHeatmapColor(fight.userHypePrediction), colors.background)}
-                      />
-                    </View>
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={16}
+                      color="rgba(0,0,0,0.45)"
+                      style={{ position: 'absolute', top: 6 }}
+                    />
                     <Text style={styles.hypeSquareText}>
                       {Math.round(fight.userHypePrediction).toString()}
                     </Text>
@@ -1747,24 +1746,28 @@ export default function CompletedFightDetailScreen({
 
                 return (
                   <View style={{
-                    width: 40,
-                    height: 40,
+                    width: 44,
+                    height: 73,
                     justifyContent: 'center',
                     alignItems: 'center',
                     borderRadius: 8,
                     backgroundColor: ratingColor,
+                    gap: 2,
                   }}>
                     <FontAwesome
                       name="star"
-                      size={24}
-                      color={starColor}
-                      style={{ position: 'absolute' }}
+                      size={16}
+                      color="rgba(0,0,0,0.45)"
+                      style={{ position: 'absolute', top: 7 }}
                     />
                     <Text style={{
                       color: '#FFFFFF',
-                      fontSize: 14,
+                      fontSize: 18,
                       fontWeight: 'bold',
                       textAlign: 'center',
+                      textShadowColor: 'rgba(0,0,0,0.7)',
+                      textShadowOffset: { width: 0, height: 1 },
+                      textShadowRadius: 3,
                     }}>
                       {fight.averageRating
                         ? fight.averageRating % 1 === 0
@@ -1815,13 +1818,12 @@ export default function CompletedFightDetailScreen({
                     backgroundColor: getHypeHeatmapColor(predictionStats.averageHype),
                   }
                 ]}>
-                  <View style={{ position: 'absolute' }}>
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={24}
-                      color={getFlameColor(getHypeHeatmapColor(predictionStats.averageHype), colors.background)}
-                    />
-                  </View>
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={16}
+                    color="rgba(0,0,0,0.45)"
+                    style={{ position: 'absolute', top: 6 }}
+                  />
                   <Text style={styles.hypeSquareText}>
                     {predictionStats.averageHype.toFixed(1)}
                   </Text>
@@ -3512,17 +3514,21 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
   },
   userHypeSquare: {
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 73,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
+    gap: 2,
   },
   hypeSquareText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   userRatingContainer: {
     marginHorizontal: 12,

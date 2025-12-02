@@ -153,14 +153,6 @@ export default function PredictionBarChart({
                     <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF' }}>
                       {winnerPredictions.fighter1.percentage}% {fighter1Name}
                     </Text>
-                    {selectedWinner === fighter1Id && !selectedMethod && (
-                      <View style={{
-                        height: 2,
-                        backgroundColor: '#F5C518',
-                        borderRadius: 1,
-                        marginTop: 2,
-                      }} />
-                    )}
                   </View>
                 </View>
                 {/* Fighter 2 */}
@@ -189,14 +181,6 @@ export default function PredictionBarChart({
                     <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF' }}>
                       {winnerPredictions.fighter2.percentage}% {fighter2Name}
                     </Text>
-                    {selectedWinner === fighter2Id && !selectedMethod && (
-                      <View style={{
-                        height: 2,
-                        backgroundColor: '#F5C518',
-                        borderRadius: 1,
-                        marginTop: 2,
-                      }} />
-                    )}
                   </View>
                 </View>
               </View>
@@ -229,8 +213,6 @@ export default function PredictionBarChart({
                   {fighter1Predictions.KO_TKO > 0 && (() => {
                     const methodPercentage = (fighter1Predictions.KO_TKO / winnerPredictions.fighter1.count) * 100;
                     const label = methodPercentage < 25 ? 'K' : 'KO';
-                    const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'KO_TKO';
-                    const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'KO_TKO';
                     return (
                       <View
                         style={{
@@ -242,18 +224,6 @@ export default function PredictionBarChart({
                           backgroundColor: 'transparent',
                         }}
                       >
-                        {/* Green overline for actual outcome */}
-                        {isActualOutcome && (
-                          <View style={{
-                            position: 'absolute',
-                            top: 6,
-                            left: '25%',
-                            right: '25%',
-                            height: 2,
-                            backgroundColor: '#4CAF50',
-                            borderRadius: 1,
-                          }} />
-                        )}
                         <Text
                           style={{
                             fontSize: 14,
@@ -263,26 +233,12 @@ export default function PredictionBarChart({
                         >
                           {label}
                         </Text>
-                        {/* Yellow underline for user prediction */}
-                        {isUserPrediction && (
-                          <View style={{
-                            position: 'absolute',
-                            bottom: 6,
-                            left: '25%',
-                            right: '25%',
-                            height: 2,
-                            backgroundColor: '#F5C518',
-                            borderRadius: 1,
-                          }} />
-                        )}
                       </View>
                     );
                   })()}
                   {fighter1Predictions.SUBMISSION > 0 && (() => {
                     const methodPercentage = (fighter1Predictions.SUBMISSION / winnerPredictions.fighter1.count) * 100;
                     const label = methodPercentage < 25 ? 'S' : 'SUB';
-                    const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION';
-                    const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'SUBMISSION';
                     return (
                       <View
                         style={{
@@ -294,18 +250,6 @@ export default function PredictionBarChart({
                           backgroundColor: 'transparent',
                         }}
                       >
-                        {/* Green overline for actual outcome */}
-                        {isActualOutcome && (
-                          <View style={{
-                            position: 'absolute',
-                            top: 6,
-                            left: '25%',
-                            right: '25%',
-                            height: 2,
-                            backgroundColor: '#4CAF50',
-                            borderRadius: 1,
-                          }} />
-                        )}
                         <Text
                           style={{
                             fontSize: 14,
@@ -315,26 +259,12 @@ export default function PredictionBarChart({
                         >
                           {label}
                         </Text>
-                        {/* Yellow underline for user prediction */}
-                        {isUserPrediction && (
-                          <View style={{
-                            position: 'absolute',
-                            bottom: 6,
-                            left: '25%',
-                            right: '25%',
-                            height: 2,
-                            backgroundColor: '#F5C518',
-                            borderRadius: 1,
-                          }} />
-                        )}
                       </View>
                     );
                   })()}
                   {fighter1Predictions.DECISION > 0 && (() => {
                     const methodPercentage = (fighter1Predictions.DECISION / winnerPredictions.fighter1.count) * 100;
                     const label = methodPercentage < 25 ? 'D' : 'DEC';
-                    const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'DECISION';
-                    const isActualOutcome = actualWinner === fighter1Id && actualMethod === 'DECISION';
                     return (
                       <View
                         style={{
@@ -344,18 +274,6 @@ export default function PredictionBarChart({
                           backgroundColor: 'transparent',
                         }}
                       >
-                        {/* Green overline for actual outcome */}
-                        {isActualOutcome && (
-                          <View style={{
-                            position: 'absolute',
-                            top: 6,
-                            left: '25%',
-                            right: '25%',
-                            height: 2,
-                            backgroundColor: '#4CAF50',
-                            borderRadius: 1,
-                          }} />
-                        )}
                         <Text
                           style={{
                             fontSize: 14,
@@ -365,18 +283,6 @@ export default function PredictionBarChart({
                         >
                           {label}
                         </Text>
-                        {/* Yellow underline for user prediction */}
-                        {isUserPrediction && (
-                          <View style={{
-                            position: 'absolute',
-                            bottom: 6,
-                            left: '25%',
-                            right: '25%',
-                            height: 2,
-                            backgroundColor: '#F5C518',
-                            borderRadius: 1,
-                          }} />
-                        )}
                       </View>
                     );
                   })()}
@@ -400,8 +306,6 @@ export default function PredictionBarChart({
                   {fighter2Predictions.KO_TKO > 0 && (() => {
                     const methodPercentage = (fighter2Predictions.KO_TKO / winnerPredictions.fighter2.count) * 100;
                     const label = methodPercentage < 25 ? 'K' : 'KO';
-                    const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'KO_TKO';
-                    const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'KO_TKO';
                     return (
                       <View
                         style={{
@@ -413,39 +317,13 @@ export default function PredictionBarChart({
                           backgroundColor: 'transparent',
                         }}
                       >
-                        {/* Green overline for actual outcome */}
-                        {isActualOutcome && (
-                          <View style={{
-                            position: 'absolute',
-                            top: 6,
-                            left: '25%',
-                            right: '25%',
-                            height: 2,
-                            backgroundColor: '#4CAF50',
-                            borderRadius: 1,
-                          }} />
-                        )}
                         <Text style={{ fontSize: 14, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
-                        {/* Yellow underline for user prediction */}
-                        {isUserPrediction && (
-                          <View style={{
-                            position: 'absolute',
-                            bottom: 6,
-                            left: '25%',
-                            right: '25%',
-                            height: 2,
-                            backgroundColor: '#F5C518',
-                            borderRadius: 1,
-                          }} />
-                        )}
                       </View>
                     );
                   })()}
                   {fighter2Predictions.SUBMISSION > 0 && (() => {
                     const methodPercentage = (fighter2Predictions.SUBMISSION / winnerPredictions.fighter2.count) * 100;
                     const label = methodPercentage < 25 ? 'S' : 'SUB';
-                    const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'SUBMISSION';
-                    const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'SUBMISSION';
                     return (
                       <View
                         style={{
@@ -457,39 +335,13 @@ export default function PredictionBarChart({
                           backgroundColor: 'transparent',
                         }}
                       >
-                        {/* Green overline for actual outcome */}
-                        {isActualOutcome && (
-                          <View style={{
-                            position: 'absolute',
-                            top: 6,
-                            left: '25%',
-                            right: '25%',
-                            height: 2,
-                            backgroundColor: '#4CAF50',
-                            borderRadius: 1,
-                          }} />
-                        )}
                         <Text style={{ fontSize: 14, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
-                        {/* Yellow underline for user prediction */}
-                        {isUserPrediction && (
-                          <View style={{
-                            position: 'absolute',
-                            bottom: 6,
-                            left: '25%',
-                            right: '25%',
-                            height: 2,
-                            backgroundColor: '#F5C518',
-                            borderRadius: 1,
-                          }} />
-                        )}
                       </View>
                     );
                   })()}
                   {fighter2Predictions.DECISION > 0 && (() => {
                     const methodPercentage = (fighter2Predictions.DECISION / winnerPredictions.fighter2.count) * 100;
                     const label = methodPercentage < 25 ? 'D' : 'DEC';
-                    const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'DECISION';
-                    const isActualOutcome = actualWinner === fighter2Id && actualMethod === 'DECISION';
                     return (
                       <View
                         style={{
@@ -499,31 +351,7 @@ export default function PredictionBarChart({
                           backgroundColor: 'transparent',
                         }}
                       >
-                        {/* Green overline for actual outcome */}
-                        {isActualOutcome && (
-                          <View style={{
-                            position: 'absolute',
-                            top: 6,
-                            left: '25%',
-                            right: '25%',
-                            height: 2,
-                            backgroundColor: '#4CAF50',
-                            borderRadius: 1,
-                          }} />
-                        )}
                         <Text style={{ fontSize: 14, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
-                        {/* Yellow underline for user prediction */}
-                        {isUserPrediction && (
-                          <View style={{
-                            position: 'absolute',
-                            bottom: 6,
-                            left: '25%',
-                            right: '25%',
-                            height: 2,
-                            backgroundColor: '#F5C518',
-                            borderRadius: 1,
-                          }} />
-                        )}
                       </View>
                     );
                   })()}

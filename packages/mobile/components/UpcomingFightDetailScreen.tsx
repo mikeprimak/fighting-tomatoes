@@ -1348,9 +1348,6 @@ export default function UpcomingFightDetailScreen({
                 alignItems: 'center',
                 gap: 6,
               }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <FontAwesome name="users" size={19} color={colors.textSecondary} />
-                </View>
                 <View style={{ position: 'relative', width: 44, height: 73 }}>
                   {/* Grey placeholder - always visible until fully revealed */}
                   <View style={{
