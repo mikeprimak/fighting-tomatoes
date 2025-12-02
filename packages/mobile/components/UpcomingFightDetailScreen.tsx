@@ -968,10 +968,14 @@ export default function UpcomingFightDetailScreen({
         {/* My Picks Section Divider */}
         <View style={[styles.sectionDivider, { marginTop: 15 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0 }}>
+          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 4 }} />
+            <FontAwesome name="check-circle" size={12} color={colors.textSecondary} />
+            <View style={{ width: 4 }} />
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
               My Picks
             </Text>
+            <View style={{ width: 4 }} />
           </View>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
@@ -1084,10 +1088,14 @@ export default function UpcomingFightDetailScreen({
         {/* My Hype Section Divider */}
         <View style={[styles.sectionDivider, { marginTop: 2 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0 }}>
+          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 4 }} />
+            <FontAwesome6 name="fire-flame-curved" size={12} color={colors.textSecondary} />
+            <View style={{ width: 4 }} />
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
               My Hype
             </Text>
+            <View style={{ width: 4 }} />
           </View>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
@@ -1230,10 +1238,14 @@ export default function UpcomingFightDetailScreen({
         {/* Community Predictions Section Divider */}
         <View style={[styles.sectionDivider, { marginTop: 15 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0 }}>
+          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 4 }} />
+            <FontAwesome name="users" size={12} color={colors.textSecondary} />
+            <View style={{ width: 4 }} />
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
               Community Predictions
             </Text>
+            <View style={{ width: 4 }} />
           </View>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
@@ -1264,10 +1276,14 @@ export default function UpcomingFightDetailScreen({
         {/* Community Hype Section Divider */}
         <View style={[styles.sectionDivider, { marginTop: -8 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0 }}>
+          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 4 }} />
+            <FontAwesome6 name="fire-flame-curved" size={12} color={colors.textSecondary} />
+            <View style={{ width: 4 }} />
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
               Community Hype
             </Text>
+            <View style={{ width: 4 }} />
           </View>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
@@ -1335,12 +1351,12 @@ export default function UpcomingFightDetailScreen({
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <FontAwesome name="users" size={19} color={colors.textSecondary} />
                 </View>
-                <View style={{ position: 'relative', width: 40, height: 40 }}>
+                <View style={{ position: 'relative', width: 44, height: 73 }}>
                   {/* Grey placeholder - always visible until fully revealed */}
                   <View style={{
                     position: 'absolute',
-                    width: 40,
-                    height: 40,
+                    width: 44,
+                    height: 73,
                     justifyContent: 'center',
                     alignItems: 'center',
                     borderRadius: 8,
@@ -1350,9 +1366,9 @@ export default function UpcomingFightDetailScreen({
                   }}>
                     <FontAwesome6
                       name="fire-flame-curved"
-                      size={20}
+                      size={24}
                       color={colors.textSecondary}
-                      style={{ position: 'absolute', opacity: 0.5 }}
+                      style={{ opacity: 0.5 }}
                     />
                   </View>
 
@@ -1360,29 +1376,33 @@ export default function UpcomingFightDetailScreen({
                   {hasRevealedHype && (
                     <Animated.View style={{
                       position: 'absolute',
-                      width: 40,
-                      height: 40,
+                      width: 44,
+                      height: 73,
                       opacity: aggregateHypeFadeAnim,
                     }}>
                       <View style={{
-                        width: 40,
-                        height: 40,
+                        width: 44,
+                        height: 73,
                         justifyContent: 'center',
                         alignItems: 'center',
                         borderRadius: 8,
                         backgroundColor: hypeColor,
+                        gap: 2,
                       }}>
                         <FontAwesome6
                           name="fire-flame-curved"
-                          size={24}
-                          color={flameColor}
-                          style={{ position: 'absolute' }}
+                          size={16}
+                          color="rgba(0,0,0,0.45)"
+                          style={{ position: 'absolute', top: 6 }}
                         />
                         <Text style={{
                           color: '#FFFFFF',
-                          fontSize: 14,
+                          fontSize: 18,
                           fontWeight: 'bold',
                           textAlign: 'center',
+                          textShadowColor: 'rgba(0,0,0,0.7)',
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 3,
                         }}>
                           {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
                         </Text>
@@ -1413,10 +1433,14 @@ export default function UpcomingFightDetailScreen({
       {/* Comments Section Divider */}
       <View style={[styles.sectionDivider, { marginTop: 7 }]}>
         <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        <View style={{ flexShrink: 0 }}>
+        <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ width: 4 }} />
+          <FontAwesome name="comments" size={12} color={colors.textSecondary} />
+          <View style={{ width: 4 }} />
           <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
             Comments
           </Text>
+          <View style={{ width: 4 }} />
         </View>
         <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
       </View>

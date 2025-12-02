@@ -511,9 +511,9 @@ export default function CompletedFightCard({
               <>
                 <FontAwesome
                   name="star"
-                  size={12}
+                  size={16}
                   color="rgba(0,0,0,0.45)"
-                  style={{ position: 'absolute', top: 8 }}
+                  style={{ position: 'absolute', top: 7 }}
                 />
                 <Text style={styles.ratingSquareNumber}>
                   {fight.averageRating.toFixed(1)}
@@ -572,10 +572,10 @@ export default function CompletedFightCard({
           ]}>
             {(fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0) ? (
               <>
-                <Animated.View style={{ position: 'absolute', top: 8, transform: [{ scale: ratingScaleAnim }] }}>
+                <Animated.View style={{ position: 'absolute', top: 7, transform: [{ scale: ratingScaleAnim }] }}>
                   <FontAwesome
                     name="star"
-                    size={12}
+                    size={16}
                     color="rgba(0,0,0,0.45)"
                   />
                 </Animated.View>
@@ -616,19 +616,19 @@ export default function CompletedFightCard({
                   <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 2, gap: 4, minHeight: 16 }}>
                     {fight.winner === fight.fighter1.id && fight.method && (
                       <View style={styles.winnerMethodBadge}>
-                        <FontAwesome name="trophy" size={8} color="#4CAF50" style={{ marginRight: 3 }} />
+                        <FontAwesome name="trophy" size={10} color="#1a1a1a" style={{ marginRight: 3 }} />
                         <Text style={styles.winnerMethodBadgeText}>{formatMethod(fight.method)}</Text>
                       </View>
                     )}
                     {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.userPrediction?.method && (
                       <View style={styles.userMethodBadge}>
-                        <FontAwesome name="user" size={8} color="#F5C518" style={{ marginRight: 3 }} />
+                        <FontAwesome name="user" size={10} color="#1a1a1a" style={{ marginRight: 3 }} />
                         <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
                       </View>
                     )}
                     {aggregateStats?.communityPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.communityPrediction?.method && (
                       <View style={styles.communityMethodBadge}>
-                        <FontAwesome name="users" size={8} color="#4A90D9" style={{ marginRight: 3 }} />
+                        <FontAwesome name="users" size={10} color="#1a1a1a" style={{ marginRight: 3 }} />
                         <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
                       </View>
                     )}
@@ -661,19 +661,19 @@ export default function CompletedFightCard({
                   <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 2, gap: 4, minHeight: 16 }}>
                     {fight.winner === fight.fighter2.id && fight.method && (
                       <View style={styles.winnerMethodBadge}>
-                        <FontAwesome name="trophy" size={8} color="#4CAF50" style={{ marginRight: 3 }} />
+                        <FontAwesome name="trophy" size={10} color="#1a1a1a" style={{ marginRight: 3 }} />
                         <Text style={styles.winnerMethodBadgeText}>{formatMethod(fight.method)}</Text>
                       </View>
                     )}
                     {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.userPrediction?.method && (
                       <View style={styles.userMethodBadge}>
-                        <FontAwesome name="user" size={8} color="#F5C518" style={{ marginRight: 3 }} />
+                        <FontAwesome name="user" size={10} color="#1a1a1a" style={{ marginRight: 3 }} />
                         <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
                       </View>
                     )}
                     {aggregateStats?.communityPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.communityPrediction?.method && (
                       <View style={styles.communityMethodBadge}>
-                        <FontAwesome name="users" size={8} color="#4A90D9" style={{ marginRight: 3 }} />
+                        <FontAwesome name="users" size={10} color="#1a1a1a" style={{ marginRight: 3 }} />
                         <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
                       </View>
                     )}
@@ -1150,9 +1150,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   userMethodBadge: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#F5C518',
+    backgroundColor: '#F5C518',
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 3,
@@ -1160,14 +1158,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   userMethodBadgeText: {
-    color: '#F5C518',
-    fontSize: 9,
+    color: '#1a1a1a',
+    fontSize: 10,
     fontWeight: '600',
   },
   communityMethodBadge: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#4A90D9',
+    backgroundColor: '#4A90D9',
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 3,
@@ -1175,14 +1171,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   communityMethodBadgeText: {
-    color: '#4A90D9',
-    fontSize: 9,
+    color: '#1a1a1a',
+    fontSize: 10,
     fontWeight: '600',
   },
   winnerMethodBadge: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#4CAF50',
+    backgroundColor: '#4CAF50',
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 3,
@@ -1190,8 +1184,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   winnerMethodBadgeText: {
-    color: '#4CAF50',
-    fontSize: 9,
+    color: '#1a1a1a',
+    fontSize: 10,
     fontWeight: '600',
   },
 });
