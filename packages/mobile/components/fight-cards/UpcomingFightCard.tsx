@@ -558,18 +558,25 @@ export default function UpcomingFightCard({
           {/* Mini Community Predictions Bar */}
           {predictionStats?.winnerPredictions &&
            predictionStats.winnerPredictions.fighter1.percentage > 0 &&
-           predictionStats.winnerPredictions.fighter2.percentage > 0 && (
-            <View style={styles.miniPredictionBar}>
+           predictionStats.winnerPredictions.fighter2.percentage > 0 && (() => {
+            const f1Pct = predictionStats.winnerPredictions.fighter1.percentage;
+            const f2Pct = predictionStats.winnerPredictions.fighter2.percentage;
+            const barWidth = 130;
+            // Shift bar so dividing point is always centered
+            // Positive = shift right, Negative = shift left
+            const barShift = (50 - f1Pct) * barWidth / 100;
+            return (
+            <View style={[styles.miniPredictionBar, { transform: [{ translateX: barShift }] }]}>
               <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
-                {predictionStats.winnerPredictions.fighter1.percentage}%
+                {f1Pct}%
               </Text>
               <View style={styles.miniPredictionBarTrack}>
                 <View
                   style={[
                     styles.miniPredictionBarFill,
                     {
-                      flex: predictionStats.winnerPredictions.fighter1.percentage,
-                      backgroundColor: predictionStats.winnerPredictions.fighter1.percentage > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
+                      flex: f1Pct,
+                      backgroundColor: f1Pct > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
                       borderTopLeftRadius: 3,
                       borderBottomLeftRadius: 3,
                     }
@@ -579,8 +586,8 @@ export default function UpcomingFightCard({
                   style={[
                     styles.miniPredictionBarFill,
                     {
-                      flex: predictionStats.winnerPredictions.fighter2.percentage,
-                      backgroundColor: predictionStats.winnerPredictions.fighter2.percentage > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
+                      flex: f2Pct,
+                      backgroundColor: f2Pct > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
                       borderTopRightRadius: 3,
                       borderBottomRightRadius: 3,
                     }
@@ -591,9 +598,9 @@ export default function UpcomingFightCard({
                   <View style={[
                     styles.userPredictionIndicator,
                     {
-                      left: `${predictionStats.winnerPredictions.fighter1.percentage / 2}%`,
+                      left: `${f1Pct / 2}%`,
                       marginLeft: -10,
-                      backgroundColor: predictionStats.winnerPredictions.fighter1.percentage > 50 ? '#83B4F3' : '#3D5065',
+                      backgroundColor: f1Pct > 50 ? '#83B4F3' : '#3D5065',
                     }
                   ]}>
                     <FontAwesome name="user" size={12} color="#F5C518" />
@@ -603,9 +610,9 @@ export default function UpcomingFightCard({
                   <View style={[
                     styles.userPredictionIndicator,
                     {
-                      left: `${predictionStats.winnerPredictions.fighter1.percentage + predictionStats.winnerPredictions.fighter2.percentage / 2}%`,
+                      left: `${f1Pct + f2Pct / 2}%`,
                       marginLeft: -10,
-                      backgroundColor: predictionStats.winnerPredictions.fighter2.percentage > 50 ? '#83B4F3' : '#3D5065',
+                      backgroundColor: f2Pct > 50 ? '#83B4F3' : '#3D5065',
                     }
                   ]}>
                     <FontAwesome name="user" size={12} color="#F5C518" />
@@ -613,10 +620,11 @@ export default function UpcomingFightCard({
                 )}
               </View>
               <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
-                {predictionStats.winnerPredictions.fighter2.percentage}%
+                {f2Pct}%
               </Text>
             </View>
-          )}
+            );
+          })()}
 
         {/* Status message */}
         {getUpcomingStatusMessage() && (
@@ -1111,7 +1119,7 @@ const styles = StyleSheet.create({
   },
   miniPredictionBarTrack: {
     flex: 1,
-    maxWidth: 120,
+    maxWidth: 130,
     height: 6,
     flexDirection: 'row',
     borderRadius: 3,
