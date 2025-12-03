@@ -118,12 +118,8 @@ export default function PredictionBarChart({
         <View style={{ flex: 1 }}>
           {/* Fighter headshots and percentages above bar chart */}
           {(() => {
-            // Calculate image sizes based on deviation from 50%
-            // This creates more dramatic size differences for closer matchups
-            const baseSize = 68;
-            const scaleFactor = 0.6; // px per % deviation from 50%
-            const fighter1Size = Math.max(48, Math.min(88, baseSize + (winnerPredictions.fighter1.percentage - 50) * scaleFactor));
-            const fighter2Size = Math.max(48, Math.min(88, baseSize + (winnerPredictions.fighter2.percentage - 50) * scaleFactor));
+            // Fixed image size for both fighters
+            const imageSize = 68;
 
             return (
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, alignItems: 'flex-end' }}>
@@ -132,7 +128,7 @@ export default function PredictionBarChart({
                   <View style={fighter1HasMajority ? {
                     borderWidth: 3,
                     borderColor: '#83B4F3',
-                    borderRadius: fighter1Size / 2 + 3,
+                    borderRadius: imageSize / 2 + 3,
                     padding: 2,
                     marginBottom: 4,
                   } : { marginBottom: 4 }}>
@@ -143,9 +139,9 @@ export default function PredictionBarChart({
                           : getFighterPlaceholder()
                       }
                       style={{
-                        width: fighter1Size,
-                        height: fighter1Size,
-                        borderRadius: fighter1Size / 2,
+                        width: imageSize,
+                        height: imageSize,
+                        borderRadius: imageSize / 2,
                       }}
                     />
                   </View>
@@ -160,7 +156,7 @@ export default function PredictionBarChart({
                   <View style={fighter2HasMajority ? {
                     borderWidth: 3,
                     borderColor: '#83B4F3',
-                    borderRadius: fighter2Size / 2 + 3,
+                    borderRadius: imageSize / 2 + 3,
                     padding: 2,
                     marginBottom: 4,
                   } : { marginBottom: 4 }}>
@@ -171,9 +167,9 @@ export default function PredictionBarChart({
                           : getFighterPlaceholder()
                       }
                       style={{
-                        width: fighter2Size,
-                        height: fighter2Size,
-                        borderRadius: fighter2Size / 2,
+                        width: imageSize,
+                        height: imageSize,
+                        borderRadius: imageSize / 2,
                       }}
                     />
                   </View>

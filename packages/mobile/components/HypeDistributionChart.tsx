@@ -22,7 +22,7 @@ export default function HypeDistributionChart({
 }: HypeDistributionChartProps) {
   // Chart dimensions - horizontal layout (matches RatingDistributionChart)
   const chartWidth = 281; // Width for 10 bars - matches rating chart
-  const chartHeight = 73; // Match height of hype/rating box
+  const chartHeight = 82; // Match height of colored score box
   const barWidth = 24; // Wider bars that almost touch
   const barGap = 1;
 
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    height: 73,
+    height: 82,
     width: 281,
   },
   chartArea: {

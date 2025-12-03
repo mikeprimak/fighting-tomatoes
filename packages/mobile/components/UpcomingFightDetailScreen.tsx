@@ -254,8 +254,8 @@ export default function UpcomingFightDetailScreen({
     totalPredictions: 100,
     averageHype: 8.5,
     winnerPredictions: {
-      fighter1: { id: fight.fighter1.id, name: `${fight.fighter1.firstName} ${fight.fighter1.lastName}`, predictions: 55, percentage: 55 },
-      fighter2: { id: fight.fighter2.id, name: `${fight.fighter2.firstName} ${fight.fighter2.lastName}`, predictions: 45, percentage: 45 },
+      fighter1: { id: fight.fighter1.id, name: `${fight.fighter1.firstName} ${fight.fighter1.lastName}`, count: 55, percentage: 55 },
+      fighter2: { id: fight.fighter2.id, name: `${fight.fighter2.firstName} ${fight.fighter2.lastName}`, count: 45, percentage: 45 },
     },
     methodPredictions: {
       DECISION: 30,
@@ -1293,7 +1293,7 @@ export default function UpcomingFightDetailScreen({
         {/* Community Data Layout: Vertical stack */}
         <View style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 18, marginTop: 0 }}>
           {/* Aggregate hype box and distribution chart - side by side */}
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 9, marginTop: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9, marginTop: 0 }}>
             {/* Community Hype Box */}
             {(() => {
             const hypeColor = aggregateStats?.communityAverageHype
@@ -1348,12 +1348,12 @@ export default function UpcomingFightDetailScreen({
                 alignItems: 'center',
                 gap: 6,
               }}>
-                <View style={{ position: 'relative', width: 44, height: 73 }}>
+                <View style={{ position: 'relative', width: 48, height: 82 }}>
                   {/* Grey placeholder - always visible until fully revealed */}
                   <View style={{
                     position: 'absolute',
-                    width: 44,
-                    height: 73,
+                    width: 48,
+                    height: 82,
                     justifyContent: 'center',
                     alignItems: 'center',
                     borderRadius: 8,
@@ -1373,13 +1373,13 @@ export default function UpcomingFightDetailScreen({
                   {hasRevealedHype && (
                     <Animated.View style={{
                       position: 'absolute',
-                      width: 44,
-                      height: 73,
+                      width: 48,
+                      height: 82,
                       opacity: aggregateHypeFadeAnim,
                     }}>
                       <View style={{
-                        width: 44,
-                        height: 73,
+                        width: 48,
+                        height: 82,
                         justifyContent: 'center',
                         alignItems: 'center',
                         borderRadius: 8,
@@ -1390,7 +1390,7 @@ export default function UpcomingFightDetailScreen({
                           name="fire-flame-curved"
                           size={16}
                           color="rgba(0,0,0,0.45)"
-                          style={{ position: 'absolute', top: 6 }}
+                          style={{ position: 'absolute', top: 9 }}
                         />
                         <Text style={{
                           color: '#FFFFFF',
@@ -1403,6 +1403,16 @@ export default function UpcomingFightDetailScreen({
                         }}>
                           {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
                         </Text>
+                        <Text style={{
+                          position: 'absolute',
+                          bottom: 9,
+                          color: 'rgba(0,0,0,0.5)',
+                          fontSize: 10,
+                          fontWeight: '600',
+                          textAlign: 'center',
+                        }}>
+                          ({aggregateStats?.totalPredictions || 0})
+                        </Text>
                       </View>
                     </Animated.View>
                   )}
@@ -1413,7 +1423,7 @@ export default function UpcomingFightDetailScreen({
 
             {/* Hype Distribution Chart - below aggregate hype box */}
             {aggregateStats?.hypeDistribution && (
-              <View style={{ marginTop: -6 }}>
+              <View style={{ flex: 1 }}>
                 <HypeDistributionChart
                   distribution={aggregateStats.hypeDistribution}
                   totalPredictions={aggregateStats.totalPredictions || 0}

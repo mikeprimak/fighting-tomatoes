@@ -946,8 +946,8 @@ export default function CompletedFightDetailScreen({
     revealOutcomeMutation.mutate();
   };
 
-  // Computed value: outcome is revealed if user rated OR tapped reveal OR backend says it's revealed
-  const isOutcomeRevealed = rating > 0 || hasLocallyRevealed || fight.hasRevealedOutcome;
+  // Winner data is always visible
+  const isOutcomeRevealed = true;
 
   // Pre-flight comment upvote mutation
   const upvotePreFightCommentMutation = useMutation({
@@ -1651,10 +1651,10 @@ export default function CompletedFightDetailScreen({
                   <View />
                 )}
 
-                {/* Right: Hype Prediction aligned under "My Hype" */}
+                {/* Right: Hype Prediction aligned under "My Hype" - matching UpcomingFightCard style */}
                 {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && fight.userHypePrediction > 0 && (
                   <View style={[
-                    styles.userHypeSquare,
+                    styles.myHypeSquare,
                     {
                       backgroundColor: getHypeHeatmapColor(fight.userHypePrediction),
                     }
@@ -1663,9 +1663,9 @@ export default function CompletedFightDetailScreen({
                       name="fire-flame-curved"
                       size={16}
                       color="rgba(0,0,0,0.45)"
-                      style={{ position: 'absolute', top: 6 }}
+                      style={{ position: 'absolute', top: 9 }}
                     />
-                    <Text style={styles.hypeSquareText}>
+                    <Text style={styles.myHypeSquareNumber}>
                       {Math.round(fight.userHypePrediction).toString()}
                     </Text>
                   </View>
@@ -1710,7 +1710,7 @@ export default function CompletedFightDetailScreen({
           {/* Community Rating Data */}
           <View style={[styles.sectionNoBorder, { marginTop: 26 }]}>
             {/* Community Rating Layout: Horizontal */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, paddingRight: 60 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9, paddingRight: 60 }}>
               {/* Community Rating Box */}
               {(() => {
                 const ratingColor = fight.averageRating > 0
@@ -1761,8 +1761,8 @@ export default function CompletedFightDetailScreen({
 
                 return (
                   <View style={{
-                    width: 44,
-                    height: 73,
+                    width: 48,
+                    height: 82,
                     justifyContent: 'center',
                     alignItems: 'center',
                     borderRadius: 8,
@@ -1773,7 +1773,7 @@ export default function CompletedFightDetailScreen({
                       name="star"
                       size={16}
                       color="rgba(0,0,0,0.45)"
-                      style={{ position: 'absolute', top: 7 }}
+                      style={{ position: 'absolute', top: 9 }}
                     />
                     <Text style={{
                       color: '#FFFFFF',
@@ -1789,6 +1789,16 @@ export default function CompletedFightDetailScreen({
                           ? fight.averageRating.toString()
                           : fight.averageRating.toFixed(1)
                         : '0'}
+                    </Text>
+                    <Text style={{
+                      position: 'absolute',
+                      bottom: 9,
+                      color: 'rgba(0,0,0,0.5)',
+                      fontSize: 10,
+                      fontWeight: '600',
+                      textAlign: 'center',
+                    }}>
+                      ({totalRatings || 0})
                     </Text>
                   </View>
                 );
@@ -1825,10 +1835,10 @@ export default function CompletedFightDetailScreen({
           <View style={[styles.sectionNoBorder, { marginTop: 33 }]}>
             {/* Community Hype Layout: Horizontal */}
             {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                {/* Community Hype Box */}
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
+                {/* Community Hype Box - matching CompletedFightCard style */}
                 <View style={[
-                  styles.userHypeSquare,
+                  styles.communityHypeSquare,
                   {
                     backgroundColor: getHypeHeatmapColor(predictionStats.averageHype),
                   }
@@ -1837,10 +1847,13 @@ export default function CompletedFightDetailScreen({
                     name="fire-flame-curved"
                     size={16}
                     color="rgba(0,0,0,0.45)"
-                    style={{ position: 'absolute', top: 6 }}
+                    style={{ position: 'absolute', top: 9 }}
                   />
-                  <Text style={styles.hypeSquareText}>
+                  <Text style={styles.communityHypeSquareText}>
                     {predictionStats.averageHype.toFixed(1)}
+                  </Text>
+                  <Text style={styles.communityHypeSquareCount}>
+                    ({predictionStats.totalPredictions || 0})
                   </Text>
                 </View>
 
@@ -3555,6 +3568,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
     gap: 2,
+  },
+  myHypeSquare: {
+    width: 48,
+    height: 82,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    gap: 2,
+  },
+  myHypeSquareNumber: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  communityHypeSquare: {
+    width: 48,
+    height: 82,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    gap: 2,
+  },
+  communityHypeSquareText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  communityHypeSquareCount: {
+    position: 'absolute',
+    bottom: 9,
+    color: 'rgba(0,0,0,0.5)',
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   hypeSquareText: {
     color: '#FFFFFF',
