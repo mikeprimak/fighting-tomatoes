@@ -607,6 +607,31 @@ export default function UpcomingFightCard({
                     }
                   ]}
                 />
+                {/* User prediction indicator */}
+                {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
+                  <View style={[
+                    styles.userPredictionIndicator,
+                    {
+                      left: `${predictionStats.winnerPredictions.fighter1.percentage / 2}%`,
+                      marginLeft: -10,
+                      backgroundColor: predictionStats.winnerPredictions.fighter1.percentage > 50 ? '#83B4F3' : '#3D5065',
+                    }
+                  ]}>
+                    <FontAwesome name="user" size={12} color="#F5C518" />
+                  </View>
+                )}
+                {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
+                  <View style={[
+                    styles.userPredictionIndicator,
+                    {
+                      left: `${predictionStats.winnerPredictions.fighter1.percentage + predictionStats.winnerPredictions.fighter2.percentage / 2}%`,
+                      marginLeft: -10,
+                      backgroundColor: predictionStats.winnerPredictions.fighter2.percentage > 50 ? '#83B4F3' : '#3D5065',
+                    }
+                  ]}>
+                    <FontAwesome name="user" size={12} color="#F5C518" />
+                  </View>
+                )}
               </View>
               <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
                 {predictionStats.winnerPredictions.fighter2.percentage}%
@@ -1106,7 +1131,6 @@ const styles = StyleSheet.create({
     height: 6,
     flexDirection: 'row',
     borderRadius: 3,
-    overflow: 'hidden',
   },
   miniPredictionBarFill: {
     height: '100%',
@@ -1114,5 +1138,14 @@ const styles = StyleSheet.create({
   miniPredictionText: {
     fontSize: 10,
     fontWeight: '600',
+  },
+  userPredictionIndicator: {
+    position: 'absolute',
+    top: -7,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
