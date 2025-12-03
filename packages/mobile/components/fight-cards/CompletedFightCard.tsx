@@ -532,18 +532,6 @@ export default function CompletedFightCard({
             )}
           </View>
 
-          {/* User comment indicator - to the left of user rating square */}
-          {(fight.userReviewCount > 0 || fight.userReview) && (
-            <View style={styles.userCommentIndicator}>
-              <FontAwesome name="comment" size={12} color={colors.textSecondary} />
-              {fight.userReviewCount > 1 && (
-                <Text style={[styles.userCommentCount, { color: colors.textSecondary }]}>
-                  {fight.userReviewCount}
-                </Text>
-              )}
-            </View>
-          )}
-
           {/* Full-height user rating square on the right */}
           <View style={[
             styles.userRatingSquare,
@@ -569,6 +557,15 @@ export default function CompletedFightCard({
                 <Animated.Text style={[styles.ratingSquareNumber, { transform: [{ scale: ratingScaleAnim }] }]}>
                   {Math.round(fight.userRating).toString()}
                 </Animated.Text>
+                {/* User comment indicator inside box */}
+                {(fight.userReviewCount > 0 || fight.userReview) && (
+                  <View style={styles.userCommentInsideBox}>
+                    <FontAwesome name="comment" size={10} color="rgba(0,0,0,0.5)" />
+                    {fight.userReviewCount > 1 && (
+                      <Text style={styles.userCommentInsideBoxCount}>{fight.userReviewCount}</Text>
+                    )}
+                  </View>
+                )}
               </>
             ) : (
               <FontAwesome
@@ -684,44 +681,6 @@ export default function CompletedFightCard({
             >
               {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
             </Text>
-          )}
-
-          {/* Mini Community Predictions Bar */}
-          {predictionStats?.winnerPredictions &&
-           predictionStats.winnerPredictions.fighter1.percentage > 0 &&
-           predictionStats.winnerPredictions.fighter2.percentage > 0 && (
-            <View style={styles.miniPredictionBar}>
-              <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
-                {predictionStats.winnerPredictions.fighter1.percentage}%
-              </Text>
-              <View style={styles.miniPredictionBarTrack}>
-                <View
-                  style={[
-                    styles.miniPredictionBarFill,
-                    {
-                      flex: predictionStats.winnerPredictions.fighter1.percentage,
-                      backgroundColor: predictionStats.winnerPredictions.fighter1.percentage > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
-                      borderTopLeftRadius: 3,
-                      borderBottomLeftRadius: 3,
-                    }
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.miniPredictionBarFill,
-                    {
-                      flex: predictionStats.winnerPredictions.fighter2.percentage,
-                      backgroundColor: predictionStats.winnerPredictions.fighter2.percentage > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
-                      borderTopRightRadius: 3,
-                      borderBottomRightRadius: 3,
-                    }
-                  ]}
-                />
-              </View>
-              <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
-                {predictionStats.winnerPredictions.fighter2.percentage}%
-              </Text>
-            </View>
           )}
 
           {/* Top 3 Tags */}
@@ -1160,6 +1119,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  userCommentInsideBox: {
+    position: 'absolute',
+    bottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  userCommentInsideBoxCount: {
+    color: 'rgba(0,0,0,0.5)',
+    fontSize: 9,
+    fontWeight: '600',
   },
   ratingCountContainer: {
     position: 'absolute',

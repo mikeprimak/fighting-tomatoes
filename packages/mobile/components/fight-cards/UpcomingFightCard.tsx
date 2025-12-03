@@ -433,18 +433,6 @@ export default function UpcomingFightCard({
             )}
           </View>
 
-          {/* User comment indicator - to the left of user hype square */}
-          {fight.userCommentCount > 0 && (
-            <View style={styles.userCommentIndicator}>
-              <FontAwesome name="comment" size={12} color={colors.textSecondary} />
-              {fight.userCommentCount > 1 && (
-                <Text style={[styles.userCommentCount, { color: colors.textSecondary }]}>
-                  {fight.userCommentCount}
-                </Text>
-              )}
-            </View>
-          )}
-
           {/* Full-height user hype square on the right */}
           <View style={[
             styles.userHypeSquare,
@@ -470,6 +458,15 @@ export default function UpcomingFightCard({
                 <Animated.Text style={[styles.hypeSquareNumber, { transform: [{ scale: hypeScaleAnim }] }]}>
                   {Math.round(fight.userHypePrediction).toString()}
                 </Animated.Text>
+                {/* User comment indicator inside box */}
+                {fight.userCommentCount > 0 && (
+                  <View style={styles.userCommentInsideBox}>
+                    <FontAwesome name="comment" size={10} color="rgba(0,0,0,0.5)" />
+                    {fight.userCommentCount > 1 && (
+                      <Text style={styles.userCommentInsideBoxCount}>{fight.userCommentCount}</Text>
+                    )}
+                  </View>
+                )}
               </>
             ) : (
               <FontAwesome6
@@ -1041,6 +1038,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  userCommentInsideBox: {
+    position: 'absolute',
+    bottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  userCommentInsideBoxCount: {
+    color: 'rgba(0,0,0,0.5)',
+    fontSize: 9,
+    fontWeight: '600',
   },
   userCommentIndicator: {
     position: 'absolute',
