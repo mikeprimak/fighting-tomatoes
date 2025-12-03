@@ -488,10 +488,10 @@ export default function CompletedFightCard({
       <View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
-        paddingLeft: 60, // 44px square + 16px padding
+        paddingLeft: 64, // 48px square + 16px padding
         paddingVertical: 4, // Minimal vertical padding
-        paddingRight: 60, // 44px square + 16px padding
-        minHeight: 73, // Updated for taller boxes (44 * 1.66)
+        paddingRight: 64, // 48px square + 16px padding
+        minHeight: 78, // Updated for taller boxes
         justifyContent: 'center',
       }]}>
           {/* Full-height community rating square on the left */}
@@ -525,9 +525,9 @@ export default function CompletedFightCard({
             ) : (
               <FontAwesome
                 name="star"
-                size={24}
+                size={16}
                 color={colors.textSecondary}
-                style={{ opacity: 0.5 }}
+                style={{ position: 'absolute', top: 8, opacity: 0.5 }}
               />
             )}
           </View>
@@ -570,9 +570,9 @@ export default function CompletedFightCard({
             ) : (
               <FontAwesome
                 name="star"
-                size={24}
+                size={16}
                 color={colors.textSecondary}
-                style={{ opacity: 0.5 }}
+                style={{ position: 'absolute', top: 8, opacity: 0.5 }}
               />
             )}
           </View>
@@ -1079,8 +1079,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    width: 44,
-    height: 73, // 66% taller (44 * 1.66)
+    width: 48,
+    height: 78,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
@@ -1090,8 +1090,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: 0,
-    width: 44,
-    height: 73, // 66% taller (44 * 1.66)
+    width: 48,
+    height: 78,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
@@ -1114,7 +1114,7 @@ const styles = StyleSheet.create({
   },
   ratingSquareCount: {
     position: 'absolute',
-    bottom: 5,
+    bottom: 7,
     color: 'rgba(0,0,0,0.5)',
     fontSize: 10,
     fontWeight: '600',
@@ -1135,8 +1135,8 @@ const styles = StyleSheet.create({
   ratingCountContainer: {
     position: 'absolute',
     top: 4,
-    left: 50,
-    height: 73, // Match taller box height
+    left: 54,
+    height: 78, // Match taller box height
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
   },
