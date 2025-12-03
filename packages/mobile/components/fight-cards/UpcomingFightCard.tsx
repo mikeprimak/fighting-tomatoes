@@ -414,7 +414,7 @@ export default function UpcomingFightCard({
                   name="fire-flame-curved"
                   size={16}
                   color="rgba(0,0,0,0.45)"
-                  style={{ position: 'absolute', top: 6 }}
+                  style={{ position: 'absolute', top: 7 }}
                 />
                 <Text style={styles.hypeSquareNumber}>
                   {predictionStats.averageHype.toFixed(1)}
@@ -448,7 +448,7 @@ export default function UpcomingFightCard({
           ]}>
             {(fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0) ? (
               <>
-                <Animated.View style={{ position: 'absolute', top: 6, transform: [{ scale: hypeScaleAnim }] }}>
+                <Animated.View style={{ position: 'absolute', top: 7, transform: [{ scale: hypeScaleAnim }] }}>
                   <FontAwesome6
                     name="fire-flame-curved"
                     size={16}
@@ -504,7 +504,7 @@ export default function UpcomingFightCard({
                 {/* Fighter 1 headshot - right of name */}
                 <Image
                   source={getFighter1ImageSource()}
-                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -1 }]}
+                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -1, marginTop: -6 }]}
                   onError={() => setFighter1ImageError(true)}
                 />
               </View>
@@ -514,7 +514,7 @@ export default function UpcomingFightCard({
                 {/* Fighter 2 headshot - left of name */}
                 <Image
                   source={getFighter2ImageSource()}
-                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -1 }]}
+                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -1, marginTop: -6 }]}
                   onError={() => setFighter2ImageError(true)}
                 />
                 <View style={[
@@ -1050,7 +1050,7 @@ const styles = StyleSheet.create({
   },
   hypeSquareCount: {
     position: 'absolute',
-    bottom: 7,
+    bottom: 8,
     color: 'rgba(0,0,0,0.5)',
     fontSize: 10,
     fontWeight: '600',
@@ -1058,7 +1058,7 @@ const styles = StyleSheet.create({
   },
   userCommentInsideBox: {
     position: 'absolute',
-    bottom: 8,
+    bottom: 9,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,

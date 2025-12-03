@@ -513,7 +513,7 @@ export default function CompletedFightCard({
                   name="star"
                   size={16}
                   color="rgba(0,0,0,0.45)"
-                  style={{ position: 'absolute', top: 7 }}
+                  style={{ position: 'absolute', top: 8 }}
                 />
                 <Text style={styles.ratingSquareNumber}>
                   {fight.averageRating.toFixed(1)}
@@ -547,7 +547,7 @@ export default function CompletedFightCard({
           ]}>
             {(fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0) ? (
               <>
-                <Animated.View style={{ position: 'absolute', top: 7, transform: [{ scale: ratingScaleAnim }] }}>
+                <Animated.View style={{ position: 'absolute', top: 8, transform: [{ scale: ratingScaleAnim }] }}>
                   <FontAwesome
                     name="star"
                     size={16}
@@ -603,7 +603,7 @@ export default function CompletedFightCard({
                 {/* Fighter 1 headshot - right of name */}
                 <Image
                   source={getFighter1ImageSource()}
-                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -1 }]}
+                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -1, marginTop: -6 }]}
                   onError={() => setFighter1ImageError(true)}
                 />
               </View>
@@ -613,7 +613,7 @@ export default function CompletedFightCard({
                 {/* Fighter 2 headshot - left of name */}
                 <Image
                   source={getFighter2ImageSource()}
-                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -1 }]}
+                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -1, marginTop: -6 }]}
                   onError={() => setFighter2ImageError(true)}
                 />
                 <View style={[
@@ -1090,7 +1090,7 @@ const styles = StyleSheet.create({
   },
   ratingSquareCount: {
     position: 'absolute',
-    bottom: 7,
+    bottom: 8,
     color: 'rgba(0,0,0,0.5)',
     fontSize: 10,
     fontWeight: '600',
@@ -1098,7 +1098,7 @@ const styles = StyleSheet.create({
   },
   userCommentInsideBox: {
     position: 'absolute',
-    bottom: 8,
+    bottom: 9,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
