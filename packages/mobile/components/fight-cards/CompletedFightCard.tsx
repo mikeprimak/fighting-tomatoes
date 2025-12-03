@@ -518,6 +518,9 @@ export default function CompletedFightCard({
                 <Text style={styles.ratingSquareNumber}>
                   {fight.averageRating.toFixed(1)}
                 </Text>
+                <Text style={styles.ratingSquareCount}>
+                  ({fight.totalRatings || 0})
+                </Text>
               </>
             ) : (
               <FontAwesome
@@ -527,22 +530,6 @@ export default function CompletedFightCard({
                 style={{ opacity: 0.5 }}
               />
             )}
-          </View>
-
-          {/* Rating count and comment count - to the right of community rating box */}
-          <View style={styles.ratingCountContainer}>
-            <View style={styles.countRow}>
-              <FontAwesome name="users" size={10} color={colors.textSecondary} />
-              <Text style={[styles.ratingCountValue, { color: colors.textSecondary }]}>
-                {fight.totalRatings || 0}
-              </Text>
-            </View>
-            <View style={styles.countRow}>
-              <FontAwesome name="comment" size={10} color={colors.textSecondary} />
-              <Text style={[styles.ratingCountValue, { color: colors.textSecondary }]}>
-                {fight.totalReviews || 0}
-              </Text>
-            </View>
           </View>
 
           {/* User comment indicator - to the left of user rating square */}
@@ -612,8 +599,8 @@ export default function CompletedFightCard({
                   ]}>
                     {fight.fighter1.lastName}
                   </Text>
-                  {/* Prediction/Result badges below name */}
-                  <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 3, gap: 4, minHeight: 16 }}>
+                  {/* Prediction/Result badges below name - TEMPORARILY HIDDEN */}
+                  {/* <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 3, gap: 4, minHeight: 16 }}>
                     {fight.winner === fight.fighter1.id && fight.method && (
                       <View style={styles.winnerMethodBadge}>
                         <FontAwesome name="trophy" size={10} color="#4CAF50" style={{ marginRight: 3 }} />
@@ -632,7 +619,7 @@ export default function CompletedFightCard({
                         <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
                       </View>
                     )}
-                  </View>
+                  </View> */}
                 </View>
               </View>
 
@@ -657,8 +644,8 @@ export default function CompletedFightCard({
                   ]}>
                     {fight.fighter2.lastName}
                   </Text>
-                  {/* Prediction/Result badges below name */}
-                  <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 3, gap: 4, minHeight: 16 }}>
+                  {/* Prediction/Result badges below name - TEMPORARILY HIDDEN */}
+                  {/* <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 3, gap: 4, minHeight: 16 }}>
                     {fight.winner === fight.fighter2.id && fight.method && (
                       <View style={styles.winnerMethodBadge}>
                         <FontAwesome name="trophy" size={10} color="#4CAF50" style={{ marginRight: 3 }} />
@@ -677,7 +664,7 @@ export default function CompletedFightCard({
                         <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
                       </View>
                     )}
-                  </View>
+                  </View> */}
                 </View>
               </View>
             </View>
@@ -697,6 +684,58 @@ export default function CompletedFightCard({
             >
               {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
             </Text>
+          )}
+
+          {/* Mini Community Predictions Bar */}
+          {predictionStats?.winnerPredictions &&
+           predictionStats.winnerPredictions.fighter1.percentage > 0 &&
+           predictionStats.winnerPredictions.fighter2.percentage > 0 && (
+            <View style={styles.miniPredictionBar}>
+              <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
+                {predictionStats.winnerPredictions.fighter1.percentage}%
+              </Text>
+              <View style={styles.miniPredictionBarTrack}>
+                <View
+                  style={[
+                    styles.miniPredictionBarFill,
+                    {
+                      flex: predictionStats.winnerPredictions.fighter1.percentage,
+                      backgroundColor: predictionStats.winnerPredictions.fighter1.percentage > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
+                      borderTopLeftRadius: 3,
+                      borderBottomLeftRadius: 3,
+                    }
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.miniPredictionBarFill,
+                    {
+                      flex: predictionStats.winnerPredictions.fighter2.percentage,
+                      backgroundColor: predictionStats.winnerPredictions.fighter2.percentage > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
+                      borderTopRightRadius: 3,
+                      borderBottomRightRadius: 3,
+                    }
+                  ]}
+                />
+              </View>
+              <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
+                {predictionStats.winnerPredictions.fighter2.percentage}%
+              </Text>
+            </View>
+          )}
+
+          {/* Top 3 Tags */}
+          {aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
+            <View style={styles.topTagsContainer}>
+              {aggregateStats.topTags.slice(0, 3).map((tagData, index) => (
+                <Text
+                  key={index}
+                  style={[styles.topTagText, { color: colors.textSecondary }]}
+                >
+                  #{tagData.name}
+                </Text>
+              ))}
+            </View>
           )}
 
         {/* Status message */}
@@ -1114,6 +1153,14 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+  ratingSquareCount: {
+    position: 'absolute',
+    bottom: 5,
+    color: 'rgba(0,0,0,0.5)',
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   ratingCountContainer: {
     position: 'absolute',
     top: 4,
@@ -1182,6 +1229,45 @@ const styles = StyleSheet.create({
   },
   winnerMethodBadgeText: {
     color: '#4CAF50',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  topTagsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 6,
+  },
+  topTagBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  topTagText: {
+    fontSize: 9,
+    fontWeight: '500',
+  },
+  miniPredictionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+    gap: 6,
+  },
+  miniPredictionBarTrack: {
+    flex: 1,
+    maxWidth: 120,
+    height: 6,
+    flexDirection: 'row',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  miniPredictionBarFill: {
+    height: '100%',
+  },
+  miniPredictionText: {
     fontSize: 10,
     fontWeight: '600',
   },

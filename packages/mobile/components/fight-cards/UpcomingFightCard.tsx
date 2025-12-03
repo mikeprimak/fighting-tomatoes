@@ -419,6 +419,9 @@ export default function UpcomingFightCard({
                 <Text style={styles.hypeSquareNumber}>
                   {predictionStats.averageHype.toFixed(1)}
                 </Text>
+                <Text style={styles.hypeSquareCount}>
+                  ({predictionStats?.totalPredictions || 0})
+                </Text>
               </>
             ) : (
               <FontAwesome6
@@ -428,22 +431,6 @@ export default function UpcomingFightCard({
                 style={{ opacity: 0.5 }}
               />
             )}
-          </View>
-
-          {/* Hype rating count and comment count - to the right of community hype box */}
-          <View style={styles.hypeCountContainer}>
-            <View style={styles.countRow}>
-              <FontAwesome name="users" size={10} color={colors.textSecondary} />
-              <Text style={[styles.hypeCountValue, { color: colors.textSecondary }]}>
-                {predictionStats?.totalPredictions || 0}
-              </Text>
-            </View>
-            <View style={styles.countRow}>
-              <FontAwesome name="comment" size={10} color={colors.textSecondary} />
-              <Text style={[styles.hypeCountValue, { color: colors.textSecondary }]}>
-                {fight.commentCount || 0}
-              </Text>
-            </View>
           </View>
 
           {/* User comment indicator - to the left of user hype square */}
@@ -513,8 +500,8 @@ export default function UpcomingFightCard({
                   ]}>
                     {fight.fighter1.lastName}
                   </Text>
-                  {/* Prediction badges below name */}
-                  <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 3, gap: 4, minHeight: 16 }}>
+                  {/* Prediction badges below name - TEMPORARILY HIDDEN */}
+                  {/* <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 3, gap: 4, minHeight: 16 }}>
                     {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.userPrediction?.method && (
                       <View style={styles.userMethodBadge}>
                         <FontAwesome name="user" size={10} color="#F5C518" style={{ marginRight: 3 }} />
@@ -527,7 +514,7 @@ export default function UpcomingFightCard({
                         <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
                       </View>
                     )}
-                  </View>
+                  </View> */}
                 </View>
               </View>
 
@@ -556,8 +543,8 @@ export default function UpcomingFightCard({
                   ]}>
                     {fight.fighter2.lastName}
                   </Text>
-                  {/* Prediction badges below name */}
-                  <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 3, gap: 4, minHeight: 16 }}>
+                  {/* Prediction badges below name - TEMPORARILY HIDDEN */}
+                  {/* <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 3, gap: 4, minHeight: 16 }}>
                     {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.userPrediction?.method && (
                       <View style={styles.userMethodBadge}>
                         <FontAwesome name="user" size={10} color="#F5C518" style={{ marginRight: 3 }} />
@@ -570,7 +557,7 @@ export default function UpcomingFightCard({
                         <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
                       </View>
                     )}
-                  </View>
+                  </View> */}
                 </View>
               </View>
             </View>
@@ -590,6 +577,44 @@ export default function UpcomingFightCard({
             >
               {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
             </Text>
+          )}
+
+          {/* Mini Community Predictions Bar */}
+          {predictionStats?.winnerPredictions &&
+           predictionStats.winnerPredictions.fighter1.percentage > 0 &&
+           predictionStats.winnerPredictions.fighter2.percentage > 0 && (
+            <View style={styles.miniPredictionBar}>
+              <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
+                {predictionStats.winnerPredictions.fighter1.percentage}%
+              </Text>
+              <View style={styles.miniPredictionBarTrack}>
+                <View
+                  style={[
+                    styles.miniPredictionBarFill,
+                    {
+                      flex: predictionStats.winnerPredictions.fighter1.percentage,
+                      backgroundColor: predictionStats.winnerPredictions.fighter1.percentage > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
+                      borderTopLeftRadius: 3,
+                      borderBottomLeftRadius: 3,
+                    }
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.miniPredictionBarFill,
+                    {
+                      flex: predictionStats.winnerPredictions.fighter2.percentage,
+                      backgroundColor: predictionStats.winnerPredictions.fighter2.percentage > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
+                      borderTopRightRadius: 3,
+                      borderBottomRightRadius: 3,
+                    }
+                  ]}
+                />
+              </View>
+              <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
+                {predictionStats.winnerPredictions.fighter2.percentage}%
+              </Text>
+            </View>
           )}
 
         {/* Status message */}
@@ -1009,6 +1034,14 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+  hypeSquareCount: {
+    position: 'absolute',
+    bottom: 5,
+    color: 'rgba(0,0,0,0.5)',
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   userCommentIndicator: {
     position: 'absolute',
     top: 4, // Aligned with numHypers on left side
@@ -1048,6 +1081,28 @@ const styles = StyleSheet.create({
   },
   communityMethodBadgeText: {
     color: '#4A90D9',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  miniPredictionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 6,
+    gap: 6,
+  },
+  miniPredictionBarTrack: {
+    flex: 1,
+    maxWidth: 120,
+    height: 6,
+    flexDirection: 'row',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  miniPredictionBarFill: {
+    height: '100%',
+  },
+  miniPredictionText: {
     fontSize: 10,
     fontWeight: '600',
   },
