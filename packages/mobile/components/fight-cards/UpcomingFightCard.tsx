@@ -386,13 +386,27 @@ export default function UpcomingFightCard({
 
   return (
     <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
+      {/* Event text above the card */}
+      {showEvent && (
+        <Text
+          style={{
+            color: colors.textSecondary,
+            fontSize: 10,
+            textAlign: 'center',
+            marginBottom: 4,
+          }}
+          numberOfLines={1}
+        >
+          {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
+        </Text>
+      )}
       <View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
         paddingLeft: 64, // 48px square + 16px padding
-        paddingVertical: 4, // Minimal vertical padding
+        paddingVertical: 6, // Minimal vertical padding
         paddingRight: 64, // 48px square + 16px padding
-        minHeight: 78, // Updated for taller boxes
+        minHeight: 82, // Updated for taller boxes
         justifyContent: 'center',
       }]}>
           {/* Full-height community hype square on the left */}
@@ -414,7 +428,7 @@ export default function UpcomingFightCard({
                   name="fire-flame-curved"
                   size={16}
                   color="rgba(0,0,0,0.45)"
-                  style={{ position: 'absolute', top: 7 }}
+                  style={{ position: 'absolute', top: 8 }}
                 />
                 <Text style={styles.hypeSquareNumber}>
                   {predictionStats.averageHype.toFixed(1)}
@@ -448,7 +462,7 @@ export default function UpcomingFightCard({
           ]}>
             {(fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0) ? (
               <>
-                <Animated.View style={{ position: 'absolute', top: 7, transform: [{ scale: hypeScaleAnim }] }}>
+                <Animated.View style={{ position: 'absolute', top: 8, transform: [{ scale: hypeScaleAnim }] }}>
                   <FontAwesome6
                     name="fire-flame-curved"
                     size={16}
@@ -539,21 +553,6 @@ export default function UpcomingFightCard({
             </View>
 
           </View>
-
-          {/* Event text below fighter names - outside the container */}
-          {showEvent && (
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontSize: 10,
-                textAlign: 'center',
-                marginTop: 2,
-              }}
-              numberOfLines={1}
-            >
-              {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
-            </Text>
-          )}
 
           {/* Mini Community Predictions Bar */}
           {predictionStats?.winnerPredictions &&
@@ -999,7 +998,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     width: 48,
-    height: 78,
+    height: 82,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
@@ -1009,7 +1008,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     left: 54,
-    height: 78, // Match taller box height
+    height: 82, // Match taller box height
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
   },
@@ -1027,7 +1026,7 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     width: 48,
-    height: 78,
+    height: 82,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
@@ -1050,7 +1049,7 @@ const styles = StyleSheet.create({
   },
   hypeSquareCount: {
     position: 'absolute',
-    bottom: 8,
+    bottom: 9,
     color: 'rgba(0,0,0,0.5)',
     fontSize: 10,
     fontWeight: '600',
@@ -1058,7 +1057,7 @@ const styles = StyleSheet.create({
   },
   userCommentInsideBox: {
     position: 'absolute',
-    bottom: 9,
+    bottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,

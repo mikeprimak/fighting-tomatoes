@@ -837,7 +837,7 @@ export default function CommunityScreen() {
                   key={fight.id}
                   fight={fight}
                   onPress={() => router.push(`/fight/${fight.id}` as any)}
-                  showEvent={false}
+                  showEvent={true}
                 />
               );
             })
@@ -944,7 +944,7 @@ export default function CommunityScreen() {
                 key={fight.id}
                 fight={fight}
                 onPress={() => router.push(`/fight/${fight.id}` as any)}
-                showEvent={false}
+                showEvent={true}
               />
             ))
           ) : (
