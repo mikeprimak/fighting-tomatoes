@@ -482,79 +482,58 @@ export default function UpcomingFightCard({
             {/* Fighter names with centered "vs" */}
             <View style={styles.fighterNamesContainer}>
               {/* Fighter 1 - Left half */}
-              <View style={styles.fighter1Container}>
+              <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center' }]}>
                 <View style={[
-                  { alignSelf: 'flex-end', position: 'relative' }
+                  { alignSelf: 'flex-end', position: 'relative', flex: 1 }
                 ]}>
                   {/* First name */}
-                  <Text style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary }]}>
+                  <Text
+                    style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary }]}
+                    numberOfLines={1}
+                  >
                     {fight.fighter1.firstName}
                   </Text>
                   {/* Last name */}
-                  <Text style={[
-                    styles.fighterLastName,
-                    { textAlign: 'right', color: colors.text }
-                  ]}>
+                  <Text
+                    style={[styles.fighterLastName, { textAlign: 'right', color: colors.text }]}
+                    numberOfLines={1}
+                  >
                     {fight.fighter1.lastName}
                   </Text>
-                  {/* Prediction badges below name - TEMPORARILY HIDDEN */}
-                  {/* <View style={{ flexDirection: 'row', alignSelf: 'flex-end', marginTop: 3, gap: 4, minHeight: 16 }}>
-                    {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.userPrediction?.method && (
-                      <View style={styles.userMethodBadge}>
-                        <FontAwesome name="user" size={10} color="#F5C518" style={{ marginRight: 3 }} />
-                        <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
-                      </View>
-                    )}
-                    {aggregateStats?.communityPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && aggregateStats?.communityPrediction?.method && (
-                      <View style={styles.communityMethodBadge}>
-                        <FontAwesome name="users" size={10} color="#4A90D9" style={{ marginRight: 3 }} />
-                        <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
-                      </View>
-                    )}
-                  </View> */}
                 </View>
-              </View>
-
-              {/* "vs" text or bell icon - Absolutely centered */}
-              <View style={styles.vsContainer}>
-                {fight.notificationReasons?.willBeNotified ? (
-                  <FontAwesome name="bell" size={14} color="#F5C518" style={{ marginLeft: -4 }} />
-                ) : (
-                  <Text style={[styles.vsText, { color: colors.textSecondary }]}>•</Text>
-                )}
+                {/* Fighter 1 headshot - right of name */}
+                <Image
+                  source={getFighter1ImageSource()}
+                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: 0 }]}
+                  onError={() => setFighter1ImageError(true)}
+                />
               </View>
 
               {/* Fighter 2 - Right half */}
-              <View style={styles.fighter2Container}>
+              <View style={[styles.fighter2Container, { flexDirection: 'row', alignItems: 'center' }]}>
+                {/* Fighter 2 headshot - left of name */}
+                <Image
+                  source={getFighter2ImageSource()}
+                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: 0 }]}
+                  onError={() => setFighter2ImageError(true)}
+                />
                 <View style={[
-                  { alignSelf: 'flex-start', position: 'relative' }
+                  { alignSelf: 'flex-start', position: 'relative', flex: 1 }
                 ]}>
                   {/* First name */}
-                  <Text style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary }]}>
+                  <Text
+                    style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary }]}
+                    numberOfLines={1}
+                  >
                     {fight.fighter2.firstName}
                   </Text>
                   {/* Last name */}
-                  <Text style={[
-                    styles.fighterLastName,
-                    { textAlign: 'left', color: colors.text }
-                  ]}>
+                  <Text
+                    style={[styles.fighterLastName, { textAlign: 'left', color: colors.text }]}
+                    numberOfLines={1}
+                  >
                     {fight.fighter2.lastName}
                   </Text>
-                  {/* Prediction badges below name - TEMPORARILY HIDDEN */}
-                  {/* <View style={{ flexDirection: 'row', alignSelf: 'flex-start', marginTop: 3, gap: 4, minHeight: 16 }}>
-                    {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.userPrediction?.method && (
-                      <View style={styles.userMethodBadge}>
-                        <FontAwesome name="user" size={10} color="#F5C518" style={{ marginRight: 3 }} />
-                        <Text style={styles.userMethodBadgeText}>{formatMethod(aggregateStats.userPrediction.method)}</Text>
-                      </View>
-                    )}
-                    {aggregateStats?.communityPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && aggregateStats?.communityPrediction?.method && (
-                      <View style={styles.communityMethodBadge}>
-                        <FontAwesome name="users" size={10} color="#4A90D9" style={{ marginRight: 3 }} />
-                        <Text style={styles.communityMethodBadgeText}>{formatMethod(aggregateStats.communityPrediction.method)}</Text>
-                      </View>
-                    )}
-                  </View> */}
                 </View>
               </View>
             </View>
@@ -839,14 +818,19 @@ const styles = StyleSheet.create({
   },
   fighter1Container: {
     flex: 1,
-    paddingRight: 12,
+    paddingRight: 4,
     justifyContent: 'center',
     marginLeft: -5,
   },
   fighter2Container: {
     flex: 1,
-    paddingLeft: 12,
+    paddingLeft: 4,
     justifyContent: 'center',
+  },
+  fighterHeadshot: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   vsContainer: {
     position: 'absolute',
