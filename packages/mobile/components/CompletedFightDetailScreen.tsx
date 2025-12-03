@@ -412,8 +412,9 @@ export default function CompletedFightDetailScreen({
   const [tagRandomSeed, setTagRandomSeed] = useState(Math.floor(Math.random() * 1000));
 
   // Animation values for wheel animation (large star display) - Initialize based on existing rating
+  // Using 92px per item for taller rating boxes (48x82)
   const wheelAnimation = useRef(new Animated.Value(
-    fight.userRating ? (10 - fight.userRating) * 52 : 520
+    fight.userRating ? (10 - fight.userRating) * 92 : 920
   )).current;
   const starColorAnimation = useRef(new Animated.Value(fight.userRating ? 1 : 0)).current;
 
@@ -1069,7 +1070,7 @@ export default function CompletedFightDetailScreen({
   const animateToNumber = (targetNumber: number) => {
     wheelAnimation.stopAnimation();
 
-    const targetPosition = targetNumber === 0 ? 520 : (10 - targetNumber) * 52;
+    const targetPosition = targetNumber === 0 ? 920 : (10 - targetNumber) * 92;
 
     Animated.timing(wheelAnimation, {
       toValue: targetPosition,
@@ -1419,29 +1420,28 @@ export default function CompletedFightDetailScreen({
                       {
                         transform: [{
                           translateY: wheelAnimation.interpolate({
-                            inputRange: [0, 520],
-                            outputRange: [156, -364],
+                            inputRange: [0, 920],
+                            outputRange: [335, -585],
                           })
                         }]
                       }
                     ]}>
                       {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
                         const ratingColor = getHypeHeatmapColor(number);
-                        const flameColor = getFlameColor(ratingColor, colors.background);
 
                         return (
-                          <View key={number} style={styles.wheelBoxContainer}>
+                          <View key={number} style={styles.ratingWheelBoxContainer}>
                             <View style={[
-                              styles.wheelBox,
+                              styles.ratingWheelBox,
                               { backgroundColor: ratingColor }
                             ]}>
                               <FontAwesome
                                 name="star"
-                                size={24}
-                                color={flameColor}
-                                style={{ position: 'absolute' }}
+                                size={16}
+                                color="rgba(0,0,0,0.45)"
+                                style={{ position: 'absolute', top: 9 }}
                               />
-                              <Text style={styles.wheelBoxText}>{number}</Text>
+                              <Text style={styles.ratingWheelBoxText}>{number}</Text>
                             </View>
                           </View>
                         );
@@ -1477,7 +1477,7 @@ export default function CompletedFightDetailScreen({
           </View>
 
           {/* Tag This Fight Section */}
-          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 0, paddingTop: 0 }]}>
+          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 12, paddingTop: 0 }]}>
             <View style={styles.userInputTitleRow}>
               <View style={styles.yellowSideLine} />
               <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>Tag This Fight</Text>
@@ -3280,6 +3280,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
+  ratingWheelBoxContainer: {
+    height: 92,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ratingWheelBox: {
+    width: 48,
+    height: 82,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  ratingWheelBoxText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
   displayFlameContainer: {
     alignItems: 'center',
     marginBottom: 1,
@@ -3290,7 +3311,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 52,
+    height: 92,
   },
   flameContainer: {
     flexDirection: 'row',
