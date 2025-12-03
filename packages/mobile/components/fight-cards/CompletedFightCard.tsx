@@ -603,7 +603,7 @@ export default function CompletedFightCard({
                 {/* Fighter 1 headshot - right of name */}
                 <Image
                   source={getFighter1ImageSource()}
-                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: 0 }]}
+                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -1 }]}
                   onError={() => setFighter1ImageError(true)}
                 />
               </View>
@@ -613,7 +613,7 @@ export default function CompletedFightCard({
                 {/* Fighter 2 headshot - left of name */}
                 <Image
                   source={getFighter2ImageSource()}
-                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: 0 }]}
+                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -1 }]}
                   onError={() => setFighter2ImageError(true)}
                 />
                 <View style={[
@@ -895,9 +895,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fighterHeadshot: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
   },
   vsContainer: {
     position: 'absolute',
