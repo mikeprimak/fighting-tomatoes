@@ -394,9 +394,15 @@ export default function CompletedFightDetailScreen({
   const toastTranslateY = useRef(new Animated.Value(50)).current;
 
   // Inline rating state - Initialize once with existing data, then manage locally
+  // Handle userRating as number, string, or object with .rating property
   const [rating, setRating] = useState(() => {
-    if (fight.userReview) return fight.userReview.rating || 0;
-    if (fight.userRating) return typeof fight.userRating === 'number' ? fight.userRating : (fight.userRating.rating || 0);
+    if (fight.userReview?.rating) return Number(fight.userReview.rating) || 0;
+    if (fight.userRating != null) {
+      if (typeof fight.userRating === 'object') {
+        return Number((fight.userRating as any).rating) || 0;
+      }
+      return Number(fight.userRating) || 0;
+    }
     return 0;
   });
   const [comment, setComment] = useState(() => fight.userReview?.content || '');
@@ -413,10 +419,65 @@ export default function CompletedFightDetailScreen({
 
   // Animation values for wheel animation (large star display) - Initialize based on existing rating
   // Using 92px per item for taller rating boxes (48x82)
+  // Must match the rating state initialization logic
+  const initialRatingForWheel = (() => {
+    if (fight.userReview?.rating) return Number(fight.userReview.rating) || 0;
+    if (fight.userRating != null) {
+      if (typeof fight.userRating === 'object') {
+        return Number((fight.userRating as any).rating) || 0;
+      }
+      return Number(fight.userRating) || 0;
+    }
+    return 0;
+  })();
   const wheelAnimation = useRef(new Animated.Value(
-    fight.userRating ? (10 - fight.userRating) * 92 : 920
+    initialRatingForWheel > 0 ? (10 - initialRatingForWheel) * 92 : 920
   )).current;
-  const starColorAnimation = useRef(new Animated.Value(fight.userRating ? 1 : 0)).current;
+  const starColorAnimation = useRef(new Animated.Value(initialRatingForWheel > 0 ? 1 : 0)).current;
+
+  // Sync rating state when fight data changes (e.g., navigating between fights or data refresh)
+  // Use refs to track the fight ID and whether we've synced data for this fight
+  const lastFightIdRef = useRef(fight.id);
+  const hasSyncedRatingRef = useRef(false);
+
+  useEffect(() => {
+    // Calculate the rating from fight data
+    // Handle userRating as number, string, or object with .rating property
+    let dataRating = 0;
+    if (fight.userReview?.rating) {
+      dataRating = Number(fight.userReview.rating) || 0;
+    } else if (fight.userRating != null) {
+      // Could be number, string, or object - handle all cases
+      if (typeof fight.userRating === 'object') {
+        dataRating = Number((fight.userRating as any).rating) || 0;
+      } else {
+        dataRating = Number(fight.userRating) || 0;
+      }
+    }
+
+    // Sync if:
+    // 1. We navigated to a different fight, OR
+    // 2. We haven't synced yet AND data just arrived (rating was 0 but now has value)
+    const isNewFight = lastFightIdRef.current !== fight.id;
+    const dataJustArrived = !hasSyncedRatingRef.current && dataRating > 0;
+
+    if (isNewFight) {
+      lastFightIdRef.current = fight.id;
+      hasSyncedRatingRef.current = false; // Reset for new fight
+    }
+
+    if (isNewFight || dataJustArrived) {
+      if (dataRating > 0) {
+        hasSyncedRatingRef.current = true;
+      }
+      setRating(dataRating);
+
+      // Also sync the wheel animation and star color animation
+      const targetPosition = dataRating > 0 ? (10 - dataRating) * 92 : 920;
+      wheelAnimation.setValue(targetPosition);
+      starColorAnimation.setValue(dataRating > 0 ? 1 : 0);
+    }
+  }, [fight.id, fight.userRating, fight.userReview?.rating]);
 
   // Animation values for My Rating
   const myRatingScaleAnim = useRef(new Animated.Value(1)).current;

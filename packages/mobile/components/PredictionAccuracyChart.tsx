@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   eventsLabel: {
-    fontSize: 10,
+    fontSize: 12,
     textAlign: 'center',
     marginBottom: 4,
   },
@@ -223,9 +223,9 @@ const styles = StyleSheet.create({
     width: 1,
   },
   yAxisLabel: {
-    fontSize: 8,
+    fontSize: 11,
     textAlign: 'center',
-    width: 50,
+    width: 60,
   },
   yAxisLabelTop: {
     position: 'absolute',
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     height: 80,
   },
   eventLabel: {
-    fontSize: 8,
+    fontSize: 11,
     width: 80,
     textAlign: 'right',
     marginTop: 36,

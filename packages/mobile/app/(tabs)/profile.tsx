@@ -214,7 +214,7 @@ export default function ProfileScreen() {
     // If there's no data, show empty chart with message
     const hasData = Object.keys(dataToUse).length > 0;
     const maxCount = hasData ? Math.max(...Object.values(dataToUse), 1) : 1;
-    const maxBarHeight = 73; // Maximum bar height to match colored box height
+    const maxBarHeight = 82; // Maximum bar height to match colored box height
 
     return (
       <View>
@@ -402,8 +402,8 @@ export default function ProfileScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 16 }}>
                 {/* Colored Hype Box */}
                 <View style={{
-                  width: 44,
-                  height: 73,
+                  width: 48,
+                  height: 82,
                   justifyContent: 'center',
                   alignItems: 'center',
                   borderRadius: 8,
@@ -413,7 +413,7 @@ export default function ProfileScreen() {
                     name="fire-flame-curved"
                     size={16}
                     color="rgba(0,0,0,0.45)"
-                    style={{ position: 'absolute', top: 6 }}
+                    style={{ position: 'absolute', top: 8 }}
                   />
                   <Text style={{
                     color: '#FFFFFF',
@@ -433,7 +433,7 @@ export default function ProfileScreen() {
                   {renderDistributionChart(user?.hypeDistribution || {}, 'hype')}
                 </View>
               </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>({user?.totalHype || 0} fights)</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 14, textAlign: 'center' }}>({user?.totalHype || 0} fights)</Text>
             </View>
           )}
         </View>
@@ -474,8 +474,8 @@ export default function ProfileScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 16 }}>
                 {/* Colored Rating Box */}
                 <View style={{
-                  width: 44,
-                  height: 73,
+                  width: 48,
+                  height: 82,
                   justifyContent: 'center',
                   alignItems: 'center',
                   borderRadius: 8,
@@ -485,7 +485,7 @@ export default function ProfileScreen() {
                     name="star"
                     size={16}
                     color="rgba(0,0,0,0.45)"
-                    style={{ position: 'absolute', top: 6 }}
+                    style={{ position: 'absolute', top: 8 }}
                   />
                   <Text style={{
                     color: '#FFFFFF',
@@ -505,7 +505,7 @@ export default function ProfileScreen() {
                   {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
                 </View>
               </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 4 }}>({user?.totalRatings || 0} fights)</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 14, textAlign: 'center' }}>({user?.totalRatings || 0} fights)</Text>
             </View>
           )}
         </View>
@@ -679,7 +679,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    height: 73,
+    height: 82,
   },
   barContainer: {
     flex: 1,
@@ -690,7 +690,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   barWrapper: {
     width: '100%',
-    height: 73,
+    height: 82,
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
