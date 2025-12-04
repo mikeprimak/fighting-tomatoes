@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, useColorScheme } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 
 interface SectionContainerProps {
   title: string;
   icon: string;
+  iconFamily?: 'fontawesome' | 'fontawesome6';
   iconColor?: string;
   headerBgColor?: string;
   containerBgColorDark?: string;
@@ -16,6 +17,7 @@ interface SectionContainerProps {
 export default function SectionContainer({
   title,
   icon,
+  iconFamily = 'fontawesome',
   iconColor = '#000',
   headerBgColor = '#F5C518',
   containerBgColorDark = 'rgba(245, 197, 24, 0.05)',
@@ -25,12 +27,14 @@ export default function SectionContainer({
 }: SectionContainerProps) {
   const colorScheme = useColorScheme();
 
+  const IconComponent = iconFamily === 'fontawesome6' ? FontAwesome6 : FontAwesome;
+
   return (
     <View>
       {/* Title Bar */}
       <View style={[styles.titleBar, { backgroundColor: headerBgColor }]}>
         <View style={styles.titleContent}>
-          <FontAwesome name={icon as any} size={18} color={iconColor} />
+          <IconComponent name={icon as any} size={18} color={iconColor} />
           <Text style={[styles.titleText, { color: iconColor }]}>
             {title}
           </Text>

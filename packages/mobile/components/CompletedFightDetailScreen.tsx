@@ -1719,7 +1719,8 @@ export default function CompletedFightDetailScreen({
         {/* ALL HYPE Section */}
         <SectionContainer
           title="ALL HYPE"
-          icon="fire"
+          icon="fire-flame-curved"
+          iconFamily="fontawesome6"
           iconColor="#000"
           headerBgColor="#83B4F3"
           containerBgColorDark="rgba(131, 180, 243, 0.05)"
@@ -1732,8 +1733,18 @@ export default function CompletedFightDetailScreen({
         >
           {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
-              {/* Community Hype Star */}
+              {/* Community Hype Flame */}
               <View style={styles.ratingStarContainer}>
+                {/* Background circle for better text contrast */}
+                <View style={{
+                  position: 'absolute',
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: getHypeHeatmapColor(predictionStats.averageHype),
+                  opacity: 0.4,
+                  top: 18,
+                }} />
                 <FontAwesome6
                   name="fire-flame-curved"
                   size={70}
