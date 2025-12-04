@@ -68,6 +68,8 @@ interface Fight {
   fighter1Ranking?: number | null;
   fighter2Ranking?: number | null;
   weightClass?: string | null;
+  cardType?: string | null;
+  orderOnCard?: number | null;
   isTitle: boolean;
   event: Event;
   hasStarted: boolean;
@@ -1423,6 +1425,21 @@ export default function CompletedFightDetailScreen({
                 )}
               </View>
             </View>
+          </View>
+
+          {/* Event Info */}
+          <View style={{ alignItems: 'center', marginTop: 16 }}>
+            <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', textAlign: 'center' }}>
+              {fight.event.name}
+            </Text>
+            <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', marginTop: 2 }}>
+              {new Date(fight.event.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+            </Text>
+            {(fight.weightClass || fight.cardType) && (
+              <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', marginTop: 2 }}>
+                {fight.weightClass ? formatWeightClass(fight.weightClass) : ''}{fight.weightClass && fight.cardType ? ' - ' : ''}{fight.orderOnCard === 1 ? 'Main Event' : (fight.cardType || '')}
+              </Text>
+            )}
           </View>
         </SectionContainer>
 
