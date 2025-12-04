@@ -1533,46 +1533,39 @@ export default function CompletedFightDetailScreen({
           icon="star"
         >
           {/* Inline Rating Section */}
-          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 0 }]}>
-            <View style={[styles.userInputTitleRow, { alignItems: 'center' }]}>
-              <View style={styles.yellowSideLine} />
-              <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 18, marginBottom: 0 }]}>Rate This Fight</Text>
-              <View style={[styles.displayFlameContainer, { marginTop: 10, marginBottom: 0, marginLeft: 8, paddingBottom: 0 }]}>
-                <View style={styles.animatedFlameContainer}>
-                  <View style={styles.wheelContainer} pointerEvents="none">
-                    <Animated.View style={[
-                      styles.wheelNumbers,
-                      {
-                        transform: [{
-                          translateY: wheelAnimation.interpolate({
-                            inputRange: [0, 920],
-                            outputRange: [335, -585],
-                          })
-                        }]
-                      }
-                    ]}>
-                      {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
-                        const ratingColor = getHypeHeatmapColor(number);
+          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: -8 }]}>
+            {/* Centered Star Display */}
+            <View style={{ alignItems: 'center', marginBottom: 10 }}>
+              <View style={styles.animatedFlameContainer}>
+                <View style={styles.wheelContainer} pointerEvents="none">
+                  <Animated.View style={[
+                    styles.wheelNumbers,
+                    {
+                      transform: [{
+                        translateY: wheelAnimation.interpolate({
+                          inputRange: [0, 920],
+                          outputRange: [335, -585],
+                        })
+                      }]
+                    }
+                  ]}>
+                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
+                      const ratingColor = getHypeHeatmapColor(number);
 
-                        return (
-                          <View key={number} style={styles.ratingWheelBoxContainer}>
-                            <View style={[
-                              styles.ratingWheelBox,
-                              { backgroundColor: ratingColor }
-                            ]}>
-                              <FontAwesome
-                                name="star"
-                                size={16}
-                                color="rgba(0,0,0,0.45)"
-                                style={{ position: 'absolute', top: 9 }}
-                              />
-                              <Text style={styles.ratingWheelBoxText}>{number}</Text>
-                            </View>
+                      return (
+                        <View key={number} style={styles.ratingWheelBoxContainer}>
+                          <View style={styles.ratingStarContainer}>
+                            <FontAwesome
+                              name="star"
+                              size={70}
+                              color={ratingColor}
+                            />
+                            <Text style={styles.ratingStarText}>{number}</Text>
                           </View>
-                        );
-                      })}
-                    </Animated.View>
-                  </View>
+                        </View>
+                      );
+                    })}
+                  </Animated.View>
                 </View>
               </View>
             </View>
@@ -3205,6 +3198,22 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+  },
+  ratingStarContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    width: 70,
+    height: 82,
+  },
+  ratingStarText: {
+    position: 'absolute',
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   displayFlameContainer: {
     alignItems: 'center',
