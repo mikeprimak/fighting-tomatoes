@@ -1672,55 +1672,33 @@ export default function CompletedFightDetailScreen({
           headerBgColor="#83B4F3"
           containerBgColorDark="rgba(131, 180, 243, 0.05)"
           containerBgColorLight="rgba(131, 180, 243, 0.08)"
+          headerRight={
+            <Text style={{ color: '#000', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
+              ({totalRatings || 0})
+            </Text>
+          }
         >
           {/* Community Rating Layout: Horizontal */}
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9, paddingRight: 60 }}>
-            {/* Community Rating Box */}
+            {/* Community Rating Star */}
             {(() => {
               const ratingColor = fight.averageRating > 0
                 ? getHypeHeatmapColor(Math.round(fight.averageRating))
                 : colors.border;
 
               return (
-                <View style={{
-                  width: 48,
-                  height: 82,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderRadius: 8,
-                  backgroundColor: ratingColor,
-                  gap: 2,
-                }}>
+                <View style={styles.ratingStarContainer}>
                   <FontAwesome
                     name="star"
-                    size={16}
-                    color="rgba(0,0,0,0.45)"
-                    style={{ position: 'absolute', top: 9 }}
+                    size={70}
+                    color={ratingColor}
                   />
-                  <Text style={{
-                    color: '#FFFFFF',
-                    fontSize: 18,
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                    textShadowColor: 'rgba(0,0,0,0.7)',
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 3,
-                  }}>
+                  <Text style={styles.ratingStarText}>
                     {fight.averageRating
                       ? fight.averageRating % 1 === 0
                         ? fight.averageRating.toString()
                         : fight.averageRating.toFixed(1)
                       : '0'}
-                  </Text>
-                  <Text style={{
-                    position: 'absolute',
-                    bottom: 9,
-                    color: 'rgba(0,0,0,0.5)',
-                    fontSize: 10,
-                    fontWeight: '600',
-                    textAlign: 'center',
-                  }}>
-                    ({totalRatings || 0})
                   </Text>
                 </View>
               );
@@ -1746,27 +1724,23 @@ export default function CompletedFightDetailScreen({
           headerBgColor="#83B4F3"
           containerBgColorDark="rgba(131, 180, 243, 0.05)"
           containerBgColorLight="rgba(131, 180, 243, 0.08)"
+          headerRight={
+            <Text style={{ color: '#000', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
+              ({predictionStats?.totalPredictions || 0})
+            </Text>
+          }
         >
           {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
-              {/* Community Hype Box */}
-              <View style={[
-                styles.communityHypeSquare,
-                {
-                  backgroundColor: getHypeHeatmapColor(predictionStats.averageHype),
-                }
-              ]}>
+              {/* Community Hype Star */}
+              <View style={styles.ratingStarContainer}>
                 <FontAwesome6
                   name="fire-flame-curved"
-                  size={16}
-                  color="rgba(0,0,0,0.45)"
-                  style={{ position: 'absolute', top: 9 }}
+                  size={70}
+                  color={getHypeHeatmapColor(predictionStats.averageHype)}
                 />
-                <Text style={styles.communityHypeSquareText}>
+                <Text style={styles.ratingStarText}>
                   {predictionStats.averageHype.toFixed(1)}
-                </Text>
-                <Text style={styles.communityHypeSquareCount}>
-                  ({predictionStats.totalPredictions || 0})
                 </Text>
               </View>
 
@@ -1797,6 +1771,11 @@ export default function CompletedFightDetailScreen({
           headerBgColor="#83B4F3"
           containerBgColorDark="rgba(131, 180, 243, 0.05)"
           containerBgColorLight="rgba(131, 180, 243, 0.08)"
+          headerRight={
+            <Text style={{ color: '#000', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
+              ({predictionStats?.totalPredictions || 0})
+            </Text>
+          }
         >
           {predictionStats && predictionStats.fighter1MethodPredictions && predictionStats.fighter2MethodPredictions && predictionStats.winnerPredictions && (() => {
             const normalized = normalizeMethod(fight.method);

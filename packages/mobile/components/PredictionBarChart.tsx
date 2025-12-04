@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Alert, Image, ImageSourcePropType } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 interface PredictionBarChartProps {
   fighter1Name: string;
@@ -103,9 +104,10 @@ export default function PredictionBarChart({
   const fighter2HasMajority = winnerPredictions.fighter2.percentage > winnerPredictions.fighter1.percentage;
 
   // Calculate background colors
-  // Majority side gets full blue (#83B4F3), minority side gets same muted blue as Community Data container
-  const fighter1BgColor = fighter1HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? 'rgba(131, 180, 243, 0.2)' : 'rgba(131, 180, 243, 0.25)');
-  const fighter2BgColor = fighter2HasMajority ? '#83B4F3' : (colorScheme === 'dark' ? 'rgba(131, 180, 243, 0.2)' : 'rgba(131, 180, 243, 0.25)');
+  // Majority side gets full blue (#83B4F3), minority side gets muted blue
+  const minorityBgColor = colorScheme === 'dark' ? '#28323F' : '#d4e3f5';
+  const fighter1BgColor = fighter1HasMajority ? '#83B4F3' : minorityBgColor;
+  const fighter2BgColor = fighter2HasMajority ? '#83B4F3' : minorityBgColor;
 
   // Divider color - solid grey with hint of blue matching Community Data container bg
   // Container uses rgba(59, 130, 246, 0.05) on dark bg, rgba(59, 130, 246, 0.08) on light
@@ -178,7 +180,6 @@ export default function PredictionBarChart({
               height: 56,
               flexDirection: 'row',
               borderRadius: 20,
-              overflow: 'hidden',
               borderWidth: 2,
               borderColor: dividerColor,
               marginTop: 10,
@@ -193,6 +194,8 @@ export default function PredictionBarChart({
                 backgroundColor: fighter1BgColor,
                 borderRightWidth: 2,
                 borderRightColor: dividerColor,
+                borderTopLeftRadius: 18,
+                borderBottomLeftRadius: 18,
               }}
             >
               {/* Fighter 1 method subdivisions - show if labels revealed or as plain bars */}
@@ -201,6 +204,7 @@ export default function PredictionBarChart({
                   {fighter1Predictions.KO_TKO > 0 && (() => {
                     const methodPercentage = (fighter1Predictions.KO_TKO / totalPredictions) * 100;
                     const label = methodPercentage < 15 ? 'K' : 'KO';
+                    const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'KO_TKO';
                     return (
                       <View
                         style={{
@@ -212,6 +216,11 @@ export default function PredictionBarChart({
                           backgroundColor: 'transparent',
                         }}
                       >
+                        {isUserPrediction && (
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter1HasMajority ? '#83B4F3' : minorityBgColor }]}>
+                            <FontAwesome name="user" size={16} color="#F5C518" />
+                          </View>
+                        )}
                         <Text
                           style={{
                             fontSize: 14,
@@ -236,6 +245,7 @@ export default function PredictionBarChart({
                   {fighter1Predictions.SUBMISSION > 0 && (() => {
                     const methodPercentage = (fighter1Predictions.SUBMISSION / totalPredictions) * 100;
                     const label = methodPercentage < 15 ? 'S' : 'SUB';
+                    const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION';
                     return (
                       <View
                         style={{
@@ -247,6 +257,11 @@ export default function PredictionBarChart({
                           backgroundColor: 'transparent',
                         }}
                       >
+                        {isUserPrediction && (
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter1HasMajority ? '#83B4F3' : minorityBgColor }]}>
+                            <FontAwesome name="user" size={16} color="#F5C518" />
+                          </View>
+                        )}
                         <Text
                           style={{
                             fontSize: 14,
@@ -271,6 +286,7 @@ export default function PredictionBarChart({
                   {fighter1Predictions.DECISION > 0 && (() => {
                     const methodPercentage = (fighter1Predictions.DECISION / totalPredictions) * 100;
                     const label = methodPercentage < 15 ? 'D' : 'DEC';
+                    const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'DECISION';
                     return (
                       <View
                         style={{
@@ -280,6 +296,11 @@ export default function PredictionBarChart({
                           backgroundColor: 'transparent',
                         }}
                       >
+                        {isUserPrediction && (
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter1HasMajority ? '#83B4F3' : minorityBgColor }]}>
+                            <FontAwesome name="user" size={16} color="#F5C518" />
+                          </View>
+                        )}
                         <Text
                           style={{
                             fontSize: 14,
@@ -313,6 +334,8 @@ export default function PredictionBarChart({
                 flex: winnerPredictions.fighter2.percentage,
                 flexDirection: 'row',
                 backgroundColor: fighter2BgColor,
+                borderTopRightRadius: 18,
+                borderBottomRightRadius: 18,
               }}
             >
               {/* Fighter 2 method subdivisions - show if labels revealed or as plain bars */}
@@ -321,6 +344,7 @@ export default function PredictionBarChart({
                   {fighter2Predictions.KO_TKO > 0 && (() => {
                     const methodPercentage = (fighter2Predictions.KO_TKO / totalPredictions) * 100;
                     const label = methodPercentage < 15 ? 'K' : 'KO';
+                    const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'KO_TKO';
                     return (
                       <View
                         style={{
@@ -332,6 +356,11 @@ export default function PredictionBarChart({
                           backgroundColor: 'transparent',
                         }}
                       >
+                        {isUserPrediction && (
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter2HasMajority ? '#83B4F3' : minorityBgColor }]}>
+                            <FontAwesome name="user" size={16} color="#F5C518" />
+                          </View>
+                        )}
                         <Text style={{ fontSize: 14, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
                         <Text style={{ fontSize: 10, fontWeight: '500', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{Math.round(methodPercentage)}%</Text>
                       </View>
@@ -340,6 +369,7 @@ export default function PredictionBarChart({
                   {fighter2Predictions.SUBMISSION > 0 && (() => {
                     const methodPercentage = (fighter2Predictions.SUBMISSION / totalPredictions) * 100;
                     const label = methodPercentage < 15 ? 'S' : 'SUB';
+                    const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'SUBMISSION';
                     return (
                       <View
                         style={{
@@ -351,6 +381,11 @@ export default function PredictionBarChart({
                           backgroundColor: 'transparent',
                         }}
                       >
+                        {isUserPrediction && (
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter2HasMajority ? '#83B4F3' : minorityBgColor }]}>
+                            <FontAwesome name="user" size={16} color="#F5C518" />
+                          </View>
+                        )}
                         <Text style={{ fontSize: 14, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
                         <Text style={{ fontSize: 10, fontWeight: '500', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{Math.round(methodPercentage)}%</Text>
                       </View>
@@ -359,6 +394,7 @@ export default function PredictionBarChart({
                   {fighter2Predictions.DECISION > 0 && (() => {
                     const methodPercentage = (fighter2Predictions.DECISION / totalPredictions) * 100;
                     const label = methodPercentage < 15 ? 'D' : 'DEC';
+                    const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'DECISION';
                     return (
                       <View
                         style={{
@@ -368,6 +404,11 @@ export default function PredictionBarChart({
                           backgroundColor: 'transparent',
                         }}
                       >
+                        {isUserPrediction && (
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter2HasMajority ? '#83B4F3' : minorityBgColor }]}>
+                            <FontAwesome name="user" size={16} color="#F5C518" />
+                          </View>
+                        )}
                         <Text style={{ fontSize: 14, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
                         <Text style={{ fontSize: 10, fontWeight: '500', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{Math.round(methodPercentage)}%</Text>
                       </View>
@@ -388,5 +429,14 @@ export default function PredictionBarChart({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
+  },
+  userPredictionIndicator: {
+    position: 'absolute',
+    top: -14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

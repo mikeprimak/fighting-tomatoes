@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 
 interface RatingDistributionChartProps {
@@ -19,7 +19,7 @@ export default function RatingDistributionChart({
 }: RatingDistributionChartProps) {
   // Chart dimensions - horizontal layout
   const chartWidth = 281; // Width for 10 bars - narrower to fit screen
-  const chartHeight = 82; // Match height of colored score box
+  const chartHeight = 72; // Height for bars area
   const barWidth = 24; // Wider bars that almost touch
   const barGap = 1;
 
@@ -79,22 +79,46 @@ export default function RatingDistributionChart({
       <View style={styles.chartArea}>
         {bars}
       </View>
+      {/* Legend - numbers 1-10 */}
+      <View style={styles.legendArea}>
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+          <View
+            key={num}
+            style={{
+              width: (chartWidth - 20) / 10,
+              marginRight: num < 10 ? barGap : 0,
+              alignItems: 'center',
+            }}
+          >
+            <Text style={styles.legendText}>{num}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    height: 82,
+    flexDirection: 'column',
     width: 281,
   },
   chartArea: {
-    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     paddingHorizontal: 10,
+    height: 72,
+  },
+  legendArea: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    marginTop: 4,
+  },
+  legendText: {
+    fontSize: 10,
+    color: '#808080',
+    textAlign: 'center',
   },
 });

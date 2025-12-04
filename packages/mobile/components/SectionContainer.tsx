@@ -9,6 +9,7 @@ interface SectionContainerProps {
   headerBgColor?: string;
   containerBgColorDark?: string;
   containerBgColorLight?: string;
+  headerRight?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -19,6 +20,7 @@ export default function SectionContainer({
   headerBgColor = '#F5C518',
   containerBgColorDark = 'rgba(245, 197, 24, 0.05)',
   containerBgColorLight = 'rgba(245, 197, 24, 0.08)',
+  headerRight,
   children,
 }: SectionContainerProps) {
   const colorScheme = useColorScheme();
@@ -32,6 +34,7 @@ export default function SectionContainer({
           <Text style={[styles.titleText, { color: iconColor }]}>
             {title}
           </Text>
+          {headerRight}
         </View>
       </View>
 
