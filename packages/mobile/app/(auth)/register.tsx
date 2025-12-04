@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
+import { FontAwesome } from '@expo/vector-icons';
 import { useAuth } from '../../store/AuthContext';
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from 'react-native';
@@ -27,6 +28,7 @@ export default function RegisterScreen() {
     lastName: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { register } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -36,6 +38,23 @@ export default function RegisterScreen() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const getPasswordStrength = (pwd: string): { level: string; color: string } => {
+    if (pwd.length < 8) return { level: 'Too short', color: '#dc2626' };
+    const hasLower = /[a-z]/.test(pwd);
+    const hasUpper = /[A-Z]/.test(pwd);
+    const hasNumber = /\d/.test(pwd);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
+
+    const score = [hasLower, hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
+
+    if (score < 2) return { level: 'Weak', color: '#dc2626' };
+    if (score < 3) return { level: 'Medium', color: '#f59e0b' };
+    if (score < 4) return { level: 'Strong', color: '#22c55e' };
+    return { level: 'Very Strong', color: '#16a34a' };
+  };
+
+  const passwordStrength = getPasswordStrength(formData.password);
+
   const validateForm = () => {
     const { email, password, confirmPassword } = formData;
 
@@ -44,13 +63,18 @@ export default function RegisterScreen() {
       return false;
     }
 
-    if (password !== confirmPassword) {
-      showError('Passwords do not match', 'Error');
+    if (password.length < 8) {
+      showError('Password must be at least 8 characters', 'Error');
       return false;
     }
 
-    if (password.length < 6) {
-      showError('Password must be at least 6 characters', 'Error');
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      showError('Password must contain uppercase, lowercase, and number', 'Error');
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      showError('Passwords do not match', 'Error');
       return false;
     }
 
@@ -150,15 +174,38 @@ export default function RegisterScreen() {
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Password *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.password}
-                  onChangeText={(value) => updateField('password', value)}
-                  placeholder="Create a password"
-                  placeholderTextColor={colors.textSecondary}
-                  secureTextEntry
-                  autoCapitalize="none"
-                />
+                <View style={styles.passwordWrapper}>
+                  <TextInput
+                    style={styles.passwordInput}
+                    value={formData.password}
+                    onChangeText={(value) => updateField('password', value)}
+                    placeholder="Create a password"
+                    placeholderTextColor={colors.textSecondary}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                  />
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <FontAwesome
+                      name={showPassword ? 'eye-slash' : 'eye'}
+                      size={20}
+                      color={colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+                </View>
+                {formData.password.length > 0 && (
+                  <View style={styles.strengthContainer}>
+                    <View style={[styles.strengthBar, { backgroundColor: passwordStrength.color }]} />
+                    <Text style={[styles.strengthText, { color: passwordStrength.color }]}>
+                      {passwordStrength.level}
+                    </Text>
+                  </View>
+                )}
+                <Text style={styles.passwordHint}>
+                  Must be 8+ characters with uppercase, lowercase, and number
+                </Text>
               </View>
 
               <View style={styles.inputContainer}>
@@ -169,7 +216,7 @@ export default function RegisterScreen() {
                   onChangeText={(value) => updateField('confirmPassword', value)}
                   placeholder="Confirm your password"
                   placeholderTextColor={colors.textSecondary}
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   autoCapitalize="none"
                 />
               </View>
@@ -261,6 +308,43 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     backgroundColor: colors.card,
+  },
+  passwordWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    backgroundColor: colors.card,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 16,
+    fontSize: 16,
+    color: colors.text,
+  },
+  eyeButton: {
+    padding: 16,
+  },
+  strengthContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  strengthBar: {
+    height: 4,
+    width: 50,
+    borderRadius: 2,
+    marginRight: 8,
+  },
+  strengthText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  passwordHint: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 6,
   },
   button: {
     backgroundColor: colors.primary,
