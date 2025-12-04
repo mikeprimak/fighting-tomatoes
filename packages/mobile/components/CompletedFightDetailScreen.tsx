@@ -1327,7 +1327,7 @@ export default function CompletedFightDetailScreen({
           title="Winner"
           icon="trophy"
           iconColor="#fff"
-          headerBgColor="#22c55e"
+          headerBgColor="#166534"
           containerBgColorDark="rgba(34, 197, 94, 0.05)"
           containerBgColorLight="rgba(34, 197, 94, 0.08)"
         >
@@ -1368,7 +1368,7 @@ export default function CompletedFightDetailScreen({
             <View style={styles.whatHappenedFighter}>
               <View style={[
                 styles.whatHappenedImageContainer,
-                { borderWidth: 3, borderColor: isOutcomeRevealed && fight.winner === fight.fighter1.id ? '#22c55e' : 'transparent' }
+                { borderWidth: 3, borderColor: isOutcomeRevealed && fight.winner === fight.fighter1.id ? '#166534' : 'transparent' }
               ]}>
                 <Image
                   key={`fighter1-winner-${fight.fighter1.id}`}
@@ -1385,7 +1385,7 @@ export default function CompletedFightDetailScreen({
               </Text>
               <View style={{ height: 24, marginTop: 4, justifyContent: 'center' }}>
                 {isOutcomeRevealed && fight.winner === fight.fighter1.id && (
-                  <Text style={{ color: '#22c55e', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
+                  <Text style={{ color: '#166534', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
                     by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
                     {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
                     {fight.time && ` ${fight.time}`}
@@ -1398,7 +1398,7 @@ export default function CompletedFightDetailScreen({
             <View style={styles.whatHappenedFighter}>
               <View style={[
                 styles.whatHappenedImageContainer,
-                { borderWidth: 3, borderColor: isOutcomeRevealed && fight.winner === fight.fighter2.id ? '#22c55e' : 'transparent' }
+                { borderWidth: 3, borderColor: isOutcomeRevealed && fight.winner === fight.fighter2.id ? '#166534' : 'transparent' }
               ]}>
                 <Image
                   key={`fighter2-winner-${fight.fighter2.id}`}
@@ -1415,88 +1415,13 @@ export default function CompletedFightDetailScreen({
               </Text>
               <View style={{ height: 24, marginTop: 4, justifyContent: 'center' }}>
                 {isOutcomeRevealed && fight.winner === fight.fighter2.id && (
-                  <Text style={{ color: '#22c55e', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
+                  <Text style={{ color: '#166534', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
                     by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
                     {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
                     {fight.time && ` ${fight.time}`}
                   </Text>
                 )}
               </View>
-            </View>
-          </View>
-        </SectionContainer>
-
-        {/* My Rating Section */}
-        <SectionContainer
-          title="My Rating"
-          icon="star"
-        >
-          {/* Inline Rating Section */}
-          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 0 }]}>
-            <View style={[styles.userInputTitleRow, { alignItems: 'center' }]}>
-              <View style={styles.yellowSideLine} />
-              <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>Rate This Fight</Text>
-              <View style={[styles.displayFlameContainer, { marginTop: 10, marginBottom: 0, marginLeft: 8, paddingBottom: 0 }]}>
-                <View style={styles.animatedFlameContainer}>
-                  <View style={styles.wheelContainer} pointerEvents="none">
-                    <Animated.View style={[
-                      styles.wheelNumbers,
-                      {
-                        transform: [{
-                          translateY: wheelAnimation.interpolate({
-                            inputRange: [0, 920],
-                            outputRange: [335, -585],
-                          })
-                        }]
-                      }
-                    ]}>
-                      {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
-                        const ratingColor = getHypeHeatmapColor(number);
-
-                        return (
-                          <View key={number} style={styles.ratingWheelBoxContainer}>
-                            <View style={[
-                              styles.ratingWheelBox,
-                              { backgroundColor: ratingColor }
-                            ]}>
-                              <FontAwesome
-                                name="star"
-                                size={16}
-                                color="rgba(0,0,0,0.45)"
-                                style={{ position: 'absolute', top: 9 }}
-                              />
-                              <Text style={styles.ratingWheelBoxText}>{number}</Text>
-                            </View>
-                          </View>
-                        );
-                      })}
-                    </Animated.View>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* Row of selectable stars (1-10) */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: -5, width: '100%' }}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
-                const isSelected = level <= rating;
-                const starColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
-
-                return (
-                  <TouchableOpacity
-                    key={level}
-                    onPress={() => handleSetRating(level)}
-                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                    style={{ paddingHorizontal: 2.5 }}
-                  >
-                    <FontAwesome
-                      name={isSelected ? "star" : "star-o"}
-                      size={31}
-                      color={starColor}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
             </View>
           </View>
         </SectionContainer>
@@ -1611,6 +1536,81 @@ export default function CompletedFightDetailScreen({
               </View>
           </SectionContainer>
         )}
+
+        {/* My Rating Section */}
+        <SectionContainer
+          title="My Rating"
+          icon="star"
+        >
+          {/* Inline Rating Section */}
+          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 0 }]}>
+            <View style={[styles.userInputTitleRow, { alignItems: 'center' }]}>
+              <View style={styles.yellowSideLine} />
+              <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 18, marginBottom: 0 }]}>Rate This Fight</Text>
+              <View style={[styles.displayFlameContainer, { marginTop: 10, marginBottom: 0, marginLeft: 8, paddingBottom: 0 }]}>
+                <View style={styles.animatedFlameContainer}>
+                  <View style={styles.wheelContainer} pointerEvents="none">
+                    <Animated.View style={[
+                      styles.wheelNumbers,
+                      {
+                        transform: [{
+                          translateY: wheelAnimation.interpolate({
+                            inputRange: [0, 920],
+                            outputRange: [335, -585],
+                          })
+                        }]
+                      }
+                    ]}>
+                      {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
+                        const ratingColor = getHypeHeatmapColor(number);
+
+                        return (
+                          <View key={number} style={styles.ratingWheelBoxContainer}>
+                            <View style={[
+                              styles.ratingWheelBox,
+                              { backgroundColor: ratingColor }
+                            ]}>
+                              <FontAwesome
+                                name="star"
+                                size={16}
+                                color="rgba(0,0,0,0.45)"
+                                style={{ position: 'absolute', top: 9 }}
+                              />
+                              <Text style={styles.ratingWheelBoxText}>{number}</Text>
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </Animated.View>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Row of selectable stars (1-10) */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: -5, width: '100%' }}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
+                const isSelected = level <= rating;
+                const starColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
+
+                return (
+                  <TouchableOpacity
+                    key={level}
+                    onPress={() => handleSetRating(level)}
+                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                    style={{ paddingHorizontal: 2.5 }}
+                  >
+                    <FontAwesome
+                      name={isSelected ? "star" : "star-o"}
+                      size={31}
+                      color={starColor}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </SectionContainer>
 
         {/* Tags Section */}
         <SectionContainer
