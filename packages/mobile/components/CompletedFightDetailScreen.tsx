@@ -1392,7 +1392,7 @@ export default function CompletedFightDetailScreen({
               </Text>
             )}
 
-            <View style={[styles.whatHappenedContainer, { marginTop: !fight.winner ? 0 : 22, alignItems: 'flex-start', marginBottom: 0 }]}>
+            <View style={[styles.whatHappenedContainer, { marginTop: !fight.winner ? 0 : 14, alignItems: 'flex-start', marginBottom: 0 }]}>
               {/* Fighter 1 */}
               <View style={styles.whatHappenedFighter}>
                 <View style={[
