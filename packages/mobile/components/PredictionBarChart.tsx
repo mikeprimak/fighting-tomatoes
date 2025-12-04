@@ -221,7 +221,7 @@ export default function PredictionBarChart({
                         }}
                       >
                         {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter1HasMajority ? '#83B4F3' : minorityBgColor }]}>
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: isActualOutcome ? '#166534' : (fighter1HasMajority ? '#83B4F3' : minorityBgColor) }]}>
                             <FontAwesome name="user" size={16} color="#F5C518" />
                           </View>
                         )}
@@ -264,7 +264,7 @@ export default function PredictionBarChart({
                         }}
                       >
                         {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter1HasMajority ? '#83B4F3' : minorityBgColor }]}>
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: isActualOutcome ? '#166534' : (fighter1HasMajority ? '#83B4F3' : minorityBgColor) }]}>
                             <FontAwesome name="user" size={16} color="#F5C518" />
                           </View>
                         )}
@@ -305,7 +305,7 @@ export default function PredictionBarChart({
                         }}
                       >
                         {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter1HasMajority ? '#83B4F3' : minorityBgColor }]}>
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: isActualOutcome ? '#166534' : (fighter1HasMajority ? '#83B4F3' : minorityBgColor) }]}>
                             <FontAwesome name="user" size={16} color="#F5C518" />
                           </View>
                         )}
@@ -367,7 +367,7 @@ export default function PredictionBarChart({
                         }}
                       >
                         {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter2HasMajority ? '#83B4F3' : minorityBgColor }]}>
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: isActualOutcome ? '#166534' : (fighter2HasMajority ? '#83B4F3' : minorityBgColor) }]}>
                             <FontAwesome name="user" size={16} color="#F5C518" />
                           </View>
                         )}
@@ -394,7 +394,7 @@ export default function PredictionBarChart({
                         }}
                       >
                         {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter2HasMajority ? '#83B4F3' : minorityBgColor }]}>
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: isActualOutcome ? '#166534' : (fighter2HasMajority ? '#83B4F3' : minorityBgColor) }]}>
                             <FontAwesome name="user" size={16} color="#F5C518" />
                           </View>
                         )}
@@ -421,7 +421,7 @@ export default function PredictionBarChart({
                         }}
                       >
                         {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter2HasMajority ? '#83B4F3' : minorityBgColor }]}>
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: isActualOutcome ? '#166534' : (fighter2HasMajority ? '#83B4F3' : minorityBgColor) }]}>
                             <FontAwesome name="user" size={16} color="#F5C518" />
                           </View>
                         )}

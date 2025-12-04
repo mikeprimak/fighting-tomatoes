@@ -1429,17 +1429,17 @@ export default function CompletedFightDetailScreen({
 
           {/* Event Info */}
           <View style={{ alignItems: 'center', marginTop: 16 }}>
-            <Text style={{ color: colors.text, fontSize: 14, fontWeight: '600', textAlign: 'center' }}>
+            {(fight.weightClass || fight.cardType) && (
+              <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center' }}>
+                {fight.weightClass ? `${formatWeightClass(fight.weightClass)}${fight.isTitle ? ' Championship' : ''}` : ''}{fight.weightClass && fight.cardType ? ' - ' : ''}{fight.orderOnCard === 1 ? 'Main Event' : (fight.cardType || '')}
+              </Text>
+            )}
+            <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', marginTop: 2 }}>
               {fight.event.name}
             </Text>
             <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', marginTop: 2 }}>
               {new Date(fight.event.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
             </Text>
-            {(fight.weightClass || fight.cardType) && (
-              <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', marginTop: 2 }}>
-                {fight.weightClass ? formatWeightClass(fight.weightClass) : ''}{fight.weightClass && fight.cardType ? ' - ' : ''}{fight.orderOnCard === 1 ? 'Main Event' : (fight.cardType || '')}
-              </Text>
-            )}
           </View>
         </SectionContainer>
 
@@ -1627,7 +1627,7 @@ export default function CompletedFightDetailScreen({
         {/* Tags Section */}
         <SectionContainer
           title="Tags"
-          icon="tags"
+          icon="hashtag"
         >
             {displayedTags.length > 0 && (() => {
               // Separate user-selected tags and unselected tags
