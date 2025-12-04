@@ -4,11 +4,24 @@ import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 
+// Helper to format method for display
+const formatMethod = (method: string | null | undefined): string => {
+  if (!method) return '';
+  switch (method.toUpperCase()) {
+    case 'KO_TKO': return 'KO';
+    case 'SUBMISSION': return 'Sub';
+    case 'DECISION': return 'Dec';
+    default: return method;
+  }
+};
+
 interface PreFightCommentCardProps {
   comment: {
     id: string;
     content: string;
     hypeRating?: number | null;
+    predictedWinner?: string | null;
+    predictedMethod?: string | null;
     upvotes: number;
     userHasUpvoted: boolean;
     user: {
@@ -21,6 +34,10 @@ interface PreFightCommentCardProps {
       eventName: string;
     };
   };
+  fighter1Id?: string;
+  fighter2Id?: string;
+  fighter1Name?: string;
+  fighter2Name?: string;
   onPress?: () => void;
   onUpvote?: () => void;
   onFlag?: () => void;
@@ -34,6 +51,10 @@ interface PreFightCommentCardProps {
 
 export function PreFightCommentCard({
   comment,
+  fighter1Id,
+  fighter2Id,
+  fighter1Name,
+  fighter2Name,
   onPress,
   onUpvote,
   onFlag,
@@ -84,19 +105,59 @@ export function PreFightCommentCard({
 
         {/* Right side: Comment content */}
         <View style={styles.commentContentContainer}>
-          {/* Header: Username and Hype Rating/Flag */}
-          <View style={styles.commentHeader}>
+          {/* Comment body */}
+          <Text style={[styles.commentContent, { color: colors.textSecondary }]}>
+            {comment.content}
+          </Text>
+
+          {/* Bottom right: 3-line info block */}
+          <View style={styles.bottomRightBlock}>
+            {/* Line 1: Username */}
             <Text style={[styles.commentAuthor, { color: showMyComment ? '#F5C518' : '#FFFFFF' }]}>
               {comment.user.displayName}
             </Text>
-            <View style={styles.ratingFlagContainer}>
+
+            {/* Line 2: Hype Rating + Prediction */}
+            <View style={styles.ratingRow}>
               {comment.hypeRating && comment.hypeRating > 0 && (
                 <View style={styles.inlineRating}>
-                  <FontAwesome6 name="fire-flame-curved" size={12} color={getHypeHeatmapColor(comment.hypeRating)} />
-                  <Text style={[styles.commentRatingText, { color: colors.text, fontSize: 12 }]}>
+                  <FontAwesome6 name="fire-flame-curved" size={14} color={getHypeHeatmapColor(comment.hypeRating)} />
+                  <Text style={[styles.commentRatingText, { color: colors.text, fontSize: 14 }]}>
                     {comment.hypeRating}
                   </Text>
                 </View>
+              )}
+              {comment.predictedWinner && fighter1Id && fighter2Id && (
+                <View style={styles.predictionContainer}>
+                  <FontAwesome name="hand-o-right" size={14} color="#FFFFFF" />
+                  <Text style={[styles.predictionText, { color: '#FFFFFF' }]}>
+                    {comment.predictedWinner === fighter1Id ? fighter1Name : fighter2Name}
+                    {comment.predictedMethod && ` by ${formatMethod(comment.predictedMethod)}`}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Line 3: Action buttons */}
+            <View style={styles.actionButtonsRow}>
+              {onReply && !showMyComment && (
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e?.stopPropagation?.();
+                    onReply?.();
+                  }}
+                  disabled={!isAuthenticated}
+                  style={styles.replyButton}
+                >
+                  <FontAwesome
+                    name="reply"
+                    size={12}
+                    color={colors.textSecondary}
+                  />
+                  <Text style={[styles.replyButtonText, { color: colors.textSecondary }]}>
+                    Reply
+                  </Text>
+                </TouchableOpacity>
               )}
               {showMyComment && onEdit && (
                 <TouchableOpacity
@@ -128,40 +189,12 @@ export function PreFightCommentCard({
                   <FontAwesome
                     name="flag"
                     size={12}
-                    color={isFlagging ? colors.textSecondary : colors.textSecondary}
+                    color={colors.textSecondary}
                   />
                 </TouchableOpacity>
               )}
             </View>
           </View>
-
-          {/* Comment body */}
-          <Text style={[styles.commentContent, { color: colors.textSecondary }]}>
-            {comment.content}
-          </Text>
-
-          {/* Reply button - bottom right */}
-          {onReply && !showMyComment && (
-            <View style={styles.replyButtonContainer}>
-              <TouchableOpacity
-                onPress={(e) => {
-                  e?.stopPropagation?.();
-                  onReply?.();
-                }}
-                disabled={!isAuthenticated}
-                style={styles.replyButton}
-              >
-                <FontAwesome
-                  name="reply"
-                  size={12}
-                  color={colors.textSecondary}
-                />
-                <Text style={[styles.replyButtonText, { color: colors.textSecondary }]}>
-                  Reply
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
 
           {/* Fight info at bottom */}
           <View style={styles.fightInfo}>
@@ -198,67 +231,72 @@ const styles = StyleSheet.create({
   commentContentContainer: {
     flex: 1,
   },
-  ratingFlagContainer: {
+  commentAuthor: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    flexShrink: 0,
+    marginBottom: 4,
+  },
+  predictionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  predictionText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   inlineRating: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
   },
-  flagButton: {
-    padding: 4,
+  commentRatingText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  replyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+  },
+  replyButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    padding: 4,
+    paddingVertical: 4,
   },
   editButtonText: {
     fontSize: 12,
     fontWeight: '600',
   },
-  commentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
-  },
-  commentAuthor: {
-    fontSize: 14,
-    fontWeight: '700',
-    flex: 1,
-    flexShrink: 1,
-  },
-  commentRatingText: {
-    fontSize: 14,
-    fontWeight: '600',
+  flagButton: {
+    paddingVertical: 4,
+    marginLeft: 12,
   },
   commentContent: {
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 8,
   },
-  replyButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 8,
-  },
-  replyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  replyButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
+  bottomRightBlock: {
+    alignItems: 'flex-end',
+    marginBottom: 4,
   },
   fightInfo: {
     gap: 2,

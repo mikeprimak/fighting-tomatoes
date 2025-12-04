@@ -4,6 +4,17 @@ import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 
+// Helper to format method for display
+const formatMethod = (method: string | null | undefined): string => {
+  if (!method) return '';
+  switch (method.toUpperCase()) {
+    case 'KO_TKO': return 'KO';
+    case 'SUBMISSION': return 'Sub';
+    case 'DECISION': return 'Dec';
+    default: return method;
+  }
+};
+
 interface CommentCardProps {
   comment: {
     id: string;
@@ -11,6 +22,8 @@ interface CommentCardProps {
     rating: number;
     upvotes: number;
     userHasUpvoted: boolean;
+    predictedWinner?: string | null;
+    predictedMethod?: string | null;
     user: {
       displayName: string;
     };
@@ -21,6 +34,10 @@ interface CommentCardProps {
       eventName: string;
     };
   };
+  fighter1Id?: string;
+  fighter2Id?: string;
+  fighter1Name?: string;
+  fighter2Name?: string;
   onPress?: () => void;
   onUpvote?: () => void;
   onFlag?: () => void;
@@ -34,6 +51,10 @@ interface CommentCardProps {
 
 export function CommentCard({
   comment,
+  fighter1Id,
+  fighter2Id,
+  fighter1Name,
+  fighter2Name,
   onPress,
   onUpvote,
   onFlag,
@@ -80,28 +101,39 @@ export function CommentCard({
 
         {/* Right side: Comment content */}
         <View style={styles.reviewContentContainer}>
-          {/* Comment body - full width */}
+          {/* Comment body */}
           <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
             {comment.content}
           </Text>
 
-          {/* Footer: Rating - Username Reply Edit */}
-          <View style={styles.footerContainer}>
-            {/* Left side: Rating - Username */}
-            <View style={styles.footerLeft}>
+          {/* Bottom right: 3-line info block */}
+          <View style={styles.bottomRightBlock}>
+            {/* Line 1: Username */}
+            <Text style={[styles.reviewAuthor, { color: showMyReview ? '#F5C518' : '#FFFFFF' }]}>
+              {comment.user.displayName}
+            </Text>
+
+            {/* Line 2: Rating + Prediction */}
+            <View style={styles.ratingRow}>
               <View style={styles.inlineRating}>
-                <FontAwesome name="star" size={12} color={getHypeHeatmapColor(comment.rating)} />
-                <Text style={[styles.reviewRatingText, { color: colors.text, fontSize: 12 }]}>
+                <FontAwesome name="star" size={14} color={getHypeHeatmapColor(comment.rating)} />
+                <Text style={[styles.reviewRatingText, { color: colors.text, fontSize: 14 }]}>
                   {comment.rating}
                 </Text>
               </View>
-              <Text style={[styles.reviewAuthor, { color: showMyReview ? '#F5C518' : '#FFFFFF' }]}>
-                {comment.user.displayName}
-              </Text>
+              {comment.predictedWinner && fighter1Id && fighter2Id && (
+                <View style={styles.predictionContainer}>
+                  <FontAwesome name="hand-o-right" size={14} color="#FFFFFF" />
+                  <Text style={[styles.predictedWinnerText, { color: '#FFFFFF' }]}>
+                    {comment.predictedWinner === fighter1Id ? fighter1Name : fighter2Name}
+                    {comment.predictedMethod && ` by ${formatMethod(comment.predictedMethod)}`}
+                  </Text>
+                </View>
+              )}
             </View>
 
-            {/* Right side: Reply + Edit/Flag */}
-            <View style={styles.footerRight}>
+            {/* Line 3: Action buttons */}
+            <View style={styles.actionButtonsRow}>
               {onReply && !showMyReview && (
                 <TouchableOpacity
                   onPress={(e) => {
@@ -190,82 +222,72 @@ const styles = StyleSheet.create({
   reviewContentContainer: {
     flex: 1,
   },
-  userRatingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  reviewAuthor: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
   },
-  ratingFlagContainer: {
+  ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    flexShrink: 0,
+    marginBottom: 4,
   },
   inlineRating: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
   },
-  flagButton: {
-    padding: 4,
-  },
-  editButton: {
+  predictionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    padding: 4,
   },
-  editButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  footerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
-  },
-  footerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  footerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  replyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    padding: 4,
-  },
-  replyButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  reviewAuthor: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  dashSeparator: {
-    fontSize: 12,
-  },
-  reviewRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  predictedWinnerText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   reviewRatingText: {
     fontSize: 14,
     fontWeight: '600',
   },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  replyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+  },
+  replyButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+  },
+  editButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  flagButton: {
+    paddingVertical: 4,
+    marginLeft: 12,
+  },
   reviewContent: {
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: 8,
+  },
+  bottomRightBlock: {
+    alignItems: 'flex-end',
+    marginBottom: 4,
   },
   fightInfo: {
     gap: 2,

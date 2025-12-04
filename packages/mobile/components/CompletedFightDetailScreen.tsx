@@ -1427,105 +1427,117 @@ export default function CompletedFightDetailScreen({
         </SectionContainer>
 
         {/* Prediction & Hype Section */}
-        {(fight.userPredictedWinner || fight.userHypePrediction) && (
-          <SectionContainer
-            title="MY PREDICTION & HYPE"
-            icon="bullseye"
-            iconColor="#fff"
-            headerBgColor="#166534"
-            containerBgColorDark="rgba(34, 197, 94, 0.05)"
-            containerBgColorLight="rgba(34, 197, 94, 0.08)"
-          >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 8 }}>
-                {/* Left: Winner and Method Prediction */}
-                {fight.userPredictedWinner ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                    {/* Fighter Headshot */}
-                    <Image
-                      source={
-                        fight.userPredictedWinner === fight.fighter1.id
-                          ? (fight.fighter1.profileImage ? { uri: fight.fighter1.profileImage } : getFighterPlaceholderImage(fight.fighter1.id))
-                          : (fight.fighter2.profileImage ? { uri: fight.fighter2.profileImage } : getFighterPlaceholderImage(fight.fighter2.id))
-                      }
-                      style={{ width: 70, height: 70, borderRadius: 35 }}
-                    />
-                    {/* Fighter Name and Method */}
-                    <View>
-                      {/* Winner Row with Accuracy Icon */}
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <Text style={[styles.predictionText, { color: colors.text, fontWeight: '700', fontSize: 17 }]}>
-                          {fight.userPredictedWinner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName}
+        <SectionContainer
+          title="MY PREDICTION & HYPE"
+          icon="bullseye"
+          iconColor="#fff"
+          headerBgColor="#166534"
+          containerBgColorDark="rgba(34, 197, 94, 0.05)"
+          containerBgColorLight="rgba(34, 197, 94, 0.08)"
+        >
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8 }}>
+              {/* Left: Winner and Method Prediction */}
+              {fight.userPredictedWinner ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                  {/* Fighter Headshot */}
+                  <Image
+                    source={
+                      fight.userPredictedWinner === fight.fighter1.id
+                        ? (fight.fighter1.profileImage ? { uri: fight.fighter1.profileImage } : getFighterPlaceholderImage(fight.fighter1.id))
+                        : (fight.fighter2.profileImage ? { uri: fight.fighter2.profileImage } : getFighterPlaceholderImage(fight.fighter2.id))
+                    }
+                    style={{ width: 70, height: 70, borderRadius: 35 }}
+                  />
+                  {/* Fighter Name and Method */}
+                  <View>
+                    {/* Winner Row with Accuracy Icon */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <Text style={[styles.predictionText, { color: colors.text, fontWeight: '700', fontSize: 17 }]}>
+                        {fight.userPredictedWinner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName}
+                      </Text>
+                      {(() => {
+                        const isWinnerCorrect = fight.winner === fight.userPredictedWinner;
+                        return (
+                          <FontAwesome
+                            name={isWinnerCorrect ? "check-circle" : "times-circle"}
+                            size={22}
+                            color={isWinnerCorrect ? "#4CAF50" : "#F44336"}
+                          />
+                        );
+                      })()}
+                    </View>
+                    {/* Method Row with Accuracy Icon - only show if method was predicted */}
+                    {fight.userPredictedMethod && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={[styles.predictionText, { color: colors.textSecondary, fontSize: 14 }]}>
+                          by {fight.userPredictedMethod.charAt(0).toUpperCase() + fight.userPredictedMethod.slice(1).toLowerCase().replace('_', '/')}
                         </Text>
                         {(() => {
                           const isWinnerCorrect = fight.winner === fight.userPredictedWinner;
+                          const normalizedActualMethod = normalizeMethod(fight.method);
+                          const normalizedPredictedMethod = fight.userPredictedMethod?.toUpperCase();
+                          const methodMatchesActual = normalizedActualMethod === normalizedPredictedMethod;
+
+                          // Icon color logic:
+                          // - If winner wrong: gray checkmark (irrelevant, doesn't count)
+                          // - If winner correct: green checkmark (correct) or red X (incorrect)
+                          const methodIconColor = !isWinnerCorrect
+                            ? colors.textSecondary // gray if winner wrong (irrelevant)
+                            : (methodMatchesActual ? "#4CAF50" : "#F44336"); // green/red if winner correct
+
+                          const methodIcon = methodMatchesActual ? "check-circle" : "times-circle";
+
                           return (
                             <FontAwesome
-                              name={isWinnerCorrect ? "check-circle" : "times-circle"}
-                              size={22}
-                              color={isWinnerCorrect ? "#4CAF50" : "#F44336"}
+                              name={methodIcon}
+                              size={18}
+                              color={methodIconColor}
                             />
                           );
                         })()}
                       </View>
-                      {/* Method Row with Accuracy Icon - only show if method was predicted */}
-                      {fight.userPredictedMethod && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                          <Text style={[styles.predictionText, { color: colors.textSecondary, fontSize: 14 }]}>
-                            by {fight.userPredictedMethod.charAt(0).toUpperCase() + fight.userPredictedMethod.slice(1).toLowerCase().replace('_', '/')}
-                          </Text>
-                          {(() => {
-                            const isWinnerCorrect = fight.winner === fight.userPredictedWinner;
-                            const normalizedActualMethod = normalizeMethod(fight.method);
-                            const normalizedPredictedMethod = fight.userPredictedMethod?.toUpperCase();
-                            const methodMatchesActual = normalizedActualMethod === normalizedPredictedMethod;
-
-                            // Icon color logic:
-                            // - If winner wrong: gray checkmark (irrelevant, doesn't count)
-                            // - If winner correct: green checkmark (correct) or red X (incorrect)
-                            const methodIconColor = !isWinnerCorrect
-                              ? colors.textSecondary // gray if winner wrong (irrelevant)
-                              : (methodMatchesActual ? "#4CAF50" : "#F44336"); // green/red if winner correct
-
-                            const methodIcon = methodMatchesActual ? "check-circle" : "times-circle";
-
-                            return (
-                              <FontAwesome
-                                name={methodIcon}
-                                size={18}
-                                color={methodIconColor}
-                              />
-                            );
-                          })()}
-                        </View>
-                      )}
-                    </View>
+                    )}
                   </View>
-                ) : (
-                  <View />
-                )}
+                </View>
+              ) : (
+                <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
+                  No picks
+                </Text>
+              )}
 
-                {/* Right: Hype Prediction aligned under "My Hype" - matching UpcomingFightCard style */}
-                {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && fight.userHypePrediction > 0 && (
-                  <View style={[
-                    styles.myHypeSquare,
-                    {
-                      backgroundColor: getHypeHeatmapColor(fight.userHypePrediction),
-                    }
-                  ]}>
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={16}
-                      color="rgba(0,0,0,0.45)"
-                      style={{ position: 'absolute', top: 9 }}
-                    />
-                    <Text style={styles.myHypeSquareNumber}>
-                      {Math.round(fight.userHypePrediction).toString()}
-                    </Text>
-                  </View>
-                )}
-              </View>
-          </SectionContainer>
-        )}
+              {/* Right: Hype Prediction - Large flame icon */}
+              {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && fight.userHypePrediction > 0 ? (
+                <View style={styles.ratingStarContainer}>
+                  {/* Background circle for better text contrast */}
+                  <View style={{
+                    position: 'absolute',
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: getHypeHeatmapColor(fight.userHypePrediction),
+                    opacity: 0.4,
+                    top: 18,
+                  }} />
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={70}
+                    color={getHypeHeatmapColor(fight.userHypePrediction)}
+                  />
+                  <Text style={styles.ratingStarText}>
+                    {Math.round(fight.userHypePrediction).toString()}
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.ratingStarContainer}>
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={70}
+                    color={colors.border}
+                  />
+                </View>
+              )}
+            </View>
+        </SectionContainer>
 
         {/* My Rating Section */}
         <SectionContainer
@@ -1990,7 +2002,7 @@ export default function CompletedFightDetailScreen({
 
             {/* User's review first (if exists and not editing) */}
             {fight.userReview && !isEditingComment && (
-              <View style={{ marginTop: 0 }}>
+              <View style={{ marginTop: 0, marginRight: 20 }}>
               <CommentCard
                 comment={{
                   id: fight.userReview.id,
@@ -1998,10 +2010,16 @@ export default function CompletedFightDetailScreen({
                   rating: rating,
                   upvotes: fight.userReview.upvotes || 0,
                   userHasUpvoted: fight.userReview.userHasUpvoted,
+                  predictedWinner: fight.userPredictedWinner,
+                  predictedMethod: fight.userPredictedMethod,
                   user: {
                     displayName: user?.displayName || 'You',
                   },
                 }}
+                fighter1Id={fight.fighter1.id}
+                fighter2Id={fight.fighter2.id}
+                fighter1Name={fight.fighter1.lastName}
+                fighter2Name={fight.fighter2.lastName}
                 onEdit={() => setIsEditingComment(true)}
                 onUpvote={() => handleUpvoteReview(fight.userReview.id)}
                 isUpvoting={upvoteMutation.isPending}
@@ -2038,24 +2056,32 @@ export default function CompletedFightDetailScreen({
 
                   return (
                   <React.Fragment key={review.id}>
-                    <CommentCard
-                      comment={{
-                        id: review.id,
-                        content: review.content,
-                        rating: review.rating,
-                        upvotes: review.upvotes || 0,
-                        userHasUpvoted: review.userHasUpvoted,
-                        user: {
-                          displayName: review.user.displayName || `${review.user.firstName} ${review.user.lastName}`,
-                        },
-                      }}
-                      onUpvote={() => handleUpvoteReview(review.id)}
-                      onFlag={() => handleFlagReview(review.id)}
-                      onReply={userHasReplied ? undefined : () => handleReplyClick(review.id)}
-                      isUpvoting={upvoteMutation.isPending}
-                      isFlagging={flagReviewMutation.isPending && reviewToFlag === review.id}
-                      isAuthenticated={isAuthenticated}
-                    />
+                    <View style={{ marginRight: 20 }}>
+                      <CommentCard
+                        comment={{
+                          id: review.id,
+                          content: review.content,
+                          rating: review.rating,
+                          upvotes: review.upvotes || 0,
+                          userHasUpvoted: review.userHasUpvoted,
+                          predictedWinner: review.predictedWinner,
+                          predictedMethod: review.predictedMethod,
+                          user: {
+                            displayName: review.user.displayName || `${review.user.firstName} ${review.user.lastName}`,
+                          },
+                        }}
+                        fighter1Id={fight.fighter1.id}
+                        fighter2Id={fight.fighter2.id}
+                        fighter1Name={fight.fighter1.lastName}
+                        fighter2Name={fight.fighter2.lastName}
+                        onUpvote={() => handleUpvoteReview(review.id)}
+                        onFlag={() => handleFlagReview(review.id)}
+                        onReply={userHasReplied ? undefined : () => handleReplyClick(review.id)}
+                        isUpvoting={upvoteMutation.isPending}
+                        isFlagging={flagReviewMutation.isPending && reviewToFlag === review.id}
+                        isAuthenticated={isAuthenticated}
+                      />
+                    </View>
 
                     {/* Reply form - shown when replying to this review */}
                     {replyingToReviewId === review.id && (
@@ -2221,10 +2247,16 @@ export default function CompletedFightDetailScreen({
                                       rating: isMyReply ? rating : (reply.rating || 0),
                                       upvotes: reply.upvotes || 0,
                                       userHasUpvoted: reply.userHasUpvoted || false,
+                                      predictedWinner: isMyReply ? fight.userPredictedWinner : reply.predictedWinner,
+                                      predictedMethod: isMyReply ? fight.userPredictedMethod : reply.predictedMethod,
                                       user: {
                                         displayName: reply.user.displayName || `${reply.user.firstName} ${reply.user.lastName}`,
                                       },
                                     }}
+                                    fighter1Id={fight.fighter1.id}
+                                    fighter2Id={fight.fighter2.id}
+                                    fighter1Name={fight.fighter1.lastName}
+                                    fighter2Name={fight.fighter2.lastName}
                                     onUpvote={() => handleUpvoteReview(reply.id)}
                                     onFlag={() => handleFlagReview(reply.id)}
                                     onEdit={isMyReply ? () => {
@@ -2243,7 +2275,7 @@ export default function CompletedFightDetailScreen({
                           {hiddenCount > 0 && (
                             <TouchableOpacity
                               onPress={() => setExpandedReplies(prev => ({ ...prev, [review.id]: !isExpanded }))}
-                              style={{ marginTop: 8, paddingVertical: 8 }}
+                              style={{ marginTop: -7, paddingVertical: 8, alignSelf: 'flex-end' }}
                             >
                               <Text style={{ color: colors.tint, fontSize: 14, fontWeight: '500' }}>
                                 {isExpanded ? 'Show less replies' : `Show ${hiddenCount} more ${hiddenCount === 1 ? 'reply' : 'replies'}`}
@@ -2292,12 +2324,18 @@ export default function CompletedFightDetailScreen({
                       id: comment.id,
                       content: comment.content,
                       hypeRating: comment.hypeRating,
+                      predictedWinner: comment.predictedWinner,
+                      predictedMethod: comment.predictedMethod,
                       upvotes: comment.upvotes || 0,
                       userHasUpvoted: comment.userHasUpvoted || false,
                       user: {
                         displayName: comment.user.displayName,
                       },
                     }}
+                    fighter1Id={fight.fighter1.id}
+                    fighter2Id={fight.fighter2.id}
+                    fighter1Name={fight.fighter1.lastName}
+                    fighter2Name={fight.fighter2.lastName}
                     isAuthenticated={isAuthenticated}
                     showMyComment={comment.userId === user?.id}
                   />

@@ -1580,23 +1580,31 @@ export default function UpcomingFightDetailScreen({
 
           {/* User's own comment first (if exists and not editing) */}
           {preFightCommentsData.userComment && !isEditingComment && (
-            <PreFightCommentCard
-              comment={{
-                id: preFightCommentsData.userComment.id,
-                content: preFightCommentsData.userComment.content,
-                hypeRating: selectedHype,
-                upvotes: preFightCommentsData.userComment.upvotes || 0,
-                userHasUpvoted: preFightCommentsData.userComment.userHasUpvoted || false,
-                user: {
-                  displayName: preFightCommentsData.userComment.user.displayName,
-                },
-              }}
-              onEdit={() => setIsEditingComment(true)}
-              onUpvote={() => handleUpvoteComment(preFightCommentsData.userComment.id)}
-              isUpvoting={upvotingCommentId === preFightCommentsData.userComment.id}
-              isAuthenticated={isAuthenticated}
-              showMyComment={true}
-            />
+            <View style={{ marginRight: 20 }}>
+              <PreFightCommentCard
+                comment={{
+                  id: preFightCommentsData.userComment.id,
+                  content: preFightCommentsData.userComment.content,
+                  hypeRating: selectedHype,
+                  predictedWinner: selectedWinner,
+                  predictedMethod: selectedMethod,
+                  upvotes: preFightCommentsData.userComment.upvotes || 0,
+                  userHasUpvoted: preFightCommentsData.userComment.userHasUpvoted || false,
+                  user: {
+                    displayName: preFightCommentsData.userComment.user.displayName,
+                  },
+                }}
+                fighter1Id={fight.fighter1.id}
+                fighter2Id={fight.fighter2.id}
+                fighter1Name={fight.fighter1.lastName}
+                fighter2Name={fight.fighter2.lastName}
+                onEdit={() => setIsEditingComment(true)}
+                onUpvote={() => handleUpvoteComment(preFightCommentsData.userComment.id)}
+                isUpvoting={upvotingCommentId === preFightCommentsData.userComment.id}
+                isAuthenticated={isAuthenticated}
+                showMyComment={true}
+              />
+            </View>
           )}
 
           {/* All other comments */}
@@ -1608,24 +1616,32 @@ export default function UpcomingFightDetailScreen({
 
               return (
               <React.Fragment key={comment.id}>
-                <PreFightCommentCard
-                  comment={{
-                    id: comment.id,
-                    content: comment.content,
-                    hypeRating: comment.hypeRating,
-                    upvotes: comment.upvotes || 0,
-                    userHasUpvoted: comment.userHasUpvoted || false,
-                    user: {
-                      displayName: comment.user.displayName,
-                    },
-                  }}
-                  onUpvote={() => handleUpvoteComment(comment.id)}
-                  onFlag={() => handleFlagComment(comment.id)}
-                  onReply={userHasReplied ? undefined : () => handleReplyClick(comment.id)}
-                  isUpvoting={upvotingCommentId === comment.id}
-                  isAuthenticated={isAuthenticated}
-                  showMyComment={false}
-                />
+                <View style={{ marginRight: 20 }}>
+                  <PreFightCommentCard
+                    comment={{
+                      id: comment.id,
+                      content: comment.content,
+                      hypeRating: comment.hypeRating,
+                      predictedWinner: comment.predictedWinner,
+                      predictedMethod: comment.predictedMethod,
+                      upvotes: comment.upvotes || 0,
+                      userHasUpvoted: comment.userHasUpvoted || false,
+                      user: {
+                        displayName: comment.user.displayName,
+                      },
+                    }}
+                    fighter1Id={fight.fighter1.id}
+                    fighter2Id={fight.fighter2.id}
+                    fighter1Name={fight.fighter1.lastName}
+                    fighter2Name={fight.fighter2.lastName}
+                    onUpvote={() => handleUpvoteComment(comment.id)}
+                    onFlag={() => handleFlagComment(comment.id)}
+                    onReply={userHasReplied ? undefined : () => handleReplyClick(comment.id)}
+                    isUpvoting={upvotingCommentId === comment.id}
+                    isAuthenticated={isAuthenticated}
+                    showMyComment={false}
+                  />
+                </View>
 
                 {/* Reply form - shown when replying to this comment */}
                 {replyingToCommentId === comment.id && (
@@ -1789,12 +1805,18 @@ export default function UpcomingFightDetailScreen({
                                   id: reply.id,
                                   content: reply.content,
                                   hypeRating: isMyReply ? selectedHype : reply.hypeRating,
+                                  predictedWinner: isMyReply ? selectedWinner : reply.predictedWinner,
+                                  predictedMethod: isMyReply ? selectedMethod : reply.predictedMethod,
                                   upvotes: reply.upvotes || 0,
                                   userHasUpvoted: reply.userHasUpvoted || false,
                                   user: {
                                     displayName: reply.user.displayName,
                                   },
                                 }}
+                                fighter1Id={fight.fighter1.id}
+                                fighter2Id={fight.fighter2.id}
+                                fighter1Name={fight.fighter1.lastName}
+                                fighter2Name={fight.fighter2.lastName}
                                 onUpvote={() => handleUpvoteComment(reply.id)}
                                 onFlag={() => handleFlagComment(reply.id)}
                                 onEdit={isMyReply ? () => {
@@ -1813,7 +1835,7 @@ export default function UpcomingFightDetailScreen({
                       {hiddenCount > 0 && (
                         <TouchableOpacity
                           onPress={() => setExpandedReplies(prev => ({ ...prev, [comment.id]: !isExpanded }))}
-                          style={{ marginTop: 8, paddingVertical: 8 }}
+                          style={{ marginTop: -7, paddingVertical: 8, alignSelf: 'flex-end' }}
                         >
                           <Text style={{ color: colors.tint, fontSize: 14, fontWeight: '500' }}>
                             {isExpanded ? 'Show less replies' : `Show ${hiddenCount} more ${hiddenCount === 1 ? 'reply' : 'replies'}`}

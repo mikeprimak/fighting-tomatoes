@@ -2103,6 +2103,20 @@ export async function fightRoutes(fastify: FastifyInstance) {
         take: limit,
       });
 
+      // Fetch predictions for all review authors to include predictedWinner
+      const reviewUserIds = [...new Set(reviews.flatMap((r: any) => [r.userId, ...r.replies.map((reply: any) => reply.userId)]))];
+      const predictions = await fastify.prisma.fightPrediction.findMany({
+        where: {
+          fightId,
+          userId: { in: reviewUserIds },
+        },
+        select: {
+          userId: true,
+          predictedWinner: true,
+        },
+      });
+      const predictionMap = new Map(predictions.map(p => [p.userId, p.predictedWinner]));
+
       // Transform reviews to include userHasUpvoted and userHasFlagged flags
       const transformedReviews = reviews.map((review: any) => {
         // Transform and sort replies: user's reply first, then chronological
@@ -2111,6 +2125,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
             ...reply,
             userHasUpvoted: currentUserId && reply.votes?.length > 0 && reply.votes[0].isUpvote,
             userHasFlagged: currentUserId && reply.reports?.length > 0,
+            predictedWinner: predictionMap.get(reply.userId) || null,
             votes: undefined,
             reports: undefined,
           }))
@@ -2128,6 +2143,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           ...review,
           userHasUpvoted: currentUserId && review.votes?.length > 0 && review.votes[0].isUpvote,
           userHasFlagged: currentUserId && review.reports?.length > 0,
+          predictedWinner: predictionMap.get(review.userId) || null,
           replyCount: review.replies.length,
           votes: undefined, // Remove votes array from response
           reports: undefined, // Remove reports array from response
