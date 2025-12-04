@@ -1326,20 +1326,41 @@ export default function CompletedFightDetailScreen({
           styles.userRatingContainer,
           {
             backgroundColor: colorScheme === 'dark' ? 'rgba(34, 197, 94, 0.05)' : 'rgba(34, 197, 94, 0.08)',
+            borderLeftWidth: 3,
             borderLeftColor: '#22c55e',
+            borderTopWidth: 3,
+            borderTopColor: '#22c55e',
             marginTop: 22,
+            position: 'relative',
           }
         ]}>
-          {/* Badge Header */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10 }}>
-            <View style={[styles.userRatingBadge, { backgroundColor: '#22c55e' }]}>
+          {/* Centered Badge on Top Border */}
+          <View style={{
+            position: 'absolute',
+            top: -21,
+            left: 2,
+            right: -2,
+            alignItems: 'center',
+            zIndex: 1,
+          }}>
+            <View style={[styles.userRatingBadge, {
+              backgroundColor: colorScheme === 'dark' ? '#1a2e1f' : '#dcfce7',
+              marginBottom: 0,
+              alignSelf: 'center',
+              borderWidth: 3,
+              borderColor: '#22c55e',
+              paddingHorizontal: 40,
+            }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <FontAwesome name="trophy" size={14} color="#000" />
-                <Text style={styles.userRatingBadgeText}>Winner</Text>
+                <FontAwesome name="trophy" size={14} color="#fff" />
+                <Text style={[styles.userRatingBadgeText, { color: '#fff' }]}>Winner</Text>
               </View>
             </View>
+          </View>
 
-            {fight.winner && !isOutcomeRevealed && (
+          {/* Reveal Button - now standalone */}
+          {fight.winner && !isOutcomeRevealed && (
+            <View style={{ alignItems: 'flex-end', paddingHorizontal: 10, marginTop: 8 }}>
               <TouchableOpacity
                 onPress={handleRevealOutcome}
                 style={[
@@ -1359,23 +1380,9 @@ export default function CompletedFightDetailScreen({
                   Reveal Winner
                 </Text>
               </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Winner Section Divider */}
-          <View style={[styles.sectionDivider, { marginTop: 15 }]}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={{ width: 4 }} />
-              <FontAwesome name="trophy" size={12} color={colors.textSecondary} />
-              <View style={{ width: 4 }} />
-              <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-                WINNER
-              </Text>
-              <View style={{ width: 4 }} />
             </View>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
+          )}
+
 
           {/* Winner Content */}
           <View style={[styles.sectionNoBorder, { marginBottom: 0, paddingBottom: 0 }]}>
@@ -1385,7 +1392,7 @@ export default function CompletedFightDetailScreen({
               </Text>
             )}
 
-            <View style={[styles.whatHappenedContainer, { marginTop: !fight.winner ? 0 : 27, alignItems: 'flex-start', marginBottom: 0 }]}>
+            <View style={[styles.whatHappenedContainer, { marginTop: !fight.winner ? 0 : 22, alignItems: 'flex-start', marginBottom: 0 }]}>
               {/* Fighter 1 */}
               <View style={styles.whatHappenedFighter}>
                 <View style={[
