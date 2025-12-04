@@ -118,20 +118,14 @@ export default function PredictionBarChart({
         <View style={{ flex: 1 }}>
           {/* Fighter headshots and percentages above bar chart */}
           {(() => {
-            // Fixed image size for both fighters
-            const imageSize = 68;
+            // Larger image size, centered layout like Winner section
+            const imageSize = 90;
 
             return (
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, alignItems: 'flex-end' }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 8, alignItems: 'flex-end' }}>
                 {/* Fighter 1 */}
-                <View style={{ alignItems: 'flex-start' }}>
-                  <View style={fighter1HasMajority ? {
-                    borderWidth: 3,
-                    borderColor: '#83B4F3',
-                    borderRadius: imageSize / 2 + 3,
-                    padding: 2,
-                    marginBottom: 4,
-                  } : { marginBottom: 4 }}>
+                <View style={{ alignItems: 'center', flex: 1 }}>
+                  <View style={{ marginBottom: 4 }}>
                     <Image
                       source={
                         fighter1Image
@@ -145,21 +139,16 @@ export default function PredictionBarChart({
                       }}
                     />
                   </View>
-                  <View>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF' }}>
-                      {winnerPredictions.fighter1.percentage}% {fighter1Name}
-                    </Text>
-                  </View>
+                  <Text style={{ fontSize: 22, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' }}>
+                    {winnerPredictions.fighter1.percentage}%
+                  </Text>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF', textAlign: 'center' }}>
+                    {fighter1Name}
+                  </Text>
                 </View>
                 {/* Fighter 2 */}
-                <View style={{ alignItems: 'flex-end' }}>
-                  <View style={fighter2HasMajority ? {
-                    borderWidth: 3,
-                    borderColor: '#83B4F3',
-                    borderRadius: imageSize / 2 + 3,
-                    padding: 2,
-                    marginBottom: 4,
-                  } : { marginBottom: 4 }}>
+                <View style={{ alignItems: 'center', flex: 1 }}>
+                  <View style={{ marginBottom: 4 }}>
                     <Image
                       source={
                         fighter2Image
@@ -173,11 +162,12 @@ export default function PredictionBarChart({
                       }}
                     />
                   </View>
-                  <View>
-                    <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF' }}>
-                      {winnerPredictions.fighter2.percentage}% {fighter2Name}
-                    </Text>
-                  </View>
+                  <Text style={{ fontSize: 22, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' }}>
+                    {winnerPredictions.fighter2.percentage}%
+                  </Text>
+                  <Text style={{ fontSize: 14, fontWeight: '600', color: '#FFFFFF', textAlign: 'center' }}>
+                    {fighter2Name}
+                  </Text>
                 </View>
               </View>
             );
@@ -187,10 +177,12 @@ export default function PredictionBarChart({
             style={{
               height: 56,
               flexDirection: 'row',
-              borderRadius: 8,
+              borderRadius: 20,
               overflow: 'hidden',
               borderWidth: 2,
               borderColor: dividerColor,
+              marginTop: 10,
+              marginBottom: 10,
             }}
           >
             {/* Fighter 1 side */}
@@ -207,8 +199,8 @@ export default function PredictionBarChart({
               {fighter1Predictions && showLabels ? (
                 <View style={{ flexDirection: 'row', flex: 1 }}>
                   {fighter1Predictions.KO_TKO > 0 && (() => {
-                    const methodPercentage = (fighter1Predictions.KO_TKO / winnerPredictions.fighter1.count) * 100;
-                    const label = methodPercentage < 25 ? 'K' : 'KO';
+                    const methodPercentage = (fighter1Predictions.KO_TKO / totalPredictions) * 100;
+                    const label = methodPercentage < 15 ? 'K' : 'KO';
                     return (
                       <View
                         style={{
@@ -229,12 +221,21 @@ export default function PredictionBarChart({
                         >
                           {label}
                         </Text>
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            fontWeight: '500',
+                            color: fighter1HasMajority ? '#000' : '#83B4F3',
+                          }}
+                        >
+                          {Math.round(methodPercentage)}%
+                        </Text>
                       </View>
                     );
                   })()}
                   {fighter1Predictions.SUBMISSION > 0 && (() => {
-                    const methodPercentage = (fighter1Predictions.SUBMISSION / winnerPredictions.fighter1.count) * 100;
-                    const label = methodPercentage < 25 ? 'S' : 'SUB';
+                    const methodPercentage = (fighter1Predictions.SUBMISSION / totalPredictions) * 100;
+                    const label = methodPercentage < 15 ? 'S' : 'SUB';
                     return (
                       <View
                         style={{
@@ -255,12 +256,21 @@ export default function PredictionBarChart({
                         >
                           {label}
                         </Text>
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            fontWeight: '500',
+                            color: fighter1HasMajority ? '#000' : '#83B4F3',
+                          }}
+                        >
+                          {Math.round(methodPercentage)}%
+                        </Text>
                       </View>
                     );
                   })()}
                   {fighter1Predictions.DECISION > 0 && (() => {
-                    const methodPercentage = (fighter1Predictions.DECISION / winnerPredictions.fighter1.count) * 100;
-                    const label = methodPercentage < 25 ? 'D' : 'DEC';
+                    const methodPercentage = (fighter1Predictions.DECISION / totalPredictions) * 100;
+                    const label = methodPercentage < 15 ? 'D' : 'DEC';
                     return (
                       <View
                         style={{
@@ -278,6 +288,15 @@ export default function PredictionBarChart({
                           }}
                         >
                           {label}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 10,
+                            fontWeight: '500',
+                            color: fighter1HasMajority ? '#000' : '#83B4F3',
+                          }}
+                        >
+                          {Math.round(methodPercentage)}%
                         </Text>
                       </View>
                     );
@@ -300,8 +319,8 @@ export default function PredictionBarChart({
               {fighter2Predictions && showLabels ? (
                 <View style={{ flexDirection: 'row', flex: 1 }}>
                   {fighter2Predictions.KO_TKO > 0 && (() => {
-                    const methodPercentage = (fighter2Predictions.KO_TKO / winnerPredictions.fighter2.count) * 100;
-                    const label = methodPercentage < 25 ? 'K' : 'KO';
+                    const methodPercentage = (fighter2Predictions.KO_TKO / totalPredictions) * 100;
+                    const label = methodPercentage < 15 ? 'K' : 'KO';
                     return (
                       <View
                         style={{
@@ -314,12 +333,13 @@ export default function PredictionBarChart({
                         }}
                       >
                         <Text style={{ fontSize: 14, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
+                        <Text style={{ fontSize: 10, fontWeight: '500', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{Math.round(methodPercentage)}%</Text>
                       </View>
                     );
                   })()}
                   {fighter2Predictions.SUBMISSION > 0 && (() => {
-                    const methodPercentage = (fighter2Predictions.SUBMISSION / winnerPredictions.fighter2.count) * 100;
-                    const label = methodPercentage < 25 ? 'S' : 'SUB';
+                    const methodPercentage = (fighter2Predictions.SUBMISSION / totalPredictions) * 100;
+                    const label = methodPercentage < 15 ? 'S' : 'SUB';
                     return (
                       <View
                         style={{
@@ -332,12 +352,13 @@ export default function PredictionBarChart({
                         }}
                       >
                         <Text style={{ fontSize: 14, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
+                        <Text style={{ fontSize: 10, fontWeight: '500', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{Math.round(methodPercentage)}%</Text>
                       </View>
                     );
                   })()}
                   {fighter2Predictions.DECISION > 0 && (() => {
-                    const methodPercentage = (fighter2Predictions.DECISION / winnerPredictions.fighter2.count) * 100;
-                    const label = methodPercentage < 25 ? 'D' : 'DEC';
+                    const methodPercentage = (fighter2Predictions.DECISION / totalPredictions) * 100;
+                    const label = methodPercentage < 15 ? 'D' : 'DEC';
                     return (
                       <View
                         style={{
@@ -348,6 +369,7 @@ export default function PredictionBarChart({
                         }}
                       >
                         <Text style={{ fontSize: 14, fontWeight: '600', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{label}</Text>
+                        <Text style={{ fontSize: 10, fontWeight: '500', color: fighter2HasMajority ? '#000' : '#83B4F3' }}>{Math.round(methodPercentage)}%</Text>
                       </View>
                     );
                   })()}
