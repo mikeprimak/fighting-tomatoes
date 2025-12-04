@@ -169,7 +169,8 @@ export default function UpcomingFightDetailScreen({
   const toastTranslateY = useRef(new Animated.Value(50)).current;
 
   // Wheel animation for number display
-  const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 52 : 520)).current;
+  // Using 92px per item for taller hype boxes (48x82)
+  const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 92 : 920)).current;
 
   // Simple fade animation for community predictions (always visible now)
   const predictionsFadeAnim = useRef(new Animated.Value(1)).current;
@@ -860,9 +861,9 @@ export default function UpcomingFightDetailScreen({
 
     // Calculate target position
     // Numbers are arranged 10,9,8,7,6,5,4,3,2,1 (10 at top, 1 at bottom)
-    // Position 0 = number 10, position 52 = number 9, ... position 468 = number 1
-    // Position 520 = blank (below "1")
-    const targetPosition = targetNumber === 0 ? 520 : (10 - targetNumber) * 52;
+    // Position 0 = number 10, position 92 = number 9, ... position 828 = number 1
+    // Position 920 = blank (below "1")
+    const targetPosition = targetNumber === 0 ? 920 : (10 - targetNumber) * 92;
 
     // Simple, smooth animation
     Animated.timing(wheelAnimation, {
@@ -924,6 +925,7 @@ export default function UpcomingFightDetailScreen({
   };
 
   const handleReplyClick = (commentId: string) => {
+    if (!requireVerification('reply to a comment')) return;
     setReplyingToCommentId(commentId);
     // Scroll to the reply input after a short delay to ensure keyboard is showing
     setTimeout(() => {
@@ -1116,8 +1118,8 @@ export default function UpcomingFightDetailScreen({
                     {
                       transform: [{
                         translateY: wheelAnimation.interpolate({
-                          inputRange: [0, 520],
-                          outputRange: [156, -364],
+                          inputRange: [0, 920],
+                          outputRange: [335, -585],
                         })
                       }]
                     }
@@ -1165,18 +1167,18 @@ export default function UpcomingFightDetailScreen({
                       const flameColor = getFlameColor(hypeColor, colors.background);
 
                       return (
-                        <View key={number} style={styles.wheelBoxContainer}>
+                        <View key={number} style={styles.hypeWheelBoxContainer}>
                           <View style={[
-                            styles.wheelBox,
+                            styles.hypeWheelBox,
                             { backgroundColor: hypeColor }
                           ]}>
                             <FontAwesome6
                               name="fire-flame-curved"
-                              size={24}
-                              color={flameColor}
-                              style={{ position: 'absolute' }}
+                              size={16}
+                              color="rgba(0,0,0,0.45)"
+                              style={{ position: 'absolute', top: 9 }}
                             />
-                            <Text style={styles.wheelBoxText}>{number}</Text>
+                            <Text style={styles.hypeWheelBoxText}>{number}</Text>
                           </View>
                         </View>
                       );
@@ -1188,7 +1190,7 @@ export default function UpcomingFightDetailScreen({
           </View>
 
           {/* Row of selectable flames (1-10) */}
-          <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: -13, height: 42, justifyContent: 'center' }]}>
+          <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: 10, height: 42, justifyContent: 'center' }]}>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
             const isSelected = level <= (selectedHype || 0);
             const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
@@ -1459,7 +1461,10 @@ export default function UpcomingFightDetailScreen({
           <View style={{ flex: 1 }} />
           {!preFightCommentsData?.userComment && !isEditingComment && !showCommentForm && (
             <Button
-              onPress={() => setShowCommentForm(!showCommentForm)}
+              onPress={() => {
+                if (!requireVerification('add a comment')) return;
+                setShowCommentForm(true);
+              }}
               variant="outline"
               size="small"
               style={{
@@ -2040,7 +2045,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 52,
+    height: 92,
   },
   wheelContainer: {
     flex: 1,
@@ -2076,6 +2081,27 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  hypeWheelBoxContainer: {
+    height: 92,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  hypeWheelBox: {
+    width: 48,
+    height: 82,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  hypeWheelBoxText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   fadeOverlay: {
     position: 'absolute',

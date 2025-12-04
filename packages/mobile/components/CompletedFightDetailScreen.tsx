@@ -859,6 +859,10 @@ export default function CompletedFightDetailScreen({
 
   // Handle showing comment form - let native behavior handle scroll
   const handleToggleCommentForm = () => {
+    // Only require verification when opening the form, not when closing
+    if (!showCommentForm) {
+      if (!requireVerification('add a review')) return;
+    }
     setShowCommentForm(!showCommentForm);
     // Native keyboard behavior will handle scrolling when input is focused
   };
@@ -1067,6 +1071,11 @@ export default function CompletedFightDetailScreen({
     upvotePreFightCommentMutation.mutate(commentId);
   };
 
+  const handleUpvoteReview = (reviewId: string) => {
+    if (!requireVerification('upvote a review')) return;
+    upvoteMutation.mutate({ reviewId });
+  };
+
   const handleFlagComment = (commentId: string) => {
     if (!requireVerification('flag a comment')) return;
     setCommentToFlag(commentId);
@@ -1100,6 +1109,7 @@ export default function CompletedFightDetailScreen({
   };
 
   const handleReplyClick = (reviewId: string) => {
+    if (!requireVerification('reply to a review')) return;
     setReplyingToReviewId(reviewId);
     // Scroll to the reply input after a short delay to ensure keyboard is showing
     setTimeout(() => {
@@ -1174,6 +1184,8 @@ export default function CompletedFightDetailScreen({
   };
 
   const handleToggleTag = (tagId: string) => {
+    if (!requireVerification('tag this fight')) return;
+
     const isSelecting = !selectedTags.includes(tagId);
     const newTags = isSelecting
       ? [...selectedTags, tagId]
@@ -2171,7 +2183,7 @@ export default function CompletedFightDetailScreen({
                   },
                 }}
                 onEdit={() => setIsEditingComment(true)}
-                onUpvote={() => upvoteMutation.mutate({ reviewId: fight.userReview.id })}
+                onUpvote={() => handleUpvoteReview(fight.userReview.id)}
                 isUpvoting={upvoteMutation.isPending}
                 isAuthenticated={isAuthenticated}
                 showMyReview={true}
@@ -2217,7 +2229,7 @@ export default function CompletedFightDetailScreen({
                           displayName: review.user.displayName || `${review.user.firstName} ${review.user.lastName}`,
                         },
                       }}
-                      onUpvote={() => upvoteMutation.mutate({ reviewId: review.id })}
+                      onUpvote={() => handleUpvoteReview(review.id)}
                       onFlag={() => handleFlagReview(review.id)}
                       onReply={userHasReplied ? undefined : () => handleReplyClick(review.id)}
                       isUpvoting={upvoteMutation.isPending}
@@ -2393,7 +2405,7 @@ export default function CompletedFightDetailScreen({
                                         displayName: reply.user.displayName || `${reply.user.firstName} ${reply.user.lastName}`,
                                       },
                                     }}
-                                    onUpvote={() => upvoteMutation.mutate({ reviewId: reply.id })}
+                                    onUpvote={() => handleUpvoteReview(reply.id)}
                                     onFlag={() => handleFlagReview(reply.id)}
                                     onEdit={isMyReply ? () => {
                                       setEditingReplyId(reply.id);
