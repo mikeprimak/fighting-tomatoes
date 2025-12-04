@@ -27,6 +27,7 @@ import { Colors } from '../../constants/Colors';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
+import { useVerification } from '../../store/VerificationContext';
 import { RoundVotingSlideup, Fight, FightDisplayCardMinimal } from '../../components';
 import { GifPickerModal } from '../../components/GifPickerModal';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
@@ -104,6 +105,7 @@ export default function CrewChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const textInputRef = useRef<TextInput>(null);
   const { user } = useAuth();
+  const { requireVerification } = useVerification();
   const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
 
 
@@ -460,6 +462,7 @@ export default function CrewChatScreen() {
 
 
   const handleSendMessage = () => {
+    if (!requireVerification('send a message')) return;
     if (message.trim() && !sendMessageMutation.isPending) {
       // Send message first
       sendMessageMutation.mutate({ content: message.trim() });
@@ -471,6 +474,7 @@ export default function CrewChatScreen() {
   };
 
   const handleSelectGif = (gifUrl: string) => {
+    if (!requireVerification('send a message')) return;
     if (!sendMessageMutation.isPending) {
       // Send GIF URL as message content
       sendMessageMutation.mutate({ content: gifUrl });

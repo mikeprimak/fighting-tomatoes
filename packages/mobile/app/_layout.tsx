@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '../store/AuthContext';
+import { VerificationProvider } from '../store/VerificationContext';
 import { PredictionAnimationProvider } from '../store/PredictionAnimationContext';
 import { NotificationProvider } from '../store/NotificationContext';
 import { Colors } from '../constants/Colors';
@@ -95,10 +96,11 @@ function RootLayoutNav() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <PredictionAnimationProvider>
-          <NotificationProvider>
-            <ThemeProvider value={colorScheme === 'dark' ? customDarkTheme : customLightTheme}>
-              <NotificationHandler />
+        <VerificationProvider>
+          <PredictionAnimationProvider>
+            <NotificationProvider>
+              <ThemeProvider value={colorScheme === 'dark' ? customDarkTheme : customLightTheme}>
+                <NotificationHandler />
               <Stack
                 screenOptions={{
                   contentStyle: { backgroundColor: colors.background },
@@ -125,10 +127,11 @@ function RootLayoutNav() {
                     headerTitleStyle: { color: colors.text }
                   }}
                 />
-              </Stack>
-            </ThemeProvider>
-          </NotificationProvider>
-        </PredictionAnimationProvider>
+                </Stack>
+              </ThemeProvider>
+            </NotificationProvider>
+          </PredictionAnimationProvider>
+        </VerificationProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

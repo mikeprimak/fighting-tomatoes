@@ -1,5 +1,6 @@
 // Type declarations for Fastify request extensions
 import 'fastify';
+import { FastifyReply } from 'fastify';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -16,5 +17,11 @@ declare module 'fastify' {
       points: number;
       level: number;
     };
+  }
+
+  interface FastifyInstance {
+    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    optionalAuthenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    requireVerified: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }

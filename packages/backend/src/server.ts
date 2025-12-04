@@ -31,6 +31,7 @@ declare module 'fastify' {
     prisma: PrismaClient;
     authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     optionalAuthenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    requireVerified: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 
@@ -281,6 +282,7 @@ start();
 
 // Export for testing purposes
 export { fastify };
+
 
 
 

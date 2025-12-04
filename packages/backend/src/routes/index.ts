@@ -14,7 +14,7 @@ import searchRoutes from './search';
 import feedbackRoutes from './feedback';
 import { uploadRoutes } from './upload';
 import { adminRoutes } from './admin';
-import { authenticateUser } from '../middleware/auth';
+import { authenticateUser, requireEmailVerification } from '../middleware/auth';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
 
@@ -987,7 +987,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    preHandler: authenticateUser,
+    preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = (request as any).user;
@@ -1084,7 +1084,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    preHandler: authenticateUser,
+    preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = (request as any).user;
@@ -1238,7 +1238,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    preHandler: authenticateUser,
+    preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const { startOfFightNotification } = request.body as { startOfFightNotification?: boolean };
@@ -1324,7 +1324,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    preHandler: authenticateUser,
+    preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = (request as any).user;
@@ -1408,7 +1408,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    preHandler: authenticateUser,
+    preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = (request as any).user;
@@ -1477,7 +1477,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    preHandler: authenticateUser,
+    preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const { enabled } = request.body as { enabled: boolean };

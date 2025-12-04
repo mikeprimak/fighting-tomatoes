@@ -743,7 +743,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
   // DELETE /api/fights/:id/rating - Remove user's rating from fight
   fastify.delete('/fights/:id/rating', {
-    preHandler: [authenticateUser],
+    preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     try {
       const { id: fightId } = request.params as { id: string };
@@ -1936,7 +1936,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
   });
 
   // POST /api/fights/:id/pre-flight-comments/:commentId/upvote - Toggle upvote on a pre-flight comment
-  fastify.post('/fights/:id/pre-fight-comments/:commentId/upvote', { preHandler: authenticateUser }, async (request, reply) => {
+  fastify.post('/fights/:id/pre-fight-comments/:commentId/upvote', { preHandler: [authenticateUser, requireEmailVerification] }, async (request, reply) => {
     try {
       const { commentId } = request.params as { id: string; commentId: string };
       const userId = (request as any).user.id;
@@ -2164,7 +2164,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
   // POST /api/fights/:fightId/reviews/:reviewId/upvote - Toggle upvote on a review
   fastify.post('/fights/:fightId/reviews/:reviewId/upvote', {
-    preHandler: [authenticateUser],
+    preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     try {
       const { fightId, reviewId } = request.params as { fightId: string; reviewId: string };
@@ -3612,7 +3612,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
     Params: { fightId: string; reviewId: string };
     Body: { reason: string };
   }>('/fights/:fightId/reviews/:reviewId/flag', {
-    preHandler: [authenticateUser],
+    preHandler: [authenticateUser, requireEmailVerification],
   }, async (request: FastifyRequest<{
     Params: { fightId: string; reviewId: string };
     Body: { reason: string };

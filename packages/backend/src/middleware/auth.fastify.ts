@@ -57,6 +57,26 @@ async function authenticateMiddleware(request: FastifyRequest, reply: FastifyRep
   }
 }
 
+// Middleware to require email verification (must be used AFTER authenticate)
+async function requireVerifiedMiddleware(request: FastifyRequest, reply: FastifyReply) {
+  // User must be authenticated first
+  if (!request.user) {
+    return reply.code(401).send({
+      error: 'Authentication required',
+      code: 'UNAUTHORIZED',
+    });
+  }
+
+  // Check if email is verified
+  if (!request.user.isEmailVerified) {
+    console.log('[AUTH] Email verification required for user:', request.user.email);
+    return reply.code(403).send({
+      error: 'Email verification required to perform this action',
+      code: 'EMAIL_NOT_VERIFIED',
+    });
+  }
+}
+
 // Optional authentication middleware (doesn't fail if no token)
 async function optionalAuthenticateMiddleware(request: FastifyRequest, reply: FastifyReply) {
   try {
@@ -106,10 +126,11 @@ async function authPlugin(fastify: FastifyInstance) {
   // Register the authenticate decorator
   fastify.decorate('authenticate', authenticateMiddleware);
   fastify.decorate('optionalAuthenticate', optionalAuthenticateMiddleware);
+  fastify.decorate('requireVerified', requireVerifiedMiddleware);
 }
 
 export default fp(authPlugin, {
   name: 'auth-plugin'
 });
 
-export { authenticateMiddleware, optionalAuthenticateMiddleware };
+export { authenticateMiddleware, optionalAuthenticateMiddleware, requireVerifiedMiddleware };

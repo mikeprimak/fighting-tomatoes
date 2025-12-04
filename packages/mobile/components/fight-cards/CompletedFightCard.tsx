@@ -586,7 +586,7 @@ export default function CompletedFightCard({
                 name="star"
                 size={16}
                 color={colors.textSecondary}
-                style={{ position: 'absolute', top: 8, opacity: 0.5 }}
+                style={{ position: 'absolute', top: 10, opacity: 0.5 }}
               />
             )}
           </View>

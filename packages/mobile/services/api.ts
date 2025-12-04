@@ -23,6 +23,10 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+// Log which API we're using at startup (helps debug local vs production issues)
+console.log(`[API] Using API URL: ${API_BASE_URL}`);
+console.log(`[API] USE_PRODUCTION_API=${USE_PRODUCTION_API}, __DEV__=${typeof __DEV__ !== 'undefined' ? __DEV__ : 'undefined'}`);
+
 // Export for use in auth screens
 export { API_BASE_URL };
 

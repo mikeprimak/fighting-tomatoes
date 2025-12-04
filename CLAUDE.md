@@ -314,6 +314,41 @@ FRONTEND_URL=https://goodfights.app
 
 ---
 
+### Email Verification Enforcement System (Nov 28, 2025)
+**Status**: ✅ Complete - Frontend modal + Backend middleware
+**Branch**: `redesign-fight-card-components`
+
+**Purpose**: Prevent unverified email users from taking community actions (spam prevention, accountability)
+
+**Frontend Implementation**:
+- `VerificationRequiredModal` - Reusable modal explaining verification is required
+- `useRequireVerification` hook - Wraps actions, shows modal if unverified
+- Applied to: ratings, reviews, comments, follows, predictions
+
+**Backend Enforcement** (`requireEmailVerification` middleware):
+- Returns 403 with `EMAIL_NOT_VERIFIED` code for unverified users
+- Uses `preHandler` array: `[authenticateUser, requireEmailVerification]`
+
+**Protected Endpoints**:
+- **fights.ts**: DELETE rating, POST upvote/flag review
+- **index.ts**: POST/DELETE fighter follow, PATCH fighter notifications, POST/DELETE fight follow, PATCH fight notifications
+- **crews.ts**: POST create/join crew, POST messages, POST predictions
+
+**Key Files**:
+- `packages/mobile/components/VerificationRequiredModal.tsx` - Modal UI
+- `packages/mobile/hooks/useRequireVerification.ts` - Verification gate hook
+- `packages/backend/src/middleware/auth.ts` - `requireEmailVerification` middleware
+- `packages/backend/src/routes/fights.ts` - Fight action endpoints
+- `packages/backend/src/routes/index.ts` - Fighter/fight follow endpoints
+- `packages/backend/src/routes/crews.ts` - Crew action endpoints
+
+**Error Response**:
+```json
+{ "error": "Email verification required", "code": "EMAIL_NOT_VERIFIED" }
+```
+
+---
+
 ### TODO: Remaining Testing
 
 **Email Verification** - ✅ COMPLETE (Nov 28, 2025):
@@ -323,11 +358,71 @@ FRONTEND_URL=https://goodfights.app
 - [x] VerificationBanner shows for unverified users
 - [x] Banner disappears after verification (on app foreground)
 
-**Forgot Password**:
-- [ ] "Forgot password?" link on login goes to forgot-password screen
-- [ ] Entering email sends reset link
-- [ ] Reset password screen validates password strength
-- [ ] Password reset succeeds and redirects to login
+**Forgot Password** - ✅ COMPLETE (Dec 1, 2025):
+- [x] "Forgot password?" link on login goes to forgot-password screen
+- [x] Entering email sends reset link
+- [x] Reset password screen validates password strength
+- [x] Password reset succeeds and login works with new password
+
+---
+
+### Email Feature Production Deployment Checklist (Dec 2025)
+
+**Problem Discovered**: Mobile app and web reset page must hit the SAME backend. During testing, the app was hitting local backend while reset-password.html hit production - causing password resets to "not work."
+
+**Root Cause**: `USE_PRODUCTION_API` in `api.ts` controls which backend the mobile app uses. EAS builds bake this value in at build time.
+
+**Production Deployment Steps**:
+
+1. **Set Mobile to Production API**:
+   ```typescript
+   // packages/mobile/services/api.ts line 6
+   const USE_PRODUCTION_API = true;
+   ```
+
+2. **Verify reset-password.html Points to Production**:
+   ```javascript
+   // reset-password.html line 401
+   const API_BASE_URL = 'https://fightcrewapp-backend.onrender.com/api';
+   ```
+
+3. **Deploy reset-password.html to goodfights.app**:
+   - Upload `reset-password.html` to your web hosting
+   - URL should be: `https://goodfights.app/reset-password.html`
+
+4. **Verify Render Environment Variables**:
+   ```
+   FRONTEND_URL=https://goodfights.app
+   SMTP_HOST=smtp.sendgrid.net
+   SMTP_PORT=587
+   SMTP_USER=apikey
+   SMTP_PASS=<your-sendgrid-api-key>
+   SMTP_FROM=noreply@goodfights.app
+   JWT_SECRET=<consistent-secret>
+   ```
+
+5. **Build New EAS Build** (required - JS is bundled at build time):
+   ```bash
+   npx eas build --profile production --platform android
+   ```
+
+6. **Test Full Flow**:
+   - Request password reset in app → email arrives
+   - Click email link → goodfights.app/reset-password.html opens
+   - Enter new password → success message
+   - Login with new password in app → works
+
+**Local Development Testing**:
+- Set `USE_PRODUCTION_API = false` in `api.ts`
+- Modify `reset-password.html` to point to local: `http://10.0.0.53:3008/api`
+- Add `'null'` to CORS origins in `server.ts` (allows file:// requests)
+- Test entire flow against local backend
+
+**Key Files**:
+- `packages/mobile/services/api.ts:6` - USE_PRODUCTION_API flag
+- `reset-password.html:401` - API_BASE_URL for web page
+- `packages/backend/src/server.ts:103-118` - CORS allowed origins
+- `packages/backend/src/utils/email.ts:70` - Reset link URL generation
 
 **Welcome Screen**:
 - [ ] Feature list displays correctly

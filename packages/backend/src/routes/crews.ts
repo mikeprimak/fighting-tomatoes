@@ -1,6 +1,7 @@
 // packages/backend/src/routes/crews.ts
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { requireEmailVerification } from '../middleware/auth';
 
 // Validation schemas
 const createCrewSchema = z.object({
@@ -48,7 +49,7 @@ function generateInviteCode(): string {
 export async function crewRoutes(fastify: FastifyInstance) {
   // Create a new crew
   fastify.post('/crews', {
-    preValidation: [fastify.authenticate],
+    preValidation: [fastify.authenticate, requireEmailVerification],
   }, async (request: any, reply: any) => {
     const userId = request.user!.id;
     const validation = createCrewSchema.safeParse(request.body);
@@ -201,7 +202,7 @@ export async function crewRoutes(fastify: FastifyInstance) {
 
   // Join a crew by invite code
   fastify.post('/crews/join', {
-    preValidation: [fastify.authenticate],
+    preValidation: [fastify.authenticate, requireEmailVerification],
   }, async (request: any, reply: any) => {
     const userId = request.user!.id;
     const validation = joinCrewSchema.safeParse(request.body);
@@ -471,7 +472,7 @@ export async function crewRoutes(fastify: FastifyInstance) {
 
   // Send a message to crew
   fastify.post('/crews/:id/messages', {
-    preValidation: [fastify.authenticate],
+    preValidation: [fastify.authenticate, requireEmailVerification],
   }, async (request: any, reply: any) => {
     const userId = request.user!.id;
     const { id } = request.params as { id: string };
@@ -635,7 +636,7 @@ export async function crewRoutes(fastify: FastifyInstance) {
 
   // Create a prediction for a fight in a crew
   fastify.post('/crews/:crewId/predictions/:fightId', {
-    preValidation: [fastify.authenticate],
+    preValidation: [fastify.authenticate, requireEmailVerification],
   }, async (request: any, reply: any) => {
     const userId = request.user!.id;
     const { crewId, fightId } = request.params as { crewId: string; fightId: string };

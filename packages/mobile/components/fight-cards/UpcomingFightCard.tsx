@@ -487,7 +487,7 @@ export default function UpcomingFightCard({
                 name="fire-flame-curved"
                 size={16}
                 color={colors.textSecondary}
-                style={{ position: 'absolute', top: 7, opacity: 0.5 }}
+                style={{ position: 'absolute', top: 9, opacity: 0.5 }}
               />
             )}
           </View>

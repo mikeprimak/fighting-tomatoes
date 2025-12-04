@@ -18,6 +18,7 @@ import { Colors } from '../../constants/Colors';
 import { apiService, Fight } from '../../services/api';
 import { DetailScreenHeader, FightDisplayCard, Button } from '../../components';
 import { useAuth } from '../../store/AuthContext';
+import { useVerification } from '../../store/VerificationContext';
 import { FontAwesome } from '@expo/vector-icons';
 
 type SortOption = 'newest' | 'oldest' | 'highest-rating' | 'most-rated';
@@ -36,6 +37,7 @@ const getFighterPlaceholderImage = (fighterId: string) => {
 export default function FighterDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { isAuthenticated } = useAuth();
+  const { requireVerification } = useVerification();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
@@ -169,6 +171,7 @@ export default function FighterDetailScreen() {
     if (!isAuthenticated) {
       return;
     }
+    if (!requireVerification('follow this fighter')) return;
     const isCurrentlyFollowing = fighter?.isFollowing || false;
     followMutation.mutate(isCurrentlyFollowing);
   };
