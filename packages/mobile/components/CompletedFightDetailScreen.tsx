@@ -1789,7 +1789,9 @@ export default function CompletedFightDetailScreen({
         {/* ALL PREDICTIONS Section */}
         <SectionContainer
           title="ALL PREDICTIONS"
-          icon="percent"
+          icon="circle-check"
+          iconFamily="fontawesome6"
+          iconSolid={true}
           iconColor="#000"
           headerBgColor="#83B4F3"
           containerBgColorDark="rgba(131, 180, 243, 0.05)"

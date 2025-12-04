@@ -102,7 +102,7 @@ export function CommentCard({
         {/* Right side: Comment content */}
         <View style={styles.reviewContentContainer}>
           {/* Comment body */}
-          <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
+          <Text style={[styles.reviewContent, { color: '#FFFFFF' }]}>
             {comment.content}
           </Text>
 
@@ -117,14 +117,14 @@ export function CommentCard({
             <View style={styles.ratingRow}>
               <View style={styles.inlineRating}>
                 <FontAwesome name="star" size={14} color={getHypeHeatmapColor(comment.rating)} />
-                <Text style={[styles.reviewRatingText, { color: colors.text, fontSize: 14 }]}>
+                <Text style={[styles.reviewRatingText, { color: colors.textSecondary, fontSize: 14 }]}>
                   {comment.rating}
                 </Text>
               </View>
               {comment.predictedWinner && fighter1Id && fighter2Id && (
                 <View style={styles.predictionContainer}>
-                  <FontAwesome name="hand-o-right" size={14} color="#FFFFFF" />
-                  <Text style={[styles.predictedWinnerText, { color: '#FFFFFF' }]}>
+                  <FontAwesome name="hand-o-right" size={14} color={colors.textSecondary} />
+                  <Text style={[styles.predictedWinnerText, { color: colors.textSecondary }]}>
                     {comment.predictedWinner === fighter1Id ? fighter1Name : fighter2Name}
                     {comment.predictedMethod && ` by ${formatMethod(comment.predictedMethod)}`}
                   </Text>

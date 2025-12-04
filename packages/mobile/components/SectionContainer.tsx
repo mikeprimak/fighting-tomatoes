@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, useColorScheme } from 'react-native';
-import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, FontAwesome6 } from '@expo/vector-icons';
 
 interface SectionContainerProps {
   title: string;
   icon: string;
-  iconFamily?: 'fontawesome' | 'fontawesome6';
+  iconFamily?: 'fontawesome' | 'fontawesome5' | 'fontawesome6';
+  iconSolid?: boolean;
   iconColor?: string;
   headerBgColor?: string;
   containerBgColorDark?: string;
@@ -18,6 +19,7 @@ export default function SectionContainer({
   title,
   icon,
   iconFamily = 'fontawesome',
+  iconSolid = false,
   iconColor = '#000',
   headerBgColor = '#F5C518',
   containerBgColorDark = 'rgba(245, 197, 24, 0.05)',
@@ -27,14 +29,18 @@ export default function SectionContainer({
 }: SectionContainerProps) {
   const colorScheme = useColorScheme();
 
-  const IconComponent = iconFamily === 'fontawesome6' ? FontAwesome6 : FontAwesome;
+  const IconComponent = iconFamily === 'fontawesome6' ? FontAwesome6 : iconFamily === 'fontawesome5' ? FontAwesome5 : FontAwesome;
 
   return (
     <View>
       {/* Title Bar */}
       <View style={[styles.titleBar, { backgroundColor: headerBgColor }]}>
         <View style={styles.titleContent}>
-          <IconComponent name={icon as any} size={18} color={iconColor} />
+          {iconFamily === 'fontawesome6' ? (
+            <FontAwesome6 name={icon as any} size={18} color={iconColor} solid={iconSolid} />
+          ) : (
+            <IconComponent name={icon as any} size={18} color={iconColor} />
+          )}
           <Text style={[styles.titleText, { color: iconColor }]}>
             {title}
           </Text>
