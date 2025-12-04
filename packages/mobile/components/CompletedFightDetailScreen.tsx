@@ -1456,39 +1456,45 @@ export default function CompletedFightDetailScreen({
           </View>
         </View>
 
+        {/* My Picks Title Bar */}
+        <View style={{
+          backgroundColor: '#F5C518',
+          paddingVertical: 12,
+          marginHorizontal: 12,
+          marginTop: 16,
+          marginBottom: 0,
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <FontAwesome name="star" size={18} color="#000" />
+            <Text style={{
+              color: '#000',
+              fontSize: 18,
+              fontWeight: '700',
+              textAlign: 'center',
+              textTransform: 'uppercase',
+              letterSpacing: 2,
+            }}>
+              My Rating
+            </Text>
+          </View>
+        </View>
+
         {/* User Rating Container */}
         <View style={[
           styles.userRatingContainer,
           {
             backgroundColor: colorScheme === 'dark' ? 'rgba(245, 197, 24, 0.05)' : 'rgba(245, 197, 24, 0.08)',
-            borderLeftColor: '#F5C518',
+            borderLeftWidth: 0,
+            marginTop: 0,
+            borderTopLeftRadius: 0,
+            borderTopRightRadius: 0,
+            paddingTop: 0,
           }
         ]}>
-          {/* Badge Header */}
-          <View style={styles.userRatingBadge}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <FontAwesome name="star" size={14} color="#000" />
-              <Text style={styles.userRatingBadgeText}>Your Rating</Text>
-            </View>
-          </View>
-
-          {/* My Rating Section Divider */}
-          <View style={[styles.sectionDivider, { marginTop: 16 }]}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={{ width: 4 }} />
-              <FontAwesome name="star" size={12} color={colors.textSecondary} />
-              <View style={{ width: 4 }} />
-              <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-                My Rating
-              </Text>
-              <View style={{ width: 4 }} />
-            </View>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
-
           {/* Inline Rating Section */}
-          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 13 }]}>
+          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 0 }]}>
             <View style={[styles.userInputTitleRow, { alignItems: 'center' }]}>
               <View style={styles.yellowSideLine} />
               <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>Rate This Fight</Text>
@@ -1556,114 +1562,63 @@ export default function CompletedFightDetailScreen({
             </View>
           </View>
 
-          {/* Tag This Fight Section */}
-          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 12, paddingTop: 0 }]}>
-            <View style={styles.userInputTitleRow}>
-              <View style={styles.yellowSideLine} />
-              <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>Tag This Fight</Text>
+        </View>
+
+        {/* Prediction & Hype Section */}
+        {(fight.userPredictedWinner || fight.userHypePrediction) && (
+          <>
+            {/* Prediction & Hype Title Bar */}
+            <View style={{
+              backgroundColor: '#F5C518',
+              paddingVertical: 12,
+              marginHorizontal: 12,
+              marginTop: 16,
+              marginBottom: 0,
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+            }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <FontAwesome name="bullseye" size={18} color="#000" />
+                <Text style={{
+                  color: '#000',
+                  fontSize: 18,
+                  fontWeight: '700',
+                  textAlign: 'center',
+                  textTransform: 'uppercase',
+                  letterSpacing: 2,
+                }}>
+                  Prediction & Hype
+                </Text>
+              </View>
             </View>
 
-            {/* Tags Content */}
-            <View style={{ marginTop: 12 }}>
-              {displayedTags.length > 0 && (() => {
-                // Separate user-selected tags and unselected tags
-                const userSelectedTags = displayedTags.filter(tag => selectedTags.includes(tag.id));
-                const unselectedTags = displayedTags.filter(tag => !selectedTags.includes(tag.id));
-
-                // Sort unselected tags by vote count (highest first)
-                const sortedUnselectedTags = unselectedTags.sort((a, b) => b.count - a.count);
-
-                // Combine: user-selected first, then sorted by votes
-                const orderedTags = [...userSelectedTags, ...sortedUnselectedTags];
-
-                return (
-                  <View style={styles.inlineTagsSection}>
-                    <View style={styles.inlineTagsContainer}>
-                      {orderedTags.map((tag) => {
-                        const isSelected = selectedTags.includes(tag.id);
-                        return (
-                          <Animated.View
-                            key={tag.id}
-                            style={{ opacity: isSelected ? 1 : tagsOpacity }}
-                          >
-                            <View style={styles.tagWithBadge}>
-                              <TouchableOpacity
-                                onPress={() => handleToggleTag(tag.id)}
-                                style={[
-                                  styles.inlineTagButton,
-                                  {
-                                    backgroundColor: isSelected ? colors.primary : 'transparent',
-                                    borderColor: colors.border,
-                                  }
-                                ]}
-                              >
-                                <Text style={[
-                                  styles.inlineTagText,
-                                  {
-                                    color: isSelected ? colors.textOnAccent : colors.textSecondary
-                                  }
-                                ]}>
-                                  {tag.name}
-                                </Text>
-                              </TouchableOpacity>
-                              {tag.count > 0 && (
-                                <View style={[
-                                  styles.tagCountBadge,
-                                  {
-                                    backgroundColor: isSelected ? colors.primary : colors.card,
-                                    borderColor: isSelected ? colors.primary : colors.border
-                                  }
-                                ]}>
-                                  <Text style={[styles.tagCountBadgeText, { color: isSelected ? colors.textOnAccent : colors.textSecondary }]}>
-                                    {tag.count}
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
-                          </Animated.View>
-                        );
-                      })}
-                    </View>
-                  </View>
-                );
-              })()}
-            </View>
-          </View>
-
-          {/* My Pre-Fight Predictions Section */}
-          {(fight.userPredictedWinner || fight.userHypePrediction) && (
-            <>
-              {/* My Pre-Fight Section Divider */}
-              <View style={[styles.sectionDivider, { marginTop: -20 }]}>
-                <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-                <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <View style={{ width: 4 }} />
-                  <FontAwesome name="history" size={12} color={colors.textSecondary} />
-                  <View style={{ width: 4 }} />
-                  <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-                    My Pre-Fight Data
-                  </Text>
-                  <View style={{ width: 4 }} />
+            {/* Prediction & Hype Container */}
+            <View style={[
+              styles.userRatingContainer,
+              {
+                backgroundColor: colorScheme === 'dark' ? 'rgba(245, 197, 24, 0.05)' : 'rgba(245, 197, 24, 0.08)',
+                borderLeftWidth: 0,
+                marginTop: 0,
+                borderTopLeftRadius: 0,
+                borderTopRightRadius: 0,
+                paddingTop: 27,
+              }
+            ]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8 }}>
+                {/* Left: My Prediction */}
+                <View style={styles.userInputTitleRow}>
+                  <View style={styles.yellowSideLine} />
+                  <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>My Prediction</Text>
                 </View>
-                <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+
+                {/* Right: My Hype */}
+                <View style={styles.userInputTitleRow}>
+                  <View style={styles.yellowSideLine} />
+                  <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>My Hype</Text>
+                </View>
               </View>
 
-              <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: 47, paddingTop: 0 }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  {/* Left: My Prediction */}
-                  <View style={styles.userInputTitleRow}>
-                    <View style={styles.yellowSideLine} />
-                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>My Prediction</Text>
-                  </View>
-
-                  {/* Right: My Hype */}
-                  <View style={styles.userInputTitleRow}>
-                    <View style={styles.yellowSideLine} />
-                    <Text style={[styles.sectionTitle, { color: colors.text, fontSize: 14, marginBottom: 0 }]}>My Hype</Text>
-                  </View>
-                </View>
-
-              <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <View style={{ marginTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: 8 }}>
                 {/* Left: Winner and Method Prediction */}
                 {fight.userPredictedWinner ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -1752,8 +1707,111 @@ export default function CompletedFightDetailScreen({
                 )}
               </View>
             </View>
-            </>
-          )}
+          </>
+        )}
+
+        {/* Tags Title Bar */}
+        <View style={{
+          backgroundColor: '#F5C518',
+          paddingVertical: 12,
+          marginHorizontal: 12,
+          marginTop: 16,
+          marginBottom: 0,
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <FontAwesome name="tags" size={18} color="#000" />
+            <Text style={{
+              color: '#000',
+              fontSize: 18,
+              fontWeight: '700',
+              textAlign: 'center',
+              textTransform: 'uppercase',
+              letterSpacing: 2,
+            }}>
+              Tags
+            </Text>
+          </View>
+        </View>
+
+        {/* Tags Container */}
+        <View style={[
+          styles.userRatingContainer,
+          {
+            backgroundColor: colorScheme === 'dark' ? 'rgba(245, 197, 24, 0.05)' : 'rgba(245, 197, 24, 0.08)',
+            borderLeftWidth: 0,
+            marginTop: 0,
+            borderTopLeftRadius: 0,
+            borderTopRightRadius: 0,
+            paddingTop: 12,
+          }
+        ]}>
+          {/* Tags Content */}
+          <View style={{ paddingHorizontal: 8 }}>
+            {displayedTags.length > 0 && (() => {
+              // Separate user-selected tags and unselected tags
+              const userSelectedTags = displayedTags.filter(tag => selectedTags.includes(tag.id));
+              const unselectedTags = displayedTags.filter(tag => !selectedTags.includes(tag.id));
+
+              // Sort unselected tags by vote count (highest first)
+              const sortedUnselectedTags = unselectedTags.sort((a, b) => b.count - a.count);
+
+              // Combine: user-selected first, then sorted by votes
+              const orderedTags = [...userSelectedTags, ...sortedUnselectedTags];
+
+              return (
+                <View style={styles.inlineTagsSection}>
+                  <View style={styles.inlineTagsContainer}>
+                    {orderedTags.map((tag) => {
+                      const isSelected = selectedTags.includes(tag.id);
+                      return (
+                        <Animated.View
+                          key={tag.id}
+                          style={{ opacity: isSelected ? 1 : tagsOpacity }}
+                        >
+                          <View style={styles.tagWithBadge}>
+                            <TouchableOpacity
+                              onPress={() => handleToggleTag(tag.id)}
+                              style={[
+                                styles.inlineTagButton,
+                                {
+                                  backgroundColor: isSelected ? colors.primary : 'transparent',
+                                  borderColor: colors.border,
+                                }
+                              ]}
+                            >
+                              <Text style={[
+                                styles.inlineTagText,
+                                {
+                                  color: isSelected ? colors.textOnAccent : colors.textSecondary
+                                }
+                              ]}>
+                                {tag.name}
+                              </Text>
+                            </TouchableOpacity>
+                            {tag.count > 0 && (
+                              <View style={[
+                                styles.tagCountBadge,
+                                {
+                                  backgroundColor: isSelected ? colors.primary : colors.card,
+                                  borderColor: isSelected ? colors.primary : colors.border
+                                }
+                              ]}>
+                                <Text style={[styles.tagCountBadgeText, { color: isSelected ? colors.textOnAccent : colors.textSecondary }]}>
+                                  {tag.count}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        </Animated.View>
+                      );
+                    })}
+                  </View>
+                </View>
+              );
+            })()}
+          </View>
         </View>
 
         {/* Community Data Container */}
