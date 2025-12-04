@@ -1387,7 +1387,7 @@ export default function CompletedFightDetailScreen({
               </Text>
               <View style={{ height: 24, marginTop: 4, justifyContent: 'center' }}>
                 {isOutcomeRevealed && fight.winner === fight.fighter1.id && (
-                  <Text style={{ color: '#166534', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
+                  <Text style={{ color: '#4CAF50', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
                     by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
                     {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
                     {fight.time && ` ${fight.time}`}
@@ -1417,7 +1417,7 @@ export default function CompletedFightDetailScreen({
               </Text>
               <View style={{ height: 24, marginTop: 4, justifyContent: 'center' }}>
                 {isOutcomeRevealed && fight.winner === fight.fighter2.id && (
-                  <Text style={{ color: '#166534', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
+                  <Text style={{ color: '#4CAF50', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
                     by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
                     {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
                     {fight.time && ` ${fight.time}`}
