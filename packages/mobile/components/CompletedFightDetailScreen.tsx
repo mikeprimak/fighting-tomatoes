@@ -1825,9 +1825,14 @@ export default function CompletedFightDetailScreen({
           title="COMMENTS"
           icon="comment"
           iconColor="#000"
-          headerBgColor="#C53030"
-          containerBgColorDark="rgba(197, 48, 48, 0.05)"
-          containerBgColorLight="rgba(197, 48, 48, 0.08)"
+          headerBgColor="#F5C518"
+          containerBgColorDark="rgba(245, 197, 24, 0.05)"
+          containerBgColorLight="rgba(245, 197, 24, 0.08)"
+          headerRight={
+            <Text style={{ color: '#000', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
+              ({(reviewsData?.pages?.flatMap(p => p.reviews)?.reduce((acc: number, r: any) => acc + 1 + (r.replies?.length || 0), 0) || 0) + (preFightCommentsData?.comments?.reduce((acc: number, c: any) => acc + 1 + (c.replies?.length || 0), 0) || 0)})
+            </Text>
+          }
         >
           {/* Comments Tab Toggle */}
           <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -1875,7 +1880,7 @@ export default function CompletedFightDetailScreen({
 
         {/* Post-Fight Comments Section */}
         {commentsTab === 'postfight' && (
-        <View style={[styles.sectionNoBorder, { marginTop: 10 }]}>
+        <View style={[styles.sectionNoBorder, { marginTop: 10, marginHorizontal: 0, padding: 0 }]}>
             {/* Only show header row when a button is visible */}
             {(!fight.userReview || isEditingComment) && (
             <View style={styles.commentHeaderRow}>
@@ -2054,7 +2059,7 @@ export default function CompletedFightDetailScreen({
 
                     {/* Reply form - shown when replying to this review */}
                     {replyingToReviewId === review.id && (
-                      <View ref={replyInputRef} collapsable={false} style={{ marginLeft: 40, marginTop: 8, marginBottom: 12 }}>
+                      <View ref={replyInputRef} collapsable={false} style={{ marginLeft: 20, marginTop: 8, marginBottom: 12 }}>
                         <View style={[
                           styles.commentInputContainer,
                           {
@@ -2133,7 +2138,7 @@ export default function CompletedFightDetailScreen({
                       const hiddenCount = review.replies.length - INITIAL_REPLIES_SHOWN;
 
                       return (
-                        <View style={{ marginLeft: 40, marginTop: replyingToReviewId === review.id ? 50 : 0, marginBottom: 20 }}>
+                        <View style={{ marginLeft: 20, marginTop: replyingToReviewId === review.id ? 50 : 0, marginBottom: 20 }}>
                           {repliesToShow.map((reply: any) => {
                             const isMyReply = reply.user?.id === user?.id;
                             return (
@@ -2277,7 +2282,7 @@ export default function CompletedFightDetailScreen({
 
         {/* Pre-Flight Comments Section */}
         {commentsTab === 'preflight' && (
-          <View style={[styles.sectionNoBorder, { marginTop: 10 }]}>
+          <View style={[styles.sectionNoBorder, { marginTop: 10, marginHorizontal: 0, padding: 0 }]}>
             {preFightCommentsData && preFightCommentsData.comments && preFightCommentsData.comments.length > 0 ? (
               <View style={{ marginTop: 0 }}>
                 {preFightCommentsData.comments.map((comment: any) => (

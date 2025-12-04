@@ -80,18 +80,47 @@ export function CommentCard({
 
         {/* Right side: Comment content */}
         <View style={styles.reviewContentContainer}>
-          {/* Header: Username and Rating/Flag */}
-          <View style={styles.reviewHeader}>
-            <Text style={[styles.reviewAuthor, { color: showMyReview ? '#F5C518' : '#FFFFFF' }]}>
-              {comment.user.displayName}
-            </Text>
-            <View style={styles.ratingFlagContainer}>
+          {/* Comment body - full width */}
+          <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
+            {comment.content}
+          </Text>
+
+          {/* Footer: Rating - Username Reply Edit */}
+          <View style={styles.footerContainer}>
+            {/* Left side: Rating - Username */}
+            <View style={styles.footerLeft}>
               <View style={styles.inlineRating}>
                 <FontAwesome name="star" size={12} color={getHypeHeatmapColor(comment.rating)} />
                 <Text style={[styles.reviewRatingText, { color: colors.text, fontSize: 12 }]}>
                   {comment.rating}
                 </Text>
               </View>
+              <Text style={[styles.reviewAuthor, { color: showMyReview ? '#F5C518' : '#FFFFFF' }]}>
+                {comment.user.displayName}
+              </Text>
+            </View>
+
+            {/* Right side: Reply + Edit/Flag */}
+            <View style={styles.footerRight}>
+              {onReply && !showMyReview && (
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e?.stopPropagation?.();
+                    onReply?.();
+                  }}
+                  disabled={!isAuthenticated}
+                  style={styles.replyButton}
+                >
+                  <FontAwesome
+                    name="reply"
+                    size={12}
+                    color={colors.textSecondary}
+                  />
+                  <Text style={[styles.replyButtonText, { color: colors.textSecondary }]}>
+                    Reply
+                  </Text>
+                </TouchableOpacity>
+              )}
               {showMyReview && onEdit && (
                 <TouchableOpacity
                   onPress={onEdit}
@@ -116,40 +145,12 @@ export function CommentCard({
                   <FontAwesome
                     name="flag"
                     size={12}
-                    color={isFlagging ? colors.textSecondary : colors.textSecondary}
+                    color={colors.textSecondary}
                   />
                 </TouchableOpacity>
               )}
             </View>
           </View>
-
-          {/* Comment body */}
-          <Text style={[styles.reviewContent, { color: colors.textSecondary }]}>
-            {comment.content}
-          </Text>
-
-          {/* Reply button - bottom right */}
-          {onReply && !showMyReview && (
-            <View style={styles.replyButtonContainer}>
-              <TouchableOpacity
-                onPress={(e) => {
-                  e?.stopPropagation?.();
-                  onReply?.();
-                }}
-                disabled={!isAuthenticated}
-                style={styles.replyButton}
-              >
-                <FontAwesome
-                  name="reply"
-                  size={12}
-                  color={colors.textSecondary}
-                />
-                <Text style={[styles.replyButtonText, { color: colors.textSecondary }]}>
-                  Reply
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
 
           {/* Fight info at bottom */}
           <View style={styles.fightInfo}>
@@ -218,10 +219,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  replyButtonContainer: {
+  footerContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    alignItems: 'center',
     marginBottom: 8,
+    gap: 8,
+  },
+  footerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  footerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   replyButton: {
     flexDirection: 'row',
@@ -233,18 +246,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
-  },
   reviewAuthor: {
-    fontSize: 14,
-    fontWeight: '700',
-    flex: 1,
-    flexShrink: 1,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  dashSeparator: {
+    fontSize: 12,
   },
   reviewRating: {
     flexDirection: 'row',
