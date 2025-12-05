@@ -1852,7 +1852,7 @@ export default function CompletedFightDetailScreen({
           containerBgColorLight="rgba(74, 74, 74, 0.08)"
           headerRight={
             <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
-              ({(reviewsData?.pages?.flatMap(p => p.reviews)?.reduce((acc: number, r: any) => acc + 1 + (r.replies?.length || 0), 0) || 0) + (preFightCommentsData?.comments?.reduce((acc: number, c: any) => acc + 1 + (c.replies?.length || 0), 0) || 0)})
+              ({(fight.userReview ? 1 : 0) + (reviewsData?.pages?.flatMap(p => p.reviews)?.filter((r: any) => r.userId !== user?.id)?.reduce((acc: number, r: any) => acc + 1 + (r.replies?.length || 0), 0) || 0)})
             </Text>
           }
         >
