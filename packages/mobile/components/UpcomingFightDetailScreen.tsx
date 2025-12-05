@@ -36,6 +36,7 @@ import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
 import FightDetailsMenu from './FightDetailsMenu';
 import Button from './Button';
+import SectionContainer from './SectionContainer';
 
 interface Fighter {
   id: string;
@@ -959,43 +960,32 @@ export default function UpcomingFightDetailScreen({
     >
 
 
-      {/* User Interaction Container */}
-      <View style={[
-        styles.userInteractionContainer,
-        {
-          backgroundColor: colorScheme === 'dark' ? 'rgba(245, 197, 24, 0.05)' : 'rgba(245, 197, 24, 0.08)',
-          borderLeftColor: '#F5C518',
-          marginTop: 22,
-        }
-      ]}>
-        {/* Badge Header */}
-        <View style={styles.userInteractionBadge}>
-          <Text style={styles.userInteractionBadgeText}>✏️ Your Predictions</Text>
-        </View>
-
+      {/* Your Predictions Section */}
+      <SectionContainer
+        title="My Picks"
+        icon="user"
+        iconColor="#000"
+        headerBgColor="#F5C518"
+        containerBgColorDark="rgba(245, 197, 24, 0.05)"
+        containerBgColorLight="rgba(245, 197, 24, 0.08)"
+      >
         {/* My Picks Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 15 }]}>
+        <View style={[styles.sectionDivider, { marginTop: 15, marginBottom: 0 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 4 }} />
             <FontAwesome name="check-circle" size={12} color={colors.textSecondary} />
             <View style={{ width: 4 }} />
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              My Picks
+              Who Will Win?
             </Text>
             <View style={{ width: 4 }} />
           </View>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
 
-        {/* Who Do You Think Will Win? */}
-        <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
-          <View style={styles.userInputTitleRow}>
-            <View style={styles.yellowSideLine} />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              Who do you think will win?
-            </Text>
-          </View>
+        {/* Fighter Selection */}
+        <View style={{ marginTop: 18 }}>
           <View style={styles.fighterButtons}>
             <TouchableOpacity
               style={[
@@ -1055,16 +1045,23 @@ export default function UpcomingFightDetailScreen({
           </View>
         </View>
 
-        {/* How will it end? */}
-        <View style={[styles.sectionNoBorder, { marginTop: -20 }]}>
-          <View style={styles.userInputTitleRow}>
-            <View style={styles.yellowSideLine} />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {selectedWinner
-                ? `How will ${selectedWinner === fight.fighter1Id ? fight.fighter1.lastName : fight.fighter2.lastName} win?`
-                : 'How will it end?'}
+        {/* How? Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 19, marginBottom: 0 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 4 }} />
+            <FontAwesome name="question-circle" size={12} color={colors.textSecondary} />
+            <View style={{ width: 4 }} />
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              How?
             </Text>
+            <View style={{ width: 4 }} />
           </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
+        {/* Method Selection */}
+        <View style={{ marginTop: 17 }}>
           <View style={styles.methodButtons}>
             {(['KO_TKO', 'SUBMISSION', 'DECISION'] as const).map((method) => {
               return (
@@ -1094,7 +1091,7 @@ export default function UpcomingFightDetailScreen({
         </View>
 
         {/* My Hype Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 2 }]}>
+        <View style={[styles.sectionDivider, { marginTop: 19, marginBottom: 0 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 4 }} />
@@ -1108,95 +1105,60 @@ export default function UpcomingFightDetailScreen({
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
 
-        {/* How Hyped? */}
-        <View style={[styles.sectionNoBorder, { marginTop: 17 }]}>
-          <View style={[styles.userInputTitleRow, { alignItems: 'center' }]}>
-            <View style={styles.yellowSideLine} />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              How hyped are you?
-            </Text>
-            {/* Spinning number wheel inline with title */}
-            <View style={[styles.displayFlameContainer, { marginTop: 10, marginBottom: 0, marginLeft: 8, paddingBottom: 0 }]}>
-              <View style={styles.animatedFlameContainer}>
-                <View style={styles.wheelContainer} pointerEvents="none">
-                  <Animated.View style={[
-                    styles.wheelNumbers,
-                    {
-                      transform: [{
-                        translateY: wheelAnimation.interpolate({
-                          inputRange: [0, 920],
-                          outputRange: [335, -585],
-                        })
-                      }]
-                    }
-                  ]}>
-                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
-                      const hypeColor = getHypeHeatmapColor(number);
-
-                      // Calculate flame color (same logic as Community area)
-                      const getFlameColor = (hypeColor: string, bgColor: string) => {
-                        const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                        const hypeHexMatch = hypeColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
-
-                        let hypeR = 0, hypeG = 0, hypeB = 0;
-                        if (hypeRgbaMatch) {
-                          hypeR = parseInt(hypeRgbaMatch[1]);
-                          hypeG = parseInt(hypeRgbaMatch[2]);
-                          hypeB = parseInt(hypeRgbaMatch[3]);
-                        } else if (hypeHexMatch) {
-                          hypeR = parseInt(hypeHexMatch[1], 16);
-                          hypeG = parseInt(hypeHexMatch[2], 16);
-                          hypeB = parseInt(hypeHexMatch[3], 16);
-                        }
-
-                        const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-                        const bgHexMatch = bgColor.match(/^#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})/);
-
-                        let bgR = 0, bgG = 0, bgB = 0;
-                        if (bgRgbaMatch) {
-                          bgR = parseInt(bgRgbaMatch[1]);
-                          bgG = parseInt(bgRgbaMatch[2]);
-                          bgB = parseInt(bgRgbaMatch[3]);
-                        } else if (bgHexMatch) {
-                          bgR = parseInt(bgHexMatch[1], 16);
-                          bgG = parseInt(bgHexMatch[2], 16);
-                          bgB = parseInt(bgHexMatch[3], 16);
-                        }
-
-                        const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
-                        const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
-                        const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
-
-                        return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
-                      };
-
-                      const flameColor = getFlameColor(hypeColor, colors.background);
-
-                      return (
-                        <View key={number} style={styles.hypeWheelBoxContainer}>
-                          <View style={[
-                            styles.hypeWheelBox,
-                            { backgroundColor: hypeColor }
-                          ]}>
-                            <FontAwesome6
-                              name="fire-flame-curved"
-                              size={16}
-                              color="rgba(0,0,0,0.45)"
-                              style={{ position: 'absolute', top: 9 }}
-                            />
-                            <Text style={styles.hypeWheelBoxText}>{number}</Text>
-                          </View>
-                        </View>
-                      );
-                    })}
-                  </Animated.View>
-                </View>
-              </View>
-            </View>
+        {/* Large Flame Display */}
+        <View style={{ alignItems: 'center', marginTop: 25, marginBottom: 8 }}>
+          <View style={{ alignItems: 'center', justifyContent: 'center', overflow: 'hidden', height: 92 }}>
+            <Animated.View style={[
+              {
+                alignItems: 'center',
+                paddingTop: 150,
+                transform: [{
+                  translateY: wheelAnimation.interpolate({
+                    inputRange: [0, 920],
+                    outputRange: [335, -585],
+                  })
+                }]
+              }
+            ]}>
+              {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
+                const hypeColor = getHypeHeatmapColor(number);
+                return (
+                  <View key={number} style={{ height: 92, justifyContent: 'center', alignItems: 'center' }}>
+                    <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 70, height: 82 }}>
+                      {/* Background circle for better text contrast */}
+                      <View style={{
+                        position: 'absolute',
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
+                        backgroundColor: hypeColor,
+                        opacity: 0.4,
+                        top: 23,
+                      }} />
+                      <FontAwesome6
+                        name="fire-flame-curved"
+                        size={70}
+                        color={hypeColor}
+                      />
+                      <Text style={{
+                        position: 'absolute',
+                        fontSize: 22,
+                        fontWeight: 'bold',
+                        color: '#FFFFFF',
+                        textShadowColor: 'rgba(0,0,0,0.8)',
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 4,
+                      }}>{number}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </Animated.View>
           </View>
+        </View>
 
-          {/* Row of selectable flames (1-10) */}
-          <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: 10, height: 42, justifyContent: 'center' }]}>
+        {/* Row of selectable flames (1-10) */}
+        <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: 10, height: 42, justifyContent: 'center' }]}>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
             const isSelected = level <= (selectedHype || 0);
             const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
@@ -1226,40 +1188,20 @@ export default function UpcomingFightDetailScreen({
               </TouchableOpacity>
             );
           })}
-          </View>
         </View>
-      </View>
+      </SectionContainer>
 
-      {/* Community Data Container */}
-      <View style={[
-        styles.communityDataContainer,
-        {
-          backgroundColor: colorScheme === 'dark' ? 'rgba(59, 130, 246, 0.05)' : 'rgba(59, 130, 246, 0.08)',
-          borderLeftColor: '#3B82F6',
-        }
-      ]}>
-        {/* Badge Header */}
-        <View style={styles.communityDataBadge}>
-          <Text style={styles.communityDataBadgeText}>👥 Community Data</Text>
-        </View>
-
-        {/* Community Predictions Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 15 }]}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 4 }} />
-            <FontAwesome name="users" size={12} color={colors.textSecondary} />
-            <View style={{ width: 4 }} />
-            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              Community Predictions
-            </Text>
-            <View style={{ width: 4 }} />
-          </View>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        </View>
-
-      {/* Community Predictions Data */}
-      <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
+      {/* Community Data Section */}
+      <SectionContainer
+        title={`All Picks (${displayPredictionStats?.totalPredictions || 0})`}
+        icon="users"
+        iconColor="#fff"
+        headerBgColor="#3B82F6"
+        containerBgColorDark="rgba(59, 130, 246, 0.05)"
+        containerBgColorLight="rgba(59, 130, 246, 0.08)"
+      >
+        {/* Community Predictions Data */}
+        <View style={{ marginTop: 16 }}>
         {/* Community Predictions Bar Chart - always visible */}
         {displayPredictionStats && displayPredictionStats.fighter1MethodPredictions && displayPredictionStats.fighter2MethodPredictions && displayPredictionStats.winnerPredictions && (
           <PredictionBarChart
@@ -1282,154 +1224,81 @@ export default function UpcomingFightDetailScreen({
       </View>
 
         {/* Community Hype Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: -8 }]}>
+        <View style={[styles.sectionDivider, { marginTop: 12, marginBottom: 0 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 4 }} />
             <FontAwesome6 name="fire-flame-curved" size={12} color={colors.textSecondary} />
             <View style={{ width: 4 }} />
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              Community Hype
+              All Hype ({aggregateStats?.totalPredictions || 0})
             </Text>
             <View style={{ width: 4 }} />
           </View>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
 
-      {/* Community Data */}
-      <View style={[styles.sectionNoBorder, { marginTop: 32 }]}>
-        {/* Community Data Layout: Vertical stack */}
-        <View style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 18, marginTop: 0 }}>
-          {/* Aggregate hype box and distribution chart - side by side */}
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9, marginTop: 0 }}>
-            {/* Community Hype Box */}
-            {(() => {
+      {/* Community Hype Data */}
+      <View style={{ marginTop: 14, marginBottom: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>
+          {/* Large Flame Icon */}
+          {(() => {
             const hypeColor = aggregateStats?.communityAverageHype
               ? getHypeHeatmapColor(aggregateStats.communityAverageHype)
               : colors.border;
 
-            // Mix 70% heatmap color with 30% background color for flame icon
-            const getFlameColor = (hypeColor: string, bgColor: string): string => {
-              // Parse hype color (RGB or hex)
-              const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-              const hypeHexMatch = hypeColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
-
-              let hypeR = 0, hypeG = 0, hypeB = 0;
-              if (hypeRgbaMatch) {
-                hypeR = parseInt(hypeRgbaMatch[1]);
-                hypeG = parseInt(hypeRgbaMatch[2]);
-                hypeB = parseInt(hypeRgbaMatch[3]);
-              } else if (hypeHexMatch) {
-                hypeR = parseInt(hypeHexMatch[1], 16);
-                hypeG = parseInt(hypeHexMatch[2], 16);
-                hypeB = parseInt(hypeHexMatch[3], 16);
-              }
-
-              // Parse background color (RGB or hex)
-              const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-              const bgHexMatch = bgColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
-
-              let bgR = 0, bgG = 0, bgB = 0;
-              if (bgRgbaMatch) {
-                bgR = parseInt(bgRgbaMatch[1]);
-                bgG = parseInt(bgRgbaMatch[2]);
-                bgB = parseInt(bgRgbaMatch[3]);
-              } else if (bgHexMatch) {
-                bgR = parseInt(bgHexMatch[1], 16);
-                bgG = parseInt(bgHexMatch[2], 16);
-                bgB = parseInt(bgHexMatch[3], 16);
-              }
-
-              // Mix 70% hype + 30% background
-              const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
-              const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
-              const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
-
-              return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
-            };
-
-            const flameColor = getFlameColor(hypeColor, colors.background);
-
             return (
-              <View style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 6,
-              }}>
-                <View style={{ position: 'relative', width: 48, height: 82 }}>
-                  {/* Grey placeholder - always visible until fully revealed */}
-                  <View style={{
-                    position: 'absolute',
-                    width: 48,
-                    height: 82,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderRadius: 8,
-                    backgroundColor: 'transparent',
-                    borderWidth: 1,
-                    borderColor: colors.textSecondary,
-                  }}>
+              <View style={{ position: 'relative', width: 70, height: 82 }}>
+                {/* Grey placeholder - always visible until fully revealed */}
+                {!hasRevealedHype && (
+                  <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 70, height: 82 }}>
                     <FontAwesome6
                       name="fire-flame-curved"
-                      size={24}
-                      color={colors.textSecondary}
-                      style={{ opacity: 0.5 }}
+                      size={70}
+                      color={colors.border}
                     />
                   </View>
+                )}
 
-                  {/* Colored box - fades in on top of placeholder when revealed */}
-                  {hasRevealedHype && (
-                    <Animated.View style={{
-                      position: 'absolute',
-                      width: 48,
-                      height: 82,
-                      opacity: aggregateHypeFadeAnim,
-                    }}>
+                {/* Colored flame - fades in when revealed */}
+                {hasRevealedHype && (
+                  <Animated.View style={{ opacity: aggregateHypeFadeAnim }}>
+                    <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 70, height: 82 }}>
+                      {/* Background circle */}
                       <View style={{
-                        width: 48,
-                        height: 82,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderRadius: 8,
+                        position: 'absolute',
+                        width: 44,
+                        height: 44,
+                        borderRadius: 22,
                         backgroundColor: hypeColor,
-                        gap: 2,
+                        opacity: 0.4,
+                        top: 23,
+                      }} />
+                      <FontAwesome6
+                        name="fire-flame-curved"
+                        size={70}
+                        color={hypeColor}
+                      />
+                      <Text style={{
+                        position: 'absolute',
+                        top: 31,
+                        fontSize: 22,
+                        fontWeight: 'bold',
+                        color: '#FFFFFF',
+                        textShadowColor: 'rgba(0,0,0,0.8)',
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 4,
                       }}>
-                        <FontAwesome6
-                          name="fire-flame-curved"
-                          size={16}
-                          color="rgba(0,0,0,0.45)"
-                          style={{ position: 'absolute', top: 9 }}
-                        />
-                        <Text style={{
-                          color: '#FFFFFF',
-                          fontSize: 18,
-                          fontWeight: 'bold',
-                          textAlign: 'center',
-                          textShadowColor: 'rgba(0,0,0,0.7)',
-                          textShadowOffset: { width: 0, height: 1 },
-                          textShadowRadius: 3,
-                        }}>
-                          {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
-                        </Text>
-                        <Text style={{
-                          position: 'absolute',
-                          bottom: 9,
-                          color: 'rgba(0,0,0,0.5)',
-                          fontSize: 10,
-                          fontWeight: '600',
-                          textAlign: 'center',
-                        }}>
-                          ({aggregateStats?.totalPredictions || 0})
-                        </Text>
-                      </View>
-                    </Animated.View>
-                  )}
-                </View>
+                        {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
+                      </Text>
+                    </View>
+                  </Animated.View>
+                )}
               </View>
             );
           })()}
 
-            {/* Hype Distribution Chart - below aggregate hype box */}
+          {/* Hype Distribution Chart */}
             {aggregateStats?.hypeDistribution && (
               <View style={{ flex: 1 }}>
                 <HypeDistributionChart
@@ -1440,28 +1309,24 @@ export default function UpcomingFightDetailScreen({
                 />
               </View>
             )}
-          </View>
-        </View>
         </View>
       </View>
+      </SectionContainer>
 
-      {/* Comments Section Divider */}
-      <View style={[styles.sectionDivider, { marginTop: 7 }]}>
-        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <View style={{ width: 4 }} />
-          <FontAwesome name="comments" size={12} color={colors.textSecondary} />
-          <View style={{ width: 4 }} />
-          <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-            Comments
+      {/* Comments Section */}
+      <SectionContainer
+        title="Comments"
+        icon="comment"
+        iconColor="#fff"
+        headerBgColor="#4a4a4a"
+        containerBgColorDark="rgba(74, 74, 74, 0.15)"
+        containerBgColorLight="rgba(74, 74, 74, 0.08)"
+        headerRight={
+          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
+            ({preFightCommentsData?.comments?.reduce((acc: number, c: any) => acc + 1 + (c.replies?.length || 0), 0) || 0})
           </Text>
-          <View style={{ width: 4 }} />
-        </View>
-        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-      </View>
-
-      {/* Comments */}
-      <View style={[styles.sectionNoBorder, { marginTop: 18 }]}>
+        }
+      >
         {/* Title row with Add Comment / Cancel button */}
         <View style={styles.commentHeaderRow}>
           <View style={{ flex: 1 }} />
@@ -1612,6 +1477,136 @@ export default function UpcomingFightDetailScreen({
               />
             </View>
           )}
+
+          {/* Display replies to user's own comment */}
+          {preFightCommentsData.userComment && preFightCommentsData.userComment.replies && preFightCommentsData.userComment.replies.length > 0 && !isEditingComment && (() => {
+            const userCommentReplies = preFightCommentsData.userComment.replies;
+            const isExpanded = expandedReplies[preFightCommentsData.userComment.id] || false;
+            const repliesToShow = isExpanded ? userCommentReplies : userCommentReplies.slice(0, INITIAL_REPLIES_SHOWN);
+            const hiddenCount = userCommentReplies.length - INITIAL_REPLIES_SHOWN;
+
+            return (
+              <View style={{ marginLeft: 40, marginBottom: 20 }}>
+                {repliesToShow.map((reply: any) => {
+                  const isMyReply = reply.user?.id === user?.id;
+                  return (
+                    <React.Fragment key={reply.id}>
+                      {editingReplyId === reply.id ? (
+                        // Edit form for reply
+                        <View style={{ marginBottom: 12 }}>
+                          <View style={[
+                            styles.commentInputContainer,
+                            {
+                              backgroundColor: colors.card,
+                              borderColor: colors.border,
+                            }
+                          ]}>
+                            <TextInput
+                              style={[
+                                styles.commentInput,
+                                { color: colors.text }
+                              ]}
+                              placeholder="Edit your reply..."
+                              placeholderTextColor={colors.textSecondary}
+                              multiline
+                              numberOfLines={4}
+                              maxLength={500}
+                              value={editReplyText}
+                              onChangeText={setEditReplyText}
+                              autoFocus={true}
+                            />
+                          </View>
+                          <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                            <TouchableOpacity
+                              style={[
+                                styles.saveCommentButton,
+                                {
+                                  backgroundColor: editReplyText.trim().length > 0 || reply.content ? colors.tint : colors.card,
+                                  flex: 1,
+                                }
+                              ]}
+                              disabled={editReplyMutation.isPending}
+                              onPress={() => {
+                                handleSaveReplyEdit(reply.id, reply.content);
+                              }}
+                            >
+                              <Text style={[
+                                styles.saveCommentButtonText,
+                                { color: editReplyText.trim().length > 0 || reply.content ? '#000' : colors.text }
+                              ]}>
+                                Save
+                              </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[
+                                styles.saveCommentButton,
+                                {
+                                  backgroundColor: colors.card,
+                                  borderWidth: 1,
+                                  borderColor: colors.border,
+                                  flex: 1,
+                                }
+                              ]}
+                              onPress={() => {
+                                setEditingReplyId(null);
+                                setEditReplyText('');
+                              }}
+                            >
+                              <Text style={[
+                                styles.saveCommentButtonText,
+                                { color: colors.text }
+                              ]}>
+                                Cancel
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      ) : (
+                        <PreFightCommentCard
+                          comment={{
+                            id: reply.id,
+                            content: reply.content,
+                            hypeRating: isMyReply ? selectedHype : reply.hypeRating,
+                            predictedWinner: isMyReply ? selectedWinner : reply.predictedWinner,
+                            predictedMethod: isMyReply ? selectedMethod : reply.predictedMethod,
+                            upvotes: reply.upvotes || 0,
+                            userHasUpvoted: reply.userHasUpvoted || false,
+                            user: {
+                              displayName: reply.user.displayName,
+                            },
+                          }}
+                          fighter1Id={fight.fighter1.id}
+                          fighter2Id={fight.fighter2.id}
+                          fighter1Name={fight.fighter1.lastName}
+                          fighter2Name={fight.fighter2.lastName}
+                          onUpvote={() => handleUpvoteComment(reply.id)}
+                          onFlag={() => handleFlagComment(reply.id)}
+                          onEdit={isMyReply ? () => {
+                            setEditingReplyId(reply.id);
+                            setEditReplyText(reply.content);
+                          } : undefined}
+                          isUpvoting={upvotingCommentId === reply.id}
+                          isAuthenticated={isAuthenticated}
+                          showMyComment={isMyReply}
+                        />
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+                {/* Show more/less replies button */}
+                {hiddenCount > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setExpandedReplies(prev => ({ ...prev, [preFightCommentsData.userComment.id]: !isExpanded }))}
+                    style={{ marginTop: -7, paddingVertical: 8, alignSelf: 'flex-end' }}
+                  >
+                    <Text style={{ color: colors.tint, fontSize: 14, fontWeight: '500' }}>
+                      {isExpanded ? 'Show less replies' : `Show ${hiddenCount} more ${hiddenCount === 1 ? 'reply' : 'replies'}`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            );
+          })()}
 
           {/* All other comments */}
           {preFightCommentsData.comments
@@ -1857,7 +1852,7 @@ export default function UpcomingFightDetailScreen({
           })}
           </View>
         )}
-      </View>
+      </SectionContainer>
 
       {/* Flag Comment Modal */}
       <FlagReviewModal

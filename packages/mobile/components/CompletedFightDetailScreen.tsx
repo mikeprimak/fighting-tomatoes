@@ -2036,6 +2036,136 @@ export default function CompletedFightDetailScreen({
                 isAuthenticated={isAuthenticated}
                 showMyReview={true}
               />
+
+              {/* Display replies to user's own review */}
+              {fight.userReview.replies && fight.userReview.replies.length > 0 && (() => {
+                const userReviewReplies = fight.userReview.replies;
+                const isExpanded = expandedReplies[fight.userReview.id] || false;
+                const repliesToShow = isExpanded ? userReviewReplies : userReviewReplies.slice(0, INITIAL_REPLIES_SHOWN);
+                const hiddenCount = userReviewReplies.length - INITIAL_REPLIES_SHOWN;
+
+                return (
+                  <View style={{ marginLeft: 20, marginBottom: 20 }}>
+                    {repliesToShow.map((reply: any) => {
+                      const isMyReply = reply.user?.id === user?.id;
+                      return (
+                        <React.Fragment key={reply.id}>
+                          {editingReplyId === reply.id ? (
+                            // Edit form for reply
+                            <View style={{ marginBottom: 12 }}>
+                              <View style={[
+                                styles.commentInputContainer,
+                                {
+                                  backgroundColor: colors.card,
+                                  borderColor: colors.border,
+                                }
+                              ]}>
+                                <TextInput
+                                  style={[
+                                    styles.commentInput,
+                                    { color: colors.text }
+                                  ]}
+                                  placeholder="Edit your reply..."
+                                  placeholderTextColor={colors.textSecondary}
+                                  multiline
+                                  numberOfLines={4}
+                                  maxLength={500}
+                                  value={editReplyText}
+                                  onChangeText={setEditReplyText}
+                                  autoFocus={true}
+                                />
+                              </View>
+                              <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                                <TouchableOpacity
+                                  style={[
+                                    styles.saveCommentButton,
+                                    {
+                                      backgroundColor: editReplyText.trim().length > 0 || reply.content ? colors.tint : colors.card,
+                                      flex: 1,
+                                    }
+                                  ]}
+                                  disabled={editReplyMutation.isPending}
+                                  onPress={() => {
+                                    handleSaveReplyEdit(reply.id, reply.content);
+                                  }}
+                                >
+                                  <Text style={[
+                                    styles.saveCommentButtonText,
+                                    { color: editReplyText.trim().length > 0 || reply.content ? '#000' : colors.text }
+                                  ]}>
+                                    Save
+                                  </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={[
+                                    styles.saveCommentButton,
+                                    {
+                                      backgroundColor: colors.card,
+                                      borderWidth: 1,
+                                      borderColor: colors.border,
+                                      flex: 1,
+                                    }
+                                  ]}
+                                  onPress={() => {
+                                    setEditingReplyId(null);
+                                    setEditReplyText('');
+                                  }}
+                                >
+                                  <Text style={[
+                                    styles.saveCommentButtonText,
+                                    { color: colors.text }
+                                  ]}>
+                                    Cancel
+                                  </Text>
+                                </TouchableOpacity>
+                              </View>
+                            </View>
+                          ) : (
+                            <CommentCard
+                              comment={{
+                                id: reply.id,
+                                content: reply.content,
+                                rating: isMyReply ? rating : (reply.rating || 0),
+                                upvotes: reply.upvotes || 0,
+                                userHasUpvoted: reply.userHasUpvoted || false,
+                                predictedWinner: isMyReply ? fight.userPredictedWinner : reply.predictedWinner,
+                                predictedMethod: isMyReply ? fight.userPredictedMethod : reply.predictedMethod,
+                                user: {
+                                  displayName: reply.user.displayName || `${reply.user.firstName} ${reply.user.lastName}`,
+                                },
+                              }}
+                              fighter1Id={fight.fighter1.id}
+                              fighter2Id={fight.fighter2.id}
+                              fighter1Name={fight.fighter1.lastName}
+                              fighter2Name={fight.fighter2.lastName}
+                              onUpvote={() => handleUpvoteReview(reply.id)}
+                              onFlag={() => handleFlagReview(reply.id)}
+                              onEdit={isMyReply ? () => {
+                                setEditingReplyId(reply.id);
+                                setEditReplyText(reply.content);
+                              } : undefined}
+                              isUpvoting={upvoteMutation.isPending}
+                              isAuthenticated={isAuthenticated}
+                              showMyReview={isMyReply}
+                            />
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
+                    {/* Show more/less replies button */}
+                    {hiddenCount > 0 && (
+                      <TouchableOpacity
+                        onPress={() => setExpandedReplies(prev => ({ ...prev, [fight.userReview.id]: !isExpanded }))}
+                        style={{ marginTop: -7, paddingVertical: 8, alignSelf: 'flex-end' }}
+                      >
+                        <Text style={{ color: colors.tint, fontSize: 14, fontWeight: '500' }}>
+                          {isExpanded ? 'Show less replies' : `Show ${hiddenCount} more ${hiddenCount === 1 ? 'reply' : 'replies'}`}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })()}
               </View>
             )}
 
@@ -2329,27 +2459,74 @@ export default function CompletedFightDetailScreen({
             {preFightCommentsData && preFightCommentsData.comments && preFightCommentsData.comments.length > 0 ? (
               <View style={{ marginTop: 0 }}>
                 {preFightCommentsData.comments.map((comment: any) => (
-                  <PreFightCommentCard
-                    key={comment.id}
-                    comment={{
-                      id: comment.id,
-                      content: comment.content,
-                      hypeRating: comment.hypeRating,
-                      predictedWinner: comment.predictedWinner,
-                      predictedMethod: comment.predictedMethod,
-                      upvotes: comment.upvotes || 0,
-                      userHasUpvoted: comment.userHasUpvoted || false,
-                      user: {
-                        displayName: comment.user.displayName,
-                      },
-                    }}
-                    fighter1Id={fight.fighter1.id}
-                    fighter2Id={fight.fighter2.id}
-                    fighter1Name={fight.fighter1.lastName}
-                    fighter2Name={fight.fighter2.lastName}
-                    isAuthenticated={isAuthenticated}
-                    showMyComment={comment.userId === user?.id}
-                  />
+                  <React.Fragment key={comment.id}>
+                    <PreFightCommentCard
+                      comment={{
+                        id: comment.id,
+                        content: comment.content,
+                        hypeRating: comment.hypeRating,
+                        predictedWinner: comment.predictedWinner,
+                        predictedMethod: comment.predictedMethod,
+                        upvotes: comment.upvotes || 0,
+                        userHasUpvoted: comment.userHasUpvoted || false,
+                        user: {
+                          displayName: comment.user.displayName,
+                        },
+                      }}
+                      fighter1Id={fight.fighter1.id}
+                      fighter2Id={fight.fighter2.id}
+                      fighter1Name={fight.fighter1.lastName}
+                      fighter2Name={fight.fighter2.lastName}
+                      isAuthenticated={isAuthenticated}
+                      showMyComment={comment.userId === user?.id}
+                    />
+
+                    {/* Display replies to this comment */}
+                    {comment.replies && comment.replies.length > 0 && (() => {
+                      const isExpanded = expandedReplies[comment.id] || false;
+                      const repliesToShow = isExpanded ? comment.replies : comment.replies.slice(0, INITIAL_REPLIES_SHOWN);
+                      const hiddenCount = comment.replies.length - INITIAL_REPLIES_SHOWN;
+
+                      return (
+                        <View style={{ marginLeft: 40, marginBottom: 20 }}>
+                          {repliesToShow.map((reply: any) => (
+                            <PreFightCommentCard
+                              key={reply.id}
+                              comment={{
+                                id: reply.id,
+                                content: reply.content,
+                                hypeRating: reply.hypeRating,
+                                predictedWinner: reply.predictedWinner,
+                                predictedMethod: reply.predictedMethod,
+                                upvotes: reply.upvotes || 0,
+                                userHasUpvoted: reply.userHasUpvoted || false,
+                                user: {
+                                  displayName: reply.user?.displayName || `${reply.user?.firstName} ${reply.user?.lastName}`,
+                                },
+                              }}
+                              fighter1Id={fight.fighter1.id}
+                              fighter2Id={fight.fighter2.id}
+                              fighter1Name={fight.fighter1.lastName}
+                              fighter2Name={fight.fighter2.lastName}
+                              isAuthenticated={isAuthenticated}
+                              showMyComment={reply.userId === user?.id}
+                            />
+                          ))}
+                          {/* Show more/less replies button */}
+                          {hiddenCount > 0 && (
+                            <TouchableOpacity
+                              onPress={() => setExpandedReplies(prev => ({ ...prev, [comment.id]: !isExpanded }))}
+                              style={{ marginTop: -7, paddingVertical: 8, alignSelf: 'flex-end' }}
+                            >
+                              <Text style={{ color: colors.tint, fontSize: 14, fontWeight: '500' }}>
+                                {isExpanded ? 'Show less replies' : `Show ${hiddenCount} more ${hiddenCount === 1 ? 'reply' : 'replies'}`}
+                              </Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      );
+                    })()}
+                  </React.Fragment>
                 ))}
               </View>
             ) : (

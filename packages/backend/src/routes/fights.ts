@@ -401,7 +401,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
           reviews: currentUserId ? {
             where: {
               userId: currentUserId,
-              isHidden: false
+              isHidden: false,
+              parentReviewId: null, // Only top-level reviews
             }, // Only get current user's review
             include: {
               user: {
@@ -418,6 +419,32 @@ export async function fightRoutes(fastify: FastifyInstance) {
               votes: {
                 where: {
                   userId: currentUserId,
+                },
+              },
+              replies: {
+                where: {
+                  isHidden: false,
+                },
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      displayName: true,
+                      firstName: true,
+                      lastName: true,
+                      avatar: true,
+                      isMedia: true,
+                      mediaOrganization: true,
+                    },
+                  },
+                  votes: currentUserId ? {
+                    where: {
+                      userId: currentUserId,
+                    },
+                  } : false,
+                },
+                orderBy: {
+                  createdAt: 'asc',
                 },
               },
             },
@@ -482,8 +509,23 @@ export async function fightRoutes(fastify: FastifyInstance) {
             createdAt: review.createdAt,
             upvotes: review.upvotes,
             userHasUpvoted: review.votes?.length > 0 && review.votes[0].isUpvote,
+            replies: review.replies?.map((reply: any) => ({
+              id: reply.id,
+              content: reply.content,
+              rating: reply.rating,
+              createdAt: reply.createdAt,
+              upvotes: reply.upvotes || 0,
+              userHasUpvoted: reply.votes?.length > 0 && reply.votes[0]?.isUpvote,
+              userId: reply.userId,
+              user: {
+                id: reply.user?.id,
+                displayName: reply.user?.displayName,
+                firstName: reply.user?.firstName,
+                lastName: reply.user?.lastName,
+              },
+            })) || [],
           };
-          console.log('Found user review:', transformedFight.userReview);
+          console.log('Found user review with replies:', transformedFight.userReview);
         }
 
         // Transform user tags (extract tag names)
