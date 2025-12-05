@@ -1434,15 +1434,10 @@ export default function CompletedFightDetailScreen({
 
           {/* Event Info */}
           <View style={{ alignItems: 'center', marginTop: 16 }}>
-            {(fight.weightClass || fight.cardType) && (
-              <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center' }}>
-                {fight.weightClass ? `${formatWeightClass(fight.weightClass)}${fight.isTitle ? ' Championship' : ''}` : ''}{fight.weightClass && fight.cardType ? ' - ' : ''}{fight.orderOnCard === 1 ? 'Main Event' : (fight.cardType || '')}
-              </Text>
-            )}
-            <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', marginTop: 2 }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', }}>
               {fight.event.name}
             </Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', marginTop: 2 }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', }}>
               {new Date(fight.event.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
             </Text>
           </View>
@@ -1538,7 +1533,7 @@ export default function CompletedFightDetailScreen({
                     borderRadius: 22,
                     backgroundColor: getHypeHeatmapColor(fight.userHypePrediction),
                     opacity: 0.4,
-                    top: 18,
+                    top: 23,
                   }} />
                   <FontAwesome6
                     name="fire-flame-curved"
@@ -1777,7 +1772,7 @@ export default function CompletedFightDetailScreen({
                   borderRadius: 22,
                   backgroundColor: getHypeHeatmapColor(predictionStats.averageHype),
                   opacity: 0.4,
-                  top: 18,
+                  top: 23,
                 }} />
                 <FontAwesome6
                   name="fire-flame-curved"
