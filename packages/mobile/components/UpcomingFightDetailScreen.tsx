@@ -17,6 +17,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
@@ -517,6 +518,7 @@ export default function UpcomingFightDetailScreen({
       // Save the comment - this returns the created/updated comment
       // Note: Backend auto-upvotes new top-level comments
       await saveCommentMutation.mutateAsync(preFightComment.trim());
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       // Invalidate queries to refresh the comment list
       await queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
@@ -690,6 +692,7 @@ export default function UpcomingFightDetailScreen({
   });
 
   const handleUpvoteComment = (commentId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!requireVerification('upvote a comment')) return;
     upvotePreFightCommentMutation.mutate(commentId);
   };
@@ -875,6 +878,7 @@ export default function UpcomingFightDetailScreen({
   };
 
   const handleWinnerSelection = (fighterId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!requireVerification('make a prediction')) return;
     const newWinner = selectedWinner === fighterId ? null : fighterId;
     setSelectedWinner(newWinner);
@@ -882,6 +886,7 @@ export default function UpcomingFightDetailScreen({
   };
 
   const handleHypeSelection = (level: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!requireVerification('rate hype')) return;
     // If tapping the same level, deselect (set to null)
     const newHype = selectedHype === level ? null : level;
@@ -891,6 +896,7 @@ export default function UpcomingFightDetailScreen({
   };
 
   const handleMethodSelection = (method: 'KO_TKO' | 'SUBMISSION' | 'DECISION') => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!requireVerification('make a prediction')) return;
     // If tapping the same method, deselect (set to null)
     const newMethod = selectedMethod === method ? null : method;
@@ -1680,6 +1686,7 @@ export default function UpcomingFightDetailScreen({
                         disabled={saveReplyMutation.isPending || replyText.trim().length === 0}
                         onPress={() => {
                           if (replyText.trim()) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             saveReplyMutation.mutate({ commentId: comment.id, content: replyText.trim() });
                           }
                         }}

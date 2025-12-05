@@ -386,20 +386,6 @@ export default function UpcomingFightCard({
 
   return (
     <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
-      {/* Event text above the card */}
-      {showEvent && (
-        <Text
-          style={{
-            color: colors.textSecondary,
-            fontSize: 10,
-            textAlign: 'center',
-            marginBottom: 4,
-          }}
-          numberOfLines={1}
-        >
-          {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
-        </Text>
-      )}
       <View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
@@ -554,76 +540,90 @@ export default function UpcomingFightCard({
 
           </View>
 
-          {/* Mini Community Predictions Bar */}
-          {predictionStats?.winnerPredictions &&
-           predictionStats.winnerPredictions.fighter1.percentage > 0 &&
-           predictionStats.winnerPredictions.fighter2.percentage > 0 && (() => {
-            const f1Pct = predictionStats.winnerPredictions.fighter1.percentage;
-            const f2Pct = predictionStats.winnerPredictions.fighter2.percentage;
-            const barWidth = 130;
-            // Shift bar so dividing point is always centered
-            // Positive = shift right, Negative = shift left
-            const barShift = (50 - f1Pct) * barWidth / 100;
-            return (
-            <View style={[styles.miniPredictionBar, { transform: [{ translateX: barShift }] }]}>
-              <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
-                {f1Pct}%
-              </Text>
-              <View style={styles.miniPredictionBarTrack}>
-                <View
-                  style={[
-                    styles.miniPredictionBarFill,
-                    {
-                      flex: f1Pct,
-                      backgroundColor: f1Pct > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
-                      borderTopLeftRadius: 3,
-                      borderBottomLeftRadius: 3,
-                    }
-                  ]}
-                />
-                <View
-                  style={[
-                    styles.miniPredictionBarFill,
-                    {
-                      flex: f2Pct,
-                      backgroundColor: f2Pct > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
-                      borderTopRightRadius: 3,
-                      borderBottomRightRadius: 3,
-                    }
-                  ]}
-                />
-                {/* User prediction indicator */}
-                {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
-                  <View style={[
-                    styles.userPredictionIndicator,
-                    {
-                      left: `${f1Pct / 2}%`,
-                      marginLeft: -10,
-                      backgroundColor: f1Pct > 50 ? '#83B4F3' : '#3D5065',
-                    }
-                  ]}>
-                    <FontAwesome name="user" size={12} color="#F5C518" />
-                  </View>
-                )}
-                {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
-                  <View style={[
-                    styles.userPredictionIndicator,
-                    {
-                      left: `${f1Pct + f2Pct / 2}%`,
-                      marginLeft: -10,
-                      backgroundColor: f2Pct > 50 ? '#83B4F3' : '#3D5065',
-                    }
-                  ]}>
-                    <FontAwesome name="user" size={12} color="#F5C518" />
-                  </View>
-                )}
+          {/* Event info inside card (when showEvent=true) OR Mini Community Predictions Bar */}
+          {showEvent ? (
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: 10,
+                textAlign: 'center',
+                marginTop: 4,
+              }}
+              numberOfLines={1}
+            >
+              {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
+            </Text>
+          ) : (
+            predictionStats?.winnerPredictions &&
+            predictionStats.winnerPredictions.fighter1.percentage > 0 &&
+            predictionStats.winnerPredictions.fighter2.percentage > 0 && (() => {
+              const f1Pct = predictionStats.winnerPredictions.fighter1.percentage;
+              const f2Pct = predictionStats.winnerPredictions.fighter2.percentage;
+              const barWidth = 130;
+              // Shift bar so dividing point is always centered
+              // Positive = shift right, Negative = shift left
+              const barShift = (50 - f1Pct) * barWidth / 100;
+              return (
+              <View style={[styles.miniPredictionBar, { transform: [{ translateX: barShift }] }]}>
+                <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
+                  {f1Pct}%
+                </Text>
+                <View style={styles.miniPredictionBarTrack}>
+                  <View
+                    style={[
+                      styles.miniPredictionBarFill,
+                      {
+                        flex: f1Pct,
+                        backgroundColor: f1Pct > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
+                        borderTopLeftRadius: 3,
+                        borderBottomLeftRadius: 3,
+                      }
+                    ]}
+                  />
+                  <View
+                    style={[
+                      styles.miniPredictionBarFill,
+                      {
+                        flex: f2Pct,
+                        backgroundColor: f2Pct > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
+                        borderTopRightRadius: 3,
+                        borderBottomRightRadius: 3,
+                      }
+                    ]}
+                  />
+                  {/* User prediction indicator */}
+                  {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
+                    <View style={[
+                      styles.userPredictionIndicator,
+                      {
+                        left: `${f1Pct / 2}%`,
+                        marginLeft: -10,
+                        backgroundColor: f1Pct > 50 ? '#83B4F3' : '#3D5065',
+                      }
+                    ]}>
+                      <FontAwesome name="user" size={12} color="#F5C518" />
+                    </View>
+                  )}
+                  {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
+                    <View style={[
+                      styles.userPredictionIndicator,
+                      {
+                        left: `${f1Pct + f2Pct / 2}%`,
+                        marginLeft: -10,
+                        backgroundColor: f2Pct > 50 ? '#83B4F3' : '#3D5065',
+                      }
+                    ]}>
+                      <FontAwesome name="user" size={12} color="#F5C518" />
+                    </View>
+                  )}
+                </View>
+                <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
+                  {f2Pct}%
+                </Text>
               </View>
-              <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
-                {f2Pct}%
-              </Text>
-            </View>
-            );
-          })()}
+              );
+            })()
+          )}
 
         {/* Status message */}
         {getUpcomingStatusMessage() && (

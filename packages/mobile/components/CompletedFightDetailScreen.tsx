@@ -16,6 +16,7 @@ import {
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useQueryClient, useQuery, useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
@@ -838,6 +839,7 @@ export default function CompletedFightDetailScreen({
     try {
       // Save the comment - this returns the created/updated review
       const response = await updateUserDataMutation.mutateAsync(submissionData);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       // If it's a new review with content, auto-upvote it
       if (isNewReview && response?.data?.review?.id) {
@@ -1075,6 +1077,7 @@ export default function CompletedFightDetailScreen({
   };
 
   const handleUpvoteReview = (reviewId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!requireVerification('upvote a review')) return;
     upvoteMutation.mutate({ reviewId });
   };
@@ -1156,6 +1159,7 @@ export default function CompletedFightDetailScreen({
 
   // Handlers for rating and tags (immediate save) - Simplified like UpcomingFightDetailScreen
   const handleSetRating = (newRating: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!requireVerification('rate this fight')) return;
     const finalRating = rating === newRating ? 0 : newRating;
 
@@ -1187,6 +1191,7 @@ export default function CompletedFightDetailScreen({
   };
 
   const handleToggleTag = (tagId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!requireVerification('tag this fight')) return;
 
     const isSelecting = !selectedTags.includes(tagId);
@@ -2139,6 +2144,7 @@ export default function CompletedFightDetailScreen({
                             disabled={saveReplyMutation.isPending || replyText.trim().length === 0}
                             onPress={() => {
                               if (replyText.trim()) {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                 saveReplyMutation.mutate({ reviewId: review.id, content: replyText.trim() });
                               }
                             }}

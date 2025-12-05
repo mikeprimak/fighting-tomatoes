@@ -485,20 +485,6 @@ export default function CompletedFightCard({
 
   return (
     <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
-      {/* Event text above the card */}
-      {showEvent && (
-        <Text
-          style={{
-            color: colors.textSecondary,
-            fontSize: 10,
-            textAlign: 'center',
-            marginBottom: 4,
-          }}
-          numberOfLines={1}
-        >
-          {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
-        </Text>
-      )}
       <View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
@@ -653,18 +639,32 @@ export default function CompletedFightCard({
 
           </View>
 
-          {/* Top 3 Tags */}
-          {aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
-            <View style={styles.topTagsContainer}>
-              {aggregateStats.topTags.slice(0, 3).map((tagData, index) => (
-                <Text
-                  key={index}
-                  style={[styles.topTagText, { color: colors.textSecondary }]}
-                >
-                  #{tagData.name}
-                </Text>
-              ))}
-            </View>
+          {/* Event info inside card (when showEvent=true) OR Top 3 Tags */}
+          {showEvent ? (
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: 10,
+                textAlign: 'center',
+                marginTop: 4,
+              }}
+              numberOfLines={1}
+            >
+              {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
+            </Text>
+          ) : (
+            aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
+              <View style={styles.topTagsContainer}>
+                {aggregateStats.topTags.slice(0, 3).map((tagData, index) => (
+                  <Text
+                    key={index}
+                    style={[styles.topTagText, { color: colors.textSecondary }]}
+                  >
+                    #{tagData.name}
+                  </Text>
+                ))}
+              </View>
+            )
           )}
 
         {/* Status message */}
