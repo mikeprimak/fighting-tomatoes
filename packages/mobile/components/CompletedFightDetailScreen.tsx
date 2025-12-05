@@ -1432,27 +1432,18 @@ export default function CompletedFightDetailScreen({
             </View>
           </View>
 
-          {/* Event Info */}
-          <View style={{ alignItems: 'center', marginTop: 16 }}>
-            <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', }}>
-              {fight.event.name}
-            </Text>
-            <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', }}>
-              {new Date(fight.event.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
-            </Text>
+          {/* Section Divider - My Prediction & Hype */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 6 }}>
+              <FontAwesome name="user" size={14} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>My Prediction & Hype</Text>
+            </View>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>
-        </SectionContainer>
 
-        {/* Prediction & Hype Section */}
-        <SectionContainer
-          title="MY PREDICTION & HYPE"
-          icon="bullseye"
-          iconColor="#fff"
-          headerBgColor="#166534"
-          containerBgColorDark="rgba(34, 197, 94, 0.05)"
-          containerBgColorLight="rgba(34, 197, 94, 0.08)"
-        >
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8 }}>
+          {/* Prediction & Hype Content */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8 }}>
               {/* Left: Winner and Method Prediction */}
               {fight.userPredictedWinner ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
@@ -1622,14 +1613,19 @@ export default function CompletedFightDetailScreen({
               })}
             </View>
           </View>
-        </SectionContainer>
 
-        {/* Tags Section */}
-        <SectionContainer
-          title="Tags"
-          icon="hashtag"
-        >
-            {displayedTags.length > 0 && (() => {
+          {/* Section Divider - Tags */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 30 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 6 }}>
+              <FontAwesome name="hashtag" size={14} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>Tags</Text>
+            </View>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
+
+          {/* Tags Content */}
+          {displayedTags.length > 0 && (() => {
               // Separate user-selected tags and unselected tags
               const userSelectedTags = displayedTags.filter(tag => selectedTags.includes(tag.id));
               const unselectedTags = displayedTags.filter(tag => !selectedTags.includes(tag.id));
@@ -1693,20 +1689,26 @@ export default function CompletedFightDetailScreen({
             })()}
         </SectionContainer>
 
-        {/* ALL RATINGS Section */}
+        {/* ALL DATA Section */}
         <SectionContainer
-          title="ALL RATINGS"
-          icon="star"
+          title="All Data"
+          icon="chart-bar"
+          iconFamily="fontawesome6"
           iconColor="#000"
           headerBgColor="#83B4F3"
           containerBgColorDark="rgba(131, 180, 243, 0.05)"
           containerBgColorLight="rgba(131, 180, 243, 0.08)"
-          headerRight={
-            <Text style={{ color: '#000', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
-              ({totalRatings || 0})
-            </Text>
-          }
         >
+          {/* Section Divider - All Ratings */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 6 }}>
+              <FontAwesome name="star" size={14} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>All Ratings ({totalRatings || 0})</Text>
+            </View>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
+
           {/* Community Rating Layout: Horizontal */}
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9, paddingRight: 60 }}>
             {/* Community Rating Star */}
@@ -1743,23 +1745,18 @@ export default function CompletedFightDetailScreen({
               </View>
             )}
           </View>
-        </SectionContainer>
 
-        {/* ALL HYPE Section */}
-        <SectionContainer
-          title="ALL HYPE"
-          icon="fire-flame-curved"
-          iconFamily="fontawesome6"
-          iconColor="#000"
-          headerBgColor="#83B4F3"
-          containerBgColorDark="rgba(131, 180, 243, 0.05)"
-          containerBgColorLight="rgba(131, 180, 243, 0.08)"
-          headerRight={
-            <Text style={{ color: '#000', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
-              ({predictionStats?.totalPredictions || 0})
-            </Text>
-          }
-        >
+          {/* Section Divider - All Hype */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 28, marginBottom: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 6 }}>
+              <FontAwesome6 name="fire-flame-curved" size={14} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>All Hype ({predictionStats?.totalPredictions || 0})</Text>
+            </View>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
+
+          {/* All Hype Content */}
           {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
               {/* Community Hype Flame */}
@@ -1801,24 +1798,18 @@ export default function CompletedFightDetailScreen({
               No community hype data
             </Text>
           )}
-        </SectionContainer>
 
-        {/* ALL PREDICTIONS Section */}
-        <SectionContainer
-          title="ALL PREDICTIONS"
-          icon="circle-check"
-          iconFamily="fontawesome6"
-          iconSolid={true}
-          iconColor="#000"
-          headerBgColor="#83B4F3"
-          containerBgColorDark="rgba(131, 180, 243, 0.05)"
-          containerBgColorLight="rgba(131, 180, 243, 0.08)"
-          headerRight={
-            <Text style={{ color: '#000', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
-              ({predictionStats?.totalPredictions || 0})
-            </Text>
-          }
-        >
+          {/* Section Divider - All Predictions */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 28, marginBottom: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 6 }}>
+              <FontAwesome6 name="circle-check" size={14} color={colors.textSecondary} solid />
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>All Predictions ({predictionStats?.totalPredictions || 0})</Text>
+            </View>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
+
+          {/* All Predictions Content */}
           {predictionStats && predictionStats.fighter1MethodPredictions && predictionStats.fighter2MethodPredictions && predictionStats.winnerPredictions && (() => {
             const normalized = normalizeMethod(fight.method);
             console.log('[CompletedFight] Passing to chart:', {
@@ -1855,12 +1846,12 @@ export default function CompletedFightDetailScreen({
         <SectionContainer
           title="COMMENTS"
           icon="comment"
-          iconColor="#000"
-          headerBgColor="#F5C518"
-          containerBgColorDark="rgba(245, 197, 24, 0.05)"
-          containerBgColorLight="rgba(245, 197, 24, 0.08)"
+          iconColor="#fff"
+          headerBgColor="#4a4a4a"
+          containerBgColorDark="rgba(74, 74, 74, 0.15)"
+          containerBgColorLight="rgba(74, 74, 74, 0.08)"
           headerRight={
-            <Text style={{ color: '#000', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
+            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
               ({(reviewsData?.pages?.flatMap(p => p.reviews)?.reduce((acc: number, r: any) => acc + 1 + (r.replies?.length || 0), 0) || 0) + (preFightCommentsData?.comments?.reduce((acc: number, c: any) => acc + 1 + (c.replies?.length || 0), 0) || 0)})
             </Text>
           }
