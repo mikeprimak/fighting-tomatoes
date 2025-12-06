@@ -304,11 +304,11 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       }
 
       // Get fights with their predictions to calculate average hype
+      // Filter by hasStarted/isComplete (not date) to include fights happening later today
       const fights = await fastify.prisma.fight.findMany({
         where: {
           event: {
             date: {
-              gte: now,
               lte: endDate,
             },
           },
@@ -550,11 +550,11 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       twentyDaysFromNow.setDate(now.getDate() + 20);
 
       // Get all upcoming fights with predictions
+      // Filter by hasStarted/isComplete (not date) to include fights happening later today
       const fights = await fastify.prisma.fight.findMany({
         where: {
           event: {
             date: {
-              gte: now,
               lte: twentyDaysFromNow,
             },
           },
@@ -637,11 +637,11 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       twentyDaysFromNow.setDate(now.getDate() + 20);
 
       // Get all upcoming fights with predictions
+      // Filter by hasStarted/isComplete (not date) to include fights happening later today
       const fights = await fastify.prisma.fight.findMany({
         where: {
           event: {
             date: {
-              gte: now,
               lte: twentyDaysFromNow,
             },
           },
@@ -723,11 +723,9 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       const { sortBy = 'top-recent' } = request.query as { sortBy?: string };
       const now = new Date();
 
+      // Filter by hasStarted/isComplete (not date) to include fights happening later today
       let whereClause: any = {
         fight: {
-          event: {
-            date: { gte: now },
-          },
           hasStarted: false,
           isComplete: false,
         },
@@ -738,7 +736,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         // Top upvoted from next 13 days
         const thirteenDaysFromNow = new Date();
         thirteenDaysFromNow.setDate(now.getDate() + 13);
-        whereClause.fight.event.date.lte = thirteenDaysFromNow;
+        whereClause.fight.event = { date: { lte: thirteenDaysFromNow } };
         orderByClause = [{ upvotes: 'desc' }, { createdAt: 'desc' }];
       } else if (sortBy === 'top-all-time') {
         // Top upvoted from all upcoming fights
@@ -855,12 +853,12 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       thirteenDaysFromNow.setDate(now.getDate() + 13);
 
       // Get top 3 upvoted pre-fight comments from upcoming fights within next 13 days
+      // Filter by hasStarted/isComplete (not date) to include fights happening later today
       const topPreFightComments = await fastify.prisma.preFightComment.findMany({
         where: {
           fight: {
             event: {
               date: {
-                gte: now,
                 lte: thirteenDaysFromNow,
               },
             },
@@ -999,11 +997,11 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       });
 
       // Get all fighters from upcoming fights (next 14 days)
+      // Filter by hasStarted/isComplete (not date) to include fights happening later today
       const upcomingFights = await fastify.prisma.fight.findMany({
         where: {
           event: {
             date: {
-              gte: now,
               lte: fourteenDaysFromNow,
             },
           },

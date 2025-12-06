@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: '700',
   },
   info: {

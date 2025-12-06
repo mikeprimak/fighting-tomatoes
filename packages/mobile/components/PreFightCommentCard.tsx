@@ -121,6 +121,15 @@ export function PreFightCommentCard({
                 </Text>
               </View>
             )}
+            {comment.predictedWinner && fighter1Id && fighter2Id && (
+              <Text
+                style={{ color: colors.textSecondary, fontSize: 14, flexShrink: 1 }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                ({comment.predictedWinner === fighter1Id ? fighter1Name : fighter2Name})
+              </Text>
+            )}
           </View>
 
           {/* Comment body */}
@@ -226,7 +235,8 @@ const styles = StyleSheet.create({
   topInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
+    overflow: 'hidden',
     gap: 8,
     marginBottom: 6,
   },

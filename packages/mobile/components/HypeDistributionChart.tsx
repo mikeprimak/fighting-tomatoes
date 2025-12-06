@@ -49,18 +49,6 @@ export default function HypeDistributionChart({
           height: chartHeight - 10,
         }}
       >
-        {/* Grey circle - always visible at bottom */}
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            width: 4,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: '#808080',
-          }}
-        />
-
         {/* Colored bar - grows upward when revealed */}
         {hasRevealedHype && count > 0 && (
           <Animated.View

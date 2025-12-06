@@ -46,18 +46,6 @@ export default function RatingDistributionChart({
           height: chartHeight - 10,
         }}
       >
-        {/* Grey circle - always visible at bottom */}
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            width: 4,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: '#808080',
-          }}
-        />
-
         {/* Colored bar - grows upward (always visible for completed fights) */}
         {count > 0 && (
           <View

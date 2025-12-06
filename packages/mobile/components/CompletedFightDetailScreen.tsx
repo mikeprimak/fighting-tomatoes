@@ -1574,7 +1574,7 @@ export default function CompletedFightDetailScreen({
           {/* Inline Rating Section */}
           <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: -8 }]}>
             {/* Centered Star Display */}
-            <View style={{ alignItems: 'center', marginBottom: 25 }}>
+            <View style={{ alignItems: 'center', marginBottom: 40 }}>
               <View style={styles.animatedFlameContainer}>
                 <View style={styles.wheelContainer} pointerEvents="none">
                   <Animated.View style={[
@@ -1583,7 +1583,7 @@ export default function CompletedFightDetailScreen({
                       transform: [{
                         translateY: wheelAnimation.interpolate({
                           inputRange: [0, 1150],
-                          outputRange: [427, -723],
+                          outputRange: [487, -663],
                         })
                       }]
                     }
@@ -1604,6 +1604,16 @@ export default function CompletedFightDetailScreen({
                         </View>
                       );
                     })}
+                    {/* Grey placeholder star - shown when no rating selected */}
+                    <View style={styles.ratingWheelBoxContainer}>
+                      <View style={styles.ratingStarContainer}>
+                        <FontAwesome
+                          name="star-o"
+                          size={90}
+                          color="#666666"
+                        />
+                      </View>
+                    </View>
                   </Animated.View>
                 </View>
               </View>
@@ -1743,7 +1753,7 @@ export default function CompletedFightDetailScreen({
                     size={90}
                     color={ratingColor}
                   />
-                  <Text style={styles.ratingStarText}>
+                  <Text style={[styles.ratingStarText, { marginTop: -4 }]}>
                     {fight.averageRating
                       ? fight.averageRating % 1 === 0
                         ? fight.averageRating.toString()
@@ -1795,7 +1805,7 @@ export default function CompletedFightDetailScreen({
                   size={90}
                   color={getHypeHeatmapColor(predictionStats.averageHype)}
                 />
-                <Text style={styles.ratingStarText}>
+                <Text style={[styles.ratingStarText, { marginTop: 12 }]}>
                   {predictionStats.averageHype.toFixed(1)}
                 </Text>
               </View>

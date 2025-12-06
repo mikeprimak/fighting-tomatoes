@@ -243,7 +243,7 @@ export default function ProfileScreen() {
                     ]}
                   />
                 </View>
-                
+                <Text style={styles.barLabel}>{rating}</Text>
               </View>
             );
           })}
@@ -368,20 +368,20 @@ export default function ProfileScreen() {
             <View>
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
                 {/* Large Flame Icon */}
-                <View style={styles.ratingIconContainer}>
+                <View style={[styles.ratingIconContainer, { marginTop: 7 }]}>
                   {/* Background circle for better text contrast */}
                   <View style={{
                     position: 'absolute',
-                    width: 44,
-                    height: 44,
-                    borderRadius: 22,
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
                     backgroundColor: getHypeHeatmapColor(Math.round(user?.averageHype || 0)),
                     opacity: 0.4,
-                    top: 23,
+                    top: 30,
                   }} />
                   <FontAwesome6
                     name="fire-flame-curved"
-                    size={70}
+                    size={90}
                     color={getHypeHeatmapColor(Math.round(user?.averageHype || 0))}
                   />
                   <Text style={[styles.ratingIconText, { marginTop: 6 }]}>
@@ -417,10 +417,10 @@ export default function ProfileScreen() {
             <View>
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
                 {/* Large Star Icon */}
-                <View style={styles.ratingIconContainer}>
+                <View style={[styles.ratingIconContainer, { marginTop: 7 }]}>
                   <FontAwesome
                     name="star"
-                    size={70}
+                    size={90}
                     color={getHypeHeatmapColor(Math.round(user?.averageRating || 0))}
                   />
                   <Text style={[styles.ratingIconText, { marginTop: -2 }]}>
@@ -623,7 +623,8 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   barLabel: {
     fontSize: 10,
-    marginTop: 2,
+    marginTop: 4,
+    color: '#808080',
   },
   barCount: {
     fontSize: 9,
@@ -633,12 +634,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    width: 70,
-    height: 82,
+    width: 90,
+    height: 105,
   },
   ratingIconText: {
     position: 'absolute',
-    fontSize: 22,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textShadowColor: 'rgba(0,0,0,0.8)',
