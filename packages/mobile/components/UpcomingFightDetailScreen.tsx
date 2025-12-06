@@ -575,16 +575,31 @@ export default function UpcomingFightDetailScreen({
       queryClient.setQueryData(['preFightComments', fight.id], (old: any) => {
         if (!old) return old;
 
-        // Update user comment if it's the one being upvoted
-        const updatedUserComment = old.userComment?.id === commentId
-          ? {
-              ...old.userComment,
-              userHasUpvoted: !old.userComment.userHasUpvoted,
-              upvotes: old.userComment.userHasUpvoted
-                ? old.userComment.upvotes - 1
-                : old.userComment.upvotes + 1,
-            }
-          : old.userComment;
+        // Update user comment if it's the one being upvoted, or check its replies
+        let updatedUserComment = old.userComment;
+        if (old.userComment?.id === commentId) {
+          updatedUserComment = {
+            ...old.userComment,
+            userHasUpvoted: !old.userComment.userHasUpvoted,
+            upvotes: old.userComment.userHasUpvoted
+              ? old.userComment.upvotes - 1
+              : old.userComment.upvotes + 1,
+          };
+        } else if (old.userComment?.replies && old.userComment.replies.length > 0) {
+          // Check if a reply to user's comment is being upvoted
+          const updatedReplies = old.userComment.replies.map((reply: any) =>
+            reply.id === commentId
+              ? {
+                  ...reply,
+                  userHasUpvoted: !reply.userHasUpvoted,
+                  upvotes: reply.userHasUpvoted ? reply.upvotes - 1 : reply.upvotes + 1,
+                }
+              : reply
+          );
+          if (updatedReplies.some((r: any, i: number) => r !== old.userComment.replies[i])) {
+            updatedUserComment = { ...old.userComment, replies: updatedReplies };
+          }
+        }
 
         // Update comments array (including nested replies)
         const updatedComments = old.comments.map((comment: any) => {
@@ -632,13 +647,29 @@ export default function UpcomingFightDetailScreen({
       queryClient.setQueryData(['preFightComments', fight.id], (old: any) => {
         if (!old) return old;
 
-        const updatedUserComment = old.userComment?.id === commentId
-          ? {
-              ...old.userComment,
-              userHasUpvoted: data.userHasUpvoted,
-              upvotes: data.upvotes,
-            }
-          : old.userComment;
+        // Update user comment if it's the one being upvoted, or check its replies
+        let updatedUserComment = old.userComment;
+        if (old.userComment?.id === commentId) {
+          updatedUserComment = {
+            ...old.userComment,
+            userHasUpvoted: data.userHasUpvoted,
+            upvotes: data.upvotes,
+          };
+        } else if (old.userComment?.replies && old.userComment.replies.length > 0) {
+          // Check if a reply to user's comment was upvoted
+          const updatedReplies = old.userComment.replies.map((reply: any) =>
+            reply.id === commentId
+              ? {
+                  ...reply,
+                  userHasUpvoted: data.userHasUpvoted,
+                  upvotes: data.upvotes,
+                }
+              : reply
+          );
+          if (updatedReplies.some((r: any, i: number) => r !== old.userComment.replies[i])) {
+            updatedUserComment = { ...old.userComment, replies: updatedReplies };
+          }
+        }
 
         // Update comments array (including nested replies)
         const updatedComments = old.comments.map((comment: any) => {
@@ -970,7 +1001,7 @@ export default function UpcomingFightDetailScreen({
         containerBgColorLight="rgba(245, 197, 24, 0.08)"
       >
         {/* My Picks Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 15, marginBottom: 0 }]}>
+        <View style={[styles.sectionDivider, { marginTop: 3, marginBottom: 0 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 4 }} />
@@ -1046,7 +1077,7 @@ export default function UpcomingFightDetailScreen({
         </View>
 
         {/* How? Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 19, marginBottom: 0 }]}>
+        <View style={[styles.sectionDivider, { marginTop: 18, marginBottom: 0 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 4 }} />
@@ -1106,7 +1137,7 @@ export default function UpcomingFightDetailScreen({
         </View>
 
         {/* Large Flame Display */}
-        <View style={{ alignItems: 'center', marginTop: 25, marginBottom: 8 }}>
+        <View style={{ alignItems: 'center', marginTop: 23, marginBottom: 8 }}>
           <View style={{ alignItems: 'center', justifyContent: 'center', overflow: 'hidden', height: 92 }}>
             <Animated.View style={[
               {

@@ -68,14 +68,16 @@ export function CommentCard({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
+  const CardWrapper = onPress ? TouchableOpacity : View;
+  const wrapperProps = onPress ? { onPress, activeOpacity: 0.7 } : {};
+
   return (
-    <TouchableOpacity
+    <CardWrapper
       style={[
         styles.reviewCard,
         { backgroundColor: colors.background, borderColor: colors.border },
       ]}
-      onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
+      {...wrapperProps}
     >
       <View style={styles.reviewContainer}>
         {/* Left side: Upvote button */}
@@ -101,38 +103,50 @@ export function CommentCard({
 
         {/* Right side: Comment content */}
         <View style={styles.reviewContentContainer}>
+          {/* Top row: Username | Star Rating | Predicted Winner */}
+          <View style={styles.topInfoRow}>
+            <Text style={[styles.reviewAuthor, { color: showMyReview ? '#F5C518' : '#FFFFFF' }]}>
+              {comment.user.displayName}
+            </Text>
+            <View style={styles.inlineRating}>
+              <FontAwesome name="star" size={14} color={getHypeHeatmapColor(comment.rating)} />
+              <Text style={[styles.reviewRatingText, { color: colors.textSecondary, fontSize: 14 }]}>
+                {comment.rating}
+              </Text>
+            </View>
+            {comment.predictedWinner && fighter1Id && fighter2Id && (
+              <View style={styles.predictionContainer}>
+                <FontAwesome name="hand-o-right" size={14} color={colors.textSecondary} />
+                <Text style={[styles.predictedWinnerText, { color: colors.textSecondary }]}>
+                  {comment.predictedWinner === fighter1Id ? fighter1Name : fighter2Name}
+                  {comment.predictedMethod && ` by ${formatMethod(comment.predictedMethod)}`}
+                </Text>
+              </View>
+            )}
+          </View>
+
           {/* Comment body */}
           <Text style={[styles.reviewContent, { color: '#FFFFFF' }]}>
             {comment.content}
           </Text>
 
-          {/* Bottom right: 3-line info block */}
-          <View style={styles.bottomRightBlock}>
-            {/* Line 1: Username */}
-            <Text style={[styles.reviewAuthor, { color: showMyReview ? '#F5C518' : '#FFFFFF' }]}>
-              {comment.user.displayName}
-            </Text>
-
-            {/* Line 2: Rating + Prediction */}
-            <View style={styles.ratingRow}>
-              <View style={styles.inlineRating}>
-                <FontAwesome name="star" size={14} color={getHypeHeatmapColor(comment.rating)} />
-                <Text style={[styles.reviewRatingText, { color: colors.textSecondary, fontSize: 14 }]}>
-                  {comment.rating}
-                </Text>
-              </View>
-              {comment.predictedWinner && fighter1Id && fighter2Id && (
-                <View style={styles.predictionContainer}>
-                  <FontAwesome name="hand-o-right" size={14} color={colors.textSecondary} />
-                  <Text style={[styles.predictedWinnerText, { color: colors.textSecondary }]}>
-                    {comment.predictedWinner === fighter1Id ? fighter1Name : fighter2Name}
-                    {comment.predictedMethod && ` by ${formatMethod(comment.predictedMethod)}`}
+          {/* Bottom row: Action buttons on the right */}
+          <View style={styles.bottomRow}>
+            {/* Fight info on the left (if present) */}
+            <View style={styles.fightInfo}>
+              {comment.fight && (
+                <>
+                  <Text style={[styles.fightText, { color: colors.textSecondary }]}>
+                    {comment.fight.fighter1Name} vs {comment.fight.fighter2Name}
                   </Text>
-                </View>
+                  <Text style={[styles.eventText, { color: colors.textSecondary }]}>
+                    {comment.fight.eventName}
+                  </Text>
+                </>
               )}
             </View>
 
-            {/* Line 3: Action buttons */}
+            {/* Action buttons on the right */}
             <View style={styles.actionButtonsRow}>
               {onReply && !showMyReview && (
                 <TouchableOpacity
@@ -183,23 +197,9 @@ export function CommentCard({
               )}
             </View>
           </View>
-
-          {/* Fight info at bottom */}
-          <View style={styles.fightInfo}>
-            {comment.fight && (
-              <>
-                <Text style={[styles.fightText, { color: colors.textSecondary }]}>
-                  {comment.fight.fighter1Name} vs {comment.fight.fighter2Name}
-                </Text>
-                <Text style={[styles.eventText, { color: colors.textSecondary }]}>
-                  {comment.fight.eventName}
-                </Text>
-              </>
-            )}
-          </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </CardWrapper>
   );
 }
 
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   reviewCard: {
     paddingTop: 12,
     paddingHorizontal: 12,
-    paddingBottom: 0,
+    paddingBottom: 8,
     borderRadius: 8,
     borderWidth: 1,
     marginBottom: 12,
@@ -222,16 +222,16 @@ const styles = StyleSheet.create({
   reviewContentContainer: {
     flex: 1,
   },
+  topInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 6,
+  },
   reviewAuthor: {
     fontSize: 14,
     fontWeight: '700',
-    marginBottom: 4,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
   },
   inlineRating: {
     flexDirection: 'row',
@@ -250,6 +250,26 @@ const styles = StyleSheet.create({
   reviewRatingText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  reviewContent: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  fightInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  fightText: {
+    fontSize: 12,
+  },
+  eventText: {
+    fontSize: 12,
   },
   actionButtonsRow: {
     flexDirection: 'row',
@@ -279,28 +299,6 @@ const styles = StyleSheet.create({
   flagButton: {
     paddingVertical: 4,
     marginLeft: 12,
-  },
-  reviewContent: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  bottomRightBlock: {
-    alignItems: 'flex-end',
-    marginBottom: 4,
-  },
-  fightInfo: {
-    gap: 2,
-    marginBottom: 8,
-    alignItems: 'flex-end',
-  },
-  fightText: {
-    fontSize: 12,
-    textAlign: 'right',
-  },
-  eventText: {
-    fontSize: 12,
-    textAlign: 'right',
   },
   upvoteButton: {
     flexDirection: 'column',

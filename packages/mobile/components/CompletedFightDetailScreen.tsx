@@ -721,6 +721,8 @@ export default function CompletedFightDetailScreen({
 
       // Check if this is the user's own top-level review
       const isUserOwnReview = fight.userReview?.id === reviewId;
+      // Check if this is a reply to the user's own review
+      const isReplyToUserReview = fight.userReview?.replies?.some((r: any) => r.id === reviewId);
 
       if (isUserOwnReview) {
         // Update the fight cache for user's own review (displayed from fight.userReview)
@@ -731,6 +733,23 @@ export default function CompletedFightDetailScreen({
             fight: {
               ...old.fight,
               userReview: toggleUpvote(old.fight.userReview),
+            },
+          };
+        });
+      } else if (isReplyToUserReview) {
+        // Update a reply to the user's own review
+        queryClient.setQueryData(['fight', fight.id, isAuthenticated], (old: any) => {
+          if (!old?.fight?.userReview?.replies) return old;
+          return {
+            ...old,
+            fight: {
+              ...old.fight,
+              userReview: {
+                ...old.fight.userReview,
+                replies: old.fight.userReview.replies.map((reply: any) =>
+                  reply.id === reviewId ? toggleUpvote(reply) : reply
+                ),
+              },
             },
           };
         });
