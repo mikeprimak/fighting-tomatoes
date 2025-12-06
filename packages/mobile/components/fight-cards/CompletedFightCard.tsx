@@ -14,6 +14,7 @@ import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import { useFightStats } from '../../hooks/useFightStats';
+import Svg, { Circle } from 'react-native-svg';
 
 interface CompletedFightCardProps extends BaseFightCardProps {
   isNextFight?: boolean;
@@ -381,6 +382,65 @@ export default function CompletedFightCard({
     return rings;
   };
 
+  // Prediction arc component - draws a quarter circle arc
+  const PredictionArc = ({ color, position }: { color: string; position: 'bottom-left' | 'bottom-right' }) => {
+    const size = 54; // Slightly larger than 50px image
+    const strokeWidth = 3;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const quarterArc = circumference / 4;
+
+    // SVG circle starts at 3 o'clock and goes clockwise
+    // bottom-left (6 to 9 o'clock) = rotate 90° from start
+    // bottom-right (3 to 6 o'clock) = no rotation needed (starts at 3 o'clock)
+    const rotation = position === 'bottom-left' ? 90 : 0;
+
+    return (
+      <View style={[styles.predictionArcContainer, { width: size, height: size }]}>
+        <Svg width={size} height={size} style={{ transform: [{ rotate: `${rotation}deg` }] }}>
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={`${quarterArc} ${circumference - quarterArc}`}
+            strokeLinecap="round"
+          />
+        </Svg>
+      </View>
+    );
+  };
+
+  // Winner arc component - draws a half circle arc (top half, 9 to 3 o'clock)
+  const WinnerArc = ({ color }: { color: string }) => {
+    const size = 54; // Slightly larger than 50px image
+    const strokeWidth = 3;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const halfArc = circumference / 2;
+
+    // SVG circle starts at 3 o'clock and goes clockwise
+    // top half (9 to 3 o'clock) = rotate 180° from start (so it starts at 9 o'clock)
+    return (
+      <View style={[styles.predictionArcContainer, { width: size, height: size }]}>
+        <Svg width={size} height={size} style={{ transform: [{ rotate: '180deg' }] }}>
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={`${halfArc} ${circumference - halfArc}`}
+            strokeLinecap="round"
+          />
+        </Svg>
+      </View>
+    );
+  };
+
   // Helper function to find top methods with their percentages
   const getTopMethods = (methods: { DECISION: number; KO_TKO: number; SUBMISSION: number }) => {
     const methodEntries = Object.entries(methods) as [string, number][];
@@ -592,21 +652,49 @@ export default function CompletedFightCard({
                   </Text>
                 </View>
                 {/* Fighter 1 headshot - right of name */}
-                <Image
-                  source={getFighter1ImageSource()}
-                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -3 }]}
-                  onError={() => setFighter1ImageError(true)}
-                />
+                <View style={[styles.fighterImageWrapper, { marginLeft: 6, marginRight: -3 }]}>
+                  <Image
+                    source={getFighter1ImageSource()}
+                    style={styles.fighterHeadshot}
+                    onError={() => setFighter1ImageError(true)}
+                  />
+                  {/* Winner arc - green top half */}
+                  {fight.winner === fight.fighter1.id && (
+                    <WinnerArc color="#4CAF50" />
+                  )}
+                  {/* Community prediction arc - blue bottom-left */}
+                  {aggregateStats?.communityPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
+                    <PredictionArc color="#4A90D9" position="bottom-left" />
+                  )}
+                  {/* User prediction arc - yellow bottom-right */}
+                  {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
+                    <PredictionArc color="#F5C518" position="bottom-right" />
+                  )}
+                </View>
               </View>
 
               {/* Fighter 2 - Right half */}
               <View style={[styles.fighter2Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
                 {/* Fighter 2 headshot - left of name */}
-                <Image
-                  source={getFighter2ImageSource()}
-                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -3 }]}
-                  onError={() => setFighter2ImageError(true)}
-                />
+                <View style={[styles.fighterImageWrapper, { marginRight: 6, marginLeft: -3 }]}>
+                  <Image
+                    source={getFighter2ImageSource()}
+                    style={styles.fighterHeadshot}
+                    onError={() => setFighter2ImageError(true)}
+                  />
+                  {/* Winner arc - green top half */}
+                  {fight.winner === fight.fighter2.id && (
+                    <WinnerArc color="#4CAF50" />
+                  )}
+                  {/* Community prediction arc - blue bottom-left */}
+                  {aggregateStats?.communityPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
+                    <PredictionArc color="#4A90D9" position="bottom-left" />
+                  )}
+                  {/* User prediction arc - yellow bottom-right */}
+                  {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
+                    <PredictionArc color="#F5C518" position="bottom-right" />
+                  )}
+                </View>
                 <View style={[
                   { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-start' }
                 ]}>
@@ -879,6 +967,17 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
+  },
+  fighterImageWrapper: {
+    position: 'relative',
+    width: 50,
+    height: 50,
+  },
+  predictionArcContainer: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    zIndex: 10,
   },
   vsContainer: {
     position: 'absolute',
