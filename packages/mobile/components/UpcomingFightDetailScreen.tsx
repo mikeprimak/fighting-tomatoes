@@ -993,149 +993,13 @@ export default function UpcomingFightDetailScreen({
 
       {/* Your Predictions Section */}
       <SectionContainer
-        title="My Picks"
+        title="How Hyped Are You?"
         icon="user"
         iconColor="#000"
         headerBgColor="#F5C518"
         containerBgColorDark="rgba(245, 197, 24, 0.05)"
         containerBgColorLight="rgba(245, 197, 24, 0.08)"
       >
-        {/* My Picks Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 3, marginBottom: 0 }]}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 4 }} />
-            <FontAwesome name="check-circle" size={12} color={colors.textSecondary} />
-            <View style={{ width: 4 }} />
-            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              Who Will Win?
-            </Text>
-            <View style={{ width: 4 }} />
-          </View>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        </View>
-
-        {/* Fighter Selection */}
-        <View style={{ marginTop: 18 }}>
-          <View style={styles.fighterButtons}>
-            <TouchableOpacity
-              style={[
-                styles.fighterButton,
-                {
-                  backgroundColor: selectedWinner === fight.fighter1.id ? '#F5C518' : 'transparent',
-                  borderColor: colors.border,
-                }
-              ]}
-              onPress={() => handleWinnerSelection(fight.fighter1.id)}
-            >
-              <Image
-                source={
-                  fight.fighter1.profileImage
-                    ? { uri: fight.fighter1.profileImage }
-                    : getFighterPlaceholderImage(fight.fighter1.id)
-                }
-                style={styles.fighterButtonImage}
-              />
-              <Text style={[
-                styles.fighterButtonText,
-                {
-                  color: selectedWinner === fight.fighter1.id ? '#000' : colors.text
-                }
-              ]}>
-                {fight.fighter1.firstName} {fight.fighter1.lastName}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.fighterButton,
-                {
-                  backgroundColor: selectedWinner === fight.fighter2.id ? '#F5C518' : 'transparent',
-                  borderColor: colors.border,
-                }
-              ]}
-              onPress={() => handleWinnerSelection(fight.fighter2.id)}
-            >
-              <Image
-                source={
-                  fight.fighter2.profileImage
-                    ? { uri: fight.fighter2.profileImage }
-                    : getFighterPlaceholderImage(fight.fighter2.id)
-                }
-                style={styles.fighterButtonImage}
-              />
-              <Text style={[
-                styles.fighterButtonText,
-                {
-                  color: selectedWinner === fight.fighter2.id ? '#000' : colors.text
-                }
-              ]}>
-                {fight.fighter2.firstName} {fight.fighter2.lastName}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* How? Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 18, marginBottom: 0 }]}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 4 }} />
-            <FontAwesome name="question-circle" size={12} color={colors.textSecondary} />
-            <View style={{ width: 4 }} />
-            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              How?
-            </Text>
-            <View style={{ width: 4 }} />
-          </View>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        </View>
-
-        {/* Method Selection */}
-        <View style={{ marginTop: 17 }}>
-          <View style={styles.methodButtons}>
-            {(['KO_TKO', 'SUBMISSION', 'DECISION'] as const).map((method) => {
-              return (
-                <TouchableOpacity
-                  key={method}
-                  style={[
-                    styles.methodButton,
-                    {
-                      backgroundColor: selectedMethod === method ? '#F5C518' : 'transparent',
-                      borderColor: colors.border,
-                    }
-                  ]}
-                  onPress={() => handleMethodSelection(method)}
-                >
-                  <Text style={[
-                    styles.methodButtonText,
-                    {
-                      color: selectedMethod === method ? '#000' : colors.text
-                    }
-                  ]}>
-                    {method === 'KO_TKO' ? 'KO/TKO' : method}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* My Hype Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 19, marginBottom: 0 }]}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 4 }} />
-            <FontAwesome6 name="fire-flame-curved" size={12} color={colors.textSecondary} />
-            <View style={{ width: 4 }} />
-            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              My Hype
-            </Text>
-            <View style={{ width: 4 }} />
-          </View>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        </View>
-
         {/* Large Flame Display */}
         <View style={{ alignItems: 'center', marginTop: 23, marginBottom: 8 }}>
           <View style={{ alignItems: 'center', justifyContent: 'center', overflow: 'hidden', height: 92 }}>
@@ -1220,55 +1084,138 @@ export default function UpcomingFightDetailScreen({
             );
           })}
         </View>
-      </SectionContainer>
 
-      {/* Community Data Section */}
-      <SectionContainer
-        title={`All Picks (${displayPredictionStats?.totalPredictions || 0})`}
-        icon="users"
-        iconColor="#fff"
-        headerBgColor="#3B82F6"
-        containerBgColorDark="rgba(59, 130, 246, 0.05)"
-        containerBgColorLight="rgba(59, 130, 246, 0.08)"
-      >
-        {/* Community Predictions Data */}
-        <View style={{ marginTop: 16 }}>
-        {/* Community Predictions Bar Chart - always visible */}
-        {displayPredictionStats && displayPredictionStats.fighter1MethodPredictions && displayPredictionStats.fighter2MethodPredictions && displayPredictionStats.winnerPredictions && (
-          <PredictionBarChart
-            fighter1Name={fight.fighter1.lastName}
-            fighter2Name={fight.fighter2.lastName}
-            fighter1Id={fight.fighter1Id}
-            fighter2Id={fight.fighter2Id}
-            fighter1Image={fight.fighter1.profileImage}
-            fighter2Image={fight.fighter2.profileImage}
-            selectedWinner={selectedWinner}
-            selectedMethod={selectedMethod}
-            fighter1Predictions={displayPredictionStats.fighter1MethodPredictions}
-            fighter2Predictions={displayPredictionStats.fighter2MethodPredictions}
-            totalPredictions={displayPredictionStats.totalPredictions}
-            winnerPredictions={displayPredictionStats.winnerPredictions}
-            showColors={hasRevealedWinner}
-            showLabels={hasRevealedMethod}
-          />
-        )}
-      </View>
-
-        {/* Community Hype Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 12, marginBottom: 0 }]}>
+        {/* Who Will Win Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 10, marginBottom: 0 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 4 }} />
-            <FontAwesome6 name="fire-flame-curved" size={12} color={colors.textSecondary} />
-            <View style={{ width: 4 }} />
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              All Hype ({aggregateStats?.totalPredictions || 0})
+              Who do you think will win?
             </Text>
             <View style={{ width: 4 }} />
           </View>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
 
+        {/* Fighter Selection */}
+        <View style={{ marginTop: 18 }}>
+          <View style={styles.fighterButtons}>
+            <TouchableOpacity
+              style={[
+                styles.fighterButton,
+                {
+                  backgroundColor: selectedWinner === fight.fighter1.id ? '#F5C518' : 'transparent',
+                  borderColor: colors.border,
+                }
+              ]}
+              onPress={() => handleWinnerSelection(fight.fighter1.id)}
+            >
+              <Image
+                source={
+                  fight.fighter1.profileImage
+                    ? { uri: fight.fighter1.profileImage }
+                    : getFighterPlaceholderImage(fight.fighter1.id)
+                }
+                style={styles.fighterButtonImage}
+              />
+              <Text style={[
+                styles.fighterButtonText,
+                {
+                  color: selectedWinner === fight.fighter1.id ? '#000' : colors.text
+                }
+              ]}>
+                {fight.fighter1.firstName} {fight.fighter1.lastName}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.fighterButton,
+                {
+                  backgroundColor: selectedWinner === fight.fighter2.id ? '#F5C518' : 'transparent',
+                  borderColor: colors.border,
+                }
+              ]}
+              onPress={() => handleWinnerSelection(fight.fighter2.id)}
+            >
+              <Image
+                source={
+                  fight.fighter2.profileImage
+                    ? { uri: fight.fighter2.profileImage }
+                    : getFighterPlaceholderImage(fight.fighter2.id)
+                }
+                style={styles.fighterButtonImage}
+              />
+              <Text style={[
+                styles.fighterButtonText,
+                {
+                  color: selectedWinner === fight.fighter2.id ? '#000' : colors.text
+                }
+              ]}>
+                {fight.fighter2.firstName} {fight.fighter2.lastName}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* How? Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 18, marginBottom: 0 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 4 }} />
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              {selectedWinner === fight.fighter1.id
+                ? `How will ${fight.fighter1.lastName} win?`
+                : selectedWinner === fight.fighter2.id
+                  ? `How will ${fight.fighter2.lastName} win?`
+                  : 'How will it end?'}
+            </Text>
+            <View style={{ width: 4 }} />
+          </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
+        {/* Method Selection */}
+        <View style={{ marginTop: 17 }}>
+          <View style={styles.methodButtons}>
+            {(['KO_TKO', 'SUBMISSION', 'DECISION'] as const).map((method) => {
+              return (
+                <TouchableOpacity
+                  key={method}
+                  style={[
+                    styles.methodButton,
+                    {
+                      backgroundColor: selectedMethod === method ? '#F5C518' : 'transparent',
+                      borderColor: colors.border,
+                    }
+                  ]}
+                  onPress={() => handleMethodSelection(method)}
+                >
+                  <Text style={[
+                    styles.methodButtonText,
+                    {
+                      color: selectedMethod === method ? '#000' : colors.text
+                    }
+                  ]}>
+                    {method === 'KO_TKO' ? 'KO/TKO' : method}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      </SectionContainer>
+
+      {/* Community Data Section */}
+      <SectionContainer
+        title={`All Hype (${aggregateStats?.totalPredictions || 0})`}
+        icon="users"
+        iconColor="#fff"
+        headerBgColor="#3B82F6"
+        containerBgColorDark="rgba(59, 130, 246, 0.05)"
+        containerBgColorLight="rgba(59, 130, 246, 0.08)"
+      >
       {/* Community Hype Data */}
       <View style={{ marginTop: 14, marginBottom: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>
@@ -1341,6 +1288,44 @@ export default function UpcomingFightDetailScreen({
               </View>
             )}
         </View>
+      </View>
+
+        {/* Community Predictions Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 12, marginBottom: 0 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 4 }} />
+            <FontAwesome name="check-circle" size={12} color={colors.textSecondary} />
+            <View style={{ width: 4 }} />
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              All Picks ({displayPredictionStats?.totalPredictions || 0})
+            </Text>
+            <View style={{ width: 4 }} />
+          </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
+        {/* Community Predictions Data */}
+        <View style={{ marginTop: 16 }}>
+        {/* Community Predictions Bar Chart - always visible */}
+        {displayPredictionStats && displayPredictionStats.fighter1MethodPredictions && displayPredictionStats.fighter2MethodPredictions && displayPredictionStats.winnerPredictions && (
+          <PredictionBarChart
+            fighter1Name={fight.fighter1.lastName}
+            fighter2Name={fight.fighter2.lastName}
+            fighter1Id={fight.fighter1Id}
+            fighter2Id={fight.fighter2Id}
+            fighter1Image={fight.fighter1.profileImage}
+            fighter2Image={fight.fighter2.profileImage}
+            selectedWinner={selectedWinner}
+            selectedMethod={selectedMethod}
+            fighter1Predictions={displayPredictionStats.fighter1MethodPredictions}
+            fighter2Predictions={displayPredictionStats.fighter2MethodPredictions}
+            totalPredictions={displayPredictionStats.totalPredictions}
+            winnerPredictions={displayPredictionStats.winnerPredictions}
+            showColors={hasRevealedWinner}
+            showLabels={hasRevealedMethod}
+          />
+        )}
       </View>
       </SectionContainer>
 

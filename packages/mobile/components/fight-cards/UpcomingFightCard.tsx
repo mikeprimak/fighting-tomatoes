@@ -390,9 +390,9 @@ export default function UpcomingFightCard({
         position: 'relative',
         overflow: 'hidden',
         paddingLeft: 64, // 48px square + 16px padding
-        paddingVertical: 6, // Minimal vertical padding
+        paddingVertical: 0, // No vertical padding
         paddingRight: 64, // 48px square + 16px padding
-        minHeight: 82, // Updated for taller boxes
+        minHeight: 62, // Reduced height after removing counts
         justifyContent: 'center',
       }]}>
           {/* Full-height community hype square on the left */}
@@ -412,15 +412,11 @@ export default function UpcomingFightCard({
               <>
                 <FontAwesome6
                   name="fire-flame-curved"
-                  size={16}
+                  size={14}
                   color="rgba(0,0,0,0.45)"
-                  style={{ position: 'absolute', top: 8 }}
                 />
                 <Text style={styles.hypeSquareNumber}>
                   {predictionStats.averageHype.toFixed(1)}
-                </Text>
-                <Text style={styles.hypeSquareCount}>
-                  ({predictionStats?.totalPredictions || 0})
                 </Text>
               </>
             ) : (
@@ -428,7 +424,7 @@ export default function UpcomingFightCard({
                 name="fire-flame-curved"
                 size={16}
                 color={colors.textSecondary}
-                style={{ position: 'absolute', top: 7, opacity: 0.5 }}
+                style={{ opacity: 0.5 }}
               />
             )}
           </View>
@@ -448,32 +444,23 @@ export default function UpcomingFightCard({
           ]}>
             {(fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0) ? (
               <>
-                <Animated.View style={{ position: 'absolute', top: 8, transform: [{ scale: hypeScaleAnim }] }}>
+                <Animated.View style={{ transform: [{ scale: hypeScaleAnim }] }}>
                   <FontAwesome6
                     name="fire-flame-curved"
-                    size={16}
+                    size={14}
                     color="rgba(0,0,0,0.45)"
                   />
                 </Animated.View>
                 <Animated.Text style={[styles.hypeSquareNumber, { transform: [{ scale: hypeScaleAnim }] }]}>
                   {Math.round(fight.userHypePrediction).toString()}
                 </Animated.Text>
-                {/* User comment indicator inside box */}
-                {fight.userCommentCount > 0 && (
-                  <View style={styles.userCommentInsideBox}>
-                    <FontAwesome name="comment" size={10} color="rgba(0,0,0,0.5)" />
-                    {fight.userCommentCount > 1 && (
-                      <Text style={styles.userCommentInsideBoxCount}>{fight.userCommentCount}</Text>
-                    )}
-                  </View>
-                )}
               </>
             ) : (
               <FontAwesome6
                 name="fire-flame-curved"
                 size={16}
                 color={colors.textSecondary}
-                style={{ position: 'absolute', top: 9, opacity: 0.5 }}
+                style={{ opacity: 0.5 }}
               />
             )}
           </View>
@@ -482,21 +469,25 @@ export default function UpcomingFightCard({
             {/* Fighter names with centered "vs" */}
             <View style={styles.fighterNamesContainer}>
               {/* Fighter 1 - Left half */}
-              <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center' }]}>
+              <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
                 <View style={[
-                  { alignSelf: 'flex-end', position: 'relative', flex: 1 }
+                  { alignSelf: 'flex-end', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-end' }
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary }]}
+                    style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
                   >
                     {fight.fighter1.firstName}
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'right', color: colors.text }]}
+                    style={[styles.fighterLastName, { textAlign: 'right', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
                   >
                     {fight.fighter1.lastName}
                   </Text>
@@ -504,33 +495,37 @@ export default function UpcomingFightCard({
                 {/* Fighter 1 headshot - right of name */}
                 <Image
                   source={getFighter1ImageSource()}
-                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -1, marginTop: -6 }]}
+                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -5, marginTop: -6, zIndex: 1 }]}
                   onError={() => setFighter1ImageError(true)}
                 />
               </View>
 
               {/* Fighter 2 - Right half */}
-              <View style={[styles.fighter2Container, { flexDirection: 'row', alignItems: 'center' }]}>
+              <View style={[styles.fighter2Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
                 {/* Fighter 2 headshot - left of name */}
                 <Image
                   source={getFighter2ImageSource()}
-                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -1, marginTop: -6 }]}
+                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -5, marginTop: -6, zIndex: 1 }]}
                   onError={() => setFighter2ImageError(true)}
                 />
                 <View style={[
-                  { alignSelf: 'flex-start', position: 'relative', flex: 1 }
+                  { alignSelf: 'flex-start', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-start' }
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary }]}
+                    style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
                   >
                     {fight.fighter2.firstName}
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'left', color: colors.text }]}
+                    style={[styles.fighterLastName, { textAlign: 'left', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
                   >
                     {fight.fighter2.lastName}
                   </Text>
@@ -540,8 +535,8 @@ export default function UpcomingFightCard({
 
           </View>
 
-          {/* Event info inside card (when showEvent=true) OR Mini Community Predictions Bar */}
-          {showEvent ? (
+          {/* Event info inside card (when showEvent=true) */}
+          {showEvent && (
             <Text
               style={{
                 color: colors.textSecondary,
@@ -553,76 +548,6 @@ export default function UpcomingFightCard({
             >
               {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
             </Text>
-          ) : (
-            predictionStats?.winnerPredictions &&
-            predictionStats.winnerPredictions.fighter1.percentage > 0 &&
-            predictionStats.winnerPredictions.fighter2.percentage > 0 && (() => {
-              const f1Pct = predictionStats.winnerPredictions.fighter1.percentage;
-              const f2Pct = predictionStats.winnerPredictions.fighter2.percentage;
-              const barWidth = 130;
-              // Shift bar so dividing point is always centered
-              // Positive = shift right, Negative = shift left
-              const barShift = (50 - f1Pct) * barWidth / 100;
-              return (
-              <View style={[styles.miniPredictionBar, { transform: [{ translateX: barShift }] }]}>
-                <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
-                  {f1Pct}%
-                </Text>
-                <View style={styles.miniPredictionBarTrack}>
-                  <View
-                    style={[
-                      styles.miniPredictionBarFill,
-                      {
-                        flex: f1Pct,
-                        backgroundColor: f1Pct > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
-                        borderTopLeftRadius: 3,
-                        borderBottomLeftRadius: 3,
-                      }
-                    ]}
-                  />
-                  <View
-                    style={[
-                      styles.miniPredictionBarFill,
-                      {
-                        flex: f2Pct,
-                        backgroundColor: f2Pct > 50 ? '#83B4F3' : 'rgba(131, 180, 243, 0.4)',
-                        borderTopRightRadius: 3,
-                        borderBottomRightRadius: 3,
-                      }
-                    ]}
-                  />
-                  {/* User prediction indicator */}
-                  {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
-                    <View style={[
-                      styles.userPredictionIndicator,
-                      {
-                        left: `${f1Pct / 2}%`,
-                        marginLeft: -10,
-                        backgroundColor: f1Pct > 50 ? '#83B4F3' : '#3D5065',
-                      }
-                    ]}>
-                      <FontAwesome name="user" size={12} color="#F5C518" />
-                    </View>
-                  )}
-                  {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
-                    <View style={[
-                      styles.userPredictionIndicator,
-                      {
-                        left: `${f1Pct + f2Pct / 2}%`,
-                        marginLeft: -10,
-                        backgroundColor: f2Pct > 50 ? '#83B4F3' : '#3D5065',
-                      }
-                    ]}>
-                      <FontAwesome name="user" size={12} color="#F5C518" />
-                    </View>
-                  )}
-                </View>
-                <Text style={[styles.miniPredictionText, { color: colors.textSecondary }]}>
-                  {f2Pct}%
-                </Text>
-              </View>
-              );
-            })()
           )}
 
         {/* Status message */}
@@ -835,9 +760,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fighterHeadshot: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   vsContainer: {
     position: 'absolute',
@@ -995,14 +920,13 @@ const styles = StyleSheet.create({
   },
   hypeSquare: {
     position: 'absolute',
-    top: 0,
+    top: 6,
     left: 0,
     width: 48,
-    height: 82,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
-    gap: 2,
   },
   hypeCountContainer: {
     position: 'absolute',
@@ -1023,14 +947,13 @@ const styles = StyleSheet.create({
   },
   userHypeSquare: {
     position: 'absolute',
-    top: 0,
+    top: 6,
     right: 0,
     width: 48,
-    height: 82,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
-    gap: 2,
   },
   hypeSquareText: {
     color: '#FFFFFF',

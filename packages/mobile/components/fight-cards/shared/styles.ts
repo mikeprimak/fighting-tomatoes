@@ -3,11 +3,11 @@ import { StyleSheet } from 'react-native';
 
 export const sharedStyles = StyleSheet.create({
   container: {
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
     marginHorizontal: 4,
-    marginBottom: 8,
+    marginBottom: 0,
   },
   titleLabel: {
     fontSize: 12,

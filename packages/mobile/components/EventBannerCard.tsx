@@ -84,26 +84,27 @@ export function EventBannerCard({
   const colors = Colors[colorScheme ?? 'light'];
   const { line1, line2 } = parseEventName(event.name);
   const { width: screenWidth } = useWindowDimensions();
-  const [imageHeight, setImageHeight] = useState(200); // Default height until image loads
+  const [fullImageHeight, setFullImageHeight] = useState(200); // Full image height
+  const containerHeight = fullImageHeight * 0.7; // Show only top 70%
 
   const imageSource = event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id);
 
-  // Calculate height based on image's natural aspect ratio
+  // Calculate full height based on image's natural aspect ratio
   const handleImageLoad = (e: any) => {
     const { width, height } = e.nativeEvent.source;
     if (width && height) {
       const calculatedHeight = (screenWidth / width) * height;
-      setImageHeight(calculatedHeight);
+      setFullImageHeight(calculatedHeight);
     }
   };
 
   return (
     <View style={styles.container}>
       {/* Event Banner Image with overlays */}
-      <View style={styles.bannerContainer}>
+      <View style={[styles.bannerContainer, { height: containerHeight }]}>
         <Image
           source={imageSource}
-          style={[styles.banner, { height: imageHeight }]}
+          style={[styles.banner, { height: fullImageHeight }]}
           resizeMode="contain"
           onLoad={handleImageLoad}
         />
@@ -146,6 +147,7 @@ const styles = StyleSheet.create({
   bannerContainer: {
     position: 'relative',
     width: '100%',
+    overflow: 'hidden',
   },
   banner: {
     width: '100%',

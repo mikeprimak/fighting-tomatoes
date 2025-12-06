@@ -632,17 +632,17 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
   },
   fightsContainer: {
-    marginTop: 8,
+    marginTop: 0,
   },
   cardSection: {
-    marginTop: 8,
+    marginTop: 0,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: 4,
     position: 'relative',
   },
   sectionHeaderPrelims: {
@@ -676,7 +676,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 2,
-    marginLeft: -10, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
+    marginLeft: -8, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
     width: 40, // Match width of heatmap square
     justifyContent: 'center', // Center text within the column
   },
@@ -684,7 +684,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 2,
-    marginRight: -10, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
+    marginRight: -8, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
     width: 40, // Match width of heatmap square
     justifyContent: 'center', // Center text within the column
   },
