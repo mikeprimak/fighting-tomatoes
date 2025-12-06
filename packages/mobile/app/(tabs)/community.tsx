@@ -683,6 +683,22 @@ export default function CommunityScreen() {
     filterTabTextActive: {
       color: colors.textOnAccent,
     },
+    eventGroup: {
+      marginBottom: 16,
+    },
+    eventGroupHeaderContainer: {
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    eventGroupHeader: {
+      fontSize: 16,
+      fontWeight: '700',
+      textAlign: 'center',
+    },
+    eventGroupDate: {
+      fontSize: 13,
+      marginTop: 2,
+    },
   });
 
   // Placeholder sections for community features
@@ -822,25 +838,58 @@ export default function CommunityScreen() {
               <ActivityIndicator size="small" color={colors.primary} />
             </View>
           ) : topUpcomingFights.data.length > 0 ? (
-            topUpcomingFights.data.map((fight: any) => {
-              if (fight.id === '68606cbb-5e84-4bba-8c80-9bdd2e691994') {
-                console.log('[Community Screen] Shevchenko vs Zhang fight data:', {
-                  id: fight.id,
-                  userHypePrediction: fight.userHypePrediction,
-                  averageHype: fight.averageHype,
-                  fighter1: fight.fighter1?.firstName + ' ' + fight.fighter1?.lastName,
-                  fighter2: fight.fighter2?.firstName + ' ' + fight.fighter2?.lastName,
-                });
-              }
-              return (
-                <UpcomingFightCard
-                  key={fight.id}
-                  fight={fight}
-                  onPress={() => router.push(`/fight/${fight.id}` as any)}
-                  showEvent={true}
-                />
-              );
-            })
+            // Group fights by event, maintaining hype order within each event
+            (() => {
+              // Group fights by event ID while preserving order
+              const eventGroups: { event: any; fights: any[] }[] = [];
+              const eventMap = new Map<string, { event: any; fights: any[] }>();
+
+              topUpcomingFights.data.forEach((fight: any) => {
+                const eventId = fight.event?.id;
+                if (!eventMap.has(eventId)) {
+                  const group = { event: fight.event, fights: [] as any[] };
+                  eventMap.set(eventId, group);
+                  eventGroups.push(group);
+                }
+                eventMap.get(eventId)!.fights.push(fight);
+              });
+
+              // Sort event groups by earliest fight date
+              eventGroups.sort((a, b) => {
+                const dateA = new Date(a.event?.date || 0).getTime();
+                const dateB = new Date(b.event?.date || 0).getTime();
+                return dateA - dateB;
+              });
+
+              return eventGroups.map((group) => (
+                <View key={group.event?.id || 'unknown'} style={styles.eventGroup}>
+                  <TouchableOpacity
+                    style={styles.eventGroupHeaderContainer}
+                    onPress={() => router.push(`/event/${group.event?.id}` as any)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.eventGroupHeader, { color: colors.text }]}>
+                      {group.event?.name || 'Unknown Event'}
+                    </Text>
+                    <Text style={[styles.eventGroupDate, { color: colors.textSecondary }]}>
+                      {group.event?.date ? new Date(group.event.date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      }) : ''}
+                    </Text>
+                  </TouchableOpacity>
+                  {group.fights.map((fight: any) => (
+                    <UpcomingFightCard
+                      key={fight.id}
+                      fight={fight}
+                      onPress={() => router.push(`/fight/${fight.id}` as any)}
+                      showEvent={false}
+                    />
+                  ))}
+                </View>
+              ));
+            })()
           ) : (
             <View style={styles.card}>
               <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
@@ -939,14 +988,58 @@ export default function CommunityScreen() {
               <ActivityIndicator size="small" color={colors.primary} />
             </View>
           ) : topRecentFights.data.length > 0 ? (
-            topRecentFights.data.map((fight: any) => (
-              <CompletedFightCard
-                key={fight.id}
-                fight={fight}
-                onPress={() => router.push(`/fight/${fight.id}` as any)}
-                showEvent={true}
-              />
-            ))
+            // Group fights by event, maintaining rating order within each event
+            (() => {
+              // Group fights by event ID while preserving order
+              const eventGroups: { event: any; fights: any[] }[] = [];
+              const eventMap = new Map<string, { event: any; fights: any[] }>();
+
+              topRecentFights.data.forEach((fight: any) => {
+                const eventId = fight.event?.id;
+                if (!eventMap.has(eventId)) {
+                  const group = { event: fight.event, fights: [] as any[] };
+                  eventMap.set(eventId, group);
+                  eventGroups.push(group);
+                }
+                eventMap.get(eventId)!.fights.push(fight);
+              });
+
+              // Sort event groups by most recent date first (descending)
+              eventGroups.sort((a, b) => {
+                const dateA = new Date(a.event?.date || 0).getTime();
+                const dateB = new Date(b.event?.date || 0).getTime();
+                return dateB - dateA;
+              });
+
+              return eventGroups.map((group) => (
+                <View key={group.event?.id || 'unknown'} style={styles.eventGroup}>
+                  <TouchableOpacity
+                    style={styles.eventGroupHeaderContainer}
+                    onPress={() => router.push(`/event/${group.event?.id}` as any)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.eventGroupHeader, { color: colors.text }]}>
+                      {group.event?.name || 'Unknown Event'}
+                    </Text>
+                    <Text style={[styles.eventGroupDate, { color: colors.textSecondary }]}>
+                      {group.event?.date ? new Date(group.event.date).toLocaleDateString('en-US', {
+                        weekday: 'short',
+                        month: 'short',
+                        day: 'numeric',
+                      }) : ''}
+                    </Text>
+                  </TouchableOpacity>
+                  {group.fights.map((fight: any) => (
+                    <CompletedFightCard
+                      key={fight.id}
+                      fight={fight}
+                      onPress={() => router.push(`/fight/${fight.id}` as any)}
+                      showEvent={false}
+                    />
+                  ))}
+                </View>
+              ));
+            })()
           ) : (
             <View style={styles.card}>
               <Text style={[styles.cardSubtext, { textAlign: 'center' }]}>
