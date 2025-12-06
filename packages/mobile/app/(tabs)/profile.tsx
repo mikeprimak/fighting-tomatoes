@@ -17,6 +17,7 @@ import { CustomAlert } from '../../components/CustomAlert';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import { api } from '../../services/api';
 import PredictionAccuracyChart from '../../components/PredictionAccuracyChart';
+import SectionContainer from '../../components/SectionContainer';
 
 interface EventAccuracy {
   eventId: string;
@@ -58,7 +59,7 @@ export default function ProfileScreen() {
   const timeFilterOptions = [
     { key: 'lastEvent', label: 'Last Event' },
     { key: 'month', label: 'Month' },
-    { key: '3months', label: '3 Months' },
+    { key: '3months', label: '3 mo.' },
     { key: 'year', label: 'Year' },
     { key: 'allTime', label: 'All Time' },
   ];
@@ -255,32 +256,14 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Predictions Section */}
-        <View style={[
-          styles.predictionsCard,
-          {
-            backgroundColor: colorScheme === 'dark' ? 'rgba(34, 197, 94, 0.05)' : 'rgba(34, 197, 94, 0.08)',
-            borderLeftWidth: 4,
-            borderLeftColor: '#22c55e',
-            borderRadius: 16,
-            marginHorizontal: -8,
-            paddingHorizontal: 12,
-          }
-        ]}>
-          <View style={{
-            alignSelf: 'flex-start',
-            backgroundColor: '#22c55e',
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 12,
-            marginBottom: 12,
-          }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <FontAwesome name="trophy" size={14} color="#000" />
-              <Text style={{ color: '#000', fontSize: 14, fontWeight: '600' }}>My Fight Predictions</Text>
-            </View>
-          </View>
-          <View style={{ height: 12 }} />
-
+        <SectionContainer
+          title="My Fight Predictions"
+          icon="trophy"
+          iconColor="#fff"
+          headerBgColor="#166534"
+          containerBgColorDark="rgba(34, 197, 94, 0.05)"
+          containerBgColorLight="rgba(34, 197, 94, 0.08)"
+        >
           {(predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect) === 0 ? (
             <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
               Make fight predictions on the "Upcoming" screen. Check in after the event to see how you did!
@@ -364,66 +347,44 @@ export default function ProfileScreen() {
               />
             </>
           )}
-        </View>
+        </SectionContainer>
 
         {/* Average Hype */}
-        <View style={[
-          styles.averageRatingCard,
-          {
-            backgroundColor: colorScheme === 'dark' ? 'rgba(245, 197, 24, 0.05)' : 'rgba(245, 197, 24, 0.08)',
-            borderLeftWidth: 4,
-            borderLeftColor: '#F5C518',
-            borderRadius: 16,
-            marginHorizontal: -8,
-            paddingHorizontal: 12,
-          }
-        ]}>
-          <View style={{
-            alignSelf: 'flex-start',
-            backgroundColor: '#F5C518',
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 12,
-            marginBottom: 8,
-          }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <FontAwesome6 name="fire-flame-curved" size={14} color="#000" />
-              <Text style={{ color: '#000', fontSize: 14, fontWeight: '600' }}>My Average Hype</Text>
-            </View>
-          </View>
-          {/* Hype Box + Distribution Chart - Horizontal Layout */}
-          <View style={{ height: 16 }} />
+        <SectionContainer
+          title="My Average Hype"
+          icon="fire-flame-curved"
+          iconFamily="fontawesome6"
+          iconColor="#000"
+          headerBgColor="#F5C518"
+          containerBgColorDark="rgba(245, 197, 24, 0.05)"
+          containerBgColorLight="rgba(245, 197, 24, 0.08)"
+        >
+          <View style={{ height: 10 }} />
           {!user?.totalHype ? (
             <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
               Choose how Hyped you are for upcoming fights on the "Upcoming" screen. You'll see your data here.
             </Text>
           ) : (
             <View>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 16 }}>
-                {/* Colored Hype Box */}
-                <View style={{
-                  width: 48,
-                  height: 82,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderRadius: 8,
-                  backgroundColor: getHypeHeatmapColor(Math.round(user?.averageHype || 0)),
-                }}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
+                {/* Large Flame Icon */}
+                <View style={styles.ratingIconContainer}>
+                  {/* Background circle for better text contrast */}
+                  <View style={{
+                    position: 'absolute',
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: getHypeHeatmapColor(Math.round(user?.averageHype || 0)),
+                    opacity: 0.4,
+                    top: 23,
+                  }} />
                   <FontAwesome6
                     name="fire-flame-curved"
-                    size={16}
-                    color="rgba(0,0,0,0.45)"
-                    style={{ position: 'absolute', top: 8 }}
+                    size={70}
+                    color={getHypeHeatmapColor(Math.round(user?.averageHype || 0))}
                   />
-                  <Text style={{
-                    color: '#FFFFFF',
-                    fontSize: 18,
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                    textShadowColor: 'rgba(0,0,0,0.7)',
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 3,
-                  }}>
+                  <Text style={[styles.ratingIconText, { marginTop: 6 }]}>
                     {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'}
                   </Text>
                 </View>
@@ -436,66 +397,33 @@ export default function ProfileScreen() {
               <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 14, textAlign: 'center' }}>({user?.totalHype || 0} fights)</Text>
             </View>
           )}
-        </View>
+        </SectionContainer>
 
         {/* Average Rating */}
-        <View style={[
-          styles.averageRatingCard,
-          {
-            backgroundColor: colorScheme === 'dark' ? 'rgba(245, 197, 24, 0.05)' : 'rgba(245, 197, 24, 0.08)',
-            borderLeftWidth: 4,
-            borderLeftColor: '#F5C518',
-            borderRadius: 16,
-            marginHorizontal: -8,
-            paddingHorizontal: 12,
-          }
-        ]}>
-          <View style={{
-            alignSelf: 'flex-start',
-            backgroundColor: '#F5C518',
-            paddingHorizontal: 12,
-            paddingVertical: 6,
-            borderRadius: 12,
-            marginBottom: 8,
-          }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <FontAwesome name="star" size={14} color="#000" />
-              <Text style={{ color: '#000', fontSize: 14, fontWeight: '600' }}>My Average Rating</Text>
-            </View>
-          </View>
-          {/* Rating Box + Distribution Chart - Horizontal Layout */}
-          <View style={{ height: 16 }} />
+        <SectionContainer
+          title="My Average Rating"
+          icon="star"
+          iconColor="#000"
+          headerBgColor="#F5C518"
+          containerBgColorDark="rgba(245, 197, 24, 0.05)"
+          containerBgColorLight="rgba(245, 197, 24, 0.08)"
+        >
+          <View style={{ height: 10 }} />
           {!user?.totalRatings ? (
             <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
               Rate how much you liked fights on the "Past Events" screen.
             </Text>
           ) : (
             <View>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 16 }}>
-                {/* Colored Rating Box */}
-                <View style={{
-                  width: 48,
-                  height: 82,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderRadius: 8,
-                  backgroundColor: getHypeHeatmapColor(Math.round(user?.averageRating || 0)),
-                }}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
+                {/* Large Star Icon */}
+                <View style={styles.ratingIconContainer}>
                   <FontAwesome
                     name="star"
-                    size={16}
-                    color="rgba(0,0,0,0.45)"
-                    style={{ position: 'absolute', top: 8 }}
+                    size={70}
+                    color={getHypeHeatmapColor(Math.round(user?.averageRating || 0))}
                   />
-                  <Text style={{
-                    color: '#FFFFFF',
-                    fontSize: 18,
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                    textShadowColor: 'rgba(0,0,0,0.7)',
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 3,
-                  }}>
+                  <Text style={[styles.ratingIconText, { marginTop: -2 }]}>
                     {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'}
                   </Text>
                 </View>
@@ -508,49 +436,51 @@ export default function ProfileScreen() {
               <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 14, textAlign: 'center' }}>({user?.totalRatings || 0} fights)</Text>
             </View>
           )}
-        </View>
+        </SectionContainer>
 
         {/* Actions */}
         <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => router.push('/activity/ratings')}
-          >
-            <View style={styles.actionButtonContent}>
-              <FontAwesome name="history" size={18} color={colors.text} />
-              <Text style={[styles.actionButtonText, { color: colors.text }]}>My Activity</Text>
-            </View>
-          </TouchableOpacity>
+          <View style={styles.actionButtonsGrid}>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+              onPress={() => router.push('/activity/ratings')}
+            >
+              <View style={styles.actionButtonContent}>
+                <FontAwesome name="history" size={18} color={colors.text} />
+                <Text style={[styles.actionButtonText, { color: colors.text }]}>My Activity</Text>
+              </View>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => router.push('/settings')}
-          >
-            <View style={styles.actionButtonContent}>
-              <FontAwesome name="bell" size={18} color={colors.text} />
-              <Text style={[styles.actionButtonText, { color: colors.text }]}>Notifications</Text>
-            </View>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+              onPress={() => router.push('/settings')}
+            >
+              <View style={styles.actionButtonContent}>
+                <FontAwesome name="bell" size={18} color={colors.text} />
+                <Text style={[styles.actionButtonText, { color: colors.text }]}>Notifications</Text>
+              </View>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => router.push('/edit-profile')}
-          >
-            <View style={styles.actionButtonContent}>
-              <FontAwesome name="user" size={18} color={colors.text} />
-              <Text style={[styles.actionButtonText, { color: colors.text }]}>Edit Profile</Text>
-            </View>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+              onPress={() => router.push('/edit-profile')}
+            >
+              <View style={styles.actionButtonContent}>
+                <FontAwesome name="user" size={18} color={colors.text} />
+                <Text style={[styles.actionButtonText, { color: colors.text }]}>Edit Profile</Text>
+              </View>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => router.push('/send-feedback')}
-          >
-            <View style={styles.actionButtonContent}>
-              <FontAwesome name="comment" size={18} color={colors.text} />
-              <Text style={[styles.actionButtonText, { color: colors.text }]}>Send Feedback</Text>
-            </View>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+              onPress={() => router.push('/send-feedback')}
+            >
+              <View style={styles.actionButtonContent}>
+                <FontAwesome name="comment" size={18} color={colors.text} />
+                <Text style={[styles.actionButtonText, { color: colors.text }]}>Send Feedback</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
 
           <TouchableOpacity
             style={[styles.logoutButton, { backgroundColor: colors.primary }]}
@@ -575,7 +505,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 4,
     paddingTop: 25,
     paddingBottom: 16,
   },
@@ -615,14 +545,6 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-  },
-  averageRatingCard: {
-    paddingVertical: 16,
-    marginBottom: 24,
-  },
-  predictionsCard: {
-    paddingVertical: 16,
-    marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 18,
@@ -707,15 +629,38 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 9,
     marginTop: 1,
   },
+  ratingIconContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    width: 70,
+    height: 82,
+  },
+  ratingIconText: {
+    position: 'absolute',
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
   actionsContainer: {
     marginTop: 8,
+    marginHorizontal: 12,
+  },
+  actionButtonsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 13,
   },
   actionButton: {
-    padding: 16,
+    width: '48%',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
-    marginBottom: 12,
   },
   actionButtonContent: {
     flexDirection: 'row',
@@ -730,7 +675,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 11,
   },
   logoutButtonText: {
     color: 'white',

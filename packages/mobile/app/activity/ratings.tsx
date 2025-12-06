@@ -23,6 +23,7 @@ import { CommentCard, FlagReviewModal, CustomAlert } from '../../components';
 import { PreFightCommentCard } from '../../components/PreFightCommentCard';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { FontAwesome } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 type SortOption = 'newest' | 'rating' | 'aggregate' | 'upvotes' | 'rated-1' | 'rated-2' | 'rated-3' | 'rated-4' | 'rated-5' | 'rated-6' | 'rated-7' | 'rated-8' | 'rated-9' | 'rated-10';
 type FilterType = 'ratings' | 'hype' | 'comments' | 'preFightComments';
@@ -75,6 +76,7 @@ export default function RatingsActivityScreen() {
     mutationFn: ({ fightId, reviewId }: { fightId: string; reviewId: string }) =>
       apiService.toggleReviewUpvote(fightId, reviewId),
     onMutate: async ({ reviewId }) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setUpvotingCommentId(reviewId);
     },
     onSuccess: () => {
@@ -90,6 +92,7 @@ export default function RatingsActivityScreen() {
     mutationFn: ({ fightId, commentId }: { fightId: string; commentId: string }) =>
       apiService.togglePreFightCommentUpvote(fightId, commentId),
     onMutate: async ({ commentId }) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setUpvotingCommentId(commentId);
     },
     onSuccess: () => {

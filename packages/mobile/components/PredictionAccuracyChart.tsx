@@ -292,13 +292,20 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   bar: {
-    borderRadius: 2,
   },
   correctBar: {
     backgroundColor: '#22C55E', // Green
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   incorrectBar: {
     backgroundColor: '#EF4444', // Red
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: 2,
+    borderBottomRightRadius: 2,
   },
   labelsContainer: {
     flexDirection: 'row',
