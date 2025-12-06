@@ -489,9 +489,9 @@ export default function CompletedFightCard({
         position: 'relative',
         overflow: 'hidden',
         paddingLeft: 64, // 48px square + 16px padding
-        paddingVertical: 6, // Minimal vertical padding
+        paddingVertical: 0, // No vertical padding
         paddingRight: 64, // 48px square + 16px padding
-        minHeight: 82, // Updated for taller boxes
+        minHeight: 62, // Reduced height to match UpcomingFightCard
         justifyContent: 'center',
       }]}>
           {/* Full-height community rating square on the left */}
@@ -511,15 +511,11 @@ export default function CompletedFightCard({
               <>
                 <FontAwesome
                   name="star"
-                  size={16}
+                  size={14}
                   color="rgba(0,0,0,0.45)"
-                  style={{ position: 'absolute', top: 9 }}
                 />
                 <Text style={styles.ratingSquareNumber}>
                   {fight.averageRating.toFixed(1)}
-                </Text>
-                <Text style={styles.ratingSquareCount}>
-                  ({fight.totalRatings || 0})
                 </Text>
               </>
             ) : (
@@ -527,7 +523,7 @@ export default function CompletedFightCard({
                 name="star"
                 size={16}
                 color={colors.textSecondary}
-                style={{ position: 'absolute', top: 8, opacity: 0.5 }}
+                style={{ opacity: 0.5 }}
               />
             )}
           </View>
@@ -547,55 +543,50 @@ export default function CompletedFightCard({
           ]}>
             {(fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0) ? (
               <>
-                <Animated.View style={{ position: 'absolute', top: 9, transform: [{ scale: ratingScaleAnim }] }}>
+                <Animated.View style={{ transform: [{ scale: ratingScaleAnim }] }}>
                   <FontAwesome
                     name="star"
-                    size={16}
+                    size={14}
                     color="rgba(0,0,0,0.45)"
                   />
                 </Animated.View>
                 <Animated.Text style={[styles.ratingSquareNumber, { transform: [{ scale: ratingScaleAnim }] }]}>
                   {Math.round(fight.userRating).toString()}
                 </Animated.Text>
-                {/* User comment indicator inside box */}
-                {(fight.userReviewCount > 0 || fight.userReview) && (
-                  <View style={styles.userCommentInsideBox}>
-                    <FontAwesome name="comment" size={10} color="rgba(0,0,0,0.5)" />
-                    {fight.userReviewCount > 1 && (
-                      <Text style={styles.userCommentInsideBoxCount}>{fight.userReviewCount}</Text>
-                    )}
-                  </View>
-                )}
               </>
             ) : (
               <FontAwesome
                 name="star"
                 size={16}
                 color={colors.textSecondary}
-                style={{ position: 'absolute', top: 10, opacity: 0.5 }}
+                style={{ opacity: 0.5 }}
               />
             )}
           </View>
 
-          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: -4 }]}>
+          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: 0 }]}>
             {/* Fighter names with centered dot */}
             <View style={styles.fighterNamesContainer}>
               {/* Fighter 1 - Left half */}
-              <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center' }]}>
+              <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
                 <View style={[
-                  { alignSelf: 'flex-end', position: 'relative', flex: 1 }
+                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-end' }
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary }]}
+                    style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
                   >
                     {fight.fighter1.firstName}
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'right', color: colors.text }]}
+                    style={[styles.fighterLastName, { textAlign: 'right', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
                   >
                     {fight.fighter1.lastName}
                   </Text>
@@ -603,33 +594,37 @@ export default function CompletedFightCard({
                 {/* Fighter 1 headshot - right of name */}
                 <Image
                   source={getFighter1ImageSource()}
-                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -1, marginTop: -6 }]}
+                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -3 }]}
                   onError={() => setFighter1ImageError(true)}
                 />
               </View>
 
               {/* Fighter 2 - Right half */}
-              <View style={[styles.fighter2Container, { flexDirection: 'row', alignItems: 'center' }]}>
+              <View style={[styles.fighter2Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
                 {/* Fighter 2 headshot - left of name */}
                 <Image
                   source={getFighter2ImageSource()}
-                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -1, marginTop: -6 }]}
+                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -3 }]}
                   onError={() => setFighter2ImageError(true)}
                 />
                 <View style={[
-                  { alignSelf: 'flex-start', position: 'relative', flex: 1 }
+                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-start' }
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary }]}
+                    style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
                   >
                     {fight.fighter2.firstName}
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'left', color: colors.text }]}
+                    style={[styles.fighterLastName, { textAlign: 'left', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
                   >
                     {fight.fighter2.lastName}
                   </Text>
@@ -639,8 +634,8 @@ export default function CompletedFightCard({
 
           </View>
 
-          {/* Event info inside card (when showEvent=true) OR Top 3 Tags */}
-          {showEvent ? (
+          {/* Event info inside card (when showEvent=true) */}
+          {showEvent && (
             <Text
               style={{
                 color: colors.textSecondary,
@@ -652,19 +647,6 @@ export default function CompletedFightCard({
             >
               {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
             </Text>
-          ) : (
-            aggregateStats?.topTags && aggregateStats.topTags.length > 0 && (
-              <View style={styles.topTagsContainer}>
-                {aggregateStats.topTags.slice(0, 3).map((tagData, index) => (
-                  <Text
-                    key={index}
-                    style={[styles.topTagText, { color: colors.textSecondary }]}
-                  >
-                    #{tagData.name}
-                  </Text>
-                ))}
-              </View>
-            )
           )}
 
         {/* Status message */}
@@ -894,9 +876,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fighterHeadshot: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   vsContainer: {
     position: 'absolute',
@@ -1052,25 +1034,23 @@ const styles = StyleSheet.create({
   },
   ratingSquare: {
     position: 'absolute',
-    top: 0,
+    top: 6,
     left: 0,
     width: 48,
-    height: 82,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
-    gap: 2,
   },
   userRatingSquare: {
     position: 'absolute',
-    top: 0,
+    top: 6,
     right: 0,
     width: 48,
-    height: 82,
+    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
-    gap: 2,
   },
   ratingSquareText: {
     color: '#FFFFFF',
@@ -1111,7 +1091,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     left: 54,
-    height: 82, // Match taller box height
+    height: 50, // Match box height
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
   },
