@@ -465,17 +465,17 @@ export default function UpcomingFightCard({
             )}
           </View>
 
-          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: -4 }]}>
+          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: 0 }]}>
             {/* Fighter names with centered "vs" */}
             <View style={styles.fighterNamesContainer}>
               {/* Fighter 1 - Left half */}
               <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
                 <View style={[
-                  { alignSelf: 'flex-end', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-end' }
+                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'center' }
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterName, { textAlign: 'center', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -484,7 +484,7 @@ export default function UpcomingFightCard({
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'right', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterLastName, { textAlign: 'center', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -495,7 +495,7 @@ export default function UpcomingFightCard({
                 {/* Fighter 1 headshot - right of name */}
                 <Image
                   source={getFighter1ImageSource()}
-                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -5, marginTop: -6, zIndex: 1 }]}
+                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -5, zIndex: 1 }]}
                   onError={() => setFighter1ImageError(true)}
                 />
               </View>
@@ -505,15 +505,15 @@ export default function UpcomingFightCard({
                 {/* Fighter 2 headshot - left of name */}
                 <Image
                   source={getFighter2ImageSource()}
-                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -5, marginTop: -6, zIndex: 1 }]}
+                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -5, zIndex: 1 }]}
                   onError={() => setFighter2ImageError(true)}
                 />
                 <View style={[
-                  { alignSelf: 'flex-start', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-start' }
+                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'center' }
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterName, { textAlign: 'center', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -522,7 +522,7 @@ export default function UpcomingFightCard({
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'left', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterLastName, { textAlign: 'center', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
