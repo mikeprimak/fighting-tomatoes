@@ -79,7 +79,7 @@ export default function PredictionBarChart({
       <View style={styles.container}>
         <View
           style={{
-            height: 56,
+            height: 72,
             borderRadius: 8,
             borderWidth: 2,
             borderColor: '#808080',
@@ -118,6 +118,19 @@ export default function PredictionBarChart({
       {/* Community Predictions Bar - progressive reveal */}
       {winnerPredictions && (
         <View style={{ flex: 1 }}>
+          {/* All Winner Predictions Section Divider */}
+          <View style={styles.sectionDivider}>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+            <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ width: 4 }} />
+              <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+                All Winner Predictions ({totalPredictions})
+              </Text>
+              <View style={{ width: 4 }} />
+            </View>
+            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          </View>
+
           {/* Fighter headshots and percentages above bar chart */}
           {(() => {
             // Larger image size, centered layout like Winner section
@@ -177,12 +190,12 @@ export default function PredictionBarChart({
 
           <View
             style={{
-              height: 56,
+              height: 72,
               flexDirection: 'row',
               borderRadius: 20,
               borderWidth: 2,
               borderColor: dividerColor,
-              marginTop: 10,
+              marginTop: 20,
               marginBottom: 10,
             }}
           >
@@ -438,5 +451,21 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  sectionDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
 });

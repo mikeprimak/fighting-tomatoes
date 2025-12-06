@@ -171,8 +171,8 @@ export default function UpcomingFightDetailScreen({
   const toastTranslateY = useRef(new Animated.Value(50)).current;
 
   // Wheel animation for number display
-  // Using 92px per item for taller hype boxes (48x82)
-  const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 92 : 920)).current;
+  // Using 115px per item for taller hype boxes (90x105)
+  const wheelAnimation = useRef(new Animated.Value(fight.userHypePrediction ? (10 - fight.userHypePrediction) * 115 : 1150)).current;
 
   // Simple fade animation for community predictions (always visible now)
   const predictionsFadeAnim = useRef(new Animated.Value(1)).current;
@@ -896,9 +896,9 @@ export default function UpcomingFightDetailScreen({
 
     // Calculate target position
     // Numbers are arranged 10,9,8,7,6,5,4,3,2,1 (10 at top, 1 at bottom)
-    // Position 0 = number 10, position 92 = number 9, ... position 828 = number 1
-    // Position 920 = blank (below "1")
-    const targetPosition = targetNumber === 0 ? 920 : (10 - targetNumber) * 92;
+    // Position 0 = number 10, position 115 = number 9, ... position 1035 = number 1
+    // Position 1150 = blank (below "1")
+    const targetPosition = targetNumber === 0 ? 1150 : (10 - targetNumber) * 115;
 
     // Simple, smooth animation
     Animated.timing(wheelAnimation, {
@@ -993,98 +993,13 @@ export default function UpcomingFightDetailScreen({
 
       {/* Your Predictions Section */}
       <SectionContainer
-        title="How Hyped Are You?"
+        title="My Picks"
         icon="user"
         iconColor="#000"
         headerBgColor="#F5C518"
         containerBgColorDark="rgba(245, 197, 24, 0.05)"
         containerBgColorLight="rgba(245, 197, 24, 0.08)"
       >
-        {/* Large Flame Display */}
-        <View style={{ alignItems: 'center', marginTop: 23, marginBottom: 8 }}>
-          <View style={{ alignItems: 'center', justifyContent: 'center', overflow: 'hidden', height: 92 }}>
-            <Animated.View style={[
-              {
-                alignItems: 'center',
-                paddingTop: 150,
-                transform: [{
-                  translateY: wheelAnimation.interpolate({
-                    inputRange: [0, 920],
-                    outputRange: [335, -585],
-                  })
-                }]
-              }
-            ]}>
-              {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
-                const hypeColor = getHypeHeatmapColor(number);
-                return (
-                  <View key={number} style={{ height: 92, justifyContent: 'center', alignItems: 'center' }}>
-                    <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 70, height: 82 }}>
-                      {/* Background circle for better text contrast */}
-                      <View style={{
-                        position: 'absolute',
-                        width: 44,
-                        height: 44,
-                        borderRadius: 22,
-                        backgroundColor: hypeColor,
-                        opacity: 0.4,
-                        top: 23,
-                      }} />
-                      <FontAwesome6
-                        name="fire-flame-curved"
-                        size={70}
-                        color={hypeColor}
-                      />
-                      <Text style={{
-                        position: 'absolute',
-                        fontSize: 22,
-                        fontWeight: 'bold',
-                        color: '#FFFFFF',
-                        textShadowColor: 'rgba(0,0,0,0.8)',
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 4,
-                      }}>{number}</Text>
-                    </View>
-                  </View>
-                );
-              })}
-            </Animated.View>
-          </View>
-        </View>
-
-        {/* Row of selectable flames (1-10) */}
-        <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: 10, height: 42, justifyContent: 'center' }]}>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
-            const isSelected = level <= (selectedHype || 0);
-            const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
-
-            return (
-              <TouchableOpacity
-                key={level}
-                onPress={() => handleHypeSelection(level)}
-                style={styles.flameButton}
-                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-              >
-                <View style={{ width: 32, alignItems: 'center' }}>
-                  {isSelected ? (
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={32}
-                      color={flameColor}
-                    />
-                  ) : (
-                    <Image
-                      source={require('../assets/flame-hollow-alpha-colored.png')}
-                      style={{ width: 32, height: 32 }}
-                      resizeMode="contain"
-                    />
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
         {/* Who Will Win Section Divider */}
         <View style={[styles.sectionDivider, { marginTop: 10, marginBottom: 0 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
@@ -1205,108 +1120,127 @@ export default function UpcomingFightDetailScreen({
             })}
           </View>
         </View>
-      </SectionContainer>
 
-      {/* Community Data Section */}
-      <SectionContainer
-        title={`All Hype (${aggregateStats?.totalPredictions || 0})`}
-        icon="users"
-        iconColor="#fff"
-        headerBgColor="#3B82F6"
-        containerBgColorDark="rgba(59, 130, 246, 0.05)"
-        containerBgColorLight="rgba(59, 130, 246, 0.08)"
-      >
-      {/* Community Hype Data */}
-      <View style={{ marginTop: 14, marginBottom: 10 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>
-          {/* Large Flame Icon */}
-          {(() => {
-            const hypeColor = aggregateStats?.communityAverageHype
-              ? getHypeHeatmapColor(aggregateStats.communityAverageHype)
-              : colors.border;
-
-            return (
-              <View style={{ position: 'relative', width: 70, height: 82 }}>
-                {/* Grey placeholder - always visible until fully revealed */}
-                {!hasRevealedHype && (
-                  <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 70, height: 82 }}>
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={70}
-                      color={colors.border}
-                    />
-                  </View>
-                )}
-
-                {/* Colored flame - fades in when revealed */}
-                {hasRevealedHype && (
-                  <Animated.View style={{ opacity: aggregateHypeFadeAnim }}>
-                    <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 70, height: 82 }}>
-                      {/* Background circle */}
-                      <View style={{
-                        position: 'absolute',
-                        width: 44,
-                        height: 44,
-                        borderRadius: 22,
-                        backgroundColor: hypeColor,
-                        opacity: 0.4,
-                        top: 23,
-                      }} />
-                      <FontAwesome6
-                        name="fire-flame-curved"
-                        size={70}
-                        color={hypeColor}
-                      />
-                      <Text style={{
-                        position: 'absolute',
-                        top: 31,
-                        fontSize: 22,
-                        fontWeight: 'bold',
-                        color: '#FFFFFF',
-                        textShadowColor: 'rgba(0,0,0,0.8)',
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 4,
-                      }}>
-                        {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
-                      </Text>
-                    </View>
-                  </Animated.View>
-                )}
-              </View>
-            );
-          })()}
-
-          {/* Hype Distribution Chart */}
-            {aggregateStats?.hypeDistribution && (
-              <View style={{ flex: 1 }}>
-                <HypeDistributionChart
-                  distribution={aggregateStats.hypeDistribution}
-                  totalPredictions={aggregateStats.totalPredictions || 0}
-                  hasRevealedHype={hasRevealedHype}
-                  fadeAnim={aggregateHypeFadeAnim}
-                />
-              </View>
-            )}
-        </View>
-      </View>
-
-        {/* Community Predictions Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 12, marginBottom: 0 }]}>
+        {/* How Hyped Are You Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 18, marginBottom: 0 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 4 }} />
-            <FontAwesome name="check-circle" size={12} color={colors.textSecondary} />
-            <View style={{ width: 4 }} />
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              All Picks ({displayPredictionStats?.totalPredictions || 0})
+              How hyped are you?
             </Text>
             <View style={{ width: 4 }} />
           </View>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
 
+        {/* Large Flame Display */}
+        <View style={{ alignItems: 'center', marginTop: 23, marginBottom: 8 }}>
+          <View style={{ alignItems: 'center', justifyContent: 'center', overflow: 'hidden', height: 115 }}>
+            <Animated.View style={[
+              {
+                alignItems: 'center',
+                paddingTop: 188,
+                transform: [{
+                  translateY: wheelAnimation.interpolate({
+                    inputRange: [0, 1150],
+                    outputRange: [479, -671],
+                  })
+                }]
+              }
+            ]}>
+              {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
+                const hypeColor = getHypeHeatmapColor(number);
+                return (
+                  <View key={number} style={{ height: 115, justifyContent: 'center', alignItems: 'center' }}>
+                    <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
+                      {/* Background circle for better text contrast */}
+                      <View style={{
+                        position: 'absolute',
+                        width: 56,
+                        height: 56,
+                        borderRadius: 28,
+                        backgroundColor: hypeColor,
+                        opacity: 0.4,
+                        top: 30,
+                      }} />
+                      <FontAwesome6
+                        name="fire-flame-curved"
+                        size={90}
+                        color={hypeColor}
+                      />
+                      <Text style={{
+                        position: 'absolute',
+                        fontSize: 32,
+                        fontWeight: 'bold',
+                        color: '#FFFFFF',
+                        textShadowColor: 'rgba(0,0,0,0.8)',
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 4,
+                      }}>{number}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+              {/* Grey placeholder flame - shown when no hype selected */}
+              <View style={{ height: 115, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
+                  <Image
+                    source={require('../assets/flame-hollow-alpha-colored.png')}
+                    style={{ width: 90, height: 90, tintColor: '#666666' }}
+                    resizeMode="contain"
+                  />
+                </View>
+              </View>
+            </Animated.View>
+          </View>
+        </View>
+
+        {/* Row of selectable flames (1-10) */}
+        <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: 10, height: 42, justifyContent: 'center' }]}>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
+            const isSelected = level <= (selectedHype || 0);
+            const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
+
+            return (
+              <TouchableOpacity
+                key={level}
+                onPress={() => handleHypeSelection(level)}
+                style={styles.flameButton}
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              >
+                <View style={{ width: 32, alignItems: 'center' }}>
+                  {isSelected ? (
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={32}
+                      color={flameColor}
+                    />
+                  ) : (
+                    <Image
+                      source={require('../assets/flame-hollow-alpha-colored.png')}
+                      style={{ width: 32, height: 32 }}
+                      resizeMode="contain"
+                    />
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </SectionContainer>
+
+      {/* Community Data Section */}
+      <SectionContainer
+        title="All Picks"
+        icon="users"
+        iconColor="#fff"
+        headerBgColor="#3B82F6"
+        containerBgColorDark="rgba(59, 130, 246, 0.05)"
+        containerBgColorLight="rgba(59, 130, 246, 0.08)"
+      >
         {/* Community Predictions Data */}
-        <View style={{ marginTop: 16 }}>
+        <View style={{ marginTop: 14 }}>
         {/* Community Predictions Bar Chart - always visible */}
         {displayPredictionStats && displayPredictionStats.fighter1MethodPredictions && displayPredictionStats.fighter2MethodPredictions && displayPredictionStats.winnerPredictions && (
           <PredictionBarChart
@@ -1326,6 +1260,93 @@ export default function UpcomingFightDetailScreen({
             showLabels={hasRevealedMethod}
           />
         )}
+      </View>
+
+        {/* Community Hype Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 12, marginBottom: 0 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 4 }} />
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              All Hype ({aggregateStats?.totalPredictions || 0})
+            </Text>
+            <View style={{ width: 4 }} />
+          </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
+      {/* Community Hype Data */}
+      <View style={{ marginTop: 14, marginBottom: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
+          {/* Large Flame Icon */}
+          {(() => {
+            const hypeColor = aggregateStats?.communityAverageHype
+              ? getHypeHeatmapColor(aggregateStats.communityAverageHype)
+              : colors.border;
+
+            return (
+              <View style={{ position: 'relative', width: 90, height: 105 }}>
+                {/* Grey placeholder - always visible until fully revealed */}
+                {!hasRevealedHype && (
+                  <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={90}
+                      color={colors.border}
+                    />
+                  </View>
+                )}
+
+                {/* Colored flame - fades in when revealed */}
+                {hasRevealedHype && (
+                  <Animated.View style={{ opacity: aggregateHypeFadeAnim }}>
+                    <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
+                      {/* Background circle */}
+                      <View style={{
+                        position: 'absolute',
+                        width: 56,
+                        height: 56,
+                        borderRadius: 28,
+                        backgroundColor: hypeColor,
+                        opacity: 0.4,
+                        top: 30,
+                      }} />
+                      <FontAwesome6
+                        name="fire-flame-curved"
+                        size={90}
+                        color={hypeColor}
+                      />
+                      <Text style={{
+                        position: 'absolute',
+                        top: 40,
+                        fontSize: 28,
+                        fontWeight: 'bold',
+                        color: '#FFFFFF',
+                        textShadowColor: 'rgba(0,0,0,0.8)',
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 4,
+                      }}>
+                        {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
+                      </Text>
+                    </View>
+                  </Animated.View>
+                )}
+              </View>
+            );
+          })()}
+
+          {/* Hype Distribution Chart */}
+            {aggregateStats?.hypeDistribution && (
+              <View style={{ flex: 1, marginLeft: -10 }}>
+                <HypeDistributionChart
+                  distribution={aggregateStats.hypeDistribution}
+                  totalPredictions={aggregateStats.totalPredictions || 0}
+                  hasRevealedHype={hasRevealedHype}
+                  fadeAnim={aggregateHypeFadeAnim}
+                />
+              </View>
+            )}
+        </View>
       </View>
       </SectionContainer>
 
@@ -1502,7 +1523,7 @@ export default function UpcomingFightDetailScreen({
             const hiddenCount = userCommentReplies.length - INITIAL_REPLIES_SHOWN;
 
             return (
-              <View style={{ marginLeft: 40, marginBottom: 20 }}>
+              <View style={{ marginLeft: 40, marginBottom: 0 }}>
                 {repliesToShow.map((reply: any) => {
                   const isMyReply = reply.user?.id === user?.id;
                   return (
@@ -1613,9 +1634,9 @@ export default function UpcomingFightDetailScreen({
                 {hiddenCount > 0 && (
                   <TouchableOpacity
                     onPress={() => setExpandedReplies(prev => ({ ...prev, [preFightCommentsData.userComment.id]: !isExpanded }))}
-                    style={{ marginTop: -7, paddingVertical: 8, alignSelf: 'flex-end' }}
+                    style={{ marginTop: -11, paddingVertical: 8, marginBottom: 5, alignSelf: 'flex-end' }}
                   >
-                    <Text style={{ color: colors.tint, fontSize: 14, fontWeight: '500' }}>
+                    <Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500' }}>
                       {isExpanded ? 'Show less replies' : `Show ${hiddenCount} more ${hiddenCount === 1 ? 'reply' : 'replies'}`}
                     </Text>
                   </TouchableOpacity>
@@ -1742,7 +1763,7 @@ export default function UpcomingFightDetailScreen({
                   const hiddenCount = comment.replies.length - INITIAL_REPLIES_SHOWN;
 
                   return (
-                    <View style={{ marginLeft: 40, marginTop: replyingToCommentId === comment.id ? 50 : 0, marginBottom: 20 }}>
+                    <View style={{ marginLeft: 40, marginTop: replyingToCommentId === comment.id ? 50 : 0, marginBottom: 0 }}>
                       {repliesToShow.map((reply: any) => {
                         const isMyReply = reply.user?.id === user?.id;
                         return (
@@ -1853,9 +1874,9 @@ export default function UpcomingFightDetailScreen({
                       {hiddenCount > 0 && (
                         <TouchableOpacity
                           onPress={() => setExpandedReplies(prev => ({ ...prev, [comment.id]: !isExpanded }))}
-                          style={{ marginTop: -7, paddingVertical: 8, alignSelf: 'flex-end' }}
+                          style={{ marginTop: -11, paddingVertical: 8, marginBottom: 5, alignSelf: 'flex-end' }}
                         >
-                          <Text style={{ color: colors.tint, fontSize: 14, fontWeight: '500' }}>
+                          <Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '500' }}>
                             {isExpanded ? 'Show less replies' : `Show ${hiddenCount} more ${hiddenCount === 1 ? 'reply' : 'replies'}`}
                           </Text>
                         </TouchableOpacity>

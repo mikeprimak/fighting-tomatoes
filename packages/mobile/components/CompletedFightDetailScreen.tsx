@@ -435,7 +435,7 @@ export default function CompletedFightDetailScreen({
     return 0;
   })();
   const wheelAnimation = useRef(new Animated.Value(
-    initialRatingForWheel > 0 ? (10 - initialRatingForWheel) * 92 : 920
+    initialRatingForWheel > 0 ? (10 - initialRatingForWheel) * 115 : 1150
   )).current;
   const starColorAnimation = useRef(new Animated.Value(initialRatingForWheel > 0 ? 1 : 0)).current;
 
@@ -477,7 +477,7 @@ export default function CompletedFightDetailScreen({
       setRating(dataRating);
 
       // Also sync the wheel animation and star color animation
-      const targetPosition = dataRating > 0 ? (10 - dataRating) * 92 : 920;
+      const targetPosition = dataRating > 0 ? (10 - dataRating) * 115 : 1150;
       wheelAnimation.setValue(targetPosition);
       starColorAnimation.setValue(dataRating > 0 ? 1 : 0);
     }
@@ -1166,7 +1166,7 @@ export default function CompletedFightDetailScreen({
   const animateToNumber = (targetNumber: number) => {
     wheelAnimation.stopAnimation();
 
-    const targetPosition = targetNumber === 0 ? 920 : (10 - targetNumber) * 92;
+    const targetPosition = targetNumber === 0 ? 1150 : (10 - targetNumber) * 115;
 
     Animated.timing(wheelAnimation, {
       toValue: targetPosition,
@@ -1538,16 +1538,16 @@ export default function CompletedFightDetailScreen({
                   {/* Background circle for better text contrast */}
                   <View style={{
                     position: 'absolute',
-                    width: 44,
-                    height: 44,
-                    borderRadius: 22,
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
                     backgroundColor: getHypeHeatmapColor(fight.userHypePrediction),
                     opacity: 0.4,
-                    top: 23,
+                    top: 30,
                   }} />
                   <FontAwesome6
                     name="fire-flame-curved"
-                    size={70}
+                    size={90}
                     color={getHypeHeatmapColor(fight.userHypePrediction)}
                   />
                   <Text style={styles.ratingStarText}>
@@ -1558,7 +1558,7 @@ export default function CompletedFightDetailScreen({
                 <View style={styles.ratingStarContainer}>
                   <FontAwesome6
                     name="fire-flame-curved"
-                    size={70}
+                    size={90}
                     color={colors.border}
                   />
                 </View>
@@ -1574,7 +1574,7 @@ export default function CompletedFightDetailScreen({
           {/* Inline Rating Section */}
           <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: -8 }]}>
             {/* Centered Star Display */}
-            <View style={{ alignItems: 'center', marginBottom: 10 }}>
+            <View style={{ alignItems: 'center', marginBottom: 25 }}>
               <View style={styles.animatedFlameContainer}>
                 <View style={styles.wheelContainer} pointerEvents="none">
                   <Animated.View style={[
@@ -1582,8 +1582,8 @@ export default function CompletedFightDetailScreen({
                     {
                       transform: [{
                         translateY: wheelAnimation.interpolate({
-                          inputRange: [0, 920],
-                          outputRange: [335, -585],
+                          inputRange: [0, 1150],
+                          outputRange: [427, -723],
                         })
                       }]
                     }
@@ -1596,7 +1596,7 @@ export default function CompletedFightDetailScreen({
                           <View style={styles.ratingStarContainer}>
                             <FontAwesome
                               name="star"
-                              size={70}
+                              size={90}
                               color={ratingColor}
                             />
                             <Text style={styles.ratingStarText}>{number}</Text>
@@ -1740,7 +1740,7 @@ export default function CompletedFightDetailScreen({
                 <View style={styles.ratingStarContainer}>
                   <FontAwesome
                     name="star"
-                    size={70}
+                    size={90}
                     color={ratingColor}
                   />
                   <Text style={styles.ratingStarText}>
@@ -1783,16 +1783,16 @@ export default function CompletedFightDetailScreen({
                 {/* Background circle for better text contrast */}
                 <View style={{
                   position: 'absolute',
-                  width: 44,
-                  height: 44,
-                  borderRadius: 22,
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
                   backgroundColor: getHypeHeatmapColor(predictionStats.averageHype),
                   opacity: 0.4,
-                  top: 23,
+                  top: 30,
                 }} />
                 <FontAwesome6
                   name="fire-flame-curved"
-                  size={70}
+                  size={90}
                   color={getHypeHeatmapColor(predictionStats.averageHype)}
                 />
                 <Text style={styles.ratingStarText}>
@@ -3390,7 +3390,7 @@ const styles = StyleSheet.create({
   },
   wheelNumbers: {
     alignItems: 'center',
-    paddingTop: 150,
+    paddingTop: 188,
   },
   wheelNumber: {
     fontSize: 52,
@@ -3423,7 +3423,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   ratingWheelBoxContainer: {
-    height: 92,
+    height: 115,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -3447,12 +3447,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    width: 70,
-    height: 82,
+    width: 90,
+    height: 105,
   },
   ratingStarText: {
     position: 'absolute',
-    fontSize: 22,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#FFFFFF',
     textShadowColor: 'rgba(0,0,0,0.8)',
