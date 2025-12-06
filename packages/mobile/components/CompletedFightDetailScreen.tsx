@@ -2031,30 +2031,32 @@ export default function CompletedFightDetailScreen({
 
             {/* User's review first (if exists and not editing) */}
             {fight.userReview && !isEditingComment && (
+              <>
               <View style={{ marginTop: 0, marginRight: 20 }}>
-              <CommentCard
-                comment={{
-                  id: fight.userReview.id,
-                  content: fight.userReview.content,
-                  rating: rating,
-                  upvotes: fight.userReview.upvotes || 0,
-                  userHasUpvoted: fight.userReview.userHasUpvoted,
-                  predictedWinner: fight.userPredictedWinner,
-                  predictedMethod: fight.userPredictedMethod,
-                  user: {
-                    displayName: user?.displayName || 'You',
-                  },
-                }}
-                fighter1Id={fight.fighter1.id}
-                fighter2Id={fight.fighter2.id}
-                fighter1Name={fight.fighter1.lastName}
-                fighter2Name={fight.fighter2.lastName}
-                onEdit={() => setIsEditingComment(true)}
-                onUpvote={() => handleUpvoteReview(fight.userReview.id)}
-                isUpvoting={upvoteMutation.isPending}
-                isAuthenticated={isAuthenticated}
-                showMyReview={true}
-              />
+                <CommentCard
+                  comment={{
+                    id: fight.userReview.id,
+                    content: fight.userReview.content,
+                    rating: rating,
+                    upvotes: fight.userReview.upvotes || 0,
+                    userHasUpvoted: fight.userReview.userHasUpvoted,
+                    predictedWinner: fight.userPredictedWinner,
+                    predictedMethod: fight.userPredictedMethod,
+                    user: {
+                      displayName: user?.displayName || 'You',
+                    },
+                  }}
+                  fighter1Id={fight.fighter1.id}
+                  fighter2Id={fight.fighter2.id}
+                  fighter1Name={fight.fighter1.lastName}
+                  fighter2Name={fight.fighter2.lastName}
+                  onEdit={() => setIsEditingComment(true)}
+                  onUpvote={() => handleUpvoteReview(fight.userReview.id)}
+                  isUpvoting={upvoteMutation.isPending}
+                  isAuthenticated={isAuthenticated}
+                  showMyReview={true}
+                />
+              </View>
 
               {/* Display replies to user's own review */}
               {fight.userReview.replies && fight.userReview.replies.length > 0 && (() => {
@@ -2185,7 +2187,7 @@ export default function CompletedFightDetailScreen({
                   </View>
                 );
               })()}
-              </View>
+              </>
             )}
 
             {/* Other reviews with infinite scroll */}
@@ -2479,26 +2481,28 @@ export default function CompletedFightDetailScreen({
               <View style={{ marginTop: 0 }}>
                 {preFightCommentsData.comments.map((comment: any) => (
                   <React.Fragment key={comment.id}>
-                    <PreFightCommentCard
-                      comment={{
-                        id: comment.id,
-                        content: comment.content,
-                        hypeRating: comment.hypeRating,
-                        predictedWinner: comment.predictedWinner,
-                        predictedMethod: comment.predictedMethod,
-                        upvotes: comment.upvotes || 0,
-                        userHasUpvoted: comment.userHasUpvoted || false,
-                        user: {
-                          displayName: comment.user.displayName,
-                        },
-                      }}
-                      fighter1Id={fight.fighter1.id}
-                      fighter2Id={fight.fighter2.id}
-                      fighter1Name={fight.fighter1.lastName}
-                      fighter2Name={fight.fighter2.lastName}
-                      isAuthenticated={isAuthenticated}
-                      showMyComment={comment.userId === user?.id}
-                    />
+                    <View style={{ marginRight: 20 }}>
+                      <PreFightCommentCard
+                        comment={{
+                          id: comment.id,
+                          content: comment.content,
+                          hypeRating: comment.hypeRating,
+                          predictedWinner: comment.predictedWinner,
+                          predictedMethod: comment.predictedMethod,
+                          upvotes: comment.upvotes || 0,
+                          userHasUpvoted: comment.userHasUpvoted || false,
+                          user: {
+                            displayName: comment.user.displayName,
+                          },
+                        }}
+                        fighter1Id={fight.fighter1.id}
+                        fighter2Id={fight.fighter2.id}
+                        fighter1Name={fight.fighter1.lastName}
+                        fighter2Name={fight.fighter2.lastName}
+                        isAuthenticated={isAuthenticated}
+                        showMyComment={comment.userId === user?.id}
+                      />
+                    </View>
 
                     {/* Display replies to this comment */}
                     {comment.replies && comment.replies.length > 0 && (() => {
