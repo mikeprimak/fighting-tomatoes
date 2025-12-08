@@ -6,7 +6,7 @@ import { checkAndSendPreEventReports } from './preEventReportService';
  * Notification Scheduler Service
  *
  * Manages scheduled tasks for sending notifications:
- * - Pre-event reports: Sent 6 hours before events start (checked hourly)
+ * - Pre-event reports: Sent 7-8 hours before main card (checked hourly)
  */
 
 let scheduledTask: ScheduledTask | null = null;

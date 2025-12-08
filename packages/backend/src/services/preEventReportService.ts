@@ -236,29 +236,58 @@ export async function sendPreEventReports(eventId: string): Promise<{
 }
 
 /**
- * Check and send pre-event reports for upcoming events (within the next 6 hours)
+ * Check and send pre-event reports for upcoming events (7-8 hours before main card)
+ * This ensures users are notified before prelims start (typically 4-5 hours before main)
  * This function should be called periodically (e.g., every hour)
  */
 export async function checkAndSendPreEventReports(): Promise<void> {
   const now = new Date();
-  const sixHoursFromNow = new Date(now.getTime() + 6 * 60 * 60 * 1000);
-  const fiveHoursFromNow = new Date(now.getTime() + 5 * 60 * 60 * 1000);
+  const eightHoursFromNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+  const sevenHoursFromNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
 
-  console.log(`[Pre-Event Report] Checking for events starting between ${fiveHoursFromNow.toISOString()} and ${sixHoursFromNow.toISOString()}`);
+  console.log(`[Pre-Event Report] Checking for events starting between ${sevenHoursFromNow.toISOString()} and ${eightHoursFromNow.toISOString()}`);
 
-  // Find events starting in approximately 6 hours (between 5 and 6 hours from now)
+  // Find events that might be starting soon
+  // We use mainStartTime (actual event start) instead of date (just the calendar date)
+  // Also check prelimStartTime and earlyPrelimStartTime as fallbacks
   const upcomingEvents = await prisma.event.findMany({
     where: {
-      date: {
-        gte: fiveHoursFromNow,
-        lte: sixHoursFromNow,
-      },
       isComplete: false,
+      OR: [
+        // Primary: use mainStartTime (main card start)
+        {
+          mainStartTime: {
+            gte: sevenHoursFromNow,
+            lte: eightHoursFromNow,
+          },
+        },
+        // Fallback: use prelimStartTime if no mainStartTime matches
+        {
+          mainStartTime: null,
+          prelimStartTime: {
+            gte: sevenHoursFromNow,
+            lte: eightHoursFromNow,
+          },
+        },
+        // Last resort: use date if no start times available
+        {
+          mainStartTime: null,
+          prelimStartTime: null,
+          earlyPrelimStartTime: null,
+          date: {
+            gte: sevenHoursFromNow,
+            lte: eightHoursFromNow,
+          },
+        },
+      ],
     },
     select: {
       id: true,
       name: true,
       date: true,
+      mainStartTime: true,
+      prelimStartTime: true,
+      earlyPrelimStartTime: true,
     },
   });
 
@@ -275,7 +304,8 @@ export async function checkAndSendPreEventReports(): Promise<void> {
       continue;
     }
 
-    console.log(`[Pre-Event Report] Processing event: ${event.name} (${event.date})`);
+    const startTime = event.mainStartTime || event.prelimStartTime || event.earlyPrelimStartTime || event.date;
+    console.log(`[Pre-Event Report] Processing event: ${event.name} (starts: ${startTime})`);
     const result = await sendPreEventReports(event.id);
 
     // Record that we sent notifications for this event (only if at least one was sent)
