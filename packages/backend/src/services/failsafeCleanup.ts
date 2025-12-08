@@ -5,9 +5,12 @@
  * Runs every hour to catch stuck data
  *
  * Rules:
- * 1. Complete fights that started 6+ hours ago
+ * 1. Complete fights that started 6+ hours ago (based on actual event start time)
  * 2. Complete events when all fights are done
- * 3. Force complete events 8+ hours after start
+ * 3. Force complete events 8+ hours after start (based on actual event start time)
+ *
+ * IMPORTANT: Uses mainStartTime/prelimStartTime/earlyPrelimStartTime, NOT event.date
+ * (event.date is just the calendar date at midnight, not the actual start time)
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -17,6 +20,18 @@ const prisma = new PrismaClient();
 // Configuration
 const FIGHT_TIMEOUT_HOURS = 6;  // Complete fights 6+ hours after event start
 const EVENT_TIMEOUT_HOURS = 8;  // Force complete events 8+ hours after start
+
+/**
+ * Get the actual event start time (earliest of main/prelim/early prelim, fallback to date)
+ */
+function getEventStartTime(event: {
+  date: Date;
+  mainStartTime?: Date | null;
+  prelimStartTime?: Date | null;
+  earlyPrelimStartTime?: Date | null;
+}): Date {
+  return event.earlyPrelimStartTime || event.prelimStartTime || event.mainStartTime || event.date;
+}
 
 export interface FailsafeResults {
   fightsCompleted: number;
@@ -72,32 +87,51 @@ export async function runFailsafeCleanup(): Promise<FailsafeResults> {
 
 /**
  * STEP 1: Complete fights from events that started 6+ hours ago
+ * Uses actual event start time (mainStartTime/prelimStartTime/earlyPrelimStartTime)
  */
 async function completeStuckFights(now: Date, results: FailsafeResults): Promise<void> {
-  const fightCutoff = new Date(now.getTime() - FIGHT_TIMEOUT_HOURS * 60 * 60 * 1000);
+  const fightCutoffMs = FIGHT_TIMEOUT_HOURS * 60 * 60 * 1000;
 
-  console.log(`\n[Failsafe] Step 1: Looking for stuck fights from events before ${fightCutoff.toISOString()}`);
+  console.log(`\n[Failsafe] Step 1: Looking for stuck fights from events that started 6+ hours ago`);
 
-  const stuckFights = await prisma.fight.findMany({
+  // Query all fights that have started but aren't complete
+  const potentiallyStuckFights = await prisma.fight.findMany({
     where: {
       hasStarted: true,
       isComplete: false,
       event: {
-        date: { lt: fightCutoff }
+        hasStarted: true
       }
     },
     include: {
-      event: { select: { name: true, date: true } },
+      event: {
+        select: {
+          name: true,
+          date: true,
+          mainStartTime: true,
+          prelimStartTime: true,
+          earlyPrelimStartTime: true
+        }
+      },
       fighter1: { select: { lastName: true } },
       fighter2: { select: { lastName: true } }
     },
     take: 100 // Safety limit
   });
 
-  console.log(`[Failsafe] Found ${stuckFights.length} stuck fights`);
+  // Filter based on actual event start time (not just event.date)
+  const stuckFights = potentiallyStuckFights.filter(fight => {
+    const eventStartTime = getEventStartTime(fight.event);
+    const timeSinceStart = now.getTime() - eventStartTime.getTime();
+    return timeSinceStart >= fightCutoffMs;
+  });
+
+  console.log(`[Failsafe] Found ${stuckFights.length} stuck fights (checked ${potentiallyStuckFights.length} candidates)`);
 
   for (const fight of stuckFights) {
     const fightersName = `${fight.fighter1.lastName} vs ${fight.fighter2.lastName}`;
+    const eventStartTime = getEventStartTime(fight.event);
+    const hoursSinceStart = Math.round((now.getTime() - eventStartTime.getTime()) / (60 * 60 * 1000));
 
     await prisma.fight.update({
       where: { id: fight.id },
@@ -108,7 +142,7 @@ async function completeStuckFights(now: Date, results: FailsafeResults): Promise
       }
     });
 
-    console.log(`  ✓ Completed: ${fightersName} (${fight.event.name})`);
+    console.log(`  ✓ Completed: ${fightersName} (${fight.event.name}, ${hoursSinceStart}hrs since event start)`);
 
     results.fightsCompleted++;
     results.details.stuckFights.push({
@@ -162,18 +196,19 @@ async function completeEventsWithAllFightsDone(now: Date, results: FailsafeResul
 }
 
 /**
- * STEP 3: Force complete events 8+ hours after their scheduled time
+ * STEP 3: Force complete events 8+ hours after their actual start time
+ * Uses actual event start time (mainStartTime/prelimStartTime/earlyPrelimStartTime)
  */
 async function forceCompleteOldEvents(now: Date, results: FailsafeResults): Promise<void> {
-  const eventCutoff = new Date(now.getTime() - EVENT_TIMEOUT_HOURS * 60 * 60 * 1000);
+  const eventCutoffMs = EVENT_TIMEOUT_HOURS * 60 * 60 * 1000;
 
-  console.log(`\n[Failsafe] Step 3: Looking for events to force complete (started before ${eventCutoff.toISOString()})`);
+  console.log(`\n[Failsafe] Step 3: Looking for events to force complete (started 8+ hours ago)`);
 
-  const oldEvents = await prisma.event.findMany({
+  // Query all incomplete events that have started
+  const potentiallyOldEvents = await prisma.event.findMany({
     where: {
       hasStarted: true,
-      isComplete: false,
-      date: { lt: eventCutoff }
+      isComplete: false
     },
     include: {
       fights: {
@@ -187,9 +222,19 @@ async function forceCompleteOldEvents(now: Date, results: FailsafeResults): Prom
     }
   });
 
-  console.log(`[Failsafe] Found ${oldEvents.length} events to force complete`);
+  // Filter based on actual event start time (not just event.date)
+  const oldEvents = potentiallyOldEvents.filter(event => {
+    const eventStartTime = getEventStartTime(event);
+    const timeSinceStart = now.getTime() - eventStartTime.getTime();
+    return timeSinceStart >= eventCutoffMs;
+  });
+
+  console.log(`[Failsafe] Found ${oldEvents.length} events to force complete (checked ${potentiallyOldEvents.length} candidates)`);
 
   for (const event of oldEvents) {
+    const eventStartTime = getEventStartTime(event);
+    const hoursSinceStart = Math.round((now.getTime() - eventStartTime.getTime()) / (60 * 60 * 1000));
+
     // Complete any remaining incomplete fights
     const incompleteFights = event.fights.filter(f => !f.isComplete);
 
@@ -220,7 +265,7 @@ async function forceCompleteOldEvents(now: Date, results: FailsafeResults): Prom
       }
     });
 
-    console.log(`  ✓ Force completed: ${event.name} (${incompleteFights.length} fights auto-completed)`);
+    console.log(`  ✓ Force completed: ${event.name} (${incompleteFights.length} fights auto-completed, ${hoursSinceStart}hrs since start)`);
 
     results.eventsCompleted++;
     results.details.forcedComplete.push({
