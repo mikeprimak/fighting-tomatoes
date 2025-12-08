@@ -421,6 +421,9 @@ export default function CompletedFightDetailScreen({
   });
   const [tagRandomSeed, setTagRandomSeed] = useState(Math.floor(Math.random() * 1000));
 
+  // Track if user has made their first rating selection - tags don't refresh on first selection
+  const hasSetRatingOnce = useRef(false);
+
   // Animation values for wheel animation (large star display) - Initialize based on existing rating
   // Using 92px per item for taller rating boxes (48x82)
   // Must match the rating state initialization logic
@@ -654,9 +657,15 @@ export default function CompletedFightDetailScreen({
   }, []);
 
   // Animate tags when they change (fade out → update → fade in)
+  // Skip on first rating selection - only animate on subsequent changes
   useEffect(() => {
     // Only animate if tags actually changed
     if (displayedTags.length > 0 && JSON.stringify(displayedTags) !== JSON.stringify(availableTags)) {
+      // Skip animation on first rating selection, just mark as done
+      if (!hasSetRatingOnce.current) {
+        hasSetRatingOnce.current = true;
+        return;
+      }
       // Fade out
       Animated.timing(tagsOpacity, {
         toValue: 0,
@@ -1205,7 +1214,11 @@ export default function CompletedFightDetailScreen({
     const finalRating = rating === newRating ? 0 : newRating;
 
     setRating(finalRating);
-    setTagRandomSeed(prev => prev + 1);
+
+    // Only refresh tags on subsequent rating selections, not the first one
+    if (hasSetRatingOnce.current) {
+      setTagRandomSeed(prev => prev + 1);
+    }
 
     // If rating > 0, reveal the outcome immediately
     if (finalRating > 0) {
