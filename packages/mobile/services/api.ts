@@ -1321,6 +1321,69 @@ class ApiService {
     return this.makeRequest(`/auth/profile/global-standing?timeFilter=${timeFilter}`);
   }
 
+  /**
+   * Get user's most upvoted post-fight reviews/comments
+   * @param limit - Maximum number of reviews to return (default 3, max 10)
+   */
+  async getMyTopReviews(limit: number = 3): Promise<{
+    reviews: Array<{
+      id: string;
+      fightId: string;
+      content: string;
+      rating: number | null;
+      upvotes: number;
+      userHasUpvoted: boolean;
+      createdAt: string;
+      isReply: boolean;
+      fight: {
+        id: string;
+        fighter1Name: string;
+        fighter2Name: string;
+        eventName: string;
+        eventDate: string;
+      };
+    }>;
+    totalWithUpvotes: number;
+  }> {
+    return this.makeRequest(`/fights/my-top-reviews?limit=${limit}`);
+  }
+
+  /**
+   * Get user's comments with pagination (by individual comments)
+   */
+  async getMyComments(params: { page?: number; limit?: number; sortBy?: string } = {}): Promise<{
+    reviews: Array<{
+      id: string;
+      fightId: string;
+      content: string;
+      rating: number | null;
+      upvotes: number;
+      userHasUpvoted: boolean;
+      createdAt: string;
+      isReply: boolean;
+      fight: {
+        id: string;
+        fighter1Name: string;
+        fighter2Name: string;
+        eventName: string;
+        eventDate: string;
+      };
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', String(params.page));
+    if (params.limit) queryParams.append('limit', String(params.limit));
+    if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+    const queryString = queryParams.toString();
+    return this.makeRequest(`/fights/my-comments${queryString ? `?${queryString}` : ''}`);
+  }
+
   // ==================== EMAIL VERIFICATION ====================
 
   /**

@@ -3744,6 +3744,207 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // GET /api/fights/my-top-reviews - Get user's most upvoted reviews (post-fight comments)
+  fastify.get<{
+    Querystring: { limit?: string };
+  }>('/fights/my-top-reviews', {
+    preHandler: [authenticateUser],
+  }, async (request, reply) => {
+    try {
+      const currentUserId = (request as any).user.id;
+      const limit = Math.min(parseInt(request.query.limit || '3'), 10);
+
+      // Get user's reviews with upvotes > 0, sorted by upvotes descending
+      const topReviews = await fastify.prisma.fightReview.findMany({
+        where: {
+          userId: currentUserId,
+          upvotes: { gt: 0 },
+          isHidden: false,
+        },
+        orderBy: { upvotes: 'desc' },
+        take: limit,
+        include: {
+          votes: {
+            where: { userId: currentUserId },
+            select: { isUpvote: true },
+          },
+          fight: {
+            select: {
+              id: true,
+              isComplete: true,
+              hasStarted: true,
+              fighter1: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              fighter2: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              event: {
+                select: {
+                  id: true,
+                  name: true,
+                  date: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // Format the response
+      const reviews = topReviews.map((review) => ({
+        id: review.id,
+        fightId: review.fightId,
+        content: review.content,
+        rating: review.rating,
+        upvotes: review.upvotes,
+        userHasUpvoted: review.votes.some(v => v.isUpvote),
+        createdAt: review.createdAt,
+        isReply: !!review.parentReviewId,
+        fight: {
+          id: review.fight.id,
+          fighter1Name: `${review.fight.fighter1.firstName} ${review.fight.fighter1.lastName}`,
+          fighter2Name: `${review.fight.fighter2.firstName} ${review.fight.fighter2.lastName}`,
+          eventName: review.fight.event.name,
+          eventDate: review.fight.event.date,
+        },
+      }));
+
+      return reply.send({
+        reviews,
+        totalWithUpvotes: await fastify.prisma.fightReview.count({
+          where: {
+            userId: currentUserId,
+            upvotes: { gt: 0 },
+            isHidden: false,
+          },
+        }),
+      });
+
+    } catch (error) {
+      console.error('Error in /fights/my-top-reviews route:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // GET /api/fights/my-comments - Get user's comments with pagination (by individual comments)
+  fastify.get<{
+    Querystring: { page?: string; limit?: string; sortBy?: string };
+  }>('/fights/my-comments', {
+    preHandler: [authenticateUser],
+  }, async (request, reply) => {
+    try {
+      const currentUserId = (request as any).user.id;
+      const page = Math.max(1, parseInt(request.query.page || '1'));
+      const limit = Math.min(Math.max(1, parseInt(request.query.limit || '15')), 50);
+      const sortBy = request.query.sortBy || 'newest';
+      const skip = (page - 1) * limit;
+
+      // Determine sort order
+      const orderBy = sortBy === 'upvotes'
+        ? { upvotes: 'desc' as const }
+        : { createdAt: 'desc' as const };
+
+      // Get total count for pagination
+      const totalCount = await fastify.prisma.fightReview.count({
+        where: {
+          userId: currentUserId,
+          isHidden: false,
+        },
+      });
+
+      // Get user's reviews with pagination
+      const reviews = await fastify.prisma.fightReview.findMany({
+        where: {
+          userId: currentUserId,
+          isHidden: false,
+        },
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          votes: {
+            where: { userId: currentUserId },
+            select: { isUpvote: true },
+          },
+          fight: {
+            select: {
+              id: true,
+              fighter1: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              fighter2: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+              event: {
+                select: {
+                  id: true,
+                  name: true,
+                  date: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // Format the response
+      const formattedReviews = reviews.map((review) => ({
+        id: review.id,
+        fightId: review.fightId,
+        content: review.content,
+        rating: review.rating,
+        upvotes: review.upvotes,
+        userHasUpvoted: review.votes.some(v => v.isUpvote),
+        createdAt: review.createdAt,
+        isReply: !!review.parentReviewId,
+        fight: {
+          id: review.fight.id,
+          fighter1Name: `${review.fight.fighter1.firstName} ${review.fight.fighter1.lastName}`,
+          fighter2Name: `${review.fight.fighter2.firstName} ${review.fight.fighter2.lastName}`,
+          eventName: review.fight.event.name,
+          eventDate: review.fight.event.date,
+        },
+      }));
+
+      return reply.send({
+        reviews: formattedReviews,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit),
+        },
+      });
+
+    } catch (error) {
+      console.error('Error in /fights/my-comments route:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
   // POST /api/fights/:fightId/reviews/:reviewId/flag - Flag a review as inappropriate
   fastify.post<{
     Params: { fightId: string; reviewId: string };

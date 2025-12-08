@@ -14,8 +14,10 @@ import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../store/AuthContext';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { CustomAlert } from '../../components/CustomAlert';
+import { CommentCard } from '../../components';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
-import { api } from '../../services/api';
+import { api, apiService } from '../../services/api';
+import * as Haptics from 'expo-haptics';
 import PredictionAccuracyChart from '../../components/PredictionAccuracyChart';
 import SectionContainer from '../../components/SectionContainer';
 
@@ -27,6 +29,24 @@ interface EventAccuracy {
   incorrect: number;
 }
 
+interface TopReview {
+  id: string;
+  fightId: string;
+  content: string;
+  rating: number | null;
+  upvotes: number;
+  userHasUpvoted: boolean;
+  createdAt: string;
+  isReply: boolean;
+  fight: {
+    id: string;
+    fighter1Name: string;
+    fighter2Name: string;
+    eventName: string;
+    eventDate: string;
+  };
+}
+
 // Helper to get ordinal suffix (1st, 2nd, 3rd, 4th, etc.)
 const getOrdinalSuffix = (n: number): string => {
   const s = ['th', 'st', 'nd', 'rd'];
@@ -35,10 +55,11 @@ const getOrdinalSuffix = (n: number): string => {
 };
 
 export default function ProfileScreen() {
-  const { user, logout, refreshUserData } = useAuth();
+  const { user, logout, refreshUserData, isAuthenticated } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { alertState, showConfirm, showError, hideAlert } = useCustomAlert();
+  const [upvotingReviewId, setUpvotingReviewId] = useState<string | null>(null);
 
   // Prediction accuracy data state
   const [predictionAccuracy, setPredictionAccuracy] = useState<{
@@ -53,6 +74,12 @@ export default function ProfileScreen() {
     totalUsers: number;
     hasRanking: boolean;
   }>({ position: null, totalUsers: 0, hasRanking: false });
+
+  // Top reviews data state
+  const [topReviews, setTopReviews] = useState<{
+    reviews: TopReview[];
+    totalWithUpvotes: number;
+  }>({ reviews: [], totalWithUpvotes: 0 });
 
   // Time filter state
   const [timeFilter, setTimeFilter] = useState<string>('3months');
@@ -93,6 +120,25 @@ export default function ProfileScreen() {
       fetchPredictionData();
     }
   }, [user?.id, timeFilter]);
+
+  // Fetch user's top upvoted reviews
+  useEffect(() => {
+    const fetchTopReviews = async () => {
+      try {
+        const data = await api.getMyTopReviews(3);
+        if (data && data.reviews) {
+          setTopReviews(data);
+        }
+      } catch (error) {
+        // Silently fail - endpoint may not exist yet
+        console.log('Top reviews not available:', error);
+      }
+    };
+
+    if (user) {
+      fetchTopReviews();
+    }
+  }, [user?.id]);
 
   // Auto-refresh user data if averageRating or averageHype is missing (from old cached data)
   // OR if distributions are empty (to get real data)
@@ -149,6 +195,27 @@ export default function ProfileScreen() {
       'Cancel',
       true
     );
+  };
+
+  // Handle upvote on a review
+  const handleUpvote = async (fightId: string, reviewId: string) => {
+    if (upvotingReviewId) return;
+
+    setUpvotingReviewId(reviewId);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    try {
+      await apiService.toggleReviewUpvote(fightId, reviewId);
+      // Refresh the top reviews to get updated upvote counts
+      const data = await api.getMyTopReviews(3);
+      if (data && data.reviews) {
+        setTopReviews(data);
+      }
+    } catch (error) {
+      console.error('Failed to upvote review:', error);
+    } finally {
+      setUpvotingReviewId(null);
+    }
   };
 
   const styles = createStyles(colors);
@@ -395,6 +462,61 @@ export default function ProfileScreen() {
                 </View>
               </View>
               <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 14, textAlign: 'center' }}>({user?.totalHype || 0} fights)</Text>
+            </View>
+          )}
+        </SectionContainer>
+
+        {/* My Comments (Post-Fight) */}
+        <SectionContainer
+          title="My Comments (Post-Fight)"
+          icon="comment"
+          iconColor="#fff"
+          headerBgColor="#3B82F6"
+          containerBgColorDark="rgba(59, 130, 246, 0.05)"
+          containerBgColorLight="rgba(59, 130, 246, 0.08)"
+        >
+          {!topReviews?.reviews || topReviews.reviews.length === 0 ? (
+            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+              Write comments on completed fights. Your most upvoted comments will appear here!
+            </Text>
+          ) : (
+            <View>
+              {topReviews.reviews.map((review) => (
+                <View key={review.id} style={{ marginBottom: 8 }}>
+                  <CommentCard
+                    comment={{
+                      id: review.id,
+                      content: review.isReply ? `↳ ${review.content}` : review.content,
+                      rating: review.rating || 0,
+                      upvotes: review.upvotes,
+                      userHasUpvoted: review.userHasUpvoted,
+                      user: { displayName: 'Me' },
+                      fight: review.fight ? {
+                        id: review.fight.id,
+                        fighter1Name: review.fight.fighter1Name,
+                        fighter2Name: review.fight.fighter2Name,
+                        eventName: review.fight.eventName,
+                      } : undefined,
+                    }}
+                    onPress={() => router.push(`/fight/${review.fight?.id}` as any)}
+                    onUpvote={() => handleUpvote(review.fightId, review.id)}
+                    isUpvoting={upvotingReviewId === review.id}
+                    isAuthenticated={isAuthenticated}
+                    showMyReview={true}
+                  />
+                </View>
+              ))}
+              {(topReviews.totalWithUpvotes || 0) > 3 && (
+                <TouchableOpacity
+                  style={styles.seeAllButton}
+                  onPress={() => router.push('/activity/my-comments' as any)}
+                >
+                  <Text style={[styles.seeAllText, { color: colors.primary }]}>
+                    See All ({topReviews.totalWithUpvotes})
+                  </Text>
+                  <FontAwesome name="chevron-right" size={12} color={colors.primary} />
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </SectionContainer>
@@ -707,5 +829,17 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   filterTabTextActive: {
     color: colors.textOnAccent,
+  },
+  seeAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    marginTop: 4,
+  },
+  seeAllText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 }); 
