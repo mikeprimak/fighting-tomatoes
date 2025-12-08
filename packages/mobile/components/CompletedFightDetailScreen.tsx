@@ -1039,7 +1039,7 @@ export default function CompletedFightDetailScreen({
   // Winner data is always visible
   const isOutcomeRevealed = true;
 
-  // Pre-flight comment upvote mutation
+  // Pre-flight comment upvote mutation (handles both top-level comments and replies)
   const upvotePreFightCommentMutation = useMutation({
     mutationFn: async (commentId: string) => {
       return apiService.togglePreFightCommentUpvote(fight.id, commentId);
@@ -1051,15 +1051,26 @@ export default function CompletedFightDetailScreen({
       await queryClient.cancelQueries({ queryKey: ['preFightComments', fight.id] });
       const previousComments = queryClient.getQueryData(['preFightComments', fight.id]);
 
-      // Optimistic update
+      // Optimistic update - handles both top-level comments and nested replies
       queryClient.setQueryData(['preFightComments', fight.id], (old: any) => {
         if (!old) return old;
 
-        const updatedComments = old.comments.map((c: any) =>
-          c.id === commentId
-            ? { ...c, upvotes: c.userHasUpvoted ? c.upvotes - 1 : c.upvotes + 1, userHasUpvoted: !c.userHasUpvoted }
-            : c
-        );
+        const updatedComments = old.comments.map((c: any) => {
+          // Check if this is the comment to update
+          if (c.id === commentId) {
+            return { ...c, upvotes: c.userHasUpvoted ? c.upvotes - 1 : c.upvotes + 1, userHasUpvoted: !c.userHasUpvoted };
+          }
+          // Check if the comment is in this comment's replies
+          if (c.replies && c.replies.length > 0) {
+            const updatedReplies = c.replies.map((r: any) =>
+              r.id === commentId
+                ? { ...r, upvotes: r.userHasUpvoted ? r.upvotes - 1 : r.upvotes + 1, userHasUpvoted: !r.userHasUpvoted }
+                : r
+            );
+            return { ...c, replies: updatedReplies };
+          }
+          return c;
+        });
 
         return { ...old, comments: updatedComments };
       });
@@ -1067,15 +1078,26 @@ export default function CompletedFightDetailScreen({
       return { previousComments };
     },
     onSuccess: (data, commentId) => {
-      // Update with actual server response
+      // Update with actual server response - handles both top-level comments and nested replies
       queryClient.setQueryData(['preFightComments', fight.id], (old: any) => {
         if (!old) return old;
 
-        const updatedComments = old.comments.map((c: any) =>
-          c.id === commentId
-            ? { ...c, upvotes: data.upvotes, userHasUpvoted: data.userHasUpvoted }
-            : c
-        );
+        const updatedComments = old.comments.map((c: any) => {
+          // Check if this is the comment to update
+          if (c.id === commentId) {
+            return { ...c, upvotes: data.upvotes, userHasUpvoted: data.userHasUpvoted };
+          }
+          // Check if the comment is in this comment's replies
+          if (c.replies && c.replies.length > 0) {
+            const updatedReplies = c.replies.map((r: any) =>
+              r.id === commentId
+                ? { ...r, upvotes: data.upvotes, userHasUpvoted: data.userHasUpvoted }
+                : r
+            );
+            return { ...c, replies: updatedReplies };
+          }
+          return c;
+        });
 
         return { ...old, comments: updatedComments };
       });
@@ -2509,6 +2531,8 @@ export default function CompletedFightDetailScreen({
                         fighter2Name={fight.fighter2.lastName}
                         isAuthenticated={isAuthenticated}
                         showMyComment={comment.userId === user?.id}
+                        onUpvote={() => handleUpvoteComment(comment.id)}
+                        isUpvoting={upvotePreFightCommentMutation.isPending}
                       />
                     </View>
 
@@ -2541,6 +2565,8 @@ export default function CompletedFightDetailScreen({
                               fighter2Name={fight.fighter2.lastName}
                               isAuthenticated={isAuthenticated}
                               showMyComment={reply.userId === user?.id}
+                              onUpvote={() => handleUpvoteComment(reply.id)}
+                              isUpvoting={upvotePreFightCommentMutation.isPending}
                             />
                           ))}
                           {/* Show more/less replies button */}
