@@ -28,6 +28,9 @@ export interface NotificationRuleConditions {
   daysOfWeek?: number[]; // 0 = Sunday, 6 = Saturday
   notDaysOfWeek?: number[]; // Exclude these days
 
+  // Special rule types (not fight-specific)
+  isPreEventReport?: boolean; // Event-level notification, not per-fight
+
   // Add more conditions here as needed - the system is extensible
 }
 
@@ -58,6 +61,11 @@ export async function evaluateFightAgainstConditions(
   }
 
   // Evaluate each condition type
+
+  // -1. Skip event-level rules (Pre-Event Report is not a per-fight notification)
+  if ((conditions as any).isPreEventReport) {
+    return false;
+  }
 
   // 0. Fight-specific conditions (highest priority - exact match)
   if (conditions.fightIds && conditions.fightIds.length > 0) {
@@ -268,6 +276,9 @@ export async function syncAllUserRuleMatches(userId: string): Promise<number> {
 /**
  * Gets all notification reasons for a specific fight for a user
  * Uses the unified rule-based notification system
+ *
+ * IMPORTANT: This now evaluates rules dynamically for hype-based rules,
+ * since hype scores can change after rules are created/enabled.
  */
 export async function getNotificationReasonsForFight(
   userId: string,
@@ -300,6 +311,9 @@ export async function getNotificationReasonsForFight(
     isActive: boolean;
   }> = [];
 
+  // Track which rules we've already added to avoid duplicates
+  const addedRuleIds = new Set<string>();
+
   // Check rule-based matches (unified notification system)
   const ruleMatches = await prisma.fightNotificationMatch.findMany({
     where: {
@@ -326,6 +340,44 @@ export async function getNotificationReasonsForFight(
       ruleId: match.ruleId,
       isActive: match.isActive,
     });
+    addedRuleIds.add(match.ruleId);
+  }
+
+  // DYNAMIC EVALUATION: Check active rules that weren't in pre-synced matches
+  // This handles cases where hype scores changed after the rule was created
+  const activeRules = await prisma.userNotificationRule.findMany({
+    where: {
+      userId,
+      isActive: true,
+    },
+  });
+
+  for (const rule of activeRules) {
+    // Skip rules already added from matches
+    if (addedRuleIds.has(rule.id)) {
+      continue;
+    }
+
+    // Dynamically evaluate if this rule matches the fight
+    const conditions = rule.conditions as NotificationRuleConditions;
+    const matches = await evaluateFightAgainstConditions(fightId, conditions);
+
+    if (matches) {
+      // Determine notification type based on rule name pattern
+      let type: 'manual' | 'fighter' | 'rule' = 'rule';
+      if (rule.name.startsWith('Manual Fight Follow:')) {
+        type = 'manual';
+      } else if (rule.name.startsWith('Fighter Follow:')) {
+        type = 'fighter';
+      }
+
+      reasons.push({
+        type,
+        source: rule.name,
+        ruleId: rule.id,
+        isActive: true, // Rule is active and matches dynamically
+      });
+    }
   }
 
   const willBeNotified = reasons.some(r => r.isActive);

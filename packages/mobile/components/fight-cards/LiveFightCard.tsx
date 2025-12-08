@@ -376,22 +376,19 @@ export default function LiveFightCard({
   const flameColor = getFlameColor(hypeBorderColor, colors.background);
   const starColor = getFlameColor(ratingBorderColor, colors.background);
 
-  const userRatingColor = getHypeHeatmapColor(fight.userRating || 0);
-  const userStarColor = getFlameColor(userRatingColor, colors.background);
+  const userHypeColor = getHypeHeatmapColor(fight.userHypePrediction || 0);
+  const userFlameColor = getFlameColor(userHypeColor, colors.background);
 
   return (
-    <TouchableOpacity onPress={() => router.push(`/completed-fight/${fight.id}`)} activeOpacity={0.7}>
+    <TouchableOpacity onPress={() => router.push(`/fight/${fight.id}`)} activeOpacity={0.7}>
       <View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
-        paddingLeft: 16, // No squares, just padding
-        paddingVertical: 0, // No vertical padding - let live strip and content handle it
-        paddingRight: 16, // No squares, just padding
-        minHeight: 40, // Minimum height to ensure content fits
+        paddingLeft: 64, // 48px square + 16px padding
+        paddingVertical: 0,
+        paddingRight: 64, // 48px square + 16px padding
+        minHeight: 62,
         justifyContent: 'center',
-        backgroundColor: '#F5C518', // Pure primary yellow
-        marginTop: 10,
-        marginBottom: 20,
       }]}>
           {/* Status Strip at Top - Up Next / Starting Soon / Live Now */}
           <Animated.View style={[
@@ -404,105 +401,179 @@ export default function LiveFightCard({
             </Text>
           </Animated.View>
 
-          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -10 : 8 }]}>
-            {/* Fighter names with centered "vs" */}
-            <View style={styles.fighterNamesContainer}>
-              {/* Fighter 1 - Left half */}
-              <View style={styles.fighter1Container}>
-                <View
-                  style={[
-                    { alignSelf: 'flex-end', position: 'relative' },
-                    aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && {
-                      borderBottomWidth: 2,
-                      borderBottomColor: '#F5C518',
-                    }
-                  ]}
-                >
-                  <Text
-                    style={[styles.fighterName, { color: '#000000', textAlign: 'right' }]}
-                    numberOfLines={1}
-                  >
-                    {cleanFighterName(getFighterName(fight.fighter1))}
-                  </Text>
-                  {/* Checkmark for correct prediction */}
-                  {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` &&
-                   fight.winner === fight.fighter1.id && (
-                    <View style={styles.checkmarkContainer}>
-                      <View style={[styles.checkmarkIcon, { backgroundColor: colors.background }]}>
-                        <FontAwesome name="check" size={10} color="#F5C518" />
-                      </View>
-                    </View>
-                  )}
-                </View>
-              </View>
-
-              {/* "vs" text - Absolutely centered */}
-              <View style={styles.vsContainer}>
-                <Text style={[styles.vsText, { color: '#000000' }]}>vs</Text>
-              </View>
-
-              {/* Fighter 2 - Right half */}
-              <View style={styles.fighter2Container}>
-                <View
-                  style={[
-                    { alignSelf: 'flex-start', position: 'relative' },
-                    aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && {
-                      borderBottomWidth: 2,
-                      borderBottomColor: '#F5C518',
-                    }
-                  ]}
-                >
-                  <Text
-                    style={[styles.fighterName, { color: '#000000', textAlign: 'left' }]}
-                    numberOfLines={1}
-                  >
-                    {cleanFighterName(getFighterName(fight.fighter2))}
-                  </Text>
-                  {/* Checkmark for correct prediction */}
-                  {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` &&
-                   fight.winner === fight.fighter2.id && (
-                    <View style={styles.checkmarkContainer}>
-                      <View style={[styles.checkmarkIcon, { backgroundColor: colors.background }]}>
-                        <FontAwesome name="check" size={10} color="#F5C518" />
-                      </View>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </View>
-
-            {/* Event text positioned absolutely below fighter names */}
-            {showEvent && (
-              <Text
-                style={{
-                  position: 'absolute',
-                  bottom: -19,
-                  left: 0,
-                  right: 0,
-                  color: colors.textSecondary,
-                  fontSize: 10,
-                  textAlign: 'center',
-                }}
-                numberOfLines={1}
-              >
-                {fight.event.name} • {formatDate(fight.event.date)}
-              </Text>
+          {/* Full-height community hype square on the left */}
+          <View style={[
+            styles.hypeSquare,
+            {
+              backgroundColor: (predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0)
+                ? hypeBorderColor
+                : 'transparent',
+              borderWidth: (predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0)
+                ? 0
+                : 1,
+              borderColor: colors.textSecondary,
+            }
+          ]}>
+            {(predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0) ? (
+              <>
+                <FontAwesome6
+                  name="fire-flame-curved"
+                  size={14}
+                  color="rgba(0,0,0,0.45)"
+                />
+                <Text style={styles.hypeSquareNumber}>
+                  {predictionStats.averageHype.toFixed(1)}
+                </Text>
+              </>
+            ) : (
+              <FontAwesome6
+                name="fire-flame-curved"
+                size={16}
+                color={colors.textSecondary}
+                style={{ opacity: 0.5 }}
+              />
             )}
           </View>
 
-          {/* Fighter Images Row */}
-          <View style={styles.fighterImagesRow}>
-            <Image
-              source={getFighter1ImageSource()}
-              style={styles.fighterImage}
-              onError={() => setFighter1ImageError(true)}
-            />
-            <Image
-              source={getFighter2ImageSource()}
-              style={styles.fighterImage}
-              onError={() => setFighter2ImageError(true)}
-            />
+          {/* Full-height user hype square on the right */}
+          <View style={[
+            styles.userHypeSquare,
+            {
+              backgroundColor: (fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0)
+                ? userHypeColor
+                : 'transparent',
+              borderWidth: (fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0)
+                ? 0
+                : 1,
+              borderColor: colors.textSecondary,
+            }
+          ]}>
+            {(fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0) ? (
+              <>
+                <FontAwesome6
+                  name="fire-flame-curved"
+                  size={14}
+                  color="rgba(0,0,0,0.45)"
+                />
+                <Text style={styles.hypeSquareNumber}>
+                  {Math.round(fight.userHypePrediction).toString()}
+                </Text>
+              </>
+            ) : (
+              <FontAwesome6
+                name="fire-flame-curved"
+                size={16}
+                color={colors.textSecondary}
+                style={{ opacity: 0.5 }}
+              />
+            )}
           </View>
+
+          <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: 0 }]}>
+            {/* Fighter names with headshots */}
+            <View style={styles.fighterNamesContainer}>
+              {/* Notification bell indicator - shown when user is following this fight */}
+              {fight.isFollowing && (
+                <View style={styles.notificationBellIndicator}>
+                  <FontAwesome name="bell" size={12} color="#F5C518" />
+                </View>
+              )}
+              {/* Fighter 1 - Left half */}
+              <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
+                <View style={[
+                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-end' }
+                ]}>
+                  {/* First name */}
+                  <Text
+                    style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {fight.fighter1.firstName}
+                  </Text>
+                  {/* Last name */}
+                  <Text
+                    style={[styles.fighterLastName, { textAlign: 'right', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {fight.fighter1.lastName}
+                  </Text>
+                </View>
+                {/* Fighter 1 headshot - right of name */}
+                <View style={[styles.fighterImageWrapper, { marginLeft: 6, marginRight: -3 }]}>
+                  <Image
+                    source={getFighter1ImageSource()}
+                    style={styles.fighterHeadshot}
+                    onError={() => setFighter1ImageError(true)}
+                  />
+                  {/* User prediction indicator - yellow circle with user icon (bottom-left for fighter 1) */}
+                  {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
+                    <View style={styles.userPredictionIndicatorLeft}>
+                      <FontAwesome name="user" size={14} color="#000000" />
+                    </View>
+                  )}
+                </View>
+              </View>
+
+              {/* Fighter 2 - Right half */}
+              <View style={[styles.fighter2Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
+                {/* Fighter 2 headshot - left of name */}
+                <View style={[styles.fighterImageWrapper, { marginRight: 6, marginLeft: -3 }]}>
+                  <Image
+                    source={getFighter2ImageSource()}
+                    style={styles.fighterHeadshot}
+                    onError={() => setFighter2ImageError(true)}
+                  />
+                  {/* User prediction indicator - yellow circle with user icon (bottom-right for fighter 2) */}
+                  {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
+                    <View style={styles.userPredictionIndicatorRight}>
+                      <FontAwesome name="user" size={14} color="#000000" />
+                    </View>
+                  )}
+                </View>
+                <View style={[
+                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-start' }
+                ]}>
+                  {/* First name */}
+                  <Text
+                    style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {fight.fighter2.firstName}
+                  </Text>
+                  {/* Last name */}
+                  <Text
+                    style={[styles.fighterLastName, { textAlign: 'left', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
+                  >
+                    {fight.fighter2.lastName}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Event info inside card (when showEvent=true) */}
+          {showEvent && (
+            <Text
+              style={{
+                color: colors.textSecondary,
+                fontSize: 10,
+                textAlign: 'center',
+                marginTop: 4,
+              }}
+              numberOfLines={1}
+            >
+              {fight.event.name} • {formatDate(fight.event.date)}
+            </Text>
+          )}
 
         {/* Bell icon - hidden but functionality preserved */}
         {false && isAuthenticated && (
@@ -703,13 +774,13 @@ const styles = StyleSheet.create({
   },
   fighter1Container: {
     flex: 1,
-    paddingRight: 12,
+    paddingRight: 4,
     justifyContent: 'center',
     marginLeft: -5,
   },
   fighter2Container: {
     flex: 1,
-    paddingLeft: 12,
+    paddingLeft: 4,
     justifyContent: 'center',
   },
   vsContainer: {
@@ -889,8 +960,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: -16,
-    marginRight: -16,
+    marginLeft: -64,
+    marginRight: -64,
     marginTop: 0,
   },
   liveNowStripText: {
@@ -898,5 +969,80 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     textTransform: 'uppercase',
+  },
+  hypeSquare: {
+    position: 'absolute',
+    top: 6,
+    left: 0,
+    width: 48,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  userHypeSquare: {
+    position: 'absolute',
+    top: 6,
+    right: 0,
+    width: 48,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  hypeSquareNumber: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  fighterLastName: {
+    fontSize: 16,
+    fontWeight: '700',
+    flexShrink: 1,
+  },
+  fighterHeadshot: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  fighterImageWrapper: {
+    position: 'relative',
+    width: 50,
+    height: 50,
+  },
+  userPredictionIndicatorLeft: {
+    position: 'absolute',
+    bottom: -4,
+    left: -4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F5C518',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 15,
+  },
+  userPredictionIndicatorRight: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F5C518',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 15,
+  },
+  notificationBellIndicator: {
+    position: 'absolute',
+    left: '50%',
+    top: '25%',
+    transform: [{ translateX: -8 }],
+    zIndex: 20,
   },
 });

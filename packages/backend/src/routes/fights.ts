@@ -2050,6 +2050,85 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // POST /api/fights/:id/pre-fight-comments/:commentId/flag - Flag a pre-fight comment as inappropriate
+  fastify.post<{
+    Params: { id: string; commentId: string };
+    Body: { reason: string };
+  }>('/fights/:id/pre-fight-comments/:commentId/flag', {
+    preHandler: [authenticateUser, requireEmailVerification],
+  }, async (request: FastifyRequest<{
+    Params: { id: string; commentId: string };
+    Body: { reason: string };
+  }>, reply: FastifyReply) => {
+    try {
+      const { id: fightId, commentId } = request.params;
+      const { reason } = request.body;
+      const userId = request.user!.id;
+
+      // Validate reason
+      const validReasons = ['SPAM', 'HARASSMENT', 'PRIVACY', 'INAPPROPRIATE_CONTENT', 'MISINFORMATION', 'OTHER'];
+      if (!reason || !validReasons.includes(reason)) {
+        return reply.code(400).send({
+          error: 'Invalid or missing report reason',
+          code: 'INVALID_REASON',
+        });
+      }
+
+      // Check if fight exists
+      const fight = await fastify.prisma.fight.findUnique({
+        where: { id: fightId },
+      });
+
+      if (!fight) {
+        return reply.code(404).send({
+          error: 'Fight not found',
+          code: 'FIGHT_NOT_FOUND',
+        });
+      }
+
+      // Check if comment exists
+      const comment = await fastify.prisma.preFightComment.findUnique({
+        where: { id: commentId },
+      });
+
+      if (!comment) {
+        return reply.code(404).send({
+          error: 'Comment not found',
+          code: 'COMMENT_NOT_FOUND',
+        });
+      }
+
+      // Upsert report (create or update if exists)
+      await fastify.prisma.preFightCommentReport.upsert({
+        where: {
+          reporterId_commentId: {
+            reporterId: userId,
+            commentId,
+          },
+        },
+        update: {
+          reason: reason as any,
+        },
+        create: {
+          reporterId: userId,
+          commentId,
+          reason: reason as any,
+        },
+      });
+
+      return reply.send({
+        message: 'Comment has been flagged for moderation',
+      });
+
+    } catch (error) {
+      console.error('Error flagging pre-fight comment:', error);
+      return reply.code(500).send({
+        error: 'Failed to flag comment',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
   // GET /api/fights/:id/reviews - Get paginated reviews for a fight (with nested replies)
   fastify.get('/fights/:id/reviews', { preHandler: optionalAuth }, async (request, reply) => {
     try {

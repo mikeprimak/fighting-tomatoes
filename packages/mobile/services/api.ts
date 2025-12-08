@@ -1149,7 +1149,7 @@ class ApiService {
   async flagPreFightComment(fightId: string, commentId: string, reason: string): Promise<{
     message: string;
   }> {
-    return this.makeRequest(`/fights/${fightId}/pre-flight-comments/${commentId}/flag`, {
+    return this.makeRequest(`/fights/${fightId}/pre-fight-comments/${commentId}/flag`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });

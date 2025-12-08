@@ -192,10 +192,9 @@ export default function FightDetailScreen() {
   };
 
   const renderMenuButton = () => {
-    // For upcoming fights, check if manual notification is set
-    const hasManualNotification = !isComplete && fight.notificationReasons?.reasons?.some(
-      (r: any) => r.type === 'manual' && r.isActive
-    );
+    // For upcoming fights, check if user will be notified for ANY reason
+    // (manual follow, fighter follow, or hype fights rule)
+    const willBeNotified = !isComplete && fight.notificationReasons?.willBeNotified;
 
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
@@ -206,9 +205,9 @@ export default function FightDetailScreen() {
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <FontAwesome
-              name={hasManualNotification ? "bell" : "bell-o"}
+              name={willBeNotified ? "bell" : "bell-o"}
               size={18}
-              color={hasManualNotification ? colors.tint : colors.text}
+              color={willBeNotified ? colors.tint : colors.text}
             />
           </TouchableOpacity>
         )}

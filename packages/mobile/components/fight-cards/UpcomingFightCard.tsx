@@ -442,8 +442,9 @@ export default function UpcomingFightCard({
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: 0 }]}>
             {/* Fighter names with centered "vs" */}
             <View style={styles.fighterNamesContainer}>
-              {/* Notification bell indicator - shown when user is following this fight */}
-              {fight.isFollowing && (
+              {/* Notification bell indicator - shown when user will be notified for this fight */}
+              {/* Covers: manual fight follow, following a fighter, or hype fights notification rule */}
+              {fight.notificationReasons?.willBeNotified && (
                 <View style={styles.notificationBellIndicator}>
                   <FontAwesome name="bell" size={12} color="#F5C518" />
                 </View>

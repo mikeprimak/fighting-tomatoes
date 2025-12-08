@@ -455,6 +455,7 @@ model PreFightComment {
 
   // Relations
   votes           PreFightCommentVote[]
+  reports         PreFightCommentReport[]
 
   // Timestamps
   createdAt       DateTime  @default(now())
@@ -477,6 +478,29 @@ model PreFightCommentVote {
 
   @@unique([userId, commentId])
   @@map("pre_fight_comment_votes")
+}
+
+model PreFightCommentReport {
+  id          String    @id @default(uuid())
+
+  // Relationships
+  reporterId  String    // user who reported
+  commentId   String
+  comment     PreFightComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  // Report details
+  reason      ReportReason
+  description String?
+
+  // Status
+  isResolved  Boolean   @default(false)
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  @@unique([reporterId, commentId])
+  @@map("pre_fight_comment_reports")
 }
 
 model ReviewVote {
