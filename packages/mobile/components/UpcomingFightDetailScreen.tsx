@@ -1245,7 +1245,7 @@ export default function UpcomingFightDetailScreen({
         containerBgColorLight="rgba(59, 130, 246, 0.08)"
       >
         {/* Community Predictions Data */}
-        <View style={{ marginTop: 14 }}>
+        <View style={{ marginTop: -22 }}>
         {/* Community Predictions Bar Chart - always visible */}
         {displayPredictionStats && displayPredictionStats.fighter1MethodPredictions && displayPredictionStats.fighter2MethodPredictions && displayPredictionStats.winnerPredictions && (
           <PredictionBarChart
