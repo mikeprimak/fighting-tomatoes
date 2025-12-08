@@ -364,15 +364,22 @@ function EventSection({
 
   const hasLiveFight = fights.some((f: Fight) => f.hasStarted && !f.isComplete);
 
-  // DEV OVERRIDE: Force "Costa vs Charriere" to show as "Up Next"
-  const DEV_FORCE_UP_NEXT = true; // Set to false to disable
+  // DEV OVERRIDE: Force "Costa vs Charriere" to show as "Live Now"
+  const DEV_FORCE_LIVE_NOW = true; // Set to false to disable
   const isCostaVsCharriere = (fight: Fight) => {
     const f1 = `${fight.fighter1?.lastName || ''}`.toLowerCase();
     const f2 = `${fight.fighter2?.lastName || ''}`.toLowerCase();
     return (f1.includes('costa') && f2.includes('charriere')) ||
            (f1.includes('charriere') && f2.includes('costa'));
   };
-  const devLastCompletedTime = DEV_FORCE_UP_NEXT ? new Date().toISOString() : null;
+  // Helper to get dev-modified fight (with hasStarted for Live Now state)
+  const getDevFight = (fight: Fight) => {
+    if (DEV_FORCE_LIVE_NOW && isCostaVsCharriere(fight)) {
+      return { ...fight, hasStarted: true, isComplete: false };
+    }
+    return fight;
+  };
+  const devLastCompletedTime = null;
 
   const styles = createStyles(colors);
 
@@ -467,12 +474,12 @@ function EventSection({
               {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
                 <FightDisplayCard
                   key={fight.id}
-                  fight={fight}
+                  fight={getDevFight(fight)}
                   onPress={() => onFightPress(fight)}
                   showEvent={false}
-                  isNextFight={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? true : nextFight?.id === fight.id}
-                  hasLiveFight={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? false : hasLiveFight}
-                  lastCompletedFightTime={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? devLastCompletedTime : lastCompletedFight?.updatedAt}
+                  isNextFight={nextFight?.id === fight.id}
+                  hasLiveFight={DEV_FORCE_LIVE_NOW && isCostaVsCharriere(fight) ? true : hasLiveFight}
+                  lastCompletedFightTime={lastCompletedFight?.updatedAt}
                 />
               ))}
             </View>
@@ -497,12 +504,12 @@ function EventSection({
               {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
                 <FightDisplayCard
                   key={fight.id}
-                  fight={fight}
+                  fight={getDevFight(fight)}
                   onPress={() => onFightPress(fight)}
                   showEvent={false}
-                  isNextFight={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? true : nextFight?.id === fight.id}
-                  hasLiveFight={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? false : hasLiveFight}
-                  lastCompletedFightTime={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? devLastCompletedTime : lastCompletedFight?.updatedAt}
+                  isNextFight={nextFight?.id === fight.id}
+                  hasLiveFight={DEV_FORCE_LIVE_NOW && isCostaVsCharriere(fight) ? true : hasLiveFight}
+                  lastCompletedFightTime={lastCompletedFight?.updatedAt}
                 />
               ))}
             </View>
@@ -527,12 +534,12 @@ function EventSection({
               {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
                 <FightDisplayCard
                   key={fight.id}
-                  fight={fight}
+                  fight={getDevFight(fight)}
                   onPress={() => onFightPress(fight)}
                   showEvent={false}
-                  isNextFight={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? true : nextFight?.id === fight.id}
-                  hasLiveFight={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? false : hasLiveFight}
-                  lastCompletedFightTime={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? devLastCompletedTime : lastCompletedFight?.updatedAt}
+                  isNextFight={nextFight?.id === fight.id}
+                  hasLiveFight={DEV_FORCE_LIVE_NOW && isCostaVsCharriere(fight) ? true : hasLiveFight}
+                  lastCompletedFightTime={lastCompletedFight?.updatedAt}
                 />
               ))}
             </View>
