@@ -364,6 +364,16 @@ function EventSection({
 
   const hasLiveFight = fights.some((f: Fight) => f.hasStarted && !f.isComplete);
 
+  // DEV OVERRIDE: Force "Costa vs Charriere" to show as "Up Next"
+  const DEV_FORCE_UP_NEXT = true; // Set to false to disable
+  const isCostaVsCharriere = (fight: Fight) => {
+    const f1 = `${fight.fighter1?.lastName || ''}`.toLowerCase();
+    const f2 = `${fight.fighter2?.lastName || ''}`.toLowerCase();
+    return (f1.includes('costa') && f2.includes('charriere')) ||
+           (f1.includes('charriere') && f2.includes('costa'));
+  };
+  const devLastCompletedTime = DEV_FORCE_UP_NEXT ? new Date().toISOString() : null;
+
   const styles = createStyles(colors);
 
   // Determine earliest start time for countdown
@@ -460,9 +470,9 @@ function EventSection({
                   fight={fight}
                   onPress={() => onFightPress(fight)}
                   showEvent={false}
-                  isNextFight={nextFight?.id === fight.id}
-                  hasLiveFight={hasLiveFight}
-                  lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                  isNextFight={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? true : nextFight?.id === fight.id}
+                  hasLiveFight={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? false : hasLiveFight}
+                  lastCompletedFightTime={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? devLastCompletedTime : lastCompletedFight?.updatedAt}
                 />
               ))}
             </View>
@@ -490,9 +500,9 @@ function EventSection({
                   fight={fight}
                   onPress={() => onFightPress(fight)}
                   showEvent={false}
-                  isNextFight={nextFight?.id === fight.id}
-                  hasLiveFight={hasLiveFight}
-                  lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                  isNextFight={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? true : nextFight?.id === fight.id}
+                  hasLiveFight={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? false : hasLiveFight}
+                  lastCompletedFightTime={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? devLastCompletedTime : lastCompletedFight?.updatedAt}
                 />
               ))}
             </View>
@@ -520,9 +530,9 @@ function EventSection({
                   fight={fight}
                   onPress={() => onFightPress(fight)}
                   showEvent={false}
-                  isNextFight={nextFight?.id === fight.id}
-                  hasLiveFight={hasLiveFight}
-                  lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                  isNextFight={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? true : nextFight?.id === fight.id}
+                  hasLiveFight={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? false : hasLiveFight}
+                  lastCompletedFightTime={DEV_FORCE_UP_NEXT && isCostaVsCharriere(fight) ? devLastCompletedTime : lastCompletedFight?.updatedAt}
                 />
               ))}
             </View>

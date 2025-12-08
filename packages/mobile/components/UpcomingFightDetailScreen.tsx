@@ -90,6 +90,7 @@ interface UpcomingFightDetailScreenProps {
   renderMenuButton?: () => React.ReactNode;
   detailsMenuVisible?: boolean;
   setDetailsMenuVisible?: (visible: boolean) => void;
+  onNotificationEnabled?: () => void;
 }
 
 // Placeholder image for fighters
@@ -108,7 +109,8 @@ export default function UpcomingFightDetailScreen({
   onPredictionSuccess,
   renderMenuButton,
   detailsMenuVisible: externalDetailsMenuVisible,
-  setDetailsMenuVisible: externalSetDetailsMenuVisible
+  setDetailsMenuVisible: externalSetDetailsMenuVisible,
+  onNotificationEnabled,
 }: UpcomingFightDetailScreenProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -821,8 +823,11 @@ export default function UpcomingFightDetailScreen({
             },
       }));
     },
-    onSuccess: (data) => {
-      // Don't show toast - user is toggling in the menu and can see the switch state
+    onSuccess: (data, enabled) => {
+      // Show toast when notification is enabled (inside FightDetailsMenu modal)
+      if (enabled) {
+        showToast('You will get a notification right before this fight.');
+      }
       // Invalidate queries to refresh notification status
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
@@ -1948,6 +1953,9 @@ export default function UpcomingFightDetailScreen({
         isTogglingNotification={toggleNotificationMutation.isPending}
         onToggleFighterNotification={handleToggleFighterNotification}
         isTogglingFighterNotification={toggleFighterNotificationMutation.isPending}
+        toastMessage={toastMessage}
+        toastOpacity={toastOpacity}
+        toastTranslateY={toastTranslateY}
       />
     </ScrollView>
   );

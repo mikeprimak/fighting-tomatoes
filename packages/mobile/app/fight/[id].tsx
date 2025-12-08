@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   useColorScheme,
+  Animated,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +24,49 @@ export default function FightDetailScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
   const [detailsMenuVisible, setDetailsMenuVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string>('');
+
+  // Animation for toast notification
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTranslateY = useRef(new Animated.Value(50)).current;
+
+  // Toast notification animation
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    toastOpacity.setValue(0);
+    toastTranslateY.setValue(50);
+
+    Animated.parallel([
+      Animated.timing(toastOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(toastTranslateY, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Auto-dismiss after 3.5 seconds
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(toastOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(toastTranslateY, {
+          toValue: 50,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setToastMessage('');
+      });
+    }, 3500);
+  };
 
   // Fetch fight details
   const { data: fightData, isLoading: fightLoading, error: fightError } = useQuery({
@@ -88,7 +132,11 @@ export default function FightDetailScreen() {
       }
       console.error('Failed to toggle notification:', err);
     },
-    onSuccess: () => {
+    onSuccess: (data, enabled) => {
+      // Show toast when notification is enabled
+      if (enabled) {
+        showToast('You will get a notification right before this fight.');
+      }
       // Only invalidate other queries that might show this fight's notification status
       // Don't invalidate the current fight query as it would overwrite our optimistic update
       queryClient.invalidateQueries({ queryKey: ['fights'] });
@@ -201,6 +249,24 @@ export default function FightDetailScreen() {
           setDetailsMenuVisible={setDetailsMenuVisible}
         />
       )}
+
+      {/* Toast Notification */}
+      {toastMessage !== '' && (
+        <Animated.View
+          style={[
+            styles.toastContainer,
+            {
+              backgroundColor: colors.card,
+              borderColor: colors.border,
+              opacity: toastOpacity,
+              transform: [{ translateY: toastTranslateY }],
+            },
+          ]}
+        >
+          <FontAwesome name="bell" size={16} color="#10b981" />
+          <Text style={[styles.toastText, { color: '#fff' }]}>{toastMessage}</Text>
+        </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
@@ -238,6 +304,30 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  toastContainer: {
+    position: 'absolute',
+    bottom: 100,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  toastText: {
+    fontSize: 14,
     fontWeight: '600',
   },
 });

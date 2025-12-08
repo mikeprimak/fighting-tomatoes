@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, useColorScheme, Switch, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, useColorScheme, Switch, ActivityIndicator, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
@@ -49,6 +49,10 @@ interface FightDetailsMenuProps {
   isTogglingNotification?: boolean;
   onToggleFighterNotification?: (fighterId: string, enabled: boolean) => void;
   isTogglingFighterNotification?: boolean;
+  // Toast props
+  toastMessage?: string;
+  toastOpacity?: Animated.Value;
+  toastTranslateY?: Animated.Value;
 }
 
 // Format event date for display
@@ -79,6 +83,9 @@ export default function FightDetailsMenu({
   isTogglingNotification,
   onToggleFighterNotification,
   isTogglingFighterNotification,
+  toastMessage,
+  toastOpacity,
+  toastTranslateY,
 }: FightDetailsMenuProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -252,6 +259,24 @@ export default function FightDetailsMenu({
             </View>
           </View>
         </View>
+
+          {/* Toast Notification inside modal */}
+          {toastMessage && toastOpacity && toastTranslateY && (
+            <Animated.View
+              style={[
+                styles.toastContainer,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  opacity: toastOpacity,
+                  transform: [{ translateY: toastTranslateY }],
+                },
+              ]}
+            >
+              <FontAwesome name="bell" size={16} color="#10b981" />
+              <Text style={[styles.toastText, { color: '#fff' }]}>{toastMessage}</Text>
+            </Animated.View>
+          )}
       </TouchableOpacity>
     </Modal>
   );
@@ -337,5 +362,28 @@ const styles = StyleSheet.create({
   toggleHintText: {
     fontSize: 12,
     fontStyle: 'italic',
+  },
+  toastContainer: {
+    position: 'absolute',
+    bottom: 50,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  toastText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

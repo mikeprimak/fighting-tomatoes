@@ -17,13 +17,20 @@ import { useFightStats } from '../../hooks/useFightStats';
 
 interface LiveFightCardProps extends BaseFightCardProps {
   animateRating?: boolean;
+  isNextFight?: boolean;
+  lastCompletedFightTime?: string;
 }
+
+// Status types for the live fight card
+type LiveFightStatus = 'up_next' | 'starting_soon' | 'live_now';
 
 export default function LiveFightCard({
   fight,
   onPress,
   showEvent = true,
   animateRating = false,
+  isNextFight = false,
+  lastCompletedFightTime,
 }: LiveFightCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -53,6 +60,83 @@ export default function LiveFightCard({
   const bellRotation = useRef(new Animated.Value(0)).current;
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const toastTranslateY = useRef(new Animated.Value(50)).current;
+
+  // Track when "Up next..." first appeared (for timing the 5 minute transition)
+  const upNextStartTimeRef = useRef<number | null>(null);
+
+  // Animation for "Starting soon..." text pulse
+  const startingSoonPulseAnim = useRef(new Animated.Value(1)).current;
+
+  // Determine the current status of the live fight card
+  const getLiveStatus = (): LiveFightStatus => {
+    // If fight has actually started, show "Live Now"
+    if (fight.hasStarted && !fight.isComplete) {
+      return 'live_now';
+    }
+
+    // If this is the next fight (waiting to start)
+    if (isNextFight && !fight.hasStarted) {
+      // Initialize the start time if not set
+      if (!upNextStartTimeRef.current && lastCompletedFightTime) {
+        upNextStartTimeRef.current = Date.now();
+      }
+
+      if (upNextStartTimeRef.current) {
+        const minutesSinceStart = (Date.now() - upNextStartTimeRef.current) / 1000 / 60;
+        // After 5 minutes, switch to "Starting soon..."
+        if (minutesSinceStart >= 5) {
+          return 'starting_soon';
+        }
+      }
+      return 'up_next';
+    }
+
+    // Default to live_now for backwards compatibility
+    return 'live_now';
+  };
+
+  const liveStatus = getLiveStatus();
+
+  // Force re-render every second to update timing
+  const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
+  React.useEffect(() => {
+    if (isNextFight && !fight.hasStarted) {
+      const interval = setInterval(forceUpdate, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isNextFight, fight.hasStarted]);
+
+  // Pulsing animation for "Starting soon..."
+  useEffect(() => {
+    if (liveStatus === 'starting_soon') {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(startingSoonPulseAnim, { toValue: 0.4, duration: 1000, useNativeDriver: true }),
+          Animated.timing(startingSoonPulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+        ])
+      );
+      pulse.start();
+      return () => {
+        pulse.stop();
+        startingSoonPulseAnim.setValue(1);
+      };
+    }
+  }, [liveStatus, startingSoonPulseAnim]);
+
+  // Get the strip text and color based on status
+  const getStripConfig = () => {
+    switch (liveStatus) {
+      case 'up_next':
+        return { text: 'Up Next', bgColor: '#F5C518', textColor: '#000000' };
+      case 'starting_soon':
+        return { text: 'Starting Soon', bgColor: '#FF8C00', textColor: '#FFFFFF' };
+      case 'live_now':
+      default:
+        return { text: 'Live Now', bgColor: '#FF0000', textColor: '#FFFFFF' };
+    }
+  };
+
+  const stripConfig = getStripConfig();
 
   // Fetch both prediction stats and aggregate stats in a single API call
   const { data } = useFightStats(fight.id);
@@ -309,10 +393,16 @@ export default function LiveFightCard({
         marginTop: 10,
         marginBottom: 20,
       }]}>
-          {/* Live Now Strip at Top */}
-          <View style={styles.liveNowStrip}>
-            <Text style={styles.liveNowStripText}>Live Now</Text>
-          </View>
+          {/* Status Strip at Top - Up Next / Starting Soon / Live Now */}
+          <Animated.View style={[
+            styles.liveNowStrip,
+            { backgroundColor: stripConfig.bgColor },
+            liveStatus === 'starting_soon' && { opacity: startingSoonPulseAnim }
+          ]}>
+            <Text style={[styles.liveNowStripText, { color: stripConfig.textColor }]}>
+              {stripConfig.text}
+            </Text>
+          </Animated.View>
 
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: showEvent ? -10 : 8 }]}>
             {/* Fighter names with centered "vs" */}

@@ -61,11 +61,6 @@ export default function UpcomingFightCard({
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const toastTranslateY = useRef(new Animated.Value(50)).current;
 
-  // Track when "Up next..." first appeared
-  const upNextStartTimeRef = useRef<number | null>(null);
-
-  // Animation for "Starting soon..." text pulse
-  const startingSoonPulseAnim = useRef(new Animated.Value(1)).current;
 
   // Fetch both prediction stats and aggregate stats in a single API call
   const { data } = useFightStats(fight.id);
@@ -129,66 +124,11 @@ export default function UpcomingFightCard({
     followMutation.mutate(fight.isFollowing || false);
   };
 
-  // Get status message
-  const getUpcomingStatusMessage = () => {
-    if (!isNextFight || fight.hasStarted || fight.isComplete) {
-      upNextStartTimeRef.current = null;
-      return null;
-    }
-
-    if (hasLiveFight) {
-      upNextStartTimeRef.current = null;
-      return null;
-    }
-
-    if (!upNextStartTimeRef.current && lastCompletedFightTime) {
-      upNextStartTimeRef.current = Date.now();
-    }
-
-    if (upNextStartTimeRef.current) {
-      const secondsSinceStart = (Date.now() - upNextStartTimeRef.current) / 1000;
-      if (secondsSinceStart < 15) {
-        return 'Up next...';
-      } else {
-        return 'Starting soon...';
-      }
-    }
-
-    return null;
-  };
-
-  // Force re-render every second for next fight
-  const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
-  React.useEffect(() => {
-    if (isNextFight && !hasLiveFight && !fight.hasStarted) {
-      const interval = setInterval(forceUpdate, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [isNextFight, hasLiveFight, fight.hasStarted]);
-
   // Reset image errors
   useEffect(() => {
     setFighter1ImageError(false);
     setFighter2ImageError(false);
   }, [fight.id]);
-
-  // Pulsing animation for "Starting soon..."
-  useEffect(() => {
-    const statusMessage = getUpcomingStatusMessage();
-    if (statusMessage === 'Starting soon...') {
-      const pulse = Animated.loop(
-        Animated.sequence([
-          Animated.timing(startingSoonPulseAnim, { toValue: 0.4, duration: 1000, useNativeDriver: true }),
-          Animated.timing(startingSoonPulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
-        ])
-      );
-      pulse.start();
-      return () => {
-        pulse.stop();
-        startingSoonPulseAnim.setValue(1);
-      };
-    }
-  }, [getUpcomingStatusMessage(), startingSoonPulseAnim]);
 
   // Prediction animation - triggers when pendingAnimationFightId matches this fight
   useEffect(() => {
@@ -502,6 +442,12 @@ export default function UpcomingFightCard({
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: 0 }]}>
             {/* Fighter names with centered "vs" */}
             <View style={styles.fighterNamesContainer}>
+              {/* Notification bell indicator - shown when user is following this fight */}
+              {fight.isFollowing && (
+                <View style={styles.notificationBellIndicator}>
+                  <FontAwesome name="bell" size={12} color="#F5C518" />
+                </View>
+              )}
               {/* Fighter 1 - Left half */}
               <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
                 <View style={[
@@ -599,24 +545,6 @@ export default function UpcomingFightCard({
               {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
             </Text>
           )}
-
-        {/* Status message */}
-        {getUpcomingStatusMessage() && (
-          <View style={[sharedStyles.outcomeContainer, { marginTop: 2 }]}>
-            <Animated.Text
-              style={[
-                styles.statusText,
-                {
-                  color: colors.text,
-                  opacity: getUpcomingStatusMessage() === 'Starting soon...' ? startingSoonPulseAnim : 1
-                }
-              ]}
-              numberOfLines={1}
-            >
-              {getUpcomingStatusMessage()}
-            </Animated.Text>
-          </View>
-        )}
 
         {/* Bell icon - hidden but functionality preserved */}
         {false && isAuthenticated && (
@@ -848,6 +776,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 15,
+  },
+  notificationBellIndicator: {
+    position: 'absolute',
+    left: '50%',
+    top: '25%',
+    transform: [{ translateX: -8 }],
+    zIndex: 20,
   },
   vsContainer: {
     position: 'absolute',
