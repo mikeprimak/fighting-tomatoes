@@ -1331,7 +1331,7 @@ export default function UpcomingFightDetailScreen({
                         textShadowOffset: { width: 0, height: 1 },
                         textShadowRadius: 4,
                       }}>
-                        {aggregateStats?.communityAverageHype ? aggregateStats.communityAverageHype.toFixed(1) : '--'}
+                        {aggregateStats?.communityAverageHype ? (aggregateStats.communityAverageHype === 10 ? '10' : aggregateStats.communityAverageHype.toFixed(1)) : '--'}
                       </Text>
                     </View>
                   </Animated.View>

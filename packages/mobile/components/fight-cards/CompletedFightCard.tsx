@@ -577,7 +577,7 @@ export default function CompletedFightCard({
                   color="rgba(0,0,0,0.45)"
                 />
                 <Text style={styles.ratingSquareNumber}>
-                  {fight.averageRating.toFixed(1)}
+                  {fight.averageRating === 10 ? '10' : fight.averageRating.toFixed(1)}
                 </Text>
               </>
             ) : (

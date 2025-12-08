@@ -1881,7 +1881,7 @@ export default function CompletedFightDetailScreen({
                   color={getHypeHeatmapColor(predictionStats.averageHype)}
                 />
                 <Text style={[styles.ratingStarText, { marginTop: 12 }]}>
-                  {predictionStats.averageHype.toFixed(1)}
+                  {predictionStats.averageHype === 10 ? '10' : predictionStats.averageHype.toFixed(1)}
                 </Text>
               </View>
 

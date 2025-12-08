@@ -390,7 +390,7 @@ export default function UpcomingFightCard({
                   color="rgba(0,0,0,0.45)"
                 />
                 <Text style={styles.hypeSquareNumber}>
-                  {predictionStats.averageHype.toFixed(1)}
+                  {predictionStats.averageHype === 10 ? '10' : predictionStats.averageHype.toFixed(1)}
                 </Text>
               </>
             ) : (
