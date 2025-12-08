@@ -382,18 +382,20 @@ export default function CompletedFightCard({
     return rings;
   };
 
-  // Prediction arc component - draws a quarter circle arc
-  const PredictionArc = ({ color, position }: { color: string; position: 'bottom-left' | 'bottom-right' }) => {
+  // Prediction arc component - draws a 1/6 circle arc (60°)
+  // Blue: 9 to 7 o'clock (left side) - rotation 120°
+  // Yellow: 7 to 5 o'clock (bottom-left) - rotation 60°
+  const PredictionArc = ({ color, position }: { color: string; position: 'left' | 'bottom-left' }) => {
     const size = 54; // Slightly larger than 50px image
     const strokeWidth = 3;
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
-    const quarterArc = circumference / 4;
+    const sixthArc = circumference / 6; // 60° arc
 
     // SVG circle starts at 3 o'clock and goes clockwise
-    // bottom-left (6 to 9 o'clock) = rotate 90° from start
-    // bottom-right (3 to 6 o'clock) = no rotation needed (starts at 3 o'clock)
-    const rotation = position === 'bottom-left' ? 90 : 0;
+    // left (9 to 7 o'clock) = rotate 120° (start at 7, draw to 9)
+    // bottom-left (7 to 5 o'clock) = rotate 60° (start at 5, draw to 7)
+    const rotation = position === 'left' ? 120 : 60;
 
     return (
       <View style={[styles.predictionArcContainer, { width: size, height: size }]}>
@@ -405,7 +407,7 @@ export default function CompletedFightCard({
             stroke={color}
             strokeWidth={strokeWidth}
             fill="none"
-            strokeDasharray={`${quarterArc} ${circumference - quarterArc}`}
+            strokeDasharray={`${sixthArc} ${circumference - sixthArc}`}
             strokeLinecap="round"
           />
         </Svg>
@@ -413,19 +415,19 @@ export default function CompletedFightCard({
     );
   };
 
-  // Winner arc component - draws a half circle arc (top half, 9 to 3 o'clock)
+  // Winner arc component - draws a 1/6 circle arc (60°, from 5 to 3 o'clock)
   const WinnerArc = ({ color }: { color: string }) => {
     const size = 54; // Slightly larger than 50px image
     const strokeWidth = 3;
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
-    const halfArc = circumference / 2;
+    const sixthArc = circumference / 6; // 60° arc
 
     // SVG circle starts at 3 o'clock and goes clockwise
-    // top half (9 to 3 o'clock) = rotate 180° from start (so it starts at 9 o'clock)
+    // bottom-right (5 to 3 o'clock) = rotate 0° (start at 3, draw to 5)
     return (
       <View style={[styles.predictionArcContainer, { width: size, height: size }]}>
-        <Svg width={size} height={size} style={{ transform: [{ rotate: '180deg' }] }}>
+        <Svg width={size} height={size} style={{ transform: [{ rotate: '0deg' }] }}>
           <Circle
             cx={size / 2}
             cy={size / 2}
@@ -433,7 +435,7 @@ export default function CompletedFightCard({
             stroke={color}
             strokeWidth={strokeWidth}
             fill="none"
-            strokeDasharray={`${halfArc} ${circumference - halfArc}`}
+            strokeDasharray={`${sixthArc} ${circumference - sixthArc}`}
             strokeLinecap="round"
           />
         </Svg>
@@ -658,17 +660,18 @@ export default function CompletedFightCard({
                     style={styles.fighterHeadshot}
                     onError={() => setFighter1ImageError(true)}
                   />
-                  {/* Winner arc - green top half */}
-                  {fight.winner === fight.fighter1.id && (
-                    <WinnerArc color="#4CAF50" />
-                  )}
-                  {/* Community prediction arc - blue bottom-left */}
-                  {aggregateStats?.communityPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
-                    <PredictionArc color="#4A90D9" position="bottom-left" />
-                  )}
-                  {/* User prediction arc - yellow bottom-right */}
+                  {/* User prediction indicator - green if correct, red X if incorrect (bottom-left for fighter 1) */}
                   {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
-                    <PredictionArc color="#F5C518" position="bottom-right" />
+                    <View style={[
+                      styles.userPredictionIndicatorLeft,
+                      { backgroundColor: fight.winner === fight.fighter1.id ? '#4CAF50' : '#F44336' }
+                    ]}>
+                      <FontAwesome
+                        name={fight.winner === fight.fighter1.id ? "user" : "times"}
+                        size={14}
+                        color={fight.winner === fight.fighter1.id ? "#000000" : "#FFFFFF"}
+                      />
+                    </View>
                   )}
                 </View>
               </View>
@@ -682,17 +685,18 @@ export default function CompletedFightCard({
                     style={styles.fighterHeadshot}
                     onError={() => setFighter2ImageError(true)}
                   />
-                  {/* Winner arc - green top half */}
-                  {fight.winner === fight.fighter2.id && (
-                    <WinnerArc color="#4CAF50" />
-                  )}
-                  {/* Community prediction arc - blue bottom-left */}
-                  {aggregateStats?.communityPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
-                    <PredictionArc color="#4A90D9" position="bottom-left" />
-                  )}
-                  {/* User prediction arc - yellow bottom-right */}
+                  {/* User prediction indicator - green if correct, red X if incorrect (bottom-right for fighter 2) */}
                   {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
-                    <PredictionArc color="#F5C518" position="bottom-right" />
+                    <View style={[
+                      styles.userPredictionIndicatorRight,
+                      { backgroundColor: fight.winner === fight.fighter2.id ? '#4CAF50' : '#F44336' }
+                    ]}>
+                      <FontAwesome
+                        name={fight.winner === fight.fighter2.id ? "user" : "times"}
+                        size={14}
+                        color={fight.winner === fight.fighter2.id ? "#000000" : "#FFFFFF"}
+                      />
+                    </View>
                   )}
                 </View>
                 <View style={[
@@ -978,6 +982,30 @@ const styles = StyleSheet.create({
     top: -2,
     left: -2,
     zIndex: 10,
+  },
+  userPredictionIndicatorLeft: {
+    position: 'absolute',
+    bottom: -4,
+    left: -4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F5C518',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 15,
+  },
+  userPredictionIndicatorRight: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F5C518',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 15,
   },
   vsContainer: {
     position: 'absolute',

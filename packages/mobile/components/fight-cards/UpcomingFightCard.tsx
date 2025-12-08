@@ -14,6 +14,7 @@ import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import { useFightStats } from '../../hooks/useFightStats';
+import Svg, { Circle } from 'react-native-svg';
 
 interface UpcomingFightCardProps extends BaseFightCardProps {
   isNextFight?: boolean;
@@ -284,6 +285,39 @@ export default function UpcomingFightCard({
     return rings;
   };
 
+  // Prediction arc component - draws a 1/6 circle arc (60°)
+  // Blue: 9 to 7 o'clock (left side) - rotation 120°
+  // Yellow: 7 to 5 o'clock (bottom-left) - rotation 60°
+  const PredictionArc = ({ color, position }: { color: string; position: 'left' | 'bottom-left' }) => {
+    const size = 54; // Slightly larger than 50px image
+    const strokeWidth = 3;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const sixthArc = circumference / 6; // 60° arc
+
+    // SVG circle starts at 3 o'clock and goes clockwise
+    // left (9 to 7 o'clock) = rotate 120° (start at 7, draw to 9)
+    // bottom-left (7 to 5 o'clock) = rotate 60° (start at 5, draw to 7)
+    const rotation = position === 'left' ? 120 : 60;
+
+    return (
+      <View style={[styles.predictionArcContainer, { width: size, height: size }]}>
+        <Svg width={size} height={size} style={{ transform: [{ rotate: `${rotation}deg` }] }}>
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={`${sixthArc} ${circumference - sixthArc}`}
+            strokeLinecap="round"
+          />
+        </Svg>
+      </View>
+    );
+  };
+
   // Helper function to find top methods with their percentages
   const getTopMethods = (methods: { DECISION: number; KO_TKO: number; SUBMISSION: number }) => {
     const methodEntries = Object.entries(methods) as [string, number][];
@@ -471,11 +505,11 @@ export default function UpcomingFightCard({
               {/* Fighter 1 - Left half */}
               <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
                 <View style={[
-                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'center' }
+                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-end' }
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'center', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -484,7 +518,7 @@ export default function UpcomingFightCard({
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'center', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterLastName, { textAlign: 'right', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -493,27 +527,43 @@ export default function UpcomingFightCard({
                   </Text>
                 </View>
                 {/* Fighter 1 headshot - right of name */}
-                <Image
-                  source={getFighter1ImageSource()}
-                  style={[styles.fighterHeadshot, { marginLeft: 6, marginRight: -5, zIndex: 1 }]}
-                  onError={() => setFighter1ImageError(true)}
-                />
+                <View style={[styles.fighterImageWrapper, { marginLeft: 6, marginRight: -3 }]}>
+                  <Image
+                    source={getFighter1ImageSource()}
+                    style={styles.fighterHeadshot}
+                    onError={() => setFighter1ImageError(true)}
+                  />
+                  {/* User prediction indicator - yellow circle with user icon (bottom-left for fighter 1) */}
+                  {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
+                    <View style={styles.userPredictionIndicatorLeft}>
+                      <FontAwesome name="user" size={14} color="#000000" />
+                    </View>
+                  )}
+                </View>
               </View>
 
               {/* Fighter 2 - Right half */}
               <View style={[styles.fighter2Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
                 {/* Fighter 2 headshot - left of name */}
-                <Image
-                  source={getFighter2ImageSource()}
-                  style={[styles.fighterHeadshot, { marginRight: 6, marginLeft: -5, zIndex: 1 }]}
-                  onError={() => setFighter2ImageError(true)}
-                />
+                <View style={[styles.fighterImageWrapper, { marginRight: 6, marginLeft: -3 }]}>
+                  <Image
+                    source={getFighter2ImageSource()}
+                    style={styles.fighterHeadshot}
+                    onError={() => setFighter2ImageError(true)}
+                  />
+                  {/* User prediction indicator - yellow circle with user icon (bottom-right for fighter 2) */}
+                  {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
+                    <View style={styles.userPredictionIndicatorRight}>
+                      <FontAwesome name="user" size={14} color="#000000" />
+                    </View>
+                  )}
+                </View>
                 <View style={[
-                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'center' }
+                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-start' }
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'center', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -522,7 +572,7 @@ export default function UpcomingFightCard({
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'center', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterLastName, { textAlign: 'left', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -763,6 +813,41 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
+  },
+  fighterImageWrapper: {
+    position: 'relative',
+    width: 50,
+    height: 50,
+  },
+  predictionArcContainer: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    zIndex: 10,
+  },
+  userPredictionIndicatorLeft: {
+    position: 'absolute',
+    bottom: -4,
+    left: -4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F5C518',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 15,
+  },
+  userPredictionIndicatorRight: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#F5C518',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 15,
   },
   vsContainer: {
     position: 'absolute',

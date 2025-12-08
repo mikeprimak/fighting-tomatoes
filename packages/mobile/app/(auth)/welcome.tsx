@@ -32,7 +32,7 @@ export default function WelcomeScreen() {
       <View style={styles.content}>
         {/* Logo and Tagline */}
         <View style={styles.header}>
-          <Text style={styles.logo}>🥊</Text>
+          <Image source={require('../../assets/app-icon.png')} style={styles.logo} resizeMode="contain" />
           <Text style={styles.appName}>FightCrewApp</Text>
           <Text style={styles.tagline}>Rate Fights. Predict Winners. Join Crews.</Text>
         </View>
@@ -93,7 +93,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: 40,
   },
   logo: {
-    fontSize: 80,
+    width: 100,
+    height: 100,
     marginBottom: 12,
   },
   appName: {

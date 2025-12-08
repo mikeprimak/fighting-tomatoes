@@ -27,7 +27,7 @@ function HeaderLogo({ title }: { title: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <Image
-        source={require('../assets/logo-hand-down-thicker.png')}
+        source={require('../assets/app-icon.png')}
         style={{ width: 48, height: 48, marginRight: 14 }}
         resizeMode="contain"
       />

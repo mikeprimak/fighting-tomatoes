@@ -11,7 +11,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 - Backend: `cd packages/backend && PORT=3008 pnpm dev`
 - Mobile: `cd packages/mobile && npx expo start --port 8083 --lan`
 
-**Critical Ports**: Backend 3008, Expo 8083, PostgreSQL 5433, Mobile API `http://10.0.0.53:3008/api`
+**Critical Ports**: Backend 3008, Expo 8083, PostgreSQL 5433, Mobile API `http://192.168.1.65:3008/api`
 
 **⚠️ STARTUP DEBUGGING CHECKLIST (Check FIRST)**:
 1. **Network connectivity**: Ensure phone and computer are on the SAME WiFi network

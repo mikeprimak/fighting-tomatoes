@@ -9,6 +9,7 @@ import {
   Keyboard,
   KeyboardEvent,
   ScrollView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../store/AuthContext';
@@ -154,7 +155,7 @@ export default function LoginScreen() {
       >
         <View style={[styles.content, { marginBottom: keyboardHeight }]}>
           <View style={styles.header}>
-            <Text style={styles.title}>🥊</Text>
+            <Image source={require('../../assets/app-icon.png')} style={styles.logoImage} resizeMode="contain" />
             <Text style={styles.subtitle}>FightCrewApp</Text>
           </View>
 
@@ -375,8 +376,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  title: {
-    fontSize: 64,
+  logoImage: {
+    width: 80,
+    height: 80,
     marginBottom: 8,
   },
   subtitle: {

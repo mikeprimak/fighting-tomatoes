@@ -1455,7 +1455,7 @@ export default function CompletedFightDetailScreen({
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 12 }}>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>MY PREDICTION & HYPE</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>WAS MY PICK CORRECT?</Text>
             </View>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>
@@ -1505,11 +1505,12 @@ export default function CompletedFightDetailScreen({
                           const methodMatchesActual = normalizedActualMethod === normalizedPredictedMethod;
 
                           // Icon color logic:
-                          // - If winner wrong: gray checkmark (irrelevant, doesn't count)
-                          // - If winner correct: green checkmark (correct) or red X (incorrect)
+                          // - If winner wrong: gray (irrelevant, doesn't count)
+                          // - If winner correct + method correct: green checkmark
+                          // - If winner correct + method wrong: gray X
                           const methodIconColor = !isWinnerCorrect
                             ? colors.textSecondary // gray if winner wrong (irrelevant)
-                            : (methodMatchesActual ? "#4CAF50" : "#F44336"); // green/red if winner correct
+                            : (methodMatchesActual ? "#4CAF50" : colors.textSecondary); // green if correct, gray if wrong
 
                           const methodIcon = methodMatchesActual ? "check-circle" : "times-circle";
 
@@ -1530,8 +1531,19 @@ export default function CompletedFightDetailScreen({
                   No picks
                 </Text>
               )}
+            </View>
 
-              {/* Right: Hype Prediction - Large flame icon */}
+          {/* Section Divider - How Hyped Was I */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <View style={{ paddingHorizontal: 12 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>HOW HYPED WAS I?</Text>
+            </View>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
+
+          {/* Hype Prediction - Large flame icon */}
+          <View style={{ alignItems: 'center' }}>
               {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && fight.userHypePrediction > 0 ? (
                 <View style={styles.ratingStarContainer}>
                   {/* Background circle for better text contrast */}
@@ -1563,13 +1575,23 @@ export default function CompletedFightDetailScreen({
                 </View>
               )}
             </View>
-        </SectionContainer>
+
+          </SectionContainer>
 
         {/* My Rating Section */}
         <SectionContainer
-          title="My Rating"
+          title="My Reaction"
           icon="star"
         >
+          {/* Section Divider - How Good Was This Fight */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <View style={{ paddingHorizontal: 12 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>HOW GOOD WAS THIS FIGHT?</Text>
+            </View>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
+
           {/* Inline Rating Section */}
           <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: -8 }]}>
             {/* Centered Star Display */}
@@ -1646,7 +1668,7 @@ export default function CompletedFightDetailScreen({
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 30 }}>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>TAGS</Text>
+              <FontAwesome name="hashtag" size={20} color={colors.textSecondary} />
             </View>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>
@@ -1716,11 +1738,10 @@ export default function CompletedFightDetailScreen({
             })()}
         </SectionContainer>
 
-        {/* ALL DATA Section */}
+        {/* ALL REACTIONS Section */}
         <SectionContainer
-          title="All Data"
-          icon="chart-bar"
-          iconFamily="fontawesome6"
+          title="All Reactions"
+          icon="users"
           iconColor="#000"
           headerBgColor="#83B4F3"
           containerBgColorDark="rgba(131, 180, 243, 0.05)"
@@ -1730,7 +1751,7 @@ export default function CompletedFightDetailScreen({
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12 }}>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>ALL RATINGS ({totalRatings || 0})</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>RATINGS ({totalRatings || 0})</Text>
             </View>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>
@@ -1772,16 +1793,48 @@ export default function CompletedFightDetailScreen({
             )}
           </View>
 
-          {/* Section Divider - All Hype */}
+          {/* All Predictions Content */}
+          {predictionStats && predictionStats.fighter1MethodPredictions && predictionStats.fighter2MethodPredictions && predictionStats.winnerPredictions && (() => {
+            const normalized = normalizeMethod(fight.method);
+            console.log('[CompletedFight] Passing to chart:', {
+              winner: fight.winner,
+              method: fight.method,
+              normalized,
+              fighter1Id: fight.fighter1.id,
+              fighter2Id: fight.fighter2.id,
+            });
+            return (
+              <PredictionBarChart
+                fighter1Name={fight.fighter1.lastName}
+                fighter2Name={fight.fighter2.lastName}
+                fighter1Id={fight.fighter1.id}
+                fighter2Id={fight.fighter2.id}
+                fighter1Image={fight.fighter1.profileImage}
+                fighter2Image={fight.fighter2.profileImage}
+                selectedWinner={fight.userPredictedWinner || null}
+                selectedMethod={fight.userPredictedMethod || null}
+                fighter1Predictions={predictionStats.fighter1MethodPredictions}
+                fighter2Predictions={predictionStats.fighter2MethodPredictions}
+                totalPredictions={predictionStats.totalPredictions}
+                winnerPredictions={predictionStats.winnerPredictions}
+                showColors={true}
+                showLabels={true}
+                actualWinner={fight.winner}
+                actualMethod={normalized}
+              />
+            );
+          })()}
+
+          {/* Section Divider - Hype */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 28, marginBottom: 12 }}>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>ALL HYPE ({predictionStats?.totalPredictions || 0})</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>HYPE ({predictionStats?.totalPredictions || 0})</Text>
             </View>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>
 
-          {/* All Hype Content */}
+          {/* Hype Content */}
           {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
               {/* Community Hype Flame */}
@@ -1823,38 +1876,6 @@ export default function CompletedFightDetailScreen({
               No community hype data
             </Text>
           )}
-
-          {/* All Predictions Content */}
-          {predictionStats && predictionStats.fighter1MethodPredictions && predictionStats.fighter2MethodPredictions && predictionStats.winnerPredictions && (() => {
-            const normalized = normalizeMethod(fight.method);
-            console.log('[CompletedFight] Passing to chart:', {
-              winner: fight.winner,
-              method: fight.method,
-              normalized,
-              fighter1Id: fight.fighter1.id,
-              fighter2Id: fight.fighter2.id,
-            });
-            return (
-              <PredictionBarChart
-                fighter1Name={fight.fighter1.lastName}
-                fighter2Name={fight.fighter2.lastName}
-                fighter1Id={fight.fighter1.id}
-                fighter2Id={fight.fighter2.id}
-                fighter1Image={fight.fighter1.profileImage}
-                fighter2Image={fight.fighter2.profileImage}
-                selectedWinner={fight.userPredictedWinner || null}
-                selectedMethod={fight.userPredictedMethod || null}
-                fighter1Predictions={predictionStats.fighter1MethodPredictions}
-                fighter2Predictions={predictionStats.fighter2MethodPredictions}
-                totalPredictions={predictionStats.totalPredictions}
-                winnerPredictions={predictionStats.winnerPredictions}
-                showColors={true}
-                showLabels={true}
-                actualWinner={fight.winner}
-                actualMethod={normalized}
-              />
-            );
-          })()}
         </SectionContainer>
 
         {/* COMMENTS Section */}

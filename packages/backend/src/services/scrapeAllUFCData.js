@@ -128,17 +128,41 @@ async function scrapeEventsList(browser) {
       const dateEl = card.querySelector('.c-card-event--result__date');
       const dateText = dateEl ? dateEl.textContent.trim() : '';
 
+      // Month name mappings (both short and full)
+      const months = {
+        'jan': 0, 'january': 0, 'feb': 1, 'february': 1, 'mar': 2, 'march': 2,
+        'apr': 3, 'april': 3, 'may': 4, 'jun': 5, 'june': 5,
+        'jul': 6, 'july': 6, 'aug': 7, 'august': 7, 'sep': 8, 'september': 8,
+        'oct': 9, 'october': 9, 'nov': 10, 'november': 10, 'dec': 11, 'december': 11
+      };
+
       let eventDate = null;
-      if (dateText) {
+      let yearFromUrl = null;
+
+      // FIRST: Try to extract the full date from the event URL
+      // Fight Night URLs have format: ufc-fight-night-{month}-{day}-{year}
+      // e.g., /event/ufc-fight-night-december-13-2025
+      const urlMatch = card.querySelector('.c-card-event--result__logo a')?.getAttribute('href') || '';
+      const urlDateMatch = urlMatch.match(/([a-z]+)-(\d{1,2})-(\d{4})$/i);
+
+      if (urlDateMatch) {
+        const urlMonthStr = urlDateMatch[1].toLowerCase();
+        const urlDay = parseInt(urlDateMatch[2], 10);
+        const urlYear = parseInt(urlDateMatch[3], 10);
+
+        if (months[urlMonthStr] !== undefined) {
+          yearFromUrl = urlYear;
+          eventDate = new Date(urlYear, months[urlMonthStr], urlDay);
+          eventDate.setHours(0, 0, 0, 0);
+        }
+      }
+
+      // FALLBACK: Parse from dateText if URL didn't have full date
+      if (!eventDate && dateText) {
         const dateMatch = dateText.match(/([A-Za-z]{3}),?\s+([A-Za-z]{3})\s+(\d{1,2})/);
         if (dateMatch) {
-          const monthStr = dateMatch[2];
+          const monthStr = dateMatch[2].toLowerCase();
           const day = parseInt(dateMatch[3], 10);
-
-          const months = {
-            'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
-            'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
-          };
 
           const month = months[monthStr];
           if (month !== undefined) {
@@ -146,11 +170,27 @@ async function scrapeEventsList(browser) {
             eventDate = new Date(year, month, day);
             eventDate.setHours(0, 0, 0, 0);
 
+            // If parsed date is in the past, check if it should be next year
+            // Only assume next year for early months (Jan-Mar) when we're in late months (Oct-Dec)
+            // This handles the year rollover case: scraping in Dec for Jan events
             if (eventDate < now) {
-              return;
+              const currentMonth = now.getMonth(); // 0-11
+              // Only assume next year if:
+              // 1. We're in the last 3 months of the year (Oct, Nov, Dec)
+              // 2. AND the event month is in the first 3 months (Jan, Feb, Mar)
+              if (currentMonth >= 9 && month <= 2) {
+                eventDate = new Date(year + 1, month, day);
+                eventDate.setHours(0, 0, 0, 0);
+              }
+              // Otherwise it's truly a past event (leave eventDate as-is, will be filtered)
             }
           }
         }
+      }
+
+      // SKIP past events
+      if (eventDate && eventDate < now) {
+        return; // Skip this event - it's in the past
       }
 
       const statusEl = card.querySelector('.c-card-event--result__status');
@@ -545,7 +585,9 @@ async function scrapeAthletePage(browser, athleteUrl) {
           for (const imgUrl of candidateImages) {
             const urlUpper = imgUrl.toUpperCase();
             const firstNameUpper = firstName.toUpperCase();
-            const lastNameUpper = lastName.toUpperCase();
+            // Remove apostrophes and special chars from last name for URL matching
+            // e.g., "O'Malley" -> "OMALLEY" to match UFC.com URL format
+            const lastNameUpper = lastName.toUpperCase().replace(/[^A-Z]/g, '');
 
             // Only match headshot images (not full body images)
             // Headshots are in path: event_results_athlete_headshot

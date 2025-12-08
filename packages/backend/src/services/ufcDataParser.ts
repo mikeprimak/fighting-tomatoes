@@ -149,6 +149,51 @@ function parseFighterName(fullName: string): { firstName: string; lastName: stri
 }
 
 /**
+ * Extract year from event URL if available
+ * Fight Night URLs have format: /event/ufc-fight-night-{month}-{day}-{year}
+ * e.g., /event/ufc-fight-night-december-13-2025 → 2025
+ */
+function extractYearFromEventUrl(eventUrl: string, dateText: string): number {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+
+  // Try to extract year from URL (Fight Night events have full date in URL)
+  const urlDateMatch = eventUrl.match(/([a-z]+)-(\d{1,2})-(\d{4})$/i);
+  if (urlDateMatch) {
+    return parseInt(urlDateMatch[3], 10);
+  }
+
+  // For numbered events (UFC 324, etc.), parse month from dateText and apply year rollover logic
+  const dateMatch = dateText.match(/([A-Za-z]+),\s+([A-Za-z]+)\s+(\d+)/);
+  if (dateMatch) {
+    const monthStr = dateMatch[2].toLowerCase();
+    const months: Record<string, number> = {
+      'jan': 0, 'january': 0, 'feb': 1, 'february': 1, 'mar': 2, 'march': 2,
+      'apr': 3, 'april': 3, 'may': 4, 'jun': 5, 'june': 5,
+      'jul': 6, 'july': 6, 'aug': 7, 'august': 7, 'sep': 8, 'september': 8,
+      'oct': 9, 'october': 9, 'nov': 10, 'november': 10, 'dec': 11, 'december': 11
+    };
+
+    const eventMonth = months[monthStr];
+    const currentMonth = now.getMonth();
+    const day = parseInt(dateMatch[3], 10);
+
+    // Create date with current year
+    const eventDate = new Date(currentYear, eventMonth, day);
+
+    // If date is in the past, check if it should be next year
+    if (eventDate < now) {
+      // Only assume next year for early months (Jan-Mar) when we're in late months (Oct-Dec)
+      if (currentMonth >= 9 && eventMonth <= 2) {
+        return currentYear + 1;
+      }
+    }
+  }
+
+  return currentYear;
+}
+
+/**
  * Parse event date text to DateTime
  * Example: "Sat, Oct 4 / 10:00 PM EDT / Main Card"
  */
@@ -259,13 +304,16 @@ async function importFighters(athletesData: ScrapedAthletesData): Promise<Map<st
 async function importEvents(
   eventsData: ScrapedEventsData,
   fighterNameToId: Map<string, string>,
-  year: number = new Date().getFullYear()
+  _year: number = new Date().getFullYear() // kept for backwards compatibility but not used
 ): Promise<void> {
   console.log(`\n📦 Importing ${eventsData.events.length} events...`);
 
   for (const eventData of eventsData.events) {
-    const eventDate = parseEventDate(eventData.dateText, year);
-    const mainStartTime = parseEventTime(eventData.dateText, eventData.eventStartTime, year);
+    // Extract year from event URL (handles year rollover correctly)
+    const eventYear = extractYearFromEventUrl(eventData.eventUrl, eventData.dateText);
+
+    const eventDate = parseEventDate(eventData.dateText, eventYear);
+    const mainStartTime = parseEventTime(eventData.dateText, eventData.eventStartTime, eventYear);
 
     // Find prelim start time from sections
     const prelimSection = eventData.sections?.find(s => s.cardType === 'Prelims');
@@ -273,7 +321,7 @@ async function importEvents(
     if (prelimSection) {
       const prelimTimeMatch = prelimSection.startTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
       if (prelimTimeMatch) {
-        prelimStartTime = parseEventTime(eventData.dateText, prelimTimeMatch[0], year);
+        prelimStartTime = parseEventTime(eventData.dateText, prelimTimeMatch[0], eventYear);
       }
     }
 
@@ -283,7 +331,7 @@ async function importEvents(
     if (earlyPrelimSection) {
       const earlyPrelimTimeMatch = earlyPrelimSection.startTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
       if (earlyPrelimTimeMatch) {
-        earlyPrelimStartTime = parseEventTime(eventData.dateText, earlyPrelimTimeMatch[0], year);
+        earlyPrelimStartTime = parseEventTime(eventData.dateText, earlyPrelimTimeMatch[0], eventYear);
       }
     }
 

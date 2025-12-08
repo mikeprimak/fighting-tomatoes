@@ -1218,7 +1218,7 @@ export default function UpcomingFightDetailScreen({
                     />
                   ) : (
                     <Image
-                      source={require('../assets/flame-hollow-alpha-colored.png')}
+                      source={require('../assets/flame-hollow-alpha-thicker-truealpha.png')}
                       style={{ width: 32, height: 32 }}
                       resizeMode="contain"
                     />

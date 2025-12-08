@@ -110,7 +110,10 @@
       "Bash(git pull:*)",
       "Bash(git merge:*)",
       "Bash(pnpm type-check:*)",
-      "WebFetch(domain:goodfights.app)"
+      "WebFetch(domain:goodfights.app)",
+      "Bash(npm ls:*)",
+      "Bash(pnpm install)",
+      "WebFetch(domain:www.ufc.com)"
     ],
     "deny": [],
     "ask": []

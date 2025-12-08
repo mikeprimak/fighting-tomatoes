@@ -527,6 +527,15 @@ function EventSection({
               ))}
             </View>
           )}
+
+          {/* More Fights Note - Show when fewer than 7 fights announced */}
+          {fights.length < 7 && fights.length > 0 && (
+            <View style={styles.moreFightsNote}>
+              <Text style={[styles.moreFightsText, { color: colors.textSecondary }]}>
+                More Fights To Be Announced
+              </Text>
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -692,5 +701,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 0.5,
+  },
+  moreFightsNote: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  moreFightsText: {
+    fontSize: 13,
+    fontStyle: 'italic',
   },
 });

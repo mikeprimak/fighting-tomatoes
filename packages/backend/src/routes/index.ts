@@ -197,8 +197,14 @@ export async function registerRoutes(fastify: FastifyInstance) {
     const skip = (page - 1) * limit;
 
     try {
+      // Only return events that have at least one fight announced (filter out TBD events)
+      const whereClause = {
+        fights: { some: {} }
+      };
+
       const [events, total] = await Promise.all([
         fastify.prisma.event.findMany({
+          where: whereClause,
           skip,
           take: limit,
           orderBy: { date: 'desc' },
@@ -220,7 +226,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
             mainStartTime: true,
           },
         }),
-        fastify.prisma.event.count(),
+        fastify.prisma.event.count({ where: whereClause }),
       ]);
 
       const totalPages = Math.ceil(total / limit);

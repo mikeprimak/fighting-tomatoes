@@ -118,13 +118,13 @@ export default function PredictionBarChart({
       {/* Community Predictions Bar - progressive reveal */}
       {winnerPredictions && (
         <View style={{ flex: 1 }}>
-          {/* All Winner Predictions Section Divider */}
+          {/* Winner Predictions Section Divider */}
           <View style={styles.sectionDivider}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
             <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{ width: 4 }} />
               <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-                All Winner Predictions ({totalPredictions})
+                Winner Predictions ({totalPredictions})
               </Text>
               <View style={{ width: 4 }} />
             </View>
@@ -230,8 +230,8 @@ export default function PredictionBarChart({
                         }}
                       >
                         {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter1HasMajority ? '#83B4F3' : minorityBgColor }]}>
-                            <FontAwesome name="user" size={16} color="#F5C518" />
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
+                            <FontAwesome name="user" size={16} color="#000000" />
                           </View>
                         )}
                         <Text
@@ -271,8 +271,8 @@ export default function PredictionBarChart({
                         }}
                       >
                         {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter1HasMajority ? '#83B4F3' : minorityBgColor }]}>
-                            <FontAwesome name="user" size={16} color="#F5C518" />
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
+                            <FontAwesome name="user" size={16} color="#000000" />
                           </View>
                         )}
                         <Text
@@ -310,8 +310,8 @@ export default function PredictionBarChart({
                         }}
                       >
                         {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter1HasMajority ? '#83B4F3' : minorityBgColor }]}>
-                            <FontAwesome name="user" size={16} color="#F5C518" />
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
+                            <FontAwesome name="user" size={16} color="#000000" />
                           </View>
                         )}
                         <Text
@@ -370,8 +370,8 @@ export default function PredictionBarChart({
                         }}
                       >
                         {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter2HasMajority ? '#83B4F3' : minorityBgColor }]}>
-                            <FontAwesome name="user" size={16} color="#F5C518" />
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
+                            <FontAwesome name="user" size={16} color="#000000" />
                           </View>
                         )}
                         <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>{label}</Text>
@@ -395,8 +395,8 @@ export default function PredictionBarChart({
                         }}
                       >
                         {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter2HasMajority ? '#83B4F3' : minorityBgColor }]}>
-                            <FontAwesome name="user" size={16} color="#F5C518" />
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
+                            <FontAwesome name="user" size={16} color="#000000" />
                           </View>
                         )}
                         <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>{label}</Text>
@@ -418,8 +418,8 @@ export default function PredictionBarChart({
                         }}
                       >
                         {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: fighter2HasMajority ? '#83B4F3' : minorityBgColor }]}>
-                            <FontAwesome name="user" size={16} color="#F5C518" />
+                          <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
+                            <FontAwesome name="user" size={16} color="#000000" />
                           </View>
                         )}
                         <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>{label}</Text>

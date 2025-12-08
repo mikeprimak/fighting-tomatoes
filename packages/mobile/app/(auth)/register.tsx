@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
@@ -110,7 +111,7 @@ export default function RegisterScreen() {
           <View style={styles.content}>
             {/* Header */}
             <View style={styles.header}>
-              <Text style={styles.title}>🥊</Text>
+              <Image source={require('../../assets/app-icon.png')} style={styles.logoImage} resizeMode="contain" />
               <Text style={styles.subtitle}>Join FightCrewApp</Text>
               <Text style={styles.tagline}>Start rating fights today</Text>
             </View>
@@ -266,8 +267,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  title: {
-    fontSize: 64,
+  logoImage: {
+    width: 80,
+    height: 80,
     marginBottom: 8,
   },
   subtitle: {

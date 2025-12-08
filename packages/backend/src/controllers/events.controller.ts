@@ -19,10 +19,11 @@ export const getEvents = async (req: Request, res: Response) => {
         { date: { lt: new Date() } }
       ];
     } else {
-      // Upcoming events: not completed AND date is in the future
+      // Upcoming events: not completed AND date is in the future AND has at least one fight
       where.AND = [
         { isComplete: false },
-        { date: { gte: new Date() } }
+        { date: { gte: new Date() } },
+        { fights: { some: {} } }  // Only show events that have fights announced
       ];
     }
 
