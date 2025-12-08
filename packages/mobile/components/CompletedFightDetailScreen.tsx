@@ -1674,21 +1674,12 @@ export default function CompletedFightDetailScreen({
           </View>
 
           {/* Tags Content */}
+          {/* Tags stay in their current order - only reorder when rating stars are tapped */}
           {displayedTags.length > 0 && (() => {
-              // Separate user-selected tags and unselected tags
-              const userSelectedTags = displayedTags.filter(tag => selectedTags.includes(tag.id));
-              const unselectedTags = displayedTags.filter(tag => !selectedTags.includes(tag.id));
-
-              // Sort unselected tags by vote count (highest first)
-              const sortedUnselectedTags = unselectedTags.sort((a, b) => b.count - a.count);
-
-              // Combine: user-selected first, then sorted by votes
-              const orderedTags = [...userSelectedTags, ...sortedUnselectedTags];
-
               return (
                 <View style={styles.inlineTagsSection}>
                   <View style={styles.inlineTagsContainer}>
-                    {orderedTags.map((tag) => {
+                    {displayedTags.map((tag) => {
                       const isSelected = selectedTags.includes(tag.id);
                       return (
                         <Animated.View
