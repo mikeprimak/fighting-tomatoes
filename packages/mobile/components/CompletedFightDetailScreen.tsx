@@ -525,51 +525,8 @@ export default function CompletedFightDetailScreen({
     refetchOnMount: 'always',
   });
 
-  const fetchedPredictionStats = fightStatsData?.predictionStats;
+  const predictionStats = fightStatsData?.predictionStats;
   const aggregateStats = fightStatsData?.aggregateStats;
-
-  // HARDCODED TEST DATA - Remove this when done testing
-  const testPredictionStats = {
-    totalPredictions: 100,
-    averageHype: 8.5,
-    hypeDistribution: {
-      1: 2,
-      2: 3,
-      3: 5,
-      4: 8,
-      5: 10,
-      6: 12,
-      7: 15,
-      8: 18,
-      9: 15,
-      10: 12,
-    },
-    winnerPredictions: {
-      fighter1: { id: fight.fighter1.id, name: `${fight.fighter1.firstName} ${fight.fighter1.lastName}`, predictions: 65, percentage: 65, count: 65 },
-      fighter2: { id: fight.fighter2.id, name: `${fight.fighter2.firstName} ${fight.fighter2.lastName}`, predictions: 35, percentage: 35, count: 35 },
-    },
-    methodPredictions: {
-      DECISION: 25,
-      KO_TKO: 35,
-      SUBMISSION: 40,
-    },
-    roundPredictions: {},
-    fighter1MethodPredictions: {
-      KO_TKO: 15,
-      SUBMISSION: 35,
-      DECISION: 15,
-    },
-    fighter1RoundPredictions: {},
-    fighter2MethodPredictions: {
-      KO_TKO: 20,
-      SUBMISSION: 5,
-      DECISION: 10,
-    },
-    fighter2RoundPredictions: {},
-  };
-
-  // Use TEST data to visualize bar chart changes
-  const predictionStats = testPredictionStats;
 
   // Fetch tags
   const { data: tagsData } = useQuery({
@@ -689,12 +646,47 @@ export default function CompletedFightDetailScreen({
     mutationFn: async (data: { rating: number | null; review: string | null; tags: string[]; }) => {
       return await apiService.updateFightUserData(fight.id, data);
     },
-    onSuccess: () => {
+    onSuccess: (response: any) => {
       // Mark this fight as needing animation
       setPendingRatingAnimation(fight.id);
 
-      // Only invalidate queries - no state updates that cause re-renders
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id, isAuthenticated] });
+      // Optimistically update the userReview in cache immediately
+      // This prevents the race condition where auto-upvote cancels the refetch
+      if (response?.data?.review) {
+        queryClient.setQueryData(['fight', fight.id, isAuthenticated], (old: any) => {
+          if (!old?.fight) return old;
+          const existingReview = old.fight.userReview;
+          return {
+            ...old,
+            fight: {
+              ...old.fight,
+              userReview: {
+                ...response.data.review,
+                // Preserve existing fields or set defaults for new reviews
+                upvotes: existingReview?.upvotes ?? 0,
+                userHasUpvoted: existingReview?.userHasUpvoted ?? false,
+                replies: existingReview?.replies ?? [],
+              },
+              userRating: response.data.rating,
+            },
+          };
+        });
+      } else if (response?.data && response.data.review === null) {
+        // Handle review deletion
+        queryClient.setQueryData(['fight', fight.id, isAuthenticated], (old: any) => {
+          if (!old?.fight) return old;
+          return {
+            ...old,
+            fight: {
+              ...old.fight,
+              userReview: null,
+              userRating: response.data.rating,
+            },
+          };
+        });
+      }
+
+      // Invalidate other queries that need fresh data
       queryClient.invalidateQueries({ queryKey: ['fightTags', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] }); // This fetches both prediction and aggregate stats
@@ -1122,6 +1114,7 @@ export default function CompletedFightDetailScreen({
   });
 
   const handleUpvoteComment = (commentId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!requireVerification('upvote a comment')) return;
     upvotePreFightCommentMutation.mutate(commentId);
   };

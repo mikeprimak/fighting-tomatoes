@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert } from 'react-native';
+import React, { useEffect, useRef, useState, useMemo, memo } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert, Easing } from 'react-native';
 import { FontAwesome, FontAwesome6, Entypo } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
 import { router } from 'expo-router';
 import { useAuth } from '../../store/AuthContext';
@@ -13,7 +13,6 @@ import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastN
 import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
-import { useFightStats } from '../../hooks/useFightStats';
 
 interface LiveFightCardProps extends BaseFightCardProps {
   animateRating?: boolean;
@@ -24,7 +23,7 @@ interface LiveFightCardProps extends BaseFightCardProps {
 // Status types for the live fight card
 type LiveFightStatus = 'up_next' | 'starting_soon' | 'live_now';
 
-export default function LiveFightCard({
+function LiveFightCard({
   fight,
   onPress,
   showEvent = true,
@@ -36,10 +35,11 @@ export default function LiveFightCard({
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const { pendingRatingAnimationFightId, setPendingRatingAnimation } = usePredictionAnimation();
+  const { pendingRatingAnimationFightId, setPendingRatingAnimation, lastViewedFightId, setLastViewedFight } = usePredictionAnimation();
 
   // Animation ref for rating animation
   const ratingScaleAnim = useRef(new Animated.Value(1)).current;
+  const highlightAnim = useRef(new Animated.Value(0)).current;
 
   // Local formatMethod function for this component - shows "KO" instead of "KO/TKO"
   const formatMethod = (method: string | null | undefined) => {
@@ -91,11 +91,12 @@ export default function LiveFightCard({
 
   const liveStatus = getLiveStatus();
 
-  // Force re-render every second to update timing
+  // Force re-render periodically to update "Up Next" / "Starting Soon" status
+  // 30 second interval is sufficient since status only changes after ~5 minutes
   const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
   React.useEffect(() => {
     if (isNextFight && !fight.hasStarted) {
-      const interval = setInterval(forceUpdate, 1000);
+      const interval = setInterval(forceUpdate, 30000); // 30 seconds instead of 1 second
       return () => clearInterval(interval);
     }
   }, [isNextFight, fight.hasStarted]);
@@ -117,6 +118,60 @@ export default function LiveFightCard({
     }
   }, [liveStatus, startingSoonPulseAnim]);
 
+  // Track previous hype value to detect when data updates
+  const prevHypeRef = useRef(fight.userHypePrediction);
+  const isWaitingForDataUpdate = useRef(false);
+
+  // When lastViewedFightId matches, start waiting for data update
+  useEffect(() => {
+    if (lastViewedFightId === fight.id) {
+      isWaitingForDataUpdate.current = true;
+    }
+  }, [lastViewedFightId, fight.id]);
+
+  // Highlight animation - triggers when data updates after returning from fight detail screen
+  useEffect(() => {
+    const prevHype = prevHypeRef.current;
+    const currentHype = fight.userHypePrediction;
+
+    // Update the ref for next comparison
+    prevHypeRef.current = currentHype;
+
+    // If we're waiting for data update and the hype value changed, trigger animation
+    if (isWaitingForDataUpdate.current && prevHype !== currentHype) {
+      isWaitingForDataUpdate.current = false;
+
+      // Small delay to let the UI render the new value first
+      const timer = setTimeout(() => {
+        // Animate: fade in, hold, then fade out
+        highlightAnim.setValue(0);
+        Animated.sequence([
+          // Fade in
+          Animated.timing(highlightAnim, {
+            toValue: 1,
+            duration: 400,
+            easing: Easing.out(Easing.ease),
+            useNativeDriver: false,
+          }),
+          // Hold at full brightness
+          Animated.delay(300),
+          // Fade out
+          Animated.timing(highlightAnim, {
+            toValue: 0,
+            duration: 800,
+            easing: Easing.in(Easing.ease),
+            useNativeDriver: false,
+          }),
+        ]).start(() => {
+          // Clear the lastViewedFightId after animation completes
+          setLastViewedFight(null);
+        });
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [fight.userHypePrediction, highlightAnim, setLastViewedFight]);
+
   // Get the strip text and color based on status
   const getStripConfig = () => {
     switch (liveStatus) {
@@ -132,10 +187,19 @@ export default function LiveFightCard({
 
   const stripConfig = getStripConfig();
 
-  // Fetch both prediction stats and aggregate stats in a single API call
-  const { data } = useFightStats(fight.id);
-  const predictionStats = data?.predictionStats;
-  const aggregateStats = data?.aggregateStats;
+  // Use fight object data directly - no need for separate API calls
+  const predictionStats = useMemo(() => ({
+    averageHype: fight.averageHype || 0,
+    totalPredictions: 0,
+  }), [fight.averageHype]);
+
+  const aggregateStats = useMemo(() => ({
+    userPrediction: fight.userHypePrediction ? {
+      winner: null,
+      method: null,
+    } : null,
+    communityPrediction: null,
+  }), [fight.userHypePrediction]);
 
   // Bell ringing animation
   const animateBellRing = () => {
@@ -302,84 +366,36 @@ export default function LiveFightCard({
     return result;
   };
 
-  const hypeBorderColor = getHypeHeatmapColor(predictionStats?.averageHype || 0);
-  const ratingBorderColor = getHypeHeatmapColor(fight.averageRating || 0);
+  // Memoize expensive color calculations to avoid recalculation on every render
+  const hypeBorderColor = useMemo(
+    () => getHypeHeatmapColor(predictionStats?.averageHype || 0),
+    [predictionStats?.averageHype]
+  );
+  const ratingBorderColor = useMemo(
+    () => getHypeHeatmapColor(fight.averageRating || 0),
+    [fight.averageRating]
+  );
   const grayColor = colors.border || '#888888';
 
-  // Create a 50% opacity version of the hype color for the fade-in start
-  const getHalfOpacityColor = (color: string) => {
-    // If it's already an rgba color, halve the alpha
-    const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-    if (rgbaMatch) {
-      const [, r, g, b, a] = rgbaMatch;
-      const alpha = a ? parseFloat(a) * 0.5 : 0.5;
-      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
-    // If it's a hex color, convert to rgba with 0.5 opacity
-    const hexMatch = color.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
-    if (hexMatch) {
-      const [, r, g, b] = hexMatch;
-      return `rgba(${parseInt(r, 16)}, ${parseInt(g, 16)}, ${parseInt(b, 16)}, 0.5)`;
-    }
-    // Fallback to the original color
-    return color;
-  };
+  const userHypeColor = useMemo(
+    () => getHypeHeatmapColor(fight.userHypePrediction || 0),
+    [fight.userHypePrediction]
+  );
 
-  const halfHypeColor = getHalfOpacityColor(hypeBorderColor);
-
-  // Mix 70% heatmap color with 30% background color for flame icon
-  const getFlameColor = (hypeColor: string, bgColor: string): string => {
-    // Parse hype color (RGB or hex)
-    const hypeRgbaMatch = hypeColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-    const hypeHexMatch = hypeColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
-
-    let hypeR = 0, hypeG = 0, hypeB = 0;
-    if (hypeRgbaMatch) {
-      hypeR = parseInt(hypeRgbaMatch[1]);
-      hypeG = parseInt(hypeRgbaMatch[2]);
-      hypeB = parseInt(hypeRgbaMatch[3]);
-    } else if (hypeHexMatch) {
-      hypeR = parseInt(hypeHexMatch[1], 16);
-      hypeG = parseInt(hypeHexMatch[2], 16);
-      hypeB = parseInt(hypeHexMatch[3], 16);
-    }
-
-    // Parse background color (RGB or hex)
-    const bgRgbaMatch = bgColor.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-    const bgHexMatch = bgColor.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
-
-    let bgR = 0, bgG = 0, bgB = 0;
-    if (bgRgbaMatch) {
-      bgR = parseInt(bgRgbaMatch[1]);
-      bgG = parseInt(bgRgbaMatch[2]);
-      bgB = parseInt(bgRgbaMatch[3]);
-    } else if (bgHexMatch) {
-      bgR = parseInt(bgHexMatch[1], 16);
-      bgG = parseInt(bgHexMatch[2], 16);
-      bgB = parseInt(bgHexMatch[3], 16);
-    }
-
-    // Mix 70% hype + 30% background
-    const mixedR = Math.round(hypeR * 0.7 + bgR * 0.3);
-    const mixedG = Math.round(hypeG * 0.7 + bgG * 0.3);
-    const mixedB = Math.round(hypeB * 0.7 + bgB * 0.3);
-
-    return `rgb(${mixedR}, ${mixedG}, ${mixedB})`;
-  };
-
-  const flameColor = getFlameColor(hypeBorderColor, colors.background);
-  const starColor = getFlameColor(ratingBorderColor, colors.background);
-
-  const userHypeColor = getHypeHeatmapColor(fight.userHypePrediction || 0);
-  const userFlameColor = getFlameColor(userHypeColor, colors.background);
+  // Interpolate highlight color for animation
+  const highlightBackgroundColor = highlightAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['transparent', 'rgba(245, 197, 24, 0.3)'], // Yellow with 30% opacity
+  });
 
   return (
     <TouchableOpacity onPress={() => router.push(`/fight/${fight.id}`)} activeOpacity={0.7}>
-      <View style={[sharedStyles.container, {
+      <Animated.View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
         paddingVertical: 0,
         paddingHorizontal: 0,
+        backgroundColor: highlightBackgroundColor,
       }]}>
           {/* Status Strip at Top - Up Next / Starting Soon / Live Now */}
           <Animated.View style={[
@@ -619,7 +635,7 @@ export default function LiveFightCard({
             </View>
           </Animated.View>
         )}
-      </View>
+      </Animated.View>
     </TouchableOpacity>
   );
 }
@@ -1042,3 +1058,6 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
 });
+
+// Memoize to prevent unnecessary re-renders when parent re-renders
+export default memo(LiveFightCard);

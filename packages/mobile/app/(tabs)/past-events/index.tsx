@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useCallback, memo } from 'react';
 import {
   View,
   Text,
-  ScrollView,
+  FlatList,
   ActivityIndicator,
   StyleSheet,
   Image,
@@ -151,7 +151,8 @@ const formatTimeAgo = (dateString: string) => {
 };
 
 // Event Section Component - shows event banner + all fights inline
-function EventSection({ event }: { event: Event }) {
+// Memoized to prevent re-renders when other events in the list change
+const EventSection = memo(function EventSection({ event }: { event: Event }) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
@@ -320,7 +321,7 @@ function EventSection({ event }: { event: Event }) {
       </View>
     </View>
   );
-}
+});
 
 export default function PastEventsScreen() {
   const colorScheme = useColorScheme();
@@ -370,18 +371,30 @@ export default function PastEventsScreen() {
     );
   }
 
+  // Memoized render function for FlatList
+  const renderEventSection = useCallback(({ item }: { item: Event }) => (
+    <EventSection event={item} />
+  ), []);
+
+  // Stable key extractor
+  const keyExtractor = useCallback((item: Event) => item.id, []);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
-      <ScrollView
+      <FlatList
+        data={pastEvents}
+        renderItem={renderEventSection}
+        keyExtractor={keyExtractor}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
-      >
-        {pastEvents.map((event: Event) => (
-          <EventSection key={event.id} event={event} />
-        ))}
-      </ScrollView>
+        // Performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={3}
+        windowSize={5}
+        initialNumToRender={2}
+      />
     </SafeAreaView>
   );
 }

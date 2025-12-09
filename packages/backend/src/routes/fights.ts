@@ -3754,14 +3754,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const currentUserId = (request as any).user.id;
       const limit = Math.min(parseInt(request.query.limit || '3'), 10);
 
-      // Get user's reviews with upvotes > 0, sorted by upvotes descending
+      // Get user's newest reviews, sorted by creation date descending
       const topReviews = await fastify.prisma.fightReview.findMany({
         where: {
           userId: currentUserId,
-          upvotes: { gt: 0 },
           isHidden: false,
         },
-        orderBy: { upvotes: 'desc' },
+        orderBy: { createdAt: 'desc' },
         take: limit,
         include: {
           votes: {
@@ -3955,13 +3954,12 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const currentUserId = (request as any).user.id;
       const limit = Math.min(parseInt(request.query.limit || '3'), 10);
 
-      // Get user's pre-flight comments with upvotes > 0, sorted by upvotes descending
+      // Get user's newest pre-flight comments, sorted by creation date descending
       const topComments = await fastify.prisma.preFightComment.findMany({
         where: {
           userId: currentUserId,
-          upvotes: { gt: 0 },
         },
-        orderBy: { upvotes: 'desc' },
+        orderBy: { createdAt: 'desc' },
         take: limit,
         include: {
           votes: {
@@ -4106,9 +4104,6 @@ export async function fightRoutes(fastify: FastifyInstance) {
         id: comment.id,
         fightId: comment.fightId,
         content: comment.content,
-        hypeRating: comment.hypeRating,
-        predictedWinner: comment.predictedWinner,
-        predictedMethod: comment.predictedMethod,
         upvotes: comment.upvotes,
         userHasUpvoted: comment.votes.length > 0,
         createdAt: comment.createdAt,

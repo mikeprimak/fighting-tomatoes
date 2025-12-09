@@ -5,6 +5,8 @@ interface PredictionAnimationContextType {
   setPendingAnimation: (fightId: string | null) => void;
   pendingRatingAnimationFightId: string | null;
   setPendingRatingAnimation: (fightId: string | null) => void;
+  lastViewedFightId: string | null;
+  setLastViewedFight: (fightId: string | null) => void;
 }
 
 const PredictionAnimationContext = createContext<PredictionAnimationContextType | undefined>(undefined);
@@ -12,6 +14,7 @@ const PredictionAnimationContext = createContext<PredictionAnimationContextType 
 export function PredictionAnimationProvider({ children }: { children: React.ReactNode }) {
   const [pendingAnimationFightId, setPendingAnimationFightId] = useState<string | null>(null);
   const [pendingRatingAnimationFightId, setPendingRatingAnimationFightId] = useState<string | null>(null);
+  const [lastViewedFightId, setLastViewedFightId] = useState<string | null>(null);
 
   const setPendingAnimation = useCallback((fightId: string | null) => {
     setPendingAnimationFightId(fightId);
@@ -21,12 +24,18 @@ export function PredictionAnimationProvider({ children }: { children: React.Reac
     setPendingRatingAnimationFightId(fightId);
   }, []);
 
+  const setLastViewedFight = useCallback((fightId: string | null) => {
+    setLastViewedFightId(fightId);
+  }, []);
+
   return (
     <PredictionAnimationContext.Provider value={{
       pendingAnimationFightId,
       setPendingAnimation,
       pendingRatingAnimationFightId,
-      setPendingRatingAnimation
+      setPendingRatingAnimation,
+      lastViewedFightId,
+      setLastViewedFight
     }}>
       {children}
     </PredictionAnimationContext.Provider>

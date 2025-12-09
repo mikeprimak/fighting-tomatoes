@@ -105,9 +105,11 @@ export function CommentCard({
         <View style={styles.reviewContentContainer}>
           {/* Top row: Username | Star Rating | Predicted Winner */}
           <View style={styles.topInfoRow}>
-            <Text style={[styles.reviewAuthor, { color: showMyReview ? '#F5C518' : '#FFFFFF' }]}>
-              {comment.user.displayName}
-            </Text>
+            <View style={showMyReview ? { borderBottomWidth: 2, borderBottomColor: '#F5C518' } : undefined}>
+              <Text style={[styles.reviewAuthor, { color: colors.textSecondary }]}>
+                {comment.user.displayName}
+              </Text>
+            </View>
             <View style={styles.inlineRating}>
               <FontAwesome name="star" size={14} color={getHypeHeatmapColor(comment.rating)} />
               <Text style={[styles.reviewRatingText, { color: colors.textSecondary, fontSize: 14 }]}>
@@ -115,13 +117,13 @@ export function CommentCard({
               </Text>
             </View>
             {comment.predictedWinner && fighter1Id && fighter2Id && (
-              <View style={styles.predictionContainer}>
-                <FontAwesome name="hand-o-right" size={14} color={colors.textSecondary} />
-                <Text style={[styles.predictedWinnerText, { color: colors.textSecondary }]}>
-                  {comment.predictedWinner === fighter1Id ? fighter1Name : fighter2Name}
-                  {comment.predictedMethod && ` by ${formatMethod(comment.predictedMethod)}`}
-                </Text>
-              </View>
+              <Text
+                style={{ color: colors.textSecondary, fontSize: 14, flexShrink: 1 }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                ({comment.predictedWinner === fighter1Id ? fighter1Name : fighter2Name})
+              </Text>
             )}
           </View>
 
@@ -225,7 +227,8 @@ const styles = StyleSheet.create({
   topInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
+    overflow: 'hidden',
     gap: 8,
     marginBottom: 6,
   },

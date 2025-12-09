@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import {
   View,
   Text,
-  ScrollView,
+  FlatList,
   ActivityIndicator,
   StyleSheet,
   Image,
@@ -250,53 +250,70 @@ export default function UpcomingEventsScreen() {
     );
   }
 
+  // Memoized render function for FlatList
+  const renderEventSection = useCallback(({ item, index }: { item: Event; index: number }) => (
+    <EventSection
+      event={item}
+      colors={colors}
+      isAuthenticated={isAuthenticated}
+      onFightPress={handleFightPress}
+      parseEventName={parseEventName}
+      formatDate={formatDate}
+      formatTime={formatTime}
+      formatTimeUntil={formatTimeUntil}
+      isFirstEvent={index === 0}
+    />
+  ), [colors, isAuthenticated, handleFightPress, parseEventName, formatDate, formatTime, formatTimeUntil]);
+
+  // Stable key extractor
+  const keyExtractor = useCallback((item: Event) => item.id, []);
+
+  // Header component for notification banner
+  const ListHeaderComponent = useCallback(() => {
+    if (!preEventMessage) return null;
+    return (
+      <View style={[styles.notificationBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+        <View style={styles.notificationIconContainer}>
+          <FontAwesome name="bell" size={20} color={colors.primary} />
+        </View>
+        <Text style={[styles.notificationText, { color: colors.text }]}>
+          {preEventMessage}
+        </Text>
+        <TouchableOpacity
+          style={styles.dismissButton}
+          onPress={() => setPreEventMessage(null)}
+        >
+          <FontAwesome name="times" size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+      </View>
+    );
+  }, [preEventMessage, colors, setPreEventMessage]);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
-      <ScrollView
+      <FlatList
+        data={upcomingEvents}
+        renderItem={renderEventSection}
+        keyExtractor={keyExtractor}
+        ListHeaderComponent={ListHeaderComponent}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
-      >
-        {/* Pre-Event Notification Banner */}
-        {preEventMessage && (
-          <View style={[styles.notificationBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
-            <View style={styles.notificationIconContainer}>
-              <FontAwesome name="bell" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.notificationText, { color: colors.text }]}>
-              {preEventMessage}
-            </Text>
-            <TouchableOpacity
-              style={styles.dismissButton}
-              onPress={() => setPreEventMessage(null)}
-            >
-              <FontAwesome name="times" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {upcomingEvents.map((event: Event, index: number) => (
-          <EventSection
-            key={event.id}
-            event={event}
-            colors={colors}
-            isAuthenticated={isAuthenticated}
-            onFightPress={handleFightPress}
-            parseEventName={parseEventName}
-            formatDate={formatDate}
-            formatTime={formatTime}
-            formatTimeUntil={formatTimeUntil}
-            isFirstEvent={index === 0}
-          />
-        ))}
-      </ScrollView>
+        // Performance optimizations
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={3}
+        windowSize={5}
+        initialNumToRender={2}
+        getItemLayout={undefined} // Events have variable height due to different fight counts
+      />
     </SafeAreaView>
   );
 }
 
 // Event Section Component - Shows banner + all fights for one event
-function EventSection({
+// Memoized to prevent re-renders when other events in the list change
+const EventSection = memo(function EventSection({
   event,
   colors,
   isAuthenticated,
@@ -557,7 +574,7 @@ function EventSection({
       )}
     </View>
   );
-}
+});
 
 const createStyles = (colors: any) => StyleSheet.create({
   container: {

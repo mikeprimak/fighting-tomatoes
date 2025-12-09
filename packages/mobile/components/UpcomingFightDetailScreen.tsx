@@ -252,38 +252,8 @@ export default function UpcomingFightDetailScreen({
   }, []);
 
   // Community data is always visible - no animation needed for reveal
-  // (Animations removed since data shows immediately)
-
-  // HARDCODED TEST DATA - Remove this when done testing
-  const testPredictionStats = {
-    totalPredictions: 100,
-    averageHype: 8.5,
-    winnerPredictions: {
-      fighter1: { id: fight.fighter1.id, name: `${fight.fighter1.firstName} ${fight.fighter1.lastName}`, count: 55, percentage: 55 },
-      fighter2: { id: fight.fighter2.id, name: `${fight.fighter2.firstName} ${fight.fighter2.lastName}`, count: 45, percentage: 45 },
-    },
-    methodPredictions: {
-      DECISION: 30,
-      KO_TKO: 45,
-      SUBMISSION: 25,
-    },
-    roundPredictions: {},
-    fighter1MethodPredictions: {
-      DECISION: 15,
-      KO_TKO: 30,
-      SUBMISSION: 10,
-    },
-    fighter1RoundPredictions: {},
-    fighter2MethodPredictions: {
-      DECISION: 15,
-      KO_TKO: 15,
-      SUBMISSION: 15,
-    },
-    fighter2RoundPredictions: {},
-  };
-
-  // Override with test data
-  const displayPredictionStats = testPredictionStats;
+  // Use real fetched prediction stats
+  const displayPredictionStats = predictionStats;
 
   // Auto-save winner selection
   const saveWinnerMutation = useMutation({
@@ -322,18 +292,27 @@ export default function UpcomingFightDetailScreen({
   // Auto-save hype selection
   const saveHypeMutation = useMutation({
     mutationFn: async (hypeLevel: number | null) => {
+      console.log('[saveHypeMutation] Saving hype:', hypeLevel);
       return apiService.createFightPrediction(fight.id, {
-        predictedRating: hypeLevel || undefined,
+        predictedRating: hypeLevel ?? undefined,
         // Keep existing values
         predictedWinner: selectedWinner || undefined,
         predictedMethod: selectedMethod || undefined,
         predictedRound: fight.userPredictedRound || undefined,
       });
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('[saveHypeMutation] Success:', data);
       // Mark this fight as needing animation
       setPendingAnimation(fight.id);
-
+      onPredictionSuccess?.();
+    },
+    onError: (error) => {
+      console.error('[saveHypeMutation] Error:', error);
+    },
+    onSettled: () => {
+      // Always invalidate queries, even on error (to reset state)
+      console.log('[saveHypeMutation] Invalidating queries');
       // Invalidate fight-specific queries
       queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
@@ -348,8 +327,6 @@ export default function UpcomingFightDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
       queryClient.invalidateQueries({ queryKey: ['myRatings'] });
-
-      onPredictionSuccess?.();
     },
   });
 

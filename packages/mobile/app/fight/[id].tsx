@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,16 +15,29 @@ import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
+import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
 import { DetailScreenHeader, UpcomingFightDetailScreen, CompletedFightDetailScreen } from '../../components';
 
 export default function FightDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { isAuthenticated } = useAuth();
+  const { setLastViewedFight } = usePredictionAnimation();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
   const [detailsMenuVisible, setDetailsMenuVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>('');
+
+  // Track this fight as the last viewed for highlight animation when returning to list
+  // Set the ID when unmounting (navigating back), not when mounting
+  useEffect(() => {
+    const fightId = id;
+    return () => {
+      if (fightId) {
+        setLastViewedFight(fightId);
+      }
+    };
+  }, [id, setLastViewedFight]);
 
   // Animation for toast notification
   const toastOpacity = useRef(new Animated.Value(0)).current;
