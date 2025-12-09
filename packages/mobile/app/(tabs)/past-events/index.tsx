@@ -249,6 +249,7 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
                     fight={fight}
                     onPress={handleFightPress}
                     showEvent={false}
+                    enableRatingAnimation={true}
                   />
                 ))}
               </View>
@@ -291,6 +292,7 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
                     fight={fight}
                     onPress={handleFightPress}
                     showEvent={false}
+                    enableRatingAnimation={true}
                   />
                 ))}
               </View>
@@ -312,6 +314,7 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
                     fight={fight}
                     onPress={handleFightPress}
                     showEvent={false}
+                    enableRatingAnimation={true}
                   />
                 ))}
               </View>

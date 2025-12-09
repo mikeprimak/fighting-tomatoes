@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState, useMemo, memo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert, Easing } from 'react-native';
+import React, { useEffect, useRef, useState, useMemo, memo, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert } from 'react-native';
 import { FontAwesome, FontAwesome6, Entypo } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
@@ -8,6 +8,7 @@ import { apiService } from '../../services/api';
 import { router } from 'expo-router';
 import { useAuth } from '../../store/AuthContext';
 import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
+import { useFocusEffect } from '@react-navigation/native';
 import { BaseFightCardProps } from './shared/types';
 import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName, formatEventName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
@@ -21,6 +22,7 @@ interface CompletedFightCardProps extends BaseFightCardProps {
   lastCompletedFightTime?: string;
   animatePrediction?: boolean;
   animateRating?: boolean;
+  enableRatingAnimation?: boolean; // Only true on list screens, prevents animation on detail screens
   // Pre-fetched stats from parent (avoids N+1 API calls per card)
   predictionStats?: any;
   aggregateStats?: any;
@@ -35,6 +37,7 @@ function CompletedFightCard({
   lastCompletedFightTime,
   animatePrediction = false,
   animateRating = false,
+  enableRatingAnimation = false,
   predictionStats: propPredictionStats,
   aggregateStats: propAggregateStats,
 }: CompletedFightCardProps) {
@@ -42,11 +45,10 @@ function CompletedFightCard({
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const { pendingRatingAnimationFightId, setPendingRatingAnimation, lastViewedFightId, setLastViewedFight } = usePredictionAnimation();
+  const { pendingRatingAnimationFightId, setPendingRatingAnimation } = usePredictionAnimation();
 
   // Animation ref for rating animation
   const ratingScaleAnim = useRef(new Animated.Value(1)).current;
-  const highlightAnim = useRef(new Animated.Value(0)).current;
 
   // Local formatMethod function for this component - shows "KO" instead of "KO/TKO"
   const formatMethod = (method: string | null | undefined) => {
@@ -63,9 +65,8 @@ function CompletedFightCard({
   const [fighter1ImageError, setFighter1ImageError] = useState(false);
   const [fighter2ImageError, setFighter2ImageError] = useState(false);
 
-  // Bell notification state
+  // Toast notification state
   const [toastMessage, setToastMessage] = useState<string>('');
-  const bellRotation = useRef(new Animated.Value(0)).current;
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const toastTranslateY = useRef(new Animated.Value(50)).current;
 
@@ -78,32 +79,6 @@ function CompletedFightCard({
   // Animation for "Starting soon..." text pulse
   const startingSoonPulseAnim = useRef(new Animated.Value(1)).current;
 
-  // Animated values for prediction save animation (flames)
-  const predictionScaleAnim = useRef(new Animated.Value(1)).current;
-  const predictionGlowAnim = useRef(new Animated.Value(0)).current;
-  const flame1 = useRef(new Animated.Value(0)).current;
-  const flame2 = useRef(new Animated.Value(0)).current;
-  const flame3 = useRef(new Animated.Value(0)).current;
-  const flame4 = useRef(new Animated.Value(0)).current;
-  const flame5 = useRef(new Animated.Value(0)).current;
-  const flame6 = useRef(new Animated.Value(0)).current;
-  const flame7 = useRef(new Animated.Value(0)).current;
-  const flame8 = useRef(new Animated.Value(0)).current;
-
-  // Animated values for fighter image sparkles
-  const fighterSparkle1 = useRef(new Animated.Value(0)).current;
-  const fighterSparkle2 = useRef(new Animated.Value(0)).current;
-  const fighterSparkle3 = useRef(new Animated.Value(0)).current;
-  const fighterSparkle4 = useRef(new Animated.Value(0)).current;
-
-  // Animated values for method text sparkles
-  const methodSparkle1 = useRef(new Animated.Value(0)).current;
-  const methodSparkle2 = useRef(new Animated.Value(0)).current;
-  const methodSparkle3 = useRef(new Animated.Value(0)).current;
-  const methodSparkle4 = useRef(new Animated.Value(0)).current;
-
-  // Animated value for hot fight flame glow
-  const hotFightGlowAnim = useRef(new Animated.Value(0)).current;
 
   // Use fight object data directly - no need for separate API calls
   // predictionStats.averageHype → fight.averageHype (for completed fights we use averageRating)
@@ -134,17 +109,6 @@ function CompletedFightCard({
     };
   }, [fight.userHypePrediction, (fight as any).userPredictedWinner, fight.fighter1.id, fight.fighter2.id, fight.fighter1.firstName, fight.fighter1.lastName, fight.fighter2.firstName, fight.fighter2.lastName]);
 
-  // Bell ringing animation
-  const animateBellRing = () => {
-    bellRotation.setValue(0);
-    Animated.sequence([
-      Animated.timing(bellRotation, { toValue: 1, duration: 100, useNativeDriver: true }),
-      Animated.timing(bellRotation, { toValue: -1, duration: 100, useNativeDriver: true }),
-      Animated.timing(bellRotation, { toValue: 1, duration: 100, useNativeDriver: true }),
-      Animated.timing(bellRotation, { toValue: 0, duration: 100, useNativeDriver: true }),
-    ]).start();
-  };
-
   // Toast notification animation
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -174,7 +138,6 @@ function CompletedFightCard({
       }
     },
     onSuccess: async (data) => {
-      animateBellRing();
       if (data.isFollowing) {
         showToast('You will be notified before this fight.');
       }
@@ -234,99 +197,48 @@ function CompletedFightCard({
     setFighter2ImageError(false);
   }, [fight.id]);
 
-  // Track previous rating value to detect when data updates
-  const prevRatingRef = useRef(fight.userRating);
-  const isWaitingForDataUpdate = useRef(false);
+  // Rating animation - triggers when screen comes into focus AND pendingRatingAnimationFightId matches
+  // Using useFocusEffect ensures animation only runs when navigating BACK to this screen
+  useFocusEffect(
+    useCallback(() => {
+      // Only animate if enabled (list screens only) and this is the fight that needs animation
+      if (!enableRatingAnimation || pendingRatingAnimationFightId !== fight.id) {
+        return;
+      }
 
-  // When lastViewedFightId matches, start waiting for data update
-  useEffect(() => {
-    if (lastViewedFightId === fight.id) {
-      isWaitingForDataUpdate.current = true;
-    }
-  }, [lastViewedFightId, fight.id]);
-
-  // Highlight animation - triggers when data updates after returning from fight detail screen
-  useEffect(() => {
-    const prevRating = prevRatingRef.current;
-    const currentRating = fight.userRating;
-
-    // Update the ref for next comparison
-    prevRatingRef.current = currentRating;
-
-    // If we're waiting for data update and the rating value changed, trigger animation
-    if (isWaitingForDataUpdate.current && prevRating !== currentRating) {
-      isWaitingForDataUpdate.current = false;
-
-      // Small delay to let the UI render the new value first
+      // Start animation after short delay for smooth transition
       const timer = setTimeout(() => {
-        // Animate: fade in, hold, then fade out
-        highlightAnim.setValue(0);
+        // Animate rating square: scale up and down twice
         Animated.sequence([
-          // Fade in
-          Animated.timing(highlightAnim, {
-            toValue: 1,
-            duration: 400,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: false,
+          Animated.timing(ratingScaleAnim, {
+            toValue: 1.6,
+            duration: 300,
+            useNativeDriver: true,
           }),
-          // Hold at full brightness
-          Animated.delay(300),
-          // Fade out
-          Animated.timing(highlightAnim, {
-            toValue: 0,
-            duration: 800,
-            easing: Easing.in(Easing.ease),
-            useNativeDriver: false,
+          Animated.timing(ratingScaleAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(ratingScaleAnim, {
+            toValue: 1.6,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(ratingScaleAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
           }),
         ]).start(() => {
-          // Clear the lastViewedFightId after animation completes
-          setLastViewedFight(null);
+          // Clear the pending animation flag after animation completes
+          setPendingRatingAnimation(null);
         });
-      }, 100);
+      }, 300); // Short delay for smooth screen transition
 
       return () => clearTimeout(timer);
-    }
-  }, [fight.userRating, highlightAnim, setLastViewedFight]);
-
-  // Rating animation - triggers when navigating back to list screen after rating fight
-  useEffect(() => {
-    // Only animate if this is the fight that needs animation
-    if (pendingRatingAnimationFightId !== fight.id) {
-      return;
-    }
-
-    // Start animation after 450ms delay
-    const timer = setTimeout(() => {
-      // Animate rating square: scale up and down twice
-      Animated.sequence([
-        Animated.timing(ratingScaleAnim, {
-          toValue: 1.15,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(ratingScaleAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(ratingScaleAnim, {
-          toValue: 1.15,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(ratingScaleAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // Clear the pending animation flag after animation completes
-        setPendingRatingAnimation(null);
-      });
-    }, 450);
-
-    return () => clearTimeout(timer);
-  }, [pendingRatingAnimationFightId, fight.id, ratingScaleAnim, setPendingRatingAnimation]);
+    }, [enableRatingAnimation, pendingRatingAnimationFightId, fight.id, ratingScaleAnim, setPendingRatingAnimation])
+  );
 
   // Pulsing animation for "Starting soon..."
   useEffect(() => {
@@ -347,94 +259,6 @@ function CompletedFightCard({
   }, [getUpcomingStatusMessage(), startingSoonPulseAnim]);
 
 
-  // Trigger animation when prediction is saved (fighter, method, or hype)
-  useEffect(() => {
-    if (animatePrediction && (fight.userHypePrediction || aggregateStats?.userPrediction?.winner)) {
-      // Reset all sparkles
-      flame1.setValue(0);
-      flame2.setValue(0);
-      flame3.setValue(0);
-      flame4.setValue(0);
-      flame5.setValue(0);
-      flame6.setValue(0);
-      flame7.setValue(0);
-      flame8.setValue(0);
-      fighterSparkle1.setValue(0);
-      fighterSparkle2.setValue(0);
-      fighterSparkle3.setValue(0);
-      fighterSparkle4.setValue(0);
-      methodSparkle1.setValue(0);
-      methodSparkle2.setValue(0);
-      methodSparkle3.setValue(0);
-      methodSparkle4.setValue(0);
-
-      const animations = [];
-
-      // Add hype animations if hype rating exists
-      if (fight.userHypePrediction) {
-        animations.push(
-          Animated.sequence([
-            Animated.timing(predictionScaleAnim, { toValue: 1.3, duration: 150, useNativeDriver: true }),
-            Animated.spring(predictionScaleAnim, { toValue: 1, friction: 3, useNativeDriver: true }),
-          ]),
-          Animated.sequence([
-            Animated.timing(predictionGlowAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-            Animated.timing(predictionGlowAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
-          ]),
-          // Flame sparkles
-          Animated.timing(flame1, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame2, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame3, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame4, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame5, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame6, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame7, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(flame8, { toValue: 1, duration: 500, useNativeDriver: true })
-        );
-      }
-
-      // Add fighter sparkles if user predicted a fighter
-      if (aggregateStats?.userPrediction?.winner) {
-        animations.push(
-          Animated.timing(fighterSparkle1, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(fighterSparkle2, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(fighterSparkle3, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(fighterSparkle4, { toValue: 1, duration: 500, useNativeDriver: true })
-        );
-      }
-
-      // Add method sparkles if user predicted a method
-      if (aggregateStats?.userPrediction?.method) {
-        animations.push(
-          Animated.timing(methodSparkle1, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(methodSparkle2, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(methodSparkle3, { toValue: 1, duration: 500, useNativeDriver: true }),
-          Animated.timing(methodSparkle4, { toValue: 1, duration: 500, useNativeDriver: true })
-        );
-      }
-
-      if (animations.length > 0) {
-        Animated.parallel(animations).start();
-      }
-    }
-  }, [animatePrediction, fight.userHypePrediction, aggregateStats?.userPrediction?.winner, aggregateStats?.userPrediction?.method, predictionScaleAnim, predictionGlowAnim, flame1, flame2, flame3, flame4, flame5, flame6, flame7, flame8, fighterSparkle1, fighterSparkle2, fighterSparkle3, fighterSparkle4, methodSparkle1, methodSparkle2, methodSparkle3, methodSparkle4]);
-
-  // Pulsing glow animation for hot fights (8+ hype) - DISABLED
-  // useEffect(() => {
-  //   if (predictionStats?.averageHype && predictionStats.averageHype >= 8) {
-  //     const pulse = Animated.loop(
-  //       Animated.sequence([
-  //         Animated.timing(hotFightGlowAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
-  //         Animated.timing(hotFightGlowAnim, { toValue: 0, duration: 1200, useNativeDriver: true }),
-  //       ])
-  //     );
-  //     pulse.start();
-  //     return () => {
-  //       pulse.stop();
-  //       hotFightGlowAnim.setValue(0);
-  //     };
-  //   }
-  // }, [predictionStats?.averageHype, hotFightGlowAnim]);
 
   const getFighter1ImageSource = () => {
     if (fighter1ImageError) {
@@ -571,15 +395,9 @@ function CompletedFightCard({
     [fight.userRating]
   );
 
-  // Interpolate highlight color for animation
-  const highlightBackgroundColor = highlightAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['transparent', 'rgba(245, 197, 24, 0.3)'], // Yellow with 30% opacity
-  });
-
   return (
     <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
-      <Animated.View style={[sharedStyles.container, {
+      <View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
         paddingLeft: 64, // 48px square + 16px padding
@@ -587,7 +405,6 @@ function CompletedFightCard({
         paddingRight: 64, // 48px square + 16px padding
         minHeight: 62, // Reduced height to match UpcomingFightCard
         justifyContent: 'center',
-        backgroundColor: highlightBackgroundColor,
       }]}>
           {/* Full-height community rating square on the left */}
           <View style={[
@@ -799,22 +616,11 @@ function CompletedFightCard({
             onPress={handleBellPress}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
-            <Animated.View
-              style={{
-                transform: [{
-                  rotate: bellRotation.interpolate({
-                    inputRange: [-1, 0, 1],
-                    outputRange: ['-15deg', '0deg', '15deg'],
-                  }),
-                }],
-              }}
-            >
-              <FontAwesome
-                name={fight.isFollowing ? "bell" : "bell-o"}
-                size={18}
-                color={fight.isFollowing ? '#F5C518' : colors.textSecondary}
-              />
-            </Animated.View>
+            <FontAwesome
+              name={fight.isFollowing ? "bell" : "bell-o"}
+              size={18}
+              color={fight.isFollowing ? '#F5C518' : colors.textSecondary}
+            />
           </TouchableOpacity>
         )}
 
@@ -837,7 +643,7 @@ function CompletedFightCard({
             </View>
           </Animated.View>
         )}
-      </Animated.View>
+      </View>
     </TouchableOpacity>
   );
 }

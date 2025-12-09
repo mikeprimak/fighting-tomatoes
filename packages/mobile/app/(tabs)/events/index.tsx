@@ -496,6 +496,8 @@ const EventSection = memo(function EventSection({
                   isNextFight={nextFight?.id === fight.id}
                   hasLiveFight={DEV_FORCE_LIVE_NOW && isCostaVsCharriere(fight) ? true : hasLiveFight}
                   lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                  enableHypeAnimation={true}
+                  enableRatingAnimation={true}
                 />
               ))}
             </View>
@@ -526,6 +528,8 @@ const EventSection = memo(function EventSection({
                   isNextFight={nextFight?.id === fight.id}
                   hasLiveFight={DEV_FORCE_LIVE_NOW && isCostaVsCharriere(fight) ? true : hasLiveFight}
                   lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                  enableHypeAnimation={true}
+                  enableRatingAnimation={true}
                 />
               ))}
             </View>
@@ -556,6 +560,8 @@ const EventSection = memo(function EventSection({
                   isNextFight={nextFight?.id === fight.id}
                   hasLiveFight={DEV_FORCE_LIVE_NOW && isCostaVsCharriere(fight) ? true : hasLiveFight}
                   lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                  enableHypeAnimation={true}
+                  enableRatingAnimation={true}
                 />
               ))}
             </View>

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo, memo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, memo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert, Easing } from 'react-native';
 import { FontAwesome, FontAwesome6, Entypo } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
@@ -8,6 +8,7 @@ import { apiService } from '../../services/api';
 import { router } from 'expo-router';
 import { useAuth } from '../../store/AuthContext';
 import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
+import { useFocusEffect } from '@react-navigation/native';
 import { BaseFightCardProps } from './shared/types';
 import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
@@ -16,6 +17,7 @@ import { getHypeHeatmapColor } from '../../utils/heatmap';
 
 interface LiveFightCardProps extends BaseFightCardProps {
   animateRating?: boolean;
+  enableRatingAnimation?: boolean; // Only true on list screens, prevents animation on detail screens
   isNextFight?: boolean;
   lastCompletedFightTime?: string;
 }
@@ -28,6 +30,7 @@ function LiveFightCard({
   onPress,
   showEvent = true,
   animateRating = false,
+  enableRatingAnimation = false,
   isNextFight = false,
   lastCompletedFightTime,
 }: LiveFightCardProps) {
@@ -277,45 +280,48 @@ function LiveFightCard({
     setFighter2ImageError(false);
   }, [fight.id]);
 
-  // Rating animation - triggers when navigating back to list screen after rating fight
-  useEffect(() => {
-    // Only animate if this is the fight that needs animation
-    if (pendingRatingAnimationFightId !== fight.id) {
-      return;
-    }
+  // Rating animation - triggers when screen comes into focus AND pendingRatingAnimationFightId matches
+  // Using useFocusEffect ensures animation only runs when navigating BACK to this screen
+  useFocusEffect(
+    useCallback(() => {
+      // Only animate if enabled (list screens only) and this is the fight that needs animation
+      if (!enableRatingAnimation || pendingRatingAnimationFightId !== fight.id) {
+        return;
+      }
 
-    // Start animation after 450ms delay
-    const timer = setTimeout(() => {
-      // Animate rating square: scale up and down twice
-      Animated.sequence([
-        Animated.timing(ratingScaleAnim, {
-          toValue: 1.15,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(ratingScaleAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(ratingScaleAnim, {
-          toValue: 1.15,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(ratingScaleAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // Clear the pending animation flag after animation completes
-        setPendingRatingAnimation(null);
-      });
-    }, 450);
+      // Start animation after short delay for smooth transition
+      const timer = setTimeout(() => {
+        // Animate rating square: scale up and down twice
+        Animated.sequence([
+          Animated.timing(ratingScaleAnim, {
+            toValue: 1.6,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(ratingScaleAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(ratingScaleAnim, {
+            toValue: 1.6,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(ratingScaleAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          // Clear the pending animation flag after animation completes
+          setPendingRatingAnimation(null);
+        });
+      }, 300); // Short delay for smooth screen transition
 
-    return () => clearTimeout(timer);
-  }, [pendingRatingAnimationFightId, fight.id, ratingScaleAnim, setPendingRatingAnimation]);
+      return () => clearTimeout(timer);
+    }, [enableRatingAnimation, pendingRatingAnimationFightId, fight.id, ratingScaleAnim, setPendingRatingAnimation])
+  );
 
   const getFighter1ImageSource = () => {
     if (fighter1ImageError) {

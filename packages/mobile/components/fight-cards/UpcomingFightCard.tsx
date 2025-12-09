@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState, useMemo, memo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert, Easing } from 'react-native';
+import React, { useEffect, useRef, useState, useMemo, memo, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert } from 'react-native';
 import { FontAwesome, FontAwesome6, Entypo } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
@@ -8,6 +8,7 @@ import { apiService } from '../../services/api';
 import { router } from 'expo-router';
 import { useAuth } from '../../store/AuthContext';
 import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
+import { useFocusEffect } from '@react-navigation/native';
 import { BaseFightCardProps } from './shared/types';
 import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName, formatEventName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
@@ -20,6 +21,7 @@ interface UpcomingFightCardProps extends BaseFightCardProps {
   hasLiveFight?: boolean;
   lastCompletedFightTime?: string;
   animatePrediction?: boolean;
+  enableHypeAnimation?: boolean; // Only true on list screens, prevents animation on detail screens
   // Pre-fetched stats from parent (avoids N+1 API calls per card)
   predictionStats?: any;
   aggregateStats?: any;
@@ -33,6 +35,7 @@ function UpcomingFightCard({
   hasLiveFight = false,
   lastCompletedFightTime,
   animatePrediction = false,
+  enableHypeAnimation = false,
   predictionStats: propPredictionStats,
   aggregateStats: propAggregateStats,
 }: UpcomingFightCardProps) {
@@ -40,12 +43,10 @@ function UpcomingFightCard({
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
-  const { pendingAnimationFightId, setPendingAnimation, lastViewedFightId, setLastViewedFight } = usePredictionAnimation();
+  const { pendingAnimationFightId, setPendingAnimation } = usePredictionAnimation();
 
-  // Animation refs for prediction animations
-  const underlineScaleAnim = useRef(new Animated.Value(1)).current;
+  // Animation ref for hype animation
   const hypeScaleAnim = useRef(new Animated.Value(1)).current;
-  const highlightAnim = useRef(new Animated.Value(0)).current;
 
   // Local formatMethod function for this component - shows "KO" instead of "KO/TKO"
   const formatMethod = (method: string | null | undefined) => {
@@ -62,9 +63,8 @@ function UpcomingFightCard({
   const [fighter1ImageError, setFighter1ImageError] = useState(false);
   const [fighter2ImageError, setFighter2ImageError] = useState(false);
 
-  // Bell notification state
+  // Toast notification state
   const [toastMessage, setToastMessage] = useState<string>('');
-  const bellRotation = useRef(new Animated.Value(0)).current;
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const toastTranslateY = useRef(new Animated.Value(50)).current;
 
@@ -98,17 +98,6 @@ function UpcomingFightCard({
     };
   }, [fight.userHypePrediction, (fight as any).userPredictedWinner, fight.fighter1.id, fight.fighter2.id, fight.fighter1.firstName, fight.fighter1.lastName, fight.fighter2.firstName, fight.fighter2.lastName]);
 
-  // Bell ringing animation
-  const animateBellRing = () => {
-    bellRotation.setValue(0);
-    Animated.sequence([
-      Animated.timing(bellRotation, { toValue: 1, duration: 100, useNativeDriver: true }),
-      Animated.timing(bellRotation, { toValue: -1, duration: 100, useNativeDriver: true }),
-      Animated.timing(bellRotation, { toValue: 1, duration: 100, useNativeDriver: true }),
-      Animated.timing(bellRotation, { toValue: 0, duration: 100, useNativeDriver: true }),
-    ]).start();
-  };
-
   // Toast notification animation
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -138,7 +127,6 @@ function UpcomingFightCard({
       }
     },
     onSuccess: async (data) => {
-      animateBellRing();
       if (data.isFollowing) {
         showToast('You will be notified before this fight.');
       }
@@ -161,123 +149,49 @@ function UpcomingFightCard({
     setFighter2ImageError(false);
   }, [fight.id]);
 
-  // Track previous hype value to detect when data updates
-  const prevHypeRef = useRef(fight.userHypePrediction);
-  const isWaitingForDataUpdate = useRef(false);
 
-  // When lastViewedFightId matches, start waiting for data update
-  useEffect(() => {
-    if (lastViewedFightId === fight.id) {
-      isWaitingForDataUpdate.current = true;
-    }
-  }, [lastViewedFightId, fight.id]);
+  // Hype animation - triggers when screen comes into focus AND pendingAnimationFightId matches
+  // Using useFocusEffect ensures animation only runs when navigating BACK to this screen
+  useFocusEffect(
+    useCallback(() => {
+      // Only animate if enabled (list screens only) and this is the fight that needs animation
+      if (!enableHypeAnimation || pendingAnimationFightId !== fight.id) {
+        return;
+      }
 
-  // Highlight animation - triggers when data updates after returning from fight detail screen
-  useEffect(() => {
-    const prevHype = prevHypeRef.current;
-    const currentHype = fight.userHypePrediction;
-
-    // Update the ref for next comparison
-    prevHypeRef.current = currentHype;
-
-    // If we're waiting for data update and the hype value changed, trigger animation
-    if (isWaitingForDataUpdate.current && prevHype !== currentHype) {
-      isWaitingForDataUpdate.current = false;
-
-      // Small delay to let the UI render the new value first
+      // Start animation after short delay for smooth transition
       const timer = setTimeout(() => {
-        // Animate: fade in, hold, then fade out
-        highlightAnim.setValue(0);
+        // Animate hype square: scale up and down twice
         Animated.sequence([
-          // Fade in
-          Animated.timing(highlightAnim, {
-            toValue: 1,
-            duration: 400,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: false,
+          Animated.timing(hypeScaleAnim, {
+            toValue: 1.6,
+            duration: 300,
+            useNativeDriver: true,
           }),
-          // Hold at full brightness
-          Animated.delay(300),
-          // Fade out
-          Animated.timing(highlightAnim, {
-            toValue: 0,
-            duration: 800,
-            easing: Easing.in(Easing.ease),
-            useNativeDriver: false,
+          Animated.timing(hypeScaleAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(hypeScaleAnim, {
+            toValue: 1.6,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(hypeScaleAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
           }),
         ]).start(() => {
-          // Clear the lastViewedFightId after animation completes
-          setLastViewedFight(null);
+          // Clear the pending animation flag after animation completes
+          setPendingAnimation(null);
         });
-      }, 100);
+      }, 300); // Short delay for smooth screen transition
 
       return () => clearTimeout(timer);
-    }
-  }, [fight.userHypePrediction, highlightAnim, setLastViewedFight]);
-
-  // Prediction animation - triggers when pendingAnimationFightId matches this fight
-  useEffect(() => {
-    // Only animate if this is the fight that needs animation
-    if (pendingAnimationFightId !== fight.id) {
-      return;
-    }
-
-    // Start animation after 450ms delay
-    const timer = setTimeout(() => {
-      // Animate underline: pulse by scaling up and back down twice
-      Animated.sequence([
-        Animated.timing(underlineScaleAnim, {
-          toValue: 1.3,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(underlineScaleAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(underlineScaleAnim, {
-          toValue: 1.3,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(underlineScaleAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      // Animate hype square: scale up and down twice
-      Animated.sequence([
-        Animated.timing(hypeScaleAnim, {
-          toValue: 1.15,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(hypeScaleAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(hypeScaleAnim, {
-          toValue: 1.15,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(hypeScaleAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // Clear the pending animation flag after animation completes
-        setPendingAnimation(null);
-      });
-    }, 450);
-
-    return () => clearTimeout(timer);
-  }, [pendingAnimationFightId, fight.id, underlineScaleAnim, hypeScaleAnim, setPendingAnimation]);
+    }, [enableHypeAnimation, pendingAnimationFightId, fight.id, hypeScaleAnim, setPendingAnimation])
+  );
 
   const getFighter1ImageSource = () => {
     if (fighter1ImageError) {
@@ -386,15 +300,9 @@ function UpcomingFightCard({
     [fight.userHypePrediction]
   );
 
-  // Interpolate highlight color for animation
-  const highlightBackgroundColor = highlightAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['transparent', 'rgba(245, 197, 24, 0.3)'], // Yellow with 30% opacity
-  });
-
   return (
     <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
-      <Animated.View style={[sharedStyles.container, {
+      <View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
         paddingLeft: 64, // 48px square + 16px padding
@@ -402,7 +310,6 @@ function UpcomingFightCard({
         paddingRight: 64, // 48px square + 16px padding
         minHeight: 62, // Reduced height after removing counts
         justifyContent: 'center',
-        backgroundColor: highlightBackgroundColor,
       }]}>
           {/* Full-height community hype square on the left */}
           <View style={[
@@ -589,22 +496,11 @@ function UpcomingFightCard({
             onPress={handleBellPress}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
-            <Animated.View
-              style={{
-                transform: [{
-                  rotate: bellRotation.interpolate({
-                    inputRange: [-1, 0, 1],
-                    outputRange: ['-15deg', '0deg', '15deg'],
-                  }),
-                }],
-              }}
-            >
-              <FontAwesome
-                name={fight.isFollowing ? "bell" : "bell-o"}
-                size={18}
-                color={fight.isFollowing ? '#F5C518' : colors.textSecondary}
-              />
-            </Animated.View>
+            <FontAwesome
+              name={fight.isFollowing ? "bell" : "bell-o"}
+              size={18}
+              color={fight.isFollowing ? '#F5C518' : colors.textSecondary}
+            />
           </TouchableOpacity>
         )}
 
@@ -627,7 +523,7 @@ function UpcomingFightCard({
             </View>
           </Animated.View>
         )}
-      </Animated.View>
+      </View>
     </TouchableOpacity>
   );
 }
