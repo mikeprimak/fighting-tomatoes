@@ -461,8 +461,92 @@
           }
         },
         {
-          "fightId": "12534",
+          "fightId": "fight-8",
           "order": 8,
+          "cardType": "Main Card",
+          "weightClass": "Lightweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Michael Johnson",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/michael-johnson"
+          },
+          "fighterB": {
+            "name": "Alexander Hernandez",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/alexander-hernandez"
+          }
+        },
+        {
+          "fightId": "fight-9",
+          "order": 9,
+          "cardType": "Main Card",
+          "weightClass": "Flyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Alex Perez",
+            "rank": "#11",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/alex-perez"
+          },
+          "fighterB": {
+            "name": "Charles Johnson",
+            "rank": "#13",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/charles-johnson"
+          }
+        },
+        {
+          "fightId": "fight-10",
+          "order": 10,
+          "cardType": "Main Card",
+          "weightClass": "Light Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Nikita Krylov",
+            "rank": "#13",
+            "country": "Russia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/nikita-krylov"
+          },
+          "fighterB": {
+            "name": "Modestas Bukauskas",
+            "rank": "",
+            "country": "Lithuania",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/modestas-bukauskas"
+          }
+        },
+        {
+          "fightId": "fight-11",
+          "order": 11,
+          "cardType": "Main Card",
+          "weightClass": "Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Josh Hokit",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/josh-hokit"
+          },
+          "fighterB": {
+            "name": "Denzel Freeman",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/denzel-freeman"
+          }
+        },
+        {
+          "fightId": "12534",
+          "order": 12,
           "cardType": "Main Card",
           "weightClass": "Middleweight",
           "isTitle": false,
@@ -500,7 +584,7 @@
       "sections": [],
       "fights": [
         {
-          "fightId": "fight-1",
+          "fightId": "12535",
           "order": 1,
           "cardType": "Main Card",
           "weightClass": "Featherweight",
@@ -518,6 +602,153 @@
             "country": "Brazil",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/diego-lopes"
+          }
+        },
+        {
+          "fightId": "fight-2",
+          "order": 2,
+          "cardType": "Main Card",
+          "weightClass": "Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Serghei Spivac",
+            "rank": "#7",
+            "country": "Moldova",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/sergey-spivak-0"
+          },
+          "fighterB": {
+            "name": "Ante Delija",
+            "rank": "#9",
+            "country": "Croatia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/ante-delija"
+          }
+        },
+        {
+          "fightId": "fight-3",
+          "order": 3,
+          "cardType": "Main Card",
+          "weightClass": "Featherweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Kaan Ofli",
+            "rank": "",
+            "country": "Australia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/kaan-ofli"
+          },
+          "fighterB": {
+            "name": "Yizha",
+            "rank": "",
+            "country": "China",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/yi-zha"
+          }
+        },
+        {
+          "fightId": "12544",
+          "order": 4,
+          "cardType": "Main Card",
+          "weightClass": "Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Tai Tuivasa",
+            "rank": "#12",
+            "country": "Australia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/tai-tuivasa"
+          },
+          "fighterB": {
+            "name": "Tallison Teixeira",
+            "rank": "#15",
+            "country": "Brazil",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/tallison-teixeira"
+          }
+        },
+        {
+          "fightId": "fight-5",
+          "order": 5,
+          "cardType": "Main Card",
+          "weightClass": "Light Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Junior Tafa",
+            "rank": "",
+            "country": "Australia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/shiyunia-tafua"
+          },
+          "fighterB": {
+            "name": "Billy Elekana",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/billy-elekana"
+          }
+        },
+        {
+          "fightId": "12545",
+          "order": 6,
+          "cardType": "Main Card",
+          "weightClass": "Light Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Jimmy Crute",
+            "rank": "",
+            "country": "Australia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/jim-crute"
+          },
+          "fighterB": {
+            "name": "Dustin Jacoby",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/dustin-jacoby"
+          }
+        },
+        {
+          "fightId": "fight-7",
+          "order": 7,
+          "cardType": "Main Card",
+          "weightClass": "Middleweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Cam Rowston",
+            "rank": "",
+            "country": "Australia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/cameron-rowston"
+          },
+          "fighterB": {
+            "name": "Cody Brundage",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/dzhonatan-pirs-1"
+          }
+        },
+        {
+          "fightId": "fight-8",
+          "order": 8,
+          "cardType": "Main Card",
+          "weightClass": "Middleweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Jacob Malkoun",
+            "rank": "",
+            "country": "Australia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/jacob-malkoun"
+          },
+          "fighterB": {
+            "name": "Torrez Finney",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/torrez-finney"
           }
         }
       ],
@@ -552,27 +783,11 @@
       "dateText": "Sat, Feb 21 / 5:00 PM EST / Main Card",
       "status": "Upcoming",
       "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-12/022126-ufc-fight-night-strickland-vs-hernandez-TEMP-HERO.jpg?h=d1cb525d&itok=ed29PL8i",
-      "eventStartTime": "5:00 PM",
-      "sections": [
-        {
-          "cardType": "Main Card",
-          "startTime": "Sat, Feb 21 / 5:00 PM EST",
-          "fightCount": 1
-        },
-        {
-          "cardType": "Prelims",
-          "startTime": "",
-          "fightCount": 0
-        },
-        {
-          "cardType": "Early Prelims",
-          "startTime": "",
-          "fightCount": 0
-        }
-      ],
+      "eventStartTime": null,
+      "sections": [],
       "fights": [
         {
-          "fightId": "fight-1",
+          "fightId": "12541",
           "order": 1,
           "cardType": "Main Card",
           "weightClass": "Middleweight",
@@ -590,8 +805,28 @@
             "country": "United States",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/ansoni-herunantesu"
+          }
+        },
+        {
+          "fightId": "fight-2",
+          "order": 2,
+          "cardType": "Main Card",
+          "weightClass": "Flyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Ode Osbourne",
+            "rank": "",
+            "country": "Jamaica",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/ote-osuhon"
           },
-          "startTime": "5:00 PM"
+          "fighterB": {
+            "name": "Alibi Idiris",
+            "rank": "",
+            "country": "Kazakhstan",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/alibi-idiris"
+          }
         }
       ],
       "localImagePath": "/images/events/ufc-fight-night-february-21-2026.jpg"

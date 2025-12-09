@@ -340,6 +340,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
         // Transform user prediction (take the first/only prediction)
         if (fight.predictions && fight.predictions.length > 0) {
           transformed.userHypePrediction = fight.predictions[0].predictedRating;
+          transformed.userPredictedWinner = fight.predictions[0].predictedWinner;
+          transformed.userPredictedMethod = fight.predictions[0].predictedMethod;
+          transformed.userPredictedRound = fight.predictions[0].predictedRound;
           transformed.hasRevealedHype = fight.predictions[0].hasRevealedHype;
           transformed.hasRevealedWinner = fight.predictions[0].hasRevealedWinner;
           transformed.hasRevealedMethod = fight.predictions[0].hasRevealedMethod;
@@ -3048,12 +3051,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
         DECISION: fighter1MethodPredictions.filter(p => (p as any).predictedMethod === 'DECISION').length,
         KO_TKO: fighter1MethodPredictions.filter(p => (p as any).predictedMethod === 'KO_TKO').length,
         SUBMISSION: fighter1MethodPredictions.filter(p => (p as any).predictedMethod === 'SUBMISSION').length,
+        UNSPECIFIED: fighter1MethodPredictions.filter(p => !(p as any).predictedMethod).length,
       };
 
       const fighter2Methods = {
         DECISION: fighter2MethodPredictions.filter(p => (p as any).predictedMethod === 'DECISION').length,
         KO_TKO: fighter2MethodPredictions.filter(p => (p as any).predictedMethod === 'KO_TKO').length,
         SUBMISSION: fighter2MethodPredictions.filter(p => (p as any).predictedMethod === 'SUBMISSION').length,
+        UNSPECIFIED: fighter2MethodPredictions.filter(p => !(p as any).predictedMethod).length,
       };
 
       // Per-fighter round predictions
@@ -3064,12 +3069,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
         fighter2Rounds[round] = fighter2MethodPredictions.filter(p => (p as any).predictedRound === round).length;
       }
 
-      // Calculate percentages ensuring they add up to 100%
+      // Calculate percentages based on predictions that have a winner selected
+      // (some predictions may only have hype without a winner pick)
+      const predictionsWithWinner = fighter1Predictions + fighter2Predictions;
       let fighter1Percentage = 0;
       let fighter2Percentage = 0;
 
-      if (totalPredictions > 0) {
-        fighter1Percentage = Math.round((fighter1Predictions / totalPredictions) * 100);
+      if (predictionsWithWinner > 0) {
+        fighter1Percentage = Math.round((fighter1Predictions / predictionsWithWinner) * 100);
         fighter2Percentage = 100 - fighter1Percentage; // Ensure they add up to 100%
       }
 

@@ -113,7 +113,21 @@
       "WebFetch(domain:goodfights.app)",
       "Bash(npm ls:*)",
       "Bash(pnpm install)",
-      "WebFetch(domain:www.ufc.com)"
+      "WebFetch(domain:www.ufc.com)",
+      "Bash(touch:*)",
+      "Bash(npx prisma db push)",
+      "Bash(npx prisma:*)",
+      "Bash(more:*)",
+      "Bash(npx esbuild:*)",
+      "Bash(dir /s \"%USERPROFILE%\\.claude\")",
+      "Bash(dir \"%USERPROFILE%\\.claude\")",
+      "Bash(du:*)",
+      "Bash(du -sh:*)",
+      "Bash(for:*)",
+      "Bash(do if [[ \"$f\" != \"66eea5e7-a5a8-4894-9702-390849a05b7d.jsonl\" ]])",
+      "Bash(then rm \"$f\")",
+      "Bash(fi)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []

@@ -18,11 +18,13 @@ interface PredictionBarChartProps {
     KO_TKO: number;
     SUBMISSION: number;
     DECISION: number;
+    UNSPECIFIED?: number;
   };
   fighter2Predictions: {
     KO_TKO: number;
     SUBMISSION: number;
     DECISION: number;
+    UNSPECIFIED?: number;
   };
   totalPredictions: number;
   winnerPredictions: {
@@ -102,11 +104,13 @@ export default function PredictionBarChart({
   // Determine which side has higher prediction percentage
   const fighter1HasMajority = winnerPredictions.fighter1.percentage > winnerPredictions.fighter2.percentage;
   const fighter2HasMajority = winnerPredictions.fighter2.percentage > winnerPredictions.fighter1.percentage;
+  const isTie = winnerPredictions.fighter1.percentage === winnerPredictions.fighter2.percentage;
 
   // Calculate background colors
   // Majority side gets full blue (#83B4F3), minority side gets muted blue
+  // In case of a tie (50/50), fighter1 gets light blue, fighter2 gets muted blue for visual distinction
   const minorityBgColor = colorScheme === 'dark' ? '#28323F' : '#d4e3f5';
-  const fighter1BgColor = fighter1HasMajority ? '#83B4F3' : minorityBgColor;
+  const fighter1BgColor = (fighter1HasMajority || isTie) ? '#83B4F3' : minorityBgColor;
   const fighter2BgColor = fighter2HasMajority ? '#83B4F3' : minorityBgColor;
 
   // Divider color - solid grey with hint of blue matching Community Data container bg
@@ -205,135 +209,64 @@ export default function PredictionBarChart({
                 flex: winnerPredictions.fighter1.percentage,
                 flexDirection: 'row',
                 backgroundColor: fighter1BgColor,
-                borderRightWidth: 2,
+                // Only show right border if fighter2 has predictions
+                borderRightWidth: winnerPredictions.fighter2.percentage > 0 ? 2 : 0,
                 borderRightColor: dividerColor,
                 borderTopLeftRadius: 18,
                 borderBottomLeftRadius: 18,
+                // If fighter1 has 100%, also round the right corners
+                borderTopRightRadius: winnerPredictions.fighter1.percentage === 100 ? 18 : 0,
+                borderBottomRightRadius: winnerPredictions.fighter1.percentage === 100 ? 18 : 0,
               }}
             >
               {/* Fighter 1 method subdivisions - show if labels revealed or as plain bars */}
               {fighter1Predictions && showLabels ? (
                 <View style={{ flexDirection: 'row', flex: 1 }}>
-                  {fighter1Predictions.KO_TKO > 0 && (() => {
-                    const methodPercentage = (fighter1Predictions.KO_TKO / totalPredictions) * 100;
-                    const label = methodPercentage < 15 ? 'K' : 'KO';
-                    const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'KO_TKO';
-                    const textColor = fighter1HasMajority ? '#000' : '#83B4F3';
-                    return (
-                      <View
-                        style={{
-                          flex: fighter1Predictions.KO_TKO,
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          borderRightWidth: 2,
-                          borderRightColor: dividerColor,
-                        }}
-                      >
-                        {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
-                            <FontAwesome name="user" size={16} color="#000000" />
-                          </View>
-                        )}
-                        <Text
+                  {(() => {
+                    // Calculate fighter1's total predictions for method percentages (including unspecified)
+                    const unspecifiedCount = fighter1Predictions.UNSPECIFIED || 0;
+                    const fighter1Total = fighter1Predictions.KO_TKO + fighter1Predictions.SUBMISSION + fighter1Predictions.DECISION + unspecifiedCount;
+                    // Text is dark on light blue bg (majority or tie), light blue on dark bg (minority)
+                    const textColor = (fighter1HasMajority || isTie) ? '#000' : '#83B4F3';
+                    const methods = [
+                      { key: 'KO_TKO', count: fighter1Predictions.KO_TKO, shortLabel: 'K', longLabel: 'KO', methodKey: 'KO_TKO' },
+                      { key: 'SUBMISSION', count: fighter1Predictions.SUBMISSION, shortLabel: 'S', longLabel: 'SUB', methodKey: 'SUBMISSION' },
+                      { key: 'DECISION', count: fighter1Predictions.DECISION, shortLabel: 'D', longLabel: 'DEC', methodKey: 'DECISION' },
+                      { key: 'UNSPECIFIED', count: unspecifiedCount, shortLabel: '?', longLabel: '?', methodKey: 'UNSPECIFIED' },
+                    ].filter(m => m.count > 0);
+
+                    return methods.map((method, index) => {
+                      // Calculate percentage relative to this fighter's total predictions
+                      const methodPercentage = fighter1Total > 0 ? (method.count / fighter1Total) * 100 : 0;
+                      const label = methodPercentage < 20 ? method.shortLabel : method.longLabel;
+                      const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === method.methodKey;
+                      const isLastMethod = index === methods.length - 1;
+
+                      return (
+                        <View
+                          key={method.key}
                           style={{
-                            fontSize: 14,
-                            fontWeight: '600',
-                            color: textColor,
+                            flex: method.count,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            borderRightWidth: isLastMethod ? 0 : 2,
+                            borderRightColor: dividerColor,
                           }}
                         >
-                          {label}
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 10,
-                            fontWeight: '500',
-                            color: textColor,
-                          }}
-                        >
-                          {Math.round(methodPercentage)}%
-                        </Text>
-                      </View>
-                    );
-                  })()}
-                  {fighter1Predictions.SUBMISSION > 0 && (() => {
-                    const methodPercentage = (fighter1Predictions.SUBMISSION / totalPredictions) * 100;
-                    const label = methodPercentage < 15 ? 'S' : 'SUB';
-                    const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'SUBMISSION';
-                    const textColor = fighter1HasMajority ? '#000' : '#83B4F3';
-                    return (
-                      <View
-                        style={{
-                          flex: fighter1Predictions.SUBMISSION,
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          borderRightWidth: 2,
-                          borderRightColor: dividerColor,
-                        }}
-                      >
-                        {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
-                            <FontAwesome name="user" size={16} color="#000000" />
-                          </View>
-                        )}
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            fontWeight: '600',
-                            color: textColor,
-                          }}
-                        >
-                          {label}
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 10,
-                            fontWeight: '500',
-                            color: textColor,
-                          }}
-                        >
-                          {Math.round(methodPercentage)}%
-                        </Text>
-                      </View>
-                    );
-                  })()}
-                  {fighter1Predictions.DECISION > 0 && (() => {
-                    const methodPercentage = (fighter1Predictions.DECISION / totalPredictions) * 100;
-                    const label = methodPercentage < 15 ? 'D' : 'DEC';
-                    const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === 'DECISION';
-                    const textColor = fighter1HasMajority ? '#000' : '#83B4F3';
-                    return (
-                      <View
-                        style={{
-                          flex: fighter1Predictions.DECISION,
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        }}
-                      >
-                        {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
-                            <FontAwesome name="user" size={16} color="#000000" />
-                          </View>
-                        )}
-                        <Text
-                          style={{
-                            fontSize: 14,
-                            fontWeight: '600',
-                            color: textColor,
-                          }}
-                        >
-                          {label}
-                        </Text>
-                        <Text
-                          style={{
-                            fontSize: 10,
-                            fontWeight: '500',
-                            color: textColor,
-                          }}
-                        >
-                          {Math.round(methodPercentage)}%
-                        </Text>
-                      </View>
-                    );
+                          {isUserPrediction && (
+                            <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
+                              <FontAwesome name="user" size={16} color="#000000" />
+                            </View>
+                          )}
+                          <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>
+                            {label}
+                          </Text>
+                          <Text style={{ fontSize: 10, fontWeight: '500', color: textColor }}>
+                            {Math.round(methodPercentage)}%
+                          </Text>
+                        </View>
+                      );
+                    });
                   })()}
                 </View>
               ) : (
@@ -349,83 +282,58 @@ export default function PredictionBarChart({
                 backgroundColor: fighter2BgColor,
                 borderTopRightRadius: 18,
                 borderBottomRightRadius: 18,
+                // If fighter2 has 100%, also round the left corners
+                borderTopLeftRadius: winnerPredictions.fighter2.percentage === 100 ? 18 : 0,
+                borderBottomLeftRadius: winnerPredictions.fighter2.percentage === 100 ? 18 : 0,
               }}
             >
               {/* Fighter 2 method subdivisions - show if labels revealed or as plain bars */}
               {fighter2Predictions && showLabels ? (
                 <View style={{ flexDirection: 'row', flex: 1 }}>
-                  {fighter2Predictions.KO_TKO > 0 && (() => {
-                    const methodPercentage = (fighter2Predictions.KO_TKO / totalPredictions) * 100;
-                    const label = methodPercentage < 15 ? 'K' : 'KO';
-                    const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'KO_TKO';
+                  {(() => {
+                    // Calculate fighter2's total predictions for method percentages (including unspecified)
+                    const unspecifiedCount = fighter2Predictions.UNSPECIFIED || 0;
+                    const fighter2Total = fighter2Predictions.KO_TKO + fighter2Predictions.SUBMISSION + fighter2Predictions.DECISION + unspecifiedCount;
                     const textColor = fighter2HasMajority ? '#000' : '#83B4F3';
-                    return (
-                      <View
-                        style={{
-                          flex: fighter2Predictions.KO_TKO,
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          borderRightWidth: 2,
-                          borderRightColor: dividerColor,
-                        }}
-                      >
-                        {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
-                            <FontAwesome name="user" size={16} color="#000000" />
-                          </View>
-                        )}
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>{label}</Text>
-                        <Text style={{ fontSize: 10, fontWeight: '500', color: textColor }}>{Math.round(methodPercentage)}%</Text>
-                      </View>
-                    );
-                  })()}
-                  {fighter2Predictions.SUBMISSION > 0 && (() => {
-                    const methodPercentage = (fighter2Predictions.SUBMISSION / totalPredictions) * 100;
-                    const label = methodPercentage < 15 ? 'S' : 'SUB';
-                    const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'SUBMISSION';
-                    const textColor = fighter2HasMajority ? '#000' : '#83B4F3';
-                    return (
-                      <View
-                        style={{
-                          flex: fighter2Predictions.SUBMISSION,
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                          borderRightWidth: 2,
-                          borderRightColor: dividerColor,
-                        }}
-                      >
-                        {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
-                            <FontAwesome name="user" size={16} color="#000000" />
-                          </View>
-                        )}
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>{label}</Text>
-                        <Text style={{ fontSize: 10, fontWeight: '500', color: textColor }}>{Math.round(methodPercentage)}%</Text>
-                      </View>
-                    );
-                  })()}
-                  {fighter2Predictions.DECISION > 0 && (() => {
-                    const methodPercentage = (fighter2Predictions.DECISION / totalPredictions) * 100;
-                    const label = methodPercentage < 15 ? 'D' : 'DEC';
-                    const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === 'DECISION';
-                    const textColor = fighter2HasMajority ? '#000' : '#83B4F3';
-                    return (
-                      <View
-                        style={{
-                          flex: fighter2Predictions.DECISION,
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        }}
-                      >
-                        {isUserPrediction && (
-                          <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
-                            <FontAwesome name="user" size={16} color="#000000" />
-                          </View>
-                        )}
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>{label}</Text>
-                        <Text style={{ fontSize: 10, fontWeight: '500', color: textColor }}>{Math.round(methodPercentage)}%</Text>
-                      </View>
-                    );
+                    const methods = [
+                      { key: 'KO_TKO', count: fighter2Predictions.KO_TKO, shortLabel: 'K', longLabel: 'KO', methodKey: 'KO_TKO' },
+                      { key: 'SUBMISSION', count: fighter2Predictions.SUBMISSION, shortLabel: 'S', longLabel: 'SUB', methodKey: 'SUBMISSION' },
+                      { key: 'DECISION', count: fighter2Predictions.DECISION, shortLabel: 'D', longLabel: 'DEC', methodKey: 'DECISION' },
+                      { key: 'UNSPECIFIED', count: unspecifiedCount, shortLabel: '?', longLabel: '?', methodKey: 'UNSPECIFIED' },
+                    ].filter(m => m.count > 0);
+
+                    return methods.map((method, index) => {
+                      // Calculate percentage relative to this fighter's total predictions
+                      const methodPercentage = fighter2Total > 0 ? (method.count / fighter2Total) * 100 : 0;
+                      const label = methodPercentage < 20 ? method.shortLabel : method.longLabel;
+                      const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === method.methodKey;
+                      const isLastMethod = index === methods.length - 1;
+
+                      return (
+                        <View
+                          key={method.key}
+                          style={{
+                            flex: method.count,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            borderRightWidth: isLastMethod ? 0 : 2,
+                            borderRightColor: dividerColor,
+                          }}
+                        >
+                          {isUserPrediction && (
+                            <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
+                              <FontAwesome name="user" size={16} color="#000000" />
+                            </View>
+                          )}
+                          <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>
+                            {label}
+                          </Text>
+                          <Text style={{ fontSize: 10, fontWeight: '500', color: textColor }}>
+                            {Math.round(methodPercentage)}%
+                          </Text>
+                        </View>
+                      );
+                    });
                   })()}
                 </View>
               ) : (

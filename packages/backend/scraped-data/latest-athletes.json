@@ -261,6 +261,62 @@
       "localHeadshotPath": "/images/athletes/deiveson-figueiredo.png"
     },
     {
+      "name": "Michael Johnson",
+      "url": "https://www.ufc.com/athlete/michael-johnson",
+      "record": "25-19-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-07/JOHNSON_MICHAEL_07-19.png?itok=6WCKk4p6",
+      "localHeadshotPath": "/images/athletes/michael-johnson.png"
+    },
+    {
+      "name": "Alexander Hernandez",
+      "url": "https://www.ufc.com/athlete/alexander-hernandez",
+      "record": "18-8-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-09/HERNANDEZ_ALEXANDER_09-13.png?itok=cYzf-yQt",
+      "localHeadshotPath": "/images/athletes/alexander-hernandez.png"
+    },
+    {
+      "name": "Alex Perez",
+      "url": "https://www.ufc.com/athlete/alex-perez",
+      "record": "25-10-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-11/PEREZ_ALEX_11-22.png?itok=y9_lNwiV",
+      "localHeadshotPath": "/images/athletes/alex-perez.png"
+    },
+    {
+      "name": "Charles Johnson",
+      "url": "https://www.ufc.com/athlete/charles-johnson",
+      "record": "18-7-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/JOHNSON_CHARLES_08-23.png?itok=1PhHPTBj",
+      "localHeadshotPath": "/images/athletes/charles-johnson.png"
+    },
+    {
+      "name": "Nikita Krylov",
+      "url": "https://www.ufc.com/athlete/nikita-krylov",
+      "record": "30-11-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-07/KRYLOV_NIKITA_07-26.png?itok=LvoJiTaN",
+      "localHeadshotPath": "/images/athletes/nikita-krylov.png"
+    },
+    {
+      "name": "Modestas Bukauskas",
+      "url": "https://www.ufc.com/athlete/modestas-bukauskas",
+      "record": "19-6-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-09/BUKAUSKAS_MODESTAS_09-06.png?itok=jXGg75RI",
+      "localHeadshotPath": "/images/athletes/modestas-bukauskas.png"
+    },
+    {
+      "name": "Josh Hokit",
+      "url": "https://www.ufc.com/athlete/josh-hokit",
+      "record": "7-0-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-11/HOKIT_JOSH_11-08.png?itok=6SEZvWv8",
+      "localHeadshotPath": "/images/athletes/josh-hokit.png"
+    },
+    {
+      "name": "Denzel Freeman",
+      "url": "https://www.ufc.com/athlete/denzel-freeman",
+      "record": "7-1-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-11/FREEMAN_DENZEL_11-22.png?itok=AptAbBit",
+      "localHeadshotPath": "/images/athletes/denzel-freeman.png"
+    },
+    {
       "name": "Ateba Gautier",
       "url": "https://www.ufc.com/athlete/ateba-gautier",
       "record": "9-1-0",
@@ -289,6 +345,104 @@
       "localHeadshotPath": "/images/athletes/diego-lopes.png"
     },
     {
+      "name": "Serghei Spivac",
+      "url": "https://www.ufc.com/athlete/sergey-spivak-0",
+      "record": "17-6-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-06/SPIVAC_SERGHEI_06-07.png?itok=MibG8SoN",
+      "localHeadshotPath": "/images/athletes/sergey-spivak-0.png"
+    },
+    {
+      "name": "Ante Delija",
+      "url": "https://www.ufc.com/athlete/ante-delija",
+      "record": "26-7-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/DELIJA_ANTE_11-01.png?itok=nSZ0eNSl",
+      "localHeadshotPath": "/images/athletes/ante-delija.png"
+    },
+    {
+      "name": "Kaan Ofli",
+      "url": "https://www.ufc.com/athlete/kaan-ofli",
+      "record": "13-4-1",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/OFLI_KAAN_10-11.png?itok=eLRUMvqm",
+      "localHeadshotPath": "/images/athletes/kaan-ofli.png"
+    },
+    {
+      "name": "Yizha",
+      "url": "https://www.ufc.com/athlete/yi-zha",
+      "record": "26-5-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/YIZHA_08-23.png?itok=Z0Sw6_i3",
+      "localHeadshotPath": "/images/athletes/yi-zha.png"
+    },
+    {
+      "name": "Tai Tuivasa",
+      "url": "https://www.ufc.com/athlete/tai-tuivasa",
+      "record": "15-8-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-01/5/TUIVASA_TAI_08-17.png?itok=buFWM-j9",
+      "localHeadshotPath": "/images/athletes/tai-tuivasa.png"
+    },
+    {
+      "name": "Tallison Teixeira",
+      "url": "https://www.ufc.com/athlete/tallison-teixeira",
+      "record": "8-1-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-07/TEIXEIRA_TALLISON_07-12.png?itok=jXpiHLnR",
+      "localHeadshotPath": "/images/athletes/tallison-teixeira.png"
+    },
+    {
+      "name": "Junior Tafa",
+      "url": "https://www.ufc.com/athlete/shiyunia-tafua",
+      "record": "6-4-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-07/TAFA_JUNIOR_07-12.png?itok=aDDrDQGR",
+      "localHeadshotPath": "/images/athletes/shiyunia-tafua.png"
+    },
+    {
+      "name": "Billy Elekana",
+      "url": "https://www.ufc.com/athlete/billy-elekana",
+      "record": "9-2-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/ELEKANA_BILLY_11-01.png?itok=QwliTb9k",
+      "localHeadshotPath": "/images/athletes/billy-elekana.png"
+    },
+    {
+      "name": "Jimmy Crute",
+      "url": "https://www.ufc.com/athlete/jim-crute",
+      "record": "14-4-2",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-09/CRUTE_JIMMY_09-27.png?itok=B0I7SrkO",
+      "localHeadshotPath": "/images/athletes/jim-crute.png"
+    },
+    {
+      "name": "Dustin Jacoby",
+      "url": "https://www.ufc.com/athlete/dustin-jacoby",
+      "record": "21-9-1",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-05/JACOBY_DUSTIN_05-31.png?itok=HuKlOne7",
+      "localHeadshotPath": "/images/athletes/dustin-jacoby.png"
+    },
+    {
+      "name": "Cam Rowston",
+      "url": "https://www.ufc.com/athlete/cameron-rowston",
+      "record": "13-3-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-09/ROWSTON_CAMERON_09-27.png?itok=xvfPyrr3",
+      "localHeadshotPath": "/images/athletes/cameron-rowston.png"
+    },
+    {
+      "name": "Cody Brundage",
+      "url": "https://www.ufc.com/athlete/dzhonatan-pirs-1",
+      "record": "11-7-1",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/BRUNDAGE_CODY_08-09.png?itok=pxaggeWr",
+      "localHeadshotPath": "/images/athletes/dzhonatan-pirs-1.png"
+    },
+    {
+      "name": "Jacob Malkoun",
+      "url": "https://www.ufc.com/athlete/jacob-malkoun",
+      "record": "8-3-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2024-03/MALKOUN_JACOB_03-30.png?itok=1tuvqeu2",
+      "localHeadshotPath": "/images/athletes/jacob-malkoun.png"
+    },
+    {
+      "name": "Torrez Finney",
+      "url": "https://www.ufc.com/athlete/torrez-finney",
+      "record": "11-0-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-04/FINNEY_TORREZ_04-05.png?itok=TBVY8Rna",
+      "localHeadshotPath": "/images/athletes/torrez-finney.png"
+    },
+    {
       "name": "Sean Strickland",
       "url": "https://www.ufc.com/athlete/sean-strickland",
       "record": "29-7-0",
@@ -301,6 +455,20 @@
       "record": "15-2-0",
       "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/HERNANDEZ_ANTHONY_08-09.png?itok=t4ehO2Q6",
       "localHeadshotPath": "/images/athletes/ansoni-herunantesu.png"
+    },
+    {
+      "name": "Ode Osbourne",
+      "url": "https://www.ufc.com/athlete/ote-osuhon",
+      "record": "13-9-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/OSBOURNE_ODE_08-09.png?itok=jQvzLALN",
+      "localHeadshotPath": "/images/athletes/ote-osuhon.png"
+    },
+    {
+      "name": "Alibi Idiris",
+      "url": "https://www.ufc.com/athlete/alibi-idiris",
+      "record": "11-1-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/IDIRIS_ALIBI_08-16.png?itok=_m8Oj3hD",
+      "localHeadshotPath": "/images/athletes/alibi-idiris.png"
     },
     {
       "name": "Max Holloway",

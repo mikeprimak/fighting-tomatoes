@@ -73,7 +73,7 @@ const getApiBaseUrl = () => {
   if (Platform.OS === 'web') {
     return 'http://localhost:3008/api';
   } else {
-    return 'http://10.0.0.53:3008/api';  // Network IP for mobile devices
+    return 'http://192.168.1.65:3008/api';  // Network IP for mobile devices
   }
 };
 
@@ -331,16 +331,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       const refreshToken = await AsyncStorage.getItem('refreshToken');
-      
+
       if (refreshToken) {
-        // Call logout endpoint to revoke tokens
-        await fetch(`${API_BASE_URL}/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refreshToken }),
-        });
+        // Call logout endpoint to revoke tokens with a timeout
+        // Don't block on this - the local cleanup is what matters
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+
+        try {
+          await fetch(`${API_BASE_URL}/auth/logout`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ refreshToken }),
+            signal: controller.signal,
+          });
+        } catch (fetchError) {
+          // Ignore fetch errors - we'll still clean up locally
+          console.log('Logout API call failed (continuing with local cleanup):', fetchError);
+        } finally {
+          clearTimeout(timeoutId);
+        }
       }
     } catch (error) {
       console.error('Logout API error:', error);

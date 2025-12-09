@@ -77,13 +77,26 @@ function UpcomingFightCard({
     totalPredictions: 0, // Not needed for card display
   }), [fight.averageHype]);
 
-  const aggregateStats = useMemo(() => ({
-    userPrediction: fight.userHypePrediction ? {
-      winner: null, // Would need to be passed if used
-      method: null,
-    } : null,
-    communityPrediction: null,
-  }), [fight.userHypePrediction]);
+  // Derive user's predicted winner name from fight.userPredictedWinner (fighter ID)
+  const aggregateStats = useMemo(() => {
+    // Check if user has predicted a winner (userPredictedWinner is a fighter ID)
+    let winnerName: string | null = null;
+    if ((fight as any).userPredictedWinner) {
+      if ((fight as any).userPredictedWinner === fight.fighter1.id) {
+        winnerName = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
+      } else if ((fight as any).userPredictedWinner === fight.fighter2.id) {
+        winnerName = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+      }
+    }
+
+    return {
+      userPrediction: (fight.userHypePrediction || winnerName) ? {
+        winner: winnerName,
+        method: (fight as any).userPredictedMethod || null,
+      } : null,
+      communityPrediction: null,
+    };
+  }, [fight.userHypePrediction, (fight as any).userPredictedWinner, fight.fighter1.id, fight.fighter2.id, fight.fighter1.firstName, fight.fighter1.lastName, fight.fighter2.firstName, fight.fighter2.lastName]);
 
   // Bell ringing animation
   const animateBellRing = () => {
