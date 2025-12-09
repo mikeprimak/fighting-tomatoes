@@ -1384,6 +1384,70 @@ class ApiService {
     return this.makeRequest(`/fights/my-comments${queryString ? `?${queryString}` : ''}`);
   }
 
+  /**
+   * Get user's most upvoted pre-flight comments
+   * @param limit - Maximum number of comments to return (default 3, max 10)
+   */
+  async getMyTopPreflightComments(limit: number = 3): Promise<{
+    comments: Array<{
+      id: string;
+      fightId: string;
+      content: string;
+      upvotes: number;
+      userHasUpvoted: boolean;
+      createdAt: string;
+      isReply: boolean;
+      fight: {
+        id: string;
+        fighter1Name: string;
+        fighter2Name: string;
+        eventName: string;
+        eventDate: string;
+      };
+    }>;
+    totalWithUpvotes: number;
+  }> {
+    return this.makeRequest(`/fights/my-top-preflight-comments?limit=${limit}`);
+  }
+
+  /**
+   * Get user's pre-flight comments with pagination
+   */
+  async getMyPreflightComments(params: { page?: number; limit?: number; sortBy?: string } = {}): Promise<{
+    comments: Array<{
+      id: string;
+      fightId: string;
+      content: string;
+      hypeRating: number | null;
+      predictedWinner: string | null;
+      predictedMethod: string | null;
+      upvotes: number;
+      userHasUpvoted: boolean;
+      createdAt: string;
+      isReply: boolean;
+      fight: {
+        id: string;
+        fighter1Name: string;
+        fighter2Name: string;
+        eventName: string;
+        eventDate: string;
+      };
+    }>;
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', String(params.page));
+    if (params.limit) queryParams.append('limit', String(params.limit));
+    if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+    const queryString = queryParams.toString();
+    return this.makeRequest(`/fights/my-preflight-comments${queryString ? `?${queryString}` : ''}`);
+  }
+
   // ==================== EMAIL VERIFICATION ====================
 
   /**

@@ -16,7 +16,7 @@ import { Colors } from '../../constants/Colors';
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
-import { CommentCard, FlagReviewModal, CustomAlert } from '../../components';
+import { PreFightCommentCard, FlagReviewModal, CustomAlert } from '../../components';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { FontAwesome } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -25,12 +25,14 @@ type SortOption = 'newest' | 'upvotes';
 const PAGE_SIZE = 15;
 
 // Type for the API response
-type CommentsPage = {
-  reviews: Array<{
+type PreflightCommentsPage = {
+  comments: Array<{
     id: string;
     fightId: string;
     content: string;
-    rating: number | null;
+    hypeRating: number | null;
+    predictedWinner: string | null;
+    predictedMethod: string | null;
     upvotes: number;
     userHasUpvoted: boolean;
     createdAt: string;
@@ -51,7 +53,7 @@ type CommentsPage = {
   };
 };
 
-export default function MyCommentsScreen() {
+export default function MyPreflightCommentsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
@@ -59,10 +61,10 @@ export default function MyCommentsScreen() {
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [flagModalVisible, setFlagModalVisible] = useState(false);
-  const [reviewToFlag, setReviewToFlag] = useState<{ fightId: string; reviewId: string } | null>(null);
+  const [commentToFlag, setCommentToFlag] = useState<{ fightId: string; commentId: string } | null>(null);
   const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
 
-  // Fetch user's comments with infinite scroll
+  // Fetch user's pre-flight comments with infinite scroll
   const {
     data,
     isLoading,
@@ -73,24 +75,24 @@ export default function MyCommentsScreen() {
     isFetchingNextPage,
     isRefetching,
   } = useInfiniteQuery(
-    ['myComments', sortBy],
+    ['myPreflightComments', sortBy],
     async ({ pageParam = 1 }) => {
-      return apiService.getMyComments({
+      return apiService.getMyPreflightComments({
         page: pageParam as number,
         limit: PAGE_SIZE,
         sortBy,
       });
     },
     {
-      getNextPageParam: (lastPage: CommentsPage) => {
+      getNextPageParam: (lastPage: PreflightCommentsPage) => {
         const { page, totalPages } = lastPage.pagination || { page: 1, totalPages: 1 };
         return page < totalPages ? page + 1 : undefined;
       },
     }
   );
 
-  // Flatten all pages into a single array of reviews
-  const allReviews = (data?.pages as CommentsPage[] | undefined)?.flatMap(page => page.reviews || []) || [];
+  // Flatten all pages into a single array of comments
+  const allComments = (data?.pages as PreflightCommentsPage[] | undefined)?.flatMap(page => page.comments || []) || [];
 
   // Load more when reaching the end
   const handleLoadMore = useCallback(() => {
@@ -99,13 +101,13 @@ export default function MyCommentsScreen() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Upvote mutation for comments (FightReview)
+  // Upvote mutation for pre-flight comments
   const upvoteMutation = useMutation({
-    mutationFn: ({ fightId, reviewId }: { fightId: string; reviewId: string }) =>
-      apiService.toggleReviewUpvote(fightId, reviewId),
-    onMutate: async ({ reviewId }) => {
+    mutationFn: ({ fightId, commentId }: { fightId: string; commentId: string }) =>
+      apiService.togglePreFightCommentUpvote(fightId, commentId),
+    onMutate: async ({ commentId }) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      setUpvotingCommentId(reviewId);
+      setUpvotingCommentId(commentId);
     },
     onSuccess: () => {
       refetch();
@@ -115,30 +117,30 @@ export default function MyCommentsScreen() {
     },
   });
 
-  // Flag review mutation
-  const flagReviewMutation = useMutation({
-    mutationFn: ({ fightId, reviewId, reason }: { fightId: string; reviewId: string; reason: string }) =>
-      apiService.flagReview(fightId, reviewId, reason),
+  // Flag comment mutation
+  const flagCommentMutation = useMutation({
+    mutationFn: ({ fightId, commentId, reason }: { fightId: string; commentId: string; reason: string }) =>
+      apiService.flagPreFightComment(fightId, commentId, reason),
     onSuccess: () => {
-      showSuccess('Review has been flagged for moderation');
+      showSuccess('Comment has been flagged for moderation');
       setFlagModalVisible(false);
-      setReviewToFlag(null);
+      setCommentToFlag(null);
     },
     onError: (error: any) => {
-      showError(error?.error || 'Failed to flag review');
+      showError(error?.error || 'Failed to flag comment');
     },
   });
 
-  const handleFlagReview = (fightId: string, reviewId: string) => {
-    setReviewToFlag({ fightId, reviewId });
+  const handleFlagComment = (fightId: string, commentId: string) => {
+    setCommentToFlag({ fightId, commentId });
     setFlagModalVisible(true);
   };
 
-  const submitFlagReview = (reason: string) => {
-    if (reviewToFlag) {
-      flagReviewMutation.mutate({
-        fightId: reviewToFlag.fightId,
-        reviewId: reviewToFlag.reviewId,
+  const submitFlagComment = (reason: string) => {
+    if (commentToFlag) {
+      flagCommentMutation.mutate({
+        fightId: commentToFlag.fightId,
+        commentId: commentToFlag.commentId,
         reason
       });
     }
@@ -174,7 +176,7 @@ export default function MyCommentsScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'My Comments (Post-Fight)',
+          title: 'My Comments (Pre-Fight)',
           headerStyle: {
             backgroundColor: colors.card,
           },
@@ -203,45 +205,46 @@ export default function MyCommentsScreen() {
               <Text style={styles.retryButtonText}>Retry</Text>
             </TouchableOpacity>
           </View>
-        ) : allReviews.length === 0 ? (
+        ) : allComments.length === 0 ? (
           <View style={styles.centerContainer}>
             <FontAwesome name="comment-o" size={64} color={colors.textSecondary} />
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
               No Comments Yet
             </Text>
             <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
-              Write comments on completed fights to see them here!
+              Write comments on upcoming fights to see them here!
             </Text>
           </View>
         ) : (
           <View style={styles.contentContainer}>
             <FlatList
-              data={allReviews}
+              data={allComments}
               keyExtractor={(item, index) => `${item.id}-${index}`}
-              renderItem={({ item: review }) => (
+              renderItem={({ item: comment }) => (
                 <View style={styles.fightCardContainer}>
-                  <CommentCard
+                  <PreFightCommentCard
                     comment={{
-                      id: review.id,
-                      content: review.isReply ? `↳ ${review.content}` : review.content,
-                      rating: review.rating || 0,
-                      upvotes: review.upvotes,
-                      userHasUpvoted: review.userHasUpvoted,
+                      id: comment.id,
+                      content: comment.isReply ? `↳ ${comment.content}` : comment.content,
+                      hypeRating: comment.hypeRating,
+                      predictedWinner: comment.predictedWinner,
+                      predictedMethod: comment.predictedMethod,
+                      upvotes: comment.upvotes,
+                      userHasUpvoted: comment.userHasUpvoted,
                       user: { displayName: 'Me' },
                       fight: {
-                        id: review.fightId,
-                        fighter1Name: review.fight.fighter1Name,
-                        fighter2Name: review.fight.fighter2Name,
-                        eventName: review.fight.eventName,
+                        id: comment.fightId,
+                        fighter1Name: comment.fight.fighter1Name,
+                        fighter2Name: comment.fight.fighter2Name,
+                        eventName: comment.fight.eventName,
                       }
                     }}
-                    onPress={() => router.push(`/fight/${review.fightId}` as any)}
-                    onUpvote={() => upvoteMutation.mutate({ fightId: review.fightId, reviewId: review.id })}
-                    onFlag={() => handleFlagReview(review.fightId, review.id)}
-                    isUpvoting={upvotingCommentId === review.id}
-                    isFlagging={flagReviewMutation.isPending && reviewToFlag?.reviewId === review.id}
+                    onPress={() => router.push(`/fight/${comment.fightId}` as any)}
+                    onUpvote={() => upvoteMutation.mutate({ fightId: comment.fightId, commentId: comment.id })}
+                    onFlag={() => handleFlagComment(comment.fightId, comment.id)}
+                    isUpvoting={upvotingCommentId === comment.id}
+                    isFlagging={flagCommentMutation.isPending && commentToFlag?.commentId === comment.id}
                     isAuthenticated={isAuthenticated}
-                    showMyReview={true}
                   />
                 </View>
               )}
@@ -304,12 +307,12 @@ export default function MyCommentsScreen() {
         )}
       </SafeAreaView>
 
-      {/* Flag Review Modal */}
+      {/* Flag Comment Modal */}
       <FlagReviewModal
         visible={flagModalVisible}
         onClose={() => setFlagModalVisible(false)}
-        onSubmit={submitFlagReview}
-        isLoading={flagReviewMutation.isPending}
+        onSubmit={submitFlagComment}
+        isLoading={flagCommentMutation.isPending}
         colorScheme={colorScheme}
       />
 

@@ -14,7 +14,7 @@ import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../store/AuthContext';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { CustomAlert } from '../../components/CustomAlert';
-import { CommentCard } from '../../components';
+import { CommentCard, PreFightCommentCard } from '../../components';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import { api, apiService } from '../../services/api';
 import * as Haptics from 'expo-haptics';
@@ -34,6 +34,23 @@ interface TopReview {
   fightId: string;
   content: string;
   rating: number | null;
+  upvotes: number;
+  userHasUpvoted: boolean;
+  createdAt: string;
+  isReply: boolean;
+  fight: {
+    id: string;
+    fighter1Name: string;
+    fighter2Name: string;
+    eventName: string;
+    eventDate: string;
+  };
+}
+
+interface TopPreflightComment {
+  id: string;
+  fightId: string;
+  content: string;
   upvotes: number;
   userHasUpvoted: boolean;
   createdAt: string;
@@ -80,6 +97,13 @@ export default function ProfileScreen() {
     reviews: TopReview[];
     totalWithUpvotes: number;
   }>({ reviews: [], totalWithUpvotes: 0 });
+
+  // Top pre-flight comments data state
+  const [topPreflightComments, setTopPreflightComments] = useState<{
+    comments: TopPreflightComment[];
+    totalWithUpvotes: number;
+  }>({ comments: [], totalWithUpvotes: 0 });
+  const [upvotingPreflightId, setUpvotingPreflightId] = useState<string | null>(null);
 
   // Time filter state
   const [timeFilter, setTimeFilter] = useState<string>('3months');
@@ -137,6 +161,25 @@ export default function ProfileScreen() {
 
     if (user) {
       fetchTopReviews();
+    }
+  }, [user?.id]);
+
+  // Fetch user's top upvoted pre-flight comments
+  useEffect(() => {
+    const fetchTopPreflightComments = async () => {
+      try {
+        const data = await api.getMyTopPreflightComments(3);
+        if (data && data.comments) {
+          setTopPreflightComments(data);
+        }
+      } catch (error) {
+        // Silently fail - endpoint may not exist yet
+        console.log('Top pre-flight comments not available:', error);
+      }
+    };
+
+    if (user) {
+      fetchTopPreflightComments();
     }
   }, [user?.id]);
 
@@ -215,6 +258,27 @@ export default function ProfileScreen() {
       console.error('Failed to upvote review:', error);
     } finally {
       setUpvotingReviewId(null);
+    }
+  };
+
+  // Handle upvote on a pre-flight comment
+  const handleUpvotePreflight = async (fightId: string, commentId: string) => {
+    if (upvotingPreflightId) return;
+
+    setUpvotingPreflightId(commentId);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    try {
+      await apiService.togglePreFightCommentUpvote(fightId, commentId);
+      // Refresh the top pre-flight comments to get updated upvote counts
+      const data = await api.getMyTopPreflightComments(3);
+      if (data && data.comments) {
+        setTopPreflightComments(data);
+      }
+    } catch (error) {
+      console.error('Failed to upvote pre-flight comment:', error);
+    } finally {
+      setUpvotingPreflightId(null);
     }
   };
 
@@ -515,6 +579,60 @@ export default function ProfileScreen() {
                     See All ({topReviews.totalWithUpvotes})
                   </Text>
                   <FontAwesome name="chevron-right" size={12} color={colors.primary} />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </SectionContainer>
+
+        {/* My Comments (Pre-Fight) */}
+        <SectionContainer
+          title="My Comments (Pre-Fight)"
+          icon="comment"
+          iconColor="#fff"
+          headerBgColor="#10B981"
+          containerBgColorDark="rgba(16, 185, 129, 0.05)"
+          containerBgColorLight="rgba(16, 185, 129, 0.08)"
+        >
+          {!topPreflightComments?.comments || topPreflightComments.comments.length === 0 ? (
+            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+              Write comments on upcoming fights. Your most upvoted comments will appear here!
+            </Text>
+          ) : (
+            <View>
+              {topPreflightComments.comments.map((comment) => (
+                <View key={comment.id} style={{ marginBottom: 8 }}>
+                  <PreFightCommentCard
+                    comment={{
+                      id: comment.id,
+                      content: comment.isReply ? `↳ ${comment.content}` : comment.content,
+                      upvotes: comment.upvotes,
+                      userHasUpvoted: comment.userHasUpvoted,
+                      user: { displayName: 'Me' },
+                      fight: comment.fight ? {
+                        id: comment.fight.id,
+                        fighter1Name: comment.fight.fighter1Name,
+                        fighter2Name: comment.fight.fighter2Name,
+                        eventName: comment.fight.eventName,
+                      } : undefined,
+                    }}
+                    onPress={() => router.push(`/fight/${comment.fight?.id}` as any)}
+                    onUpvote={() => handleUpvotePreflight(comment.fightId, comment.id)}
+                    isUpvoting={upvotingPreflightId === comment.id}
+                    isAuthenticated={isAuthenticated}
+                    showMyComment={true}
+                  />
+                </View>
+              ))}
+              {(topPreflightComments.totalWithUpvotes || 0) > 3 && (
+                <TouchableOpacity
+                  style={styles.seeAllButton}
+                  onPress={() => router.push('/activity/my-preflight-comments' as any)}
+                >
+                  <Text style={[styles.seeAllText, { color: '#10B981' }]}>
+                    See All ({topPreflightComments.totalWithUpvotes})
+                  </Text>
+                  <FontAwesome name="chevron-right" size={12} color="#10B981" />
                 </TouchableOpacity>
               )}
             </View>
