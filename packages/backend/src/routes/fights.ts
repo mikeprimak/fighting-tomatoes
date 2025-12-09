@@ -280,9 +280,39 @@ export async function fightRoutes(fastify: FastifyInstance) {
       // Create a set of followed fighter IDs
       const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
 
+      // Calculate aggregate hype for all fights in batch (performance optimization)
+      const fightIds = fights.map((f: any) => f.id);
+      const allPredictions = await fastify.prisma.fightPrediction.findMany({
+        where: {
+          fightId: { in: fightIds },
+          predictedRating: { not: null },
+        },
+        select: {
+          fightId: true,
+          predictedRating: true,
+        },
+      });
+
+      // Group predictions by fight and calculate averages
+      const hypeByFight = new Map<string, { total: number; count: number }>();
+      for (const pred of allPredictions) {
+        const existing = hypeByFight.get(pred.fightId) || { total: 0, count: 0 };
+        existing.total += pred.predictedRating || 0;
+        existing.count += 1;
+        hypeByFight.set(pred.fightId, existing);
+      }
+
       // Transform fights data to include user-specific data in the expected format
       const transformedFights = await Promise.all(fights.map(async (fight: any) => {
         const transformed = { ...fight };
+
+        // Add aggregate hype from batch calculation
+        const hypeData = hypeByFight.get(fight.id);
+        if (hypeData && hypeData.count > 0) {
+          transformed.averageHype = Math.round((hypeData.total / hypeData.count) * 10) / 10;
+        } else {
+          transformed.averageHype = 0;
+        }
 
         // Add comment count
         transformed.commentCount = fight._count?.preFightComments || 0;
