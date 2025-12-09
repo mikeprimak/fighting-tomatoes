@@ -218,39 +218,13 @@ export default function UpcomingEventsScreen() {
     };
   };
 
-  const handleFightPress = (fight: Fight) => {
-    // Navigate to fight detail screen
+  const handleFightPress = useCallback((fight: Fight) => {
     router.push(`/fight/${fight.id}`);
-  };
+  }, [router]);
 
   const styles = createStyles(colors);
 
-  if (eventsLoading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
-        <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>Loading events...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (upcomingEvents.length === 0) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
-        <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
-        <View style={styles.loadingContainer}>
-          <Text style={[styles.noEventsText, { color: colors.textSecondary }]}>
-            No upcoming events
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Memoized render function for FlatList
+  // Memoized render function for FlatList - must be before early returns (Rules of Hooks)
   const renderEventSection = useCallback(({ item, index }: { item: Event; index: number }) => (
     <EventSection
       event={item}
@@ -287,7 +261,32 @@ export default function UpcomingEventsScreen() {
         </TouchableOpacity>
       </View>
     );
-  }, [preEventMessage, colors, setPreEventMessage]);
+  }, [preEventMessage, colors, setPreEventMessage, styles.notificationBanner, styles.notificationIconContainer, styles.notificationText, styles.dismissButton]);
+
+  if (eventsLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
+        <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text }]}>Loading events...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (upcomingEvents.length === 0) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
+        <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.noEventsText, { color: colors.textSecondary }]}>
+            No upcoming events
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>

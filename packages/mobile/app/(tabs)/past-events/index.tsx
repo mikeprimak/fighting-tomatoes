@@ -346,6 +346,14 @@ export default function PastEventsScreen() {
 
   const styles = createStyles(colors);
 
+  // Memoized render function for FlatList - must be before early returns (Rules of Hooks)
+  const renderEventSection = useCallback(({ item }: { item: Event }) => (
+    <EventSection event={item} />
+  ), []);
+
+  // Stable key extractor
+  const keyExtractor = useCallback((item: Event) => item.id, []);
+
   if (eventsLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
@@ -370,14 +378,6 @@ export default function PastEventsScreen() {
       </SafeAreaView>
     );
   }
-
-  // Memoized render function for FlatList
-  const renderEventSection = useCallback(({ item }: { item: Event }) => (
-    <EventSection event={item} />
-  ), []);
-
-  // Stable key extractor
-  const keyExtractor = useCallback((item: Event) => item.id, []);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
