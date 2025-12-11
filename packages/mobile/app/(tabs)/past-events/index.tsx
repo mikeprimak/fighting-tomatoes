@@ -1,4 +1,4 @@
-import React, { useCallback, memo } from 'react';
+import React, { useCallback, memo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,15 @@ import {
   StyleSheet,
   Image,
   StatusBar,
+  TextInput,
+  TouchableOpacity,
+  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { useAuth } from '../../../store/AuthContext';
@@ -313,6 +317,15 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
 export default function PastEventsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = () => {
+    Keyboard.dismiss();
+    if (searchQuery.trim().length >= 2) {
+      router.push(`/search-results?q=${encodeURIComponent(searchQuery.trim())}` as any);
+    }
+  };
 
   // Fetch past events with fights included using infinite query for lazy loading
   const {
@@ -404,9 +417,40 @@ export default function PastEventsScreen() {
         data={pastEvents}
         renderItem={renderEventSection}
         keyExtractor={keyExtractor}
+        ListHeaderComponent={
+          <View style={styles.searchContainer}>
+            <View style={styles.searchBarWrapper}>
+              <View style={styles.searchInputContainer}>
+                <FontAwesome
+                  name="search"
+                  size={18}
+                  color={colors.textSecondary}
+                  style={styles.searchIcon}
+                />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search"
+                  placeholderTextColor={colors.textSecondary}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  onSubmitEditing={handleSearch}
+                  returnKeyType="search"
+                />
+              </View>
+              <TouchableOpacity
+                style={styles.searchButton}
+                onPress={handleSearch}
+                disabled={searchQuery.trim().length < 2}
+              >
+                <Text style={styles.searchButtonText}>Search</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        }
         ListFooterComponent={ListFooterComponent}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         // Lazy loading - load more events when reaching end
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
@@ -557,5 +601,52 @@ const createStyles = (colors: any) => StyleSheet.create({
     letterSpacing: 0.5,
     flexWrap: 'nowrap',
     textAlign: 'center',
+  },
+  searchContainer: {
+    backgroundColor: colors.card,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  searchBarWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  searchInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: colors.text,
+    height: 44,
+  },
+  searchButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchButtonText: {
+    color: '#000000',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

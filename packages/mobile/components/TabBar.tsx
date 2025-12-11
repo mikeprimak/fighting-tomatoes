@@ -180,7 +180,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
                 textAlign: 'center',
               }}
             >
-              {hasLiveEvent ? 'Live' : 'Upcoming'}
+              {hasLiveEvent ? 'Live' : 'Upcoming Events'}
             </Text>
           ),
           headerTitle: () => <HeaderLogo title="Upcoming Events" />,
@@ -189,49 +189,34 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
       <Tabs.Screen
         name="past-events"
         options={{
-          title: 'Past Events',
+          title: 'Completed Events',
           tabBarLabel: ({ color }) => (
             <Text style={{ fontSize: 10, color, textAlign: 'center' }}>
-              Past Events
+              Completed Events
             </Text>
           ),
           tabBarIcon: ({ color }) => <FontAwesome name="star" size={24} style={{ marginBottom: -3 }} color={color} />,
-          headerTitle: () => <HeaderLogo title="Past Events" />,
+          headerTitle: () => <HeaderLogo title="Completed Events" />,
         }}
       />
       <Tabs.Screen
         name="community"
         options={{
-          title: 'Good Fights',
-          tabBarLabel: () => null,
-          tabBarIcon: ({ focused }) => (
-            <Image
-              source={
-                focused
-                  ? require('../assets/GOOD-FIGHTS-WORD-LOGO-SQUARE-FULL-YELLOW-SIZED.png')
-                  : require('../assets/GOOD-FIGHTS-WORD-LOGO-SQUARE-FULL-GREY-SIZED.png')
-              }
-              style={{ width: 84, height: 36, marginTop: 14 }}
-              resizeMode="contain"
-            />
-          ),
-          headerTitle: () => <HeaderLogo title="Good Fights" />,
+          href: null, // Hide from tab bar
         }}
       />
       <Tabs.Screen
         name="news"
         options={{
-          title: 'News',
-          tabBarIcon: ({ color }) => <TabBarIcon name="newspaper-o" color={color} />,
-          headerTitle: () => <HeaderLogo title="News" />,
+          href: null, // Hide from tab bar
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'Me',
           tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
-          headerTitle: () => <HeaderLogo title={user?.displayName || 'Profile'} />,
+          headerTitle: () => <HeaderLogo title={user?.displayName || 'Me'} />,
         }}
       />
     </Tabs>
