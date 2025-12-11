@@ -106,7 +106,7 @@ export default function ProfileScreen() {
   const [upvotingPreflightId, setUpvotingPreflightId] = useState<string | null>(null);
 
   // Time filter state
-  const [timeFilter, setTimeFilter] = useState<string>('3months');
+  const [timeFilter, setTimeFilter] = useState<string>('lastEvent');
   const timeFilterOptions = [
     { key: 'lastEvent', label: 'Last Event' },
     { key: 'month', label: 'Month' },
@@ -384,7 +384,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Predictions Section */}
         <SectionContainer
@@ -698,47 +698,35 @@ export default function ProfileScreen() {
 
         {/* Actions */}
         <View style={styles.actionsContainer}>
-          <View style={styles.actionButtonsGrid}>
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-              onPress={() => router.push('/activity/ratings')}
-            >
-              <View style={styles.actionButtonContent}>
-                <FontAwesome name="history" size={18} color={colors.text} />
-                <Text style={[styles.actionButtonText, { color: colors.text }]}>My Activity</Text>
-              </View>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButtonFull, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+            onPress={() => router.push('/settings')}
+          >
+            <View style={styles.actionButtonContent}>
+              <FontAwesome name="bell" size={18} color={colors.text} />
+              <Text style={[styles.actionButtonText, { color: colors.text }]}>Notification Settings</Text>
+            </View>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-              onPress={() => router.push('/settings')}
-            >
-              <View style={styles.actionButtonContent}>
-                <FontAwesome name="bell" size={18} color={colors.text} />
-                <Text style={[styles.actionButtonText, { color: colors.text }]}>Notifications</Text>
-              </View>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButtonFull, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+            onPress={() => router.push('/edit-profile')}
+          >
+            <View style={styles.actionButtonContent}>
+              <FontAwesome name="user" size={18} color={colors.text} />
+              <Text style={[styles.actionButtonText, { color: colors.text }]}>Edit Profile</Text>
+            </View>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-              onPress={() => router.push('/edit-profile')}
-            >
-              <View style={styles.actionButtonContent}>
-                <FontAwesome name="user" size={18} color={colors.text} />
-                <Text style={[styles.actionButtonText, { color: colors.text }]}>Edit Profile</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-              onPress={() => router.push('/send-feedback')}
-            >
-              <View style={styles.actionButtonContent}>
-                <FontAwesome name="comment" size={18} color={colors.text} />
-                <Text style={[styles.actionButtonText, { color: colors.text }]}>Send Feedback</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[styles.actionButtonFull, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
+            onPress={() => router.push('/send-feedback')}
+          >
+            <View style={styles.actionButtonContent}>
+              <FontAwesome name="comment" size={18} color={colors.text} />
+              <Text style={[styles.actionButtonText, { color: colors.text }]}>Send Feedback</Text>
+            </View>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.logoutButton, { backgroundColor: colors.primary }]}
@@ -907,15 +895,11 @@ const createStyles = (colors: any) => StyleSheet.create({
   actionsContainer: {
     marginTop: 8,
     marginHorizontal: 12,
+    gap: 11,
   },
-  actionButtonsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 13,
-  },
-  actionButton: {
-    width: '48%',
-    paddingVertical: 24,
+  actionButtonFull: {
+    width: '100%',
+    paddingVertical: 16,
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
@@ -934,7 +918,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 11,
   },
   logoutButtonText: {
     color: 'white',

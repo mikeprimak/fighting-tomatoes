@@ -180,23 +180,23 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
                 textAlign: 'center',
               }}
             >
-              {hasLiveEvent ? 'Live' : 'Upcoming Events'}
+              {hasLiveEvent ? 'Live' : 'Upcoming Fights'}
             </Text>
           ),
-          headerTitle: () => <HeaderLogo title="Upcoming Events" />,
+          headerTitle: () => <HeaderLogo title="Upcoming Fights" />,
         }}
       />
       <Tabs.Screen
         name="past-events"
         options={{
-          title: 'Completed Events',
+          title: 'Completed Fights',
           tabBarLabel: ({ color }) => (
             <Text style={{ fontSize: 10, color, textAlign: 'center' }}>
-              Completed Events
+              Completed Fights
             </Text>
           ),
           tabBarIcon: ({ color }) => <FontAwesome name="star" size={24} style={{ marginBottom: -3 }} color={color} />,
-          headerTitle: () => <HeaderLogo title="Completed Events" />,
+          headerTitle: () => <HeaderLogo title="Completed Fights" />,
         }}
       />
       <Tabs.Screen
@@ -214,7 +214,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Me',
+          title: user?.displayName || 'Me',
           tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
           headerTitle: () => <HeaderLogo title={user?.displayName || 'Me'} />,
         }}
