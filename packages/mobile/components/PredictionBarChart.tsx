@@ -236,9 +236,10 @@ export default function PredictionBarChart({
                     ].filter(m => m.count > 0);
 
                     return methods.map((method, index) => {
-                      // Calculate percentage relative to this fighter's total predictions
-                      const methodPercentage = fighter1Total > 0 ? (method.count / fighter1Total) * 100 : 0;
-                      const label = methodPercentage < 20 ? method.shortLabel : method.longLabel;
+                      // Calculate percentage relative to OVERALL total predictions
+                      const methodPercentage = totalPredictions > 0 ? (method.count / totalPredictions) * 100 : 0;
+                      // Use overall percentage for label sizing (determines visual width)
+                      const label = methodPercentage < 10 ? method.shortLabel : method.longLabel;
                       const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === method.methodKey;
                       const isLastMethod = index === methods.length - 1;
 
@@ -303,9 +304,10 @@ export default function PredictionBarChart({
                     ].filter(m => m.count > 0);
 
                     return methods.map((method, index) => {
-                      // Calculate percentage relative to this fighter's total predictions
-                      const methodPercentage = fighter2Total > 0 ? (method.count / fighter2Total) * 100 : 0;
-                      const label = methodPercentage < 20 ? method.shortLabel : method.longLabel;
+                      // Calculate percentage relative to OVERALL total predictions
+                      const methodPercentage = totalPredictions > 0 ? (method.count / totalPredictions) * 100 : 0;
+                      // Use overall percentage for label sizing (determines visual width)
+                      const label = methodPercentage < 10 ? method.shortLabel : method.longLabel;
                       const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === method.methodKey;
                       const isLastMethod = index === methods.length - 1;
 
