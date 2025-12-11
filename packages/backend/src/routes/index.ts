@@ -15,6 +15,7 @@ import feedbackRoutes from './feedback';
 import { uploadRoutes } from './upload';
 import { adminRoutes } from './admin';
 import { authenticateUser, requireEmailVerification } from '../middleware/auth';
+import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
 
@@ -138,6 +139,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Events endpoint with optional fights included
   fastify.get('/api/events', {
+    preHandler: optionalAuthenticateMiddleware,
     schema: {
       description: 'Get events list with optional fights included',
       tags: ['events'],
@@ -198,6 +200,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     const { limit = 20, page = 1, type = 'all', includeFights = false } = request.query as any;
     const skip = (page - 1) * limit;
+    const userId = (request as any).user?.id;
 
     try {
       // Base filter: only return events that have at least one fight announced
@@ -304,7 +307,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         const allFightIds = events.flatMap((e: any) => e.fights?.map((f: any) => f.id) || []);
 
         if (allFightIds.length > 0) {
-          // Batch fetch predictions for hype calculation
+          // Batch fetch predictions for hype calculation (all users)
           const allPredictions = await fastify.prisma.fightPrediction.findMany({
             where: {
               fightId: { in: allFightIds },
@@ -316,7 +319,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
             },
           });
 
-          // Group predictions by fight
+          // Group predictions by fight for average hype
           const hypeByFight = new Map<string, { total: number; count: number }>();
           for (const pred of allPredictions) {
             const existing = hypeByFight.get(pred.fightId) || { total: 0, count: 0 };
@@ -325,17 +328,67 @@ export async function registerRoutes(fastify: FastifyInstance) {
             hypeByFight.set(pred.fightId, existing);
           }
 
-          // Transform events to add averageHype and commentCount to fights
+          // Fetch user-specific data if authenticated
+          let userRatingsByFight = new Map<string, number>();
+          let userPredictionsByFight = new Map<string, { predictedRating: number | null; predictedWinner: string | null; predictedMethod: string | null }>();
+
+          if (userId) {
+            // Fetch user's ratings
+            const userRatings = await fastify.prisma.fightRating.findMany({
+              where: {
+                fightId: { in: allFightIds },
+                userId: userId,
+              },
+              select: {
+                fightId: true,
+                rating: true,
+              },
+            });
+            for (const rating of userRatings) {
+              userRatingsByFight.set(rating.fightId, rating.rating);
+            }
+
+            // Fetch user's predictions
+            const userPredictions = await fastify.prisma.fightPrediction.findMany({
+              where: {
+                fightId: { in: allFightIds },
+                userId: userId,
+              },
+              select: {
+                fightId: true,
+                predictedRating: true,
+                predictedWinner: true,
+                predictedMethod: true,
+              },
+            });
+            for (const pred of userPredictions) {
+              userPredictionsByFight.set(pred.fightId, {
+                predictedRating: pred.predictedRating,
+                predictedWinner: pred.predictedWinner,
+                predictedMethod: pred.predictedMethod,
+              });
+            }
+          }
+
+          // Transform events to add averageHype, commentCount, and user data to fights
           transformedEvents = events.map((event: any) => ({
             ...event,
             fights: event.fights?.map((fight: any) => {
               const hypeData = hypeByFight.get(fight.id);
+              const userRating = userRatingsByFight.get(fight.id);
+              const userPrediction = userPredictionsByFight.get(fight.id);
+
               return {
                 ...fight,
                 averageHype: hypeData && hypeData.count > 0
                   ? Math.round((hypeData.total / hypeData.count) * 10) / 10
                   : 0,
                 commentCount: fight._count?.preFightComments || 0,
+                // User-specific data (null if not authenticated or no data)
+                userRating: userRating ?? null,
+                userHypePrediction: userPrediction?.predictedRating ?? null,
+                userPredictedWinner: userPrediction?.predictedWinner ?? null,
+                userPredictedMethod: userPrediction?.predictedMethod ?? null,
               };
             }) || [],
           }));
