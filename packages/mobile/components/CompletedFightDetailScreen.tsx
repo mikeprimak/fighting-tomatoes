@@ -1879,10 +1879,10 @@ export default function CompletedFightDetailScreen({
               </View>
 
               {/* Hype Distribution Chart */}
-              {predictionStats?.hypeDistribution && (
+              {predictionStats?.distribution && (
                 <View style={{ flex: 1, marginLeft: -10 }}>
                   <HypeDistributionChart
-                    distribution={predictionStats.hypeDistribution}
+                    distribution={predictionStats.distribution}
                     totalPredictions={predictionStats.totalPredictions || 0}
                     hasRevealedHype={true}
                     fadeAnim={new Animated.Value(1)}
