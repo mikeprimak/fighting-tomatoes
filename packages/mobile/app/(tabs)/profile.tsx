@@ -526,6 +526,15 @@ export default function ProfileScreen() {
                 </View>
               </View>
               <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 14, textAlign: 'center' }}>({user?.totalHype || 0} fights)</Text>
+              <TouchableOpacity
+                style={styles.seeAllButton}
+                onPress={() => router.push('/activity/my-hype' as any)}
+              >
+                <Text style={[styles.seeAllText, { color: '#F5C518' }]}>
+                  See All
+                </Text>
+                <FontAwesome name="chevron-right" size={12} color="#F5C518" />
+              </TouchableOpacity>
             </View>
           )}
         </SectionContainer>
@@ -674,6 +683,15 @@ export default function ProfileScreen() {
                 </View>
               </View>
               <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 14, textAlign: 'center' }}>({user?.totalRatings || 0} fights)</Text>
+              <TouchableOpacity
+                style={styles.seeAllButton}
+                onPress={() => router.push('/activity/my-ratings' as any)}
+              >
+                <Text style={[styles.seeAllText, { color: '#F5C518' }]}>
+                  See All
+                </Text>
+                <FontAwesome name="chevron-right" size={12} color="#F5C518" />
+              </TouchableOpacity>
             </View>
           )}
         </SectionContainer>

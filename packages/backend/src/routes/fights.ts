@@ -3563,32 +3563,41 @@ export async function fightRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Calculate aggregate hype for all fights
-      const aggregateHypePromises = fights.map(async (fight: any) => {
-        const allPredictions = await fastify.prisma.fightPrediction.findMany({
-          where: {
-            fightId: fight.id,
-            predictedRating: { not: null },
-          },
-          select: {
-            predictedRating: true,
-          },
-        });
-
-        const predictionsWithRating = allPredictions.filter(p => p.predictedRating !== null);
-        const averageHype = predictionsWithRating.length > 0
-          ? predictionsWithRating.reduce((sum, p) => sum + (p.predictedRating || 0), 0) / predictionsWithRating.length
-          : 0;
-
-        return {
-          fightId: fight.id,
-          averageHype: Math.round(averageHype * 10) / 10,
-          totalPredictions: predictionsWithRating.length,
-        };
+      // Calculate aggregate hype for all fights in a single query
+      const fightIds = fights.map((f: any) => f.id);
+      const allPredictions = await fastify.prisma.fightPrediction.findMany({
+        where: {
+          fightId: { in: fightIds },
+          predictedRating: { not: null },
+        },
+        select: {
+          fightId: true,
+          predictedRating: true,
+        },
       });
 
-      const aggregateHypeResults = await Promise.all(aggregateHypePromises);
-      const hypeMap = new Map(aggregateHypeResults.map(r => [r.fightId, r]));
+      // Group predictions by fight and calculate averages
+      const hypeMap = new Map<string, { averageHype: number; totalPredictions: number }>();
+      const predictionsByFight = new Map<string, number[]>();
+
+      for (const pred of allPredictions) {
+        if (pred.predictedRating !== null) {
+          if (!predictionsByFight.has(pred.fightId)) {
+            predictionsByFight.set(pred.fightId, []);
+          }
+          predictionsByFight.get(pred.fightId)!.push(pred.predictedRating);
+        }
+      }
+
+      for (const [fightId, ratings] of predictionsByFight) {
+        const averageHype = ratings.length > 0
+          ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
+          : 0;
+        hypeMap.set(fightId, {
+          averageHype: Math.round(averageHype * 10) / 10,
+          totalPredictions: ratings.length,
+        });
+      }
 
       // Transform fights data
       const transformedFights = fights.map((fight: any) => {
@@ -3669,7 +3678,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
         return transformed;
       });
 
-      // Add notification data for each fight if user is authenticated
+      // Add fighter follow data for each fight if user is authenticated
+      // Skip expensive notification rule engine calls for this endpoint - not needed for activity screens
       if (currentUserId) {
         // Get fighter follows for all fights
         const allFighterIds = transformedFights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]);
@@ -3687,18 +3697,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
         const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
 
-        // Add notification data for each fight
+        // Add fighter follow status for each fight
         for (const fight of transformedFights) {
-          // Add fighter follow status
           fight.isFollowingFighter1 = followedFighterIds.has(fight.fighter1Id) || undefined;
           fight.isFollowingFighter2 = followedFighterIds.has(fight.fighter2Id) || undefined;
-
-          // Get comprehensive notification reasons using the unified rule engine
-          const notificationReasons = await notificationRuleEngine.getNotificationReasonsForFight(
-            currentUserId,
-            fight.id
-          );
-          fight.notificationReasons = notificationReasons;
         }
       }
 
