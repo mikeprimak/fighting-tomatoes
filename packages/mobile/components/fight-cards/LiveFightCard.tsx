@@ -179,12 +179,12 @@ function LiveFightCard({
   const getStripConfig = () => {
     switch (liveStatus) {
       case 'up_next':
-        return { text: 'Up Next', bgColor: '#F5C518', textColor: '#000000' };
+        return { text: 'Up Next', bgColor: '#4CAF50', textColor: '#FFFFFF' };
       case 'starting_soon':
-        return { text: 'Starting Soon', bgColor: '#FF8C00', textColor: '#FFFFFF' };
+        return { text: 'Starting Soon', bgColor: '#4CAF50', textColor: '#FFFFFF' };
       case 'live_now':
       default:
-        return { text: 'Live Now', bgColor: '#FF0000', textColor: '#FFFFFF' };
+        return { text: 'Live Now', bgColor: '#4CAF50', textColor: '#FFFFFF' };
     }
   };
 
@@ -437,8 +437,8 @@ function LiveFightCard({
             minHeight: 62,
             justifyContent: 'center',
             backgroundColor: colorScheme === 'dark'
-              ? 'rgba(245, 197, 24, 0.08)' // 8% yellow on dark background
-              : 'rgba(245, 197, 24, 0.12)', // 12% yellow on light background
+              ? 'rgba(76, 175, 80, 0.18)' // 18% green on dark background
+              : 'rgba(76, 175, 80, 0.22)', // 22% green on light background
           }}>
             {/* Full-height community hype square on the left */}
             <View style={[
@@ -545,7 +545,7 @@ function LiveFightCard({
                   {/* User prediction indicator - yellow circle with user icon (bottom-left for fighter 1) */}
                   {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
                     <View style={styles.userPredictionIndicatorLeft}>
-                      <FontAwesome name="user" size={14} color="#000000" />
+                      <FontAwesome name="user" size={11} color="#000000" />
                     </View>
                   )}
                 </View>
@@ -563,7 +563,7 @@ function LiveFightCard({
                   {/* User prediction indicator - yellow circle with user icon (bottom-right for fighter 2) */}
                   {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
                     <View style={styles.userPredictionIndicatorRight}>
-                      <FontAwesome name="user" size={14} color="#000000" />
+                      <FontAwesome name="user" size={11} color="#000000" />
                     </View>
                   )}
                 </View>
@@ -1047,11 +1047,11 @@ const styles = StyleSheet.create({
   },
   userPredictionIndicatorLeft: {
     position: 'absolute',
-    bottom: -4,
-    left: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    bottom: -2,
+    left: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#F5C518',
     justifyContent: 'center',
     alignItems: 'center',
@@ -1059,11 +1059,11 @@ const styles = StyleSheet.create({
   },
   userPredictionIndicatorRight: {
     position: 'absolute',
-    bottom: -4,
-    right: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#F5C518',
     justifyContent: 'center',
     alignItems: 'center',

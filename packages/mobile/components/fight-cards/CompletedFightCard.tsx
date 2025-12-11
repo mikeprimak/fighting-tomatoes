@@ -525,7 +525,7 @@ function CompletedFightCard({
                     ]}>
                       <FontAwesome
                         name={fight.winner === fight.fighter1.id ? "user" : "times"}
-                        size={14}
+                        size={11}
                         color={fight.winner === fight.fighter1.id ? "#000000" : "#FFFFFF"}
                       />
                     </View>
@@ -550,7 +550,7 @@ function CompletedFightCard({
                     ]}>
                       <FontAwesome
                         name={fight.winner === fight.fighter2.id ? "user" : "times"}
-                        size={14}
+                        size={11}
                         color={fight.winner === fight.fighter2.id ? "#000000" : "#FFFFFF"}
                       />
                     </View>
@@ -831,11 +831,11 @@ const styles = StyleSheet.create({
   },
   userPredictionIndicatorLeft: {
     position: 'absolute',
-    bottom: -4,
-    left: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    bottom: -2,
+    left: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#F5C518',
     justifyContent: 'center',
     alignItems: 'center',
@@ -843,11 +843,11 @@ const styles = StyleSheet.create({
   },
   userPredictionIndicatorRight: {
     position: 'absolute',
-    bottom: -4,
-    right: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#F5C518',
     justifyContent: 'center',
     alignItems: 'center',

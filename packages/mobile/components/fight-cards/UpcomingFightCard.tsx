@@ -432,7 +432,7 @@ function UpcomingFightCard({
                   {/* User prediction indicator - yellow circle with user icon (bottom-left for fighter 1) */}
                   {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
                     <View style={styles.userPredictionIndicatorLeft}>
-                      <FontAwesome name="user" size={14} color="#000000" />
+                      <FontAwesome name="user" size={11} color="#000000" />
                     </View>
                   )}
                 </View>
@@ -450,7 +450,7 @@ function UpcomingFightCard({
                   {/* User prediction indicator - yellow circle with user icon (bottom-right for fighter 2) */}
                   {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
                     <View style={styles.userPredictionIndicatorRight}>
-                      <FontAwesome name="user" size={14} color="#000000" />
+                      <FontAwesome name="user" size={11} color="#000000" />
                     </View>
                   )}
                 </View>
@@ -694,11 +694,11 @@ const styles = StyleSheet.create({
   },
   userPredictionIndicatorLeft: {
     position: 'absolute',
-    bottom: -4,
-    left: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    bottom: -2,
+    left: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#F5C518',
     justifyContent: 'center',
     alignItems: 'center',
@@ -706,11 +706,11 @@ const styles = StyleSheet.create({
   },
   userPredictionIndicatorRight: {
     position: 'absolute',
-    bottom: -4,
-    right: -4,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#F5C518',
     justifyContent: 'center',
     alignItems: 'center',
