@@ -136,16 +136,18 @@ export async function registerRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Events endpoint
+  // Events endpoint with optional fights included
   fastify.get('/api/events', {
     schema: {
-      description: 'Get events list',
+      description: 'Get events list with optional fights included',
       tags: ['events'],
       querystring: {
         type: 'object',
         properties: {
           limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
           page: { type: 'integer', minimum: 1, default: 1 },
+          type: { type: 'string', enum: ['upcoming', 'past', 'all'], default: 'all' },
+          includeFights: { type: 'boolean', default: false },
         },
       },
       response: {
@@ -169,6 +171,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   earlyPrelimStartTime: { type: ['string', 'null'] },
                   prelimStartTime: { type: ['string', 'null'] },
                   mainStartTime: { type: ['string', 'null'] },
+                  fights: { type: 'array' },
                 },
               },
             },
@@ -193,46 +196,156 @@ export async function registerRoutes(fastify: FastifyInstance) {
       },
     },
   }, async (request, reply) => {
-    const { limit = 20, page = 1 } = request.query as any;
+    const { limit = 20, page = 1, type = 'all', includeFights = false } = request.query as any;
     const skip = (page - 1) * limit;
 
     try {
-      // Only return events that have at least one fight announced (filter out TBD events)
-      const whereClause = {
+      // Base filter: only return events that have at least one fight announced
+      const whereClause: any = {
         fights: { some: {} }
       };
+
+      // Add type filter for upcoming/past events
+      if (type === 'upcoming') {
+        whereClause.isComplete = false;
+      } else if (type === 'past') {
+        whereClause.isComplete = true;
+      }
+
+      // Determine sort order based on type
+      // Upcoming: soonest first (asc), Past: most recent first (desc)
+      const orderBy = type === 'upcoming' ? { date: 'asc' as const } : { date: 'desc' as const };
+
+      // Build select object
+      const select: any = {
+        id: true,
+        name: true,
+        promotion: true,
+        date: true,
+        venue: true,
+        location: true,
+        hasStarted: true,
+        isComplete: true,
+        averageRating: true,
+        totalRatings: true,
+        greatFights: true,
+        bannerImage: true,
+        earlyPrelimStartTime: true,
+        prelimStartTime: true,
+        mainStartTime: true,
+      };
+
+      // Include fights if requested
+      if (includeFights) {
+        select.fights = {
+          orderBy: { orderOnCard: 'asc' },
+          select: {
+            id: true,
+            weightClass: true,
+            isTitle: true,
+            titleName: true,
+            orderOnCard: true,
+            hasStarted: true,
+            isComplete: true,
+            winner: true,
+            method: true,
+            round: true,
+            time: true,
+            averageRating: true,
+            totalRatings: true,
+            fighter1: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                nickname: true,
+                profileImage: true,
+                wins: true,
+                losses: true,
+                draws: true,
+              },
+            },
+            fighter2: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                nickname: true,
+                profileImage: true,
+                wins: true,
+                losses: true,
+                draws: true,
+              },
+            },
+            _count: {
+              select: {
+                preFightComments: true,
+              },
+            },
+          },
+        };
+      }
 
       const [events, total] = await Promise.all([
         fastify.prisma.event.findMany({
           where: whereClause,
           skip,
           take: limit,
-          orderBy: { date: 'desc' },
-          select: {
-            id: true,
-            name: true,
-            promotion: true,
-            date: true,
-            venue: true,
-            location: true,
-            hasStarted: true,
-            isComplete: true,
-            averageRating: true,
-            totalRatings: true,
-            greatFights: true,
-            bannerImage: true,
-            earlyPrelimStartTime: true,
-            prelimStartTime: true,
-            mainStartTime: true,
-          },
+          orderBy,
+          select,
         }),
         fastify.prisma.event.count({ where: whereClause }),
       ]);
 
+      // If fights are included, calculate aggregate hype/ratings for each fight
+      let transformedEvents = events;
+      if (includeFights && events.length > 0) {
+        // Get all fight IDs across all events
+        const allFightIds = events.flatMap((e: any) => e.fights?.map((f: any) => f.id) || []);
+
+        if (allFightIds.length > 0) {
+          // Batch fetch predictions for hype calculation
+          const allPredictions = await fastify.prisma.fightPrediction.findMany({
+            where: {
+              fightId: { in: allFightIds },
+              predictedRating: { not: null },
+            },
+            select: {
+              fightId: true,
+              predictedRating: true,
+            },
+          });
+
+          // Group predictions by fight
+          const hypeByFight = new Map<string, { total: number; count: number }>();
+          for (const pred of allPredictions) {
+            const existing = hypeByFight.get(pred.fightId) || { total: 0, count: 0 };
+            existing.total += pred.predictedRating || 0;
+            existing.count += 1;
+            hypeByFight.set(pred.fightId, existing);
+          }
+
+          // Transform events to add averageHype and commentCount to fights
+          transformedEvents = events.map((event: any) => ({
+            ...event,
+            fights: event.fights?.map((fight: any) => {
+              const hypeData = hypeByFight.get(fight.id);
+              return {
+                ...fight,
+                averageHype: hypeData && hypeData.count > 0
+                  ? Math.round((hypeData.total / hypeData.count) * 10) / 10
+                  : 0,
+                commentCount: fight._count?.preFightComments || 0,
+              };
+            }) || [],
+          }));
+        }
+      }
+
       const totalPages = Math.ceil(total / limit);
 
       return reply.code(200).send({
-        events,
+        events: transformedEvents,
         pagination: {
           page,
           limit,

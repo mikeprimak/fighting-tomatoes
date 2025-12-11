@@ -9,7 +9,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/Colors';
@@ -17,6 +17,9 @@ import { apiService } from '../../../services/api';
 import { useAuth } from '../../../store/AuthContext';
 import CompletedFightCard from '../../../components/fight-cards/CompletedFightCard';
 import { EventBannerCard } from '../../../components';
+
+// Number of events to load initially and per page
+const EVENTS_PER_PAGE = 2;
 
 interface Event {
   id: string;
@@ -28,6 +31,8 @@ interface Event {
   hasStarted: boolean;
   isComplete: boolean;
   bannerImage?: string | null;
+  earlyPrelimStartTime?: string | null;
+  fights?: Fight[];
 }
 
 interface Fight {
@@ -155,25 +160,10 @@ const formatTimeAgo = (dateString: string) => {
 const EventSection = memo(function EventSection({ event }: { event: Event }) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { isAuthenticated } = useAuth();
   const router = useRouter();
 
-  // Fetch fights for this specific event
-  const { data: fightsData, isLoading: fightsLoading } = useQuery({
-    queryKey: ['eventFights', event.id, isAuthenticated],
-    queryFn: async () => {
-      const response = await apiService.getFights({
-        eventId: event.id,
-        includeUserData: isAuthenticated,
-        limit: 50,
-      });
-      // Don't sort here - let each card section handle its own sort order
-      return response;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const fights = fightsData?.fights || [];
+  // Use fights from event data (loaded via includeFights parameter)
+  const fights = event.fights || [];
 
   // Group fights by card section using orderOnCard
   const hasEarlyPrelims = !!event.earlyPrelimStartTime;
@@ -205,13 +195,6 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
 
       {/* Fights Container */}
       <View style={styles.fightsContainer}>
-        {fightsLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading fights...</Text>
-          </View>
-        ) : (
-          <>
             {/* Main Card */}
             {mainCard.length > 0 && (
               <View style={styles.cardSection}>
@@ -322,8 +305,6 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
                 ))}
               </View>
             )}
-          </>
-        )}
       </View>
     </View>
   );
@@ -333,22 +314,41 @@ export default function PastEventsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
-  // Fetch all events
-  const { data: eventsData, isLoading: eventsLoading } = useQuery({
-    queryKey: ['events'],
-    queryFn: () => apiService.getEvents(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  // Fetch past events with fights included using infinite query for lazy loading
+  const {
+    data: eventsData,
+    isLoading: eventsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery(
+    ['pastEvents'],
+    async ({ pageParam = 1 }) => {
+      return apiService.getEvents({
+        type: 'past',
+        includeFights: true,
+        page: pageParam,
+        limit: EVENTS_PER_PAGE,
+      });
+    },
+    {
+      getNextPageParam: (lastPage) => {
+        const { page, totalPages } = lastPage.pagination;
+        return page < totalPages ? page + 1 : undefined;
+      },
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
+  );
 
-  const allEvents = eventsData?.events || [];
+  // Flatten all pages of events into a single array (already sorted by backend - most recent first)
+  const pastEvents = eventsData?.pages.flatMap(page => page.events) || [];
 
-  // Filter and sort past events (most recent first)
-  const pastEvents = allEvents
-    .filter((event: Event) => event.isComplete)
-    .sort((a: Event, b: Event) => {
-      // Most recent first
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    });
+  // Handler for loading more events when reaching end of list
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const styles = createStyles(colors);
 
@@ -356,6 +356,17 @@ export default function PastEventsScreen() {
   const renderEventSection = useCallback(({ item }: { item: Event }) => (
     <EventSection event={item} />
   ), []);
+
+  // Footer component for loading more indicator
+  const ListFooterComponent = useCallback(() => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.loadMoreContainer}>
+        <ActivityIndicator size="small" color={colors.primary} />
+        <Text style={[styles.loadMoreText, { color: colors.textSecondary }]}>Loading more events...</Text>
+      </View>
+    );
+  }, [isFetchingNextPage, colors, styles.loadMoreContainer, styles.loadMoreText]);
 
   // Stable key extractor
   const keyExtractor = useCallback((item: Event) => item.id, []);
@@ -393,8 +404,12 @@ export default function PastEventsScreen() {
         data={pastEvents}
         renderItem={renderEventSection}
         keyExtractor={keyExtractor}
+        ListFooterComponent={ListFooterComponent}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        // Lazy loading - load more events when reaching end
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
         // Performance optimizations
         removeClippedSubviews={true}
         maxToRenderPerBatch={3}
@@ -425,6 +440,16 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  loadMoreContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    gap: 10,
+  },
+  loadMoreText: {
+    fontSize: 14,
   },
   eventSection: {
     marginBottom: 32,

@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +20,9 @@ import { FightDisplayCard, EventBannerCard } from '../../../components';
 import { useAuth } from '../../../store/AuthContext';
 import { useNotification } from '../../../store/NotificationContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+
+// Number of events to load initially and per page
+const EVENTS_PER_PAGE = 2;
 
 interface Event {
   id: string;
@@ -34,6 +37,7 @@ interface Event {
   earlyPrelimStartTime?: string | null;
   prelimStartTime?: string | null;
   mainStartTime?: string | null;
+  fights?: Fight[];
 }
 
 type Fight = any;
@@ -81,35 +85,60 @@ export default function UpcomingEventsScreen() {
   // Refetch fight data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      // Invalidate all fight-related queries to trigger refetch
-      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      // Invalidate upcoming events queries to trigger refetch
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
     }, [queryClient])
   );
 
-  // Fetch all events
-  const { data: eventsData, isLoading: eventsLoading } = useQuery({
-    queryKey: ['events'],
-    queryFn: () => apiService.getEvents(),
-    staleTime: 30 * 1000, // 30 seconds - refresh frequently for live status
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-  });
+  // Fetch upcoming events with fights included using infinite query for lazy loading
+  const {
+    data: eventsData,
+    isLoading: eventsLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery(
+    ['upcomingEvents', isAuthenticated],
+    async ({ pageParam = 1 }) => {
+      return apiService.getEvents({
+        type: 'upcoming',
+        includeFights: true,
+        page: pageParam,
+        limit: EVENTS_PER_PAGE,
+      });
+    },
+    {
+      getNextPageParam: (lastPage) => {
+        const { page, totalPages } = lastPage.pagination;
+        return page < totalPages ? page + 1 : undefined;
+      },
+      staleTime: 30 * 1000, // 30 seconds - refresh frequently for live status
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: true,
+    }
+  );
 
-  const allEvents = eventsData?.events || [];
+  // Flatten all pages of events into a single array
+  const allEvents = eventsData?.pages.flatMap(page => page.events) || [];
 
   // Check if any event is live
   const hasLiveEvent = allEvents.some((event: Event) => event.hasStarted && !event.isComplete);
 
-  // Filter and sort upcoming events
-  const upcomingEvents = allEvents
-    .filter((event: Event) => !event.isComplete)
-    .sort((a: Event, b: Event) => {
-      const aIsLive = a.hasStarted && !a.isComplete;
-      const bIsLive = b.hasStarted && !b.isComplete;
-      if (aIsLive && !bIsLive) return -1;
-      if (!aIsLive && bIsLive) return 1;
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    });
+  // Sort upcoming events (live events first, then by date)
+  const upcomingEvents = [...allEvents].sort((a: Event, b: Event) => {
+    const aIsLive = a.hasStarted && !a.isComplete;
+    const bIsLive = b.hasStarted && !b.isComplete;
+    if (aIsLive && !bIsLive) return -1;
+    if (!aIsLive && bIsLive) return 1;
+    return new Date(a.date).getTime() - new Date(b.date).getTime();
+  });
+
+  // Handler for loading more events when reaching end of list
+  const handleLoadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -263,6 +292,17 @@ export default function UpcomingEventsScreen() {
     );
   }, [preEventMessage, colors, setPreEventMessage, styles.notificationBanner, styles.notificationIconContainer, styles.notificationText, styles.dismissButton]);
 
+  // Footer component for loading more indicator
+  const ListFooterComponent = useCallback(() => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={styles.loadMoreContainer}>
+        <ActivityIndicator size="small" color={colors.primary} />
+        <Text style={[styles.loadMoreText, { color: colors.textSecondary }]}>Loading more events...</Text>
+      </View>
+    );
+  }, [isFetchingNextPage, colors, styles.loadMoreContainer, styles.loadMoreText]);
+
   if (eventsLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
@@ -297,8 +337,12 @@ export default function UpcomingEventsScreen() {
         renderItem={renderEventSection}
         keyExtractor={keyExtractor}
         ListHeaderComponent={ListHeaderComponent}
+        ListFooterComponent={ListFooterComponent}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        // Lazy loading - load more events when reaching end
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
         // Performance optimizations
         removeClippedSubviews={true}
         maxToRenderPerBatch={3}
@@ -336,26 +380,8 @@ const EventSection = memo(function EventSection({
   const { line1, line2 } = parseEventName(event.name);
   const isLive = event.hasStarted && !event.isComplete;
 
-  // Fetch fights for this event
-  const { data: fightsData, isLoading: fightsLoading } = useQuery({
-    queryKey: ['eventFights', event.id, isAuthenticated],
-    queryFn: async () => {
-      const response = await apiService.getFights({
-        eventId: event.id,
-        includeUserData: isAuthenticated,
-        limit: 50,
-      });
-      response.fights.sort((a: any, b: any) => b.orderOnCard - a.orderOnCard);
-      return response;
-    },
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    // Poll every 15 seconds when event is live
-    refetchInterval: isLive ? 15000 : false,
-    refetchIntervalInBackground: false, // Stop polling when app is backgrounded
-  });
-
-  const fights = fightsData?.fights || [];
+  // Use fights from event data (loaded via includeFights parameter)
+  const fights = event.fights || [];
 
   // Group fights by card section
   const hasEarlyPrelims = !!event.earlyPrelimStartTime;
@@ -444,12 +470,7 @@ const EventSection = memo(function EventSection({
       />
 
       {/* Fights List */}
-      {fightsLoading ? (
-        <View style={styles.fightsLoadingContainer}>
-          <ActivityIndicator size="small" color={colors.primary} />
-        </View>
-      ) : (
-        <View style={styles.fightsContainer}>
+      <View style={styles.fightsContainer}>
           {/* Main Card */}
           {mainCard.length > 0 && (
             <View style={styles.cardSection}>
@@ -579,7 +600,6 @@ const EventSection = memo(function EventSection({
             </View>
           )}
         </View>
-      )}
     </View>
   );
 });
@@ -604,6 +624,16 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  loadMoreContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    gap: 10,
+  },
+  loadMoreText: {
+    fontSize: 14,
   },
   notificationBanner: {
     flexDirection: 'row',

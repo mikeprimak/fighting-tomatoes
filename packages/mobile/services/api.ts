@@ -17,7 +17,7 @@ const getApiBaseUrl = () => {
   if (Platform.OS === 'web') {
     return 'http://localhost:3008/api';
   } else {
-    return 'http://192.168.1.65:3008/api';  // Network IP for mobile devices (working server)
+    return 'http://10.0.0.53:3008/api';  // Network IP for mobile devices (working server)
   }
 };
 
@@ -329,8 +329,32 @@ class ApiService {
     });
   }
 
-  async getEvents(): Promise<{ events: any[] }> {
-    return this.makeRequest('/events');
+  async getEvents(params: {
+    page?: number;
+    limit?: number;
+    type?: 'upcoming' | 'past' | 'all';
+    includeFights?: boolean;
+  } = {}): Promise<{
+    events: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
+    const queryParams = new URLSearchParams();
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        queryParams.append(key, value.toString());
+      }
+    });
+
+    const queryString = queryParams.toString();
+    const endpoint = `/events${queryString ? `?${queryString}` : ''}`;
+
+    return this.makeRequest(endpoint);
   }
 
   async getEvent(eventId: string): Promise<{ event: any }> {
