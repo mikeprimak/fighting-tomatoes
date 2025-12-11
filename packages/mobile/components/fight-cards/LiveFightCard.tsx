@@ -179,12 +179,12 @@ function LiveFightCard({
   const getStripConfig = () => {
     switch (liveStatus) {
       case 'up_next':
-        return { text: 'Up Next', bgColor: '#4CAF50', textColor: '#FFFFFF' };
+        return { text: 'Up Next', bgColor: '#166534', textColor: '#FFFFFF' };
       case 'starting_soon':
-        return { text: 'Starting Soon', bgColor: '#4CAF50', textColor: '#FFFFFF' };
+        return { text: 'Starting Soon', bgColor: '#166534', textColor: '#FFFFFF' };
       case 'live_now':
       default:
-        return { text: 'Live Now', bgColor: '#4CAF50', textColor: '#FFFFFF' };
+        return { text: 'Live Now', bgColor: '#166534', textColor: '#FFFFFF' };
     }
   };
 
@@ -437,8 +437,8 @@ function LiveFightCard({
             minHeight: 62,
             justifyContent: 'center',
             backgroundColor: colorScheme === 'dark'
-              ? 'rgba(76, 175, 80, 0.18)' // 18% green on dark background
-              : 'rgba(76, 175, 80, 0.22)', // 22% green on light background
+              ? 'rgba(22, 101, 52, 0.25)' // 25% #166534 green on dark background
+              : 'rgba(22, 101, 52, 0.15)', // 15% #166534 green on light background
           }}>
             {/* Full-height community hype square on the left */}
             <View style={[

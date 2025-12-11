@@ -192,7 +192,7 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
         event={event}
         statusBadge={{
           text: 'COMPLETED',
-          backgroundColor: '#22C55E',
+          backgroundColor: '#166534',
           textColor: '#FFFFFF',
         }}
       />
@@ -691,7 +691,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignSelf: 'center',
   },
   sectionTitle: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.5,
   },
@@ -699,7 +699,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 0,
-    marginLeft: -18,
+    marginLeft: -16,
     width: 60,
     justifyContent: 'center',
   },
@@ -707,12 +707,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 0,
-    marginRight: -20,
+    marginRight: -18,
     width: 60,
     justifyContent: 'center',
   },
   columnHeaderText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.5,
     flexWrap: 'nowrap',

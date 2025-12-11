@@ -294,14 +294,14 @@ const styles = StyleSheet.create({
   bar: {
   },
   correctBar: {
-    backgroundColor: '#22C55E', // Green
+    backgroundColor: '#166534', // Green
     borderTopLeftRadius: 2,
     borderTopRightRadius: 2,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
   },
   incorrectBar: {
-    backgroundColor: '#EF4444', // Red
+    backgroundColor: '#991B1B', // Dark red to match #166534 green
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
     borderBottomLeftRadius: 2,

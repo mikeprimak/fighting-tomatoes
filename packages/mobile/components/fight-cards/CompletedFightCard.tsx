@@ -517,16 +517,16 @@ function CompletedFightCard({
                     style={styles.fighterHeadshot}
                     onError={() => setFighter1ImageError(true)}
                   />
-                  {/* User prediction indicator - green if correct, red X if incorrect (bottom-left for fighter 1) */}
+                  {/* User prediction indicator - green checkmark if correct, red X if incorrect (bottom-left for fighter 1) */}
                   {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
                     <View style={[
                       styles.userPredictionIndicatorLeft,
-                      { backgroundColor: fight.winner === fight.fighter1.id ? '#4CAF50' : '#F44336' }
+                      { backgroundColor: fight.winner === fight.fighter1.id ? '#166534' : '#991B1B' }
                     ]}>
                       <FontAwesome
-                        name={fight.winner === fight.fighter1.id ? "user" : "times"}
+                        name={fight.winner === fight.fighter1.id ? "check" : "times"}
                         size={11}
-                        color={fight.winner === fight.fighter1.id ? "#000000" : "#FFFFFF"}
+                        color="#FFFFFF"
                       />
                     </View>
                   )}
@@ -542,16 +542,16 @@ function CompletedFightCard({
                     style={styles.fighterHeadshot}
                     onError={() => setFighter2ImageError(true)}
                   />
-                  {/* User prediction indicator - green if correct, red X if incorrect (bottom-right for fighter 2) */}
+                  {/* User prediction indicator - green checkmark if correct, red X if incorrect (bottom-right for fighter 2) */}
                   {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
                     <View style={[
                       styles.userPredictionIndicatorRight,
-                      { backgroundColor: fight.winner === fight.fighter2.id ? '#4CAF50' : '#F44336' }
+                      { backgroundColor: fight.winner === fight.fighter2.id ? '#166534' : '#991B1B' }
                     ]}>
                       <FontAwesome
-                        name={fight.winner === fight.fighter2.id ? "user" : "times"}
+                        name={fight.winner === fight.fighter2.id ? "check" : "times"}
                         size={11}
-                        color={fight.winner === fight.fighter2.id ? "#000000" : "#FFFFFF"}
+                        color="#FFFFFF"
                       />
                     </View>
                   )}
@@ -591,6 +591,7 @@ function CompletedFightCard({
                 fontSize: 10,
                 textAlign: 'center',
                 marginTop: 4,
+                marginBottom: 6,
               }}
               numberOfLines={1}
             >

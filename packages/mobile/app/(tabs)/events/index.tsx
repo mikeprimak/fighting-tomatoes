@@ -745,32 +745,32 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignSelf: 'center',
   },
   sectionTitle: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.5,
   },
   sectionTime: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
   },
   columnHeaders: {
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 2,
-    marginLeft: -8, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
-    width: 40, // Match width of heatmap square
-    justifyContent: 'center', // Center text within the column
+    gap: 0,
+    marginLeft: -16,
+    width: 60,
+    justifyContent: 'center',
   },
   columnHeadersRight: {
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 2,
-    marginRight: -8, // Offset the sectionHeader's marginHorizontal to align with heatmap squares
-    width: 40, // Match width of heatmap square
-    justifyContent: 'center', // Center text within the column
+    gap: 0,
+    marginRight: -18,
+    width: 60,
+    justifyContent: 'center',
   },
   columnHeaderText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.5,
   },

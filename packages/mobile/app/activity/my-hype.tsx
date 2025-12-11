@@ -198,7 +198,7 @@ export default function MyHypeScreen() {
                     return orderA - orderB;
                   });
                 return pastFights.length > 0 ? (
-                  <View style={styles.sectionContainer}>
+                  <View style={[styles.sectionContainer, { marginTop: 30 }]}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>Past Fights</Text>
                     {pastFights.map((fight: FightData) => (
                       <UpcomingFightCard
@@ -354,30 +354,30 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 0,
-    marginLeft: -11,
-    width: 40,
+    marginLeft: -16,
+    width: 60,
     justifyContent: 'center',
   },
   columnHeadersRight: {
     flexDirection: 'column',
     alignItems: 'center',
     gap: 0,
-    marginRight: -11,
-    width: 40,
+    marginRight: -18,
+    width: 60,
     justifyContent: 'center',
   },
   columnHeaderText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.5,
   },
   sectionContainer: {
-    marginTop: 16,
+    marginTop: -37,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     marginBottom: 12,
-    marginLeft: 16,
+    textAlign: 'center',
   },
 });
