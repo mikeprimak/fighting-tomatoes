@@ -487,7 +487,7 @@ const EventSection = memo(function EventSection({
                 </View>
               </View>
 
-              {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
+              {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                 <FightDisplayCard
                   key={fight.id}
                   fight={getDevFight(fight)}
@@ -498,6 +498,7 @@ const EventSection = memo(function EventSection({
                   lastCompletedFightTime={lastCompletedFight?.updatedAt}
                   enableHypeAnimation={true}
                   enableRatingAnimation={true}
+                  index={index}
                 />
               ))}
             </View>
@@ -519,7 +520,7 @@ const EventSection = memo(function EventSection({
                   )}
                 </View>
               </View>
-              {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
+              {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                 <FightDisplayCard
                   key={fight.id}
                   fight={getDevFight(fight)}
@@ -530,6 +531,7 @@ const EventSection = memo(function EventSection({
                   lastCompletedFightTime={lastCompletedFight?.updatedAt}
                   enableHypeAnimation={true}
                   enableRatingAnimation={true}
+                  index={mainCard.length + index}
                 />
               ))}
             </View>
@@ -551,7 +553,7 @@ const EventSection = memo(function EventSection({
                   )}
                 </View>
               </View>
-              {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
+              {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                 <FightDisplayCard
                   key={fight.id}
                   fight={getDevFight(fight)}
@@ -562,6 +564,7 @@ const EventSection = memo(function EventSection({
                   lastCompletedFightTime={lastCompletedFight?.updatedAt}
                   enableHypeAnimation={true}
                   enableRatingAnimation={true}
+                  index={mainCard.length + prelimCard.length + index}
                 />
               ))}
             </View>

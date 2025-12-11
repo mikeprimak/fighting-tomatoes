@@ -436,12 +436,13 @@ export default function FighterDetailScreen() {
                           <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
                         </View>
                       </View>
-                      {upcomingFights.map((fight: Fight) => (
+                      {upcomingFights.map((fight: Fight, index: number) => (
                         <FightDisplayCard
                           key={fight.id}
                           fight={fight}
                           onPress={() => handleFightPress(fight)}
                           showEvent={true}
+                          index={index}
                         />
                       ))}
                     </>
@@ -460,12 +461,13 @@ export default function FighterDetailScreen() {
                           <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
                         </View>
                       </View>
-                      {completedFights.map((fight: Fight) => (
+                      {completedFights.map((fight: Fight, index: number) => (
                         <FightDisplayCard
                           key={fight.id}
                           fight={fight}
                           onPress={() => handleFightPress(fight)}
                           showEvent={true}
+                          index={upcomingFights.length + index}
                         />
                       ))}
                     </>
@@ -486,12 +488,13 @@ export default function FighterDetailScreen() {
                           <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
                         </View>
                       </View>
-                      {completedFights.map((fight: Fight) => (
+                      {completedFights.map((fight: Fight, index: number) => (
                         <FightDisplayCard
                           key={fight.id}
                           fight={fight}
                           onPress={() => handleFightPress(fight)}
                           showEvent={true}
+                          index={index}
                         />
                       ))}
                     </>
@@ -510,12 +513,13 @@ export default function FighterDetailScreen() {
                           <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
                         </View>
                       </View>
-                      {upcomingFights.map((fight: Fight) => (
+                      {upcomingFights.map((fight: Fight, index: number) => (
                         <FightDisplayCard
                           key={fight.id}
                           fight={fight}
                           onPress={() => handleFightPress(fight)}
                           showEvent={true}
+                          index={completedFights.length + index}
                         />
                       ))}
                     </>

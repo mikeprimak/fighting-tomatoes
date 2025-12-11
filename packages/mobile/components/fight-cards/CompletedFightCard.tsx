@@ -26,6 +26,7 @@ interface CompletedFightCardProps extends BaseFightCardProps {
   // Pre-fetched stats from parent (avoids N+1 API calls per card)
   predictionStats?: any;
   aggregateStats?: any;
+  index?: number; // For alternating background colors
 }
 
 function CompletedFightCard({
@@ -40,6 +41,7 @@ function CompletedFightCard({
   enableRatingAnimation = false,
   predictionStats: propPredictionStats,
   aggregateStats: propAggregateStats,
+  index,
 }: CompletedFightCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -395,6 +397,10 @@ function CompletedFightCard({
     [fight.userRating]
   );
 
+  // Alternating background colors for fight cards
+  const isEvenRow = index !== undefined && index % 2 === 0;
+  const cardBgColor = isEvenRow ? '#222222' : '#181818';
+
   return (
     <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
       <View style={[sharedStyles.container, {
@@ -405,6 +411,7 @@ function CompletedFightCard({
         paddingRight: 64, // 48px square + 16px padding
         minHeight: 62, // Reduced height to match UpcomingFightCard
         justifyContent: 'center',
+        backgroundColor: cardBgColor,
       }]}>
           {/* Full-height community rating square on the left */}
           <View style={[
@@ -486,7 +493,7 @@ function CompletedFightCard({
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -495,7 +502,7 @@ function CompletedFightCard({
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'right', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterLastName, { textAlign: 'right', color: colors.text, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -554,7 +561,7 @@ function CompletedFightCard({
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -563,7 +570,7 @@ function CompletedFightCard({
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'left', color: colors.text, backgroundColor: colors.background, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterLastName, { textAlign: 'left', color: colors.text, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}

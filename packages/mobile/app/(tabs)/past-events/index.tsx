@@ -243,13 +243,14 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
                     </Text>
                   </View>
                 </View>
-                {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
+                {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                   <CompletedFightCard
                     key={fight.id}
                     fight={fight}
                     onPress={handleFightPress}
                     showEvent={false}
                     enableRatingAnimation={true}
+                    index={index}
                   />
                 ))}
               </View>
@@ -286,13 +287,14 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
                     </Text>
                   </View>
                 </View>
-                {[...prelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
+                {[...prelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                   <CompletedFightCard
                     key={fight.id}
                     fight={fight}
                     onPress={handleFightPress}
                     showEvent={false}
                     enableRatingAnimation={true}
+                    index={mainCard.length + index}
                   />
                 ))}
               </View>
@@ -308,13 +310,14 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
                     </Text>
                   </View>
                 </View>
-                {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
+                {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                   <CompletedFightCard
                     key={fight.id}
                     fight={fight}
                     onPress={handleFightPress}
                     showEvent={false}
                     enableRatingAnimation={true}
+                    index={mainCard.length + prelims.length + index}
                   />
                 ))}
               </View>

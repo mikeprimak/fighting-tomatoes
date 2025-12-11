@@ -861,34 +861,41 @@ export default function CommunityScreen() {
                 return dateA - dateB;
               });
 
-              return eventGroups.map((group) => (
-                <View key={group.event?.id || 'unknown'} style={styles.eventGroup}>
-                  <TouchableOpacity
-                    style={styles.eventGroupHeaderContainer}
-                    onPress={() => router.push(`/event/${group.event?.id}` as any)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.eventGroupHeader, { color: colors.text }]}>
-                      {group.event?.name || 'Unknown Event'}
-                    </Text>
-                    <Text style={[styles.eventGroupDate, { color: colors.textSecondary }]}>
-                      {group.event?.date ? new Date(group.event.date).toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                      }) : ''}
-                    </Text>
-                  </TouchableOpacity>
-                  {group.fights.map((fight: any) => (
-                    <UpcomingFightCard
-                      key={fight.id}
-                      fight={fight}
-                      onPress={() => router.push(`/fight/${fight.id}` as any)}
-                      showEvent={false}
-                    />
-                  ))}
-                </View>
-              ));
+              // Track cumulative index across all event groups
+              let cumulativeIndex = 0;
+              return eventGroups.map((group) => {
+                const startIndex = cumulativeIndex;
+                cumulativeIndex += group.fights.length;
+                return (
+                  <View key={group.event?.id || 'unknown'} style={styles.eventGroup}>
+                    <TouchableOpacity
+                      style={styles.eventGroupHeaderContainer}
+                      onPress={() => router.push(`/event/${group.event?.id}` as any)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.eventGroupHeader, { color: colors.text }]}>
+                        {group.event?.name || 'Unknown Event'}
+                      </Text>
+                      <Text style={[styles.eventGroupDate, { color: colors.textSecondary }]}>
+                        {group.event?.date ? new Date(group.event.date).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                        }) : ''}
+                      </Text>
+                    </TouchableOpacity>
+                    {group.fights.map((fight: any, fightIndex: number) => (
+                      <UpcomingFightCard
+                        key={fight.id}
+                        fight={fight}
+                        onPress={() => router.push(`/fight/${fight.id}` as any)}
+                        showEvent={false}
+                        index={startIndex + fightIndex}
+                      />
+                    ))}
+                  </View>
+                );
+              });
             })()
           ) : (
             <View style={styles.card}>
@@ -1011,34 +1018,41 @@ export default function CommunityScreen() {
                 return dateB - dateA;
               });
 
-              return eventGroups.map((group) => (
-                <View key={group.event?.id || 'unknown'} style={styles.eventGroup}>
-                  <TouchableOpacity
-                    style={styles.eventGroupHeaderContainer}
-                    onPress={() => router.push(`/event/${group.event?.id}` as any)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.eventGroupHeader, { color: colors.text }]}>
-                      {group.event?.name || 'Unknown Event'}
-                    </Text>
-                    <Text style={[styles.eventGroupDate, { color: colors.textSecondary }]}>
-                      {group.event?.date ? new Date(group.event.date).toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                      }) : ''}
-                    </Text>
-                  </TouchableOpacity>
-                  {group.fights.map((fight: any) => (
-                    <CompletedFightCard
-                      key={fight.id}
-                      fight={fight}
-                      onPress={() => router.push(`/fight/${fight.id}` as any)}
-                      showEvent={false}
-                    />
-                  ))}
-                </View>
-              ));
+              // Track cumulative index across all event groups
+              let cumulativeIndex = 0;
+              return eventGroups.map((group) => {
+                const startIndex = cumulativeIndex;
+                cumulativeIndex += group.fights.length;
+                return (
+                  <View key={group.event?.id || 'unknown'} style={styles.eventGroup}>
+                    <TouchableOpacity
+                      style={styles.eventGroupHeaderContainer}
+                      onPress={() => router.push(`/event/${group.event?.id}` as any)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.eventGroupHeader, { color: colors.text }]}>
+                        {group.event?.name || 'Unknown Event'}
+                      </Text>
+                      <Text style={[styles.eventGroupDate, { color: colors.textSecondary }]}>
+                        {group.event?.date ? new Date(group.event.date).toLocaleDateString('en-US', {
+                          weekday: 'short',
+                          month: 'short',
+                          day: 'numeric',
+                        }) : ''}
+                      </Text>
+                    </TouchableOpacity>
+                    {group.fights.map((fight: any, fightIndex: number) => (
+                      <CompletedFightCard
+                        key={fight.id}
+                        fight={fight}
+                        onPress={() => router.push(`/fight/${fight.id}` as any)}
+                        showEvent={false}
+                        index={startIndex + fightIndex}
+                      />
+                    ))}
+                  </View>
+                );
+              });
             })()
           ) : (
             <View style={styles.card}>

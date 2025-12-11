@@ -16,6 +16,7 @@ interface FightDisplayCardProps {
   animatePrediction?: boolean;
   enableHypeAnimation?: boolean;
   enableRatingAnimation?: boolean;
+  index?: number; // For alternating background colors
 }
 
 export default function FightDisplayCard({
@@ -29,6 +30,7 @@ export default function FightDisplayCard({
   animatePrediction = false,
   enableHypeAnimation = false,
   enableRatingAnimation = false,
+  index,
 }: FightDisplayCardProps) {
   // Determine fight status
   const getStatus = () => {
@@ -52,6 +54,7 @@ export default function FightDisplayCard({
         enableRatingAnimation={enableRatingAnimation}
         isNextFight={true}
         lastCompletedFightTime={lastCompletedFightTime}
+        index={index}
       />
     );
   }
@@ -67,6 +70,7 @@ export default function FightDisplayCard({
         lastCompletedFightTime={lastCompletedFightTime}
         animatePrediction={animatePrediction}
         enableHypeAnimation={enableHypeAnimation}
+        index={index}
       />
     );
   }
@@ -79,6 +83,7 @@ export default function FightDisplayCard({
         showEvent={showEvent}
         animateRating={animateRating}
         enableRatingAnimation={enableRatingAnimation}
+        index={index}
       />
     );
   }
@@ -91,6 +96,7 @@ export default function FightDisplayCard({
       showEvent={showEvent}
       animateRating={animateRating}
       enableRatingAnimation={enableRatingAnimation}
+      index={index}
     />
   );
 }

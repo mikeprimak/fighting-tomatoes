@@ -325,12 +325,13 @@ export default function SearchResultsScreen() {
                         </Text>
                       </View>
                     </View>
-                    {upcomingFights.map((fight) => (
+                    {upcomingFights.map((fight, index) => (
                       <UpcomingFightCard
                         key={fight.id}
                         fight={fight}
                         onPress={() => router.push(`/fight/${fight.id}` as any)}
                         showEvent={true}
+                        index={index}
                       />
                     ))}
                   </View>
@@ -364,12 +365,13 @@ export default function SearchResultsScreen() {
                         </Text>
                       </View>
                     </View>
-                    {completedFights.map((fight) => (
+                    {completedFights.map((fight, index) => (
                       <CompletedFightCard
                         key={fight.id}
                         fight={fight}
                         onPress={() => router.push(`/fight/${fight.id}` as any)}
                         showEvent={true}
+                        index={upcomingFights.length + index}
                       />
                     ))}
                   </View>

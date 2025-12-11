@@ -399,6 +399,7 @@ export default function EventDetailScreen() {
                 isNextFight={nextFight?.id === fight.id}
                 hasLiveFight={hasLiveFight}
                 lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                index={index}
               />
             ))}
           </View>
@@ -419,7 +420,7 @@ export default function EventDetailScreen() {
               </View>
             </View>
 
-            {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
+            {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
               <FightDisplayCard
                 key={fight.id}
                 fight={fight}
@@ -428,6 +429,7 @@ export default function EventDetailScreen() {
                 isNextFight={nextFight?.id === fight.id}
                 hasLiveFight={hasLiveFight}
                 lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                index={mainCard.length + index}
               />
             ))}
           </View>
@@ -448,7 +450,7 @@ export default function EventDetailScreen() {
               </View>
             </View>
 
-            {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight) => (
+            {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
               <FightDisplayCard
                 key={fight.id}
                 fight={fight}
@@ -457,6 +459,7 @@ export default function EventDetailScreen() {
                 isNextFight={nextFight?.id === fight.id}
                 hasLiveFight={hasLiveFight}
                 lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                index={mainCard.length + prelimCard.length + index}
               />
             ))}
           </View>
