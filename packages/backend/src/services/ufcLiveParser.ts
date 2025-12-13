@@ -32,14 +32,14 @@ function parseFighterName(fullName: string): { firstName: string; lastName: stri
     };
   }
 
-  // Simple first/last split
+  // Simple first/last split: first word = firstName, everything else = lastName
   const parts = fullName.trim().split(/\s+/);
   if (parts.length === 1) {
     return { firstName: parts[0], lastName: '' };
   }
 
-  const lastName = parts.pop() || '';
-  const firstName = parts.join(' ');
+  const firstName = parts[0];
+  const lastName = parts.slice(1).join(' ');
 
   return { firstName, lastName };
 }

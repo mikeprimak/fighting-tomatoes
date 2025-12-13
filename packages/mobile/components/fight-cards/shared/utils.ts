@@ -39,11 +39,12 @@ export const cleanFighterName = (displayName: string) => {
   return nicknameMatch ? nicknameMatch[1].trim() : displayName;
 };
 
-// Extract last name from full name
+// Extract last name from full name (everything except the first word)
 export const getLastName = (fullName: string) => {
   if (!fullName) return fullName;
   const parts = fullName.trim().split(' ');
-  return parts[parts.length - 1];
+  if (parts.length === 1) return parts[0];
+  return parts.slice(1).join(' ');
 };
 
 // Format date string
