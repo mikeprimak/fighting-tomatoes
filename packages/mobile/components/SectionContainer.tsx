@@ -64,11 +64,11 @@ export default function SectionContainer({
 const styles = StyleSheet.create({
   titleBar: {
     paddingVertical: 12,
-    marginHorizontal: 12,
+    marginHorizontal: 0,
     marginTop: 16,
     marginBottom: 0,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   },
   titleContent: {
     flexDirection: 'row',
@@ -84,13 +84,13 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
   container: {
-    marginHorizontal: 12,
+    marginHorizontal: 0,
     marginTop: 0,
     marginBottom: 16,
     paddingTop: 16,
     paddingBottom: 16,
     paddingHorizontal: 12,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
 });
