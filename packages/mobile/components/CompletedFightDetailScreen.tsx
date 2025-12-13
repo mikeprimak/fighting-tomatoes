@@ -1485,12 +1485,10 @@ export default function CompletedFightDetailScreen({
           </View>
 
           {/* Section Divider - My Prediction & Hype */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 12 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>WAS MY PICK CORRECT?</Text>
-            </View>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 12, paddingHorizontal: 16 }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>WAS MY PICK CORRECT?</Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border, marginLeft: 12, marginRight: 12, maxWidth: 80 }} />
+            <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>MY HYPE</Text>
           </View>
 
           {/* Prediction & Hype Content */}
@@ -1564,49 +1562,38 @@ export default function CompletedFightDetailScreen({
                   No picks
                 </Text>
               )}
-            </View>
 
-          {/* Section Divider - How Hyped Was I */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 12 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>HOW HYPED WAS I?</Text>
-            </View>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          </View>
-
-          {/* Hype Prediction - Large flame icon */}
-          <View style={{ alignItems: 'center' }}>
-              {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && fight.userHypePrediction > 0 ? (
-                <View style={styles.ratingStarContainer}>
-                  {/* Background circle for better text contrast */}
-                  <View style={{
-                    position: 'absolute',
-                    width: 56,
-                    height: 56,
-                    borderRadius: 28,
-                    backgroundColor: getHypeHeatmapColor(fight.userHypePrediction),
-                    opacity: 0.4,
-                    top: 30,
-                  }} />
+              {/* Right: My Hype - Large flame icon with number */}
+              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && fight.userHypePrediction > 0 ? (
+                  <View style={{ position: 'relative', justifyContent: 'center', alignItems: 'center' }}>
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={70}
+                      color={getHypeHeatmapColor(fight.userHypePrediction)}
+                    />
+                    <Text style={{
+                      position: 'absolute',
+                      top: 22,
+                      fontSize: 24,
+                      fontWeight: 'bold',
+                      color: '#FFFFFF',
+                      textShadowColor: 'rgba(0,0,0,0.8)',
+                      textShadowOffset: { width: 0, height: 1 },
+                      textShadowRadius: 3,
+                    }}>
+                      {Math.round(fight.userHypePrediction).toString()}
+                    </Text>
+                  </View>
+                ) : (
                   <FontAwesome6
                     name="fire-flame-curved"
-                    size={90}
-                    color={getHypeHeatmapColor(fight.userHypePrediction)}
+                    size={70}
+                    color={colors.textSecondary}
+                    style={{ opacity: 0.3 }}
                   />
-                  <Text style={styles.ratingStarText}>
-                    {Math.round(fight.userHypePrediction).toString()}
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.ratingStarContainer}>
-                  <FontAwesome6
-                    name="fire-flame-curved"
-                    size={90}
-                    color={colors.border}
-                  />
-                </View>
-              )}
+                )}
+              </View>
             </View>
 
           </SectionContainer>
