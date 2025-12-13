@@ -31,17 +31,26 @@ export default function SectionContainer({
 
   const IconComponent = iconFamily === 'fontawesome6' ? FontAwesome6 : iconFamily === 'fontawesome5' ? FontAwesome5 : FontAwesome;
 
+  const containerBgColor = colorScheme === 'dark' ? containerBgColorDark : containerBgColorLight;
+
   return (
     <View>
       {/* Title Bar */}
-      <View style={[styles.titleBar, { backgroundColor: headerBgColor }]}>
+      <View style={[
+        styles.titleBar,
+        {
+          backgroundColor: containerBgColor,
+          borderBottomColor: headerBgColor,
+          borderBottomWidth: 3,
+        }
+      ]}>
         <View style={styles.titleContent}>
           {iconFamily === 'fontawesome6' ? (
-            <FontAwesome6 name={icon as any} size={18} color={iconColor} solid={iconSolid} />
+            <FontAwesome6 name={icon as any} size={18} color="#FFFFFF" solid={iconSolid} />
           ) : (
-            <IconComponent name={icon as any} size={18} color={iconColor} />
+            <IconComponent name={icon as any} size={18} color="#FFFFFF" />
           )}
-          <Text style={[styles.titleText, { color: iconColor }]}>
+          <Text style={[styles.titleText, { color: '#FFFFFF' }]}>
             {title}
           </Text>
           {headerRight}
@@ -52,7 +61,7 @@ export default function SectionContainer({
       <View style={[
         styles.container,
         {
-          backgroundColor: colorScheme === 'dark' ? containerBgColorDark : containerBgColorLight,
+          backgroundColor: containerBgColor,
         }
       ]}>
         {children}
@@ -65,7 +74,7 @@ const styles = StyleSheet.create({
   titleBar: {
     paddingVertical: 12,
     marginHorizontal: 0,
-    marginTop: 16,
+    marginTop: 0,
     marginBottom: 0,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
@@ -86,7 +95,7 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: 0,
     marginTop: 0,
-    marginBottom: 16,
+    marginBottom: 46,
     paddingTop: 16,
     paddingBottom: 16,
     paddingHorizontal: 12,

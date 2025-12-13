@@ -727,7 +727,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     position: 'relative',
   },
   sectionHeaderPrelims: {
-    paddingVertical: 8,
+    paddingTop: 8,
+    paddingBottom: 9,
+    marginTop: 16,
+    marginBottom: 13,
   },
   sectionHeaderRight: {
     flexDirection: 'row',

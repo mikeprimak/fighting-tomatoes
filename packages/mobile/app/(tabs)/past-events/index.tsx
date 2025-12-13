@@ -246,31 +246,11 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
             {/* Preliminary Card */}
             {prelims.length > 0 && (
               <View style={styles.cardSection}>
-                <View style={styles.sectionHeader}>
-                  {/* Left Column Header - ALL / RATINGS */}
-                  <View style={styles.columnHeaders}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      ALL
-                    </Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      RATINGS
-                    </Text>
-                  </View>
-
+                <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
                   {/* Center - Title */}
                   <View style={styles.sectionHeaderCenter}>
                     <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                      PRELIMINARY CARD
-                    </Text>
-                  </View>
-
-                  {/* Right Column Header - MY / RATING */}
-                  <View style={styles.columnHeadersRight}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      MY
-                    </Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      RATING
+                      PRELIMS
                     </Text>
                   </View>
                 </View>
@@ -290,8 +270,8 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
             {/* Early Prelims */}
             {earlyPrelims.length > 0 && (
               <View style={styles.cardSection}>
-                <View style={styles.sectionHeader}>
-                  <View style={styles.sectionHeaderRight}>
+                <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
+                  <View style={styles.sectionHeaderCenter}>
                     <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
                       EARLY PRELIMS
                     </Text>
@@ -678,6 +658,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 12,
     position: 'relative',
+  },
+  sectionHeaderPrelims: {
+    paddingTop: 8,
+    paddingBottom: 9,
+    marginTop: 16,
+    marginBottom: 13,
   },
   sectionHeaderRight: {
     flexDirection: 'row',
