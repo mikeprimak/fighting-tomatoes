@@ -51,12 +51,16 @@ interface TopPreflightComment {
   id: string;
   fightId: string;
   content: string;
+  hypeRating: number | null;
+  predictedWinner: string | null;
   upvotes: number;
   userHasUpvoted: boolean;
   createdAt: string;
   isReply: boolean;
   fight: {
     id: string;
+    fighter1Id: string;
+    fighter2Id: string;
     fighter1Name: string;
     fighter2Name: string;
     eventName: string;
@@ -535,15 +539,14 @@ export default function ProfileScreen() {
                   {renderDistributionChart(user?.hypeDistribution || {}, 'hype')}
                 </View>
               </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 14, textAlign: 'center' }}>({user?.totalHype || 0} fights)</Text>
               <TouchableOpacity
-                style={styles.seeAllButton}
+                style={[styles.seeAllButton, { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 12, marginTop: 14 }]}
                 onPress={() => router.push('/activity/my-hype' as any)}
               >
-                <Text style={[styles.seeAllText, { color: '#F5C518' }]}>
-                  See All
+                <Text style={[styles.seeAllText, { color: colors.textSecondary }]}>
+                  See all {user?.totalHype || 0} fights
                 </Text>
-                <FontAwesome name="chevron-right" size={12} color="#F5C518" />
+                <FontAwesome name="chevron-right" size={12} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
           )}
@@ -591,13 +594,13 @@ export default function ProfileScreen() {
               ))}
               {(topReviews.totalWithUpvotes || 0) > 3 && (
                 <TouchableOpacity
-                  style={styles.seeAllButton}
+                  style={[styles.seeAllButton, { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 12 }]}
                   onPress={() => router.push('/activity/my-comments' as any)}
                 >
-                  <Text style={[styles.seeAllText, { color: colors.primary }]}>
-                    See All ({topReviews.totalWithUpvotes})
+                  <Text style={[styles.seeAllText, { color: colors.textSecondary }]}>
+                    See all {topReviews.totalWithUpvotes} comments
                   </Text>
-                  <FontAwesome name="chevron-right" size={12} color={colors.primary} />
+                  <FontAwesome name="chevron-right" size={12} color={colors.textSecondary} />
                 </TouchableOpacity>
               )}
             </View>
@@ -624,7 +627,9 @@ export default function ProfileScreen() {
                   <PreFightCommentCard
                     comment={{
                       id: comment.id,
-                      content: comment.isReply ? `↳ ${comment.content}` : comment.content,
+                      content: comment.content,
+                      hypeRating: comment.hypeRating,
+                      predictedWinner: comment.predictedWinner,
                       upvotes: comment.upvotes,
                       userHasUpvoted: comment.userHasUpvoted,
                       user: { displayName: 'Me' },
@@ -635,6 +640,10 @@ export default function ProfileScreen() {
                         eventName: comment.fight.eventName,
                       } : undefined,
                     }}
+                    fighter1Id={comment.fight?.fighter1Id}
+                    fighter2Id={comment.fight?.fighter2Id}
+                    fighter1Name={comment.fight?.fighter1Name}
+                    fighter2Name={comment.fight?.fighter2Name}
                     onPress={() => router.push(`/fight/${comment.fight?.id}` as any)}
                     onUpvote={() => handleUpvotePreflight(comment.fightId, comment.id)}
                     isUpvoting={upvotingPreflightId === comment.id}
@@ -645,13 +654,13 @@ export default function ProfileScreen() {
               ))}
               {(topPreflightComments.totalWithUpvotes || 0) > 3 && (
                 <TouchableOpacity
-                  style={styles.seeAllButton}
+                  style={[styles.seeAllButton, { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 12 }]}
                   onPress={() => router.push('/activity/my-preflight-comments' as any)}
                 >
-                  <Text style={[styles.seeAllText, { color: '#10B981' }]}>
-                    See All ({topPreflightComments.totalWithUpvotes})
+                  <Text style={[styles.seeAllText, { color: colors.textSecondary }]}>
+                    See all {topPreflightComments.totalWithUpvotes} comments
                   </Text>
-                  <FontAwesome name="chevron-right" size={12} color="#10B981" />
+                  <FontAwesome name="chevron-right" size={12} color={colors.textSecondary} />
                 </TouchableOpacity>
               )}
             </View>
@@ -692,15 +701,14 @@ export default function ProfileScreen() {
                   {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
                 </View>
               </View>
-              <Text style={{ color: colors.textSecondary, fontSize: 12, marginTop: 14, textAlign: 'center' }}>({user?.totalRatings || 0} fights)</Text>
               <TouchableOpacity
-                style={styles.seeAllButton}
+                style={[styles.seeAllButton, { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 12, marginTop: 14 }]}
                 onPress={() => router.push('/activity/my-ratings' as any)}
               >
-                <Text style={[styles.seeAllText, { color: '#F5C518' }]}>
-                  See All
+                <Text style={[styles.seeAllText, { color: colors.textSecondary }]}>
+                  See all {user?.totalRatings || 0} fights
                 </Text>
-                <FontAwesome name="chevron-right" size={12} color="#F5C518" />
+                <FontAwesome name="chevron-right" size={12} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
           )}
