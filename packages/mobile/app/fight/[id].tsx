@@ -19,7 +19,7 @@ import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
 import { DetailScreenHeader, UpcomingFightDetailScreen, CompletedFightDetailScreen } from '../../components';
 
 export default function FightDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, mode } = useLocalSearchParams<{ id: string; mode?: string }>();
   const { isAuthenticated } = useAuth();
   const { setLastViewedFight } = usePredictionAnimation();
   const colorScheme = useColorScheme();
@@ -193,7 +193,8 @@ export default function FightDetailScreen() {
   }
 
   const { fight } = fightData;
-  const isComplete = fight.isComplete;
+  // Show completed screen if fight is complete OR if mode=completed (for live fights)
+  const isComplete = fight.isComplete || mode === 'completed';
 
   // Toggle fight notification using mutation
   const handleToggleNotification = () => {

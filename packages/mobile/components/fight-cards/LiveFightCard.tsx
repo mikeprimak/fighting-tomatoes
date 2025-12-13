@@ -408,7 +408,7 @@ function LiveFightCard({
   });
 
   return (
-    <TouchableOpacity onPress={() => router.push(`/fight/${fight.id}`)} activeOpacity={0.7}>
+    <TouchableOpacity onPress={() => router.push(`/fight/${fight.id}?mode=completed`)} activeOpacity={0.7}>
       <Animated.View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',

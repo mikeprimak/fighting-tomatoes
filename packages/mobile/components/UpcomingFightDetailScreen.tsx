@@ -159,6 +159,9 @@ export default function UpcomingFightDetailScreen({
   const hasRevealedWinner = true;
   const hasRevealedMethod = true;
 
+  // Check if pre-fight activity is locked (fight has started)
+  const isPreFightLocked = fight.hasStarted;
+
   // Snapshot the fight data when menu opens to prevent re-renders during toggles
   const [menuFightSnapshot, setMenuFightSnapshot] = useState(fight);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -982,6 +985,24 @@ export default function UpcomingFightDetailScreen({
         containerBgColorDark="rgba(245, 197, 24, 0.05)"
         containerBgColorLight="rgba(245, 197, 24, 0.08)"
       >
+        {/* Locked banner when fight has started */}
+        {isPreFightLocked && (
+          <View style={{
+            backgroundColor: colorScheme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)',
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 8,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <FontAwesome name="lock" size={14} color={colors.textSecondary} />
+            <Text style={{ color: colors.textSecondary, fontSize: 13, flex: 1 }}>
+              Predictions are locked. This fight has started.
+            </Text>
+          </View>
+        )}
+
         {/* Who Will Win Section Divider */}
         <View style={[styles.sectionDivider, { marginTop: 10, marginBottom: 0 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
@@ -1004,9 +1025,11 @@ export default function UpcomingFightDetailScreen({
                 {
                   backgroundColor: selectedWinner === fight.fighter1.id ? '#F5C518' : 'transparent',
                   borderColor: colors.border,
+                  opacity: isPreFightLocked ? 0.5 : 1,
                 }
               ]}
               onPress={() => handleWinnerSelection(fight.fighter1.id)}
+              disabled={isPreFightLocked}
             >
               <Image
                 source={
@@ -1032,9 +1055,11 @@ export default function UpcomingFightDetailScreen({
                 {
                   backgroundColor: selectedWinner === fight.fighter2.id ? '#F5C518' : 'transparent',
                   borderColor: colors.border,
+                  opacity: isPreFightLocked ? 0.5 : 1,
                 }
               ]}
               onPress={() => handleWinnerSelection(fight.fighter2.id)}
+              disabled={isPreFightLocked}
             >
               <Image
                 source={
@@ -1085,9 +1110,11 @@ export default function UpcomingFightDetailScreen({
                     {
                       backgroundColor: selectedMethod === method ? '#F5C518' : 'transparent',
                       borderColor: colors.border,
+                      opacity: isPreFightLocked ? 0.5 : 1,
                     }
                   ]}
                   onPress={() => handleMethodSelection(method)}
+                  disabled={isPreFightLocked}
                 >
                   <Text style={[
                     styles.methodButtonText,
@@ -1180,7 +1207,7 @@ export default function UpcomingFightDetailScreen({
         </View>
 
         {/* Row of selectable flames (1-10) */}
-        <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: 10, height: 42, justifyContent: 'center' }]}>
+        <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: 10, height: 42, justifyContent: 'center', opacity: isPreFightLocked ? 0.5 : 1 }]}>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
             const isSelected = level <= (selectedHype || 0);
             const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
@@ -1191,6 +1218,7 @@ export default function UpcomingFightDetailScreen({
                 onPress={() => handleHypeSelection(level)}
                 style={styles.flameButton}
                 hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                disabled={isPreFightLocked}
               >
                 <View style={{ width: 32, alignItems: 'center' }}>
                   {isSelected ? (
@@ -1357,9 +1385,27 @@ export default function UpcomingFightDetailScreen({
           </Text>
         }
       >
+        {/* Locked banner when fight has started */}
+        {isPreFightLocked && (
+          <View style={{
+            backgroundColor: colorScheme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)',
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 12,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <FontAwesome name="lock" size={14} color={colors.textSecondary} />
+            <Text style={{ color: colors.textSecondary, fontSize: 13, flex: 1 }}>
+              Pre-fight activity is closed. This fight has started.
+            </Text>
+          </View>
+        )}
+
         {/* Title row with Add Comment / Cancel button */}
         <View style={[styles.commentHeaderRow, { justifyContent: 'center' }]}>
-          {!preFightCommentsData?.userComment && !isEditingComment && !showCommentForm && (
+          {!isPreFightLocked && !preFightCommentsData?.userComment && !isEditingComment && !showCommentForm && (
             <Button
               onPress={() => {
                 if (!requireVerification('add a comment')) return;
@@ -1379,7 +1425,7 @@ export default function UpcomingFightDetailScreen({
               + Add Comment
             </Button>
           )}
-          {!preFightCommentsData?.userComment && !isEditingComment && showCommentForm && (
+          {!isPreFightLocked && !preFightCommentsData?.userComment && !isEditingComment && showCommentForm && (
             <Button
               onPress={() => setShowCommentForm(!showCommentForm)}
               variant="outline"
@@ -1396,7 +1442,7 @@ export default function UpcomingFightDetailScreen({
               Cancel
             </Button>
           )}
-          {isEditingComment && (
+          {!isPreFightLocked && isEditingComment && (
             <Button
               onPress={() => {
                 setIsEditingComment(false);
@@ -1418,8 +1464,8 @@ export default function UpcomingFightDetailScreen({
           )}
         </View>
 
-        {/* Show comment input when showCommentForm is true (for new comments) OR when editing */}
-        {((showCommentForm && !preFightCommentsData?.userComment) || isEditingComment) && (
+        {/* Show comment input when showCommentForm is true (for new comments) OR when editing - only if not locked */}
+        {!isPreFightLocked && ((showCommentForm && !preFightCommentsData?.userComment) || isEditingComment) && (
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={100}
@@ -1500,7 +1546,7 @@ export default function UpcomingFightDetailScreen({
                 fighter2Id={fight.fighter2.id}
                 fighter1Name={fight.fighter1.lastName}
                 fighter2Name={fight.fighter2.lastName}
-                onEdit={() => setIsEditingComment(true)}
+                onEdit={isPreFightLocked ? undefined : () => setIsEditingComment(true)}
                 onUpvote={() => handleUpvoteComment(preFightCommentsData.userComment.id)}
                 isUpvoting={upvotingCommentId === preFightCommentsData.userComment.id}
                 isAuthenticated={isAuthenticated}
@@ -1522,7 +1568,7 @@ export default function UpcomingFightDetailScreen({
                   const isMyReply = reply.user?.id === user?.id;
                   return (
                     <React.Fragment key={reply.id}>
-                      {editingReplyId === reply.id ? (
+                      {!isPreFightLocked && editingReplyId === reply.id ? (
                         // Edit form for reply
                         <View style={{ marginBottom: 12 }}>
                           <View style={[
@@ -1612,10 +1658,10 @@ export default function UpcomingFightDetailScreen({
                           fighter2Name={fight.fighter2.lastName}
                           onUpvote={() => handleUpvoteComment(reply.id)}
                           onFlag={() => handleFlagComment(reply.id)}
-                          onEdit={isMyReply ? () => {
+                          onEdit={isPreFightLocked ? undefined : (isMyReply ? () => {
                             setEditingReplyId(reply.id);
                             setEditReplyText(reply.content);
-                          } : undefined}
+                          } : undefined)}
                           isUpvoting={upvotingCommentId === reply.id}
                           isAuthenticated={isAuthenticated}
                           showMyComment={isMyReply}
@@ -1668,15 +1714,15 @@ export default function UpcomingFightDetailScreen({
                     fighter2Name={fight.fighter2.lastName}
                     onUpvote={() => handleUpvoteComment(comment.id)}
                     onFlag={() => handleFlagComment(comment.id)}
-                    onReply={userHasReplied ? undefined : () => handleReplyClick(comment.id)}
+                    onReply={isPreFightLocked || userHasReplied ? undefined : () => handleReplyClick(comment.id)}
                     isUpvoting={upvotingCommentId === comment.id}
                     isAuthenticated={isAuthenticated}
                     showMyComment={false}
                   />
                 </View>
 
-                {/* Reply form - shown when replying to this comment */}
-                {replyingToCommentId === comment.id && (
+                {/* Reply form - shown when replying to this comment (only if not locked) */}
+                {!isPreFightLocked && replyingToCommentId === comment.id && (
                   <View ref={replyInputRef} collapsable={false} style={{ marginLeft: 40, marginTop: 8, marginBottom: 12 }}>
                     <View style={[
                       styles.commentInputContainer,
@@ -1762,7 +1808,7 @@ export default function UpcomingFightDetailScreen({
                         const isMyReply = reply.user?.id === user?.id;
                         return (
                           <React.Fragment key={reply.id}>
-                            {editingReplyId === reply.id ? (
+                            {!isPreFightLocked && editingReplyId === reply.id ? (
                               // Edit form for reply
                               <View style={{ marginBottom: 12 }}>
                                 <View style={[
@@ -1852,10 +1898,10 @@ export default function UpcomingFightDetailScreen({
                                 fighter2Name={fight.fighter2.lastName}
                                 onUpvote={() => handleUpvoteComment(reply.id)}
                                 onFlag={() => handleFlagComment(reply.id)}
-                                onEdit={isMyReply ? () => {
+                                onEdit={isPreFightLocked ? undefined : (isMyReply ? () => {
                                   setEditingReplyId(reply.id);
                                   setEditReplyText(reply.content);
-                                } : undefined}
+                                } : undefined)}
                                 isUpvoting={upvotingCommentId === reply.id}
                                 isAuthenticated={isAuthenticated}
                                 showMyComment={isMyReply}
