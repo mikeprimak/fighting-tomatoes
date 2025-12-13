@@ -356,6 +356,8 @@ export default function PastEventsScreen() {
         return page < totalPages ? page + 1 : undefined;
       },
       staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: true,
       enabled: viewMode === 'recent',
     }
   );
@@ -365,6 +367,8 @@ export default function PastEventsScreen() {
     queryKey: ['topRecentFights', isAuthenticated, topRatedPeriod],
     queryFn: () => apiService.getTopRecentFights(topRatedPeriod),
     staleTime: 5 * 60 * 1000,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     enabled: viewMode === 'top-rated',
   });
 

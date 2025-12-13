@@ -447,38 +447,25 @@ function CompletedFightCard({
             )}
           </View>
 
-          {/* Full-height user rating square on the right */}
-          <View style={[
-            styles.userRatingSquare,
-            {
-              backgroundColor: (fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0)
-                ? userRatingColor
-                : 'transparent',
-              borderWidth: (fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0)
-                ? 0
-                : 1,
-              borderColor: colors.textSecondary,
-            }
-          ]}>
+          {/* User rating star icon on the right */}
+          <View style={styles.userRatingStarContainer}>
             {(fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0) ? (
-              <>
-                <Animated.View style={{ transform: [{ scale: ratingScaleAnim }] }}>
-                  <FontAwesome
-                    name="star"
-                    size={14}
-                    color="rgba(0,0,0,0.45)"
-                  />
-                </Animated.View>
-                <Animated.Text style={[styles.ratingSquareNumber, { transform: [{ scale: ratingScaleAnim }] }]}>
+              <Animated.View style={[styles.userRatingStarWrapper, { transform: [{ scale: ratingScaleAnim }] }]}>
+                <FontAwesome
+                  name="star"
+                  size={42}
+                  color={userRatingColor}
+                />
+                <Text style={styles.userRatingStarNumber}>
                   {Math.round(fight.userRating).toString()}
-                </Animated.Text>
-              </>
+                </Text>
+              </Animated.View>
             ) : (
               <FontAwesome
                 name="star"
-                size={16}
+                size={32}
                 color={colors.textSecondary}
-                style={{ opacity: 0.5 }}
+                style={{ opacity: 0.3 }}
               />
             )}
           </View>
@@ -1025,6 +1012,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
+  },
+  userRatingStarContainer: {
+    position: 'absolute',
+    top: 6,
+    right: 0,
+    width: 48,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userRatingStarWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userRatingStarNumber: {
+    position: 'absolute',
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+    top: 7,
   },
   ratingSquareText: {
     color: '#FFFFFF',

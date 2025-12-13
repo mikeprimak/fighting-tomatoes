@@ -352,38 +352,25 @@ function UpcomingFightCard({
             )}
           </View>
 
-          {/* Full-height user hype square on the right */}
-          <View style={[
-            styles.userHypeSquare,
-            {
-              backgroundColor: (fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0)
-                ? userHypeColor
-                : 'transparent',
-              borderWidth: (fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0)
-                ? 0
-                : 1,
-              borderColor: colors.textSecondary,
-            }
-          ]}>
+          {/* User hype flame icon on the right */}
+          <View style={styles.userHypeFlameContainer}>
             {(fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0) ? (
-              <>
-                <Animated.View style={{ transform: [{ scale: hypeScaleAnim }] }}>
-                  <FontAwesome6
-                    name="fire-flame-curved"
-                    size={14}
-                    color="rgba(0,0,0,0.45)"
-                  />
-                </Animated.View>
-                <Animated.Text style={[styles.hypeSquareNumber, { transform: [{ scale: hypeScaleAnim }] }]}>
+              <Animated.View style={[styles.userHypeFlameWrapper, { transform: [{ scale: hypeScaleAnim }] }]}>
+                <FontAwesome6
+                  name="fire-flame-curved"
+                  size={42}
+                  color={userHypeColor}
+                />
+                <Text style={styles.userHypeFlameNumber}>
                   {Math.round(fight.userHypePrediction).toString()}
-                </Animated.Text>
-              </>
+                </Text>
+              </Animated.View>
             ) : (
               <FontAwesome6
                 name="fire-flame-curved"
-                size={16}
+                size={32}
                 color={colors.textSecondary}
-                style={{ opacity: 0.5 }}
+                style={{ opacity: 0.3 }}
               />
             )}
           </View>
@@ -913,6 +900,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
+  },
+  userHypeFlameContainer: {
+    position: 'absolute',
+    top: 6,
+    right: 0,
+    width: 48,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userHypeFlameWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userHypeFlameNumber: {
+    position: 'absolute',
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+    top: 11,
   },
   hypeSquareText: {
     color: '#FFFFFF',

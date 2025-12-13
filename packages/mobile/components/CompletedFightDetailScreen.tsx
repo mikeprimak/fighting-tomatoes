@@ -692,6 +692,11 @@ export default function CompletedFightDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] }); // This fetches both prediction and aggregate stats
       queryClient.invalidateQueries({ queryKey: ['eventFights', fight.event.id] });
       queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });
+      // Invalidate fight list queries so cards update when navigating back
+      queryClient.invalidateQueries({ queryKey: ['fights'] });
+      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
+      queryClient.invalidateQueries({ queryKey: ['pastEvents'] }); // Past events screen embeds fights
       onRatingSuccess?.();
     },
     onError: (error: any) => {
@@ -1777,26 +1782,45 @@ export default function CompletedFightDetailScreen({
 
           {/* Community Rating Layout: Horizontal */}
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
-            {/* Community Rating Star */}
+            {/* Community Rating Box (like CompletedFightCard) */}
             {(() => {
               const ratingColor = fight.averageRating > 0
                 ? getHypeHeatmapColor(Math.round(fight.averageRating))
                 : colors.border;
 
               return (
-                <View style={styles.ratingStarContainer}>
-                  <FontAwesome
-                    name="star"
-                    size={90}
-                    color={ratingColor}
-                  />
-                  <Text style={[styles.ratingStarText, { marginTop: -4 }]}>
-                    {fight.averageRating
-                      ? fight.averageRating % 1 === 0
-                        ? fight.averageRating.toString()
-                        : fight.averageRating.toFixed(1)
-                      : '0'}
-                  </Text>
+                <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
+                  <View style={{
+                    width: 80,
+                    height: 90,
+                    borderRadius: 12,
+                    backgroundColor: fight.averageRating > 0 ? ratingColor : 'transparent',
+                    borderWidth: fight.averageRating > 0 ? 0 : 1,
+                    borderColor: colors.textSecondary,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
+                    <FontAwesome
+                      name="star"
+                      size={28}
+                      color={fight.averageRating > 0 ? 'rgba(0,0,0,0.45)' : colors.textSecondary}
+                      style={fight.averageRating > 0 ? {} : { opacity: 0.5 }}
+                    />
+                    {fight.averageRating > 0 && (
+                      <Text style={{
+                        fontSize: 28,
+                        fontWeight: 'bold',
+                        color: '#FFFFFF',
+                        textShadowColor: 'rgba(0,0,0,0.7)',
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 3,
+                      }}>
+                        {fight.averageRating % 1 === 0
+                          ? fight.averageRating.toString()
+                          : fight.averageRating.toFixed(1)}
+                      </Text>
+                    )}
+                  </View>
                 </View>
               );
             })()}
@@ -1856,26 +1880,32 @@ export default function CompletedFightDetailScreen({
           {/* Hype Content */}
           {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
-              {/* Community Hype Flame */}
-              <View style={styles.ratingStarContainer}>
-                {/* Background circle for better text contrast */}
+              {/* Community Hype Box (like UpcomingFightCard) */}
+              <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
                 <View style={{
-                  position: 'absolute',
-                  width: 56,
-                  height: 56,
-                  borderRadius: 28,
+                  width: 80,
+                  height: 90,
+                  borderRadius: 12,
                   backgroundColor: getHypeHeatmapColor(predictionStats.averageHype),
-                  opacity: 0.4,
-                  top: 30,
-                }} />
-                <FontAwesome6
-                  name="fire-flame-curved"
-                  size={90}
-                  color={getHypeHeatmapColor(predictionStats.averageHype)}
-                />
-                <Text style={[styles.ratingStarText, { marginTop: 12 }]}>
-                  {predictionStats.averageHype === 10 ? '10' : predictionStats.averageHype.toFixed(1)}
-                </Text>
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={28}
+                    color="rgba(0,0,0,0.45)"
+                  />
+                  <Text style={{
+                    fontSize: 28,
+                    fontWeight: 'bold',
+                    color: '#FFFFFF',
+                    textShadowColor: 'rgba(0,0,0,0.7)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 3,
+                  }}>
+                    {predictionStats.averageHype === 10 ? '10' : predictionStats.averageHype.toFixed(1)}
+                  </Text>
+                </View>
               </View>
 
               {/* Hype Distribution Chart */}

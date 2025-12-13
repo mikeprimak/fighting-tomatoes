@@ -407,7 +407,7 @@ const EventSection = memo(function EventSection({
   const hasLiveFight = fights.some((f: Fight) => f.hasStarted && !f.isComplete);
 
   // DEV OVERRIDE: Force "Costa vs Charriere" to show as "Live Now"
-  const DEV_FORCE_LIVE_NOW = true; // Set to false to disable
+  const DEV_FORCE_LIVE_NOW = false; // Set to false to disable
   const isCostaVsCharriere = (fight: Fight) => {
     const f1 = `${fight.fighter1?.lastName || ''}`.toLowerCase();
     const f2 = `${fight.fighter2?.lastName || ''}`.toLowerCase();

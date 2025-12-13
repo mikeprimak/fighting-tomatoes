@@ -1153,7 +1153,8 @@ export default function UpcomingFightDetailScreen({
                       />
                       <Text style={{
                         position: 'absolute',
-                        fontSize: 32,
+                        marginTop: 6,
+                        fontSize: 34,
                         fontWeight: 'bold',
                         color: '#FFFFFF',
                         textShadowColor: 'rgba(0,0,0,0.8)',
@@ -1260,56 +1261,66 @@ export default function UpcomingFightDetailScreen({
       {/* Community Hype Data */}
       <View style={{ marginTop: 14, marginBottom: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
-          {/* Large Flame Icon */}
+          {/* Large Hype Box (like UpcomingFightCard) */}
           {(() => {
             const hypeColor = aggregateStats?.communityAverageHype
               ? getHypeHeatmapColor(aggregateStats.communityAverageHype)
               : colors.border;
 
             return (
-              <View style={{ position: 'relative', width: 90, height: 105 }}>
-                {/* Grey placeholder - always visible until fully revealed */}
+              <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
+                {/* Grey placeholder box - shown until revealed */}
                 {!hasRevealedHype && (
-                  <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
+                  <View style={{
+                    width: 80,
+                    height: 90,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: colors.textSecondary,
+                    backgroundColor: 'transparent',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
                     <FontAwesome6
                       name="fire-flame-curved"
-                      size={90}
-                      color={colors.border}
+                      size={28}
+                      color={colors.textSecondary}
+                      style={{ opacity: 0.5 }}
                     />
                   </View>
                 )}
 
-                {/* Colored flame - fades in when revealed */}
+                {/* Colored hype box - fades in when revealed */}
                 {hasRevealedHype && (
                   <Animated.View style={{ opacity: aggregateHypeFadeAnim }}>
-                    <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
-                      {/* Background circle */}
-                      <View style={{
-                        position: 'absolute',
-                        width: 56,
-                        height: 56,
-                        borderRadius: 28,
-                        backgroundColor: hypeColor,
-                        opacity: 0.4,
-                        top: 30,
-                      }} />
+                    <View style={{
+                      width: 80,
+                      height: 90,
+                      borderRadius: 12,
+                      backgroundColor: aggregateStats?.communityAverageHype > 0 ? hypeColor : 'transparent',
+                      borderWidth: aggregateStats?.communityAverageHype > 0 ? 0 : 1,
+                      borderColor: colors.textSecondary,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
                       <FontAwesome6
                         name="fire-flame-curved"
-                        size={90}
-                        color={hypeColor}
+                        size={28}
+                        color={aggregateStats?.communityAverageHype > 0 ? 'rgba(0,0,0,0.45)' : colors.textSecondary}
+                        style={aggregateStats?.communityAverageHype > 0 ? {} : { opacity: 0.5 }}
                       />
-                      <Text style={{
-                        position: 'absolute',
-                        top: 40,
-                        fontSize: 28,
-                        fontWeight: 'bold',
-                        color: '#FFFFFF',
-                        textShadowColor: 'rgba(0,0,0,0.8)',
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 4,
-                      }}>
-                        {aggregateStats?.communityAverageHype ? (aggregateStats.communityAverageHype === 10 ? '10' : aggregateStats.communityAverageHype.toFixed(1)) : '--'}
-                      </Text>
+                      {aggregateStats?.communityAverageHype > 0 && (
+                        <Text style={{
+                          fontSize: 28,
+                          fontWeight: 'bold',
+                          color: '#FFFFFF',
+                          textShadowColor: 'rgba(0,0,0,0.7)',
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 3,
+                        }}>
+                          {aggregateStats.communityAverageHype === 10 ? '10' : aggregateStats.communityAverageHype.toFixed(1)}
+                        </Text>
+                      )}
                     </View>
                   </Animated.View>
                 )}

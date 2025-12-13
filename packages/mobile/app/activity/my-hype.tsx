@@ -169,12 +169,13 @@ export default function MyHypeScreen() {
                 return upcomingFights.length > 0 ? (
                   <View style={styles.sectionContainer}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>Upcoming Fights</Text>
-                    {upcomingFights.map((fight: FightData) => (
+                    {upcomingFights.map((fight: FightData, index: number) => (
                       <UpcomingFightCard
                         key={fight.id}
                         fight={fight}
                         onPress={handleFightPress}
                         showEvent={true}
+                        index={index}
                       />
                     ))}
                   </View>
@@ -200,12 +201,13 @@ export default function MyHypeScreen() {
                 return pastFights.length > 0 ? (
                   <View style={[styles.sectionContainer, { marginTop: 30 }]}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>Past Fights</Text>
-                    {pastFights.map((fight: FightData) => (
+                    {pastFights.map((fight: FightData, index: number) => (
                       <UpcomingFightCard
                         key={fight.id}
                         fight={fight}
                         onPress={handleFightPress}
                         showEvent={true}
+                        index={index}
                       />
                     ))}
                   </View>

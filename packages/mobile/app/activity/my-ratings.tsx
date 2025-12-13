@@ -124,11 +124,12 @@ export default function MyRatingsScreen() {
             <FlatList
               data={data.fights}
               keyExtractor={(item: FightData) => item.id}
-              renderItem={({ item }) => (
+              renderItem={({ item, index }) => (
                 <CompletedFightCard
                   fight={item}
                   onPress={handleFightPress}
                   showEvent={true}
+                  index={index}
                 />
               )}
               contentContainerStyle={styles.listContent}
