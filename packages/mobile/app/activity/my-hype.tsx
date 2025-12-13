@@ -8,21 +8,32 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, router, useFocusEffect } from 'expo-router';
+import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
 import { FightData } from '../../components/FightDisplayCardNew';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
+import { getHypeHeatmapColor } from '../../utils/heatmap';
 
-type SortOption = 'newest' | 'highest';
+type SortOption = 'newest' | 'highest' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10';
 
 export default function MyHypeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const { filter } = useLocalSearchParams<{ filter?: string }>();
+
+  // Determine initial sort option from route param
+  const getInitialSortOption = (): SortOption => {
+    if (filter && ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].includes(filter)) {
+      return filter as SortOption;
+    }
+    return 'newest';
+  };
+
+  const [sortBy, setSortBy] = useState<SortOption>(getInitialSortOption);
   const [showSortMenu, setShowSortMenu] = useState(false);
 
   // Fetch user's hype fights
@@ -50,22 +61,41 @@ export default function MyHypeScreen() {
     router.push(`/fight/${fight.id}` as any);
   };
 
-  const sortOptions = [
-    { value: 'newest' as SortOption, label: 'New', icon: 'clock-o' },
-    { value: 'highest' as SortOption, label: 'My Hype', icon: 'fire' },
+  const sortOptions: { value: SortOption; label: string; icon?: string; isScoreFilter?: boolean; useFlameIcon?: boolean }[] = [
+    { value: 'newest', label: 'New', icon: 'clock-o' },
+    { value: 'highest', label: 'My Hype', useFlameIcon: true },
+    { value: '10', label: '10', isScoreFilter: true },
+    { value: '9', label: '9', isScoreFilter: true },
+    { value: '8', label: '8', isScoreFilter: true },
+    { value: '7', label: '7', isScoreFilter: true },
+    { value: '6', label: '6', isScoreFilter: true },
+    { value: '5', label: '5', isScoreFilter: true },
+    { value: '4', label: '4', isScoreFilter: true },
+    { value: '3', label: '3', isScoreFilter: true },
+    { value: '2', label: '2', isScoreFilter: true },
+    { value: '1', label: '1', isScoreFilter: true },
   ];
 
   const styles = createStyles(colors);
 
   const renderSortButton = () => {
     const currentSort = sortOptions.find(opt => opt.value === sortBy);
+    const isScoreFilter = currentSort?.isScoreFilter;
+    const scoreValue = isScoreFilter ? parseInt(currentSort.value) : null;
+
     return (
       <View style={styles.filterContainer}>
         <TouchableOpacity
           style={[styles.filterButton, { backgroundColor: colors.card, borderColor: colors.border }]}
           onPress={() => setShowSortMenu(!showSortMenu)}
         >
-          <FontAwesome name={currentSort?.icon as any} size={14} color={colors.text} />
+          {isScoreFilter && scoreValue ? (
+            <FontAwesome6 name="fire-flame-curved" size={14} color={getHypeHeatmapColor(scoreValue)} solid />
+          ) : currentSort?.useFlameIcon ? (
+            <FontAwesome6 name="fire-flame-curved" size={14} color={colors.text} solid />
+          ) : (
+            <FontAwesome name={currentSort?.icon as any} size={14} color={colors.text} />
+          )}
           <Text style={[styles.filterButtonText, { color: colors.text }]}>
             {currentSort?.label}
           </Text>
@@ -152,8 +182,19 @@ export default function MyHypeScreen() {
 
               {/* Upcoming Fights Section */}
               {(() => {
+                // Check if sortBy is a score filter (1-10)
+                const isScoreFilter = !isNaN(parseInt(sortBy));
+                const scoreFilter = isScoreFilter ? parseInt(sortBy) : null;
+
                 const upcomingFights = data.fights
-                  .filter((f: FightData) => f.status === 'upcoming')
+                  .filter((f: FightData) => {
+                    if (f.status !== 'upcoming') return false;
+                    // Apply score filter if active
+                    if (scoreFilter !== null) {
+                      return Math.round(f.userHypePrediction || 0) === scoreFilter;
+                    }
+                    return true;
+                  })
                   .sort((a: FightData, b: FightData) => {
                     if (sortBy === 'highest') {
                       return (b.userHypePrediction || 0) - (a.userHypePrediction || 0);
@@ -184,8 +225,19 @@ export default function MyHypeScreen() {
 
               {/* Past Fights Section */}
               {(() => {
+                // Check if sortBy is a score filter (1-10)
+                const isScoreFilter = !isNaN(parseInt(sortBy));
+                const scoreFilter = isScoreFilter ? parseInt(sortBy) : null;
+
                 const pastFights = data.fights
-                  .filter((f: FightData) => f.status === 'completed')
+                  .filter((f: FightData) => {
+                    if (f.status !== 'completed') return false;
+                    // Apply score filter if active
+                    if (scoreFilter !== null) {
+                      return Math.round(f.userHypePrediction || 0) === scoreFilter;
+                    }
+                    return true;
+                  })
                   .sort((a: FightData, b: FightData) => {
                     if (sortBy === 'highest') {
                       return (b.userHypePrediction || 0) - (a.userHypePrediction || 0);
@@ -217,29 +269,40 @@ export default function MyHypeScreen() {
 
             {/* Sort Dropdown Menu */}
             {showSortMenu && (
-              <View style={[styles.overlayMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                {sortOptions.map(option => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.filterMenuItem,
-                      sortBy === option.value && { backgroundColor: colors.backgroundSecondary }
-                    ]}
-                    onPress={() => {
-                      setSortBy(option.value);
-                      setShowSortMenu(false);
-                    }}
-                  >
-                    <FontAwesome name={option.icon as any} size={14} color={colors.text} />
-                    <Text style={[styles.filterMenuItemText, { color: colors.text }]}>
-                      {option.label}
-                    </Text>
-                    {sortBy === option.value && (
-                      <FontAwesome name="check" size={14} color={colors.primary} />
-                    )}
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <ScrollView style={[styles.overlayMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {sortOptions.map(option => {
+                  const isScoreOption = option.isScoreFilter;
+                  const scoreValue = isScoreOption ? parseInt(option.value) : null;
+
+                  return (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[
+                        styles.filterMenuItem,
+                        sortBy === option.value && { backgroundColor: colors.backgroundSecondary }
+                      ]}
+                      onPress={() => {
+                        setSortBy(option.value);
+                        setShowSortMenu(false);
+                      }}
+                    >
+                      {isScoreOption && scoreValue ? (
+                        <FontAwesome6 name="fire-flame-curved" size={14} color={getHypeHeatmapColor(scoreValue)} solid />
+                      ) : option.useFlameIcon ? (
+                        <FontAwesome6 name="fire-flame-curved" size={14} color={colors.text} solid />
+                      ) : (
+                        <FontAwesome name={option.icon as any} size={14} color={colors.text} />
+                      )}
+                      <Text style={[styles.filterMenuItemText, { color: colors.text }]}>
+                        {option.label}
+                      </Text>
+                      {sortBy === option.value && (
+                        <FontAwesome name="check" size={14} color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
             )}
           </View>
         )}
@@ -322,6 +385,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     top: 80,
     left: 16,
     right: 16,
+    maxHeight: 350,
     borderRadius: 8,
     borderWidth: 1,
     shadowColor: '#000',

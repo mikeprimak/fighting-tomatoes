@@ -348,6 +348,11 @@ export default function ProfileScreen() {
     const maxCount = hasData ? Math.max(...Object.values(dataToUse), 1) : 1;
     const maxBarHeight = 82; // Maximum bar height to match colored box height
 
+    const handleBarPress = (score: number) => {
+      const route = type === 'hype' ? '/activity/my-hype' : '/activity/my-ratings';
+      router.push(`${route}?filter=${score}` as any);
+    };
+
     return (
       <View>
         {!hasData && (
@@ -362,7 +367,12 @@ export default function ProfileScreen() {
             const barColor = getHypeHeatmapColor(rating);
 
             return (
-              <View key={rating} style={styles.barContainer}>
+              <TouchableOpacity
+                key={rating}
+                style={styles.barContainer}
+                onPress={() => handleBarPress(rating)}
+                activeOpacity={0.7}
+              >
                 <View style={styles.barWrapper}>
                   <View
                     style={[
@@ -375,7 +385,7 @@ export default function ProfileScreen() {
                   />
                 </View>
                 <Text style={styles.barLabel}>{rating}</Text>
-              </View>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -388,7 +398,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Predictions Section */}
         <SectionContainer
-          title="My Fight Predictions"
+          title="My Prediction Accuracy"
           icon="trophy"
           iconColor="#fff"
           headerBgColor="#166534"

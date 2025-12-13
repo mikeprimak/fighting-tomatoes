@@ -920,8 +920,36 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
       // 'allTime' = no date filter (dateFilter stays null)
 
-      // Build the where clause
-      const whereClause: any = {
+      // Build event filter for completed events (events with at least one fight with a result)
+      const eventWhereClause: any = {
+        fights: {
+          some: {
+            winner: { not: null }
+          }
+        }
+      };
+
+      if (dateFilter) {
+        eventWhereClause.date = { gte: dateFilter };
+      }
+
+      // Get completed events in the time range
+      // For lastEventOnly, only get the most recent event (optimize query)
+      const completedEvents = await fastify.prisma.event.findMany({
+        where: eventWhereClause,
+        select: {
+          id: true,
+          name: true,
+          date: true
+        },
+        orderBy: {
+          date: lastEventOnly ? 'desc' : 'asc'
+        },
+        ...(lastEventOnly ? { take: 1 } : {})
+      });
+
+      // Build prediction where clause
+      const predictionWhereClause: any = {
         userId,
         predictedWinner: { not: null },
         fight: {
@@ -929,13 +957,17 @@ export async function authRoutes(fastify: FastifyInstance) {
         }
       };
 
-      if (dateFilter) {
-        whereClause.fight.event = { date: { gte: dateFilter } };
+      // Filter predictions by date range or specific events
+      if (lastEventOnly && completedEvents.length > 0) {
+        // For lastEventOnly, only get predictions for that specific event
+        predictionWhereClause.fight.eventId = completedEvents[0].id;
+      } else if (dateFilter) {
+        predictionWhereClause.fight.event = { date: { gte: dateFilter } };
       }
 
       // Get all predictions for this user where the fight has a result
       const predictions = await fastify.prisma.fightPrediction.findMany({
-        where: whereClause,
+        where: predictionWhereClause,
         include: {
           fight: {
             select: {
@@ -960,7 +992,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         }
       });
 
-      // Group predictions by event
+      // Initialize event map with all completed events (0 predictions)
       const eventMap = new Map<string, {
         eventId: string,
         eventName: string,
@@ -969,10 +1001,22 @@ export async function authRoutes(fastify: FastifyInstance) {
         incorrect: number
       }>();
 
+      for (const event of completedEvents) {
+        eventMap.set(event.id, {
+          eventId: event.id,
+          eventName: event.name,
+          eventDate: event.date,
+          correct: 0,
+          incorrect: 0
+        });
+      }
+
+      // Add prediction counts to events
       for (const prediction of predictions) {
         const event = prediction.fight.event;
         const isCorrect = prediction.predictedWinner === prediction.fight.winner;
 
+        // Event should already exist in map, but add it just in case
         if (!eventMap.has(event.id)) {
           eventMap.set(event.id, {
             eventId: event.id,
