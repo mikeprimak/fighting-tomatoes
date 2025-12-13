@@ -19,6 +19,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { useAuth } from '../../../store/AuthContext';
+import { useSearch } from '../../../store/SearchContext';
 import CompletedFightCard from '../../../components/fight-cards/CompletedFightCard';
 import { EventBannerCard } from '../../../components';
 
@@ -302,6 +303,7 @@ export default function PastEventsScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const { isSearchVisible, hideSearch } = useSearch();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('recent');
   const [topRatedPeriod, setTopRatedPeriod] = useState<TimePeriod>('week');
@@ -398,35 +400,38 @@ export default function PastEventsScreen() {
   // Header component with search bar and nav tabs
   const ListHeaderComponent = (
     <View>
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBarWrapper}>
-          <View style={styles.searchInputContainer}>
-            <FontAwesome
-              name="search"
-              size={18}
-              color={colors.textSecondary}
-              style={styles.searchIcon}
-            />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search"
-              placeholderTextColor={colors.textSecondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={handleSearch}
-              returnKeyType="search"
-            />
+      {/* Search Bar - only shown when isSearchVisible is true */}
+      {isSearchVisible && (
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBarWrapper}>
+            <View style={styles.searchInputContainer}>
+              <FontAwesome
+                name="search"
+                size={18}
+                color={colors.textSecondary}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search fighters, events..."
+                placeholderTextColor={colors.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
+                autoFocus={true}
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={handleSearch}
+              disabled={searchQuery.trim().length < 2}
+            >
+              <Text style={styles.searchButtonText}>Search</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.searchButton}
-            onPress={handleSearch}
-            disabled={searchQuery.trim().length < 2}
-          >
-            <Text style={styles.searchButtonText}>Search</Text>
-          </TouchableOpacity>
         </View>
-      </View>
+      )}
 
       {/* View Mode Tabs */}
       <View style={styles.viewModeTabs}>

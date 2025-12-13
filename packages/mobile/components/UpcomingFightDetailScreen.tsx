@@ -1217,10 +1217,10 @@ export default function UpcomingFightDetailScreen({
       <SectionContainer
         title="All Picks"
         icon="users"
-        iconColor="#fff"
-        headerBgColor="#3B82F6"
-        containerBgColorDark="rgba(59, 130, 246, 0.05)"
-        containerBgColorLight="rgba(59, 130, 246, 0.08)"
+        iconColor="#000"
+        headerBgColor="#83B4F3"
+        containerBgColorDark="rgba(131, 180, 243, 0.05)"
+        containerBgColorLight="rgba(131, 180, 243, 0.08)"
       >
         {/* Community Predictions Data */}
         <View style={{ marginTop: -22 }}>
@@ -1358,8 +1358,7 @@ export default function UpcomingFightDetailScreen({
         }
       >
         {/* Title row with Add Comment / Cancel button */}
-        <View style={styles.commentHeaderRow}>
-          <View style={{ flex: 1 }} />
+        <View style={[styles.commentHeaderRow, { justifyContent: 'center' }]}>
           {!preFightCommentsData?.userComment && !isEditingComment && !showCommentForm && (
             <Button
               onPress={() => {
@@ -1377,7 +1376,7 @@ export default function UpcomingFightDetailScreen({
                 color: colors.text,
               }}
             >
-              + Add
+              + Add Comment
             </Button>
           )}
           {!preFightCommentsData?.userComment && !isEditingComment && showCommentForm && (
@@ -1459,6 +1458,8 @@ export default function UpcomingFightDetailScreen({
                 styles.saveCommentButton,
                 {
                   backgroundColor: (preFightCommentsData?.userComment || preFightComment.trim().length > 0) ? colors.tint : colors.card,
+                  borderWidth: (preFightCommentsData?.userComment || preFightComment.trim().length > 0) ? 0 : 1,
+                  borderColor: colors.border,
                 }
               ]}
               disabled={saveCommentMutation.isPending}
@@ -1481,7 +1482,7 @@ export default function UpcomingFightDetailScreen({
 
           {/* User's own comment first (if exists and not editing) */}
           {preFightCommentsData.userComment && !isEditingComment && (
-            <View style={{ marginRight: 20 }}>
+            <View>
               <PreFightCommentCard
                 comment={{
                   id: preFightCommentsData.userComment.id,
@@ -1647,7 +1648,7 @@ export default function UpcomingFightDetailScreen({
 
               return (
               <React.Fragment key={comment.id}>
-                <View style={{ marginRight: 20 }}>
+                <View>
                   <PreFightCommentCard
                     comment={{
                       id: comment.id,

@@ -1977,8 +1977,7 @@ export default function CompletedFightDetailScreen({
         <View style={[styles.sectionNoBorder, { marginTop: 10, marginHorizontal: 0, padding: 0 }]}>
             {/* Only show header row when a button is visible */}
             {(!fight.userReview || isEditingComment) && (
-            <View style={styles.commentHeaderRow}>
-              <View style={{ flex: 1 }} />
+            <View style={[styles.commentHeaderRow, { justifyContent: 'center' }]}>
               {!fight.userReview && !isEditingComment && !showCommentForm && (
                 <Button
                   onPress={handleToggleCommentForm}
@@ -1993,7 +1992,7 @@ export default function CompletedFightDetailScreen({
                     color: colors.text,
                   }}
                 >
-                  + Add
+                  + Add Comment
                 </Button>
               )}
               {!fight.userReview && !isEditingComment && showCommentForm && (
@@ -2067,6 +2066,8 @@ export default function CompletedFightDetailScreen({
                         styles.saveCommentButton,
                         {
                           backgroundColor: (fight.userReview || comment.trim().length > 0) ? colors.tint : colors.card,
+                          borderWidth: (fight.userReview || comment.trim().length > 0) ? 0 : 1,
+                          borderColor: colors.border,
                         }
                       ]}
                       disabled={updateUserDataMutation.isPending}
@@ -2085,7 +2086,7 @@ export default function CompletedFightDetailScreen({
             {/* User's review first (if exists and not editing) */}
             {fight.userReview && !isEditingComment && (
               <>
-              <View style={{ marginTop: 0, marginRight: 20 }}>
+              <View style={{ marginTop: 0 }}>
                 <CommentCard
                   comment={{
                     id: fight.userReview.id,
@@ -2270,7 +2271,7 @@ export default function CompletedFightDetailScreen({
 
                   return (
                   <React.Fragment key={review.id}>
-                    <View style={{ marginRight: 20 }}>
+                    <View>
                       <CommentCard
                         comment={{
                           id: review.id,
@@ -2534,7 +2535,7 @@ export default function CompletedFightDetailScreen({
               <View style={{ marginTop: 0 }}>
                 {preFightCommentsData.comments.map((comment: any) => (
                   <React.Fragment key={comment.id}>
-                    <View style={{ marginRight: 20 }}>
+                    <View>
                       <PreFightCommentCard
                         comment={{
                           id: comment.id,

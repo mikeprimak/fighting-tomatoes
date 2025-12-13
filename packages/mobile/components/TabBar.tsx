@@ -2,10 +2,11 @@ import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { Tabs, useRouter, usePathname } from 'expo-router';
-import { useColorScheme, Text, View, Image } from 'react-native';
+import { useColorScheme, Text, View, Image, TouchableOpacity } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { useAuth } from '../store/AuthContext';
 import { useHasLiveEvent } from '../hooks/useHasLiveEvent';
+import { useSearch } from '../store/SearchContext';
 
 /**
  * Tab Bar Icon Component
@@ -118,6 +119,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
   const colors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
   const hasLiveEvent = useHasLiveEvent();
+  const { toggleSearch, isSearchVisible } = useSearch();
 
   return (
     <Tabs
@@ -197,6 +199,18 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
           ),
           tabBarIcon: ({ color }) => <FontAwesome name="star" size={24} style={{ marginBottom: -3 }} color={color} />,
           headerTitle: () => <HeaderLogo title="Completed Fights" />,
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={toggleSearch}
+              style={{ marginRight: 16, padding: 8 }}
+            >
+              <FontAwesome
+                name="search"
+                size={20}
+                color={isSearchVisible ? colors.tint : colors.text}
+              />
+            </TouchableOpacity>
+          ),
         }}
       />
       <Tabs.Screen

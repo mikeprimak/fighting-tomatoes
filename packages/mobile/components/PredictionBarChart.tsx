@@ -241,6 +241,7 @@ export default function PredictionBarChart({
                       // Use overall percentage for label sizing (determines visual width)
                       const label = methodPercentage < 10 ? method.shortLabel : method.longLabel;
                       const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === method.methodKey;
+                      const isActualOutcome = actualWinner === fighter1Id && actualMethod === method.methodKey;
                       const isLastMethod = index === methods.length - 1;
 
                       return (
@@ -257,6 +258,11 @@ export default function PredictionBarChart({
                           {isUserPrediction && (
                             <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
                               <FontAwesome name="user" size={16} color="#000000" />
+                            </View>
+                          )}
+                          {isActualOutcome && (
+                            <View style={[styles.actualOutcomeIndicator, { backgroundColor: '#10b981' }]}>
+                              <FontAwesome name="check" size={14} color="#FFFFFF" />
                             </View>
                           )}
                           <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>
@@ -309,6 +315,7 @@ export default function PredictionBarChart({
                       // Use overall percentage for label sizing (determines visual width)
                       const label = methodPercentage < 10 ? method.shortLabel : method.longLabel;
                       const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === method.methodKey;
+                      const isActualOutcome = actualWinner === fighter2Id && actualMethod === method.methodKey;
                       const isLastMethod = index === methods.length - 1;
 
                       return (
@@ -325,6 +332,11 @@ export default function PredictionBarChart({
                           {isUserPrediction && (
                             <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
                               <FontAwesome name="user" size={16} color="#000000" />
+                            </View>
+                          )}
+                          {isActualOutcome && (
+                            <View style={[styles.actualOutcomeIndicator, { backgroundColor: '#10b981' }]}>
+                              <FontAwesome name="check" size={14} color="#FFFFFF" />
                             </View>
                           )}
                           <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>
@@ -356,6 +368,15 @@ const styles = StyleSheet.create({
   userPredictionIndicator: {
     position: 'absolute',
     top: -14,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actualOutcomeIndicator: {
+    position: 'absolute',
+    bottom: -14,
     width: 28,
     height: 28,
     borderRadius: 14,
