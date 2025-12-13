@@ -11,6 +11,7 @@ interface EventBannerCardProps {
     bannerImage?: string | null;
     hasStarted: boolean;
     isComplete: boolean;
+    promotion?: string;
   };
   statusBadge?: {
     text: string;
@@ -114,7 +115,7 @@ export function EventBannerCard({
           {statusBadge && (
             <View style={[styles.statusBadgeOverlay, { backgroundColor: statusBadge.backgroundColor }]}>
               <Text style={[styles.statusBadgeText, statusBadge.textColor && { color: statusBadge.textColor }]}>
-                {statusBadge.text}
+                {event.promotion ? `${event.promotion} - ${statusBadge.text}` : statusBadge.text}
               </Text>
             </View>
           )}
