@@ -49,6 +49,7 @@ function UpcomingFightCard({
 
   // Animation ref for hype animation
   const hypeScaleAnim = useRef(new Animated.Value(1)).current;
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Local formatMethod function for this component - shows "KO" instead of "KO/TKO"
   const formatMethod = (method: string | null | undefined) => {
@@ -163,6 +164,7 @@ function UpcomingFightCard({
 
       // Start animation after short delay for smooth transition
       const timer = setTimeout(() => {
+        setIsAnimating(true);
         // Animate hype square: scale up and down twice
         Animated.sequence([
           Animated.timing(hypeScaleAnim, {
@@ -187,6 +189,7 @@ function UpcomingFightCard({
           }),
         ]).start(() => {
           // Clear the pending animation flag after animation completes
+          setIsAnimating(false);
           setPendingAnimation(null);
         });
       }, 300); // Short delay for smooth screen transition
@@ -307,10 +310,14 @@ function UpcomingFightCard({
   const cardBgColor = isEvenRow ? '#222222' : '#181818';
 
   return (
-    <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
+    <TouchableOpacity
+      onPress={() => onPress(fight)}
+      activeOpacity={0.7}
+      style={isAnimating ? { zIndex: 9999, elevation: 9999 } : undefined}
+    >
       <View style={[sharedStyles.container, {
         position: 'relative',
-        overflow: 'hidden',
+        overflow: 'visible',
         paddingLeft: 64, // 48px square + 16px padding
         paddingVertical: 0, // No vertical padding
         paddingRight: 64, // 48px square + 16px padding
@@ -909,11 +916,16 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1000,
+    elevation: 1000,
+    overflow: 'visible',
   },
   userHypeFlameWrapper: {
     position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 1000,
+    elevation: 1000,
   },
   userHypeFlameNumber: {
     position: 'absolute',
