@@ -34,7 +34,7 @@ export default function HypeDistributionChart({
   for (let hype = 1; hype <= 10; hype++) {
     const count = distribution[hype] || 0;
     const barHeight = maxCount > 0 ? (count / maxCount) * (chartHeight - 10) : 0;
-    const color = getHypeHeatmapColor(hype); // Use correct heatmap colors
+    const color = getHypeHeatmapColor(hype); // Orange → Red hype colors
 
     bars.push(
       <View

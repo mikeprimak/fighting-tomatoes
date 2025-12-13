@@ -13,7 +13,7 @@ import { BaseFightCardProps } from './shared/types';
 import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName, formatEventName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getHypeHeatmapColor } from '../../utils/heatmap';
+import { getHypeHeatmapColor, getRatingHeatmapColor } from '../../utils/heatmap';
 import Svg, { Circle } from 'react-native-svg';
 
 interface CompletedFightCardProps extends BaseFightCardProps {
@@ -386,14 +386,15 @@ function CompletedFightCard({
   };
 
   // Memoize expensive color calculations to avoid recalculation on every render
+  // Use blue→purple scale for ratings (analytical judgment)
   const ratingBorderColor = useMemo(
-    () => getHypeHeatmapColor(fight.averageRating || 0),
+    () => getRatingHeatmapColor(fight.averageRating || 0),
     [fight.averageRating]
   );
   const grayColor = colors.border || '#888888';
 
   const userRatingColor = useMemo(
-    () => getHypeHeatmapColor(fight.userRating || 0),
+    () => getRatingHeatmapColor(fight.userRating || 0),
     [fight.userRating]
   );
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { getHypeHeatmapColor } from '../utils/heatmap';
+import { getRatingHeatmapColor } from '../utils/heatmap';
 
 interface RatingDistributionChartProps {
   // Distribution of rating scores 1-10
@@ -31,7 +31,7 @@ export default function RatingDistributionChart({
   for (let rating = 1; rating <= 10; rating++) {
     const count = distribution[rating] || 0;
     const barHeight = maxCount > 0 ? (count / maxCount) * (chartHeight - 10) : 0;
-    const color = getHypeHeatmapColor(rating); // Use correct heatmap colors
+    const color = getRatingHeatmapColor(rating); // Blue → Purple rating colors
 
     bars.push(
       <View

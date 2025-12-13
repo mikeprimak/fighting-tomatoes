@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
-import { getHypeHeatmapColor } from '../utils/heatmap';
+import { getHypeHeatmapColor, getRatingHeatmapColor } from '../utils/heatmap';
 
 // Helper to format method for display
 const formatMethod = (method: string | null | undefined): string => {
@@ -111,7 +111,7 @@ export function CommentCard({
               </Text>
             </View>
             <View style={styles.inlineRating}>
-              <FontAwesome name="star" size={14} color={getHypeHeatmapColor(comment.rating)} />
+              <FontAwesome name="star" size={14} color={getRatingHeatmapColor(comment.rating)} />
               <Text style={[styles.reviewRatingText, { color: colors.textSecondary, fontSize: 14 }]}>
                 {comment.rating}
               </Text>

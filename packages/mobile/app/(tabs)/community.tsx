@@ -26,7 +26,7 @@ import HotPredictionCard from '../../components/fight-cards/HotPredictionCard';
 import EvenPredictionCard from '../../components/fight-cards/EvenPredictionCard';
 import FighterCard from '../../components/FighterCard';
 import { PreFightCommentCard } from '../../components/PreFightCommentCard';
-import { getHypeHeatmapColor } from '../../utils/heatmap';
+import { getHypeHeatmapColor, getRatingHeatmapColor } from '../../utils/heatmap';
 
 interface Event {
   id: string;
@@ -1091,7 +1091,7 @@ export default function CommunityScreen() {
             <View style={styles.classicFightOverlay}>
               {/* Rating Box on the left */}
               {classicFightData && (() => {
-                const ratingColor = getHypeHeatmapColor(classicFightData.averageRating || 0);
+                const ratingColor = getRatingHeatmapColor(classicFightData.averageRating || 0);
                 const starColor = getIconColor(ratingColor, colors.background);
                 return (
                   <View style={[styles.classicRatingBox, { backgroundColor: ratingColor }]}>

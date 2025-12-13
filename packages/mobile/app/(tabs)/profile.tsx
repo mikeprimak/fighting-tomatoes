@@ -15,7 +15,7 @@ import { useAuth } from '../../store/AuthContext';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { CustomAlert } from '../../components/CustomAlert';
 import { CommentCard, PreFightCommentCard } from '../../components';
-import { getHypeHeatmapColor } from '../../utils/heatmap';
+import { getHypeHeatmapColor, getRatingHeatmapColor } from '../../utils/heatmap';
 import { api, apiService } from '../../services/api';
 import * as Haptics from 'expo-haptics';
 import PredictionAccuracyChart from '../../components/PredictionAccuracyChart';
@@ -359,7 +359,8 @@ export default function ProfileScreen() {
           {ratings.map((rating) => {
             const count = dataToUse[rating] || 0;
             const barHeight = count > 0 ? Math.max((count / maxCount) * maxBarHeight, 4) : 0;
-            const barColor = getHypeHeatmapColor(rating);
+            // Use blue→purple for ratings, orange→red for hype
+            const barColor = type === 'rating' ? getRatingHeatmapColor(rating) : getHypeHeatmapColor(rating);
 
             return (
               <View key={rating} style={styles.barContainer}>
@@ -670,7 +671,7 @@ export default function ProfileScreen() {
                   <FontAwesome
                     name="star"
                     size={90}
-                    color={getHypeHeatmapColor(Math.round(user?.averageRating || 0))}
+                    color={getRatingHeatmapColor(Math.round(user?.averageRating || 0))}
                   />
                   <Text style={[styles.ratingIconText, { marginTop: -2 }]}>
                     {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'}

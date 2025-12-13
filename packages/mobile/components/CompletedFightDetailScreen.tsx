@@ -22,7 +22,7 @@ import { useQueryClient, useQuery, useInfiniteQuery, useMutation } from '@tansta
 import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
-import { getHypeHeatmapColor, getFlameColor } from '../utils/heatmap';
+import { getHypeHeatmapColor, getRatingHeatmapColor, getFlameColor } from '../utils/heatmap';
 import { FlagReviewModal, CommentCard, RatingDistributionChart } from '.';
 import HypeDistributionChart from './HypeDistributionChart';
 import { PreFightCommentCard } from './PreFightCommentCard';
@@ -1780,7 +1780,7 @@ export default function CompletedFightDetailScreen({
             {/* Community Rating Star */}
             {(() => {
               const ratingColor = fight.averageRating > 0
-                ? getHypeHeatmapColor(Math.round(fight.averageRating))
+                ? getRatingHeatmapColor(Math.round(fight.averageRating))
                 : colors.border;
 
               return (

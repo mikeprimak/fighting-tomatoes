@@ -1,28 +1,47 @@
 /**
- * Heatmap color utility for fight hype/rating scores
- * Pre-computed lookup table for 0.0 to 10.0 in 0.1 increments
+ * Heatmap color utilities for fight hype and rating scores
+ * Pre-computed lookup tables for 0.0 to 10.0 in 0.1 increments
  *
- * Color scale:
+ * HYPE Color Scale (Orange → Red) - Warm, energetic excitement:
  * - 0-0.9: Grey (#808080)
- * - 1-5: Gradient from grey to muted yellow
- * - 5-7: Gradient to golden yellow (#ffcf3b)
- * - 7-10: Gradient through orange to pure red (#ff0000)
+ * - 1-5: Grey to orange
+ * - 5-7: Orange intensifies
+ * - 7-10: Orange to deep red
+ *
+ * RATING Color Scale (Blue → Purple) - Cool, analytical judgment:
+ * - 0-0.9: Grey (#808080)
+ * - 1-5: Grey to blue
+ * - 5-7: Blue to indigo
+ * - 7-10: Indigo to magenta-purple
  */
 
-// Pre-computed color stops for interpolation
-const colorStops = [
+// HYPE color stops (Orange → Red)
+const hypeColorStops = [
   { score: 1.0, r: 128, g: 128, b: 128 },  // Grey
-  { score: 5.0, r: 200, g: 185, b: 130 },  // Muted yellowish
-  { score: 7.0, r: 255, g: 207, b: 59 },   // Golden yellow
-  { score: 7.5, r: 253, g: 183, b: 12 },   // Yellow-orange
-  { score: 8.0, r: 243, g: 134, b: 53 },   // Orange
-  { score: 8.5, r: 237, g: 94, b: 50 },    // Orange-red
-  { score: 9.0, r: 233, g: 52, b: 48 },    // Red-orange
-  { score: 10.0, r: 255, g: 0, b: 0 },     // Pure red
+  { score: 3.0, r: 180, g: 120, b: 80 },   // Muted orange-brown
+  { score: 5.0, r: 230, g: 130, b: 60 },   // Orange
+  { score: 7.0, r: 249, g: 115, b: 22 },   // Bright orange #F97316
+  { score: 8.0, r: 239, g: 68, b: 68 },    // Red-orange #EF4444
+  { score: 9.0, r: 220, g: 38, b: 38 },    // Red #DC2626
+  { score: 10.0, r: 185, g: 28, b: 28 },   // Deep red #B91C1C
 ];
 
-// Interpolate between two color stops
-function interpolateColor(score: number): string {
+// RATING color stops (Blue → Purple)
+const ratingColorStops = [
+  { score: 1.0, r: 128, g: 128, b: 128 },  // Grey
+  { score: 3.0, r: 100, g: 130, b: 180 },  // Muted blue
+  { score: 5.0, r: 59, g: 130, b: 246 },   // Blue #3B82F6
+  { score: 7.0, r: 99, g: 102, b: 241 },   // Indigo #6366F1
+  { score: 8.0, r: 139, g: 92, b: 246 },   // Violet #8B5CF6
+  { score: 9.0, r: 168, g: 85, b: 247 },   // Purple #A855F7
+  { score: 10.0, r: 192, g: 38, b: 211 },  // Magenta-purple #C026D3
+];
+
+// Color stop type
+type ColorStop = { score: number; r: number; g: number; b: number };
+
+// Interpolate between two color stops for a given color scale
+function interpolateColor(score: number, colorStops: ColorStop[]): string {
   let lowerStop = colorStops[0];
   let upperStop = colorStops[colorStops.length - 1];
 
@@ -44,35 +63,65 @@ function interpolateColor(score: number): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-// Pre-compute all 101 colors (0.0 to 10.0 in 0.1 increments)
-// This runs once at module load time
-const HEATMAP_COLORS: string[] = [];
+// Pre-compute all 101 HYPE colors (0.0 to 10.0 in 0.1 increments)
+// Orange → Red scale for excitement/anticipation
+const HYPE_COLORS: string[] = [];
 for (let i = 0; i <= 100; i++) {
   const score = i / 10;
   if (score < 1) {
-    HEATMAP_COLORS.push('#808080'); // Grey for scores below 1
+    HYPE_COLORS.push('#808080'); // Grey for scores below 1
   } else if (score >= 10) {
-    HEATMAP_COLORS.push('#ff0000'); // Pure red for 10
+    HYPE_COLORS.push('rgb(185, 28, 28)'); // Deep red for 10
   } else {
-    HEATMAP_COLORS.push(interpolateColor(score));
+    HYPE_COLORS.push(interpolateColor(score, hypeColorStops));
+  }
+}
+
+// Pre-compute all 101 RATING colors (0.0 to 10.0 in 0.1 increments)
+// Blue → Purple scale for analytical judgment
+const RATING_COLORS: string[] = [];
+for (let i = 0; i <= 100; i++) {
+  const score = i / 10;
+  if (score < 1) {
+    RATING_COLORS.push('#808080'); // Grey for scores below 1
+  } else if (score >= 10) {
+    RATING_COLORS.push('rgb(192, 38, 211)'); // Magenta-purple for 10
+  } else {
+    RATING_COLORS.push(interpolateColor(score, ratingColorStops));
   }
 }
 
 /**
- * Get heatmap color for a hype/rating score (0-10)
+ * Get heatmap color for a HYPE score (0-10)
+ * Orange → Red scale for excitement/anticipation
  * Uses pre-computed lookup table for O(1) performance
  */
 export const getHypeHeatmapColor = (hypeScore: number): string => {
   // Clamp to valid range
-  if (hypeScore < 0) return HEATMAP_COLORS[0];
-  if (hypeScore >= 10) return HEATMAP_COLORS[100];
+  if (hypeScore < 0) return HYPE_COLORS[0];
+  if (hypeScore >= 10) return HYPE_COLORS[100];
 
   // Round to nearest 0.1 and lookup
   const index = Math.round(hypeScore * 10);
-  return HEATMAP_COLORS[index];
+  return HYPE_COLORS[index];
 };
 
-// Pre-computed RGB values for faster flame color mixing
+/**
+ * Get heatmap color for a RATING score (0-10)
+ * Blue → Purple scale for analytical judgment
+ * Uses pre-computed lookup table for O(1) performance
+ */
+export const getRatingHeatmapColor = (ratingScore: number): string => {
+  // Clamp to valid range
+  if (ratingScore < 0) return RATING_COLORS[0];
+  if (ratingScore >= 10) return RATING_COLORS[100];
+
+  // Round to nearest 0.1 and lookup
+  const index = Math.round(ratingScore * 10);
+  return RATING_COLORS[index];
+};
+
+// Pre-computed RGB values for faster color mixing
 // Parsed once at module load
 interface RGBColor {
   r: number;
@@ -80,7 +129,8 @@ interface RGBColor {
   b: number;
 }
 
-const HEATMAP_RGB: RGBColor[] = HEATMAP_COLORS.map(color => {
+// Helper to parse color string to RGB
+function colorToRGB(color: string): RGBColor {
   if (color.startsWith('#')) {
     return {
       r: parseInt(color.slice(1, 3), 16),
@@ -97,7 +147,13 @@ const HEATMAP_RGB: RGBColor[] = HEATMAP_COLORS.map(color => {
     };
   }
   return { r: 128, g: 128, b: 128 }; // Fallback grey
-});
+}
+
+// Pre-computed HYPE RGB values
+const HYPE_RGB: RGBColor[] = HYPE_COLORS.map(colorToRGB);
+
+// Pre-computed RATING RGB values
+const RATING_RGB: RGBColor[] = RATING_COLORS.map(colorToRGB);
 
 // Common background colors pre-parsed
 const BACKGROUND_RGB: Record<string, RGBColor> = {
@@ -164,12 +220,29 @@ export const getFlameColor = (hypeColor: string, bgColor: string): string => {
 export const getFlameColorFromScore = (hypeScore: number, bgColor: string): string => {
   // Get pre-computed RGB for this score
   const index = Math.max(0, Math.min(100, Math.round(hypeScore * 10)));
-  const hypeRgb = HEATMAP_RGB[index];
+  const hypeRgb = HYPE_RGB[index];
   const bgRgb = parseColor(bgColor);
 
   const r = Math.round(hypeRgb.r * 0.7 + bgRgb.r * 0.3);
   const g = Math.round(hypeRgb.g * 0.7 + bgRgb.g * 0.3);
   const b = Math.round(hypeRgb.b * 0.7 + bgRgb.b * 0.3);
+
+  return `rgb(${r}, ${g}, ${b})`;
+};
+
+/**
+ * Get rating icon color directly from a rating score
+ * Blue → Purple scale mixed with background for icons
+ */
+export const getRatingColorFromScore = (ratingScore: number, bgColor: string): string => {
+  // Get pre-computed RGB for this score
+  const index = Math.max(0, Math.min(100, Math.round(ratingScore * 10)));
+  const ratingRgb = RATING_RGB[index];
+  const bgRgb = parseColor(bgColor);
+
+  const r = Math.round(ratingRgb.r * 0.7 + bgRgb.r * 0.3);
+  const g = Math.round(ratingRgb.g * 0.7 + bgRgb.g * 0.3);
+  const b = Math.round(ratingRgb.b * 0.7 + bgRgb.b * 0.3);
 
   return `rgb(${r}, ${g}, ${b})`;
 };

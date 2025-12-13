@@ -13,7 +13,7 @@ import { BaseFightCardProps } from './shared/types';
 import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getHypeHeatmapColor } from '../../utils/heatmap';
+import { getHypeHeatmapColor, getRatingHeatmapColor } from '../../utils/heatmap';
 
 interface LiveFightCardProps extends BaseFightCardProps {
   animateRating?: boolean;
@@ -391,7 +391,7 @@ function LiveFightCard({
     [predictionStats?.averageHype]
   );
   const ratingBorderColor = useMemo(
-    () => getHypeHeatmapColor(fight.averageRating || 0),
+    () => getRatingHeatmapColor(fight.averageRating || 0),
     [fight.averageRating]
   );
   const grayColor = colors.border || '#888888';

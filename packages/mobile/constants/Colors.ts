@@ -1,10 +1,41 @@
 /**
  * FightCrewApp Color Scheme
- * Combat sports inspired design with golden accents
+ * Combat sports inspired design with semantic color system
  */
 
 const tintColorLight = '#F5C518'; // Golden accent
 const tintColorDark = '#F5C518';  // Golden accent
+
+/**
+ * Semantic Color System
+ * Different colors for different data types to improve clarity
+ */
+export const SemanticColors = {
+  // HYPE: Orange → Red (warm, energetic excitement)
+  hype: {
+    low: '#808080',      // Grey - no hype
+    medium: '#F97316',   // Orange - moderate hype
+    high: '#EF4444',     // Red-orange - high hype
+    max: '#B91C1C',      // Deep red - maximum hype
+  },
+
+  // RATINGS: Blue → Purple (cool, analytical judgment)
+  rating: {
+    low: '#808080',      // Grey - no rating
+    medium: '#3B82F6',   // Blue - moderate rating
+    high: '#8B5CF6',     // Violet - high rating
+    max: '#C026D3',      // Magenta-purple - maximum rating
+  },
+
+  // User ownership indicator
+  userOwnership: '#F5C518',  // Gold - "This is yours"
+
+  // Winners/Success
+  winner: '#10b981',         // Green - positive outcomes
+
+  // Community/Aggregate data
+  community: '#808080',      // Grey - baseline/aggregate info
+};
 
 export const Colors = {
   light: {
