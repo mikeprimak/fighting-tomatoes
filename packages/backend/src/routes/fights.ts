@@ -4029,28 +4029,44 @@ export async function fightRoutes(fastify: FastifyInstance) {
                   date: true,
                 },
               },
+              // Include user's prediction for this fight
+              predictions: {
+                where: { userId: currentUserId },
+                select: {
+                  predictedRating: true,
+                  predictedWinner: true,
+                },
+                take: 1,
+              },
             },
           },
         },
       });
 
       // Format the response
-      const comments = topComments.map((comment) => ({
-        id: comment.id,
-        fightId: comment.fightId,
-        content: comment.content,
-        upvotes: comment.upvotes,
-        userHasUpvoted: comment.votes.length > 0,
-        createdAt: comment.createdAt,
-        isReply: !!comment.parentCommentId,
-        fight: {
-          id: comment.fight.id,
-          fighter1Name: `${comment.fight.fighter1.firstName} ${comment.fight.fighter1.lastName}`,
-          fighter2Name: `${comment.fight.fighter2.firstName} ${comment.fight.fighter2.lastName}`,
-          eventName: comment.fight.event.name,
-          eventDate: comment.fight.event.date,
-        },
-      }));
+      const comments = topComments.map((comment) => {
+        const prediction = comment.fight.predictions[0];
+        return {
+          id: comment.id,
+          fightId: comment.fightId,
+          content: comment.content,
+          hypeRating: prediction?.predictedRating || null,
+          predictedWinner: prediction?.predictedWinner || null,
+          upvotes: comment.upvotes,
+          userHasUpvoted: comment.votes.length > 0,
+          createdAt: comment.createdAt,
+          isReply: !!comment.parentCommentId,
+          fight: {
+            id: comment.fight.id,
+            fighter1Id: comment.fight.fighter1.id,
+            fighter2Id: comment.fight.fighter2.id,
+            fighter1Name: `${comment.fight.fighter1.firstName} ${comment.fight.fighter1.lastName}`,
+            fighter2Name: `${comment.fight.fighter2.firstName} ${comment.fight.fighter2.lastName}`,
+            eventName: comment.fight.event.name,
+            eventDate: comment.fight.event.date,
+          },
+        };
+      });
 
       return reply.send({
         comments,
@@ -4133,28 +4149,44 @@ export async function fightRoutes(fastify: FastifyInstance) {
                   date: true,
                 },
               },
+              // Include user's prediction for this fight
+              predictions: {
+                where: { userId: currentUserId },
+                select: {
+                  predictedRating: true,
+                  predictedWinner: true,
+                },
+                take: 1,
+              },
             },
           },
         },
       });
 
       // Format the response
-      const formattedComments = comments.map((comment) => ({
-        id: comment.id,
-        fightId: comment.fightId,
-        content: comment.content,
-        upvotes: comment.upvotes,
-        userHasUpvoted: comment.votes.length > 0,
-        createdAt: comment.createdAt,
-        isReply: !!comment.parentCommentId,
-        fight: {
-          id: comment.fight.id,
-          fighter1Name: `${comment.fight.fighter1.firstName} ${comment.fight.fighter1.lastName}`,
-          fighter2Name: `${comment.fight.fighter2.firstName} ${comment.fight.fighter2.lastName}`,
-          eventName: comment.fight.event.name,
-          eventDate: comment.fight.event.date,
-        },
-      }));
+      const formattedComments = comments.map((comment) => {
+        const prediction = comment.fight.predictions[0];
+        return {
+          id: comment.id,
+          fightId: comment.fightId,
+          content: comment.content,
+          hypeRating: prediction?.predictedRating || null,
+          predictedWinner: prediction?.predictedWinner || null,
+          upvotes: comment.upvotes,
+          userHasUpvoted: comment.votes.length > 0,
+          createdAt: comment.createdAt,
+          isReply: !!comment.parentCommentId,
+          fight: {
+            id: comment.fight.id,
+            fighter1Id: comment.fight.fighter1.id,
+            fighter2Id: comment.fight.fighter2.id,
+            fighter1Name: `${comment.fight.fighter1.firstName} ${comment.fight.fighter1.lastName}`,
+            fighter2Name: `${comment.fight.fighter2.firstName} ${comment.fight.fighter2.lastName}`,
+            eventName: comment.fight.event.name,
+            eventDate: comment.fight.event.date,
+          },
+        };
+      });
 
       return reply.send({
         comments: formattedComments,

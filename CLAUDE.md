@@ -105,3 +105,54 @@ When switching between work locations (different WiFi networks), update the dev 
 - **File operations**: Prefer editing existing files over creating new ones
 
 **See CLAUDE-ARCHIVE.md for detailed troubleshooting, setup guides, and implementation details**
+
+## COLOR REDESIGN PLAN (Branch: color-option2)
+
+**Goal**: Implement semantic color system (Option D hybrid) for clarity
+
+### New Color Scheme
+
+| Category | Color Scale | Hex Range | Purpose |
+|----------|-------------|-----------|---------|
+| **HYPE** | Orange → Red | Grey → `#F97316` → `#EF4444` → `#B91C1C` | Warm, energetic excitement |
+| **RATINGS** | Blue → Purple | Grey → `#3B82F6` → `#8B5CF6` → `#C026D3` | Cool, analytical judgment |
+| **User ownership** | Gold border/badge | `#F5C518` | "This is yours" indicator |
+| **Winners/Success** | Green | `#10b981` | Positive outcomes |
+| **Community data** | Gray | `#808080` | Baseline/aggregate info |
+
+### Files to Update
+
+1. **`packages/mobile/utils/heatmap.ts`** - Create separate `getHypeHeatmapColor()` and `getRatingHeatmapColor()` functions with different color stops
+2. **`packages/mobile/constants/Colors.ts`** - Add semantic color constants
+3. **`packages/mobile/components/HypeDistributionChart.tsx`** - Already uses `getHypeHeatmapColor` (will auto-update)
+4. **`packages/mobile/components/RatingDistributionChart.tsx`** - Change from `getHypeHeatmapColor` to `getRatingHeatmapColor`
+5. **Fight card components** - Apply gold borders for user items
+
+### New heatmap.ts Color Stops
+
+**Hype (Orange→Red):**
+```
+score 1.0: rgb(128, 128, 128)  // Grey
+score 3.0: rgb(180, 120, 80)   // Muted orange-brown
+score 5.0: rgb(230, 130, 60)   // Orange
+score 7.0: rgb(249, 115, 22)   // Bright orange #F97316
+score 8.0: rgb(239, 68, 68)    // Red-orange #EF4444
+score 9.0: rgb(220, 38, 38)    // Red #DC2626
+score 10.0: rgb(185, 28, 28)   // Deep red #B91C1C
+```
+
+**Ratings (Blue→Purple):**
+```
+score 1.0: rgb(128, 128, 128)  // Grey
+score 3.0: rgb(100, 130, 180)  // Muted blue
+score 5.0: rgb(59, 130, 246)   // Blue #3B82F6
+score 7.0: rgb(99, 102, 241)   // Indigo #6366F1
+score 8.0: rgb(139, 92, 246)   // Violet #8B5CF6
+score 9.0: rgb(168, 85, 247)   // Purple #A855F7
+score 10.0: rgb(192, 38, 211)  // Magenta-purple #C026D3
+```
+
+### New Exports to Add to heatmap.ts
+
+- `getRatingHeatmapColor(score)` - Blue→Purple scale for ratings
+- `getRatingColorFromScore(score, bgColor)` - Mixed rating color for icons

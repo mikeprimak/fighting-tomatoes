@@ -127,7 +127,12 @@ export function PreFightCommentCard({
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
-                ({comment.predictedWinner === fighter1Id ? fighter1Name : fighter2Name})
+                ({(() => {
+                  const fullName = comment.predictedWinner === fighter1Id ? fighter1Name : fighter2Name;
+                  // Extract last name (everything after first space, or full name if no space)
+                  const parts = (fullName || '').split(' ');
+                  return parts.length > 1 ? parts.slice(1).join(' ') : fullName;
+                })()})
               </Text>
             )}
           </View>

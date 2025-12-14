@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Pressable } from 'react-native';
 import { Colors } from '../constants/Colors';
+import { router } from 'expo-router';
 
 interface EventAccuracy {
   eventId: string;
@@ -110,36 +111,47 @@ export default function PredictionAccuracyChart({
             const incorrectHeight = (event.incorrect / maxValue) * barMaxHeight;
 
             return (
-              <View
+              <Pressable
                 key={event.eventId}
                 style={[styles.barColumn, { width: barWidth }]}
+                onPress={() => router.push(`/event/${event.eventId}`)}
               >
-                {/* Correct (green) - goes up */}
-                <View style={styles.upperSection}>
-                  {event.correct > 0 && (
-                    <View
-                      style={[
-                        styles.bar,
-                        styles.correctBar,
-                        { height: correctHeight, width: barWidth - 2 },
-                      ]}
-                    />
-                  )}
-                </View>
+                {({ pressed }) => (
+                  <>
+                    {/* Correct (green) - goes up */}
+                    <View style={styles.upperSection}>
+                      {event.correct > 0 && (
+                        <View
+                          style={[
+                            styles.bar,
+                            styles.correctBar,
+                            { height: correctHeight, width: barWidth - 2 },
+                            pressed && { backgroundColor: '#22c55e' },
+                          ]}
+                        >
+                          <Text style={styles.barNumberTop}>{event.correct}</Text>
+                        </View>
+                      )}
+                    </View>
 
-                {/* Incorrect (red) - goes down */}
-                <View style={styles.lowerSection}>
-                  {event.incorrect > 0 && (
-                    <View
-                      style={[
-                        styles.bar,
-                        styles.incorrectBar,
-                        { height: incorrectHeight, width: barWidth - 2 },
-                      ]}
-                    />
-                  )}
-                </View>
-              </View>
+                    {/* Incorrect (red) - goes down */}
+                    <View style={styles.lowerSection}>
+                      {event.incorrect > 0 && (
+                        <View
+                          style={[
+                            styles.bar,
+                            styles.incorrectBar,
+                            { height: incorrectHeight, width: barWidth - 2 },
+                            pressed && { backgroundColor: '#dc2626' },
+                          ]}
+                        >
+                          <Text style={styles.barNumberBottom}>{event.incorrect}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </>
+                )}
+              </Pressable>
             );
           })}
         </View>
@@ -264,6 +276,22 @@ const styles = StyleSheet.create({
     right: 0,
     top: 88,
     height: 1,
+  },
+  barNumberTop: {
+    position: 'absolute',
+    bottom: 2,
+    alignSelf: 'center',
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  barNumberBottom: {
+    position: 'absolute',
+    top: 2,
+    alignSelf: 'center',
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   barsContainer: {
     flex: 1,

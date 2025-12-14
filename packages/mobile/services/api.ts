@@ -1419,12 +1419,16 @@ class ApiService {
       id: string;
       fightId: string;
       content: string;
+      hypeRating: number | null;
+      predictedWinner: string | null;
       upvotes: number;
       userHasUpvoted: boolean;
       createdAt: string;
       isReply: boolean;
       fight: {
         id: string;
+        fighter1Id: string;
+        fighter2Id: string;
         fighter1Name: string;
         fighter2Name: string;
         eventName: string;
@@ -1446,13 +1450,14 @@ class ApiService {
       content: string;
       hypeRating: number | null;
       predictedWinner: string | null;
-      predictedMethod: string | null;
       upvotes: number;
       userHasUpvoted: boolean;
       createdAt: string;
       isReply: boolean;
       fight: {
         id: string;
+        fighter1Id: string;
+        fighter2Id: string;
         fighter1Name: string;
         fighter2Name: string;
         eventName: string;

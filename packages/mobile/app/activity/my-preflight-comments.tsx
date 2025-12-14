@@ -32,13 +32,14 @@ type PreflightCommentsPage = {
     content: string;
     hypeRating: number | null;
     predictedWinner: string | null;
-    predictedMethod: string | null;
     upvotes: number;
     userHasUpvoted: boolean;
     createdAt: string;
     isReply: boolean;
     fight: {
       id: string;
+      fighter1Id: string;
+      fighter2Id: string;
       fighter1Name: string;
       fighter2Name: string;
       eventName: string;
@@ -225,10 +226,9 @@ export default function MyPreflightCommentsScreen() {
                   <PreFightCommentCard
                     comment={{
                       id: comment.id,
-                      content: comment.isReply ? `↳ ${comment.content}` : comment.content,
+                      content: comment.content,
                       hypeRating: comment.hypeRating,
                       predictedWinner: comment.predictedWinner,
-                      predictedMethod: comment.predictedMethod,
                       upvotes: comment.upvotes,
                       userHasUpvoted: comment.userHasUpvoted,
                       user: { displayName: 'Me' },
@@ -239,12 +239,17 @@ export default function MyPreflightCommentsScreen() {
                         eventName: comment.fight.eventName,
                       }
                     }}
+                    fighter1Id={comment.fight.fighter1Id}
+                    fighter2Id={comment.fight.fighter2Id}
+                    fighter1Name={comment.fight.fighter1Name}
+                    fighter2Name={comment.fight.fighter2Name}
                     onPress={() => router.push(`/fight/${comment.fightId}` as any)}
                     onUpvote={() => upvoteMutation.mutate({ fightId: comment.fightId, commentId: comment.id })}
                     onFlag={() => handleFlagComment(comment.fightId, comment.id)}
                     isUpvoting={upvotingCommentId === comment.id}
                     isFlagging={flagCommentMutation.isPending && commentToFlag?.commentId === comment.id}
                     isAuthenticated={isAuthenticated}
+                    showMyComment={true}
                   />
                 </View>
               )}
