@@ -1828,7 +1828,7 @@ export default function CompletedFightDetailScreen({
 
           {/* Pre-Fight Header Divider */}
           <View style={{
-            marginTop: 50,
+            marginTop: 45,
             marginBottom: -4,
             backgroundColor: 'rgba(128, 128, 128, 0.05)',
             paddingVertical: 10,
