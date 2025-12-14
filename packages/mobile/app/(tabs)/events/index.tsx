@@ -118,8 +118,20 @@ export default function UpcomingEventsScreen() {
     }
   );
 
-  // Flatten all pages of events into a single array
-  const allEvents = eventsData?.pages.flatMap(page => page.events) || [];
+  // Flatten all pages of events into a single array and deduplicate by ID
+  const allEvents = React.useMemo(() => {
+    const events = eventsData?.pages.flatMap(page => page.events) || [];
+    // Deduplicate events by ID (in case same event appears in multiple pages due to cache)
+    const seen = new Set<string>();
+    return events.filter((event: Event) => {
+      if (seen.has(event.id)) {
+        console.warn('[Events] Duplicate event filtered:', event.id, event.name);
+        return false;
+      }
+      seen.add(event.id);
+      return true;
+    });
+  }, [eventsData]);
 
   // Check if any event is live
   const hasLiveEvent = allEvents.some((event: Event) => event.hasStarted && !event.isComplete);
@@ -381,7 +393,19 @@ const EventSection = memo(function EventSection({
   const isLive = event.hasStarted && !event.isComplete;
 
   // Use fights from event data (loaded via includeFights parameter)
-  const fights = event.fights || [];
+  // Deduplicate fights by ID in case of data issues
+  const fights = React.useMemo(() => {
+    const allFights = event.fights || [];
+    const seen = new Set<string>();
+    return allFights.filter((fight: Fight) => {
+      if (seen.has(fight.id)) {
+        console.warn('[Events] Duplicate fight filtered:', fight.id);
+        return false;
+      }
+      seen.add(fight.id);
+      return true;
+    });
+  }, [event.fights]);
 
   // Group fights by card section
   const hasEarlyPrelims = !!event.earlyPrelimStartTime;
