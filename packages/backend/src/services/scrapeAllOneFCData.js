@@ -149,19 +149,32 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
     const eventData = await page.evaluate(() => {
       // Extract event image (try multiple selectors)
       let eventImageUrl = null;
-      const imageSelectors = [
-        '.event-banner img',
-        '.hero img',
-        'picture img',
-        '.featured-image img',
-        'img.event-image'
-      ];
 
-      for (const selector of imageSelectors) {
-        const imgEl = document.querySelector(selector);
-        if (imgEl && imgEl.src) {
-          eventImageUrl = imgEl.src;
-          break;
+      // First try og:image meta tag (most reliable)
+      const ogImage = document.querySelector('meta[property="og:image"]');
+      if (ogImage && ogImage.content) {
+        eventImageUrl = ogImage.content;
+      }
+
+      // If no og:image, try various image selectors
+      if (!eventImageUrl) {
+        const imageSelectors = [
+          '.event-banner img',
+          '.hero img',
+          '.next-event img',
+          'picture img',
+          '.featured-image img',
+          'img.event-image',
+          'img[src*="1800x1200"]', // ONE FC event images are typically 1800x1200
+          'img[src*="cdn.onefc.com"][src*="event"]'
+        ];
+
+        for (const selector of imageSelectors) {
+          const imgEl = document.querySelector(selector);
+          if (imgEl && imgEl.src && imgEl.src.includes('cdn.onefc.com')) {
+            eventImageUrl = imgEl.src;
+            break;
+          }
         }
       }
 
@@ -400,9 +413,12 @@ async function main() {
       console.log(`📄 ${event.eventName}`);
       const eventData = await scrapeEventPage(browser, event.eventUrl, event.eventName);
 
+      // Merge event data, preserving image from events list if event page didn't find one
       const completeEventData = {
         ...event,
-        ...eventData
+        ...eventData,
+        // Preserve the original eventImageUrl if the event page returned null
+        eventImageUrl: eventData.eventImageUrl || event.eventImageUrl
       };
 
       allEventData.push(completeEventData);
