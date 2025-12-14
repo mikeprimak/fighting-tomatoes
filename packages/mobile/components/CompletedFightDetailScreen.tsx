@@ -1488,7 +1488,10 @@ export default function CompletedFightDetailScreen({
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 12, paddingHorizontal: 16 }}>
             <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>WAS MY PICK CORRECT?</Text>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border, marginLeft: 12, marginRight: 12, maxWidth: 80 }} />
-            <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>MY HYPE</Text>
+            <View style={{ alignItems: 'center' }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600', textAlign: 'center' }}>HOW HYPED</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600', textAlign: 'center' }}>WAS I?</Text>
+            </View>
           </View>
 
           {/* Prediction & Hype Content */}
@@ -1564,18 +1567,18 @@ export default function CompletedFightDetailScreen({
               )}
 
               {/* Right: My Hype - Large flame icon with number */}
-              <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ alignItems: 'center', justifyContent: 'center', marginRight: 35 }}>
                 {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && fight.userHypePrediction > 0 ? (
                   <View style={{ position: 'relative', justifyContent: 'center', alignItems: 'center' }}>
                     <FontAwesome6
                       name="fire-flame-curved"
-                      size={70}
+                      size={50}
                       color={getHypeHeatmapColor(fight.userHypePrediction)}
                     />
                     <Text style={{
                       position: 'absolute',
-                      top: 22,
-                      fontSize: 24,
+                      top: 14,
+                      fontSize: 20,
                       fontWeight: 'bold',
                       color: '#FFFFFF',
                       textShadowColor: 'rgba(0,0,0,0.8)',
@@ -1588,7 +1591,7 @@ export default function CompletedFightDetailScreen({
                 ) : (
                   <FontAwesome6
                     name="fire-flame-curved"
-                    size={70}
+                    size={50}
                     color={colors.textSecondary}
                     style={{ opacity: 0.3 }}
                   />
