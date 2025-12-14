@@ -122,13 +122,13 @@ export default function PredictionBarChart({
       {/* Community Predictions Bar - progressive reveal */}
       {winnerPredictions && (
         <View style={{ flex: 1 }}>
-          {/* Winner Predictions Section Divider */}
+          {/* Picks Section Divider */}
           <View style={styles.sectionDivider}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
             <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{ width: 4 }} />
               <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-                Winner Predictions ({totalPredictions})
+                Picks ({totalPredictions})
               </Text>
               <View style={{ width: 4 }} />
             </View>

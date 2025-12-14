@@ -1754,7 +1754,7 @@ export default function CompletedFightDetailScreen({
 
         {/* ALL REACTIONS Section */}
         <SectionContainer
-          title="All Reactions"
+          title="Crowd Reactions"
           icon="users"
           iconColor="#000"
           headerBgColor="#83B4F3"
@@ -1824,6 +1824,22 @@ export default function CompletedFightDetailScreen({
                 />
               </View>
             )}
+          </View>
+
+          {/* Pre-Fight Header Divider */}
+          <View style={{
+            marginTop: 50,
+            marginBottom: -4,
+            backgroundColor: 'rgba(128, 128, 128, 0.05)',
+            paddingVertical: 10,
+            alignItems: 'center',
+          }}>
+            <Text style={{
+              color: colors.text,
+              fontSize: 16,
+              fontWeight: '700',
+              letterSpacing: 1,
+            }}>PRE-FIGHT</Text>
           </View>
 
           {/* All Predictions Content */}
