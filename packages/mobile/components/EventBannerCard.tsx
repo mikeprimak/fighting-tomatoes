@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, Image, StyleSheet, useWindowDimensions } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
@@ -85,19 +85,14 @@ export function EventBannerCard({
   const colors = Colors[colorScheme ?? 'light'];
   const { line1, line2 } = parseEventName(event.name);
   const { width: screenWidth } = useWindowDimensions();
-  const [fullImageHeight, setFullImageHeight] = useState(200); // Full image height
+
+  // Use fixed aspect ratio to prevent layout shifts when items remount during scroll
+  // UFC event banners are typically 16:9 aspect ratio
+  const BANNER_ASPECT_RATIO = 16 / 9;
+  const fullImageHeight = screenWidth / BANNER_ASPECT_RATIO;
   const containerHeight = fullImageHeight * 0.7; // Show only top 70%
 
   const imageSource = event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id);
-
-  // Calculate full height based on image's natural aspect ratio
-  const handleImageLoad = (e: any) => {
-    const { width, height } = e.nativeEvent.source;
-    if (width && height) {
-      const calculatedHeight = (screenWidth / width) * height;
-      setFullImageHeight(calculatedHeight);
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -106,8 +101,7 @@ export function EventBannerCard({
         <Image
           source={imageSource}
           style={[styles.banner, { height: fullImageHeight }]}
-          resizeMode="contain"
-          onLoad={handleImageLoad}
+          resizeMode="cover"
         />
 
         {/* Overlays on banner image - Bottom Left */}

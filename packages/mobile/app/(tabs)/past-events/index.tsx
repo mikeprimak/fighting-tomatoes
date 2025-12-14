@@ -560,10 +560,16 @@ export default function PastEventsScreen() {
         keyboardShouldPersistTaps="handled"
         onEndReached={viewMode === 'recent' ? handleLoadMore : undefined}
         onEndReachedThreshold={0.5}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={3}
-        windowSize={5}
-        initialNumToRender={2}
+        // Disable virtualization optimizations to prevent scroll jumping
+        // with variable height items
+        removeClippedSubviews={false}
+        windowSize={21}
+        maxToRenderPerBatch={10}
+        initialNumToRender={5}
+        // Helps maintain scroll position when content changes
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+        }}
       />
     </SafeAreaView>
   );

@@ -355,12 +355,16 @@ export default function UpcomingEventsScreen() {
         // Lazy loading - load more events when reaching end
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
-        // Performance optimizations
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={3}
-        windowSize={5}
-        initialNumToRender={2}
-        getItemLayout={undefined} // Events have variable height due to different fight counts
+        // Disable virtualization optimizations to prevent scroll jumping
+        // with variable height items
+        removeClippedSubviews={false}
+        windowSize={21}
+        maxToRenderPerBatch={10}
+        initialNumToRender={5}
+        // Helps maintain scroll position when content changes
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+        }}
       />
     </SafeAreaView>
   );
