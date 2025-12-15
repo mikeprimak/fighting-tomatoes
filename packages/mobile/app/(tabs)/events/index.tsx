@@ -55,6 +55,10 @@ const getPlaceholderImage = (eventId: string) => {
   return images[index];
 };
 
+// Available organizations for filtering
+const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC'] as const;
+type Organization = typeof ORGANIZATIONS[number];
+
 export default function UpcomingEventsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -62,6 +66,9 @@ export default function UpcomingEventsScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { preEventMessage, setPreEventMessage } = useNotification();
+
+  // Organization filter state - empty set means "ALL" (show everything)
+  const [selectedOrgs, setSelectedOrgs] = useState<Set<Organization>>(new Set());
 
   // Check AsyncStorage for pending notification message on mount
   useEffect(() => {
@@ -137,13 +144,48 @@ export default function UpcomingEventsScreen() {
   const hasLiveEvent = allEvents.some((event: Event) => event.hasStarted && !event.isComplete);
 
   // Sort upcoming events (live events first, then by date)
-  const upcomingEvents = [...allEvents].sort((a: Event, b: Event) => {
+  const sortedEvents = [...allEvents].sort((a: Event, b: Event) => {
     const aIsLive = a.hasStarted && !a.isComplete;
     const bIsLive = b.hasStarted && !b.isComplete;
     if (aIsLive && !bIsLive) return -1;
     if (!aIsLive && bIsLive) return 1;
     return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
+
+  // Filter events by selected organizations
+  const upcomingEvents = React.useMemo(() => {
+    if (selectedOrgs.size === 0) {
+      // "ALL" selected - show everything
+      return sortedEvents;
+    }
+    return sortedEvents.filter((event: Event) => {
+      const eventPromotion = event.promotion?.toUpperCase() || '';
+      return Array.from(selectedOrgs).some(org => eventPromotion.includes(org));
+    });
+  }, [sortedEvents, selectedOrgs]);
+
+  // Handler for organization filter tap
+  const handleOrgPress = useCallback((org: Organization | 'ALL') => {
+    if (org === 'ALL') {
+      // Clear all selections to show all events
+      setSelectedOrgs(new Set());
+    } else {
+      setSelectedOrgs(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(org)) {
+          // Remove if already selected
+          newSet.delete(org);
+        } else {
+          // Add to selection
+          newSet.add(org);
+        }
+        return newSet;
+      });
+    }
+  }, []);
+
+  // Check if "ALL" should be highlighted (when no specific orgs selected)
+  const isAllSelected = selectedOrgs.size === 0;
 
   // Handler for loading more events when reaching end of list
   const handleLoadMore = useCallback(() => {
@@ -283,26 +325,59 @@ export default function UpcomingEventsScreen() {
   // Stable key extractor
   const keyExtractor = useCallback((item: Event) => item.id, []);
 
-  // Header component for notification banner
+  // Header component for notification banner and organization filters
   const ListHeaderComponent = useCallback(() => {
-    if (!preEventMessage) return null;
     return (
-      <View style={[styles.notificationBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
-        <View style={styles.notificationIconContainer}>
-          <FontAwesome name="bell" size={20} color={colors.primary} />
+      <View>
+        {/* Notification Banner */}
+        {preEventMessage && (
+          <View style={[styles.notificationBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+            <View style={styles.notificationIconContainer}>
+              <FontAwesome name="bell" size={20} color={colors.primary} />
+            </View>
+            <Text style={[styles.notificationText, { color: colors.text }]}>
+              {preEventMessage}
+            </Text>
+            <TouchableOpacity
+              style={styles.dismissButton}
+              onPress={() => setPreEventMessage(null)}
+            >
+              <FontAwesome name="times" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Organization Filter Tabs */}
+        <View style={styles.orgFilterTabs}>
+          {/* ALL Tab */}
+          <TouchableOpacity
+            style={[styles.orgFilterTab, isAllSelected && styles.orgFilterTabActive]}
+            onPress={() => handleOrgPress('ALL')}
+          >
+            <Text style={[styles.orgFilterTabText, isAllSelected && styles.orgFilterTabTextActive]}>
+              ALL
+            </Text>
+          </TouchableOpacity>
+
+          {/* Organization Tabs */}
+          {ORGANIZATIONS.map(org => {
+            const isSelected = isAllSelected || selectedOrgs.has(org);
+            return (
+              <TouchableOpacity
+                key={org}
+                style={[styles.orgFilterTab, isSelected && styles.orgFilterTabActive]}
+                onPress={() => handleOrgPress(org)}
+              >
+                <Text style={[styles.orgFilterTabText, isSelected && styles.orgFilterTabTextActive]}>
+                  {org}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-        <Text style={[styles.notificationText, { color: colors.text }]}>
-          {preEventMessage}
-        </Text>
-        <TouchableOpacity
-          style={styles.dismissButton}
-          onPress={() => setPreEventMessage(null)}
-        >
-          <FontAwesome name="times" size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
       </View>
     );
-  }, [preEventMessage, colors, setPreEventMessage, styles.notificationBanner, styles.notificationIconContainer, styles.notificationText, styles.dismissButton]);
+  }, [preEventMessage, colors, setPreEventMessage, isAllSelected, selectedOrgs, handleOrgPress, styles]);
 
   // Footer component for loading more indicator
   const ListFooterComponent = useCallback(() => {
@@ -315,6 +390,20 @@ export default function UpcomingEventsScreen() {
     );
   }, [isFetchingNextPage, colors, styles.loadMoreContainer, styles.loadMoreText]);
 
+  // Empty component when no events match filter
+  const ListEmptyComponent = useCallback(() => {
+    const message = selectedOrgs.size > 0
+      ? `No upcoming ${Array.from(selectedOrgs).join(' or ')} events`
+      : 'No upcoming events';
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={[styles.noEventsText, { color: colors.textSecondary }]}>
+          {message}
+        </Text>
+      </View>
+    );
+  }, [selectedOrgs, colors, styles]);
+
   if (eventsLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
@@ -322,19 +411,6 @@ export default function UpcomingEventsScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>Loading events...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (upcomingEvents.length === 0) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
-        <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
-        <View style={styles.loadingContainer}>
-          <Text style={[styles.noEventsText, { color: colors.textSecondary }]}>
-            No upcoming events
-          </Text>
         </View>
       </SafeAreaView>
     );
@@ -350,6 +426,7 @@ export default function UpcomingEventsScreen() {
         keyExtractor={keyExtractor}
         ListHeaderComponent={ListHeaderComponent}
         ListFooterComponent={ListFooterComponent}
+        ListEmptyComponent={ListEmptyComponent}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
         // Lazy loading - load more events when reaching end
@@ -502,39 +579,15 @@ const EventSection = memo(function EventSection({
           {/* Main Card */}
           {mainCard.length > 0 && (
             <View style={styles.cardSection}>
-              <View style={styles.sectionHeader}>
-                {/* Left Column Header - ALL HYPE */}
-                <View style={styles.columnHeaders}>
-                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                    ALL
-                  </Text>
-                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                    HYPE
-                  </Text>
-                </View>
-
-                {/* Center - Title and Time on same line */}
-                <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
-                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                    MAIN
-                  </Text>
-                  {event.mainStartTime && (
+              {event.mainStartTime && (
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
                     <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
                       {formatTime(event.mainStartTime)}
                     </Text>
-                  )}
+                  </View>
                 </View>
-
-                {/* Right Column Header - MY HYPE */}
-                <View style={styles.columnHeadersRight}>
-                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                    MY
-                  </Text>
-                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                    HYPE
-                  </Text>
-                </View>
-              </View>
+              )}
 
               {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                 <FightDisplayCard
@@ -813,5 +866,38 @@ const createStyles = (colors: any) => StyleSheet.create({
   moreFightsText: {
     fontSize: 13,
     fontStyle: 'italic',
+  },
+  orgFilterTabs: {
+    flexDirection: 'row',
+    backgroundColor: colors.card,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  orgFilterTab: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  orgFilterTabActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  orgFilterTabText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.textSecondary,
+  },
+  orgFilterTabTextActive: {
+    color: '#000000',
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
   },
 });

@@ -137,7 +137,7 @@ export function EventBannerCard({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 8,
+    marginBottom: 0,
   },
   bannerContainer: {
     position: 'relative',
