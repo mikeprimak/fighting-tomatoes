@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo } from 'react';
+import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
 import {
   View,
   Text,
@@ -69,6 +69,12 @@ export default function UpcomingEventsScreen() {
 
   // Organization filter state - empty set means "ALL" (show everything)
   const [selectedOrgs, setSelectedOrgs] = useState<Set<Organization>>(new Set());
+
+  // Ref to FlatList for scrolling to top on filter change
+  const flatListRef = useRef<FlatList>(null);
+
+  // Flag to temporarily disable maintainVisibleContentPosition during filter changes
+  const [maintainScrollPosition, setMaintainScrollPosition] = useState(true);
 
   // Check AsyncStorage for pending notification message on mount
   useEffect(() => {
@@ -166,6 +172,9 @@ export default function UpcomingEventsScreen() {
 
   // Handler for organization filter tap
   const handleOrgPress = useCallback((org: Organization | 'ALL') => {
+    // Disable maintainVisibleContentPosition before changing filter
+    setMaintainScrollPosition(false);
+
     if (org === 'ALL') {
       // Clear all selections to show all events
       setSelectedOrgs(new Set());
@@ -182,6 +191,15 @@ export default function UpcomingEventsScreen() {
         return newSet;
       });
     }
+    // Scroll to top when filter changes so view stays relative to filter tabs
+    // Use setTimeout to ensure scroll happens after state update and re-render
+    setTimeout(() => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+      // Re-enable maintainVisibleContentPosition after scroll completes
+      setTimeout(() => {
+        setMaintainScrollPosition(true);
+      }, 100);
+    }, 50);
   }, []);
 
   // Check if "ALL" should be highlighted (when no specific orgs selected)
@@ -421,6 +439,7 @@ export default function UpcomingEventsScreen() {
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
       <FlatList
+        ref={flatListRef}
         data={upcomingEvents}
         renderItem={renderEventSection}
         keyExtractor={keyExtractor}
@@ -438,10 +457,11 @@ export default function UpcomingEventsScreen() {
         windowSize={21}
         maxToRenderPerBatch={10}
         initialNumToRender={5}
-        // Helps maintain scroll position when content changes
-        maintainVisibleContentPosition={{
+        // Conditionally maintain scroll position - disabled during filter changes
+        // to allow scrollToOffset to work, then re-enabled for normal scrolling
+        maintainVisibleContentPosition={maintainScrollPosition ? {
           minIndexForVisible: 0,
-        }}
+        } : undefined}
       />
     </SafeAreaView>
   );
