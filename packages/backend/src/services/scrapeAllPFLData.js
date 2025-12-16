@@ -223,6 +223,13 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       timeout: 60000
     });
 
+    // Wait for the event banner to load (schedule-dl-bg div with background-image)
+    try {
+      await page.waitForSelector('.schedule-dl-bg', { timeout: 5000 });
+    } catch (e) {
+      // Banner div might not exist on all pages
+    }
+
     // Wait for the fight card component to load via AJAX
     // The AJAX endpoint populates #fight_card_component
     try {
@@ -247,13 +254,38 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       // Extract event banner image
       let eventImageUrl = null;
 
-      // Try og:image meta tag first
-      const ogImage = document.querySelector('meta[property="og:image"]');
-      if (ogImage && ogImage.content) {
-        eventImageUrl = ogImage.content;
+      // PRIORITY 1: Look for background-image on schedule-dl-bg div (main event banner)
+      const scheduleBgDiv = document.querySelector('.schedule-dl-bg, div[class*="schedule"][class*="bg"]');
+      if (scheduleBgDiv) {
+        // Try inline style first
+        const style = scheduleBgDiv.getAttribute('style') || '';
+        const bgMatch = style.match(/background-image:\s*url\(['"]?([^'")\s]+)['"]?\)/i);
+        if (bgMatch && bgMatch[1]) {
+          eventImageUrl = bgMatch[1];
+        }
+
+        // Try computed style if inline didn't work
+        if (!eventImageUrl) {
+          const computedStyle = window.getComputedStyle(scheduleBgDiv);
+          const bgImage = computedStyle.backgroundImage;
+          if (bgImage && bgImage !== 'none') {
+            const computedMatch = bgImage.match(/url\(['"]?([^'")\s]+)['"]?\)/i);
+            if (computedMatch && computedMatch[1] && !computedMatch[1].includes('schedule-banner-default')) {
+              eventImageUrl = computedMatch[1];
+            }
+          }
+        }
       }
 
-      // Try hero/banner images
+      // PRIORITY 2: Try og:image meta tag
+      if (!eventImageUrl) {
+        const ogImage = document.querySelector('meta[property="og:image"]');
+        if (ogImage && ogImage.content) {
+          eventImageUrl = ogImage.content;
+        }
+      }
+
+      // PRIORITY 3: Try hero/banner images
       if (!eventImageUrl) {
         const bannerSelectors = [
           '.hero img',

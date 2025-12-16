@@ -243,6 +243,8 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       // Try hero/banner images if no og:image
       if (!eventImageUrl) {
         const bannerSelectors = [
+          'img.hero_image',           // BKFC specific hero image
+          'img.hero_image.is--events', // BKFC events hero image
           '.hero img',
           '.event-banner img',
           '.banner img',
