@@ -637,16 +637,6 @@ const EventSection = memo(function EventSection({
           {/* Main Card */}
           {mainCard.length > 0 && (
             <View style={styles.cardSection}>
-              {event.mainStartTime && (
-                <View style={styles.sectionHeader}>
-                  <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
-                    <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
-                      {formatTime(event.mainStartTime)}
-                    </Text>
-                  </View>
-                </View>
-              )}
-
               {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                 <FightDisplayCard
                   key={fight.id}

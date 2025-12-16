@@ -5,8 +5,8 @@ export const sharedStyles = StyleSheet.create({
   container: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 8,
-    marginHorizontal: 4,
+    borderRadius: 0,
+    marginHorizontal: 0,
     marginBottom: 0,
   },
   titleLabel: {

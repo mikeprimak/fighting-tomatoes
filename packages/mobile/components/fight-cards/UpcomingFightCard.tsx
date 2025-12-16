@@ -382,16 +382,17 @@ function UpcomingFightCard({
             )}
           </View>
 
+          {/* Notification bell indicator - upper right corner above flame */}
+          {/* Covers: manual fight follow, following a fighter, or hype fights notification rule */}
+          {fight.notificationReasons?.willBeNotified && (
+            <View style={styles.notificationBellIndicator}>
+              <FontAwesome name="bell" size={10} color="#F5C518" />
+            </View>
+          )}
+
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: 0 }]}>
             {/* Fighter names with centered "vs" */}
             <View style={styles.fighterNamesContainer}>
-              {/* Notification bell indicator - shown when user will be notified for this fight */}
-              {/* Covers: manual fight follow, following a fighter, or hype fights notification rule */}
-              {fight.notificationReasons?.willBeNotified && (
-                <View style={styles.notificationBellIndicator}>
-                  <FontAwesome name="bell" size={12} color="#F5C518" />
-                </View>
-              )}
               {/* Fighter 1 - Left half */}
               <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
                 <View style={[
@@ -712,10 +713,9 @@ const styles = StyleSheet.create({
   },
   notificationBellIndicator: {
     position: 'absolute',
-    left: '50%',
-    top: '25%',
-    transform: [{ translateX: -8 }],
-    zIndex: 20,
+    top: 6,
+    right: 4,
+    zIndex: 25,
   },
   vsContainer: {
     position: 'absolute',

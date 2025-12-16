@@ -17,6 +17,7 @@ import { adminRoutes } from './admin';
 import { authenticateUser, requireEmailVerification } from '../middleware/auth';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
+import { notificationRuleEngine } from '../services/notificationRuleEngine';
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
 
 export async function registerRoutes(fastify: FastifyInstance) {
@@ -370,6 +371,20 @@ export async function registerRoutes(fastify: FastifyInstance) {
             }
           }
 
+          // Fetch notification reasons for each fight if user is authenticated
+          let notificationReasonsByFight = new Map<string, { willBeNotified: boolean; reasons: any[] }>();
+          if (userId) {
+            // Batch fetch notification reasons for all fights
+            const notificationPromises = allFightIds.map(async (fightId: string) => {
+              const reasons = await notificationRuleEngine.getNotificationReasonsForFight(userId, fightId);
+              return { fightId, reasons };
+            });
+            const notificationResults = await Promise.all(notificationPromises);
+            for (const result of notificationResults) {
+              notificationReasonsByFight.set(result.fightId, result.reasons);
+            }
+          }
+
           // Transform events to add averageHype, commentCount, and user data to fights
           transformedEvents = events.map((event: any) => ({
             ...event,
@@ -377,6 +392,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
               const hypeData = hypeByFight.get(fight.id);
               const userRating = userRatingsByFight.get(fight.id);
               const userPrediction = userPredictionsByFight.get(fight.id);
+              const notificationReasons = notificationReasonsByFight.get(fight.id);
 
               return {
                 ...fight,
@@ -389,6 +405,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 userHypePrediction: userPrediction?.predictedRating ?? null,
                 userPredictedWinner: userPrediction?.predictedWinner ?? null,
                 userPredictedMethod: userPrediction?.predictedMethod ?? null,
+                // Notification data (null if not authenticated)
+                notificationReasons: notificationReasons ?? null,
               };
             }) || [],
           }));
