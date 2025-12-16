@@ -347,6 +347,7 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         if (fighterMap.has(cleanedName)) return;
 
         // Get image - look for nearby img elements
+        // BKFC uses bkfc-cdn.gigcasters.com for images, prefer 400x400 versions
         let imageUrl = null;
         const container = link.closest('[class*="matchup"], [class*="fight"], [class*="bout"], [class*="athlete"]') ||
                          link.parentElement?.parentElement;
@@ -356,9 +357,16 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
           for (const img of imgs) {
             const src = img.src || img.getAttribute('data-src') || '';
             // Skip flags, icons, logos
-            if (src && !src.includes('flag') && !src.includes('icon') && !src.includes('logo')) {
-              imageUrl = src;
-              break;
+            if (src && !src.includes('flag') && !src.includes('icon') && !src.includes('logo') && !src.includes('sponsor')) {
+              // Prioritize 400x400 profile images from BKFC CDN
+              if (src.includes('bkfc-cdn.gigcasters.com') && src.includes('400x400')) {
+                imageUrl = src;
+                break;
+              }
+              // Otherwise take any valid image (but keep looking for 400x400)
+              if (!imageUrl) {
+                imageUrl = src;
+              }
             }
           }
         }
@@ -534,21 +542,47 @@ async function scrapeFighterPage(browser, fighterUrl) {
         record = `${recordMatch[1]}-${recordMatch[2]}-${recordMatch[3]}`;
       }
 
-      // Look for headshot image
-      const imgSelectors = [
-        'img[src*="fighter"]',
-        'img[src*="athlete"]',
-        'img[src*="headshot"]',
-        '.fighter-image img',
-        '.athlete-image img',
-        '.profile-image img'
-      ];
+      // Look for headshot image - BKFC uses bkfc-cdn.gigcasters.com for images
+      // Example: https://bkfc-cdn.gigcasters.com/.../JULIAN_LANE_400x400.png
+      const allImages = document.querySelectorAll('img');
 
-      for (const selector of imgSelectors) {
-        const img = document.querySelector(selector);
-        if (img && img.src && !img.src.includes('flag') && !img.src.includes('icon')) {
-          headshotUrl = img.src;
+      for (const img of allImages) {
+        const src = img.src || img.getAttribute('data-src') || '';
+
+        // Priority 1: BKFC CDN images with 400x400 (profile images)
+        if (src.includes('bkfc-cdn.gigcasters.com') && src.includes('400x400')) {
+          headshotUrl = src;
           break;
+        }
+
+        // Priority 2: Any BKFC CDN image that's not a flag/icon/logo
+        if (src.includes('bkfc-cdn.gigcasters.com') &&
+            !src.includes('flag') &&
+            !src.includes('icon') &&
+            !src.includes('logo') &&
+            !src.includes('sponsor')) {
+          headshotUrl = src;
+          // Don't break - keep looking for 400x400 version
+        }
+      }
+
+      // Fallback to other selectors if no BKFC CDN image found
+      if (!headshotUrl) {
+        const imgSelectors = [
+          'img[src*="fighter"]',
+          'img[src*="athlete"]',
+          'img[src*="headshot"]',
+          '.fighter-image img',
+          '.athlete-image img',
+          '.profile-image img'
+        ];
+
+        for (const selector of imgSelectors) {
+          const img = document.querySelector(selector);
+          if (img && img.src && !img.src.includes('flag') && !img.src.includes('icon')) {
+            headshotUrl = img.src;
+            break;
+          }
         }
       }
 
@@ -699,9 +733,12 @@ async function main() {
     for (const [name, athlete] of uniqueAthletes) {
       if (athlete.url) {
         athleteCount++;
-        console.log(`   ${athleteCount}/${uniqueAthletes.size} ${athlete.name}`);
         const fighterData = await scrapeFighterPage(browser, athlete.url);
         uniqueAthletes.set(name, { ...athlete, ...fighterData });
+
+        // Log image status
+        const imageStatus = fighterData.headshotUrl ? '✅ image found' : '⚠️  no image';
+        console.log(`   ${athleteCount}/${uniqueAthletes.size} ${athlete.name} - ${imageStatus}`);
 
         await new Promise(resolve => setTimeout(resolve, delays.betweenAthletes));
       }
