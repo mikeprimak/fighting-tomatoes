@@ -299,7 +299,13 @@ export default function UpcomingEventsScreen() {
       return 'IN 1 WEEK';
     }
 
-    if (diffWeeks < 4) {
+    // Show weeks for 2-3 weeks, then 5-7 weeks
+    // 4 weeks = 1 month, 8 weeks = 2 months
+    if (diffWeeks <= 3) {
+      return `IN ${diffWeeks} WEEKS`;
+    }
+
+    if (diffWeeks >= 5 && diffWeeks <= 7) {
       return `IN ${diffWeeks} WEEKS`;
     }
 

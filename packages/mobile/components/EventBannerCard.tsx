@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, useWindowDimensions } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
+import { PromotionLogo } from './PromotionLogo';
 
 interface EventBannerCardProps {
   event: {
@@ -89,35 +90,41 @@ export function EventBannerCard({
   // Use fixed aspect ratio to prevent layout shifts when items remount during scroll
   // UFC event banners are typically 16:9 aspect ratio
   const BANNER_ASPECT_RATIO = 16 / 9;
-  const fullImageHeight = screenWidth / BANNER_ASPECT_RATIO;
-  const containerHeight = fullImageHeight * 0.7; // Show only top 70%
+  const imageHeight = screenWidth / BANNER_ASPECT_RATIO;
 
   const imageSource = event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id);
 
   return (
     <View style={styles.container}>
       {/* Event Banner Image with overlays */}
-      <View style={[styles.bannerContainer, { height: containerHeight }]}>
+      <View style={[styles.bannerContainer, { height: imageHeight }]}>
         <Image
           source={imageSource}
-          style={[styles.banner, { height: fullImageHeight }]}
+          style={[styles.banner, { height: imageHeight }]}
           resizeMode="cover"
         />
 
         {/* Overlays on banner image - Bottom Left */}
         <View style={styles.bannerOverlays}>
-          {statusBadge && (
-            <View style={[styles.statusBadgeOverlay, { backgroundColor: statusBadge.backgroundColor }]}>
-              <Text style={[styles.statusBadgeText, statusBadge.textColor && { color: statusBadge.textColor }]}>
-                {event.promotion ? `${event.promotion} - ${statusBadge.text}` : statusBadge.text}
-              </Text>
+          {/* Promotion Logo */}
+          {event.promotion && (
+            <View style={styles.logoOverlay}>
+              <PromotionLogo promotion={event.promotion} size={28} color="#FFFFFF" />
             </View>
           )}
 
+          {/* Date and Status stacked vertically */}
           <View style={[
-            styles.dateOverlay,
-            !statusBadge && styles.dateOverlayRoundedLeft
+            styles.dateStatusContainer,
+            !event.promotion && styles.firstElementRounded
           ]}>
+            {statusBadge && (
+              <View style={[styles.statusBadgeOverlay, { backgroundColor: statusBadge.backgroundColor }]}>
+                <Text style={[styles.statusBadgeText, statusBadge.textColor && { color: statusBadge.textColor }]}>
+                  {statusBadge.text}
+                </Text>
+              </View>
+            )}
             <Text style={styles.dateText}>
               {formatDate(event.date, event.isComplete)}
             </Text>
@@ -147,46 +154,58 @@ const styles = StyleSheet.create({
   banner: {
     width: '100%',
   },
+  logoOverlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    borderTopLeftRadius: 6,
+    borderBottomLeftRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginRight: -1, // Overlap to prevent subpixel gap
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   bannerOverlays: {
     position: 'absolute',
     bottom: 12,
     left: 12,
     flexDirection: 'row',
     gap: 0,
-    alignItems: 'center',
-  },
-  statusBadgeOverlay: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 0,
-    borderBottomRightRadius: 0,
-    borderBottomLeftRadius: 6,
+    alignItems: 'stretch',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
   },
-  dateOverlay: {
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderTopLeftRadius: 0,
+  dateStatusContainer: {
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     borderTopRightRadius: 6,
     borderBottomRightRadius: 6,
-    borderBottomLeftRadius: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
-  dateOverlayRoundedLeft: {
+  statusBadgeOverlay: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  firstElementRounded: {
     borderTopLeftRadius: 6,
     borderBottomLeftRadius: 6,
   },
+  statusBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
   dateText: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
   },
   info: {
     padding: 16,
@@ -194,10 +213,5 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 18,
     fontWeight: '600',
-  },
-  statusBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
   },
 });
