@@ -59,6 +59,9 @@ const getPlaceholderImage = (eventId: string) => {
 const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC'] as const;
 type Organization = typeof ORGANIZATIONS[number];
 
+// AsyncStorage key for persisting filter preference
+const ORG_FILTER_STORAGE_KEY = 'events_org_filter';
+
 export default function UpcomingEventsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -75,6 +78,35 @@ export default function UpcomingEventsScreen() {
 
   // Flag to temporarily disable maintainVisibleContentPosition during filter changes
   const [maintainScrollPosition, setMaintainScrollPosition] = useState(true);
+
+  // Load saved organization filter on mount
+  useEffect(() => {
+    const loadSavedFilter = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(ORG_FILTER_STORAGE_KEY);
+        if (saved) {
+          const orgs = JSON.parse(saved) as Organization[];
+          setSelectedOrgs(new Set(orgs));
+        }
+      } catch (error) {
+        console.error('[Events] Error loading saved org filter:', error);
+      }
+    };
+    loadSavedFilter();
+  }, []);
+
+  // Save organization filter when it changes
+  useEffect(() => {
+    const saveFilter = async () => {
+      try {
+        const orgsArray = Array.from(selectedOrgs);
+        await AsyncStorage.setItem(ORG_FILTER_STORAGE_KEY, JSON.stringify(orgsArray));
+      } catch (error) {
+        console.error('[Events] Error saving org filter:', error);
+      }
+    };
+    saveFilter();
+  }, [selectedOrgs]);
 
   // Check AsyncStorage for pending notification message on mount
   useEffect(() => {
