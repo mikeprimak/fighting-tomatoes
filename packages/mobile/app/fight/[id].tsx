@@ -102,46 +102,71 @@ export default function FightDetailScreen() {
     onMutate: async (enabled) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['fight', id, isAuthenticated] });
+      await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
 
-      // Snapshot the previous value
+      // Snapshot the previous values
       const previousFight = queryClient.getQueryData(['fight', id, isAuthenticated]);
+      const previousEvents = queryClient.getQueryData(['upcomingEvents', isAuthenticated]);
 
-      // Optimistically update to the new value
+      // Helper to calculate new notification state
+      const getNewNotificationReasons = (oldReasons: any) => {
+        if (enabled) {
+          return {
+            willBeNotified: true,
+            reasons: [
+              ...(oldReasons?.reasons || []).filter((r: any) => r.isActive && r.type !== 'manual'),
+              { type: 'manual' as const, source: 'Manual Fight Follow', isActive: true },
+            ],
+          };
+        } else {
+          const updatedReasons = (oldReasons?.reasons || []).map((r: any) =>
+            r.type === 'manual' ? { ...r, isActive: false } : r
+          );
+          const hasOtherActiveReasons = updatedReasons.some((r: any) => r.isActive && r.type !== 'manual');
+          return { willBeNotified: hasOtherActiveReasons, reasons: updatedReasons };
+        }
+      };
+
+      // Optimistically update fight detail screen
       queryClient.setQueryData(['fight', id, isAuthenticated], (old: any) => {
         if (!old?.fight) return old;
-
         return {
           ...old,
           fight: {
             ...old.fight,
-            notificationReasons: enabled
-              ? {
-                  willBeNotified: true,
-                  reasons: [
-                    ...(old.fight.notificationReasons?.reasons || []).filter((r: any) => r.isActive && r.type !== 'manual'),
-                    {
-                      type: 'manual' as const,
-                      source: 'Manual Fight Follow',
-                      isActive: true,
-                    },
-                  ],
-                }
-              : {
-                  willBeNotified: false,
-                  reasons: (old.fight.notificationReasons?.reasons || []).map((r: any) =>
-                    r.type === 'manual' ? { ...r, isActive: false } : r
-                  ),
-                },
+            notificationReasons: getNewNotificationReasons(old.fight.notificationReasons),
           },
         };
       });
 
-      return { previousFight };
+      // Optimistically update events list (infinite query) for instant bell icon update
+      queryClient.setQueryData(['upcomingEvents', isAuthenticated], (old: any) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            events: page.events.map((event: any) => ({
+              ...event,
+              fights: event.fights?.map((fight: any) =>
+                fight.id === id
+                  ? { ...fight, notificationReasons: getNewNotificationReasons(fight.notificationReasons) }
+                  : fight
+              ) || [],
+            })),
+          })),
+        };
+      });
+
+      return { previousFight, previousEvents };
     },
     onError: (err, enabled, context: any) => {
       // Rollback on error
       if (context?.previousFight) {
         queryClient.setQueryData(['fight', id, isAuthenticated], context.previousFight);
+      }
+      if (context?.previousEvents) {
+        queryClient.setQueryData(['upcomingEvents', isAuthenticated], context.previousEvents);
       }
       console.error('Failed to toggle notification:', err);
     },
@@ -157,6 +182,7 @@ export default function FightDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['myRatings'] });
       queryClient.invalidateQueries({ queryKey: ['eventFights'] });
       queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
     },
   });
 
@@ -197,12 +223,10 @@ export default function FightDetailScreen() {
   const isComplete = fight.isComplete || mode === 'completed';
 
   // Toggle fight notification using mutation
+  // Use willBeNotified to match the visual state of the bell icon
   const handleToggleNotification = () => {
-    const hasManualNotification = fight.notificationReasons?.reasons?.some(
-      (r: any) => r.type === 'manual' && r.isActive
-    );
-
-    toggleNotificationMutation.mutate(!hasManualNotification);
+    const willBeNotified = fight.notificationReasons?.willBeNotified;
+    toggleNotificationMutation.mutate(!willBeNotified);
   };
 
   const renderMenuButton = () => {
