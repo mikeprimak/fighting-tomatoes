@@ -632,6 +632,18 @@ const EventSection = memo(function EventSection({
         }}
       />
 
+      {/* Main Card Start Time - Centered above fight list */}
+      {!isEventLive && !event.isComplete && event.mainStartTime && (
+        <View style={styles.mainCardStartTimeContainer}>
+          <Text style={[styles.mainCardStartTimeLabel, { color: colors.textSecondary }]}>
+            MAIN CARD STARTS
+          </Text>
+          <Text style={[styles.mainCardStartTimeValue, { color: colors.text }]}>
+            {formatTime(event.mainStartTime)}
+          </Text>
+        </View>
+      )}
+
       {/* Fights List */}
       <View style={styles.fightsContainer}>
           {/* Main Card */}
@@ -843,6 +855,21 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   fightsContainer: {
     marginTop: 0,
+  },
+  mainCardStartTimeContainer: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginBottom: 4,
+  },
+  mainCardStartTimeLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  mainCardStartTimeValue: {
+    fontSize: 18,
+    fontWeight: '700',
   },
   cardSection: {
     marginTop: 0,

@@ -152,6 +152,43 @@ async function scrapeEventsList(browser) {
         return;
       }
 
+      // Extract event start time from countdown date element
+      // BKFC uses [data-countdown-date] with format "December 20, 2025 7:00 PM"
+      let eventStartTime = null;
+      if (container) {
+        // Try 1: Get data-countdown-date attribute value
+        const countdownDateEl = container.querySelector('[data-countdown-date]');
+        if (countdownDateEl) {
+          const attrValue = countdownDateEl.getAttribute('data-countdown-date') || '';
+          const textValue = countdownDateEl.textContent?.trim() || '';
+          const dateText = attrValue || textValue;
+          const timeMatch = dateText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+          if (timeMatch) {
+            eventStartTime = timeMatch[1].trim().toUpperCase();
+          }
+        }
+
+        // Try 2: Search container text for time pattern
+        if (!eventStartTime) {
+          const containerText = container.textContent || '';
+          // Look for patterns like "2025 7:00 PM"
+          const timePatterns = [
+            /\d{4}\s+(\d{1,2}:\d{2}\s*(?:AM|PM))/gi,
+            /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:EST|ET|EDT)/gi,
+          ];
+          for (const pattern of timePatterns) {
+            const match = containerText.match(pattern);
+            if (match) {
+              const timeExtract = match[0].match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+              if (timeExtract) {
+                eventStartTime = timeExtract[1].trim().toUpperCase();
+                break;
+              }
+            }
+          }
+        }
+      }
+
       // Extract event image
       let eventImageUrl = null;
       if (container) {
@@ -199,6 +236,7 @@ async function scrapeEventsList(browser) {
         country: 'USA',
         dateText,
         eventDate: eventDate ? eventDate.toISOString() : null,
+        eventStartTime,
         eventImageUrl,
         status: 'Upcoming'
       });
@@ -262,13 +300,64 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         }
       }
 
-      // Extract event time
+      // Extract event time from countdown date element
+      // BKFC uses [data-countdown-date] with format "December 20, 2025 7:00 PM"
       let eventStartTime = null;
-      const timeEl = document.querySelector('[class*="time"]');
-      if (timeEl) {
-        const timeMatch = timeEl.textContent.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+
+      // Try 1: Get data-countdown-date attribute value (the attribute itself contains the date string)
+      const countdownDateEl = document.querySelector('[data-countdown-date]');
+      if (countdownDateEl) {
+        // Check attribute value first (more reliable)
+        const attrValue = countdownDateEl.getAttribute('data-countdown-date') || '';
+        const textValue = countdownDateEl.textContent?.trim() || '';
+        const dateText = attrValue || textValue;
+
+        const timeMatch = dateText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
         if (timeMatch) {
-          eventStartTime = timeMatch[1].trim();
+          eventStartTime = timeMatch[1].trim().toUpperCase();
+        }
+      }
+
+      // Try 2: Look for data-event-date-est attribute
+      if (!eventStartTime) {
+        const estDateEl = document.querySelector('[data-event-date-est]');
+        if (estDateEl) {
+          const attrValue = estDateEl.getAttribute('data-event-date-est') || '';
+          const timeMatch = attrValue.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+          if (timeMatch) {
+            eventStartTime = timeMatch[1].trim().toUpperCase();
+          }
+        }
+      }
+
+      // Try 3: Search page text for time pattern near date
+      if (!eventStartTime) {
+        const pageText = document.body.innerText || '';
+        // Look for patterns like "December 20, 2025 7:00 PM" or "7:00 PM EST"
+        const timePatterns = [
+          /\d{4}\s+(\d{1,2}:\d{2}\s*(?:AM|PM))/gi,  // After year: "2025 7:00 PM"
+          /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:EST|ET|EDT)/gi,  // Time with timezone
+        ];
+        for (const pattern of timePatterns) {
+          const match = pageText.match(pattern);
+          if (match) {
+            const timeExtract = match[0].match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+            if (timeExtract) {
+              eventStartTime = timeExtract[1].trim().toUpperCase();
+              break;
+            }
+          }
+        }
+      }
+
+      // Try 4: Fallback to time-related selectors
+      if (!eventStartTime) {
+        const timeEl = document.querySelector('[class*="time"]');
+        if (timeEl) {
+          const timeMatch = timeEl.textContent.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+          if (timeMatch) {
+            eventStartTime = timeMatch[1].trim().toUpperCase();
+          }
         }
       }
 
@@ -696,7 +785,8 @@ async function main() {
       const completeEventData = {
         ...event,
         ...eventData,
-        eventImageUrl: eventData.eventImageUrl || event.eventImageUrl
+        eventImageUrl: eventData.eventImageUrl || event.eventImageUrl,
+        eventStartTime: eventData.eventStartTime || event.eventStartTime
       };
 
       allEventData.push(completeEventData);

@@ -304,13 +304,65 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         }
       }
 
-      // Extract event details
+      // Extract event start time
+      // PFL has DateTime.fromISO("2025-12-20T16:00:00.000000Z") in scripts
       let eventStartTime = null;
-      const timeEl = document.querySelector('[class*="time"]');
-      if (timeEl) {
-        const timeMatch = timeEl.textContent.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
-        if (timeMatch) {
-          eventStartTime = timeMatch[1].trim();
+      let eventStartTimeISO = null;
+
+      // Try 1: Look for DateTime.fromISO in scripts (most reliable - gives exact UTC time)
+      const scripts = document.querySelectorAll('script');
+      for (const script of scripts) {
+        const scriptContent = script.textContent || '';
+        const isoMatch = scriptContent.match(/DateTime\.fromISO\(["']([^"']+)["']\)/);
+        if (isoMatch && isoMatch[1]) {
+          eventStartTimeISO = isoMatch[1];
+          // Also extract just the time portion for display
+          const date = new Date(isoMatch[1]);
+          const hours = date.getUTCHours();
+          const minutes = date.getUTCMinutes();
+          const ampm = hours >= 12 ? 'PM' : 'AM';
+          const hour12 = hours % 12 || 12;
+          eventStartTime = `${hour12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+          break;
+        }
+      }
+
+      // Try 2: Look for "MAIN CARD" text with time pattern like "11:00am ET"
+      if (!eventStartTime) {
+        const pageText = document.body.innerText || '';
+        const mainCardMatch = pageText.match(/MAIN\s*CARD[^|]*\|\s*(\d{1,2}:\d{2}(?:am|pm))/i);
+        if (mainCardMatch) {
+          eventStartTime = mainCardMatch[1].toUpperCase();
+        }
+      }
+
+      // Try 3: General time pattern search
+      if (!eventStartTime) {
+        const pageText = document.body.innerText || '';
+        const timePatterns = [
+          /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT)/gi,
+          /(\d{1,2}:\d{2}(?:am|pm))\s*(?:ET|EST|EDT)/gi,
+        ];
+        for (const pattern of timePatterns) {
+          const match = pageText.match(pattern);
+          if (match) {
+            const timeExtract = match[0].match(/(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))/i);
+            if (timeExtract) {
+              eventStartTime = timeExtract[1].toUpperCase();
+              break;
+            }
+          }
+        }
+      }
+
+      // Try 4: Fallback to time-related selectors
+      if (!eventStartTime) {
+        const timeEl = document.querySelector('[class*="time"]');
+        if (timeEl) {
+          const timeMatch = timeEl.textContent.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+          if (timeMatch) {
+            eventStartTime = timeMatch[1].trim().toUpperCase();
+          }
         }
       }
 
@@ -676,6 +728,7 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       return {
         eventImageUrl,
         eventStartTime,
+        eventStartTimeISO,
         fights: allFights
       };
     });

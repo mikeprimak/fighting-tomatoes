@@ -184,6 +184,53 @@ function parseBKFCDate(dateStr: string | null): Date {
   return new Date(dateStr);
 }
 
+/**
+ * Parse event start time string (e.g., "7:00 PM") and combine with event date
+ * Returns a full datetime for the mainStartTime field
+ * BKFC times are in EST (Eastern Standard Time, UTC-5)
+ */
+function parseEventStartTime(eventDate: Date, timeStr: string | null | undefined): Date | null {
+  if (!timeStr) return null;
+
+  // Parse time string like "7:00 PM" or "7:00PM"
+  const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!timeMatch) return null;
+
+  let hours = parseInt(timeMatch[1], 10);
+  const minutes = parseInt(timeMatch[2], 10);
+  const isPM = timeMatch[3].toUpperCase() === 'PM';
+
+  // Convert to 24-hour format
+  if (isPM && hours !== 12) {
+    hours += 12;
+  } else if (!isPM && hours === 12) {
+    hours = 0;
+  }
+
+  // eventDate is stored as UTC (e.g., "2025-12-20T05:00:00.000Z" for Dec 20 midnight EST)
+  // We need to extract the local date and apply the time in EST, then convert to UTC
+  // EST is UTC-5, so to convert EST to UTC we add 5 hours
+
+  // Get the local date components from the event date
+  // The eventDate was created from ISO string like "2025-12-20T05:00:00.000Z"
+  // which represents midnight local time on Dec 20
+  const year = eventDate.getUTCFullYear();
+  const month = eventDate.getUTCMonth();
+  const day = eventDate.getUTCDate();
+
+  // The eventDate is actually midnight EST stored as 5am UTC
+  // So we need to adjust: if UTC hours < 12, it means the local date is actually the same day
+  // For simplicity, assume the eventDate already points to the correct calendar date
+  // and we just need to set the correct UTC time (EST + 5 hours)
+
+  // Create a new date for the same calendar day with the correct time in UTC
+  // If it's 7pm EST, that's midnight UTC (7pm + 5 = 24 = midnight next day in UTC)
+  const utcHours = hours + 5; // Convert EST to UTC
+  const dateTime = new Date(Date.UTC(year, month, day, utcHours, minutes, 0, 0));
+
+  return dateTime;
+}
+
 // ============== PARSER FUNCTIONS ==============
 
 /**
@@ -277,6 +324,9 @@ async function importBKFCEvents(
     // Parse date
     const eventDate = parseBKFCDate(eventData.eventDate);
 
+    // Parse main card start time
+    const mainStartTime = parseEventStartTime(eventDate, eventData.eventStartTime);
+
     // Build location string
     const locationParts = [eventData.city, eventData.state, eventData.country]
       .filter(Boolean);
@@ -314,6 +364,7 @@ async function importBKFCEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
+          mainStartTime: mainStartTime || undefined,
           hasStarted: eventData.status === 'Live',
           isComplete: eventData.status === 'Complete',
         }
@@ -329,6 +380,7 @@ async function importBKFCEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
+          mainStartTime: mainStartTime || undefined,
           hasStarted: eventData.status === 'Live',
           isComplete: eventData.status === 'Complete',
         }

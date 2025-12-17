@@ -54,6 +54,7 @@ interface ScrapedPFLEvent {
   fights?: ScrapedPFLFight[];
   localImagePath?: string;
   eventStartTime?: string;
+  eventStartTimeISO?: string; // ISO format datetime from PFL scripts
 }
 
 interface ScrapedPFLEventsData {
@@ -137,6 +138,50 @@ function parsePFLDate(dateStr: string | null): Date {
     return new Date('2099-01-01');
   }
   return new Date(dateStr);
+}
+
+/**
+ * Parse PFL event start time to Date object
+ * PFL provides eventStartTimeISO directly (e.g., "2025-12-20T16:00:00.000000Z")
+ * Falls back to parsing eventStartTime string with eventDate
+ */
+function parsePFLEventStartTime(
+  eventDate: Date,
+  eventStartTimeISO: string | null | undefined,
+  eventStartTime: string | null | undefined
+): Date | null {
+  // Priority 1: Use ISO format if available (most reliable)
+  if (eventStartTimeISO) {
+    return new Date(eventStartTimeISO);
+  }
+
+  // Priority 2: Parse time string and combine with event date
+  if (eventStartTime) {
+    const timeMatch = eventStartTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (timeMatch) {
+      let hours = parseInt(timeMatch[1], 10);
+      const minutes = parseInt(timeMatch[2], 10);
+      const isPM = timeMatch[3].toUpperCase() === 'PM';
+
+      // Convert to 24-hour format
+      if (isPM && hours !== 12) {
+        hours += 12;
+      } else if (!isPM && hours === 12) {
+        hours = 0;
+      }
+
+      // PFL times are typically ET (Eastern Time, UTC-5)
+      // Convert to UTC by adding 5 hours
+      const year = eventDate.getUTCFullYear();
+      const month = eventDate.getUTCMonth();
+      const day = eventDate.getUTCDate();
+      const utcHours = hours + 5;
+
+      return new Date(Date.UTC(year, month, day, utcHours, minutes, 0, 0));
+    }
+  }
+
+  return null;
 }
 
 // ============== PARSER FUNCTIONS ==============
@@ -245,6 +290,13 @@ async function importPFLEvents(
       }
     }
 
+    // Parse main card start time
+    const mainStartTime = parsePFLEventStartTime(
+      eventDate,
+      eventData.eventStartTimeISO,
+      eventData.eventStartTime
+    );
+
     // Try to find existing event by URL first, then by name+date
     let event = await prisma.event.findFirst({
       where: {
@@ -266,6 +318,7 @@ async function importPFLEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
+          mainStartTime: mainStartTime || undefined,
           hasStarted: eventData.status === 'Live',
           isComplete: eventData.status === 'Complete',
         }
@@ -281,6 +334,7 @@ async function importPFLEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
+          mainStartTime: mainStartTime || undefined,
           hasStarted: eventData.status === 'Live',
           isComplete: eventData.status === 'Complete',
         }
