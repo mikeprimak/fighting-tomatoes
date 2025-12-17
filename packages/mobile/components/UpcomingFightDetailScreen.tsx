@@ -757,9 +757,11 @@ export default function UpcomingFightDetailScreen({
     onMutate: async (enabled) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
+      await queryClient.cancelQueries({ queryKey: ['fight', fight.id] });
 
-      // Snapshot previous events cache for rollback
+      // Snapshot previous caches for rollback
       const previousEvents = queryClient.getQueryData(['upcomingEvents', isAuthenticated]);
+      const previousFight = queryClient.getQueryData(['fight', fight.id, isAuthenticated]);
 
       // Helper to calculate new notification state
       const getNewNotificationReasons = (oldReasons: any) => {
@@ -790,6 +792,18 @@ export default function UpcomingFightDetailScreen({
         notificationReasons: getNewNotificationReasons(prev.notificationReasons),
       }));
 
+      // Optimistically update fight detail query (for header bell icon)
+      queryClient.setQueryData(['fight', fight.id, isAuthenticated], (old: any) => {
+        if (!old?.fight) return old;
+        return {
+          ...old,
+          fight: {
+            ...old.fight,
+            notificationReasons: getNewNotificationReasons(old.fight.notificationReasons),
+          },
+        };
+      });
+
       // Optimistically update events list (infinite query) for instant bell icon update
       queryClient.setQueryData(['upcomingEvents', isAuthenticated], (old: any) => {
         if (!old?.pages) return old;
@@ -809,7 +823,7 @@ export default function UpcomingFightDetailScreen({
         };
       });
 
-      return { previousEvents };
+      return { previousEvents, previousFight };
     },
     onSuccess: (data, enabled) => {
       // Show toast when notification is enabled (inside FightDetailsMenu modal)
@@ -829,6 +843,9 @@ export default function UpcomingFightDetailScreen({
       // Revert optimistic update on error
       setLocalNotificationReasons(fight.notificationReasons);
       setMenuFightSnapshot(fight);
+      if (context?.previousFight) {
+        queryClient.setQueryData(['fight', fight.id, isAuthenticated], context.previousFight);
+      }
       if (context?.previousEvents) {
         queryClient.setQueryData(['upcomingEvents', isAuthenticated], context.previousEvents);
       }
