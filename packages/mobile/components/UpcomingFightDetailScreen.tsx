@@ -258,6 +258,25 @@ export default function UpcomingFightDetailScreen({
   // Use real fetched prediction stats
   const displayPredictionStats = predictionStats;
 
+  // Helper to optimistically update events cache for predictions
+  const updateEventsCache = (updates: { userPredictedWinner?: string | null; userPredictedMethod?: string | null; userHypePrediction?: number | null }) => {
+    queryClient.setQueryData(['upcomingEvents', isAuthenticated], (old: any) => {
+      if (!old?.pages) return old;
+      return {
+        ...old,
+        pages: old.pages.map((page: any) => ({
+          ...page,
+          events: page.events.map((event: any) => ({
+            ...event,
+            fights: event.fights?.map((f: any) =>
+              f.id === fight.id ? { ...f, ...updates } : f
+            ) || [],
+          })),
+        })),
+      };
+    });
+  };
+
   // Auto-save winner selection
   const saveWinnerMutation = useMutation({
     mutationFn: async (winnerId: string | null) => {
@@ -268,6 +287,17 @@ export default function UpcomingFightDetailScreen({
         predictedRound: fight.userPredictedRound || undefined,
         predictedRating: selectedHype || undefined,
       });
+    },
+    onMutate: async (winnerId) => {
+      await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
+      const previousEvents = queryClient.getQueryData(['upcomingEvents', isAuthenticated]);
+      updateEventsCache({ userPredictedWinner: winnerId });
+      return { previousEvents };
+    },
+    onError: (err, winnerId, context: any) => {
+      if (context?.previousEvents) {
+        queryClient.setQueryData(['upcomingEvents', isAuthenticated], context.previousEvents);
+      }
     },
     onSuccess: () => {
       // Mark this fight as needing animation
@@ -287,6 +317,7 @@ export default function UpcomingFightDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
       queryClient.invalidateQueries({ queryKey: ['myRatings'] });
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
 
       onPredictionSuccess?.();
     },
@@ -304,14 +335,23 @@ export default function UpcomingFightDetailScreen({
         predictedRound: fight.userPredictedRound || undefined,
       });
     },
+    onMutate: async (hypeLevel) => {
+      await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
+      const previousEvents = queryClient.getQueryData(['upcomingEvents', isAuthenticated]);
+      updateEventsCache({ userHypePrediction: hypeLevel });
+      return { previousEvents };
+    },
     onSuccess: (data) => {
       console.log('[saveHypeMutation] Success:', data);
       // Mark this fight as needing animation
       setPendingAnimation(fight.id);
       onPredictionSuccess?.();
     },
-    onError: (error) => {
+    onError: (error, hypeLevel, context: any) => {
       console.error('[saveHypeMutation] Error:', error);
+      if (context?.previousEvents) {
+        queryClient.setQueryData(['upcomingEvents', isAuthenticated], context.previousEvents);
+      }
     },
     onSettled: () => {
       // Always invalidate queries, even on error (to reset state)
@@ -330,6 +370,7 @@ export default function UpcomingFightDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
       queryClient.invalidateQueries({ queryKey: ['myRatings'] });
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
     },
   });
 
@@ -343,6 +384,17 @@ export default function UpcomingFightDetailScreen({
         predictedRating: selectedHype || undefined,
         predictedRound: fight.userPredictedRound || undefined,
       });
+    },
+    onMutate: async (method) => {
+      await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
+      const previousEvents = queryClient.getQueryData(['upcomingEvents', isAuthenticated]);
+      updateEventsCache({ userPredictedMethod: method });
+      return { previousEvents };
+    },
+    onError: (err, method, context: any) => {
+      if (context?.previousEvents) {
+        queryClient.setQueryData(['upcomingEvents', isAuthenticated], context.previousEvents);
+      }
     },
     onSuccess: () => {
       // Mark this fight as needing animation
@@ -362,6 +414,7 @@ export default function UpcomingFightDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
       queryClient.invalidateQueries({ queryKey: ['myRatings'] });
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
 
       onPredictionSuccess?.();
     },
