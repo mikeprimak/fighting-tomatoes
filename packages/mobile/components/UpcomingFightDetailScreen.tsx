@@ -755,53 +755,61 @@ export default function UpcomingFightDetailScreen({
       return apiService.toggleFightNotification(fight.id, enabled);
     },
     onMutate: async (enabled) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
+
+      // Snapshot previous events cache for rollback
+      const previousEvents = queryClient.getQueryData(['upcomingEvents', isAuthenticated]);
+
+      // Helper to calculate new notification state
+      const getNewNotificationReasons = (oldReasons: any) => {
+        if (enabled) {
+          return {
+            willBeNotified: true,
+            reasons: [
+              ...(oldReasons?.reasons || []).filter((r: any) => r.isActive && r.type !== 'manual'),
+              { type: 'manual' as const, source: 'Manual Fight Follow', isActive: true },
+            ],
+          };
+        } else {
+          const updatedReasons = (oldReasons?.reasons || []).map((r: any) =>
+            r.type === 'manual' ? { ...r, isActive: false } : r
+          );
+          const hasOtherActiveReasons = updatedReasons.some((r: any) => r.isActive && r.type !== 'manual');
+          return { willBeNotified: hasOtherActiveReasons, reasons: updatedReasons };
+        }
+      };
+
       // Optimistically update local state
-      if (enabled) {
-        // When enabling, create a "manual" notification reason
-        setLocalNotificationReasons({
-          willBeNotified: true,
-          reasons: [
-            ...(localNotificationReasons?.reasons || []).filter(r => r.isActive),
-            {
-              type: 'manual' as const,
-              source: 'Manual Fight Follow',
-              isActive: true,
-            },
-          ],
-        });
-      } else {
-        // When disabling, mark all reasons as inactive
-        setLocalNotificationReasons({
-          willBeNotified: false,
-          reasons: (localNotificationReasons?.reasons || []).map(r => ({
-            ...r,
-            isActive: false,
-          })),
-        });
-      }
+      const newReasons = getNewNotificationReasons(localNotificationReasons);
+      setLocalNotificationReasons(newReasons);
+
       // Update the menu snapshot
       setMenuFightSnapshot(prev => ({
         ...prev,
-        notificationReasons: enabled
-          ? {
-              willBeNotified: true,
-              reasons: [
-                ...(prev.notificationReasons?.reasons || []).filter(r => r.isActive),
-                {
-                  type: 'manual' as const,
-                  source: 'Manual Fight Follow',
-                  isActive: true,
-                },
-              ],
-            }
-          : {
-              willBeNotified: false,
-              reasons: (prev.notificationReasons?.reasons || []).map(r => ({
-                ...r,
-                isActive: false,
-              })),
-            },
+        notificationReasons: getNewNotificationReasons(prev.notificationReasons),
       }));
+
+      // Optimistically update events list (infinite query) for instant bell icon update
+      queryClient.setQueryData(['upcomingEvents', isAuthenticated], (old: any) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            events: page.events.map((event: any) => ({
+              ...event,
+              fights: event.fights?.map((f: any) =>
+                f.id === fight.id
+                  ? { ...f, notificationReasons: getNewNotificationReasons(f.notificationReasons) }
+                  : f
+              ) || [],
+            })),
+          })),
+        };
+      });
+
+      return { previousEvents };
     },
     onSuccess: (data, enabled) => {
       // Show toast when notification is enabled (inside FightDetailsMenu modal)
@@ -815,11 +823,15 @@ export default function UpcomingFightDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['myRatings'] });
       queryClient.invalidateQueries({ queryKey: ['eventFights'] });
       queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
     },
-    onError: (error: any, enabled) => {
+    onError: (error: any, enabled, context: any) => {
       // Revert optimistic update on error
       setLocalNotificationReasons(fight.notificationReasons);
       setMenuFightSnapshot(fight);
+      if (context?.previousEvents) {
+        queryClient.setQueryData(['upcomingEvents', isAuthenticated], context.previousEvents);
+      }
       showError(error?.error || 'Failed to update notification preference');
     },
   });
