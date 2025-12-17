@@ -223,10 +223,12 @@ export default function FightDetailScreen() {
   const isComplete = fight.isComplete || mode === 'completed';
 
   // Toggle fight notification using mutation
-  // Use willBeNotified to match the visual state of the bell icon
+  // Toggle the MANUAL notification on/off (bell visual may stay on if fighter follow exists)
   const handleToggleNotification = () => {
-    const willBeNotified = fight.notificationReasons?.willBeNotified;
-    toggleNotificationMutation.mutate(!willBeNotified);
+    const hasManualNotification = fight.notificationReasons?.reasons?.some(
+      (r: any) => r.type === 'manual' && r.isActive
+    );
+    toggleNotificationMutation.mutate(!hasManualNotification);
   };
 
   const renderMenuButton = () => {
