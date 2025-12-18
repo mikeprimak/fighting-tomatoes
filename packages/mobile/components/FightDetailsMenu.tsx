@@ -124,6 +124,11 @@ export default function FightDetailsMenu({
             const willBeNotified = fight.notificationReasons?.willBeNotified ?? false;
             const notificationReasons = fight.notificationReasons?.reasons ?? [];
 
+            // Switch shows MANUAL notification status only (so toggle matches visual)
+            const hasManualNotification = notificationReasons.some(
+              (r: any) => r.type === 'manual' && r.isActive
+            );
+
             // Build the reasons list from the new notification system
             const reasons: string[] = notificationReasons
               .filter(reason => reason.isActive)
@@ -173,11 +178,10 @@ export default function FightDetailsMenu({
                     )}
                   </View>
                   <Switch
-                    value={willBeNotified}
+                    value={hasManualNotification}
                     disabled={toggleDisabled}
                     onValueChange={(enabled) => {
-                      // Simply call the unified toggle notification handler
-                      // This will handle all notification types (manual, fighter, hyped fights)
+                      // Toggle the manual notification
                       onToggleNotification(enabled);
                     }}
                     trackColor={{ false: colors.textSecondary, true: colors.tint }}

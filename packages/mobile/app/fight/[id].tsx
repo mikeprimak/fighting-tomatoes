@@ -232,9 +232,11 @@ export default function FightDetailScreen() {
   };
 
   const renderMenuButton = () => {
-    // For upcoming fights, check if user will be notified for ANY reason
-    // (manual follow, fighter follow, or hype fights rule)
-    const willBeNotified = !isComplete && fight.notificationReasons?.willBeNotified;
+    // Bell shows MANUAL notification status only (so visual matches toggle action)
+    // This prevents "stuck" bell when notification is from fighter follow only
+    const hasManualNotification = !isComplete && fight.notificationReasons?.reasons?.some(
+      (r: any) => r.type === 'manual' && r.isActive
+    );
 
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
@@ -245,9 +247,9 @@ export default function FightDetailScreen() {
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <FontAwesome
-              name={willBeNotified ? "bell" : "bell-o"}
+              name={hasManualNotification ? "bell" : "bell-o"}
               size={18}
-              color={willBeNotified ? colors.tint : colors.text}
+              color={hasManualNotification ? colors.tint : colors.text}
             />
           </TouchableOpacity>
         )}

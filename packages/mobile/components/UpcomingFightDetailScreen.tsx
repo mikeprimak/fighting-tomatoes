@@ -883,8 +883,8 @@ export default function UpcomingFightDetailScreen({
       if (enabled) {
         showToast('You will get a notification right before this fight.');
       }
-      // Invalidate queries to refresh notification status
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      // Invalidate other queries but NOT the current fight query
+      // (we already did optimistic update, invalidating would refetch and potentially overwrite)
       queryClient.invalidateQueries({ queryKey: ['fights'] });
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
       queryClient.invalidateQueries({ queryKey: ['myRatings'] });
@@ -906,14 +906,10 @@ export default function UpcomingFightDetailScreen({
     },
   });
 
-  const handleToggleNotification = (_enabled: boolean) => {
+  const handleToggleNotification = (enabled: boolean) => {
     if (!requireVerification('follow this fight')) return;
-    // Toggle manual notification based on current manual state, not switch value
-    // (switch shows willBeNotified which includes fighter follows)
-    const hasManualNotification = localNotificationReasons?.reasons?.some(
-      (r: any) => r.type === 'manual' && r.isActive
-    );
-    toggleNotificationMutation.mutate(!hasManualNotification);
+    // Switch now shows hasManualNotification, so enabled is the correct value
+    toggleNotificationMutation.mutate(enabled);
   };
 
   // Toggle fighter notification mutation
