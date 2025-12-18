@@ -906,9 +906,14 @@ export default function UpcomingFightDetailScreen({
     },
   });
 
-  const handleToggleNotification = (enabled: boolean) => {
+  const handleToggleNotification = (_enabled: boolean) => {
     if (!requireVerification('follow this fight')) return;
-    toggleNotificationMutation.mutate(enabled);
+    // Toggle manual notification based on current manual state, not switch value
+    // (switch shows willBeNotified which includes fighter follows)
+    const hasManualNotification = localNotificationReasons?.reasons?.some(
+      (r: any) => r.type === 'manual' && r.isActive
+    );
+    toggleNotificationMutation.mutate(!hasManualNotification);
   };
 
   // Toggle fighter notification mutation
