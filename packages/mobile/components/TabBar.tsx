@@ -129,6 +129,12 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
+          paddingTop: 15,
+          paddingBottom: 30,
+        },
+        tabBarItemStyle: {
+          marginTop: -17,
+          paddingVertical: 5,
         },
         headerStyle: {
           backgroundColor: colors.card,
