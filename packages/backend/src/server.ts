@@ -222,6 +222,11 @@ async function start() {
     // Register API routes
     await registerRoutes(fastify);
 
+    // Redirect /admin to /admin.html for convenience
+    fastify.get('/admin', async (request, reply) => {
+      return reply.redirect('/admin.html');
+    });
+
     // 404 handler for undefined routes
     fastify.setNotFoundHandler(async (request, reply) => {
       return reply.code(404).send({

@@ -1,1187 +1,1482 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FightCrewApp Admin Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fight Admin - Event & Fight Manager</title>
+  <style>
+    :root {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-card: #1f2940;
+      --bg-input: #2a3a5a;
+      --text-primary: #ffffff;
+      --text-secondary: #a0aec0;
+      --text-muted: #718096;
+      --accent-gold: #f5c518;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-orange: #f97316;
+      --border-color: #374151;
+      --card-main: #f5c518;
+      --card-prelim: #a0aec0;
+      --card-early: #718096;
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f5f5f5;
-            color: #333;
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
 
-        h1 {
-            color: #dc2626;
-            margin-bottom: 20px;
-            font-size: 32px;
-        }
+    /* Header */
+    .header {
+      background: var(--bg-secondary);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
 
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #e5e7eb;
-        }
+    .header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
 
-        .tab {
-            background: transparent;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            font-weight: 500;
-            color: #6b7280;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-            transition: all 0.2s;
-        }
+    .header h1::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 24px;
+      background: var(--accent-gold);
+      border-radius: 2px;
+    }
 
-        .tab:hover {
-            color: #dc2626;
-        }
+    .header-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
 
-        .tab.active {
-            color: #dc2626;
-            border-bottom-color: #dc2626;
-        }
+    /* Main Layout */
+    .main-container {
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      height: calc(100vh - 60px);
+    }
 
-        .tab-content {
-            display: none;
-        }
+    /* Panels */
+    .panel {
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
 
-        .tab-content.active {
-            display: block;
-        }
+    .events-panel {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+    }
 
-        /* Stats Grid */
-        .section {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
+    .fights-panel {
+      background: var(--bg-primary);
+    }
 
-        .section-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #1f2937;
-        }
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-        }
+    .panel-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
 
-        .stat-card {
-            background: #f9fafb;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-        }
+    /* Buttons */
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
 
-        .stat-label {
-            font-size: 14px;
-            color: #6b7280;
-            margin-bottom: 8px;
-        }
+    .btn-primary {
+      background: var(--accent-blue);
+      color: white;
+    }
 
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #1f2937;
-        }
+    .btn-primary:hover {
+      background: #2563eb;
+    }
 
-        /* Table */
-        .table-container {
-            overflow-x: auto;
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
+    .btn-success {
+      background: var(--accent-green);
+      color: white;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+    .btn-success:hover {
+      background: #059669;
+    }
 
-        th {
-            background: #f9fafb;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            color: #374151;
-            border-bottom: 2px solid #e5e7eb;
-        }
+    .btn-danger {
+      background: var(--accent-red);
+      color: white;
+    }
 
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
-        }
+    .btn-danger:hover {
+      background: #dc2626;
+    }
 
-        tr:hover {
-            background: #f9fafb;
-        }
+    .btn-secondary {
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
 
-        /* Buttons */
-        .btn {
-            padding: 8px 16px;
-            border-radius: 6px;
-            border: none;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+    .btn-secondary:hover {
+      background: var(--border-color);
+    }
 
-        .btn-primary {
-            background: #dc2626;
-            color: white;
-        }
+    .btn-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
 
-        .btn-primary:hover {
-            background: #b91c1c;
-        }
+    .btn-icon {
+      padding: 0.375rem;
+      background: transparent;
+      color: var(--text-secondary);
+    }
 
-        .btn-secondary {
-            background: #6b7280;
-            color: white;
-        }
+    .btn-icon:hover {
+      color: var(--text-primary);
+      background: var(--bg-input);
+    }
 
-        .btn-secondary:hover {
-            background: #4b5563;
-        }
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 1rem;
+    }
 
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
+    .form-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 0.375rem;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
 
-        .btn-danger:hover {
-            background: #dc2626;
-        }
+    .form-input, .form-select {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      transition: border-color 0.2s;
+    }
 
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 12px;
-        }
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
 
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
+    .form-input::placeholder {
+      color: var(--text-muted);
+    }
 
-        .modal.active {
-            display: flex;
-        }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
 
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.5rem;
+    }
 
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
 
-        .modal-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #1f2937;
-        }
+    .checkbox-group input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent-blue);
+    }
 
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #6b7280;
-            cursor: pointer;
-        }
+    /* Event Cards */
+    .event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
 
-        /* Form */
-        .form-group {
-            margin-bottom: 16px;
-        }
+    .event-card {
+      background: var(--bg-card);
+      border-radius: 8px;
+      padding: 1rem;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
 
-        .form-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 6px;
-        }
+    .event-card:hover {
+      border-color: var(--border-color);
+    }
 
-        .form-input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-        }
+    .event-card.selected {
+      border-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.1);
+    }
 
-        .form-input:focus {
-            outline: none;
-            border-color: #dc2626;
-        }
+    .event-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
 
-        .form-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-        }
+    .event-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      line-height: 1.3;
+    }
 
-        .loader {
-            text-align: center;
-            padding: 40px;
-            color: #6b7280;
-        }
+    .event-promotion {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.125rem 0.375rem;
+      border-radius: 4px;
+      background: var(--accent-gold);
+      color: #000;
+      white-space: nowrap;
+    }
 
-        .error {
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-        }
+    .event-meta {
+      display: flex;
+      gap: 1rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
 
-        .success {
-            background: #d1fae5;
-            color: #065f46;
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-        }
+    .event-fights-count {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
 
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-        }
+    /* Fight List */
+    .fight-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
 
-        .badge-success {
-            background: #d1fae5;
-            color: #065f46;
-        }
+    .card-section {
+      margin-bottom: 1.5rem;
+    }
 
-        .badge-warning {
-            background: #fef3c7;
-            color: #92400e;
-        }
+    .card-section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
 
-        .badge-danger {
-            background: #fee2e2;
-            color: #991b1b;
-        }
+    .card-section-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
 
-        .checkbox {
-            width: 18px;
-            height: 18px;
-        }
+    .card-section-badge.main {
+      background: var(--card-main);
+      color: #000;
+    }
 
-        /* Charts */
-        .chart-container {
-            position: relative;
-            height: 400px;
-            margin-bottom: 32px;
-        }
+    .card-section-badge.prelim {
+      background: var(--card-prelim);
+      color: #000;
+    }
 
-        .chart-controls {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
+    .card-section-badge.early {
+      background: var(--card-early);
+      color: #000;
+    }
 
-        .btn-group {
-            display: flex;
-            gap: 4px;
-        }
+    .fight-card {
+      background: var(--bg-card);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid var(--border-color);
+    }
 
-        .btn-toggle {
-            padding: 8px 16px;
-            border: 1px solid #d1d5db;
-            background: white;
-            color: #6b7280;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 14px;
-            font-weight: 500;
-        }
+    .fight-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
 
-        .btn-toggle:first-child {
-            border-radius: 6px 0 0 6px;
-        }
+    .fight-order {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      width: 24px;
+      text-align: center;
+    }
 
-        .btn-toggle:last-child {
-            border-radius: 0 6px 6px 0;
-        }
+    .fight-matchup {
+      font-weight: 500;
+    }
 
-        .btn-toggle:only-child {
-            border-radius: 6px;
-        }
+    .fight-details {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
 
-        .btn-toggle.active {
-            background: #dc2626;
-            color: white;
-            border-color: #dc2626;
-        }
+    .fight-title-badge {
+      font-size: 0.65rem;
+      background: var(--accent-gold);
+      color: #000;
+      padding: 0.125rem 0.375rem;
+      border-radius: 3px;
+      font-weight: 600;
+      margin-left: 0.5rem;
+    }
 
-        .btn-toggle:hover:not(.active) {
-            background: #f3f4f6;
-        }
-    </style>
+    .fight-actions {
+      display: flex;
+      gap: 0.25rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .fight-card:hover .fight-actions {
+      opacity: 1;
+    }
+
+    /* Autocomplete */
+    .autocomplete-wrapper {
+      position: relative;
+    }
+
+    .autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      margin-top: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .autocomplete-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+
+    .autocomplete-item:hover, .autocomplete-item.selected {
+      background: var(--bg-input);
+    }
+
+    .autocomplete-name {
+      font-weight: 500;
+    }
+
+    .autocomplete-record {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .autocomplete-create {
+      color: var(--accent-blue);
+      font-weight: 500;
+    }
+
+    /* Modals */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      transform: scale(0.95);
+      transition: transform 0.2s;
+    }
+
+    .modal-overlay.active .modal {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      color: var(--text-primary);
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .empty-state-text {
+      font-size: 0.875rem;
+    }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .filter-bar .form-select {
+      flex: 1;
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .toast {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      animation: slideIn 0.3s ease;
+    }
+
+    .toast.success {
+      border-left: 4px solid var(--accent-green);
+    }
+
+    .toast.error {
+      border-left: 4px solid var(--accent-red);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-color);
+      border-top-color: var(--accent-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Inline Fighter Create */
+    .inline-create-form {
+      background: var(--bg-input);
+      border-radius: 6px;
+      padding: 1rem;
+      margin-top: 0.5rem;
+      border: 1px solid var(--accent-blue);
+    }
+
+    .inline-create-header {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent-blue);
+      margin-bottom: 0.75rem;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🥊 FightCrewApp Admin Dashboard</h1>
+  <!-- Header -->
+  <header class="header">
+    <h1>Fight Admin</h1>
+    <div class="header-controls">
+      <select id="globalPromotion" class="form-select" style="width: 200px;">
+        <option value="">All Promotions</option>
+        <option value="UFC">UFC</option>
+        <option value="PFL">PFL</option>
+        <option value="ONE">ONE Championship</option>
+        <option value="BKFC">BKFC</option>
+        <option value="Bellator">Bellator</option>
+        <option value="Golden Boy">Golden Boy Promotions</option>
+        <option value="Top Rank">Top Rank Boxing</option>
+        <option value="PBC">Premier Boxing Champions</option>
+        <option value="Matchroom">Matchroom Boxing</option>
+        <option value="MVP">Most Valuable Promotions</option>
+        <option value="Rizin">Rizin Fighting Federation</option>
+        <option value="Oktagon">Oktagon MMA</option>
+        <option value="Karate Combat">Karate Combat</option>
+        <option value="Dirty Boxing">Dirty Boxing Championship</option>
+      </select>
+    </div>
+  </header>
 
-        <!-- Tabs -->
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
-            <button class="tab" onclick="switchTab('metrics')">Metrics Over Time</button>
-            <button class="tab" onclick="switchTab('events')">Events</button>
-            <button class="tab" onclick="switchTab('fighters')">Fighters</button>
-            <button class="tab" onclick="switchTab('fights')">Fights</button>
+  <!-- Main Container -->
+  <div class="main-container">
+    <!-- Events Panel -->
+    <div class="panel events-panel">
+      <div class="panel-header">
+        <span class="panel-title">Events</span>
+        <button class="btn btn-primary btn-sm" onclick="openEventModal()">+ New Event</button>
+      </div>
+
+      <div class="filter-bar">
+        <select id="eventFilter" class="form-select" onchange="loadEvents()">
+          <option value="upcoming">Upcoming</option>
+          <option value="all">All Events</option>
+        </select>
+      </div>
+
+      <div id="eventList" class="event-list">
+        <div class="empty-state">
+          <div class="empty-state-icon">📅</div>
+          <div class="empty-state-text">Loading events...</div>
         </div>
-
-        <!-- Dashboard Tab -->
-        <div id="dashboard-tab" class="tab-content active">
-            <button class="btn btn-primary" onclick="fetchStats()">🔄 Refresh</button>
-            <span id="lastUpdated" style="margin-left: 12px; font-size: 12px; color: #6b7280;"></span>
-
-            <div id="loading" class="loader">Loading...</div>
-            <div id="error" class="error" style="display: none;"></div>
-
-            <div id="dashboard-content" style="display: none;">
-                <div class="section">
-                    <h2 class="section-title">👥 User Engagement</h2>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-label">Total Users</div>
-                            <div class="stat-value" id="totalUsers">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Active Today</div>
-                            <div class="stat-value" id="activeToday">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Active This Week</div>
-                            <div class="stat-value" id="activeWeek">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">New This Week</div>
-                            <div class="stat-value" id="newThisWeek">-</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <h2 class="section-title">📊 User Activity</h2>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-label">Total Ratings</div>
-                            <div class="stat-value" id="totalRatings">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Total Reviews</div>
-                            <div class="stat-value" id="totalReviews">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Ratings Today</div>
-                            <div class="stat-value" id="ratingsToday">-</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <h2 class="section-title">📦 Content</h2>
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-label">Total Events</div>
-                            <div class="stat-value" id="totalEvents">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Total Fights</div>
-                            <div class="stat-value" id="totalFights">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Total Fighters</div>
-                            <div class="stat-value" id="totalFighters">-</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-label">Upcoming Events</div>
-                            <div class="stat-value" id="upcomingEvents">-</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Metrics Over Time Tab -->
-        <div id="metrics-tab" class="tab-content">
-            <div class="chart-controls">
-                <button class="btn btn-primary" onclick="captureMetrics()">📸 Capture Today's Snapshot</button>
-                <div class="btn-group">
-                    <button class="btn-toggle active" onclick="changeTimeRange(7)">7 Days</button>
-                    <button class="btn-toggle" onclick="changeTimeRange(30)">30 Days</button>
-                    <button class="btn-toggle" onclick="changeTimeRange(90)">90 Days</button>
-                    <button class="btn-toggle" onclick="changeTimeRange(365)">1 Year</button>
-                </div>
-            </div>
-
-            <div id="metrics-message"></div>
-
-            <div class="section">
-                <h2 class="section-title">👥 User Growth</h2>
-                <div class="chart-container">
-                    <canvas id="usersChart"></canvas>
-                </div>
-            </div>
-
-            <div class="section">
-                <h2 class="section-title">📊 Daily Activity</h2>
-                <div class="chart-container">
-                    <canvas id="activityChart"></canvas>
-                </div>
-            </div>
-
-            <div class="section">
-                <h2 class="section-title">⭐ Engagement</h2>
-                <div class="chart-container">
-                    <canvas id="engagementChart"></canvas>
-                </div>
-            </div>
-
-            <div class="section">
-                <h2 class="section-title">🎯 Sessions</h2>
-                <div class="chart-container">
-                    <canvas id="sessionsChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- Events Tab -->
-        <div id="events-tab" class="tab-content">
-            <div style="margin-bottom: 16px;">
-                <button class="btn btn-primary" onclick="openEventModal()">+ Add Event</button>
-                <button class="btn btn-secondary" onclick="loadEvents()">🔄 Refresh</button>
-            </div>
-            <div id="events-message"></div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Promotion</th>
-                            <th>Date</th>
-                            <th>Location</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="events-table"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Fighters Tab -->
-        <div id="fighters-tab" class="tab-content">
-            <div style="margin-bottom: 16px;">
-                <button class="btn btn-primary" onclick="openFighterModal()">+ Add Fighter</button>
-                <button class="btn btn-secondary" onclick="loadFighters()">🔄 Refresh</button>
-            </div>
-            <div id="fighters-message"></div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Nickname</th>
-                            <th>Record</th>
-                            <th>Weight Class</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="fighters-table"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Fights Tab -->
-        <div id="fights-tab" class="tab-content">
-            <div style="margin-bottom: 16px;">
-                <button class="btn btn-secondary" onclick="loadFights()">🔄 Refresh</button>
-            </div>
-            <div id="fights-message"></div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Event</th>
-                            <th>Fighter 1</th>
-                            <th>Fighter 2</th>
-                            <th>Weight Class</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="fights-table"></tbody>
-                </table>
-            </div>
-        </div>
+      </div>
     </div>
 
-    <!-- Event Modal -->
-    <div id="event-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title" id="event-modal-title">Add Event</h3>
-                <button class="close-btn" onclick="closeEventModal()">&times;</button>
-            </div>
-            <form id="event-form">
-                <input type="hidden" id="event-id">
-                <div class="form-group">
-                    <label class="form-label">Name *</label>
-                    <input type="text" class="form-input" id="event-name" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Promotion *</label>
-                    <input type="text" class="form-input" id="event-promotion" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Date *</label>
-                    <input type="datetime-local" class="form-input" id="event-date" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Location</label>
-                    <input type="text" class="form-input" id="event-location">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Venue</label>
-                    <input type="text" class="form-input" id="event-venue">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">
-                        <input type="checkbox" class="checkbox" id="event-started"> Has Started
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">
-                        <input type="checkbox" class="checkbox" id="event-complete"> Is Complete
-                    </label>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Save</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Cancel</button>
-                </div>
-            </form>
+    <!-- Fights Panel -->
+    <div class="panel fights-panel">
+      <div id="fightsContent">
+        <div class="empty-state">
+          <div class="empty-state-icon">👈</div>
+          <div class="empty-state-text">Select an event to view and manage fights</div>
         </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Fighter Modal -->
-    <div id="fighter-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title" id="fighter-modal-title">Add Fighter</h3>
-                <button class="close-btn" onclick="closeFighterModal()">&times;</button>
-            </div>
-            <form id="fighter-form">
-                <input type="hidden" id="fighter-id">
-                <div class="form-group">
-                    <label class="form-label">First Name *</label>
-                    <input type="text" class="form-input" id="fighter-firstName" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Last Name *</label>
-                    <input type="text" class="form-input" id="fighter-lastName" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Nickname</label>
-                    <input type="text" class="form-input" id="fighter-nickname">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Weight Class</label>
-                    <input type="text" class="form-input" id="fighter-weightClass">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Wins</label>
-                    <input type="number" class="form-input" id="fighter-wins" value="0">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Losses</label>
-                    <input type="number" class="form-input" id="fighter-losses" value="0">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Draws</label>
-                    <input type="number" class="form-input" id="fighter-draws" value="0">
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Save</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeFighterModal()">Cancel</button>
-                </div>
-            </form>
+  <!-- Event Modal -->
+  <div id="eventModal" class="modal-overlay" onclick="closeModal(event, 'eventModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title" id="eventModalTitle">Create Event</h2>
+        <button class="modal-close" onclick="closeEventModal()">&times;</button>
+      </div>
+
+      <form id="eventForm" onsubmit="saveEvent(event)">
+        <input type="hidden" id="eventId">
+
+        <div class="form-group">
+          <label class="form-label">Promotion</label>
+          <select id="eventPromotion" class="form-select" required>
+            <option value="">Select promotion...</option>
+            <option value="UFC">UFC</option>
+            <option value="PFL">PFL</option>
+            <option value="ONE">ONE Championship</option>
+            <option value="BKFC">BKFC</option>
+            <option value="Bellator">Bellator</option>
+            <option value="Golden Boy">Golden Boy Promotions</option>
+            <option value="Top Rank">Top Rank Boxing</option>
+            <option value="PBC">Premier Boxing Champions</option>
+            <option value="Matchroom">Matchroom Boxing</option>
+            <option value="MVP">Most Valuable Promotions</option>
+            <option value="Rizin">Rizin Fighting Federation</option>
+            <option value="Oktagon">Oktagon MMA</option>
+            <option value="Karate Combat">Karate Combat</option>
+            <option value="Dirty Boxing">Dirty Boxing Championship</option>
+          </select>
         </div>
-    </div>
 
-    <!-- Fight Modal -->
-    <div id="fight-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Edit Fight</h3>
-                <button class="close-btn" onclick="closeFightModal()">&times;</button>
-            </div>
-            <form id="fight-form">
-                <input type="hidden" id="fight-id">
-                <div class="form-group">
-                    <label class="form-label">
-                        <input type="checkbox" class="checkbox" id="fight-started"> Has Started
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">
-                        <input type="checkbox" class="checkbox" id="fight-complete"> Is Complete
-                    </label>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Save</button>
-                    <button type="button" class="btn btn-secondary" onclick="closeFightModal()">Cancel</button>
-                </div>
-            </form>
+        <div class="form-group">
+          <label class="form-label">Event Name</label>
+          <input type="text" id="eventName" class="form-input" placeholder="e.g., UFC 320: Jones vs Miocic" required>
         </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            <input type="date" id="eventDate" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Time (Main Card)</label>
+            <input type="time" id="eventTime" class="form-input" value="22:00">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Venue</label>
+            <input type="text" id="eventVenue" class="form-input" placeholder="T-Mobile Arena">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Location</label>
+            <input type="text" id="eventLocation" class="form-input" placeholder="Las Vegas, NV">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Main Card Broadcast</label>
+          <input type="text" id="eventMainChannel" class="form-input" placeholder="ESPN+ PPV">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Cancel</button>
+          <button type="submit" class="btn btn-success">Save Event</button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <script>
-        const API_URL = 'http://localhost:3001/api/admin';
-        let currentTab = 'dashboard';
-        let currentTimeRange = 7;
-        let charts = {
-            users: null,
-            activity: null,
-            engagement: null,
-            sessions: null
-        };
+  <!-- Fight Modal -->
+  <div id="fightModal" class="modal-overlay" onclick="closeModal(event, 'fightModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title" id="fightModalTitle">Add Fight</h2>
+        <button class="modal-close" onclick="closeFightModal()">&times;</button>
+      </div>
 
-        // Tab switching
-        function switchTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+      <form id="fightForm" onsubmit="saveFight(event)">
+        <input type="hidden" id="fightId">
+        <input type="hidden" id="fightEventId">
 
-            event.target.classList.add('active');
-            document.getElementById(`${tab}-tab`).classList.add('active');
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Fighter 1</label>
+            <div class="autocomplete-wrapper">
+              <input type="text" id="fighter1Search" class="form-input" placeholder="Search fighter..." autocomplete="off" oninput="searchFighter(1, this.value)">
+              <input type="hidden" id="fighter1Id">
+              <div id="fighter1Dropdown" class="autocomplete-dropdown" style="display: none;"></div>
+              <div id="fighter1Create" class="inline-create-form" style="display: none;">
+                <div class="inline-create-header">Create New Fighter</div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <input type="text" id="fighter1FirstName" class="form-input" placeholder="First name">
+                  </div>
+                  <div class="form-group">
+                    <input type="text" id="fighter1LastName" class="form-input" placeholder="Last name">
+                  </div>
+                </div>
+                <div class="form-row-3">
+                  <input type="number" id="fighter1Wins" class="form-input" placeholder="W" min="0" value="0">
+                  <input type="number" id="fighter1Losses" class="form-input" placeholder="L" min="0" value="0">
+                  <input type="number" id="fighter1Draws" class="form-input" placeholder="D" min="0" value="0">
+                </div>
+                <div style="margin-top: 0.5rem;">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="createFighter(1)">Create Fighter</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="cancelCreateFighter(1)">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fighter 2</label>
+            <div class="autocomplete-wrapper">
+              <input type="text" id="fighter2Search" class="form-input" placeholder="Search fighter..." autocomplete="off" oninput="searchFighter(2, this.value)">
+              <input type="hidden" id="fighter2Id">
+              <div id="fighter2Dropdown" class="autocomplete-dropdown" style="display: none;"></div>
+              <div id="fighter2Create" class="inline-create-form" style="display: none;">
+                <div class="inline-create-header">Create New Fighter</div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <input type="text" id="fighter2FirstName" class="form-input" placeholder="First name">
+                  </div>
+                  <div class="form-group">
+                    <input type="text" id="fighter2LastName" class="form-input" placeholder="Last name">
+                  </div>
+                </div>
+                <div class="form-row-3">
+                  <input type="number" id="fighter2Wins" class="form-input" placeholder="W" min="0" value="0">
+                  <input type="number" id="fighter2Losses" class="form-input" placeholder="L" min="0" value="0">
+                  <input type="number" id="fighter2Draws" class="form-input" placeholder="D" min="0" value="0">
+                </div>
+                <div style="margin-top: 0.5rem;">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="createFighter(2)">Create Fighter</button>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="cancelCreateFighter(2)">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            if (tab === 'dashboard') fetchStats();
-            else if (tab === 'metrics') loadMetrics(currentTimeRange);
-            else if (tab === 'events') loadEvents();
-            else if (tab === 'fighters') loadFighters();
-            else if (tab === 'fights') loadFights();
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Weight Class</label>
+            <select id="fightWeightClass" class="form-select">
+              <option value="">Select...</option>
+              <optgroup label="Men's MMA">
+                <option value="STRAWWEIGHT">Strawweight (115 lbs)</option>
+                <option value="FLYWEIGHT">Flyweight (125 lbs)</option>
+                <option value="BANTAMWEIGHT">Bantamweight (135 lbs)</option>
+                <option value="FEATHERWEIGHT">Featherweight (145 lbs)</option>
+                <option value="LIGHTWEIGHT">Lightweight (155 lbs)</option>
+                <option value="WELTERWEIGHT">Welterweight (170 lbs)</option>
+                <option value="MIDDLEWEIGHT">Middleweight (185 lbs)</option>
+                <option value="LIGHT_HEAVYWEIGHT">Light Heavyweight (205 lbs)</option>
+                <option value="HEAVYWEIGHT">Heavyweight (265 lbs)</option>
+              </optgroup>
+              <optgroup label="Women's MMA">
+                <option value="WOMENS_STRAWWEIGHT">W. Strawweight (115 lbs)</option>
+                <option value="WOMENS_FLYWEIGHT">W. Flyweight (125 lbs)</option>
+                <option value="WOMENS_BANTAMWEIGHT">W. Bantamweight (135 lbs)</option>
+                <option value="WOMENS_FEATHERWEIGHT">W. Featherweight (145 lbs)</option>
+              </optgroup>
+              <optgroup label="Boxing">
+                <option value="BOXING_HEAVYWEIGHT">Heavyweight</option>
+                <option value="BOXING_CRUISERWEIGHT">Cruiserweight</option>
+                <option value="BOXING_LIGHT_HEAVYWEIGHT">Light Heavyweight</option>
+                <option value="BOXING_SUPER_MIDDLEWEIGHT">Super Middleweight</option>
+                <option value="BOXING_MIDDLEWEIGHT">Middleweight</option>
+                <option value="BOXING_SUPER_WELTERWEIGHT">Super Welterweight</option>
+                <option value="BOXING_WELTERWEIGHT">Welterweight</option>
+                <option value="BOXING_SUPER_LIGHTWEIGHT">Super Lightweight</option>
+                <option value="BOXING_LIGHTWEIGHT">Lightweight</option>
+                <option value="BOXING_SUPER_FEATHERWEIGHT">Super Featherweight</option>
+                <option value="BOXING_FEATHERWEIGHT">Featherweight</option>
+                <option value="BOXING_SUPER_BANTAMWEIGHT">Super Bantamweight</option>
+                <option value="BOXING_BANTAMWEIGHT">Bantamweight</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Card Section</label>
+            <select id="fightCardType" class="form-select">
+              <option value="Main Card">Main Card</option>
+              <option value="Prelims">Prelims</option>
+              <option value="Early Prelims">Early Prelims</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Order on Card</label>
+            <input type="number" id="fightOrder" class="form-input" min="1" value="1" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Scheduled Rounds</label>
+            <select id="fightRounds" class="form-select">
+              <option value="3">3 Rounds</option>
+              <option value="5">5 Rounds</option>
+              <option value="8">8 Rounds (Boxing)</option>
+              <option value="10">10 Rounds (Boxing)</option>
+              <option value="12">12 Rounds (Boxing)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input type="checkbox" id="fightIsTitle" onchange="toggleTitleName()">
+            <label for="fightIsTitle">Title Fight</label>
+          </div>
+        </div>
+
+        <div class="form-group" id="titleNameGroup" style="display: none;">
+          <label class="form-label">Title Name</label>
+          <input type="text" id="fightTitleName" class="form-input" placeholder="e.g., UFC Heavyweight Championship">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeFightModal()">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="saveFightAndContinue()">Save & Add Another</button>
+          <button type="submit" class="btn btn-success">Save Fight</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script>
+    // API Base URL
+    const API_BASE = window.location.origin + '/api';
+
+    // State
+    let selectedEvent = null;
+    let lastSearchQuery = { 1: '', 2: '' };
+    let searchTimeout = null;
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    document.addEventListener('DOMContentLoaded', () => {
+      loadEvents();
+
+      // Global promotion filter
+      document.getElementById('globalPromotion').addEventListener('change', loadEvents);
+
+      // Close dropdowns on click outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.autocomplete-wrapper')) {
+          document.getElementById('fighter1Dropdown').style.display = 'none';
+          document.getElementById('fighter2Dropdown').style.display = 'none';
+        }
+      });
+    });
+
+    // ============================================
+    // EVENTS
+    // ============================================
+    async function loadEvents() {
+      const promotion = document.getElementById('globalPromotion').value;
+      const filter = document.getElementById('eventFilter').value;
+      const params = new URLSearchParams();
+
+      if (promotion) params.set('promotion', promotion);
+      if (filter === 'upcoming') params.set('upcoming', 'true');
+      params.set('limit', '100');
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/events?${params}`);
+        const data = await res.json();
+
+        const container = document.getElementById('eventList');
+        if (!data.events || data.events.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">📅</div>
+              <div class="empty-state-text">No events found</div>
+            </div>
+          `;
+          return;
         }
 
-        // Dashboard Stats
-        async function fetchStats() {
-            try {
-                document.getElementById('loading').style.display = 'block';
-                document.getElementById('error').style.display = 'none';
-                document.getElementById('dashboard-content').style.display = 'none';
+        container.innerHTML = data.events.map(event => `
+          <div class="event-card ${selectedEvent?.id === event.id ? 'selected' : ''}"
+               onclick="selectEvent('${event.id}')"
+               data-id="${event.id}">
+            <div class="event-card-header">
+              <div class="event-name">${escapeHtml(event.name)}</div>
+              <span class="event-promotion">${escapeHtml(event.promotion)}</span>
+            </div>
+            <div class="event-meta">
+              <span>${formatDate(event.date)}</span>
+              <span class="event-fights-count">
+                <span>${event._count?.fights || 0} fights</span>
+              </span>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        showToast('Failed to load events', 'error');
+        console.error(err);
+      }
+    }
 
-                const res = await fetch(`${API_URL}/stats`);
-                const data = await res.json();
+    async function selectEvent(eventId) {
+      try {
+        const res = await fetch(`${API_BASE}/admin/events/${eventId}`);
+        const data = await res.json();
+        selectedEvent = data.event;
 
-                document.getElementById('totalUsers').textContent = data.users.total;
-                document.getElementById('activeToday').textContent = data.users.activeToday;
-                document.getElementById('activeWeek').textContent = data.users.activeWeek;
-                document.getElementById('newThisWeek').textContent = data.users.newThisWeek;
+        // Update UI
+        document.querySelectorAll('.event-card').forEach(card => {
+          card.classList.toggle('selected', card.dataset.id === eventId);
+        });
 
-                document.getElementById('totalRatings').textContent = data.engagement.totalRatings;
-                document.getElementById('totalReviews').textContent = data.engagement.totalReviews;
-                document.getElementById('ratingsToday').textContent = data.engagement.ratingsToday;
+        renderFights();
+      } catch (err) {
+        showToast('Failed to load event', 'error');
+        console.error(err);
+      }
+    }
 
-                document.getElementById('totalEvents').textContent = data.content.totalEvents;
-                document.getElementById('totalFights').textContent = data.content.totalFights;
-                document.getElementById('totalFighters').textContent = data.content.totalFighters;
-                document.getElementById('upcomingEvents').textContent = data.content.upcomingEvents;
+    function renderFights() {
+      const container = document.getElementById('fightsContent');
 
-                document.getElementById('lastUpdated').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('dashboard-content').style.display = 'block';
-            } catch (error) {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').style.display = 'block';
-                document.getElementById('error').textContent = `Error: ${error.message}`;
-            }
+      if (!selectedEvent) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">👈</div>
+            <div class="empty-state-text">Select an event to view and manage fights</div>
+          </div>
+        `;
+        return;
+      }
+
+      const fights = selectedEvent.fights || [];
+
+      // Group fights by card type
+      const mainCard = fights.filter(f => f.cardType === 'Main Card' || !f.cardType);
+      const prelims = fights.filter(f => f.cardType === 'Prelims');
+      const earlyPrelims = fights.filter(f => f.cardType === 'Early Prelims');
+
+      container.innerHTML = `
+        <div class="panel-header">
+          <div>
+            <span class="panel-title">${escapeHtml(selectedEvent.name)}</span>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+              ${formatDate(selectedEvent.date)} • ${selectedEvent.venue || ''} ${selectedEvent.location || ''}
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary btn-sm" onclick="openEventModal('${selectedEvent.id}')">Edit Event</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteEvent('${selectedEvent.id}')">Delete Event</button>
+            <button class="btn btn-primary btn-sm" onclick="openFightModal()">+ Add Fight</button>
+          </div>
+        </div>
+
+        ${renderCardSection('Main Card', 'main', mainCard)}
+        ${prelims.length > 0 ? renderCardSection('Prelims', 'prelim', prelims) : ''}
+        ${earlyPrelims.length > 0 ? renderCardSection('Early Prelims', 'early', earlyPrelims) : ''}
+
+        ${fights.length === 0 ? `
+          <div class="empty-state">
+            <div class="empty-state-icon">🥊</div>
+            <div class="empty-state-text">No fights yet. Click "Add Fight" to get started.</div>
+          </div>
+        ` : ''}
+      `;
+    }
+
+    function renderCardSection(title, badgeClass, fights) {
+      if (fights.length === 0 && badgeClass !== 'main') return '';
+
+      return `
+        <div class="card-section">
+          <div class="card-section-header">
+            <span class="card-section-badge ${badgeClass}">${title}</span>
+            <span style="color: var(--text-muted); font-size: 0.75rem;">${fights.length} fights</span>
+          </div>
+          <div class="fight-list">
+            ${fights.map(fight => renderFightCard(fight)).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderFightCard(fight) {
+      const f1 = fight.fighter1;
+      const f2 = fight.fighter2;
+      const f1Name = f1 ? `${f1.firstName} ${f1.lastName}` : 'TBD';
+      const f2Name = f2 ? `${f2.firstName} ${f2.lastName}` : 'TBD';
+
+      return `
+        <div class="fight-card">
+          <div class="fight-info">
+            <span class="fight-order">#${fight.orderOnCard}</span>
+            <div>
+              <div class="fight-matchup">
+                ${escapeHtml(f1Name)} vs ${escapeHtml(f2Name)}
+                ${fight.isTitle ? '<span class="fight-title-badge">TITLE</span>' : ''}
+              </div>
+              <div class="fight-details">
+                ${fight.weightClass || 'Catchweight'} • ${fight.scheduledRounds} rounds
+              </div>
+            </div>
+          </div>
+          <div class="fight-actions">
+            <button class="btn btn-icon btn-sm" onclick="openFightModal('${fight.id}')" title="Edit">✏️</button>
+            <button class="btn btn-icon btn-sm" onclick="deleteFight('${fight.id}')" title="Delete">🗑️</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function openEventModal(eventId = null) {
+      const modal = document.getElementById('eventModal');
+      const form = document.getElementById('eventForm');
+      form.reset();
+
+      if (eventId && selectedEvent) {
+        document.getElementById('eventModalTitle').textContent = 'Edit Event';
+        document.getElementById('eventId').value = selectedEvent.id;
+        document.getElementById('eventPromotion').value = selectedEvent.promotion || '';
+        document.getElementById('eventName').value = selectedEvent.name || '';
+        document.getElementById('eventDate').value = selectedEvent.date ? selectedEvent.date.split('T')[0] : '';
+        document.getElementById('eventVenue').value = selectedEvent.venue || '';
+        document.getElementById('eventLocation').value = selectedEvent.location || '';
+        document.getElementById('eventMainChannel').value = selectedEvent.mainChannel || '';
+      } else {
+        document.getElementById('eventModalTitle').textContent = 'Create Event';
+        document.getElementById('eventId').value = '';
+        // Copy promotion from global filter if set
+        const globalPromo = document.getElementById('globalPromotion').value;
+        if (globalPromo) {
+          document.getElementById('eventPromotion').value = globalPromo;
+        }
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeEventModal() {
+      document.getElementById('eventModal').classList.remove('active');
+    }
+
+    async function saveEvent(e) {
+      e.preventDefault();
+
+      const eventId = document.getElementById('eventId').value;
+      const date = document.getElementById('eventDate').value;
+      const time = document.getElementById('eventTime').value || '22:00';
+
+      const data = {
+        name: document.getElementById('eventName').value,
+        promotion: document.getElementById('eventPromotion').value,
+        date: `${date}T${time}:00`,
+        venue: document.getElementById('eventVenue').value || undefined,
+        location: document.getElementById('eventLocation').value || undefined,
+        mainChannel: document.getElementById('eventMainChannel').value || undefined,
+      };
+
+      try {
+        const url = eventId ? `${API_BASE}/admin/events/${eventId}` : `${API_BASE}/admin/events`;
+        const method = eventId ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to save event');
         }
 
-        // Metrics Over Time
-        async function captureMetrics() {
-            try {
-                const res = await fetch(`${API_URL}/metrics/capture`, { method: 'POST' });
-                const data = await res.json();
+        showToast(eventId ? 'Event updated' : 'Event created', 'success');
+        closeEventModal();
+        loadEvents();
 
-                if (res.ok) {
-                    showMessage('metrics', data.message, 'success');
-                    loadMetrics(currentTimeRange);
-                } else {
-                    showMessage('metrics', data.error || 'Failed to capture metrics', 'error');
-                }
-            } catch (error) {
-                showMessage('metrics', error.message, 'error');
-            }
+        if (eventId) {
+          selectEvent(eventId);
+        }
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function deleteEvent(eventId) {
+      if (!confirm('Delete this event and all its fights? This cannot be undone.')) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/events/${eventId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete event');
+
+        showToast('Event deleted', 'success');
+        selectedEvent = null;
+        loadEvents();
+        renderFights();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // ============================================
+    // FIGHTS
+    // ============================================
+    function openFightModal(fightId = null) {
+      if (!selectedEvent) {
+        showToast('Please select an event first', 'error');
+        return;
+      }
+
+      const modal = document.getElementById('fightModal');
+      const form = document.getElementById('fightForm');
+      form.reset();
+
+      // Reset fighter fields
+      document.getElementById('fighter1Id').value = '';
+      document.getElementById('fighter2Id').value = '';
+      document.getElementById('fighter1Search').value = '';
+      document.getElementById('fighter2Search').value = '';
+      document.getElementById('fighter1Create').style.display = 'none';
+      document.getElementById('fighter2Create').style.display = 'none';
+
+      document.getElementById('fightEventId').value = selectedEvent.id;
+
+      if (fightId) {
+        const fight = selectedEvent.fights.find(f => f.id === fightId);
+        if (fight) {
+          document.getElementById('fightModalTitle').textContent = 'Edit Fight';
+          document.getElementById('fightId').value = fight.id;
+          document.getElementById('fighter1Id').value = fight.fighter1?.id || '';
+          document.getElementById('fighter2Id').value = fight.fighter2?.id || '';
+          document.getElementById('fighter1Search').value = fight.fighter1 ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}` : '';
+          document.getElementById('fighter2Search').value = fight.fighter2 ? `${fight.fighter2.firstName} ${fight.fighter2.lastName}` : '';
+          document.getElementById('fightWeightClass').value = fight.weightClass || '';
+          document.getElementById('fightCardType').value = fight.cardType || 'Main Card';
+          document.getElementById('fightOrder').value = fight.orderOnCard || 1;
+          document.getElementById('fightRounds').value = fight.scheduledRounds || 3;
+          document.getElementById('fightIsTitle').checked = fight.isTitle || false;
+          document.getElementById('fightTitleName').value = fight.titleName || '';
+          toggleTitleName();
+        }
+      } else {
+        document.getElementById('fightModalTitle').textContent = 'Add Fight';
+        document.getElementById('fightId').value = '';
+        // Auto-set order to next available
+        const maxOrder = Math.max(0, ...selectedEvent.fights.map(f => f.orderOnCard || 0));
+        document.getElementById('fightOrder').value = maxOrder + 1;
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeFightModal() {
+      document.getElementById('fightModal').classList.remove('active');
+    }
+
+    function toggleTitleName() {
+      const isTitle = document.getElementById('fightIsTitle').checked;
+      document.getElementById('titleNameGroup').style.display = isTitle ? 'block' : 'none';
+      if (isTitle) {
+        document.getElementById('fightRounds').value = '5';
+      }
+    }
+
+    async function saveFight(e, keepOpen = false) {
+      if (e) e.preventDefault();
+
+      const fighter1Id = document.getElementById('fighter1Id').value;
+      const fighter2Id = document.getElementById('fighter2Id').value;
+
+      if (!fighter1Id || !fighter2Id) {
+        showToast('Please select both fighters', 'error');
+        return false;
+      }
+
+      const fightId = document.getElementById('fightId').value;
+      const data = {
+        eventId: document.getElementById('fightEventId').value,
+        fighter1Id,
+        fighter2Id,
+        weightClass: document.getElementById('fightWeightClass').value || undefined,
+        cardType: document.getElementById('fightCardType').value,
+        orderOnCard: parseInt(document.getElementById('fightOrder').value),
+        scheduledRounds: parseInt(document.getElementById('fightRounds').value),
+        isTitle: document.getElementById('fightIsTitle').checked,
+        titleName: document.getElementById('fightTitleName').value || undefined,
+      };
+
+      try {
+        const url = fightId ? `${API_BASE}/admin/fights/${fightId}` : `${API_BASE}/admin/fights`;
+        const method = fightId ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to save fight');
         }
 
-        function changeTimeRange(days) {
-            currentTimeRange = days;
-            document.querySelectorAll('.btn-toggle').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            loadMetrics(days);
+        showToast(fightId ? 'Fight updated' : 'Fight added', 'success');
+
+        // Refresh event data
+        await selectEvent(selectedEvent.id);
+
+        if (keepOpen) {
+          // Reset form for another entry but keep event
+          document.getElementById('fightId').value = '';
+          document.getElementById('fighter1Id').value = '';
+          document.getElementById('fighter2Id').value = '';
+          document.getElementById('fighter1Search').value = '';
+          document.getElementById('fighter2Search').value = '';
+          const maxOrder = Math.max(0, ...selectedEvent.fights.map(f => f.orderOnCard || 0));
+          document.getElementById('fightOrder').value = maxOrder + 1;
+        } else {
+          closeFightModal();
         }
 
-        async function loadMetrics(days) {
-            try {
-                const res = await fetch(`${API_URL}/metrics/history?days=${days}`);
-                const data = await res.json();
+        return true;
+      } catch (err) {
+        showToast(err.message, 'error');
+        return false;
+      }
+    }
 
-                if (data.metrics.length === 0) {
-                    showMessage('metrics', 'No metrics data available. Click "Capture Today\'s Snapshot" to start tracking.', 'error');
-                    return;
-                }
+    async function saveFightAndContinue() {
+      await saveFight(null, true);
+    }
 
-                updateCharts(data.metrics);
-            } catch (error) {
-                showMessage('metrics', error.message, 'error');
-            }
+    async function deleteFight(fightId) {
+      if (!confirm('Delete this fight?')) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/fights/${fightId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete fight');
+
+        showToast('Fight deleted', 'success');
+        await selectEvent(selectedEvent.id);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // ============================================
+    // FIGHTER AUTOCOMPLETE
+    // ============================================
+    async function searchFighter(num, query) {
+      const dropdown = document.getElementById(`fighter${num}Dropdown`);
+      const createForm = document.getElementById(`fighter${num}Create`);
+
+      if (query.length < 2) {
+        dropdown.style.display = 'none';
+        return;
+      }
+
+      lastSearchQuery[num] = query;
+
+      // Debounce
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch(`${API_BASE}/admin/fighters/search?q=${encodeURIComponent(query)}`);
+          const data = await res.json();
+
+          if (lastSearchQuery[num] !== query) return; // Outdated
+
+          let html = '';
+          if (data.fighters && data.fighters.length > 0) {
+            html = data.fighters.map(f => `
+              <div class="autocomplete-item" onclick="selectFighter(${num}, '${f.id}', '${escapeHtml(f.firstName)} ${escapeHtml(f.lastName)}')">
+                <span class="autocomplete-name">${escapeHtml(f.firstName)} ${escapeHtml(f.lastName)}${f.nickname ? ` "${escapeHtml(f.nickname)}"` : ''}</span>
+                <span class="autocomplete-record">${f.wins}-${f.losses}-${f.draws}</span>
+              </div>
+            `).join('');
+          }
+
+          // Add create option
+          html += `
+            <div class="autocomplete-item autocomplete-create" onclick="showCreateFighter(${num}, '${escapeHtml(query)}')">
+              + Create "${escapeHtml(query)}"
+            </div>
+          `;
+
+          dropdown.innerHTML = html;
+          dropdown.style.display = 'block';
+          createForm.style.display = 'none';
+        } catch (err) {
+          console.error('Fighter search error:', err);
+        }
+      }, 200);
+    }
+
+    function selectFighter(num, id, name) {
+      document.getElementById(`fighter${num}Id`).value = id;
+      document.getElementById(`fighter${num}Search`).value = name;
+      document.getElementById(`fighter${num}Dropdown`).style.display = 'none';
+    }
+
+    function showCreateFighter(num, query) {
+      const dropdown = document.getElementById(`fighter${num}Dropdown`);
+      const createForm = document.getElementById(`fighter${num}Create`);
+
+      dropdown.style.display = 'none';
+      createForm.style.display = 'block';
+
+      // Parse name
+      const parts = query.trim().split(' ');
+      if (parts.length >= 2) {
+        document.getElementById(`fighter${num}FirstName`).value = parts[0];
+        document.getElementById(`fighter${num}LastName`).value = parts.slice(1).join(' ');
+      } else {
+        document.getElementById(`fighter${num}FirstName`).value = query;
+        document.getElementById(`fighter${num}LastName`).value = '';
+      }
+    }
+
+    function cancelCreateFighter(num) {
+      document.getElementById(`fighter${num}Create`).style.display = 'none';
+      document.getElementById(`fighter${num}Search`).value = '';
+    }
+
+    async function createFighter(num) {
+      const firstName = document.getElementById(`fighter${num}FirstName`).value.trim();
+      const lastName = document.getElementById(`fighter${num}LastName`).value.trim();
+      const wins = parseInt(document.getElementById(`fighter${num}Wins`).value) || 0;
+      const losses = parseInt(document.getElementById(`fighter${num}Losses`).value) || 0;
+      const draws = parseInt(document.getElementById(`fighter${num}Draws`).value) || 0;
+
+      if (!firstName || !lastName) {
+        showToast('First and last name required', 'error');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/fighters`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firstName, lastName, wins, losses, draws }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to create fighter');
         }
 
-        function updateCharts(metrics) {
-            const labels = metrics.map(m => new Date(m.date).toLocaleDateString());
+        const data = await res.json();
+        const fighter = data.fighter;
 
-            // User Growth Chart
-            const usersData = {
-                labels,
-                datasets: [
-                    {
-                        label: 'Total Users',
-                        data: metrics.map(m => m.totalUsers),
-                        borderColor: '#dc2626',
-                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    },
-                    {
-                        label: 'New Users',
-                        data: metrics.map(m => m.newUsers),
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }
-                ]
-            };
+        document.getElementById(`fighter${num}Id`).value = fighter.id;
+        document.getElementById(`fighter${num}Search`).value = `${fighter.firstName} ${fighter.lastName}`;
+        document.getElementById(`fighter${num}Create`).style.display = 'none';
 
-            // Activity Chart
-            const activityData = {
-                labels,
-                datasets: [
-                    {
-                        label: 'Active Users',
-                        data: metrics.map(m => m.activeUsers),
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    },
-                    {
-                        label: 'Returning Users',
-                        data: metrics.map(m => m.returningUsers),
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }
-                ]
-            };
+        showToast('Fighter created', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
 
-            // Engagement Chart
-            const engagementData = {
-                labels,
-                datasets: [
-                    {
-                        label: 'Total Ratings',
-                        data: metrics.map(m => m.totalRatings),
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    },
-                    {
-                        label: 'Total Reviews',
-                        data: metrics.map(m => m.totalReviews),
-                        borderColor: '#ec4899',
-                        backgroundColor: 'rgba(236, 72, 153, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }
-                ]
-            };
+    // ============================================
+    // UTILITIES
+    // ============================================
+    function closeModal(e, modalId) {
+      if (e.target.classList.contains('modal-overlay')) {
+        document.getElementById(modalId).classList.remove('active');
+      }
+    }
 
-            // Sessions Chart
-            const sessionsData = {
-                labels,
-                datasets: [
-                    {
-                        label: 'Total Sessions',
-                        data: metrics.map(m => m.totalSessions),
-                        borderColor: '#06b6d4',
-                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }
-                ]
-            };
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
 
-            const chartConfig = {
-                type: 'line',
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            };
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    }
 
-            // Destroy existing charts
-            if (charts.users) charts.users.destroy();
-            if (charts.activity) charts.activity.destroy();
-            if (charts.engagement) charts.engagement.destroy();
-            if (charts.sessions) charts.sessions.destroy();
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <span>${type === 'success' ? '✓' : '✗'}</span>
+        <span>${escapeHtml(message)}</span>
+      `;
+      container.appendChild(toast);
 
-            // Create new charts
-            charts.users = new Chart(document.getElementById('usersChart'), {
-                ...chartConfig,
-                data: usersData
-            });
-
-            charts.activity = new Chart(document.getElementById('activityChart'), {
-                ...chartConfig,
-                data: activityData
-            });
-
-            charts.engagement = new Chart(document.getElementById('engagementChart'), {
-                ...chartConfig,
-                data: engagementData
-            });
-
-            charts.sessions = new Chart(document.getElementById('sessionsChart'), {
-                ...chartConfig,
-                data: sessionsData
-            });
-        }
-
-        // Events CRUD
-        async function loadEvents() {
-            try {
-                const res = await fetch(`${API_URL}/events`);
-                const data = await res.json();
-                const tbody = document.getElementById('events-table');
-                tbody.innerHTML = data.events.map(e => `
-                    <tr>
-                        <td>${e.name}</td>
-                        <td>${e.promotion}</td>
-                        <td>${new Date(e.date).toLocaleDateString()}</td>
-                        <td>${e.location || '-'}</td>
-                        <td>
-                            ${e.isComplete ? '<span class="badge badge-success">Complete</span>' :
-                              e.hasStarted ? '<span class="badge badge-warning">Live</span>' :
-                              '<span class="badge">Upcoming</span>'}
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-secondary" onclick='editEvent(${JSON.stringify(e)})'>Edit</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteEvent('${e.id}')">Delete</button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                showMessage('events', error.message, 'error');
-            }
-        }
-
-        function openEventModal(event = null) {
-            document.getElementById('event-modal').classList.add('active');
-            document.getElementById('event-modal-title').textContent = event ? 'Edit Event' : 'Add Event';
-
-            if (event) {
-                document.getElementById('event-id').value = event.id;
-                document.getElementById('event-name').value = event.name;
-                document.getElementById('event-promotion').value = event.promotion;
-                document.getElementById('event-date').value = new Date(event.date).toISOString().slice(0,16);
-                document.getElementById('event-location').value = event.location || '';
-                document.getElementById('event-venue').value = event.venue || '';
-                document.getElementById('event-started').checked = event.hasStarted;
-                document.getElementById('event-complete').checked = event.isComplete;
-            } else {
-                document.getElementById('event-form').reset();
-                document.getElementById('event-id').value = '';
-            }
-        }
-
-        function editEvent(event) {
-            openEventModal(event);
-        }
-
-        function closeEventModal() {
-            document.getElementById('event-modal').classList.remove('active');
-        }
-
-        document.getElementById('event-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('event-id').value;
-            const data = {
-                name: document.getElementById('event-name').value,
-                promotion: document.getElementById('event-promotion').value,
-                date: new Date(document.getElementById('event-date').value).toISOString(),
-                location: document.getElementById('event-location').value || null,
-                venue: document.getElementById('event-venue').value || null,
-                hasStarted: document.getElementById('event-started').checked,
-                isComplete: document.getElementById('event-complete').checked,
-            };
-
-            try {
-                const res = await fetch(`${API_URL}/events${id ? '/' + id : ''}`, {
-                    method: id ? 'PUT' : 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                if (res.ok) {
-                    closeEventModal();
-                    loadEvents();
-                    showMessage('events', 'Event saved successfully!', 'success');
-                }
-            } catch (error) {
-                showMessage('events', error.message, 'error');
-            }
-        };
-
-        async function deleteEvent(id) {
-            if (!confirm('Delete this event?')) return;
-            try {
-                await fetch(`${API_URL}/events/${id}`, { method: 'DELETE' });
-                loadEvents();
-                showMessage('events', 'Event deleted successfully!', 'success');
-            } catch (error) {
-                showMessage('events', error.message, 'error');
-            }
-        }
-
-        // Fighters CRUD
-        async function loadFighters() {
-            try {
-                const res = await fetch(`${API_URL}/fighters`);
-                const data = await res.json();
-                const tbody = document.getElementById('fighters-table');
-                tbody.innerHTML = data.fighters.map(f => `
-                    <tr>
-                        <td>${f.firstName} ${f.lastName}</td>
-                        <td>${f.nickname || '-'}</td>
-                        <td>${f.wins}-${f.losses}-${f.draws}</td>
-                        <td>${f.weightClass || '-'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-secondary" onclick='editFighter(${JSON.stringify(f)})'>Edit</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteFighter('${f.id}')">Delete</button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                showMessage('fighters', error.message, 'error');
-            }
-        }
-
-        function openFighterModal(fighter = null) {
-            document.getElementById('fighter-modal').classList.add('active');
-            document.getElementById('fighter-modal-title').textContent = fighter ? 'Edit Fighter' : 'Add Fighter';
-
-            if (fighter) {
-                document.getElementById('fighter-id').value = fighter.id;
-                document.getElementById('fighter-firstName').value = fighter.firstName;
-                document.getElementById('fighter-lastName').value = fighter.lastName;
-                document.getElementById('fighter-nickname').value = fighter.nickname || '';
-                document.getElementById('fighter-weightClass').value = fighter.weightClass || '';
-                document.getElementById('fighter-wins').value = fighter.wins;
-                document.getElementById('fighter-losses').value = fighter.losses;
-                document.getElementById('fighter-draws').value = fighter.draws;
-            } else {
-                document.getElementById('fighter-form').reset();
-                document.getElementById('fighter-id').value = '';
-            }
-        }
-
-        function editFighter(fighter) {
-            openFighterModal(fighter);
-        }
-
-        function closeFighterModal() {
-            document.getElementById('fighter-modal').classList.remove('active');
-        }
-
-        document.getElementById('fighter-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('fighter-id').value;
-            const data = {
-                firstName: document.getElementById('fighter-firstName').value,
-                lastName: document.getElementById('fighter-lastName').value,
-                nickname: document.getElementById('fighter-nickname').value || null,
-                weightClass: document.getElementById('fighter-weightClass').value || null,
-                wins: parseInt(document.getElementById('fighter-wins').value) || 0,
-                losses: parseInt(document.getElementById('fighter-losses').value) || 0,
-                draws: parseInt(document.getElementById('fighter-draws').value) || 0,
-            };
-
-            try {
-                const res = await fetch(`${API_URL}/fighters${id ? '/' + id : ''}`, {
-                    method: id ? 'PUT' : 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                if (res.ok) {
-                    closeFighterModal();
-                    loadFighters();
-                    showMessage('fighters', 'Fighter saved successfully!', 'success');
-                }
-            } catch (error) {
-                showMessage('fighters', error.message, 'error');
-            }
-        };
-
-        async function deleteFighter(id) {
-            if (!confirm('Delete this fighter?')) return;
-            try {
-                await fetch(`${API_URL}/fighters/${id}`, { method: 'DELETE' });
-                loadFighters();
-                showMessage('fighters', 'Fighter deleted successfully!', 'success');
-            } catch (error) {
-                showMessage('fighters', error.message, 'error');
-            }
-        }
-
-        // Fights CRUD
-        async function loadFights() {
-            try {
-                const res = await fetch(`${API_URL}/fights`);
-                const data = await res.json();
-                const tbody = document.getElementById('fights-table');
-                tbody.innerHTML = data.fights.map(f => `
-                    <tr>
-                        <td>${f.event?.name || 'N/A'}</td>
-                        <td>${f.fighter1?.firstName} ${f.fighter1?.lastName}</td>
-                        <td>${f.fighter2?.firstName} ${f.fighter2?.lastName}</td>
-                        <td>${f.weightClass}</td>
-                        <td>
-                            ${f.isComplete ? '<span class="badge badge-success">Complete</span>' :
-                              f.hasStarted ? '<span class="badge badge-warning">Live</span>' :
-                              '<span class="badge">Upcoming</span>'}
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-secondary" onclick='editFight(${JSON.stringify(f)})'>Edit</button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                showMessage('fights', error.message, 'error');
-            }
-        }
-
-        function editFight(fight) {
-            document.getElementById('fight-modal').classList.add('active');
-            document.getElementById('fight-id').value = fight.id;
-            document.getElementById('fight-started').checked = fight.hasStarted;
-            document.getElementById('fight-complete').checked = fight.isComplete;
-        }
-
-        function closeFightModal() {
-            document.getElementById('fight-modal').classList.remove('active');
-        }
-
-        document.getElementById('fight-form').onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('fight-id').value;
-            const data = {
-                hasStarted: document.getElementById('fight-started').checked,
-                isComplete: document.getElementById('fight-complete').checked,
-            };
-
-            try {
-                const res = await fetch(`${API_URL}/fights/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                if (res.ok) {
-                    closeFightModal();
-                    loadFights();
-                    showMessage('fights', 'Fight updated successfully!', 'success');
-                }
-            } catch (error) {
-                showMessage('fights', error.message, 'error');
-            }
-        };
-
-        // Helper functions
-        function showMessage(tab, message, type) {
-            const el = document.getElementById(`${tab}-message`);
-            el.className = type;
-            el.textContent = message;
-            el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', 3000);
-        }
-
-        // Initial load
-        fetchStats();
-    </script>
+      setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+  </script>
 </body>
 </html>
