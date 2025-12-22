@@ -211,15 +211,17 @@ async function importOktagonFighters(
       continue;
     }
 
-    // Upload image to R2 storage
+    // Use local cropped image if available, otherwise try to upload to R2
     let profileImageUrl: string | null = null;
-    const imageUrl = athlete.imageUrl;
-    if (imageUrl) {
+    if (athlete.localImagePath) {
+      // Use local cropped image path (these are already cropped headshots)
+      profileImageUrl = athlete.localImagePath;
+    } else if (athlete.imageUrl) {
       try {
-        profileImageUrl = await uploadFighterImage(imageUrl, `${firstName} ${lastName}`);
+        profileImageUrl = await uploadFighterImage(athlete.imageUrl, `${firstName} ${lastName}`);
       } catch (error) {
         console.warn(`  ⚠ Image upload failed for ${firstName} ${lastName}, using OKTAGON URL`);
-        profileImageUrl = imageUrl;
+        profileImageUrl = athlete.imageUrl;
       }
     }
 
@@ -397,43 +399,63 @@ async function importOktagonEvents(
         }
       }
 
-      // If still not found, create the fighters
+      // If still not found, create/upsert the fighters
       if (!fighter1Id) {
         const recordParts = parseRecord(fightData.fighterA.record);
-        const fighter1 = await prisma.fighter.create({
-          data: {
-            firstName: fightData.fighterA.firstName || fightData.fighterA.name.split(' ')[0] || '',
-            lastName: fightData.fighterA.lastName || fightData.fighterA.name.split(' ').slice(1).join(' ') || '',
+        const firstName = fightData.fighterA.firstName || fightData.fighterA.name.split(' ')[0] || '';
+        const lastName = fightData.fighterA.lastName || fightData.fighterA.name.split(' ').slice(1).join(' ') || '';
+        const fighter1 = await prisma.fighter.upsert({
+          where: {
+            firstName_lastName: { firstName, lastName }
+          },
+          create: {
+            firstName,
+            lastName,
             nickname: fightData.fighterA.nickname || undefined,
             ...recordParts,
             profileImage: fightData.fighterA.imageUrl || undefined,
             gender: inferGenderFromWeightClass(fightData.weightClass),
             sport: Sport.MMA,
             isActive: true,
+          },
+          update: {
+            nickname: fightData.fighterA.nickname || undefined,
+            ...recordParts,
+            profileImage: fightData.fighterA.imageUrl || undefined,
           }
         });
         fighter1Id = fighter1.id;
         fighterUrlToId.set(fightData.fighterA.athleteUrl, fighter1.id);
-        console.log(`    + Created fighter: ${fightData.fighterA.name}`);
+        console.log(`    + Upserted fighter: ${fightData.fighterA.name}`);
       }
 
       if (!fighter2Id) {
         const recordParts = parseRecord(fightData.fighterB.record);
-        const fighter2 = await prisma.fighter.create({
-          data: {
-            firstName: fightData.fighterB.firstName || fightData.fighterB.name.split(' ')[0] || '',
-            lastName: fightData.fighterB.lastName || fightData.fighterB.name.split(' ').slice(1).join(' ') || '',
+        const firstName = fightData.fighterB.firstName || fightData.fighterB.name.split(' ')[0] || '';
+        const lastName = fightData.fighterB.lastName || fightData.fighterB.name.split(' ').slice(1).join(' ') || '';
+        const fighter2 = await prisma.fighter.upsert({
+          where: {
+            firstName_lastName: { firstName, lastName }
+          },
+          create: {
+            firstName,
+            lastName,
             nickname: fightData.fighterB.nickname || undefined,
             ...recordParts,
             profileImage: fightData.fighterB.imageUrl || undefined,
             gender: inferGenderFromWeightClass(fightData.weightClass),
             sport: Sport.MMA,
             isActive: true,
+          },
+          update: {
+            nickname: fightData.fighterB.nickname || undefined,
+            ...recordParts,
+            profileImage: fightData.fighterB.imageUrl || undefined,
           }
         });
         fighter2Id = fighter2.id;
         fighterUrlToId.set(fightData.fighterB.athleteUrl, fighter2.id);
-        console.log(`    + Created fighter: ${fightData.fighterB.name}`);
+        console.log(`    + Upserted fighter: ${fightData.fighterB.name}`);
       }
 
       // Parse weight class

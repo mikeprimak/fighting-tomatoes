@@ -10,6 +10,7 @@ import {
 import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
+import { PromotionLogo } from './PromotionLogo';
 
 interface Event {
   id: string;
@@ -195,13 +196,19 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
       style={[styles.eventCard, { backgroundColor: colors.card, borderColor: colors.border }]}
       onPress={handlePress}
     >
-      {/* Event Image */}
-      <Image
-        source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
-        style={styles.eventImage}
-        resizeMode="cover"
-        onLoad={handleImageLoad}
-      />
+      {/* Event Image with Logo Overlay */}
+      <View style={styles.imageContainer}>
+        <Image
+          source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
+          style={styles.eventImage}
+          resizeMode="cover"
+          onLoad={handleImageLoad}
+        />
+        {/* Promotion Logo Overlay */}
+        <View style={styles.logoOverlay}>
+          <PromotionLogo promotion={event.promotion} size={20} />
+        </View>
+      </View>
 
       <View style={styles.eventContent}>
         <View style={styles.eventHeader}>
@@ -267,10 +274,27 @@ const createStyles = (colors: any, aspectRatio: number) => StyleSheet.create({
     overflow: 'hidden',
     width: '100%',
   },
+  imageContainer: {
+    position: 'relative',
+  },
   eventImage: {
     width: '100%',
     height: undefined,
     aspectRatio: aspectRatio,
+  },
+  logoOverlay: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   eventContent: {
     padding: 16,

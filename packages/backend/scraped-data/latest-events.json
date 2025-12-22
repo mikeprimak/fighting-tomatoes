@@ -1,326 +1,6 @@
 {
   "events": [
     {
-      "eventName": "UFC Fight Night Royval vs. Kape",
-      "eventType": "Fight Night",
-      "headline": "Royval vs Kape",
-      "eventUrl": "https://www.ufc.com/event/ufc-fight-night-december-13-2025",
-      "venue": "UFC APEX",
-      "city": "Las Vegas",
-      "state": "NV",
-      "country": "United States",
-      "dateText": "Sat, Dec 13 / 10:00 PM EST / Main Card",
-      "status": "Upcoming",
-      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-11/121325-ufc-fight-night-royval-vs-kape-EVENT-ART.jpg?h=d1cb525d&itok=g11srEdo",
-      "eventStartTime": "10:00 PM",
-      "sections": [
-        {
-          "cardType": "Main Card",
-          "startTime": "Sat, Dec 13 / 10:00 PM EST",
-          "fightCount": 6
-        },
-        {
-          "cardType": "Prelims",
-          "startTime": "Sat, Dec 13 / 7:00 PM EST",
-          "fightCount": 7
-        },
-        {
-          "cardType": "Early Prelims",
-          "startTime": "",
-          "fightCount": 0
-        }
-      ],
-      "fights": [
-        {
-          "fightId": "12469",
-          "order": 1,
-          "cardType": "Main Card",
-          "weightClass": "Flyweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Brandon Royval",
-            "rank": "#2",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/brandon-royval"
-          },
-          "fighterB": {
-            "name": "Manel Kape",
-            "rank": "#6",
-            "country": "Portugal",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/manel-kape"
-          },
-          "startTime": "10:00 PM"
-        },
-        {
-          "fightId": "12518",
-          "order": 2,
-          "cardType": "Main Card",
-          "weightClass": "Featherweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Giga Chikadze",
-            "rank": "#15",
-            "country": "Georgia",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/giga-chikadze"
-          },
-          "fighterB": {
-            "name": "Kevin Vallejos",
-            "rank": "",
-            "country": "Argentina",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/kevin-vallejos"
-          },
-          "startTime": "10:30 PM"
-        },
-        {
-          "fightId": "12522",
-          "order": 3,
-          "cardType": "Main Card",
-          "weightClass": "Middleweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Cesar Almeida",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/cesar-almeida"
-          },
-          "fighterB": {
-            "name": "Cezary Oleksiejczuk",
-            "rank": "",
-            "country": "Poland",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/cezary-oleksiejczuk"
-          },
-          "startTime": "11:00 PM"
-        },
-        {
-          "fightId": "12521",
-          "order": 4,
-          "cardType": "Main Card",
-          "weightClass": "Featherweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Melquizael Costa",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/melquizael-costa"
-          },
-          "fighterB": {
-            "name": "Morgan Charriere",
-            "rank": "",
-            "country": "France",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/morgan-charriere"
-          },
-          "startTime": "11:30 PM"
-        },
-        {
-          "fightId": "12519",
-          "order": 5,
-          "cardType": "Main Card",
-          "weightClass": "Heavyweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Kennedy Nzechukwu",
-            "rank": "",
-            "country": "Nigeria",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/kennedy-nzechukwu"
-          },
-          "fighterB": {
-            "name": "Marcus Buchecha",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/marcus-buchecha"
-          },
-          "startTime": "12:00 AM"
-        },
-        {
-          "fightId": "12563",
-          "order": 6,
-          "cardType": "Main Card",
-          "weightClass": "Catchweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "King Green",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/bobby-green"
-          },
-          "fighterB": {
-            "name": "Lance Gibson Jr.",
-            "rank": "",
-            "country": "Canada",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/lance-gibson-jr"
-          },
-          "startTime": "12:30 AM"
-        },
-        {
-          "fightId": "12511",
-          "order": 7,
-          "cardType": "Prelims",
-          "weightClass": "Women's Strawweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Amanda Lemos",
-            "rank": "#5",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/amanda-lemos"
-          },
-          "fighterB": {
-            "name": "Gillian Robertson",
-            "rank": "#10",
-            "country": "Canada",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/gillian-robertson"
-          },
-          "startTime": "1:00 AM"
-        },
-        {
-          "fightId": "12564",
-          "order": 8,
-          "cardType": "Prelims",
-          "weightClass": "Featherweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Joanderson Brito",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/kori-makkenna-3"
-          },
-          "fighterB": {
-            "name": "Isaac Thomson",
-            "rank": "",
-            "country": "Australia",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/isaac-thomson"
-          },
-          "startTime": "1:30 AM"
-        },
-        {
-          "fightId": "12536",
-          "order": 9,
-          "cardType": "Prelims",
-          "weightClass": "Welterweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Neil Magny",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/neil-magny"
-          },
-          "fighterB": {
-            "name": "Yaroslav Amosov",
-            "rank": "",
-            "country": "Ukraine",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/yaroslav-amosov"
-          },
-          "startTime": "2:00 AM"
-        },
-        {
-          "fightId": "12537",
-          "order": 10,
-          "cardType": "Prelims",
-          "weightClass": "Heavyweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Sean Sharaf",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/sean-sharaf"
-          },
-          "fighterB": {
-            "name": "Steven Asplund",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/steven-asplund"
-          },
-          "startTime": "2:30 AM"
-        },
-        {
-          "fightId": "12512",
-          "order": 11,
-          "cardType": "Prelims",
-          "weightClass": "Women's Bantamweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Melissa Croden",
-            "rank": "",
-            "country": "Canada",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/melissa-croden"
-          },
-          "fighterB": {
-            "name": "Luana Santos",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/luana-santos"
-          },
-          "startTime": "3:00 AM"
-        },
-        {
-          "fightId": "12538",
-          "order": 12,
-          "cardType": "Prelims",
-          "weightClass": "Heavyweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Allen Frye Jr.",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/allen-frye-jr"
-          },
-          "fighterB": {
-            "name": "Guilherme Pat",
-            "rank": "",
-            "country": "Brazil",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/guilherme-pat"
-          },
-          "startTime": "3:30 AM"
-        },
-        {
-          "fightId": "12510",
-          "order": 13,
-          "cardType": "Prelims",
-          "weightClass": "Women's Flyweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Jamey-Lyn Horth",
-            "rank": "",
-            "country": "Canada",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/jamey-lyn-horth"
-          },
-          "fighterB": {
-            "name": "Tereza Bledá",
-            "rank": "",
-            "country": "Czechia",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/tereza-bleda"
-          },
-          "startTime": "4:00 AM"
-        }
-      ],
-      "localImagePath": "/images/events/ufc-fight-night-december-13-2025.jpg"
-    },
-    {
       "eventName": "UFC 324: Gaethje vs. Pimblett",
       "eventType": "Numbered",
       "headline": "Gaethje vs Pimblett",
@@ -434,7 +114,7 @@
           },
           "fighterB": {
             "name": "Jean Silva",
-            "rank": "#11",
+            "rank": "#10",
             "country": "Brazil",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/jean-silva"
@@ -945,9 +625,9 @@
       "localImagePath": "/images/events/ufc-325.jpg"
     },
     {
-      "eventName": "UFC Fight Night TBD vs. TBD",
+      "eventName": "UFC Fight Night Bautista vs. Oliveira",
       "eventType": "Fight Night",
-      "headline": "TBD vs TBD",
+      "headline": "Bautista vs Oliveira",
       "eventUrl": "https://www.ufc.com/event/ufc-fight-night-february-07-2026",
       "venue": "UFC APEX",
       "city": "Las Vegas",
@@ -955,13 +635,55 @@
       "country": "United States",
       "dateText": "Sat, Feb 7 / 9:00 PM EST / Main Card",
       "status": "Upcoming",
-      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/image/2023-11/BACKGROUND%204.jpg?h=d1cb525d&itok=ys7smXvK",
+      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-12/020725-ufc-fight-night-bautista-vs-oliveira-TEMP-HERO.jpg?h=d1cb525d&itok=CUYtCPSc",
       "eventStartTime": null,
       "sections": [],
       "fights": [
         {
-          "fightId": "12565",
+          "fightId": "12567",
           "order": 1,
+          "cardType": "Main Card",
+          "weightClass": "Bantamweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Mario Bautista",
+            "rank": "#9",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/mario-bautista"
+          },
+          "fighterB": {
+            "name": "Vinicius Oliveira",
+            "rank": "#13",
+            "country": "Brazil",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/vinicius-oliveira"
+          }
+        },
+        {
+          "fightId": "12568",
+          "order": 2,
+          "cardType": "Main Card",
+          "weightClass": "Flyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Amir Albazi",
+            "rank": "#6",
+            "country": "Iraq",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/amir-albazi"
+          },
+          "fighterB": {
+            "name": "Kyoji Horiguchi",
+            "rank": "#8",
+            "country": "Japan",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/kyoji-horiguchi"
+          }
+        },
+        {
+          "fightId": "12565",
+          "order": 3,
           "cardType": "Main Card",
           "weightClass": "Middleweight",
           "isTitle": false,
@@ -978,6 +700,48 @@
             "country": "Canada",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/marc-andre-barriault"
+          }
+        },
+        {
+          "fightId": "12569",
+          "order": 4,
+          "cardType": "Main Card",
+          "weightClass": "Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Ryan Spann",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/ryan-spann"
+          },
+          "fighterB": {
+            "name": "Rizvan Kuniev",
+            "rank": "",
+            "country": "Russia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/mario-souza-1"
+          }
+        },
+        {
+          "fightId": "12571",
+          "order": 5,
+          "cardType": "Main Card",
+          "weightClass": "Light Heavyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Uran Satybaldiev",
+            "rank": "",
+            "country": "Kyrgyzstan",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/uran-satybaldiev"
+          },
+          "fighterB": {
+            "name": "Julius Walker",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/julius-walker"
           }
         }
       ],
@@ -1054,7 +818,7 @@
       "country": "Mexico",
       "dateText": "Sat, Feb 28 / 9:00 PM EST / Main Card",
       "status": "Upcoming",
-      "eventImageUrl": "https://www.ufc.com/s3/files/styles/background_image_sm/s3/2025-12/022826-ufc-fight-night-moreno-vs-almabayev-TEMP-HERO.jpg?h=d1cb525d&itok=ca8j-bEb",
+      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-12/022826-ufc-fight-night-moreno-vs-almabayev-TEMP-HERO.jpg?h=d1cb525d&itok=ca8j-bEb",
       "eventStartTime": "9:00 PM",
       "sections": [
         {
@@ -1075,14 +839,14 @@
       ],
       "fights": [
         {
-          "fightId": "fight-1",
+          "fightId": "12566",
           "order": 1,
           "cardType": "Main Card",
           "weightClass": "Flyweight",
           "isTitle": false,
           "fighterA": {
             "name": "Brandon Moreno",
-            "rank": "#4",
+            "rank": "#5",
             "country": "Mexico",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/brandon-moreno"
@@ -1154,6 +918,23 @@
       "sections": [],
       "fights": [],
       "localImagePath": "/images/events/ufc-fight-night-march-14-2026.jpg"
+    },
+    {
+      "eventName": "UFC Fight Night TBD vs. TBD",
+      "eventType": "Fight Night",
+      "headline": "TBD vs TBD",
+      "eventUrl": "https://www.ufc.com/event/ufc-fight-night-march-21-2026",
+      "venue": "O2 Arena",
+      "city": "London",
+      "state": "",
+      "country": "United Kingdom",
+      "dateText": "Sat, Mar 21 / 4:00 PM EST / Main Card",
+      "status": "Upcoming",
+      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/image/2023-11/BACKGROUND%204.jpg?h=d1cb525d&itok=ys7smXvK",
+      "eventStartTime": null,
+      "sections": [],
+      "fights": [],
+      "localImagePath": "/images/events/ufc-fight-night-march-21-2026.jpg"
     }
   ]
 }

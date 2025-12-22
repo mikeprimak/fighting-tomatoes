@@ -1326,7 +1326,7 @@ export default function UpcomingFightDetailScreen({
 
       {/* Community Data Section */}
       <SectionContainer
-        title="All Picks"
+        title="Crowd Picks"
         icon="users"
         iconColor="#000"
         headerBgColor="#83B4F3"
@@ -1362,7 +1362,7 @@ export default function UpcomingFightDetailScreen({
           <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 4 }} />
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              All Hype ({aggregateStats?.totalPredictions || 0})
+              How Hyped? ({aggregateStats?.totalPredictions || 0})
             </Text>
             <View style={{ width: 4 }} />
           </View>

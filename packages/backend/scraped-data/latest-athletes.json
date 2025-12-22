@@ -1,180 +1,6 @@
 {
   "athletes": [
     {
-      "name": "Brandon Royval",
-      "url": "https://www.ufc.com/athlete/brandon-royval",
-      "record": "17-8-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/ROYVAL_BRANDON_12-13.png?itok=2J583p2X",
-      "localHeadshotPath": "/images/athletes/brandon-royval.png"
-    },
-    {
-      "name": "Manel Kape",
-      "url": "https://www.ufc.com/athlete/manel-kape",
-      "record": "21-7-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/KAPE_MANEL_12-13.png?itok=aW6vn0cP",
-      "localHeadshotPath": "/images/athletes/manel-kape.png"
-    },
-    {
-      "name": "Giga Chikadze",
-      "url": "https://www.ufc.com/athlete/giga-chikadze",
-      "record": "15-5-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/CHIKADZE_GIGA_12-13.png?itok=jZogYGtn",
-      "localHeadshotPath": "/images/athletes/giga-chikadze.png"
-    },
-    {
-      "name": "Kevin Vallejos",
-      "url": "https://www.ufc.com/athlete/kevin-vallejos",
-      "record": "16-1-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/VALLEJOS_KEVIN_12-13.png?itok=n0pVKZf2",
-      "localHeadshotPath": "/images/athletes/kevin-vallejos.png"
-    },
-    {
-      "name": "Cesar Almeida",
-      "url": "https://www.ufc.com/athlete/cesar-almeida",
-      "record": "7-1-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/ALMEIDA_CESAR_12-13.png?itok=0NIvOMTD",
-      "localHeadshotPath": "/images/athletes/cesar-almeida.png"
-    },
-    {
-      "name": "Cezary Oleksiejczuk",
-      "url": "https://www.ufc.com/athlete/cezary-oleksiejczuk",
-      "record": "16-3-0",
-      "headshotUrl": null
-    },
-    {
-      "name": "Melquizael Costa",
-      "url": "https://www.ufc.com/athlete/melquizael-costa",
-      "record": "24-7-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/COSTA_MELQUIZAEL_12-13.png?itok=yGtg0y0D",
-      "localHeadshotPath": "/images/athletes/melquizael-costa.png"
-    },
-    {
-      "name": "Morgan Charriere",
-      "url": "https://www.ufc.com/athlete/morgan-charriere",
-      "record": "21-11-1",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/CHARRIERE_MORGAN_12-13.png?itok=5X2sMFS7",
-      "localHeadshotPath": "/images/athletes/morgan-charriere.png"
-    },
-    {
-      "name": "Kennedy Nzechukwu",
-      "url": "https://www.ufc.com/athlete/kennedy-nzechukwu",
-      "record": "14-6-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/NZECHUKWU_KENNEDY_12-13.png?itok=yjj3pZT-",
-      "localHeadshotPath": "/images/athletes/kennedy-nzechukwu.png"
-    },
-    {
-      "name": "Marcus Buchecha",
-      "url": "https://www.ufc.com/athlete/marcus-buchecha",
-      "record": "5-2-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/BUCHECHA_MARCUS_12-13.png?itok=XLJEZqaA",
-      "localHeadshotPath": "/images/athletes/marcus-buchecha.png"
-    },
-    {
-      "name": "King Green",
-      "url": "https://www.ufc.com/athlete/bobby-green",
-      "record": "32-17-1",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/GREEN_KING_12-13.png?itok=lQxldB2S",
-      "localHeadshotPath": "/images/athletes/bobby-green.png"
-    },
-    {
-      "name": "Lance Gibson Jr.",
-      "url": "https://www.ufc.com/athlete/lance-gibson-jr",
-      "record": "9-1-0",
-      "headshotUrl": null
-    },
-    {
-      "name": "Amanda Lemos",
-      "url": "https://www.ufc.com/athlete/amanda-lemos",
-      "record": "15-5-1",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/LEMOS_AMANDA_12-13.png?itok=mBF6klsH",
-      "localHeadshotPath": "/images/athletes/amanda-lemos.png"
-    },
-    {
-      "name": "Gillian Robertson",
-      "url": "https://www.ufc.com/athlete/gillian-robertson",
-      "record": "16-8-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/ROBERTSON_GILLIAN_12-13.png?itok=MOXqve5q",
-      "localHeadshotPath": "/images/athletes/gillian-robertson.png"
-    },
-    {
-      "name": "Joanderson Brito",
-      "url": "https://www.ufc.com/athlete/kori-makkenna-3",
-      "record": "17-5-1",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/BRITO_JOANDERSON_12-13.png?itok=SqPSu9bD",
-      "localHeadshotPath": "/images/athletes/kori-makkenna-3.png"
-    },
-    {
-      "name": "Isaac Thomson",
-      "url": "https://www.ufc.com/athlete/isaac-thomson",
-      "record": "9-2-0",
-      "headshotUrl": null
-    },
-    {
-      "name": "Neil Magny",
-      "url": "https://www.ufc.com/athlete/neil-magny",
-      "record": "31-14-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/MAGNY_NEIL_12-13.png?itok=3IFjmey0",
-      "localHeadshotPath": "/images/athletes/neil-magny.png"
-    },
-    {
-      "name": "Yaroslav Amosov",
-      "url": "https://www.ufc.com/athlete/yaroslav-amosov",
-      "record": "28-1-0",
-      "headshotUrl": null
-    },
-    {
-      "name": "Sean Sharaf",
-      "url": "https://www.ufc.com/athlete/sean-sharaf",
-      "record": "4-1-0",
-      "headshotUrl": null
-    },
-    {
-      "name": "Steven Asplund",
-      "url": "https://www.ufc.com/athlete/steven-asplund",
-      "record": "6-1-0",
-      "headshotUrl": null
-    },
-    {
-      "name": "Melissa Croden",
-      "url": "https://www.ufc.com/athlete/melissa-croden",
-      "record": "7-2-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/CRODEN_MELISSA_10-18.png?itok=8Mijgelc",
-      "localHeadshotPath": "/images/athletes/melissa-croden.png"
-    },
-    {
-      "name": "Luana Santos",
-      "url": "https://www.ufc.com/athlete/luana-santos",
-      "record": "9-2-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/SANTOS_LUANA_12-13.png?itok=A_HgOqp0",
-      "localHeadshotPath": "/images/athletes/luana-santos.png"
-    },
-    {
-      "name": "Allen Frye Jr.",
-      "url": "https://www.ufc.com/athlete/allen-frye-jr",
-      "record": "6-0-0",
-      "headshotUrl": null
-    },
-    {
-      "name": "Guilherme Pat",
-      "url": "https://www.ufc.com/athlete/guilherme-pat",
-      "record": "5-0-0",
-      "headshotUrl": null
-    },
-    {
-      "name": "Jamey-Lyn Horth",
-      "url": "https://www.ufc.com/athlete/jamey-lyn-horth",
-      "record": "8-2-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/HORTH_JAMEY-LYN_12-13.png?itok=Wh46FLio",
-      "localHeadshotPath": "/images/athletes/jamey-lyn-horth.png"
-    },
-    {
-      "name": "Tereza Bledá",
-      "url": "https://www.ufc.com/athlete/tereza-bleda",
-      "record": "7-1-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/BLEDA_TEREZA_12-13.png?itok=7UM6e6NC",
-      "localHeadshotPath": "/images/athletes/tereza-bleda.png"
-    },
-    {
       "name": "Justin Gaethje",
       "url": "https://www.ufc.com/athlete/justin-gaethje",
       "record": "27-5-0",
@@ -559,6 +385,34 @@
       "headshotUrl": null
     },
     {
+      "name": "Mario Bautista",
+      "url": "https://www.ufc.com/athlete/mario-bautista",
+      "record": "16-3-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/BAUTISTA_MARIO_10-25.png?itok=Oolf6Jp3",
+      "localHeadshotPath": "/images/athletes/mario-bautista.png"
+    },
+    {
+      "name": "Vinicius Oliveira",
+      "url": "https://www.ufc.com/athlete/vinicius-oliveira",
+      "record": "23-3-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-07/OLIVEIRA_VINICIUS_07-19.png?itok=VrW5MdJe",
+      "localHeadshotPath": "/images/athletes/vinicius-oliveira.png"
+    },
+    {
+      "name": "Amir Albazi",
+      "url": "https://www.ufc.com/athlete/amir-albazi",
+      "record": "17-2-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-01/5/ALBAZI_AMIR_11-02.png?itok=4tv_VKcD",
+      "localHeadshotPath": "/images/athletes/amir-albazi.png"
+    },
+    {
+      "name": "Kyoji Horiguchi",
+      "url": "https://www.ufc.com/athlete/kyoji-horiguchi",
+      "record": "35-5-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-11/HORIGUCHI_KYOJI_11-22.png?itok=uRMYwEsp",
+      "localHeadshotPath": "/images/athletes/kyoji-horiguchi.png"
+    },
+    {
       "name": "Michal Oleksiejczuk",
       "url": "https://www.ufc.com/athlete/michal-oleksiejczuk",
       "record": "21-9-0",
@@ -571,6 +425,34 @@
       "record": "17-10-0",
       "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-07/BARRIAULT_MARC-ANDRE_07-26.png?itok=Eq8iSb2i",
       "localHeadshotPath": "/images/athletes/marc-andre-barriault.png"
+    },
+    {
+      "name": "Ryan Spann",
+      "url": "https://www.ufc.com/athlete/ryan-spann",
+      "record": "23-11-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-07/SPANN_RYAN_07-19.png?itok=6U56yDzC",
+      "localHeadshotPath": "/images/athletes/ryan-spann.png"
+    },
+    {
+      "name": "Rizvan Kuniev",
+      "url": "https://www.ufc.com/athlete/mario-souza-1",
+      "record": "12-3-1",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-06/KUNIEV_RIZVAN_06-21.png?itok=tDA5gg40",
+      "localHeadshotPath": "/images/athletes/mario-souza-1.png"
+    },
+    {
+      "name": "Uran Satybaldiev",
+      "url": "https://www.ufc.com/athlete/uran-satybaldiev",
+      "record": "8-1-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/SATYBALDIEV_URAN_08-23.png?itok=-Q5e1SRX",
+      "localHeadshotPath": "/images/athletes/uran-satybaldiev.png"
+    },
+    {
+      "name": "Julius Walker",
+      "url": "https://www.ufc.com/athlete/julius-walker",
+      "record": "7-1-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/WALKER_JULIUS_08-09.png?itok=IJaXvlDg",
+      "localHeadshotPath": "/images/athletes/julius-walker.png"
     },
     {
       "name": "Sean Strickland",

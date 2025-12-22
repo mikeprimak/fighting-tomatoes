@@ -168,7 +168,19 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
   const router = useRouter();
 
   // Use fights from event data (loaded via includeFights parameter)
-  const fights = event.fights || [];
+  // Deduplicate fights by ID in case of data issues
+  const fights = React.useMemo(() => {
+    const allFights = event.fights || [];
+    const seen = new Set<string>();
+    return allFights.filter((fight: Fight) => {
+      if (seen.has(fight.id)) {
+        console.warn('[PastEvents] Duplicate fight filtered:', fight.id);
+        return false;
+      }
+      seen.add(fight.id);
+      return true;
+    });
+  }, [event.fights]);
 
   // Group fights by card section using orderOnCard
   const hasEarlyPrelims = !!event.earlyPrelimStartTime;
@@ -355,7 +367,19 @@ export default function PastEventsScreen() {
   });
 
   // Flatten all pages of events into a single array (already sorted by backend - most recent first)
-  const pastEvents = eventsData?.pages.flatMap(page => page.events) || [];
+  // Deduplicate events by ID in case of pagination overlap
+  const pastEvents = React.useMemo(() => {
+    const allEvents = eventsData?.pages.flatMap(page => page.events) || [];
+    const seen = new Set<string>();
+    return allEvents.filter((event: Event) => {
+      if (seen.has(event.id)) {
+        console.warn('[PastEvents] Duplicate event filtered:', event.id, event.name);
+        return false;
+      }
+      seen.add(event.id);
+      return true;
+    });
+  }, [eventsData?.pages]);
 
   // Handler for loading more events when reaching end of list
   const handleLoadMore = useCallback(() => {

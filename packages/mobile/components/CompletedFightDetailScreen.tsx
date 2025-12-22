@@ -1765,7 +1765,7 @@ export default function CompletedFightDetailScreen({
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12 }}>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>RATINGS ({totalRatings || 0})</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>FIGHT RATINGS ({totalRatings || 0})</Text>
             </View>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>

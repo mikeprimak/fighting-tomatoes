@@ -1,27 +1,40 @@
 // Shared utility functions for fight cards
 import { Fighter } from './types';
+import { API_BASE_URL } from '../../../services/api';
+
+// Get the server base URL (without /api)
+const getServerBaseUrl = () => API_BASE_URL.replace('/api', '');
 
 // Get fighter image (either from profileImage or placeholder)
 export const getFighterImage = (fighter: Fighter) => {
-  // Check if profileImage exists and is a valid URL
-  if (fighter.profileImage && fighter.profileImage.startsWith('http')) {
-    // Check if the URL points to a known default/placeholder image
-    const isDefaultImage =
-      fighter.profileImage.includes('silhouette') ||
-      fighter.profileImage.includes('default-fighter') ||
-      fighter.profileImage.includes('placeholder') ||
-      fighter.profileImage.includes('avatar-default') ||
-      fighter.profileImage.includes('no-image') ||
-      // UFC's default fighter image URL pattern
-      fighter.profileImage.includes('_headshot_default') ||
-      fighter.profileImage.includes('default_headshot');
+  if (!fighter.profileImage) {
+    return require('../../../assets/fighters/fighter-default-alpha.png');
+  }
 
-    // If it's a default image from the source, use our transparent placeholder
-    if (isDefaultImage) {
-      return require('../../../assets/fighters/fighter-default-alpha.png');
-    }
+  // Check if the URL points to a known default/placeholder image
+  const isDefaultImage =
+    fighter.profileImage.includes('silhouette') ||
+    fighter.profileImage.includes('default-fighter') ||
+    fighter.profileImage.includes('placeholder') ||
+    fighter.profileImage.includes('avatar-default') ||
+    fighter.profileImage.includes('no-image') ||
+    // UFC's default fighter image URL pattern
+    fighter.profileImage.includes('_headshot_default') ||
+    fighter.profileImage.includes('default_headshot');
 
+  // If it's a default image from the source, use our transparent placeholder
+  if (isDefaultImage) {
+    return require('../../../assets/fighters/fighter-default-alpha.png');
+  }
+
+  // Handle full URLs (http/https)
+  if (fighter.profileImage.startsWith('http')) {
     return { uri: fighter.profileImage };
+  }
+
+  // Handle relative paths (e.g., /images/athletes/oktagon/...)
+  if (fighter.profileImage.startsWith('/')) {
+    return { uri: `${getServerBaseUrl()}${fighter.profileImage}` };
   }
 
   return require('../../../assets/fighters/fighter-default-alpha.png');

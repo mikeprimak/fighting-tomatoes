@@ -8,6 +8,7 @@ import {
   Image,
   StatusBar,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -56,7 +57,7 @@ const getPlaceholderImage = (eventId: string) => {
 };
 
 // Available organizations for filtering
-const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC'] as const;
+const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'MATCHROOM', 'TOP RANK', 'GOLDEN BOY'] as const;
 type Organization = typeof ORGANIZATIONS[number];
 
 // AsyncStorage key for persisting filter preference
@@ -198,7 +199,11 @@ export default function UpcomingEventsScreen() {
     }
     return sortedEvents.filter((event: Event) => {
       const eventPromotion = event.promotion?.toUpperCase() || '';
-      return Array.from(selectedOrgs).some(org => eventPromotion.includes(org));
+      return Array.from(selectedOrgs).some(org => {
+        // Handle both space and underscore variants (e.g., "TOP RANK" matches "TOP_RANK")
+        const orgWithUnderscore = org.replace(/ /g, '_');
+        return eventPromotion.includes(org) || eventPromotion.includes(orgWithUnderscore);
+      });
     });
   }, [sortedEvents, selectedOrgs]);
 
@@ -404,32 +409,38 @@ export default function UpcomingEventsScreen() {
         )}
 
         {/* Organization Filter Tabs */}
-        <View style={styles.orgFilterTabs}>
-          {/* ALL Tab */}
-          <TouchableOpacity
-            style={[styles.orgFilterTab, isAllSelected && styles.orgFilterTabActive]}
-            onPress={() => handleOrgPress('ALL')}
+        <View style={styles.orgFilterTabsContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.orgFilterTabs}
           >
-            <Text style={[styles.orgFilterTabText, isAllSelected && styles.orgFilterTabTextActive]}>
-              ALL
-            </Text>
-          </TouchableOpacity>
+            {/* ALL Tab */}
+            <TouchableOpacity
+              style={[styles.orgFilterTab, isAllSelected && styles.orgFilterTabActive]}
+              onPress={() => handleOrgPress('ALL')}
+            >
+              <Text style={[styles.orgFilterTabText, isAllSelected && styles.orgFilterTabTextActive]}>
+                ALL
+              </Text>
+            </TouchableOpacity>
 
-          {/* Organization Tabs */}
-          {ORGANIZATIONS.map(org => {
-            const isSelected = isAllSelected || selectedOrgs.has(org);
-            return (
-              <TouchableOpacity
-                key={org}
-                style={[styles.orgFilterTab, isSelected && styles.orgFilterTabActive]}
-                onPress={() => handleOrgPress(org)}
-              >
-                <Text style={[styles.orgFilterTabText, isSelected && styles.orgFilterTabTextActive]}>
-                  {org}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+            {/* Organization Tabs */}
+            {ORGANIZATIONS.map(org => {
+              const isSelected = isAllSelected || selectedOrgs.has(org);
+              return (
+                <TouchableOpacity
+                  key={org}
+                  style={[styles.orgFilterTab, isSelected && styles.orgFilterTabActive]}
+                  onPress={() => handleOrgPress(org)}
+                >
+                  <Text style={[styles.orgFilterTabText, isSelected && styles.orgFilterTabTextActive]}>
+                    {org}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
         </View>
       </View>
     );
@@ -942,14 +953,16 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 13,
     fontStyle: 'italic',
   },
+  orgFilterTabsContainer: {
+    backgroundColor: colors.card,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
   orgFilterTabs: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
     paddingHorizontal: 16,
     paddingVertical: 10,
     gap: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   orgFilterTab: {
     paddingHorizontal: 12,

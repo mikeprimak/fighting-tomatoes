@@ -128,7 +128,7 @@ export default function PredictionBarChart({
             <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{ width: 4 }} />
               <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-                Picks ({totalPredictions})
+                Winner Predictions ({totalPredictions})
               </Text>
               <View style={{ width: 4 }} />
             </View>

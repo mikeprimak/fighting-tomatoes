@@ -73,6 +73,7 @@ When switching between work locations (different WiFi networks), update the dev 
 | **Pre-Event Scheduler** | ✅ Complete | `services/notificationScheduler.ts` |
 | **UFC Scraper** | ✅ Complete | `services/scrapeAllUFCData.js` |
 | **ONE FC Scraper** | ✅ Complete | `services/scrapeAllOneFCData.js` |
+| **Promotion Logos** | ✅ Complete | `components/PromotionLogo.tsx` |
 
 ## Recent Features (Summary)
 

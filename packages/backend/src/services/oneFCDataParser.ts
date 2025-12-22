@@ -317,6 +317,7 @@ async function importOneFCEvents(
         data: {
           name: eventData.eventName,
           date: eventDate,
+          mainStartTime: eventDate, // ONE FC events have a single start time
           venue: eventData.venue || undefined,
           location,
           bannerImage: bannerImageUrl,
@@ -332,6 +333,7 @@ async function importOneFCEvents(
           name: eventData.eventName,
           promotion: 'ONE', // ONE Championship
           date: eventDate,
+          mainStartTime: eventDate, // ONE FC events have a single start time
           venue: eventData.venue || undefined,
           location,
           bannerImage: bannerImageUrl,
