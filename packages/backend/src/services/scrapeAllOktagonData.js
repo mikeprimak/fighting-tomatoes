@@ -19,6 +19,7 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 
 // Configuration based on mode
 const SCRAPER_MODE = process.env.SCRAPER_MODE || 'manual';
@@ -608,6 +609,105 @@ async function downloadImage(browser, url, filepath, retries = 3) {
   throw lastError || new Error('Download failed after all retries');
 }
 
+/**
+ * Download and crop athlete image to focus on head/face
+ * OKTAGON images show mid-thigh to head, so we crop to upper portion
+ */
+async function downloadAndCropAthleteImage(browser, url, filepath, retries = 3) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    let page = null;
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      page = await browser.newPage();
+
+      const response = await page.goto(url, {
+        waitUntil: 'networkidle2',
+        timeout: 30000
+      });
+
+      if (response && response.ok()) {
+        const buffer = await response.buffer();
+
+        // Process image with sharp to crop to headshot
+        try {
+          const image = sharp(buffer);
+          const metadata = await image.metadata();
+
+          if (metadata.width && metadata.height) {
+            // OKTAGON images are typically portrait with fighter from mid-thigh to head
+            // We want to crop to focus on the upper 45% (head/shoulders area)
+            // and slightly zoom in by taking the center 70% horizontally
+
+            const cropTop = 0; // Start from top
+            const cropHeight = Math.floor(metadata.height * 0.45); // Take top 45%
+            const horizontalMargin = Math.floor(metadata.width * 0.15); // 15% margin on each side
+            const cropWidth = metadata.width - (horizontalMargin * 2); // Center 70%
+            const cropLeft = horizontalMargin;
+
+            // Ensure valid crop dimensions
+            const finalWidth = Math.max(cropWidth, 100);
+            const finalHeight = Math.max(cropHeight, 100);
+            const finalLeft = Math.max(0, Math.min(cropLeft, metadata.width - finalWidth));
+            const finalTop = Math.max(0, cropTop);
+
+            await image
+              .extract({
+                left: finalLeft,
+                top: finalTop,
+                width: Math.min(finalWidth, metadata.width - finalLeft),
+                height: Math.min(finalHeight, metadata.height - finalTop)
+              })
+              .png() // Keep as PNG for quality
+              .toFile(filepath);
+
+          } else {
+            // Fallback: save without cropping if metadata not available
+            fs.writeFileSync(filepath, buffer);
+          }
+        } catch (sharpError) {
+          // Fallback: save original if sharp processing fails
+          console.warn(`      ⚠ Sharp processing failed, saving original: ${sharpError.message}`);
+          fs.writeFileSync(filepath, buffer);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        if (page && !page.isClosed()) {
+          try {
+            await page.close();
+          } catch (closeError) {
+            // Ignore close errors
+          }
+        }
+
+        return filepath;
+      } else {
+        throw new Error(`Failed to download: ${response ? response.status() : 'No response'}`);
+      }
+    } catch (error) {
+      lastError = error;
+
+      if (page && !page.isClosed()) {
+        try {
+          await page.close();
+        } catch (closeError) {
+          // Ignore close errors
+        }
+      }
+
+      if (attempt < retries) {
+        const backoffDelay = attempt * 500;
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+      }
+    }
+  }
+
+  throw lastError || new Error('Download failed after all retries');
+}
+
 // ========================================
 // MAIN ORCHESTRATOR
 // ========================================
@@ -763,10 +863,10 @@ async function main() {
         if (!fs.existsSync(filepath)) {
           currentCount++;
           try {
-            await downloadImage(browser, athlete.imageUrl, filepath);
+            await downloadAndCropAthleteImage(browser, athlete.imageUrl, filepath);
             athlete.localImagePath = `/images/athletes/oktagon/${filename}`;
             downloadCount++;
-            console.log(`      ✅ ${filename} (${currentCount}/${totalToDownload})`);
+            console.log(`      ✅ ${filename} (${currentCount}/${totalToDownload}) [cropped]`);
 
             await new Promise(resolve => setTimeout(resolve, delays.betweenImages));
           } catch (error) {
