@@ -63,6 +63,120 @@ type Organization = typeof ORGANIZATIONS[number];
 // AsyncStorage key for persisting filter preference
 const ORG_FILTER_STORAGE_KEY = 'events_org_filter';
 
+// Pure formatting functions - defined at module level for stable references
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+const formatTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  });
+};
+
+const formatTimeUntil = (dateString: string) => {
+  const eventDate = new Date(dateString);
+  const now = new Date();
+
+  // Get calendar dates (ignoring time)
+  const eventCalendarDate = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+  const todayCalendarDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  // Calculate difference in calendar days
+  const diffTime = eventCalendarDate.getTime() - todayCalendarDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  // If it's today, show hours remaining or "TODAY"
+  if (diffDays === 0) {
+    const hoursUntil = Math.floor((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60));
+    if (hoursUntil <= 0) {
+      return 'TODAY';
+    }
+    if (hoursUntil === 1) {
+      return 'IN 1 HOUR';
+    }
+    return `IN ${hoursUntil} HOURS`;
+  }
+
+  if (diffDays === 1) {
+    return 'TOMORROW';
+  }
+
+  if (diffDays < 7) {
+    return `IN ${diffDays} DAYS`;
+  }
+
+  const diffWeeks = Math.round(diffDays / 7);
+  if (diffWeeks === 1) {
+    return 'IN 1 WEEK';
+  }
+
+  // Show weeks for 2-3 weeks, then 5-7 weeks
+  // 4 weeks = 1 month, 8 weeks = 2 months
+  if (diffWeeks <= 3) {
+    return `IN ${diffWeeks} WEEKS`;
+  }
+
+  if (diffWeeks >= 5 && diffWeeks <= 7) {
+    return `IN ${diffWeeks} WEEKS`;
+  }
+
+  const diffMonths = Math.round(diffDays / 30);
+  if (diffMonths === 1) {
+    return 'IN 1 MONTH';
+  }
+
+  if (diffMonths < 12) {
+    return `IN ${diffMonths} MONTHS`;
+  }
+
+  const diffYears = Math.round(diffDays / 365);
+  if (diffYears === 1) {
+    return 'IN 1 YEAR';
+  }
+
+  return `IN ${diffYears} YEARS`;
+};
+
+const parseEventName = (eventName: string) => {
+  const colonMatch = eventName.match(/^([^:]+):\s*(.+)$/);
+  if (colonMatch) {
+    return {
+      line1: colonMatch[1].trim(),
+      line2: colonMatch[2].replace(/\./g, '').trim(),
+    };
+  }
+
+  const fightNightMatch = eventName.match(/^(UFC Fight Night)\s+(.+)$/i);
+  if (fightNightMatch) {
+    return {
+      line1: fightNightMatch[1],
+      line2: fightNightMatch[2].replace(/\./g, '').trim(),
+    };
+  }
+
+  const numberedMatch = eventName.match(/^(UFC\s+\d+)\s*(.*)$/i);
+  if (numberedMatch) {
+    return {
+      line1: numberedMatch[1],
+      line2: numberedMatch[2].replace(/\./g, '').trim() || '',
+    };
+  }
+
+  return {
+    line1: eventName,
+    line2: '',
+  };
+};
+
 export default function UpcomingEventsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -249,119 +363,6 @@ export default function UpcomingEventsScreen() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short',
-    });
-  };
-
-  const formatTimeUntil = (dateString: string) => {
-    const eventDate = new Date(dateString);
-    const now = new Date();
-
-    // Get calendar dates (ignoring time)
-    const eventCalendarDate = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
-    const todayCalendarDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    // Calculate difference in calendar days
-    const diffTime = eventCalendarDate.getTime() - todayCalendarDate.getTime();
-    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-    // If it's today, show hours remaining or "TODAY"
-    if (diffDays === 0) {
-      const hoursUntil = Math.floor((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60));
-      if (hoursUntil <= 0) {
-        return 'TODAY';
-      }
-      if (hoursUntil === 1) {
-        return 'IN 1 HOUR';
-      }
-      return `IN ${hoursUntil} HOURS`;
-    }
-
-    if (diffDays === 1) {
-      return 'TOMORROW';
-    }
-
-    if (diffDays < 7) {
-      return `IN ${diffDays} DAYS`;
-    }
-
-    const diffWeeks = Math.round(diffDays / 7);
-    if (diffWeeks === 1) {
-      return 'IN 1 WEEK';
-    }
-
-    // Show weeks for 2-3 weeks, then 5-7 weeks
-    // 4 weeks = 1 month, 8 weeks = 2 months
-    if (diffWeeks <= 3) {
-      return `IN ${diffWeeks} WEEKS`;
-    }
-
-    if (diffWeeks >= 5 && diffWeeks <= 7) {
-      return `IN ${diffWeeks} WEEKS`;
-    }
-
-    const diffMonths = Math.round(diffDays / 30);
-    if (diffMonths === 1) {
-      return 'IN 1 MONTH';
-    }
-
-    if (diffMonths < 12) {
-      return `IN ${diffMonths} MONTHS`;
-    }
-
-    const diffYears = Math.round(diffDays / 365);
-    if (diffYears === 1) {
-      return 'IN 1 YEAR';
-    }
-
-    return `IN ${diffYears} YEARS`;
-  };
-
-  const parseEventName = (eventName: string) => {
-    const colonMatch = eventName.match(/^([^:]+):\s*(.+)$/);
-    if (colonMatch) {
-      return {
-        line1: colonMatch[1].trim(),
-        line2: colonMatch[2].replace(/\./g, '').trim(),
-      };
-    }
-
-    const fightNightMatch = eventName.match(/^(UFC Fight Night)\s+(.+)$/i);
-    if (fightNightMatch) {
-      return {
-        line1: fightNightMatch[1],
-        line2: fightNightMatch[2].replace(/\./g, '').trim(),
-      };
-    }
-
-    const numberedMatch = eventName.match(/^(UFC\s+\d+)\s*(.*)$/i);
-    if (numberedMatch) {
-      return {
-        line1: numberedMatch[1],
-        line2: numberedMatch[2].replace(/\./g, '').trim() || '',
-      };
-    }
-
-    return {
-      line1: eventName,
-      line2: '',
-    };
-  };
-
   const handleFightPress = useCallback((fight: Fight) => {
     router.push(`/fight/${fight.id}`);
   }, [router]);
@@ -381,70 +382,31 @@ export default function UpcomingEventsScreen() {
       formatTimeUntil={formatTimeUntil}
       isFirstEvent={index === 0}
     />
-  ), [colors, isAuthenticated, handleFightPress, parseEventName, formatDate, formatTime, formatTimeUntil]);
+  ), [colors, isAuthenticated, handleFightPress]);
 
   // Stable key extractor
   const keyExtractor = useCallback((item: Event) => item.id, []);
 
-  // Header component for notification banner and organization filters
+  // Header component for notification banner only
   const ListHeaderComponent = useCallback(() => {
+    if (!preEventMessage) return null;
     return (
-      <View>
-        {/* Notification Banner */}
-        {preEventMessage && (
-          <View style={[styles.notificationBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
-            <View style={styles.notificationIconContainer}>
-              <FontAwesome name="bell" size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.notificationText, { color: colors.text }]}>
-              {preEventMessage}
-            </Text>
-            <TouchableOpacity
-              style={styles.dismissButton}
-              onPress={() => setPreEventMessage(null)}
-            >
-              <FontAwesome name="times" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Organization Filter Tabs */}
-        <View style={styles.orgFilterTabsContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.orgFilterTabs}
-          >
-            {/* ALL Tab */}
-            <TouchableOpacity
-              style={[styles.orgFilterTab, isAllSelected && styles.orgFilterTabActive]}
-              onPress={() => handleOrgPress('ALL')}
-            >
-              <Text style={[styles.orgFilterTabText, isAllSelected && styles.orgFilterTabTextActive]}>
-                ALL
-              </Text>
-            </TouchableOpacity>
-
-            {/* Organization Tabs */}
-            {ORGANIZATIONS.map(org => {
-              const isSelected = isAllSelected || selectedOrgs.has(org);
-              return (
-                <TouchableOpacity
-                  key={org}
-                  style={[styles.orgFilterTab, isSelected && styles.orgFilterTabActive]}
-                  onPress={() => handleOrgPress(org)}
-                >
-                  <Text style={[styles.orgFilterTabText, isSelected && styles.orgFilterTabTextActive]}>
-                    {org}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+      <View style={[styles.notificationBanner, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
+        <View style={styles.notificationIconContainer}>
+          <FontAwesome name="bell" size={20} color={colors.primary} />
         </View>
+        <Text style={[styles.notificationText, { color: colors.text }]}>
+          {preEventMessage}
+        </Text>
+        <TouchableOpacity
+          style={styles.dismissButton}
+          onPress={() => setPreEventMessage(null)}
+        >
+          <FontAwesome name="times" size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
       </View>
     );
-  }, [preEventMessage, colors, setPreEventMessage, isAllSelected, selectedOrgs, handleOrgPress, styles]);
+  }, [preEventMessage, colors, setPreEventMessage, styles]);
 
   // Footer component for loading more indicator
   const ListFooterComponent = useCallback(() => {
@@ -487,6 +449,41 @@ export default function UpcomingEventsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
+      {/* Organization Filter Tabs - Outside FlatList to preserve scroll position */}
+      <View style={styles.orgFilterTabsContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.orgFilterTabs}
+        >
+          {/* ALL Tab */}
+          <TouchableOpacity
+            style={[styles.orgFilterTab, isAllSelected && styles.orgFilterTabActive]}
+            onPress={() => handleOrgPress('ALL')}
+          >
+            <Text style={[styles.orgFilterTabText, isAllSelected && styles.orgFilterTabTextActive]}>
+              ALL
+            </Text>
+          </TouchableOpacity>
+
+          {/* Organization Tabs */}
+          {ORGANIZATIONS.map(org => {
+            const isSelected = isAllSelected || selectedOrgs.has(org);
+            return (
+              <TouchableOpacity
+                key={org}
+                style={[styles.orgFilterTab, isSelected && styles.orgFilterTabActive]}
+                onPress={() => handleOrgPress(org)}
+              >
+                <Text style={[styles.orgFilterTabText, isSelected && styles.orgFilterTabTextActive]}>
+                  {org}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+
       <FlatList
         ref={flatListRef}
         data={upcomingEvents}
@@ -500,10 +497,9 @@ export default function UpcomingEventsScreen() {
         // Lazy loading - load more events when reaching end
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
-        // Disable virtualization optimizations to prevent scroll jumping
-        // with variable height items
-        removeClippedSubviews={false}
-        windowSize={21}
+        // Enable clipping for better scroll performance
+        removeClippedSubviews={true}
+        windowSize={5}
         maxToRenderPerBatch={10}
         initialNumToRender={5}
         // Conditionally maintain scroll position - disabled during filter changes

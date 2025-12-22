@@ -1,5 +1,5 @@
 // Container component that routes to the appropriate fight card based on status
-import React from 'react';
+import React, { memo } from 'react';
 import UpcomingFightCard from './fight-cards/UpcomingFightCard';
 import LiveFightCard from './fight-cards/LiveFightCard';
 import CompletedFightCard from './fight-cards/CompletedFightCard';
@@ -19,7 +19,7 @@ interface FightDisplayCardProps {
   index?: number; // For alternating background colors
 }
 
-export default function FightDisplayCard({
+function FightDisplayCard({
   fight,
   onPress,
   showEvent = true,
@@ -100,6 +100,8 @@ export default function FightDisplayCard({
     />
   );
 }
+
+export default memo(FightDisplayCard);
 
 // Re-export the FightData type for convenience
 export type { FightData };
