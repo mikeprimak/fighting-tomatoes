@@ -13,6 +13,7 @@ interface EventBannerCardProps {
     hasStarted: boolean;
     isComplete: boolean;
     promotion?: string;
+    mainStartTime?: string | null;
   };
   statusBadge?: {
     text: string;
@@ -77,6 +78,20 @@ const formatDate = (dateString: string, isComplete: boolean) => {
   });
 };
 
+const formatTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'pm' : 'am';
+  const hour12 = hours % 12 || 12;
+
+  // Only show minutes if not on the hour
+  if (minutes === 0) {
+    return `${hour12}${ampm}`;
+  }
+  return `${hour12}:${minutes.toString().padStart(2, '0')}${ampm}`;
+};
+
 export function EventBannerCard({
   event,
   statusBadge,
@@ -127,6 +142,9 @@ export function EventBannerCard({
             )}
             <Text style={styles.dateText}>
               {formatDate(event.date, event.isComplete)}
+              {event.mainStartTime && !event.hasStarted && !event.isComplete && (
+                <Text style={styles.timeText}>{`  •  ${formatTime(event.mainStartTime)}`}</Text>
+              )}
             </Text>
           </View>
         </View>
@@ -191,6 +209,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
     marginBottom: 4,
+    alignSelf: 'stretch',
   },
   firstElementRounded: {
     borderTopLeftRadius: 6,
@@ -201,11 +220,17 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
+    textAlign: 'center',
   },
   dateText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  timeText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '500',
   },
   info: {
     padding: 16,

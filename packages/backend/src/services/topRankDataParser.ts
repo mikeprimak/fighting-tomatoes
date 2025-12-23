@@ -265,13 +265,18 @@ function parseTopRankDate(dateText: string): Date {
     const day = parseInt(dateWithoutYearMatch[2], 10);
     if (month !== undefined) {
       // Determine year based on whether the date is in the past
+      // For upcoming events, if a date is more than 2 weeks in the past, assume next year
       const now = new Date();
       const currentYear = now.getFullYear();
-      let eventDate = new Date(currentYear, month, day);
+      let eventDate = new Date(currentYear, month, day, 12, 0, 0); // Noon to avoid timezone issues
 
-      // If the date is in the past, assume next year
-      if (eventDate < now) {
-        eventDate = new Date(currentYear + 1, month, day);
+      // Calculate a threshold: 2 weeks ago
+      // This handles the case where we're in December and parsing "Jan 31" - clearly next year
+      const twoWeeksAgo = new Date(now);
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+      if (eventDate < twoWeeksAgo) {
+        eventDate = new Date(currentYear + 1, month, day, 12, 0, 0);
       }
 
       return eventDate;

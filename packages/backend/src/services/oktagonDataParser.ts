@@ -3,6 +3,7 @@ import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
+import { TBA_FIGHTER_ID, TBA_FIGHTER_NAME, isTBAFighter } from '../constants/tba';
 
 const prisma = new PrismaClient();
 
@@ -364,9 +365,16 @@ async function importOktagonEvents(
     const fights = eventData.fights || [];
 
     for (const fightData of fights) {
+      // Check if fighterB is TBA (missing opponent)
+      const isFighterBTBA = !fightData.fighterB.name ||
+                            fightData.fighterB.name.trim() === '' ||
+                            fightData.fighterB.name.toUpperCase() === 'TBA' ||
+                            fightData.fighterB.name.toUpperCase() === 'TBD' ||
+                            (!fightData.fighterB.firstName && !fightData.fighterB.lastName);
+
       // Find fighter IDs from URL map
       let fighter1Id = fighterUrlToId.get(fightData.fighterA.athleteUrl);
-      let fighter2Id = fighterUrlToId.get(fightData.fighterB.athleteUrl);
+      let fighter2Id = isFighterBTBA ? TBA_FIGHTER_ID : fighterUrlToId.get(fightData.fighterB.athleteUrl);
 
       // If not found by URL, try to find by name
       if (!fighter1Id && fightData.fighterA.firstName && fightData.fighterA.lastName) {
@@ -384,7 +392,8 @@ async function importOktagonEvents(
         }
       }
 
-      if (!fighter2Id && fightData.fighterB.firstName && fightData.fighterB.lastName) {
+      // Skip fighter2 lookup if it's TBA
+      if (!isFighterBTBA && !fighter2Id && fightData.fighterB.firstName && fightData.fighterB.lastName) {
         const fighter2 = await prisma.fighter.findUnique({
           where: {
             firstName_lastName: {
@@ -429,7 +438,8 @@ async function importOktagonEvents(
         console.log(`    + Upserted fighter: ${fightData.fighterA.name}`);
       }
 
-      if (!fighter2Id) {
+      // Skip fighter2 creation if it's TBA - use the global TBA fighter
+      if (!fighter2Id && !isFighterBTBA) {
         const recordParts = parseRecord(fightData.fighterB.record);
         const firstName = fightData.fighterB.firstName || fightData.fighterB.name.split(' ')[0] || '';
         const lastName = fightData.fighterB.lastName || fightData.fighterB.name.split(' ').slice(1).join(' ') || '';
@@ -456,13 +466,16 @@ async function importOktagonEvents(
         fighter2Id = fighter2.id;
         fighterUrlToId.set(fightData.fighterB.athleteUrl, fighter2.id);
         console.log(`    + Upserted fighter: ${fightData.fighterB.name}`);
+      } else if (isFighterBTBA) {
+        fighter2Id = TBA_FIGHTER_ID;
+        console.log(`    📋 Fighter B is TBA - using placeholder`);
       }
 
       // Parse weight class
       const weightClass = parseOktagonWeightClass(fightData.weightClass);
       const gender = inferGenderFromWeightClass(fightData.weightClass);
 
-      // Update fighter weight class and gender
+      // Update fighter weight class and gender (skip TBA fighter)
       await prisma.fighter.update({
         where: { id: fighter1Id },
         data: {
@@ -471,13 +484,16 @@ async function importOktagonEvents(
         }
       });
 
-      await prisma.fighter.update({
-        where: { id: fighter2Id },
-        data: {
-          gender,
-          weightClass: weightClass || undefined,
-        }
-      });
+      // Don't update TBA fighter's weight class/gender
+      if (!isTBAFighter(fighter2Id)) {
+        await prisma.fighter.update({
+          where: { id: fighter2Id },
+          data: {
+            gender,
+            weightClass: weightClass || undefined,
+          }
+        });
+      }
 
       // Create title name for championship fights
       const titleName = fightData.isTitle

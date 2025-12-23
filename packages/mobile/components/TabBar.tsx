@@ -124,17 +124,22 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.tint,
+        tabBarActiveTintColor: '#F5C518',
         tabBarInactiveTintColor: colors.tabIconDefault,
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
-          paddingTop: 15,
-          paddingBottom: 30,
+          height: 80,
+          paddingBottom: 15,
         },
         tabBarItemStyle: {
-          marginTop: -17,
-          paddingVertical: 5,
+          justifyContent: 'center',
+        },
+        tabBarIconStyle: {
+          marginTop: 3,
+        },
+        tabBarLabelStyle: {
+          marginBottom: 5,
         },
         headerStyle: {
           backgroundColor: colors.card,

@@ -428,7 +428,18 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
 
         fighterLinks.forEach(link => {
           const href = link.href || '';
-          const slug = href.split('/').pop() || '';
+          let slug = href.split('/').pop() || '';
+
+          // URL-decode the slug to handle special characters like apostrophes
+          // e.g., "n%e2%80%99tchala" -> "n'tchala"
+          try {
+            slug = decodeURIComponent(slug);
+          } catch (e) {
+            // If decoding fails, use the original slug
+          }
+
+          // Normalize curly apostrophes to standard apostrophes
+          slug = slug.replace(/[\u2018\u2019\u201B\u0060\u00B4]/g, "'");
 
           // Convert slug to name: "vadim-nemkov" -> "Vadim Nemkov"
           const nameParts = slug.split('-').map(p =>

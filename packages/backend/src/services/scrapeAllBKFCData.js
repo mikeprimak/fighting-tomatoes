@@ -38,6 +38,94 @@ const DELAYS = {
 const delays = DELAYS[SCRAPER_MODE] || DELAYS.manual;
 
 // ========================================
+// HELPER: Parse Fighter Name from URL Slug
+// ========================================
+/**
+ * Parse a fighter name from a URL slug, extracting nickname if present.
+ * Examples:
+ *   "julian-lane" → { firstName: "Julian", lastName: "Lane", nickname: null }
+ *   "lorenzo-the-juggernaut-hunt" → { firstName: "Lorenzo", lastName: "Hunt", nickname: "The Juggernaut" }
+ *   "yoel-romero-iqws6" → { firstName: "Yoel", lastName: "Romero", nickname: null } (garbage removed)
+ */
+function parseFighterNameFromSlug(slug) {
+  if (!slug) return { firstName: '', lastName: '', nickname: null, displayName: '' };
+
+  const parts = slug.split('-').filter(p => p.length > 0);
+  if (parts.length === 0) return { firstName: '', lastName: '', nickname: null, displayName: '' };
+
+  // Clean garbage characters - remove parts that:
+  // 1. Contain digits mixed with letters (e.g., "iqws6")
+  // 2. Are single characters that aren't common (like 'o' for O'Brien)
+  // 3. Are purely numeric
+  const cleanedParts = parts.filter(part => {
+    // Remove if contains digits
+    if (/\d/.test(part)) return false;
+    // Remove if single char (unless it's common like 'o' for O'Something)
+    if (part.length === 1 && !['o', 'j', 'c', 'd'].includes(part.toLowerCase())) return false;
+    // Remove if looks like garbage (no vowels and more than 2 chars)
+    if (part.length > 2 && !/[aeiouAEIOU]/.test(part)) return false;
+    return true;
+  });
+
+  if (cleanedParts.length === 0) return { firstName: '', lastName: '', nickname: null, displayName: '' };
+
+  // Nickname prefixes that typically start a nickname
+  const nicknameStarters = ['the', 'da', 'el', 'la', 'big', 'lil', 'lil\'', 'baby', 'king', 'queen'];
+
+  // Find nickname boundaries
+  let nicknameStart = -1;
+  let nicknameEnd = -1;
+
+  for (let i = 0; i < cleanedParts.length; i++) {
+    const part = cleanedParts[i].toLowerCase();
+    if (nicknameStarters.includes(part)) {
+      // Found a nickname starter - the nickname typically goes from here to before the last name
+      // But only if there's at least one part before (firstName) and after (lastName)
+      if (i > 0 && i < cleanedParts.length - 1) {
+        nicknameStart = i;
+        // Nickname ends at the part before the last one
+        nicknameEnd = cleanedParts.length - 2;
+        break;
+      }
+    }
+  }
+
+  let firstName, lastName, nickname = null;
+
+  if (nicknameStart > 0 && nicknameEnd >= nicknameStart) {
+    // We have a nickname
+    firstName = cleanedParts.slice(0, nicknameStart)
+      .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+      .join(' ');
+
+    nickname = cleanedParts.slice(nicknameStart, nicknameEnd + 1)
+      .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+      .join(' ');
+
+    lastName = cleanedParts.slice(nicknameEnd + 1)
+      .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+      .join(' ');
+  } else {
+    // No nickname detected - standard first/last name parsing
+    const capitalizedParts = cleanedParts.map(p => {
+      // Handle special suffixes
+      if (['jr', 'sr', 'ii', 'iii', 'iv'].includes(p.toLowerCase())) {
+        return p.toUpperCase();
+      }
+      return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+    });
+
+    firstName = capitalizedParts[0];
+    lastName = capitalizedParts.slice(1).join(' ');
+  }
+
+  // Build display name (without nickname for now)
+  const displayName = `${firstName}${lastName ? ' ' + lastName : ''}`;
+
+  return { firstName, lastName, nickname, displayName };
+}
+
+// ========================================
 // STEP 1: Scrape Events List
 // ========================================
 async function scrapeEventsList(browser) {
@@ -421,14 +509,51 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         const slug = href.split('/fighters/').pop()?.replace(/\/$/, '') || '';
         if (!slug) return;
 
-        // Convert slug to name: "julian-lane" -> "Julian Lane"
-        const nameParts = slug.split('-').map(p =>
-          p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
-        );
-        let name = nameParts.join(' ');
+        // Use the helper function to parse name from slug (handles nicknames and garbage)
+        // Note: parseFighterNameFromSlug is defined outside page.evaluate, so we need inline logic here
+        const parts = slug.split('-').filter(p => p.length > 0);
+        if (parts.length === 0) return;
 
-        // Handle special cases like "Jr" or "III"
-        name = name.replace(/\s(Jr|Sr|Ii|Iii|Iv)$/i, (match) => match.toUpperCase());
+        // Clean garbage characters
+        const cleanedParts = parts.filter(part => {
+          if (/\d/.test(part)) return false;
+          if (part.length === 1 && !['o', 'j', 'c', 'd'].includes(part.toLowerCase())) return false;
+          if (part.length > 2 && !/[aeiouAEIOU]/.test(part)) return false;
+          return true;
+        });
+        if (cleanedParts.length === 0) return;
+
+        // Detect and extract nickname
+        const nicknameStarters = ['the', 'da', 'el', 'la', 'big', 'lil', 'baby', 'king', 'queen'];
+        let nicknameStart = -1;
+        let nicknameEnd = -1;
+
+        for (let i = 0; i < cleanedParts.length; i++) {
+          const part = cleanedParts[i].toLowerCase();
+          if (nicknameStarters.includes(part) && i > 0 && i < cleanedParts.length - 1) {
+            nicknameStart = i;
+            nicknameEnd = cleanedParts.length - 2;
+            break;
+          }
+        }
+
+        let name;
+        if (nicknameStart > 0 && nicknameEnd >= nicknameStart) {
+          // Extract name without the nickname portion
+          const firstNameParts = cleanedParts.slice(0, nicknameStart);
+          const lastNameParts = cleanedParts.slice(nicknameEnd + 1);
+          const allNameParts = [...firstNameParts, ...lastNameParts];
+          name = allNameParts.map(p => {
+            if (['jr', 'sr', 'ii', 'iii', 'iv'].includes(p.toLowerCase())) return p.toUpperCase();
+            return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+          }).join(' ');
+        } else {
+          // Standard name parsing
+          name = cleanedParts.map(p => {
+            if (['jr', 'sr', 'ii', 'iii', 'iv'].includes(p.toLowerCase())) return p.toUpperCase();
+            return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
+          }).join(' ');
+        }
 
         if (!isValidFighterName(name)) return;
 

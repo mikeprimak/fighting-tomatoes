@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -37,6 +37,7 @@ import { CustomAlert } from './CustomAlert';
 import FightDetailsMenu from './FightDetailsMenu';
 import Button from './Button';
 import SectionContainer from './SectionContainer';
+import { isTBAFighterName } from '../constants/tba';
 
 interface Fighter {
   id: string;
@@ -82,6 +83,7 @@ interface Fight {
   isFollowing?: boolean;
   isFollowingFighter1?: boolean;
   isFollowingFighter2?: boolean;
+  hasTBAFighter?: boolean; // True if either fighter is TBA (To Be Announced)
 }
 
 interface UpcomingFightDetailScreenProps {
@@ -158,6 +160,14 @@ export default function UpcomingFightDetailScreen({
   const hasRevealedHype = true;
   const hasRevealedWinner = true;
   const hasRevealedMethod = true;
+
+  // Check if fight has a TBA (To Be Announced) fighter - predictions disabled
+  const hasTBA = useMemo(() => {
+    // Check API response first, then fallback to fighter name check
+    return fight.hasTBAFighter ||
+           isTBAFighterName(fight.fighter1.firstName) ||
+           isTBAFighterName(fight.fighter2.firstName);
+  }, [fight.hasTBAFighter, fight.fighter1.firstName, fight.fighter2.firstName]);
 
   // Check if pre-fight activity is locked (fight has started)
   const isPreFightLocked = fight.hasStarted;
@@ -1099,6 +1109,25 @@ export default function UpcomingFightDetailScreen({
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
 
+        {/* TBA Notice - shown when opponent is not yet announced */}
+        {hasTBA && (
+          <View style={{ marginTop: 12, paddingHorizontal: 16 }}>
+            <View style={{
+              backgroundColor: colors.border + '40',
+              borderRadius: 8,
+              padding: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+            }}>
+              <Ionicons name="information-circle-outline" size={20} color={colors.textSecondary} />
+              <Text style={{ color: colors.textSecondary, fontSize: 13, flex: 1 }}>
+                Predictions disabled - opponent not yet announced
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* Fighter Selection */}
         <View style={{ marginTop: 18 }}>
           <View style={styles.fighterButtons}>
@@ -1108,11 +1137,11 @@ export default function UpcomingFightDetailScreen({
                 {
                   backgroundColor: selectedWinner === fight.fighter1.id ? '#F5C518' : 'transparent',
                   borderColor: colors.border,
-                  opacity: isPreFightLocked ? 0.5 : 1,
+                  opacity: (isPreFightLocked || hasTBA) ? 0.5 : 1,
                 }
               ]}
               onPress={() => handleWinnerSelection(fight.fighter1.id)}
-              disabled={isPreFightLocked}
+              disabled={isPreFightLocked || hasTBA}
             >
               <Image
                 source={
@@ -1138,11 +1167,11 @@ export default function UpcomingFightDetailScreen({
                 {
                   backgroundColor: selectedWinner === fight.fighter2.id ? '#F5C518' : 'transparent',
                   borderColor: colors.border,
-                  opacity: isPreFightLocked ? 0.5 : 1,
+                  opacity: (isPreFightLocked || hasTBA) ? 0.5 : 1,
                 }
               ]}
               onPress={() => handleWinnerSelection(fight.fighter2.id)}
-              disabled={isPreFightLocked}
+              disabled={isPreFightLocked || hasTBA}
             >
               <Image
                 source={
@@ -1193,11 +1222,11 @@ export default function UpcomingFightDetailScreen({
                     {
                       backgroundColor: selectedMethod === method ? '#F5C518' : 'transparent',
                       borderColor: colors.border,
-                      opacity: isPreFightLocked ? 0.5 : 1,
+                      opacity: (isPreFightLocked || hasTBA) ? 0.5 : 1,
                     }
                   ]}
                   onPress={() => handleMethodSelection(method)}
-                  disabled={isPreFightLocked}
+                  disabled={isPreFightLocked || hasTBA}
                 >
                   <Text style={[
                     styles.methodButtonText,

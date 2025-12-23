@@ -4,6 +4,7 @@ import { WeightClass, Sport, Gender, ActivityType, PredictionMethod } from '@pri
 import { authenticateUser, requireEmailVerification, optionalAuth } from '../middleware/auth';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 import { calculateQualityThreadScore } from '../utils/commentSorting';
+import { TBA_FIGHTER_ID, isTBAFighter, fightHasTBA } from '../constants/tba';
 
 // Request/Response schemas using Zod for validation
 const CreateFightSchema = z.object({
@@ -305,6 +306,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
       // Transform fights data to include user-specific data in the expected format
       const transformedFights = await Promise.all(fights.map(async (fight: any) => {
         const transformed = { ...fight };
+
+        // Check if fight has a TBA (To Be Announced) fighter - predictions should be disabled
+        transformed.hasTBAFighter = fightHasTBA(fight.fighter1Id, fight.fighter2Id);
 
         // Add aggregate hype from batch calculation
         const hypeData = hypeByFight.get(fight.id);
@@ -3603,6 +3607,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const transformedFights = fights.map((fight: any) => {
         const transformed = { ...fight };
         const hypeStats = hypeMap.get(fight.id);
+
+        // Check if fight has a TBA (To Be Announced) fighter - predictions should be disabled
+        transformed.hasTBAFighter = fightHasTBA(fight.fighter1Id, fight.fighter2Id);
 
         // Add aggregate hype stats
         transformed.averageHype = hypeStats?.averageHype || 0;
