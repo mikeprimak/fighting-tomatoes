@@ -329,39 +329,39 @@ export async function registerRoutes(fastify: FastifyInstance) {
             hypeByFight.set(pred.fightId, existing);
           }
 
-          // Fetch user-specific data if authenticated
+          // Fetch user-specific data if authenticated (parallel queries for performance)
           let userRatingsByFight = new Map<string, number>();
           let userPredictionsByFight = new Map<string, { predictedRating: number | null; predictedWinner: string | null; predictedMethod: string | null }>();
 
           if (userId) {
-            // Fetch user's ratings
-            const userRatings = await fastify.prisma.fightRating.findMany({
-              where: {
-                fightId: { in: allFightIds },
-                userId: userId,
-              },
-              select: {
-                fightId: true,
-                rating: true,
-              },
-            });
+            const [userRatings, userPredictions] = await Promise.all([
+              fastify.prisma.fightRating.findMany({
+                where: {
+                  fightId: { in: allFightIds },
+                  userId: userId,
+                },
+                select: {
+                  fightId: true,
+                  rating: true,
+                },
+              }),
+              fastify.prisma.fightPrediction.findMany({
+                where: {
+                  fightId: { in: allFightIds },
+                  userId: userId,
+                },
+                select: {
+                  fightId: true,
+                  predictedRating: true,
+                  predictedWinner: true,
+                  predictedMethod: true,
+                },
+              }),
+            ]);
+
             for (const rating of userRatings) {
               userRatingsByFight.set(rating.fightId, rating.rating);
             }
-
-            // Fetch user's predictions
-            const userPredictions = await fastify.prisma.fightPrediction.findMany({
-              where: {
-                fightId: { in: allFightIds },
-                userId: userId,
-              },
-              select: {
-                fightId: true,
-                predictedRating: true,
-                predictedWinner: true,
-                predictedMethod: true,
-              },
-            });
             for (const pred of userPredictions) {
               userPredictionsByFight.set(pred.fightId, {
                 predictedRating: pred.predictedRating,
@@ -372,8 +372,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
           }
 
           // Fetch notification reasons for each fight if user is authenticated
+          // Skip for past events - notification reasons are irrelevant for completed fights
           let notificationReasonsByFight = new Map<string, { willBeNotified: boolean; reasons: any[] }>();
-          if (userId) {
+          if (userId && type !== 'past') {
             // Batch fetch notification reasons for all fights
             const notificationPromises = allFightIds.map(async (fightId: string) => {
               const reasons = await notificationRuleEngine.getNotificationReasonsForFight(userId, fightId);
