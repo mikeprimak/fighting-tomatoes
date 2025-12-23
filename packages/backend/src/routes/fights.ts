@@ -2892,6 +2892,20 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Calculate updated aggregate hype for immediate frontend update
+      const aggregateResult = await fastify.prisma.fightPrediction.aggregate({
+        where: {
+          fightId,
+          predictedRating: { not: null },
+        },
+        _avg: { predictedRating: true },
+        _count: true,
+      });
+
+      const averageHype = aggregateResult._avg.predictedRating
+        ? Math.round(aggregateResult._avg.predictedRating * 10) / 10
+        : 0;
+
       return reply.send({
         prediction: {
           id: prediction.id,
@@ -2906,6 +2920,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
             name: (prediction as any).user.displayName || `${(prediction as any).user.firstName} ${(prediction as any).user.lastName}`,
           },
         },
+        // Return updated aggregate for instant frontend cache update
+        averageHype,
+        totalHypePredictions: aggregateResult._count,
         message: 'Prediction saved successfully',
       });
 

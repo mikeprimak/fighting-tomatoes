@@ -269,7 +269,7 @@ export default function UpcomingFightDetailScreen({
   const displayPredictionStats = predictionStats;
 
   // Helper to optimistically update events cache for predictions
-  const updateEventsCache = (updates: { userPredictedWinner?: string | null; userPredictedMethod?: string | null; userHypePrediction?: number | null }) => {
+  const updateEventsCache = (updates: { userPredictedWinner?: string | null; userPredictedMethod?: string | null; userHypePrediction?: number | null; averageHype?: number }) => {
     queryClient.setQueryData(['upcomingEvents', isAuthenticated], (old: any) => {
       if (!old?.pages) return old;
       return {
@@ -351,10 +351,16 @@ export default function UpcomingFightDetailScreen({
       updateEventsCache({ userHypePrediction: hypeLevel });
       return { previousEvents };
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       console.log('[saveHypeMutation] Success:', data);
       // Mark this fight as needing animation
       setPendingAnimation(fight.id);
+
+      // Immediately update cache with the returned aggregate hype (no refetch delay)
+      if (data.averageHype !== undefined) {
+        updateEventsCache({ averageHype: data.averageHype });
+      }
+
       onPredictionSuccess?.();
     },
     onError: (error, hypeLevel, context: any) => {
