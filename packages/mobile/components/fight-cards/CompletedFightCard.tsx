@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, memo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert, ViewStyle } from 'react-native';
 import { FontAwesome, FontAwesome6, Entypo } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
@@ -15,6 +15,68 @@ import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import Svg, { Circle } from 'react-native-svg';
+
+// Hoisted outside component to avoid recreation on every render
+const DEFAULT_FIGHTER_IMAGE = require('../../assets/fighters/fighter-default-alpha.png');
+
+// Arc style used by both PredictionArc and WinnerArc
+const predictionArcStyle: ViewStyle = {
+  position: 'absolute',
+  top: -2,
+  left: -2,
+  zIndex: 10,
+};
+
+// PredictionArc component - moved outside to prevent recreation on every render
+const PredictionArc = memo(({ color, position, size = 54 }: { color: string; position: 'left' | 'bottom-left'; size?: number }) => {
+  const strokeWidth = 3;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const sixthArc = circumference / 6;
+  const rotation = position === 'left' ? 120 : 60;
+
+  return (
+    <View style={[predictionArcStyle, { width: size, height: size }]}>
+      <Svg width={size} height={size} style={{ transform: [{ rotate: `${rotation}deg` }] }}>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={`${sixthArc} ${circumference - sixthArc}`}
+          strokeLinecap="round"
+        />
+      </Svg>
+    </View>
+  );
+});
+
+// WinnerArc component - moved outside to prevent recreation on every render
+const WinnerArc = memo(({ color, size = 54 }: { color: string; size?: number }) => {
+  const strokeWidth = 3;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const sixthArc = circumference / 6;
+
+  return (
+    <View style={[predictionArcStyle, { width: size, height: size }]}>
+      <Svg width={size} height={size} style={{ transform: [{ rotate: '0deg' }] }}>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={`${sixthArc} ${circumference - sixthArc}`}
+          strokeLinecap="round"
+        />
+      </Svg>
+    </View>
+  );
+});
 
 interface CompletedFightCardProps extends BaseFightCardProps {
   isNextFight?: boolean;
@@ -82,9 +144,17 @@ function CompletedFightCard({
   const startingSoonPulseAnim = useRef(new Animated.Value(1)).current;
 
 
+  // Pre-compute fighter full names to avoid repeated string concatenation
+  const fighter1FullName = useMemo(
+    () => `${fight.fighter1.firstName} ${fight.fighter1.lastName}`,
+    [fight.fighter1.firstName, fight.fighter1.lastName]
+  );
+  const fighter2FullName = useMemo(
+    () => `${fight.fighter2.firstName} ${fight.fighter2.lastName}`,
+    [fight.fighter2.firstName, fight.fighter2.lastName]
+  );
+
   // Use fight object data directly - no need for separate API calls
-  // predictionStats.averageHype → fight.averageHype (for completed fights we use averageRating)
-  // aggregateStats.userPrediction → can be derived from fight object
   const predictionStats = useMemo(() => ({
     averageHype: fight.averageHype || 0,
     totalPredictions: 0,
@@ -92,13 +162,12 @@ function CompletedFightCard({
 
   // Derive user's predicted winner name from fight.userPredictedWinner (fighter ID)
   const aggregateStats = useMemo(() => {
-    // Check if user has predicted a winner (userPredictedWinner is a fighter ID)
     let winnerName: string | null = null;
     if ((fight as any).userPredictedWinner) {
       if ((fight as any).userPredictedWinner === fight.fighter1.id) {
-        winnerName = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
+        winnerName = fighter1FullName;
       } else if ((fight as any).userPredictedWinner === fight.fighter2.id) {
-        winnerName = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+        winnerName = fighter2FullName;
       }
     }
 
@@ -109,7 +178,7 @@ function CompletedFightCard({
       } : null,
       communityPrediction: null,
     };
-  }, [fight.userHypePrediction, (fight as any).userPredictedWinner, fight.fighter1.id, fight.fighter2.id, fight.fighter1.firstName, fight.fighter1.lastName, fight.fighter2.firstName, fight.fighter2.lastName]);
+  }, [fight.userHypePrediction, (fight as any).userPredictedWinner, fight.fighter1.id, fight.fighter2.id, fighter1FullName, fighter2FullName]);
 
   // Toast notification animation
   const showToast = (message: string) => {
@@ -262,97 +331,20 @@ function CompletedFightCard({
 
 
 
-  const getFighter1ImageSource = () => {
-    if (fighter1ImageError) {
-      return require('../../assets/fighters/fighter-default-alpha.png');
-    }
-    return getFighterImage(fight.fighter1);
-  };
+  // Memoize image sources to avoid recalculation on every render
+  const fighter1ImageSource = useMemo(
+    () => fighter1ImageError ? DEFAULT_FIGHTER_IMAGE : getFighterImage(fight.fighter1),
+    [fighter1ImageError, fight.fighter1]
+  );
+  const fighter2ImageSource = useMemo(
+    () => fighter2ImageError ? DEFAULT_FIGHTER_IMAGE : getFighterImage(fight.fighter2),
+    [fighter2ImageError, fight.fighter2]
+  );
 
-  const getFighter2ImageSource = () => {
-    if (fighter2ImageError) {
-      return require('../../assets/fighters/fighter-default-alpha.png');
-    }
-    return getFighterImage(fight.fighter2);
-  };
-
-  // Determine which rings to show for each fighter (only community and user, no winner)
-  const getFighterRings = (fighterId: string, fighterName: string, isFighter2: boolean) => {
-    const rings = [];
-
-    // Blue ring - user's prediction (inner ring - pushed first)
-    if (aggregateStats?.userPrediction?.winner === fighterName) {
-      rings.push('user');
-    }
-
-    // Community prediction ring - yellow (outer ring - pushed second)
-    if (aggregateStats?.communityPrediction?.winner === fighterName) {
-      rings.push('community');
-    }
-
-    return rings;
-  };
-
-  // Prediction arc component - draws a 1/6 circle arc (60°)
-  // Blue: 9 to 7 o'clock (left side) - rotation 120°
-  // Yellow: 7 to 5 o'clock (bottom-left) - rotation 60°
-  const PredictionArc = ({ color, position }: { color: string; position: 'left' | 'bottom-left' }) => {
-    const size = 54; // Slightly larger than 50px image
-    const strokeWidth = 3;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = 2 * Math.PI * radius;
-    const sixthArc = circumference / 6; // 60° arc
-
-    // SVG circle starts at 3 o'clock and goes clockwise
-    // left (9 to 7 o'clock) = rotate 120° (start at 7, draw to 9)
-    // bottom-left (7 to 5 o'clock) = rotate 60° (start at 5, draw to 7)
-    const rotation = position === 'left' ? 120 : 60;
-
-    return (
-      <View style={[styles.predictionArcContainer, { width: size, height: size }]}>
-        <Svg width={size} height={size} style={{ transform: [{ rotate: `${rotation}deg` }] }}>
-          <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke={color}
-            strokeWidth={strokeWidth}
-            fill="none"
-            strokeDasharray={`${sixthArc} ${circumference - sixthArc}`}
-            strokeLinecap="round"
-          />
-        </Svg>
-      </View>
-    );
-  };
-
-  // Winner arc component - draws a 1/6 circle arc (60°, from 5 to 3 o'clock)
-  const WinnerArc = ({ color }: { color: string }) => {
-    const size = 54; // Slightly larger than 50px image
-    const strokeWidth = 3;
-    const radius = (size - strokeWidth) / 2;
-    const circumference = 2 * Math.PI * radius;
-    const sixthArc = circumference / 6; // 60° arc
-
-    // SVG circle starts at 3 o'clock and goes clockwise
-    // bottom-right (5 to 3 o'clock) = rotate 0° (start at 3, draw to 5)
-    return (
-      <View style={[styles.predictionArcContainer, { width: size, height: size }]}>
-        <Svg width={size} height={size} style={{ transform: [{ rotate: '0deg' }] }}>
-          <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke={color}
-            strokeWidth={strokeWidth}
-            fill="none"
-            strokeDasharray={`${sixthArc} ${circumference - sixthArc}`}
-            strokeLinecap="round"
-          />
-        </Svg>
-      </View>
-    );
-  };
+  // Memoized callbacks to prevent new function references on every render
+  const handleFighter1ImageError = useCallback(() => setFighter1ImageError(true), []);
+  const handleFighter2ImageError = useCallback(() => setFighter2ImageError(true), []);
+  const handleCardPress = useCallback(() => onPress(fight), [onPress, fight]);
 
   // Helper function to find top methods with their percentages
   const getTopMethods = (methods: { DECISION: number; KO_TKO: number; SUBMISSION: number }) => {
@@ -402,7 +394,7 @@ function CompletedFightCard({
   const cardBgColor = isEvenRow ? '#222222' : '#181818';
 
   return (
-    <TouchableOpacity onPress={() => onPress(fight)} activeOpacity={0.7}>
+    <TouchableOpacity onPress={handleCardPress} activeOpacity={0.7}>
       <View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
@@ -500,12 +492,12 @@ function CompletedFightCard({
                 {/* Fighter 1 headshot - right of name */}
                 <View style={[styles.fighterImageWrapper, { marginLeft: 6, marginRight: -3 }]}>
                   <Image
-                    source={getFighter1ImageSource()}
+                    source={fighter1ImageSource}
                     style={styles.fighterHeadshot}
-                    onError={() => setFighter1ImageError(true)}
+                    onError={handleFighter1ImageError}
                   />
                   {/* User prediction indicator - green checkmark if correct, red X if incorrect (bottom-left for fighter 1) */}
-                  {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
+                  {aggregateStats?.userPrediction?.winner === fighter1FullName && (
                     <View style={[
                       styles.userPredictionIndicatorLeft,
                       { backgroundColor: fight.winner === fight.fighter1.id ? '#166534' : '#991B1B' }
@@ -525,12 +517,12 @@ function CompletedFightCard({
                 {/* Fighter 2 headshot - left of name */}
                 <View style={[styles.fighterImageWrapper, { marginRight: 6, marginLeft: -3 }]}>
                   <Image
-                    source={getFighter2ImageSource()}
+                    source={fighter2ImageSource}
                     style={styles.fighterHeadshot}
-                    onError={() => setFighter2ImageError(true)}
+                    onError={handleFighter2ImageError}
                   />
                   {/* User prediction indicator - green checkmark if correct, red X if incorrect (bottom-right for fighter 2) */}
-                  {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
+                  {aggregateStats?.userPrediction?.winner === fighter2FullName && (
                     <View style={[
                       styles.userPredictionIndicatorRight,
                       { backgroundColor: fight.winner === fight.fighter2.id ? '#166534' : '#991B1B' }
