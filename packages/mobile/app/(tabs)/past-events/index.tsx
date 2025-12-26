@@ -193,7 +193,7 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
   const { line1, line2 } = parseEventName(event.name);
 
   const handleFightPress = (fight: Fight) => {
-    router.push(`/fight/${fight.id}`);
+    router.push(`/fight/${fight.id}?mode=completed`);
   };
 
   const styles = createStyles(colors);
@@ -215,34 +215,6 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
             {/* Main Card */}
             {mainCard.length > 0 && (
               <View style={styles.cardSection}>
-                <View style={styles.sectionHeader}>
-                  {/* Left Column Header - ALL / RATINGS */}
-                  <View style={styles.columnHeaders}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      ALL
-                    </Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      RATINGS
-                    </Text>
-                  </View>
-
-                  {/* Center - Title */}
-                  <View style={styles.sectionHeaderCenter}>
-                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                      MAIN CARD
-                    </Text>
-                  </View>
-
-                  {/* Right Column Header - MY / RATING */}
-                  <View style={styles.columnHeadersRight}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      MY
-                    </Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                      RATING
-                    </Text>
-                  </View>
-                </View>
                 {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                   <CompletedFightCard
                     key={fight.id}
@@ -400,9 +372,10 @@ export default function PastEventsScreen() {
     <CompletedFightCard
       key={item.id}
       fight={item}
-      onPress={() => router.push(`/fight/${item.id}` as any)}
+      onPress={() => router.push(`/fight/${item.id}?mode=completed` as any)}
       showEvent={true}
       index={index}
+      showRank={true}
     />
   ), [router]);
 
@@ -523,19 +496,6 @@ export default function PastEventsScreen() {
         </View>
       )}
 
-      {/* Column headers for Top Rated view */}
-      {viewMode === 'top-rated' && (
-        <View style={styles.topRatedColumnHeaders}>
-          <View style={styles.columnHeaders}>
-            <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
-            <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATINGS</Text>
-          </View>
-          <View style={styles.columnHeadersRight}>
-            <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
-            <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
-          </View>
-        </View>
-      )}
     </View>
   );
 
@@ -677,14 +637,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginTop: 4,
   },
   fightsContainer: {
-    marginTop: 8,
+    marginTop: 0,
   },
   loadingContainer: {
     paddingVertical: 20,
     alignItems: 'center',
   },
   cardSection: {
-    marginTop: 8,
+    marginTop: 0,
   },
   sectionHeader: {
     flexDirection: 'row',

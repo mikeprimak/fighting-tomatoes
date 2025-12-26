@@ -509,6 +509,62 @@
       "record": "36-11-0",
       "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/OLIVEIRA_CHARLES_10-11.png?itok=vZYVQ-Bm",
       "localHeadshotPath": "/images/athletes/charles-oliveira.png"
+    },
+    {
+      "name": "Renato Moicano",
+      "url": "https://www.ufc.com/athlete/renato-moicano",
+      "record": "20-7-1",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-06/MOICANO_RENATO_06-28.png?itok=4PD_3YFD",
+      "localHeadshotPath": "/images/athletes/renato-moicano.png"
+    },
+    {
+      "name": "Brian Ortega",
+      "url": "https://www.ufc.com/athlete/brian-ortega",
+      "record": "16-5-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/ORTEGA_BRIAN_08-23.png?itok=242TjJQn",
+      "localHeadshotPath": "/images/athletes/brian-ortega.png"
+    },
+    {
+      "name": "Caio Borralho",
+      "url": "https://www.ufc.com/athlete/mario-souza-3",
+      "record": "17-2-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-09/BORRALHO_CAIO_09-06.png?itok=Fqoox8Yz",
+      "localHeadshotPath": "/images/athletes/mario-souza-3.png"
+    },
+    {
+      "name": "Reinier de Ridder",
+      "url": "https://www.ufc.com/athlete/reinier-de-ridder",
+      "record": "21-3-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/DE-RIDDER_REINIER_10-18.png?itok=cCiewy9T",
+      "localHeadshotPath": "/images/athletes/reinier-de-ridder.png"
+    },
+    {
+      "name": "Paulo Costa",
+      "url": "https://www.ufc.com/athlete/paulo-costa",
+      "record": "15-4-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-07/COSTA_PAULO_07-19.png?itok=A3_cmpza",
+      "localHeadshotPath": "/images/athletes/paulo-costa.png"
+    },
+    {
+      "name": "Brunno Ferreira",
+      "url": "https://www.ufc.com/athlete/brunno-ferreira",
+      "record": "15-2-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-12/FERREIRA_BRUNNO_12-06.png?itok=R4PQ_vqe",
+      "localHeadshotPath": "/images/athletes/brunno-ferreira.png"
+    },
+    {
+      "name": "Cody Garbrandt",
+      "url": "https://www.ufc.com/athlete/cody-garbrandt",
+      "record": "14-7-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-06/GARBRANDT_CODY_06-14.png?itok=VKNm35-s",
+      "localHeadshotPath": "/images/athletes/cody-garbrandt.png"
+    },
+    {
+      "name": "Xiao Long",
+      "url": "https://www.ufc.com/athlete/shiyao-ron",
+      "record": "27-10-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/LONG_XIAO_08-23.png?itok=uJKGXkAU",
+      "localHeadshotPath": "/images/athletes/shiyao-ron.png"
     }
   ]
 }

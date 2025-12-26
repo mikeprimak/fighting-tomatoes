@@ -3885,7 +3885,6 @@ export async function fightRoutes(fastify: FastifyInstance) {
         totalWithUpvotes: await fastify.prisma.fightReview.count({
           where: {
             userId: currentUserId,
-            upvotes: { gt: 0 },
             isHidden: false,
           },
         }),
@@ -4097,7 +4096,6 @@ export async function fightRoutes(fastify: FastifyInstance) {
         totalWithUpvotes: await fastify.prisma.preFightComment.count({
           where: {
             userId: currentUserId,
-            upvotes: { gt: 0 },
           },
         }),
       });

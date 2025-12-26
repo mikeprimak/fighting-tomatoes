@@ -163,7 +163,13 @@
       "WebFetch(domain:oktagonmma.com)",
       "WebFetch(domain:toprank.com)",
       "WebFetch(domain:www.goldenboy.com)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(PORT=3008 pnpm --dir packages/backend dev)",
+      "Bash(npx:*)",
+      "WebFetch(domain:webook.com)",
+      "WebSearch",
+      "Bash(timeout 60 node:*)",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "ask": []

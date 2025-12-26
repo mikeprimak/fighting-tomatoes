@@ -59,7 +59,8 @@ export default function MyRatingsScreen() {
 
   const handleFightPress = (fight: FightData) => {
     setShowSortMenu(false);
-    router.push(`/fight/${fight.id}` as any);
+    // User's rated fights are always completed
+    router.push(`/fight/${fight.id}?mode=completed` as any);
   };
 
   const sortOptions: { value: SortOption; label: string; icon?: string; isScoreFilter?: boolean }[] = [

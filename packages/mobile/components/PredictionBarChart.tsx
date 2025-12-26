@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Alert, Image, ImageSourcePropType } from 'react
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { getFighterImageUrl } from './fight-cards/shared/utils';
 
 interface PredictionBarChartProps {
   fighter1Name: string;
@@ -147,8 +148,8 @@ export default function PredictionBarChart({
                   <View style={{ marginBottom: 4 }}>
                     <Image
                       source={
-                        fighter1Image
-                          ? { uri: fighter1Image }
+                        getFighterImageUrl(fighter1Image)
+                          ? { uri: getFighterImageUrl(fighter1Image)! }
                           : getFighterPlaceholder()
                       }
                       style={{
@@ -170,8 +171,8 @@ export default function PredictionBarChart({
                   <View style={{ marginBottom: 4 }}>
                     <Image
                       source={
-                        fighter2Image
-                          ? { uri: fighter2Image }
+                        getFighterImageUrl(fighter2Image)
+                          ? { uri: getFighterImageUrl(fighter2Image)! }
                           : getFighterPlaceholder()
                       }
                       style={{

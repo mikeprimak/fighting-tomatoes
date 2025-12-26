@@ -369,7 +369,7 @@ export default function SearchResultsScreen() {
                       <CompletedFightCard
                         key={fight.id}
                         fight={fight}
-                        onPress={() => router.push(`/fight/${fight.id}` as any)}
+                        onPress={() => router.push(`/fight/${fight.id}?mode=completed` as any)}
                         showEvent={true}
                         index={upcomingFights.length + index}
                       />

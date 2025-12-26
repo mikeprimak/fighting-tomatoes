@@ -402,7 +402,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Predictions Section */}
         <SectionContainer
-          title="My Prediction Accuracy"
+          title="My Winner Picks"
           icon="trophy"
           iconColor="#fff"
           headerBgColor="#166534"
@@ -494,15 +494,75 @@ export default function ProfileScreen() {
           )}
         </SectionContainer>
 
+        {/* Average Rating */}
+        <SectionContainer
+          title="My Ratings"
+          icon="star"
+          iconColor="#000"
+          headerBgColor="#F5C518"
+          containerBgColorDark="rgba(245, 197, 24, 0.05)"
+          containerBgColorLight="rgba(245, 197, 24, 0.08)"
+          headerRight={user?.totalRatings ? (
+            <TouchableOpacity
+              onPress={() => router.push('/activity/my-ratings' as any)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+            >
+              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>See All</Text>
+              <FontAwesome name="chevron-right" size={10} color="rgba(255,255,255,0.8)" />
+            </TouchableOpacity>
+          ) : undefined}
+        >
+          <View style={{ height: 10 }} />
+          {!user?.totalRatings ? (
+            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+              Rate how much you liked fights on the "Past Events" screen.
+            </Text>
+          ) : (
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
+                {/* Large Star Icon */}
+                <View style={{ alignItems: 'center' }}>
+                  <View style={[styles.ratingIconContainer, { marginTop: 7 }]}>
+                    <FontAwesome
+                      name="star"
+                      size={90}
+                      color={getHypeHeatmapColor(Math.round(user?.averageRating || 0))}
+                    />
+                    <Text style={[styles.ratingIconText, { marginTop: -2 }]}>
+                      {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'}
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>avg.</Text>
+                </View>
+
+                {/* Distribution Chart */}
+                <View style={{ flex: 1 }}>
+                  {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2, textAlign: 'center' }}>{user?.totalRatings || 0} fights</Text>
+                </View>
+              </View>
+            </View>
+          )}
+        </SectionContainer>
+
         {/* Average Hype */}
         <SectionContainer
-          title="My Average Hype"
+          title="My Hype"
           icon="fire-flame-curved"
           iconFamily="fontawesome6"
           iconColor="#000"
           headerBgColor="#F5C518"
           containerBgColorDark="rgba(245, 197, 24, 0.05)"
           containerBgColorLight="rgba(245, 197, 24, 0.08)"
+          headerRight={user?.totalHype ? (
+            <TouchableOpacity
+              onPress={() => router.push('/activity/my-hype' as any)}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+            >
+              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>See All</Text>
+              <FontAwesome name="chevron-right" size={10} color="rgba(255,255,255,0.8)" />
+            </TouchableOpacity>
+          ) : undefined}
         >
           <View style={{ height: 10 }} />
           {!user?.totalHype ? (
@@ -513,41 +573,36 @@ export default function ProfileScreen() {
             <View>
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
                 {/* Large Flame Icon */}
-                <View style={[styles.ratingIconContainer, { marginTop: 7 }]}>
-                  {/* Background circle for better text contrast */}
-                  <View style={{
-                    position: 'absolute',
-                    width: 56,
-                    height: 56,
-                    borderRadius: 28,
-                    backgroundColor: getHypeHeatmapColor(Math.round(user?.averageHype || 0)),
-                    opacity: 0.4,
-                    top: 30,
-                  }} />
-                  <FontAwesome6
-                    name="fire-flame-curved"
-                    size={90}
-                    color={getHypeHeatmapColor(Math.round(user?.averageHype || 0))}
-                  />
-                  <Text style={[styles.ratingIconText, { marginTop: 6 }]}>
-                    {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'}
-                  </Text>
+                <View style={{ alignItems: 'center' }}>
+                  <View style={[styles.ratingIconContainer, { marginTop: 7 }]}>
+                    {/* Background circle for better text contrast */}
+                    <View style={{
+                      position: 'absolute',
+                      width: 56,
+                      height: 56,
+                      borderRadius: 28,
+                      backgroundColor: getHypeHeatmapColor(Math.round(user?.averageHype || 0)),
+                      opacity: 0.4,
+                      top: 30,
+                    }} />
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={90}
+                      color={getHypeHeatmapColor(Math.round(user?.averageHype || 0))}
+                    />
+                    <Text style={[styles.ratingIconText, { marginTop: 6 }]}>
+                      {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'}
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>avg.</Text>
                 </View>
 
                 {/* Distribution Chart */}
                 <View style={{ flex: 1 }}>
                   {renderDistributionChart(user?.hypeDistribution || {}, 'hype')}
+                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2, textAlign: 'center' }}>{user?.totalHype || 0} fights</Text>
                 </View>
               </View>
-              <TouchableOpacity
-                style={[styles.seeAllButton, { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 12, marginTop: 14 }]}
-                onPress={() => router.push('/activity/my-hype' as any)}
-              >
-                <Text style={[styles.seeAllText, { color: colors.textSecondary }]}>
-                  See all {user?.totalHype || 0} fights
-                </Text>
-                <FontAwesome name="chevron-right" size={12} color={colors.textSecondary} />
-              </TouchableOpacity>
             </View>
           )}
         </SectionContainer>
@@ -663,53 +718,6 @@ export default function ProfileScreen() {
                   <FontAwesome name="chevron-right" size={12} color={colors.textSecondary} />
                 </TouchableOpacity>
               )}
-            </View>
-          )}
-        </SectionContainer>
-
-        {/* Average Rating */}
-        <SectionContainer
-          title="My Average Rating"
-          icon="star"
-          iconColor="#000"
-          headerBgColor="#F5C518"
-          containerBgColorDark="rgba(245, 197, 24, 0.05)"
-          containerBgColorLight="rgba(245, 197, 24, 0.08)"
-        >
-          <View style={{ height: 10 }} />
-          {!user?.totalRatings ? (
-            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
-              Rate how much you liked fights on the "Past Events" screen.
-            </Text>
-          ) : (
-            <View>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
-                {/* Large Star Icon */}
-                <View style={[styles.ratingIconContainer, { marginTop: 7 }]}>
-                  <FontAwesome
-                    name="star"
-                    size={90}
-                    color={getHypeHeatmapColor(Math.round(user?.averageRating || 0))}
-                  />
-                  <Text style={[styles.ratingIconText, { marginTop: -2 }]}>
-                    {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'}
-                  </Text>
-                </View>
-
-                {/* Distribution Chart */}
-                <View style={{ flex: 1 }}>
-                  {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
-                </View>
-              </View>
-              <TouchableOpacity
-                style={[styles.seeAllButton, { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 12, marginTop: 14 }]}
-                onPress={() => router.push('/activity/my-ratings' as any)}
-              >
-                <Text style={[styles.seeAllText, { color: colors.textSecondary }]}>
-                  See all {user?.totalRatings || 0} fights
-                </Text>
-                <FontAwesome name="chevron-right" size={12} color={colors.textSecondary} />
-              </TouchableOpacity>
             </View>
           )}
         </SectionContainer>

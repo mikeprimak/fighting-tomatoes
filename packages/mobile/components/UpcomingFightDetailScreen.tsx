@@ -38,6 +38,7 @@ import FightDetailsMenu from './FightDetailsMenu';
 import Button from './Button';
 import SectionContainer from './SectionContainer';
 import { isTBAFighterName } from '../constants/tba';
+import { getFighterImage } from './fight-cards/shared/utils';
 
 interface Fighter {
   id: string;
@@ -94,11 +95,6 @@ interface UpcomingFightDetailScreenProps {
   setDetailsMenuVisible?: (visible: boolean) => void;
   onNotificationEnabled?: () => void;
 }
-
-// Placeholder image for fighters
-const getFighterPlaceholderImage = (fighterId: string) => {
-  return require('../assets/fighters/fighter-default-alpha.png');
-};
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -1150,11 +1146,7 @@ export default function UpcomingFightDetailScreen({
               disabled={isPreFightLocked || hasTBA}
             >
               <Image
-                source={
-                  fight.fighter1.profileImage
-                    ? { uri: fight.fighter1.profileImage }
-                    : getFighterPlaceholderImage(fight.fighter1.id)
-                }
+                source={getFighterImage(fight.fighter1)}
                 style={styles.fighterButtonImage}
               />
               <Text style={[
@@ -1180,11 +1172,7 @@ export default function UpcomingFightDetailScreen({
               disabled={isPreFightLocked || hasTBA}
             >
               <Image
-                source={
-                  fight.fighter2.profileImage
-                    ? { uri: fight.fighter2.profileImage }
-                    : getFighterPlaceholderImage(fight.fighter2.id)
-                }
+                source={getFighterImage(fight.fighter2)}
                 style={styles.fighterButtonImage}
               />
               <Text style={[

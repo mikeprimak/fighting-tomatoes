@@ -53,8 +53,12 @@ export default function SectionContainer({
           <Text style={[styles.titleText, { color: '#FFFFFF' }]}>
             {title}
           </Text>
-          {headerRight}
         </View>
+        {headerRight && (
+          <View style={styles.headerRight}>
+            {headerRight}
+          </View>
+        )}
       </View>
 
       {/* Container */}
@@ -84,6 +88,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+  },
+  headerRight: {
+    position: 'absolute',
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
   },
   titleText: {
     fontSize: 18,

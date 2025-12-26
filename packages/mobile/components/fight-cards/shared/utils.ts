@@ -5,6 +5,36 @@ import { API_BASE_URL } from '../../../services/api';
 // Get the server base URL (without /api)
 const getServerBaseUrl = () => API_BASE_URL.replace('/api', '');
 
+// Process fighter image URL (handles relative paths for non-UFC promotions)
+// Returns a full URL string or null
+export const getFighterImageUrl = (imageUrl: string | null | undefined): string | null => {
+  if (!imageUrl) return null;
+
+  // Check if the URL points to a known default/placeholder image
+  const isDefaultImage =
+    imageUrl.includes('silhouette') ||
+    imageUrl.includes('default-fighter') ||
+    imageUrl.includes('placeholder') ||
+    imageUrl.includes('avatar-default') ||
+    imageUrl.includes('no-image') ||
+    imageUrl.includes('_headshot_default') ||
+    imageUrl.includes('default_headshot');
+
+  if (isDefaultImage) return null;
+
+  // Handle full URLs (http/https)
+  if (imageUrl.startsWith('http')) {
+    return imageUrl;
+  }
+
+  // Handle relative paths (e.g., /images/athletes/oktagon/...)
+  if (imageUrl.startsWith('/')) {
+    return `${getServerBaseUrl()}${imageUrl}`;
+  }
+
+  return null;
+};
+
 // Get fighter image (either from profileImage or placeholder)
 export const getFighterImage = (fighter: Fighter) => {
   if (!fighter.profileImage) {

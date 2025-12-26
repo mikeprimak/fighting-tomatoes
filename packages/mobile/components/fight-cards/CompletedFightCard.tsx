@@ -89,6 +89,7 @@ interface CompletedFightCardProps extends BaseFightCardProps {
   predictionStats?: any;
   aggregateStats?: any;
   index?: number; // For alternating background colors
+  showRank?: boolean; // Show rank indicator (e.g., "#1") next to event name
 }
 
 function CompletedFightCard({
@@ -104,6 +105,7 @@ function CompletedFightCard({
   predictionStats: propPredictionStats,
   aggregateStats: propAggregateStats,
   index,
+  showRank = false,
 }: CompletedFightCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -405,10 +407,33 @@ function CompletedFightCard({
         justifyContent: 'center',
         backgroundColor: cardBgColor,
       }]}>
+          {/* Event info inside card (when showEvent=true) - above fighter names */}
+          {showEvent && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, marginBottom: 2 }}>
+              {showRank && index !== undefined && (
+                <Text style={{ color: colors.textSecondary, fontWeight: '600', fontSize: 11, position: 'absolute', left: -59, top: -6 }}>
+                  #{index + 1}
+                </Text>
+              )}
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: 10,
+                  textAlign: 'center',
+                  flex: 1,
+                }}
+                numberOfLines={1}
+              >
+                {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
+              </Text>
+            </View>
+          )}
+
           {/* Full-height community rating square on the left */}
           <View style={[
             styles.ratingSquare,
             {
+              top: showEvent ? 20 : 6, // Move down when event info is shown
               backgroundColor: (fight.averageRating !== undefined && fight.averageRating > 0)
                 ? ratingBorderColor
                 : 'transparent',
@@ -440,7 +465,7 @@ function CompletedFightCard({
           </View>
 
           {/* User rating star icon on the right */}
-          <View style={styles.userRatingStarContainer}>
+          <View style={[styles.userRatingStarContainer, { top: showEvent ? 20 : 6 }]}>
             {(fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0) ? (
               <Animated.View style={[styles.userRatingStarWrapper, { transform: [{ scale: ratingScaleAnim }] }]}>
                 <FontAwesome
@@ -561,22 +586,6 @@ function CompletedFightCard({
             </View>
 
           </View>
-
-          {/* Event info inside card (when showEvent=true) */}
-          {showEvent && (
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontSize: 10,
-                textAlign: 'center',
-                marginTop: 4,
-                marginBottom: 6,
-              }}
-              numberOfLines={1}
-            >
-              {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
-            </Text>
-          )}
 
         {/* Status message */}
         {getUpcomingStatusMessage() && (

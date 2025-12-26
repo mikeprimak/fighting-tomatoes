@@ -67,8 +67,8 @@ export default function RatingsActivityScreen() {
     setShowFilterTypeMenu(false);
     setShowSortMenu(false);
 
-    // Navigate to fight detail screen (handles both upcoming and completed fights)
-    router.push(`/fight/${fight.id}` as any);
+    // Navigate to fight detail screen - rated fights are always completed
+    router.push(`/fight/${fight.id}?mode=completed` as any);
   };
 
   // Upvote mutation for comments (FightReview)

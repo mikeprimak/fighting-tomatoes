@@ -487,7 +487,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         orderBy: {
           averageRating: 'desc',
         },
-        take: 10,
+        take: 25,
       });
 
       // Get user's fighter follows if authenticated

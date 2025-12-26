@@ -11,7 +11,7 @@
       "country": "United States",
       "dateText": "Sat, Jan 24 / 9:00 PM EST / Main Card",
       "status": "Upcoming",
-      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-11/UFC-324_justin-gaethje-vs-paddy-pimblett.jpg?h=d1cb525d&itok=eBrn1vJ5",
+      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-12/012426-ufc-324-gaethje-vs-pimblett-EVENT-ART.jpg?h=d1cb525d&itok=w__QbO0Z",
       "eventStartTime": null,
       "sections": [],
       "fights": [
@@ -872,21 +872,21 @@
       "city": "Las Vegas",
       "state": "NV",
       "country": "United States",
-      "dateText": "Sat, Mar 7 / 9:00 PM EST / Main Card",
+      "dateText": "Sat, Mar 7 / 4:00 PM EST / Main Card",
       "status": "Upcoming",
       "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-12/030726-ufc-326-holloway-vs-oliveira-2-TEMP-HERO.jpg?h=d1cb525d&itok=rIs40gBY",
       "eventStartTime": null,
       "sections": [],
       "fights": [
         {
-          "fightId": "fight-1",
+          "fightId": "12540",
           "order": 1,
           "cardType": "Main Card",
           "weightClass": "Lightweight",
           "isTitle": false,
           "fighterA": {
             "name": "Max Holloway",
-            "rank": "#3",
+            "rank": "C",
             "country": "United States",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/max-holloway"
@@ -897,6 +897,90 @@
             "country": "Brazil",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/charles-oliveira"
+          }
+        },
+        {
+          "fightId": "fight-2",
+          "order": 2,
+          "cardType": "Main Card",
+          "weightClass": "Lightweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Renato Moicano",
+            "rank": "#10",
+            "country": "Brazil",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/renato-moicano"
+          },
+          "fighterB": {
+            "name": "Brian Ortega",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/brian-ortega"
+          }
+        },
+        {
+          "fightId": "fight-3",
+          "order": 3,
+          "cardType": "Main Card",
+          "weightClass": "Middleweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Caio Borralho",
+            "rank": "#7",
+            "country": "Brazil",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/mario-souza-3"
+          },
+          "fighterB": {
+            "name": "Reinier de Ridder",
+            "rank": "#8",
+            "country": "Netherlands",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/reinier-de-ridder"
+          }
+        },
+        {
+          "fightId": "fight-4",
+          "order": 4,
+          "cardType": "Main Card",
+          "weightClass": "Middleweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Paulo Costa",
+            "rank": "#13",
+            "country": "Brazil",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/paulo-costa"
+          },
+          "fighterB": {
+            "name": "Brunno Ferreira",
+            "rank": "",
+            "country": "Brazil",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/brunno-ferreira"
+          }
+        },
+        {
+          "fightId": "fight-5",
+          "order": 5,
+          "cardType": "Main Card",
+          "weightClass": "Bantamweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Cody Garbrandt",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/cody-garbrandt"
+          },
+          "fighterB": {
+            "name": "Xiao Long",
+            "rank": "",
+            "country": "China",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/shiyao-ron"
           }
         }
       ],

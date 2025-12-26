@@ -196,9 +196,6 @@ export default function UpcomingEventsScreen() {
   // Ref to FlatList for scrolling to top on filter change
   const flatListRef = useRef<FlatList>(null);
 
-  // Flag to temporarily disable maintainVisibleContentPosition during filter changes
-  const [maintainScrollPosition, setMaintainScrollPosition] = useState(true);
-
   // Load saved organization filter on mount
   useEffect(() => {
     const loadSavedFilter = async () => {
@@ -328,9 +325,6 @@ export default function UpcomingEventsScreen() {
 
   // Handler for organization filter tap
   const handleOrgPress = useCallback((org: Organization | 'ALL') => {
-    // Disable maintainVisibleContentPosition before changing filter
-    setMaintainScrollPosition(false);
-
     if (org === 'ALL') {
       // Clear all selections to show all events
       setSelectedOrgs(new Set());
@@ -347,14 +341,9 @@ export default function UpcomingEventsScreen() {
         return newSet;
       });
     }
-    // Scroll to top when filter changes so view stays relative to filter tabs
-    // Use setTimeout to ensure scroll happens after state update and re-render
+    // Scroll to top when filter changes
     setTimeout(() => {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
-      // Re-enable maintainVisibleContentPosition after scroll completes
-      setTimeout(() => {
-        setMaintainScrollPosition(true);
-      }, 100);
     }, 50);
   }, []);
 
@@ -507,11 +496,6 @@ export default function UpcomingEventsScreen() {
         windowSize={5}
         maxToRenderPerBatch={10}
         initialNumToRender={5}
-        // Conditionally maintain scroll position - disabled during filter changes
-        // to allow scrollToOffset to work, then re-enabled for normal scrolling
-        maintainVisibleContentPosition={maintainScrollPosition ? {
-          minIndexForVisible: 0,
-        } : undefined}
       />
     </SafeAreaView>
   );
