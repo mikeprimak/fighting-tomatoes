@@ -78,8 +78,11 @@ async function notifyNextFight(eventId: string, completedFightOrder: number): Pr
     });
 
     if (nextFight) {
-      const fighter1Name = `${nextFight.fighter1.firstName} ${nextFight.fighter1.lastName}`;
-      const fighter2Name = `${nextFight.fighter2.firstName} ${nextFight.fighter2.lastName}`;
+      // Handle single-name fighters (stored in lastName with empty firstName)
+      const formatName = (f: { firstName: string; lastName: string }) =>
+        f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : (f.lastName || f.firstName);
+      const fighter1Name = formatName(nextFight.fighter1);
+      const fighter2Name = formatName(nextFight.fighter2);
 
       console.log(`    🔔 Next fight notification: ${fighter1Name} vs ${fighter2Name}`);
 

@@ -737,6 +737,21 @@
           <input type="text" id="eventMainChannel" class="form-input" placeholder="ESPN+ PPV">
         </div>
 
+        <!-- Banner Image Section -->
+        <div class="form-group" id="bannerImageSection" style="display: none;">
+          <label class="form-label">Event Banner Image</label>
+          <div id="currentBannerPreview" style="margin-bottom: 0.75rem; display: none;">
+            <img id="bannerPreviewImg" src="" alt="Current banner" style="max-width: 100%; max-height: 150px; border-radius: 6px; border: 1px solid var(--border-color);">
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="text" id="bannerImageUrl" class="form-input" placeholder="Paste image URL here..." style="flex: 1;">
+            <button type="button" class="btn btn-primary" onclick="uploadBannerImage()" id="uploadBannerBtn">
+              Upload
+            </button>
+          </div>
+          <div id="bannerUploadStatus" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;"></div>
+        </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeEventModal()">Cancel</button>
           <button type="submit" class="btn btn-success">Save Event</button>
@@ -858,9 +873,17 @@
           <div class="form-group">
             <label class="form-label">Card Section</label>
             <select id="fightCardType" class="form-select">
-              <option value="Main Card">Main Card</option>
-              <option value="Prelims">Prelims</option>
-              <option value="Early Prelims">Early Prelims</option>
+              <optgroup label="MMA">
+                <option value="Main Card">Main Card</option>
+                <option value="Prelims">Prelims</option>
+                <option value="Early Prelims">Early Prelims</option>
+              </optgroup>
+              <optgroup label="Boxing">
+                <option value="Main Event">Main Event</option>
+                <option value="Co-Main Event">Co-Main Event</option>
+                <option value="Undercard">Undercard</option>
+                <option value="Featured">Featured</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -1015,10 +1038,19 @@
 
       const fights = selectedEvent.fights || [];
 
-      // Group fights by card type
-      const mainCard = fights.filter(f => f.cardType === 'Main Card' || !f.cardType);
-      const prelims = fights.filter(f => f.cardType === 'Prelims');
-      const earlyPrelims = fights.filter(f => f.cardType === 'Early Prelims');
+      // Group fights by card type (handle MMA and Boxing conventions)
+      const mainCardTypes = ['Main Card', 'Main Event', 'Co-Main Event'];
+      const prelimTypes = ['Prelims', 'Undercard', 'Featured'];
+      const earlyPrelimTypes = ['Early Prelims'];
+
+      const mainCard = fights.filter(f => mainCardTypes.includes(f.cardType) || !f.cardType);
+      const prelims = fights.filter(f => prelimTypes.includes(f.cardType));
+      const earlyPrelims = fights.filter(f => earlyPrelimTypes.includes(f.cardType));
+      // Catch any fights with unexpected card types
+      const other = fights.filter(f => f.cardType &&
+        !mainCardTypes.includes(f.cardType) &&
+        !prelimTypes.includes(f.cardType) &&
+        !earlyPrelimTypes.includes(f.cardType));
 
       container.innerHTML = `
         <div class="panel-header">
@@ -1036,8 +1068,9 @@
         </div>
 
         ${renderCardSection('Main Card', 'main', mainCard)}
-        ${prelims.length > 0 ? renderCardSection('Prelims', 'prelim', prelims) : ''}
+        ${prelims.length > 0 ? renderCardSection('Prelims / Undercard', 'prelim', prelims) : ''}
         ${earlyPrelims.length > 0 ? renderCardSection('Early Prelims', 'early', earlyPrelims) : ''}
+        ${other.length > 0 ? renderCardSection('Other', 'early', other) : ''}
 
         ${fights.length === 0 ? `
           <div class="empty-state">
@@ -1097,6 +1130,11 @@
       const form = document.getElementById('eventForm');
       form.reset();
 
+      // Reset banner section
+      document.getElementById('bannerImageUrl').value = '';
+      document.getElementById('bannerUploadStatus').textContent = '';
+      document.getElementById('currentBannerPreview').style.display = 'none';
+
       if (eventId && selectedEvent) {
         document.getElementById('eventModalTitle').textContent = 'Edit Event';
         document.getElementById('eventId').value = selectedEvent.id;
@@ -1106,9 +1144,20 @@
         document.getElementById('eventVenue').value = selectedEvent.venue || '';
         document.getElementById('eventLocation').value = selectedEvent.location || '';
         document.getElementById('eventMainChannel').value = selectedEvent.mainChannel || '';
+
+        // Show banner section for existing events
+        document.getElementById('bannerImageSection').style.display = 'block';
+
+        // Show current banner if exists
+        if (selectedEvent.bannerImage) {
+          document.getElementById('bannerPreviewImg').src = selectedEvent.bannerImage;
+          document.getElementById('currentBannerPreview').style.display = 'block';
+        }
       } else {
         document.getElementById('eventModalTitle').textContent = 'Create Event';
         document.getElementById('eventId').value = '';
+        // Hide banner section for new events (need to save first)
+        document.getElementById('bannerImageSection').style.display = 'none';
         // Copy promotion from global filter if set
         const globalPromo = document.getElementById('globalPromotion').value;
         if (globalPromo) {
@@ -1179,6 +1228,77 @@
         renderFights();
       } catch (err) {
         showToast(err.message, 'error');
+      }
+    }
+
+    // ============================================
+    // BANNER IMAGE UPLOAD
+    // ============================================
+    async function uploadBannerImage() {
+      const eventId = document.getElementById('eventId').value;
+      const imageUrl = document.getElementById('bannerImageUrl').value.trim();
+      const statusEl = document.getElementById('bannerUploadStatus');
+      const uploadBtn = document.getElementById('uploadBannerBtn');
+
+      if (!eventId) {
+        showToast('Please save the event first before uploading a banner', 'error');
+        return;
+      }
+
+      if (!imageUrl) {
+        showToast('Please enter an image URL', 'error');
+        return;
+      }
+
+      // Validate URL format
+      try {
+        new URL(imageUrl);
+      } catch {
+        showToast('Invalid URL format', 'error');
+        return;
+      }
+
+      // Show loading state
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span class="spinner"></span>';
+      statusEl.textContent = 'Downloading and uploading image...';
+      statusEl.style.color = 'var(--accent-blue)';
+
+      try {
+        const res = await fetch(`${API_BASE}/admin/events/${eventId}/banner`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || data.message || 'Upload failed');
+        }
+
+        // Success - update preview
+        document.getElementById('bannerPreviewImg').src = data.bannerImage;
+        document.getElementById('currentBannerPreview').style.display = 'block';
+        document.getElementById('bannerImageUrl').value = '';
+
+        statusEl.textContent = 'Banner uploaded successfully!';
+        statusEl.style.color = 'var(--accent-green)';
+
+        // Update selectedEvent with new banner
+        if (selectedEvent) {
+          selectedEvent.bannerImage = data.bannerImage;
+        }
+
+        showToast('Banner image uploaded', 'success');
+
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.style.color = 'var(--accent-red)';
+        showToast(err.message, 'error');
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = 'Upload';
       }
     }
 

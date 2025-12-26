@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, useColorScheme, Switch
 import { useRouter } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
+import { getFighterDisplayName } from '../utils/formatFighterName';
 
 interface Fighter {
   id: string;
@@ -140,9 +141,9 @@ export default function FightDetailsMenu({
                   const fighterId = reason.source.replace('Fighter Follow: ', '');
                   // Find the fighter name from the fight data
                   if (fighterId === fight.fighter1Id) {
-                    return `Following ${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
+                    return `Following ${getFighterDisplayName(fight.fighter1)}`;
                   } else if (fighterId === fight.fighter2Id) {
-                    return `Following ${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+                    return `Following ${getFighterDisplayName(fight.fighter2)}`;
                   }
                   return reason.source; // Fallback to raw source
                 } else if (reason.type === 'rule') {
@@ -202,7 +203,7 @@ export default function FightDetailsMenu({
               <Text style={[styles.menuItemLabel, { color: colors.textSecondary }]}>Fighter 1</Text>
               <View style={styles.menuItemValueRow}>
                 <Text style={[styles.menuItemValue, { color: colors.text }]}>
-                  {fight.fighter1.firstName} {fight.fighter1.lastName}
+                  {getFighterDisplayName(fight.fighter1)}
                 </Text>
                 <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
               </View>
@@ -218,7 +219,7 @@ export default function FightDetailsMenu({
               <Text style={[styles.menuItemLabel, { color: colors.textSecondary }]}>Fighter 2</Text>
               <View style={styles.menuItemValueRow}>
                 <Text style={[styles.menuItemValue, { color: colors.text }]}>
-                  {fight.fighter2.firstName} {fight.fighter2.lastName}
+                  {getFighterDisplayName(fight.fighter2)}
                 </Text>
                 <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
               </View>

@@ -169,7 +169,9 @@
       "WebFetch(domain:webook.com)",
       "WebSearch",
       "Bash(timeout 60 node:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(PGPASSWORD=devpassword pg_dump:*)",
+      "Bash(do)"
     ],
     "deny": [],
     "ask": []

@@ -9,10 +9,19 @@ import { z } from 'zod';
 import {
   triggerDailyUFCScraper,
   triggerFailsafeCleanup,
-  triggerLiveEventScheduler
+  triggerLiveEventScheduler,
+  triggerBKFCScraper,
+  triggerPFLScraper,
+  triggerOneFCScraper,
+  triggerMatchroomScraper,
+  triggerGoldenBoyScraper,
+  triggerTopRankScraper,
+  triggerOktagonScraper,
+  triggerAllOrganizationScrapers,
 } from '../services/backgroundJobs';
 import { getFailsafeStatus } from '../services/failsafeCleanup';
 import { scheduleAllUpcomingEvents, safetyCheckEvents } from '../services/eventBasedScheduler';
+import { uploadEventImage } from '../services/imageStorage';
 
 // Zod schemas for admin CRUD operations
 const CreateEventSchema = z.object({
@@ -154,7 +163,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
     const [events, total] = await Promise.all([
       prisma.event.findMany({
         where,
-        orderBy: { date: 'desc' },
+        // For upcoming events, show soonest first; for all events, show most recent first
+        orderBy: { date: upcoming === 'true' ? 'asc' : 'desc' },
         take: parseInt(limit),
         skip: parseInt(offset),
         include: {
@@ -247,6 +257,61 @@ export async function adminRoutes(fastify: FastifyInstance) {
     await prisma.event.delete({ where: { id } });
 
     return reply.send({ success: true });
+  });
+
+  // Upload event banner image from URL
+  // Downloads from provided URL, uploads to R2, updates event record
+  fastify.post('/admin/events/:id/banner', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { imageUrl } = request.body as { imageUrl?: string };
+
+    if (!imageUrl) {
+      return reply.code(400).send({ error: 'imageUrl is required' });
+    }
+
+    // Validate URL format
+    try {
+      new URL(imageUrl);
+    } catch {
+      return reply.code(400).send({ error: 'Invalid URL format' });
+    }
+
+    // Get event to use its name for the image filename
+    const event = await prisma.event.findUnique({
+      where: { id },
+      select: { id: true, name: true },
+    });
+
+    if (!event) {
+      return reply.code(404).send({ error: 'Event not found' });
+    }
+
+    try {
+      console.log(`[Admin] Uploading banner for event ${event.name} from: ${imageUrl}`);
+
+      // Download from URL and upload to R2
+      const bannerImageUrl = await uploadEventImage(imageUrl, event.name);
+
+      // Update event with new banner URL
+      const updatedEvent = await prisma.event.update({
+        where: { id },
+        data: { bannerImage: bannerImageUrl },
+      });
+
+      console.log(`[Admin] Banner uploaded successfully: ${bannerImageUrl}`);
+
+      return reply.send({
+        success: true,
+        bannerImage: bannerImageUrl,
+        event: updatedEvent,
+      });
+    } catch (error: any) {
+      console.error(`[Admin] Banner upload failed:`, error.message);
+      return reply.code(500).send({
+        error: 'Failed to upload banner image',
+        message: error.message,
+      });
+    }
   });
 
   // ============================================
@@ -444,6 +509,139 @@ export async function adminRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // ============================================
+  // ORGANIZATION SCRAPER TRIGGERS
+  // ============================================
+
+  // Manual trigger: BKFC Scraper
+  fastify.post('/admin/trigger/scraper/bkfc', async (request, reply) => {
+    try {
+      console.log('[Admin] Manual trigger: BKFC scraper');
+      const results = await triggerBKFCScraper();
+      return reply.send({
+        success: true,
+        message: 'BKFC scraper completed',
+        data: results
+      });
+    } catch (error: any) {
+      console.error('[Admin] BKFC scraper failed:', error);
+      return reply.code(500).send({ error: 'BKFC scraper failed', message: error.message });
+    }
+  });
+
+  // Manual trigger: PFL Scraper
+  fastify.post('/admin/trigger/scraper/pfl', async (request, reply) => {
+    try {
+      console.log('[Admin] Manual trigger: PFL scraper');
+      const results = await triggerPFLScraper();
+      return reply.send({
+        success: true,
+        message: 'PFL scraper completed',
+        data: results
+      });
+    } catch (error: any) {
+      console.error('[Admin] PFL scraper failed:', error);
+      return reply.code(500).send({ error: 'PFL scraper failed', message: error.message });
+    }
+  });
+
+  // Manual trigger: ONE FC Scraper
+  fastify.post('/admin/trigger/scraper/onefc', async (request, reply) => {
+    try {
+      console.log('[Admin] Manual trigger: ONE FC scraper');
+      const results = await triggerOneFCScraper();
+      return reply.send({
+        success: true,
+        message: 'ONE FC scraper completed',
+        data: results
+      });
+    } catch (error: any) {
+      console.error('[Admin] ONE FC scraper failed:', error);
+      return reply.code(500).send({ error: 'ONE FC scraper failed', message: error.message });
+    }
+  });
+
+  // Manual trigger: Matchroom Scraper
+  fastify.post('/admin/trigger/scraper/matchroom', async (request, reply) => {
+    try {
+      console.log('[Admin] Manual trigger: Matchroom scraper');
+      const results = await triggerMatchroomScraper();
+      return reply.send({
+        success: true,
+        message: 'Matchroom scraper completed',
+        data: results
+      });
+    } catch (error: any) {
+      console.error('[Admin] Matchroom scraper failed:', error);
+      return reply.code(500).send({ error: 'Matchroom scraper failed', message: error.message });
+    }
+  });
+
+  // Manual trigger: Golden Boy Scraper
+  fastify.post('/admin/trigger/scraper/goldenboy', async (request, reply) => {
+    try {
+      console.log('[Admin] Manual trigger: Golden Boy scraper');
+      const results = await triggerGoldenBoyScraper();
+      return reply.send({
+        success: true,
+        message: 'Golden Boy scraper completed',
+        data: results
+      });
+    } catch (error: any) {
+      console.error('[Admin] Golden Boy scraper failed:', error);
+      return reply.code(500).send({ error: 'Golden Boy scraper failed', message: error.message });
+    }
+  });
+
+  // Manual trigger: Top Rank Scraper
+  fastify.post('/admin/trigger/scraper/toprank', async (request, reply) => {
+    try {
+      console.log('[Admin] Manual trigger: Top Rank scraper');
+      const results = await triggerTopRankScraper();
+      return reply.send({
+        success: true,
+        message: 'Top Rank scraper completed',
+        data: results
+      });
+    } catch (error: any) {
+      console.error('[Admin] Top Rank scraper failed:', error);
+      return reply.code(500).send({ error: 'Top Rank scraper failed', message: error.message });
+    }
+  });
+
+  // Manual trigger: OKTAGON Scraper
+  fastify.post('/admin/trigger/scraper/oktagon', async (request, reply) => {
+    try {
+      console.log('[Admin] Manual trigger: OKTAGON scraper');
+      const results = await triggerOktagonScraper();
+      return reply.send({
+        success: true,
+        message: 'OKTAGON scraper completed',
+        data: results
+      });
+    } catch (error: any) {
+      console.error('[Admin] OKTAGON scraper failed:', error);
+      return reply.code(500).send({ error: 'OKTAGON scraper failed', message: error.message });
+    }
+  });
+
+  // Manual trigger: ALL Organization Scrapers (runs sequentially)
+  fastify.post('/admin/trigger/scraper/all', async (request, reply) => {
+    try {
+      console.log('[Admin] Manual trigger: ALL organization scrapers');
+      const results = await triggerAllOrganizationScrapers();
+      const successCount = results.filter(r => r.success).length;
+      return reply.send({
+        success: true,
+        message: `Completed ${successCount}/${results.length} organization scrapers`,
+        data: results
+      });
+    } catch (error: any) {
+      console.error('[Admin] All scrapers failed:', error);
+      return reply.code(500).send({ error: 'All scrapers failed', message: error.message });
+    }
+  });
+
   // System Health Check
   fastify.get('/admin/health', async (request, reply) => {
     try {
@@ -454,9 +652,37 @@ export async function adminRoutes(fastify: FastifyInstance) {
         data: {
           failsafe: failsafeStatus,
           crons: {
-            dailyScraper: {
-              schedule: 'Daily at 12pm EST (5pm UTC)',
+            ufcScraper: {
+              schedule: 'Daily at 12:00pm EST (5:00pm UTC)',
               cronExpression: '0 17 * * *'
+            },
+            bkfcScraper: {
+              schedule: 'Daily at 12:30am EST (5:30am UTC)',
+              cronExpression: '30 5 * * *'
+            },
+            pflScraper: {
+              schedule: 'Daily at 1:00am EST (6:00am UTC)',
+              cronExpression: '0 6 * * *'
+            },
+            oneFCScraper: {
+              schedule: 'Daily at 1:30am EST (6:30am UTC)',
+              cronExpression: '30 6 * * *'
+            },
+            matchroomScraper: {
+              schedule: 'Daily at 2:00am EST (7:00am UTC)',
+              cronExpression: '0 7 * * *'
+            },
+            goldenBoyScraper: {
+              schedule: 'Daily at 2:30am EST (7:30am UTC)',
+              cronExpression: '30 7 * * *'
+            },
+            topRankScraper: {
+              schedule: 'Daily at 3:00am EST (8:00am UTC)',
+              cronExpression: '0 8 * * *'
+            },
+            oktagonScraper: {
+              schedule: 'Daily at 3:30am EST (8:30am UTC)',
+              cronExpression: '30 8 * * *'
             },
             failsafeCleanup: {
               schedule: 'Every hour',

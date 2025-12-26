@@ -15,6 +15,7 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 
 // Configuration based on mode
 const SCRAPER_MODE = process.env.SCRAPER_MODE || 'manual';
@@ -35,6 +36,15 @@ const DELAYS = {
 };
 
 const delays = DELAYS[SCRAPER_MODE] || DELAYS.manual;
+
+// Fighters to skip cropping (use original image as-is)
+// Add fighter names here if auto-crop produces bad results
+const SKIP_CROP_FIGHTERS = [
+  'Zaquin Moses',
+  'Raymond Muratalla',
+  'Teofimo Lopez',
+  'Josh Warrington',
+];
 
 // ========================================
 // STEP 1: Scrape Events List
@@ -535,29 +545,94 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         globalOrder++;
       }
 
-      // Try to find boxer images
+      // Try to find boxer images from div.boxer-image img.main elements
+      // Matchroom structure: each fight section has two boxer-image divs, one for each fighter
+      // Images are in <div class="boxer-image"><img class="main" src="..."></div>
+
+      // Strategy 1: Look for boxer-image containers with img.main
+      const boxerImageContainers = document.querySelectorAll('.boxer-image img.main, .boxer-image img[class*="main"]');
+
+      // Collect all valid boxer image URLs in order they appear on page
+      const collectedBoxerImages = [];
+      boxerImageContainers.forEach(img => {
+        const src = img.src || img.getAttribute('data-src') || '';
+        if (src && !src.includes('placeholder') && !src.includes('logo') && !src.includes('icon')) {
+          // Prefer smaller srcset version for storage efficiency (around 600x900 or 667x1000)
+          const srcset = img.srcset || '';
+          let bestSrc = src;
+
+          // Parse srcset and pick a medium-sized image (around 600-700px width)
+          if (srcset) {
+            const srcsetParts = srcset.split(',').map(part => {
+              const [url, size] = part.trim().split(/\s+/);
+              const width = parseInt(size) || 0;
+              return { url, width };
+            }).filter(p => p.url && p.width > 0);
+
+            // Find an image around 600-700px width, or fallback to smallest > 300px
+            const mediumImg = srcsetParts.find(p => p.width >= 600 && p.width <= 800);
+            const smallImg = srcsetParts.find(p => p.width >= 300 && p.width <= 500);
+
+            if (mediumImg) {
+              bestSrc = mediumImg.url;
+            } else if (smallImg) {
+              bestSrc = smallImg.url;
+            }
+          }
+
+          collectedBoxerImages.push(bestSrc);
+        }
+      });
+
+      console.log(`      Found ${collectedBoxerImages.length} boxer images in boxer-image containers`);
+
+      // Assign images to fighters in order (each fight has 2 images: boxerA then boxerB)
+      // The images appear in the same order as the fights on the page
+      let imageIndex = 0;
+      for (const fight of allFights) {
+        if (imageIndex < collectedBoxerImages.length && !fight.boxerA.imageUrl) {
+          fight.boxerA.imageUrl = collectedBoxerImages[imageIndex];
+          imageIndex++;
+        }
+        if (imageIndex < collectedBoxerImages.length && !fight.boxerB.imageUrl) {
+          fight.boxerB.imageUrl = collectedBoxerImages[imageIndex];
+          imageIndex++;
+        }
+      }
+
+      // Strategy 2: Fallback - try to match by alt text or URL containing fighter name
       const allImages = document.querySelectorAll('img');
 
       allImages.forEach(img => {
         const src = img.src || img.getAttribute('data-src') || '';
         const alt = (img.alt || '').toLowerCase();
+        const srcLower = src.toLowerCase();
 
         // Skip logos, icons, flags
         if (src.includes('logo') || src.includes('icon') || src.includes('flag') ||
             src.includes('sponsor') || src.includes('dazn') || src.includes('placeholder')) return;
 
-        // Check if alt text matches a boxer name
+        // Check if alt text or src URL matches a boxer name
         for (const fight of allFights) {
+          // Skip if already has image
+          if (fight.boxerA.imageUrl && fight.boxerB.imageUrl) continue;
+
           const boxerAFirst = fight.boxerA.name.toLowerCase().split(' ')[0];
           const boxerALast = fight.boxerA.name.toLowerCase().split(' ').pop();
           const boxerBFirst = fight.boxerB.name.toLowerCase().split(' ')[0];
           const boxerBLast = fight.boxerB.name.toLowerCase().split(' ').pop();
 
-          if (alt.includes(boxerAFirst) || alt.includes(boxerALast)) {
-            if (!fight.boxerA.imageUrl) fight.boxerA.imageUrl = src;
+          // Check alt text OR URL for name match
+          const matchesBoxerA = (alt.includes(boxerAFirst) || alt.includes(boxerALast) ||
+                                  srcLower.includes(boxerAFirst) || srcLower.includes(boxerALast));
+          const matchesBoxerB = (alt.includes(boxerBFirst) || alt.includes(boxerBLast) ||
+                                  srcLower.includes(boxerBFirst) || srcLower.includes(boxerBLast));
+
+          if (matchesBoxerA && !fight.boxerA.imageUrl) {
+            fight.boxerA.imageUrl = src;
           }
-          if (alt.includes(boxerBFirst) || alt.includes(boxerBLast)) {
-            if (!fight.boxerB.imageUrl) fight.boxerB.imageUrl = src;
+          if (matchesBoxerB && !fight.boxerB.imageUrl) {
+            fight.boxerB.imageUrl = src;
           }
         }
       });
@@ -669,6 +744,105 @@ async function downloadImage(browser, url, filepath, retries = 3) {
       if (response && response.ok()) {
         const buffer = await response.buffer();
         fs.writeFileSync(filepath, buffer);
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        if (page && !page.isClosed()) {
+          try {
+            await page.close();
+          } catch (closeError) {
+            // Ignore close errors
+          }
+        }
+
+        return filepath;
+      } else {
+        throw new Error(`Failed to download: ${response ? response.status() : 'No response'}`);
+      }
+    } catch (error) {
+      lastError = error;
+
+      if (page && !page.isClosed()) {
+        try {
+          await page.close();
+        } catch (closeError) {
+          // Ignore close errors
+        }
+      }
+
+      if (attempt < retries) {
+        const backoffDelay = attempt * 500;
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+      }
+    }
+  }
+
+  throw lastError || new Error('Download failed after all retries');
+}
+
+/**
+ * Download and crop boxer image to focus on head/face
+ * Matchroom images show waist-up to head, so we crop to upper portion
+ */
+async function downloadAndCropBoxerImage(browser, url, filepath, retries = 3) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    let page = null;
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      page = await browser.newPage();
+
+      const response = await page.goto(url, {
+        waitUntil: 'networkidle2',
+        timeout: 30000
+      });
+
+      if (response && response.ok()) {
+        const buffer = await response.buffer();
+
+        // Process image with sharp to crop to headshot
+        try {
+          const image = sharp(buffer);
+          const metadata = await image.metadata();
+
+          if (metadata.width && metadata.height) {
+            // Matchroom images are typically portrait with fighter from waist to head
+            // We want to crop to focus on the upper 50% (head/shoulders area)
+            // and slightly zoom in by taking the center 60% horizontally
+
+            const cropTop = 0; // Start from top
+            const cropHeight = Math.floor(metadata.height * 0.50); // Take top 50%
+            const horizontalMargin = Math.floor(metadata.width * 0.20); // 20% margin on each side
+            const cropWidth = metadata.width - (horizontalMargin * 2); // Center 60%
+            const cropLeft = horizontalMargin;
+
+            // Ensure valid crop dimensions
+            const finalWidth = Math.max(cropWidth, 100);
+            const finalHeight = Math.max(cropHeight, 100);
+            const finalLeft = Math.max(0, Math.min(cropLeft, metadata.width - finalWidth));
+            const finalTop = Math.max(0, cropTop);
+
+            await image
+              .extract({
+                left: finalLeft,
+                top: finalTop,
+                width: Math.min(finalWidth, metadata.width - finalLeft),
+                height: Math.min(finalHeight, metadata.height - finalTop)
+              })
+              .png() // Keep as PNG for quality
+              .toFile(filepath);
+
+          } else {
+            // Fallback: save without cropping if metadata not available
+            fs.writeFileSync(filepath, buffer);
+          }
+        } catch (sharpError) {
+          // Fallback: save original if sharp processing fails
+          console.warn(`      ⚠ Sharp processing failed, saving original: ${sharpError.message}`);
+          fs.writeFileSync(filepath, buffer);
+        }
 
         await new Promise(resolve => setTimeout(resolve, 300));
 
@@ -833,17 +1007,34 @@ async function main() {
 
     for (const [name, boxer] of uniqueBoxers) {
       if (boxer.imageUrl) {
+        // Skip placeholder/silhouette images - no point cropping those
+        if (boxer.imageUrl.includes('silhouette') || boxer.imageUrl.includes('placeholder')) {
+          continue;
+        }
+
         const boxerSlug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
         const filename = `${boxerSlug}.png`;
         const filepath = path.join(boxerImagesDir, filename);
 
+        // Check if this fighter should skip cropping
+        const shouldSkipCrop = SKIP_CROP_FIGHTERS.some(
+          skipName => skipName.toLowerCase() === name.toLowerCase()
+        );
+
         if (!fs.existsSync(filepath)) {
           currentCount++;
           try {
-            await downloadImage(browser, boxer.imageUrl, filepath);
+            if (shouldSkipCrop) {
+              // Download original without cropping
+              await downloadImage(browser, boxer.imageUrl, filepath);
+              console.log(`      ✅ ${filename} (${currentCount}/${boxersToDownload.length}) [original - skip crop]`);
+            } else {
+              // Download and crop to headshot
+              await downloadAndCropBoxerImage(browser, boxer.imageUrl, filepath);
+              console.log(`      ✅ ${filename} (${currentCount}/${boxersToDownload.length}) [cropped]`);
+            }
             boxer.localImagePath = `/images/athletes/matchroom/${filename}`;
             downloadCount++;
-            console.log(`      ✅ ${filename} (${currentCount}/${boxersToDownload.length})`);
 
             await new Promise(resolve => setTimeout(resolve, delays.betweenImages));
           } catch (error) {

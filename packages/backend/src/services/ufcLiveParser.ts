@@ -35,7 +35,8 @@ function parseFighterName(fullName: string): { firstName: string; lastName: stri
   // Simple first/last split: first word = firstName, everything else = lastName
   const parts = fullName.trim().split(/\s+/);
   if (parts.length === 1) {
-    return { firstName: parts[0], lastName: '' };
+    // Single-name fighters (e.g., "Tawanchai") - store in lastName for proper sorting
+    return { firstName: '', lastName: parts[0] };
   }
 
   const firstName = parts[0];

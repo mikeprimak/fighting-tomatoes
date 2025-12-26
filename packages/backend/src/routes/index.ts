@@ -218,7 +218,10 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
       // Determine sort order based on type
       // Upcoming: soonest first (asc), Past: most recent first (desc)
-      const orderBy = type === 'upcoming' ? { date: 'asc' as const } : { date: 'desc' as const };
+      // Include id as secondary sort to ensure deterministic ordering for events on same date
+      const orderBy = type === 'upcoming'
+        ? [{ date: 'asc' as const }, { id: 'asc' as const }]
+        : [{ date: 'desc' as const }, { id: 'asc' as const }];
 
       // Build select object
       const select: any = {

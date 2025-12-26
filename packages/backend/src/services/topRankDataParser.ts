@@ -205,7 +205,8 @@ function parseTopRankFighterName(
         const lastName = parts.slice(1).join(' ').trim();
         return { firstName, lastName };
       } else if (parts.length === 1) {
-        return { firstName: parts[0].trim(), lastName: '' };
+        // Single-name fighters - store in lastName for proper sorting
+        return { firstName: '', lastName: parts[0].trim() };
       }
     }
   }
@@ -223,7 +224,8 @@ function parseTopRankFighterName(
   // Simple first/last split
   const nameParts = name.trim().split(/\s+/);
   if (nameParts.length === 1) {
-    return { firstName: nameParts[0].trim(), lastName: '' };
+    // Single-name fighters - store in lastName for proper sorting
+    return { firstName: '', lastName: nameParts[0].trim() };
   }
 
   const firstName = nameParts[0].trim();
@@ -418,7 +420,7 @@ async function importTopRankEvents(
         data: {
           name: eventData.eventName,
           date: eventDate,
-          mainStartTime: eventDate,
+          // Don't set mainStartTime - Top Rank scraper doesn't capture start times
           venue: eventData.venue || undefined,
           location,
           bannerImage: bannerImageUrl,
@@ -434,7 +436,7 @@ async function importTopRankEvents(
           name: eventData.eventName,
           promotion: 'TOP_RANK', // Top Rank Boxing
           date: eventDate,
-          mainStartTime: eventDate,
+          // Don't set mainStartTime - Top Rank scraper doesn't capture start times
           venue: eventData.venue || undefined,
           location,
           bannerImage: bannerImageUrl,
@@ -579,8 +581,127 @@ async function importTopRankEvents(
       }
     }
 
+    // ============== CANCELLATION DETECTION ==============
+    // Check for fights that were replaced (e.g., fighter rebooked with new opponent)
+    // This handles cases where a fight is cancelled and one/both fighters get rebooked
+
     if (fights.length > 0) {
       console.log(`    ✓ Imported ${fightsImported}/${fights.length} fights`);
+
+      // Build a set of all fighter names in the current scraped data for this event
+      const scrapedFighterNames = new Set<string>();
+      for (const fightData of fights) {
+        scrapedFighterNames.add(fightData.fighterA.name.toLowerCase().trim());
+        scrapedFighterNames.add(fightData.fighterB.name.toLowerCase().trim());
+      }
+
+      // Build a map of scraped fight pairs (to check if a specific matchup exists)
+      const scrapedFightPairs = new Set<string>();
+      for (const fightData of fights) {
+        const pairKey = [
+          fightData.fighterA.name.toLowerCase().trim(),
+          fightData.fighterB.name.toLowerCase().trim()
+        ].sort().join('|');
+        scrapedFightPairs.add(pairKey);
+      }
+
+      // Get all existing fights for this event from the database
+      const existingDbFights = await prisma.fight.findMany({
+        where: {
+          eventId: event.id,
+          isComplete: false,
+          isCancelled: false,
+        },
+        include: {
+          fighter1: true,
+          fighter2: true,
+        }
+      });
+
+      let cancelledCount = 0;
+      let unCancelledCount = 0;
+
+      for (const dbFight of existingDbFights) {
+        const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
+        const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+
+        // Create the pair key for this DB fight
+        const dbFightPairKey = [fighter1Name, fighter2Name].sort().join('|');
+
+        // Check if this exact matchup still exists in scraped data
+        if (!scrapedFightPairs.has(dbFightPairKey)) {
+          // Matchup no longer exists - check if either fighter was rebooked
+          const fighter1Rebooked = scrapedFighterNames.has(fighter1Name);
+          const fighter2Rebooked = scrapedFighterNames.has(fighter2Name);
+
+          if (fighter1Rebooked || fighter2Rebooked) {
+            // At least one fighter appears in a different fight - this was a rebooking
+            console.log(`    ❌ Cancelling fight (fighter rebooked): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+
+            await prisma.fight.update({
+              where: { id: dbFight.id },
+              data: { isCancelled: true }
+            });
+
+            cancelledCount++;
+          } else {
+            // Neither fighter appears in scraped data at all - fight may have been fully cancelled
+            // Only mark as cancelled if event is in the near future (within 7 days)
+            const daysUntilEvent = (eventDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+
+            if (daysUntilEvent <= 7) {
+              console.log(`    ❌ Cancelling fight (not in scraped data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+
+              await prisma.fight.update({
+                where: { id: dbFight.id },
+                data: { isCancelled: true }
+              });
+
+              cancelledCount++;
+            } else {
+              console.log(`    ⚠ Fight missing from scraped data (not cancelling, event > 7 days out): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+            }
+          }
+        }
+      }
+
+      // Also check for fights that were previously cancelled but now reappear (un-cancel them)
+      const cancelledDbFights = await prisma.fight.findMany({
+        where: {
+          eventId: event.id,
+          isComplete: false,
+          isCancelled: true,
+        },
+        include: {
+          fighter1: true,
+          fighter2: true,
+        }
+      });
+
+      for (const dbFight of cancelledDbFights) {
+        const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
+        const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+        const dbFightPairKey = [fighter1Name, fighter2Name].sort().join('|');
+
+        if (scrapedFightPairs.has(dbFightPairKey)) {
+          // Fight reappeared in scraped data - un-cancel it
+          console.log(`    ✅ Un-cancelling fight (reappeared in data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+
+          await prisma.fight.update({
+            where: { id: dbFight.id },
+            data: { isCancelled: false }
+          });
+
+          unCancelledCount++;
+        }
+      }
+
+      if (cancelledCount > 0) {
+        console.log(`    ⚠ Cancelled ${cancelledCount} fights due to rebooking/cancellation`);
+      }
+      if (unCancelledCount > 0) {
+        console.log(`    ✅ Un-cancelled ${unCancelledCount} fights (reappeared in data)`);
+      }
     } else {
       console.log(`    ⚠ No fights found for this event`);
     }

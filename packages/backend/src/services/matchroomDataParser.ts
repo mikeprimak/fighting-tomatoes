@@ -1,6 +1,7 @@
 // Matchroom Boxing Data Parser - Imports scraped JSON data into database
 import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
 
@@ -231,28 +232,58 @@ async function importMatchroomBoxers(
       continue;
     }
 
-    // Use lastName as firstName if firstName is empty (single names like "Eubank")
-    const finalFirstName = firstName || lastName;
-    const finalLastName = firstName ? lastName : '';
+    // Single-name fighters are stored with firstName empty and lastName containing the name
+    // This ensures proper sorting and display
 
     // Upload image to R2 storage if available
+    // Prefer local cropped image over remote URL
     let profileImageUrl: string | null = null;
-    if (boxer.imageUrl && !boxer.imageUrl.includes('placeholder')) {
+    const displayName = firstName && lastName ? `${firstName} ${lastName}` : (lastName || firstName);
+
+    // Check for local cropped image first
+    const localImagePath = (boxer as any).localImagePath;
+    const localFilePath = localImagePath ? path.join(__dirname, '../../public', localImagePath) : null;
+    const hasLocalImage = localFilePath && fsSync.existsSync(localFilePath);
+
+    if (hasLocalImage && localImagePath) {
+      // Local cropped image exists - use it
+      // For now, use local path directly (will be served by backend)
+      // When R2 is configured, we'll need to upload the local file
+      const isR2Configured = !!(process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET);
+
+      if (isR2Configured) {
+        // Read local file and upload to R2
+        try {
+          const fileBuffer = fsSync.readFileSync(localFilePath);
+          const base64 = fileBuffer.toString('base64');
+          const dataUrl = `data:image/png;base64,${base64}`;
+          profileImageUrl = await uploadFighterImage(dataUrl, displayName);
+        } catch (error) {
+          console.warn(`  ⚠ Local image upload failed for ${displayName}`);
+          profileImageUrl = localImagePath; // Fall back to local path
+        }
+      } else {
+        // No R2 - use local path (served by backend's /images route)
+        profileImageUrl = localImagePath;
+        console.log(`[Local] Using cropped image: ${localImagePath}`);
+      }
+    } else if (boxer.imageUrl && !boxer.imageUrl.includes('placeholder') && !boxer.imageUrl.includes('silhouette')) {
       try {
-        profileImageUrl = await uploadFighterImage(boxer.imageUrl, `${finalFirstName} ${finalLastName}`);
+        profileImageUrl = await uploadFighterImage(boxer.imageUrl, displayName);
       } catch (error) {
-        console.warn(`  ⚠ Image upload failed for ${finalFirstName} ${finalLastName}`);
+        console.warn(`  ⚠ Image upload failed for ${displayName}`);
         profileImageUrl = boxer.imageUrl;
       }
     }
 
     try {
       // Upsert boxer using firstName + lastName unique constraint
+      // Single-name fighters have empty firstName
       const fighter = await prisma.fighter.upsert({
         where: {
           firstName_lastName: {
-            firstName: finalFirstName,
-            lastName: finalLastName,
+            firstName,
+            lastName,
           }
         },
         update: {
@@ -263,8 +294,8 @@ async function importMatchroomBoxers(
           nickname: nickname || undefined,
         },
         create: {
-          firstName: finalFirstName,
-          lastName: finalLastName,
+          firstName,
+          lastName,
           nickname,
           wins: boxer.wins || 0,
           losses: boxer.losses || 0,
@@ -278,9 +309,9 @@ async function importMatchroomBoxers(
 
       boxerNameToId.set(boxer.name, fighter.id);
       const recordStr = boxer.record || 'no record';
-      console.log(`  ✓ ${finalFirstName} ${finalLastName} (${recordStr})`);
+      console.log(`  ✓ ${displayName} (${recordStr})`);
     } catch (error) {
-      console.error(`  ✗ Failed to import ${finalFirstName} ${finalLastName}:`, error);
+      console.error(`  ✗ Failed to import ${displayName}:`, error);
     }
   }
 
@@ -328,46 +359,18 @@ async function importMatchroomEvents(
 ): Promise<void> {
   console.log(`\n📦 Processing ${eventsData.events.length} Matchroom event entries...`);
 
-  // Group events by actual date (extracted from page content)
-  const eventsByDate = new Map<string, ScrapedMatchroomEvent[]>();
+  // Process each event separately (don't merge by date)
+  for (const scrapedEvent of eventsData.events) {
+    // Extract actual date from normalized text or use the provided date
+    const actualDate = extractActualDate((scrapedEvent as any)._normalizedText) || parseMatchroomDate(scrapedEvent.eventDate);
+    scrapedEvent.eventDate = actualDate.toISOString();
 
-  for (const event of eventsData.events) {
-    // Try to extract actual date from normalized text first
-    const actualDate = extractActualDate((event as any)._normalizedText) || parseMatchroomDate(event.eventDate);
-    const dateKey = actualDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    const eventName = scrapedEvent.eventName;
+    const allFights = scrapedEvent.fights || [];
+    const primaryEvent = scrapedEvent;
+    const dateKey = actualDate.toISOString().split('T')[0];
 
-    // Update the event's date with the correct one
-    event.eventDate = actualDate.toISOString();
-
-    if (!eventsByDate.has(dateKey)) {
-      eventsByDate.set(dateKey, []);
-    }
-    eventsByDate.get(dateKey)!.push(event);
-  }
-
-  console.log(`  📋 Found ${eventsByDate.size} unique event dates`);
-
-  // Process each date group as a single event
-  for (const [dateKey, eventGroup] of Array.from(eventsByDate.entries())) {
-    // Use the first event's details as the base, but combine all fights
-    const primaryEvent = eventGroup[0];
-    const allFights: ScrapedMatchroomFight[] = [];
-
-    // Collect all fights from all events on this date
-    for (const event of eventGroup) {
-      if (event.fights) {
-        allFights.push(...event.fights);
-      }
-    }
-
-    // Create a combined event name if multiple main events
-    let eventName = primaryEvent.eventName;
-    if (eventGroup.length > 1) {
-      // Use the most prominent fight or first one as the event name
-      eventName = `Matchroom Boxing: ${dateKey}`;
-    }
-
-    console.log(`\n  📅 ${dateKey}: ${eventGroup.length} entries -> "${eventName}" with ${allFights.length} fights`);
+    console.log(`\n  📅 ${dateKey}: "${eventName}" with ${allFights.length} fights`);
 
     // Parse date
     const eventDate = parseMatchroomDate(primaryEvent.eventDate);
@@ -375,19 +378,16 @@ async function importMatchroomEvents(
     // Parse main card start time
     const mainStartTime = parseEventStartTime(eventDate, primaryEvent.eventStartTime);
 
-    // Build location string from any event that has it
+    // Build location string
     let location = 'TBA';
-    for (const evt of eventGroup) {
-      const locationParts = [evt.city, evt.country].filter(Boolean);
-      if (locationParts.length > 0) {
-        location = locationParts.join(', ');
-        break;
-      }
+    const locationParts = [primaryEvent.city, primaryEvent.country].filter(Boolean);
+    if (locationParts.length > 0) {
+      location = locationParts.join(', ');
     }
 
-    // Upload event banner to R2 storage (use first available)
+    // Upload event banner to R2 storage
     let bannerImageUrl: string | undefined;
-    const bannerSource = eventGroup.find(e => e.eventImageUrl)?.eventImageUrl;
+    const bannerSource = primaryEvent.eventImageUrl;
     if (bannerSource) {
       try {
         bannerImageUrl = await uploadEventImage(bannerSource, eventName);
@@ -454,18 +454,17 @@ async function importMatchroomEvents(
       let boxer2Id = boxerNameToId.get(fightData.boxerB.name);
 
       // Create boxers on the fly if not found
+      // Single-name fighters are stored with firstName empty, lastName containing the name
       if (!boxer1Id) {
         const { firstName, lastName, nickname } = parseBoxerName(fightData.boxerA.name);
-        const finalFirstName = firstName || lastName;
-        const finalLastName = firstName ? lastName : '';
 
-        if (finalFirstName) {
+        if (firstName || lastName) {
           try {
             const b1 = await prisma.fighter.upsert({
               where: {
                 firstName_lastName: {
-                  firstName: finalFirstName,
-                  lastName: finalLastName,
+                  firstName,
+                  lastName,
                 }
               },
               update: {
@@ -474,8 +473,8 @@ async function importMatchroomEvents(
                 draws: fightData.boxerA.draws || undefined,
               },
               create: {
-                firstName: finalFirstName,
-                lastName: finalLastName,
+                firstName,
+                lastName,
                 nickname,
                 wins: fightData.boxerA.wins || 0,
                 losses: fightData.boxerA.losses || 0,
@@ -495,16 +494,14 @@ async function importMatchroomEvents(
 
       if (!boxer2Id) {
         const { firstName, lastName, nickname } = parseBoxerName(fightData.boxerB.name);
-        const finalFirstName = firstName || lastName;
-        const finalLastName = firstName ? lastName : '';
 
-        if (finalFirstName) {
+        if (firstName || lastName) {
           try {
             const b2 = await prisma.fighter.upsert({
               where: {
                 firstName_lastName: {
-                  firstName: finalFirstName,
-                  lastName: finalLastName,
+                  firstName,
+                  lastName,
                 }
               },
               update: {
@@ -513,8 +510,8 @@ async function importMatchroomEvents(
                 draws: fightData.boxerB.draws || undefined,
               },
               create: {
-                firstName: finalFirstName,
-                lastName: finalLastName,
+                firstName,
+                lastName,
                 nickname,
                 wins: fightData.boxerB.wins || 0,
                 losses: fightData.boxerB.losses || 0,
@@ -608,8 +605,127 @@ async function importMatchroomEvents(
       }
     }
 
+    // ============== CANCELLATION DETECTION ==============
+    // Check for fights that were replaced (e.g., fighter rebooked with new opponent)
+    // This handles cases where a fight is cancelled and one/both fighters get rebooked
+
     if (fights.length > 0) {
       console.log(`    ✓ Imported ${fightsImported}/${fights.length} fights`);
+
+      // Build a set of all boxer names in the current scraped data for this event
+      const scrapedFighterNames = new Set<string>();
+      for (const fightData of fights) {
+        scrapedFighterNames.add(fightData.boxerA.name.toLowerCase().trim());
+        scrapedFighterNames.add(fightData.boxerB.name.toLowerCase().trim());
+      }
+
+      // Build a map of scraped fight pairs (to check if a specific matchup exists)
+      const scrapedFightPairs = new Set<string>();
+      for (const fightData of fights) {
+        const pairKey = [
+          fightData.boxerA.name.toLowerCase().trim(),
+          fightData.boxerB.name.toLowerCase().trim()
+        ].sort().join('|');
+        scrapedFightPairs.add(pairKey);
+      }
+
+      // Get all existing fights for this event from the database
+      const existingDbFights = await prisma.fight.findMany({
+        where: {
+          eventId: event.id,
+          isComplete: false,
+          isCancelled: false,
+        },
+        include: {
+          fighter1: true,
+          fighter2: true,
+        }
+      });
+
+      let cancelledCount = 0;
+      let unCancelledCount = 0;
+
+      for (const dbFight of existingDbFights) {
+        const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
+        const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+
+        // Create the pair key for this DB fight
+        const dbFightPairKey = [fighter1Name, fighter2Name].sort().join('|');
+
+        // Check if this exact matchup still exists in scraped data
+        if (!scrapedFightPairs.has(dbFightPairKey)) {
+          // Matchup no longer exists - check if either fighter was rebooked
+          const fighter1Rebooked = scrapedFighterNames.has(fighter1Name);
+          const fighter2Rebooked = scrapedFighterNames.has(fighter2Name);
+
+          if (fighter1Rebooked || fighter2Rebooked) {
+            // At least one fighter appears in a different fight - this was a rebooking
+            console.log(`    ❌ Cancelling fight (fighter rebooked): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+
+            await prisma.fight.update({
+              where: { id: dbFight.id },
+              data: { isCancelled: true }
+            });
+
+            cancelledCount++;
+          } else {
+            // Neither fighter appears in scraped data at all - fight may have been fully cancelled
+            // Only mark as cancelled if event is in the near future (within 7 days)
+            const daysUntilEvent = (eventDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+
+            if (daysUntilEvent <= 7) {
+              console.log(`    ❌ Cancelling fight (not in scraped data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+
+              await prisma.fight.update({
+                where: { id: dbFight.id },
+                data: { isCancelled: true }
+              });
+
+              cancelledCount++;
+            } else {
+              console.log(`    ⚠ Fight missing from scraped data (not cancelling, event > 7 days out): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+            }
+          }
+        }
+      }
+
+      // Also check for fights that were previously cancelled but now reappear (un-cancel them)
+      const cancelledDbFights = await prisma.fight.findMany({
+        where: {
+          eventId: event.id,
+          isComplete: false,
+          isCancelled: true,
+        },
+        include: {
+          fighter1: true,
+          fighter2: true,
+        }
+      });
+
+      for (const dbFight of cancelledDbFights) {
+        const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
+        const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+        const dbFightPairKey = [fighter1Name, fighter2Name].sort().join('|');
+
+        if (scrapedFightPairs.has(dbFightPairKey)) {
+          // Fight reappeared in scraped data - un-cancel it
+          console.log(`    ✅ Un-cancelling fight (reappeared in data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+
+          await prisma.fight.update({
+            where: { id: dbFight.id },
+            data: { isCancelled: false }
+          });
+
+          unCancelledCount++;
+        }
+      }
+
+      if (cancelledCount > 0) {
+        console.log(`    ⚠ Cancelled ${cancelledCount} fights due to rebooking/cancellation`);
+      }
+      if (unCancelledCount > 0) {
+        console.log(`    ✅ Un-cancelled ${unCancelledCount} fights (reappeared in data)`);
+      }
     } else {
       console.log(`    ⚠ No fights found for this event`);
     }

@@ -9,7 +9,7 @@ import {
 import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
-import { getFighterImage } from './fight-cards/shared/utils';
+import { getFighterImage, getFighterName } from './fight-cards/shared/utils';
 
 interface Fighter {
   id: string;
@@ -36,10 +36,6 @@ export default function FighterCard({ fighter, onPress, avgRating, fightCount, l
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
-  const getFighterName = (fighter: Fighter) => {
-    const name = `${fighter.firstName} ${fighter.lastName}`;
-    return fighter.nickname ? `${name} "${fighter.nickname}"` : name;
-  };
 
   const getRelativeTimeText = () => {
     if (nextFightDate) {

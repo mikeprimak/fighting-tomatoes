@@ -156,8 +156,8 @@ function parseBKFCFighterName(
   const nameParts = cleanName.split(/\s+/).filter(p => p.length > 0);
 
   if (nameParts.length === 1) {
-    // Single name - use as first name
-    return { firstName: nameParts[0], lastName: '', nickname };
+    // Single-name fighters (e.g., "Tawanchai") - store in lastName for proper sorting
+    return { firstName: '', lastName: nameParts[0], nickname };
   }
 
   // Handle suffixes like Jr, Sr, III

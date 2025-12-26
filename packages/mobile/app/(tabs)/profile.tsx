@@ -543,6 +543,58 @@ export default function ProfileScreen() {
               </View>
             </View>
           )}
+
+          {/* My Comments (Post-Fight) */}
+          <View style={{ marginTop: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, marginBottom: 20 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <FontAwesome name="comments" size={18} color={colors.text} />
+                <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, textTransform: 'uppercase', letterSpacing: 2 }}>My Comments</Text>
+              </View>
+              {topReviews?.reviews && topReviews.reviews.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => router.push('/activity/my-comments' as any)}
+                  style={{ position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                >
+                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>See All</Text>
+                  <FontAwesome name="chevron-right" size={10} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+            {!topReviews?.reviews || topReviews.reviews.length === 0 ? (
+              <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+                Write comments on completed fights. Your most upvoted comments will appear here!
+              </Text>
+            ) : (
+              <View>
+                {topReviews.reviews.map((review) => (
+                  <View key={review.id} style={{ marginBottom: 8 }}>
+                    <CommentCard
+                      comment={{
+                        id: review.id,
+                        content: review.isReply ? `↳ ${review.content}` : review.content,
+                        rating: review.rating || 0,
+                        upvotes: review.upvotes,
+                        userHasUpvoted: review.userHasUpvoted,
+                        user: { displayName: 'Me' },
+                        fight: review.fight ? {
+                          id: review.fight.id,
+                          fighter1Name: review.fight.fighter1Name,
+                          fighter2Name: review.fight.fighter2Name,
+                          eventName: review.fight.eventName,
+                        } : undefined,
+                      }}
+                      onPress={() => router.push(`/fight/${review.fight?.id}` as any)}
+                      onUpvote={() => handleUpvote(review.fightId, review.id)}
+                      isUpvoting={upvotingReviewId === review.id}
+                      isAuthenticated={isAuthenticated}
+                      showMyReview={true}
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
         </SectionContainer>
 
         {/* Average Hype */}
@@ -605,121 +657,63 @@ export default function ProfileScreen() {
               </View>
             </View>
           )}
-        </SectionContainer>
 
-        {/* My Comments (Post-Fight) */}
-        <SectionContainer
-          title="My Comments (Post-Fight)"
-          icon="comment"
-          iconColor="#fff"
-          headerBgColor="#3B82F6"
-          containerBgColorDark="rgba(59, 130, 246, 0.05)"
-          containerBgColorLight="rgba(59, 130, 246, 0.08)"
-        >
-          {!topReviews?.reviews || topReviews.reviews.length === 0 ? (
-            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
-              Write comments on completed fights. Your most upvoted comments will appear here!
-            </Text>
-          ) : (
-            <View>
-              {topReviews.reviews.map((review) => (
-                <View key={review.id} style={{ marginBottom: 8 }}>
-                  <CommentCard
-                    comment={{
-                      id: review.id,
-                      content: review.isReply ? `↳ ${review.content}` : review.content,
-                      rating: review.rating || 0,
-                      upvotes: review.upvotes,
-                      userHasUpvoted: review.userHasUpvoted,
-                      user: { displayName: 'Me' },
-                      fight: review.fight ? {
-                        id: review.fight.id,
-                        fighter1Name: review.fight.fighter1Name,
-                        fighter2Name: review.fight.fighter2Name,
-                        eventName: review.fight.eventName,
-                      } : undefined,
-                    }}
-                    onPress={() => router.push(`/fight/${review.fight?.id}` as any)}
-                    onUpvote={() => handleUpvote(review.fightId, review.id)}
-                    isUpvoting={upvotingReviewId === review.id}
-                    isAuthenticated={isAuthenticated}
-                    showMyReview={true}
-                  />
-                </View>
-              ))}
-              {(topReviews.totalWithUpvotes || 0) > 3 && (
+          {/* My Comments (Pre-Fight) */}
+          <View style={{ marginTop: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, marginBottom: 20 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <FontAwesome name="comments" size={18} color={colors.text} />
+                <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, textTransform: 'uppercase', letterSpacing: 2 }}>My Comments</Text>
+              </View>
+              {topPreflightComments?.comments && topPreflightComments.comments.length > 0 && (
                 <TouchableOpacity
-                  style={[styles.seeAllButton, { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 12 }]}
-                  onPress={() => router.push('/activity/my-comments' as any)}
-                >
-                  <Text style={[styles.seeAllText, { color: colors.textSecondary }]}>
-                    See all {topReviews.totalWithUpvotes} comments
-                  </Text>
-                  <FontAwesome name="chevron-right" size={12} color={colors.textSecondary} />
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-        </SectionContainer>
-
-        {/* My Comments (Pre-Fight) */}
-        <SectionContainer
-          title="My Comments (Pre-Fight)"
-          icon="comment"
-          iconColor="#fff"
-          headerBgColor="#10B981"
-          containerBgColorDark="rgba(16, 185, 129, 0.05)"
-          containerBgColorLight="rgba(16, 185, 129, 0.08)"
-        >
-          {!topPreflightComments?.comments || topPreflightComments.comments.length === 0 ? (
-            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
-              Write comments on upcoming fights. Your most upvoted comments will appear here!
-            </Text>
-          ) : (
-            <View>
-              {topPreflightComments.comments.map((comment) => (
-                <View key={comment.id} style={{ marginBottom: 8 }}>
-                  <PreFightCommentCard
-                    comment={{
-                      id: comment.id,
-                      content: comment.content,
-                      hypeRating: comment.hypeRating,
-                      predictedWinner: comment.predictedWinner,
-                      upvotes: comment.upvotes,
-                      userHasUpvoted: comment.userHasUpvoted,
-                      user: { displayName: 'Me' },
-                      fight: comment.fight ? {
-                        id: comment.fight.id,
-                        fighter1Name: comment.fight.fighter1Name,
-                        fighter2Name: comment.fight.fighter2Name,
-                        eventName: comment.fight.eventName,
-                      } : undefined,
-                    }}
-                    fighter1Id={comment.fight?.fighter1Id}
-                    fighter2Id={comment.fight?.fighter2Id}
-                    fighter1Name={comment.fight?.fighter1Name}
-                    fighter2Name={comment.fight?.fighter2Name}
-                    onPress={() => router.push(`/fight/${comment.fight?.id}` as any)}
-                    onUpvote={() => handleUpvotePreflight(comment.fightId, comment.id)}
-                    isUpvoting={upvotingPreflightId === comment.id}
-                    isAuthenticated={isAuthenticated}
-                    showMyComment={true}
-                  />
-                </View>
-              ))}
-              {(topPreflightComments.totalWithUpvotes || 0) > 3 && (
-                <TouchableOpacity
-                  style={[styles.seeAllButton, { borderWidth: 1, borderColor: colors.border, borderRadius: 6, paddingHorizontal: 12 }]}
                   onPress={() => router.push('/activity/my-preflight-comments' as any)}
+                  style={{ position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center', gap: 4 }}
                 >
-                  <Text style={[styles.seeAllText, { color: colors.textSecondary }]}>
-                    See all {topPreflightComments.totalWithUpvotes} comments
-                  </Text>
-                  <FontAwesome name="chevron-right" size={12} color={colors.textSecondary} />
+                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>See All</Text>
+                  <FontAwesome name="chevron-right" size={10} color={colors.textSecondary} />
                 </TouchableOpacity>
               )}
             </View>
-          )}
+            {!topPreflightComments?.comments || topPreflightComments.comments.length === 0 ? (
+              <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+                Write comments on upcoming fights. Your most upvoted comments will appear here!
+              </Text>
+            ) : (
+              <View>
+                {topPreflightComments.comments.map((comment) => (
+                  <View key={comment.id} style={{ marginBottom: 8 }}>
+                    <PreFightCommentCard
+                      comment={{
+                        id: comment.id,
+                        content: comment.content,
+                        hypeRating: comment.hypeRating,
+                        predictedWinner: comment.predictedWinner,
+                        upvotes: comment.upvotes,
+                        userHasUpvoted: comment.userHasUpvoted,
+                        user: { displayName: 'Me' },
+                        fight: comment.fight ? {
+                          id: comment.fight.id,
+                          fighter1Name: comment.fight.fighter1Name,
+                          fighter2Name: comment.fight.fighter2Name,
+                          eventName: comment.fight.eventName,
+                        } : undefined,
+                      }}
+                      fighter1Id={comment.fight?.fighter1Id}
+                      fighter2Id={comment.fight?.fighter2Id}
+                      fighter1Name={comment.fight?.fighter1Name}
+                      fighter2Name={comment.fight?.fighter2Name}
+                      onPress={() => router.push(`/fight/${comment.fight?.id}` as any)}
+                      onUpvote={() => handleUpvotePreflight(comment.fightId, comment.id)}
+                      isUpvoting={upvotingPreflightId === comment.id}
+                      isAuthenticated={isAuthenticated}
+                      showMyComment={true}
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
         </SectionContainer>
 
         {/* Actions */}
@@ -778,7 +772,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     paddingHorizontal: 4,
-    paddingTop: 25,
+    paddingTop: 0,
     paddingBottom: 16,
   },
   header: {

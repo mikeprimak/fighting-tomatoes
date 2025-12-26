@@ -23,6 +23,7 @@ import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { getHypeHeatmapColor, getFlameColor } from '../utils/heatmap';
+import { getFighterDisplayName } from '../utils/formatFighterName';
 import { FlagReviewModal, CommentCard, RatingDistributionChart } from '.';
 import HypeDistributionChart from './HypeDistributionChart';
 import { PreFightCommentCard } from './PreFightCommentCard';
@@ -1191,18 +1192,35 @@ export default function CompletedFightDetailScreen({
     updateUserDataMutation.mutate(submissionData);
   }, [rating, selectedTags]);
 
+  // Track current animation target to handle interruptions
+  const animationTargetRef = useRef<number | null>(null);
+
   // Simple animation function (like UpcomingFightDetailScreen)
   const animateToNumber = (targetNumber: number) => {
-    wheelAnimation.stopAnimation();
-
+    // Calculate target position
+    // Numbers are arranged 10,9,8,7,6,5,4,3,2,1 (10 at top, 1 at bottom)
+    // Position 0 = number 10, position 115 = number 9, ... position 1035 = number 1
+    // Position 1150 = blank (below "1")
     const targetPosition = targetNumber === 0 ? 1150 : (10 - targetNumber) * 115;
 
-    Animated.timing(wheelAnimation, {
-      toValue: targetPosition,
-      duration: 800,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
+    // Store the target so we can ensure it's reached
+    animationTargetRef.current = targetPosition;
+
+    // Stop any existing animation and start new one
+    wheelAnimation.stopAnimation(() => {
+      // Start new animation after stopping previous
+      Animated.timing(wheelAnimation, {
+        toValue: targetPosition,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        // If animation was interrupted but this is still our target, snap to it
+        if (!finished && animationTargetRef.current === targetPosition) {
+          wheelAnimation.setValue(targetPosition);
+        }
+      });
+    });
   };
 
   // Handlers for rating and tags (immediate save) - Simplified like UpcomingFightDetailScreen
@@ -1417,7 +1435,7 @@ export default function CompletedFightDetailScreen({
 
           {/* Winner Content */}
           {!fight.winner && (
-            <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center' }]}>
+            <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center', marginTop: -6, marginBottom: 10 }]}>
               Outcome data not yet available.
             </Text>
           )}
@@ -1440,7 +1458,7 @@ export default function CompletedFightDetailScreen({
                 />
               </View>
               <Text style={[styles.whatHappenedName, { color: colors.text }]}>
-                {fight.fighter1.firstName} {fight.fighter1.lastName}
+                {getFighterDisplayName(fight.fighter1)}
               </Text>
               <View style={{ height: 24, marginTop: 4, justifyContent: 'center' }}>
                 {isOutcomeRevealed && fight.winner === fight.fighter1.id && (
@@ -1470,7 +1488,7 @@ export default function CompletedFightDetailScreen({
                 />
               </View>
               <Text style={[styles.whatHappenedName, { color: colors.text }]}>
-                {fight.fighter2.firstName} {fight.fighter2.lastName}
+                {getFighterDisplayName(fight.fighter2)}
               </Text>
               <View style={{ height: 24, marginTop: 4, justifyContent: 'center' }}>
                 {isOutcomeRevealed && fight.winner === fight.fighter2.id && (
@@ -1561,13 +1579,13 @@ export default function CompletedFightDetailScreen({
                   </View>
                 </View>
               ) : (
-                <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
-                  No picks
+                <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic', marginLeft: 45, opacity: 0.5 }]}>
+                  No pick made.
                 </Text>
               )}
 
               {/* Right: My Hype - Large flame icon with number */}
-              <View style={{ alignItems: 'center', justifyContent: 'center', marginRight: 35 }}>
+              <View style={{ alignItems: 'center', justifyContent: 'center', marginRight: 26 }}>
                 {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && fight.userHypePrediction > 0 ? (
                   <View style={{ position: 'relative', justifyContent: 'center', alignItems: 'center' }}>
                     <FontAwesome6
@@ -1589,11 +1607,10 @@ export default function CompletedFightDetailScreen({
                     </Text>
                   </View>
                 ) : (
-                  <FontAwesome6
-                    name="fire-flame-curved"
-                    size={50}
-                    color={colors.textSecondary}
-                    style={{ opacity: 0.3 }}
+                  <Image
+                    source={require('../assets/flame-hollow-alpha-colored.png')}
+                    style={{ width: 50, height: 50, tintColor: colors.textSecondary, opacity: 0.5 }}
+                    resizeMode="contain"
                   />
                 )}
               </View>
@@ -2005,7 +2022,7 @@ export default function CompletedFightDetailScreen({
                   style={{
                     borderWidth: 1,
                     borderColor: colors.border,
-                    backgroundColor: colors.background,
+                    backgroundColor: colors.card,
                   }}
                   textStyle={{
                     color: colors.text,
@@ -2022,7 +2039,7 @@ export default function CompletedFightDetailScreen({
                   style={{
                     borderWidth: 1,
                     borderColor: colors.border,
-                    backgroundColor: colors.background,
+                    backgroundColor: colors.card,
                   }}
                   textStyle={{
                     color: colors.text,
@@ -2042,7 +2059,7 @@ export default function CompletedFightDetailScreen({
                   style={{
                     borderWidth: 1,
                     borderColor: colors.border,
-                    backgroundColor: colors.background,
+                    backgroundColor: colors.card,
                   }}
                   textStyle={{
                     color: colors.text,
@@ -2879,7 +2896,7 @@ export default function CompletedFightDetailScreen({
           <View style={styles.infoRow}>
             <FontAwesome name="user" size={16} color={colors.textSecondary} />
             <Text style={[styles.infoText, { color: colors.text }]}>
-              {fight.fighter1.firstName} {fight.fighter1.lastName}: {fight.fighter1.wins}-{fight.fighter1.losses}-{fight.fighter1.draws}
+              {getFighterDisplayName(fight.fighter1)}: {fight.fighter1.wins}-{fight.fighter1.losses}-{fight.fighter1.draws}
               {fight.fighter1Ranking && fight.weightClass && ` (#${fight.fighter1Ranking} ${formatWeightClass(fight.weightClass)})`}
             </Text>
           </View>
@@ -2888,7 +2905,7 @@ export default function CompletedFightDetailScreen({
           <View style={styles.infoRow}>
             <FontAwesome name="user" size={16} color={colors.textSecondary} />
             <Text style={[styles.infoText, { color: colors.text }]}>
-              {fight.fighter2.firstName} {fight.fighter2.lastName}: {fight.fighter2.wins}-{fight.fighter2.losses}-{fight.fighter2.draws}
+              {getFighterDisplayName(fight.fighter2)}: {fight.fighter2.wins}-{fight.fighter2.losses}-{fight.fighter2.draws}
               {fight.fighter2Ranking && fight.weightClass && ` (#${fight.fighter2Ranking} ${formatWeightClass(fight.weightClass)})`}
             </Text>
           </View>

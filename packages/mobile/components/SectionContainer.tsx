@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: 0,
     marginTop: 0,
-    marginBottom: 46,
+    marginBottom: 20,
     paddingTop: 16,
     paddingBottom: 16,
     paddingHorizontal: 12,

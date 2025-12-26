@@ -23,6 +23,7 @@ import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { getHypeHeatmapColor } from '../utils/heatmap';
+import { getFighterDisplayName } from '../utils/formatFighterName';
 import PredictionBarChart from './PredictionBarChart';
 import HypeDistributionChart from './HypeDistributionChart';
 import FightDetailsSection from './FightDetailsSection';
@@ -966,27 +967,35 @@ export default function UpcomingFightDetailScreen({
     toggleFighterNotificationMutation.mutate({ fighterId, enabled });
   };
 
+  // Track current animation target to handle interruptions
+  const animationTargetRef = useRef<number | null>(null);
+
   // Animated wheel effect for number display
   const animateToNumber = (targetNumber: number) => {
-    const currentNumber = selectedHype || 0;
-    if (currentNumber === targetNumber) return;
-
-    // Stop any existing animation to prevent conflicts
-    wheelAnimation.stopAnimation();
-
     // Calculate target position
     // Numbers are arranged 10,9,8,7,6,5,4,3,2,1 (10 at top, 1 at bottom)
     // Position 0 = number 10, position 115 = number 9, ... position 1035 = number 1
     // Position 1150 = blank (below "1")
     const targetPosition = targetNumber === 0 ? 1150 : (10 - targetNumber) * 115;
 
-    // Simple, smooth animation
-    Animated.timing(wheelAnimation, {
-      toValue: targetPosition,
-      duration: 800,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: true,
-    }).start();
+    // Store the target so we can ensure it's reached
+    animationTargetRef.current = targetPosition;
+
+    // Stop any existing animation and start new one
+    wheelAnimation.stopAnimation(() => {
+      // Start new animation after stopping previous
+      Animated.timing(wheelAnimation, {
+        toValue: targetPosition,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        // If animation was interrupted but this is still our target, snap to it
+        if (!finished && animationTargetRef.current === targetPosition) {
+          wheelAnimation.setValue(targetPosition);
+        }
+      });
+    });
   };
 
   const handleWinnerSelection = (fighterId: string) => {
@@ -1155,7 +1164,7 @@ export default function UpcomingFightDetailScreen({
                   color: selectedWinner === fight.fighter1.id ? '#000' : colors.text
                 }
               ]}>
-                {fight.fighter1.firstName} {fight.fighter1.lastName}
+                {getFighterDisplayName(fight.fighter1)}
               </Text>
             </TouchableOpacity>
 
@@ -1181,7 +1190,7 @@ export default function UpcomingFightDetailScreen({
                   color: selectedWinner === fight.fighter2.id ? '#000' : colors.text
                 }
               ]}>
-                {fight.fighter2.firstName} {fight.fighter2.lastName}
+                {getFighterDisplayName(fight.fighter2)}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1522,7 +1531,7 @@ export default function UpcomingFightDetailScreen({
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                backgroundColor: colors.background,
+                backgroundColor: colors.card,
               }}
               textStyle={{
                 color: colors.text,
@@ -1539,7 +1548,7 @@ export default function UpcomingFightDetailScreen({
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                backgroundColor: colors.background,
+                backgroundColor: colors.card,
               }}
               textStyle={{
                 color: colors.text,
@@ -1559,7 +1568,7 @@ export default function UpcomingFightDetailScreen({
               style={{
                 borderWidth: 1,
                 borderColor: colors.border,
-                backgroundColor: colors.background,
+                backgroundColor: colors.card,
               }}
               textStyle={{
                 color: colors.text,

@@ -10,7 +10,7 @@ import { useAuth } from '../../store/AuthContext';
 import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { BaseFightCardProps } from './shared/types';
-import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName, formatEventName } from './shared/utils';
+import { getFighterImage, getFighterName, getFighterDisplayName, cleanFighterName, formatDate, getLastName, formatEventName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
@@ -147,12 +147,13 @@ function CompletedFightCard({
 
 
   // Pre-compute fighter full names to avoid repeated string concatenation
+  // Uses getFighterDisplayName to handle single-name fighters properly
   const fighter1FullName = useMemo(
-    () => `${fight.fighter1.firstName} ${fight.fighter1.lastName}`,
+    () => getFighterDisplayName(fight.fighter1),
     [fight.fighter1.firstName, fight.fighter1.lastName]
   );
   const fighter2FullName = useMemo(
-    () => `${fight.fighter2.firstName} ${fight.fighter2.lastName}`,
+    () => getFighterDisplayName(fight.fighter2),
     [fight.fighter2.firstName, fight.fighter2.lastName]
   );
 

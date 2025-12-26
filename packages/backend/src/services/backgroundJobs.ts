@@ -8,6 +8,17 @@ import { checkAndStartLiveEvents } from './liveEventScheduler';
 import { scheduleAllUpcomingEvents, safetyCheckEvents, cancelAllScheduledEvents } from './eventBasedScheduler';
 import { runFailsafeCleanup, FailsafeResults } from './failsafeCleanup';
 import { runDailyUFCScraper, DailyScraperResults } from './dailyUFCScraper';
+import {
+  runDailyBKFCScraper,
+  runDailyPFLScraper,
+  runDailyOneFCScraper,
+  runDailyMatchroomScraper,
+  runDailyGoldenBoyScraper,
+  runDailyTopRankScraper,
+  runDailyOktagonScraper,
+  runAllOrganizationScrapers,
+  OrganizationScraperResults,
+} from './dailyAllScrapers';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -18,6 +29,15 @@ let liveEventSchedulerJob: cron.ScheduledTask | null = null;
 let eventSchedulerSafetyJob: cron.ScheduledTask | null = null;
 let dailyScraperJob: cron.ScheduledTask | null = null;
 let failsafeCleanupJob: cron.ScheduledTask | null = null;
+
+// Organization scraper jobs (staggered at night to avoid memory issues)
+let bkfcScraperJob: cron.ScheduledTask | null = null;
+let pflScraperJob: cron.ScheduledTask | null = null;
+let oneFCScraperJob: cron.ScheduledTask | null = null;
+let matchroomScraperJob: cron.ScheduledTask | null = null;
+let goldenBoyScraperJob: cron.ScheduledTask | null = null;
+let topRankScraperJob: cron.ScheduledTask | null = null;
+let oktagonScraperJob: cron.ScheduledTask | null = null;
 
 /**
  * Start all background jobs
@@ -124,6 +144,96 @@ export function startBackgroundJobs(): void {
 
   console.log('[Background Jobs] Failsafe cleanup ENABLED - runs every hour');
 
+  // ============================================
+  // ORGANIZATION SCRAPERS - Staggered at night EST
+  // Schedule: One every 30 minutes starting at 12:30am EST
+  // Times are in UTC (EST + 5 hours)
+  // ============================================
+
+  // BKFC: 12:30am EST = 5:30am UTC
+  bkfcScraperJob = cron.schedule('30 5 * * *', async () => {
+    console.log('[Background Jobs] Running daily BKFC scraper...');
+    try {
+      await runDailyBKFCScraper();
+      await scheduleAllUpcomingEvents();
+    } catch (error) {
+      console.error('[Background Jobs] Daily BKFC scraper failed:', error);
+    }
+  });
+  console.log('[Background Jobs] Daily BKFC scraper ENABLED - runs at 12:30am EST (5:30am UTC)');
+
+  // PFL: 1:00am EST = 6:00am UTC
+  pflScraperJob = cron.schedule('0 6 * * *', async () => {
+    console.log('[Background Jobs] Running daily PFL scraper...');
+    try {
+      await runDailyPFLScraper();
+      await scheduleAllUpcomingEvents();
+    } catch (error) {
+      console.error('[Background Jobs] Daily PFL scraper failed:', error);
+    }
+  });
+  console.log('[Background Jobs] Daily PFL scraper ENABLED - runs at 1:00am EST (6:00am UTC)');
+
+  // ONE FC: 1:30am EST = 6:30am UTC
+  oneFCScraperJob = cron.schedule('30 6 * * *', async () => {
+    console.log('[Background Jobs] Running daily ONE FC scraper...');
+    try {
+      await runDailyOneFCScraper();
+      await scheduleAllUpcomingEvents();
+    } catch (error) {
+      console.error('[Background Jobs] Daily ONE FC scraper failed:', error);
+    }
+  });
+  console.log('[Background Jobs] Daily ONE FC scraper ENABLED - runs at 1:30am EST (6:30am UTC)');
+
+  // Matchroom: 2:00am EST = 7:00am UTC
+  matchroomScraperJob = cron.schedule('0 7 * * *', async () => {
+    console.log('[Background Jobs] Running daily Matchroom scraper...');
+    try {
+      await runDailyMatchroomScraper();
+      await scheduleAllUpcomingEvents();
+    } catch (error) {
+      console.error('[Background Jobs] Daily Matchroom scraper failed:', error);
+    }
+  });
+  console.log('[Background Jobs] Daily Matchroom scraper ENABLED - runs at 2:00am EST (7:00am UTC)');
+
+  // Golden Boy: 2:30am EST = 7:30am UTC
+  goldenBoyScraperJob = cron.schedule('30 7 * * *', async () => {
+    console.log('[Background Jobs] Running daily Golden Boy scraper...');
+    try {
+      await runDailyGoldenBoyScraper();
+      await scheduleAllUpcomingEvents();
+    } catch (error) {
+      console.error('[Background Jobs] Daily Golden Boy scraper failed:', error);
+    }
+  });
+  console.log('[Background Jobs] Daily Golden Boy scraper ENABLED - runs at 2:30am EST (7:30am UTC)');
+
+  // Top Rank: 3:00am EST = 8:00am UTC
+  topRankScraperJob = cron.schedule('0 8 * * *', async () => {
+    console.log('[Background Jobs] Running daily Top Rank scraper...');
+    try {
+      await runDailyTopRankScraper();
+      await scheduleAllUpcomingEvents();
+    } catch (error) {
+      console.error('[Background Jobs] Daily Top Rank scraper failed:', error);
+    }
+  });
+  console.log('[Background Jobs] Daily Top Rank scraper ENABLED - runs at 3:00am EST (8:00am UTC)');
+
+  // OKTAGON: 3:30am EST = 8:30am UTC
+  oktagonScraperJob = cron.schedule('30 8 * * *', async () => {
+    console.log('[Background Jobs] Running daily OKTAGON scraper...');
+    try {
+      await runDailyOktagonScraper();
+      await scheduleAllUpcomingEvents();
+    } catch (error) {
+      console.error('[Background Jobs] Daily OKTAGON scraper failed:', error);
+    }
+  });
+  console.log('[Background Jobs] Daily OKTAGON scraper ENABLED - runs at 3:30am EST (8:30am UTC)');
+
   // DISABLED: Initial startup check (also disabled for memory constraints)
   // setTimeout(async () => {
   //   console.log('[Background Jobs] Running initial event completion check...');
@@ -180,6 +290,24 @@ export function stopBackgroundJobs(): void {
     failsafeCleanupJob.stop();
     console.log('[Background Jobs] Failsafe cleanup stopped');
   }
+
+  // Stop organization scrapers
+  const orgScraperJobs = [
+    { job: bkfcScraperJob, name: 'BKFC' },
+    { job: pflScraperJob, name: 'PFL' },
+    { job: oneFCScraperJob, name: 'ONE FC' },
+    { job: matchroomScraperJob, name: 'Matchroom' },
+    { job: goldenBoyScraperJob, name: 'Golden Boy' },
+    { job: topRankScraperJob, name: 'Top Rank' },
+    { job: oktagonScraperJob, name: 'OKTAGON' },
+  ];
+
+  orgScraperJobs.forEach(({ job, name }) => {
+    if (job) {
+      job.stop();
+      console.log(`[Background Jobs] ${name} scraper stopped`);
+    }
+  });
 
   console.log('[Background Jobs] All background jobs stopped');
 }
@@ -278,4 +406,73 @@ export async function triggerDailyUFCScraper(): Promise<DailyScraperResults> {
 export async function triggerFailsafeCleanup(): Promise<FailsafeResults> {
   console.log('[Background Jobs] Manual trigger: failsafe cleanup');
   return await runFailsafeCleanup();
+}
+
+// ============================================
+// ORGANIZATION SCRAPER MANUAL TRIGGERS
+// ============================================
+
+/**
+ * Trigger BKFC scraper manually (for testing/admin)
+ */
+export async function triggerBKFCScraper(): Promise<OrganizationScraperResults> {
+  console.log('[Background Jobs] Manual trigger: BKFC scraper');
+  return await runDailyBKFCScraper();
+}
+
+/**
+ * Trigger PFL scraper manually (for testing/admin)
+ */
+export async function triggerPFLScraper(): Promise<OrganizationScraperResults> {
+  console.log('[Background Jobs] Manual trigger: PFL scraper');
+  return await runDailyPFLScraper();
+}
+
+/**
+ * Trigger ONE FC scraper manually (for testing/admin)
+ */
+export async function triggerOneFCScraper(): Promise<OrganizationScraperResults> {
+  console.log('[Background Jobs] Manual trigger: ONE FC scraper');
+  return await runDailyOneFCScraper();
+}
+
+/**
+ * Trigger Matchroom scraper manually (for testing/admin)
+ */
+export async function triggerMatchroomScraper(): Promise<OrganizationScraperResults> {
+  console.log('[Background Jobs] Manual trigger: Matchroom scraper');
+  return await runDailyMatchroomScraper();
+}
+
+/**
+ * Trigger Golden Boy scraper manually (for testing/admin)
+ */
+export async function triggerGoldenBoyScraper(): Promise<OrganizationScraperResults> {
+  console.log('[Background Jobs] Manual trigger: Golden Boy scraper');
+  return await runDailyGoldenBoyScraper();
+}
+
+/**
+ * Trigger Top Rank scraper manually (for testing/admin)
+ */
+export async function triggerTopRankScraper(): Promise<OrganizationScraperResults> {
+  console.log('[Background Jobs] Manual trigger: Top Rank scraper');
+  return await runDailyTopRankScraper();
+}
+
+/**
+ * Trigger OKTAGON scraper manually (for testing/admin)
+ */
+export async function triggerOktagonScraper(): Promise<OrganizationScraperResults> {
+  console.log('[Background Jobs] Manual trigger: OKTAGON scraper');
+  return await runDailyOktagonScraper();
+}
+
+/**
+ * Trigger all organization scrapers manually (for testing/admin)
+ * Warning: This runs all scrapers sequentially and may take a long time
+ */
+export async function triggerAllOrganizationScrapers(): Promise<OrganizationScraperResults[]> {
+  console.log('[Background Jobs] Manual trigger: ALL organization scrapers');
+  return await runAllOrganizationScrapers();
 }

@@ -10,7 +10,7 @@ import { useAuth } from '../../store/AuthContext';
 import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { BaseFightCardProps } from './shared/types';
-import { getFighterImage, getFighterName, cleanFighterName, formatDate, getLastName } from './shared/utils';
+import { getFighterImage, getFighterName, getFighterDisplayName, cleanFighterName, formatDate, getLastName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
@@ -202,9 +202,9 @@ function LiveFightCard({
     let winnerName: string | null = null;
     if ((fight as any).userPredictedWinner) {
       if ((fight as any).userPredictedWinner === fight.fighter1.id) {
-        winnerName = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
+        winnerName = getFighterDisplayName(fight.fighter1);
       } else if ((fight as any).userPredictedWinner === fight.fighter2.id) {
-        winnerName = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
+        winnerName = getFighterDisplayName(fight.fighter2);
       }
     }
 
@@ -532,7 +532,7 @@ function LiveFightCard({
                     onError={() => setFighter1ImageError(true)}
                   />
                   {/* User prediction indicator - yellow circle with user icon (bottom-left for fighter 1) */}
-                  {aggregateStats?.userPrediction?.winner === `${fight.fighter1.firstName} ${fight.fighter1.lastName}` && (
+                  {aggregateStats?.userPrediction?.winner === getFighterDisplayName(fight.fighter1) && (
                     <View style={styles.userPredictionIndicatorLeft}>
                       <FontAwesome name="user" size={11} color="#000000" />
                     </View>
@@ -550,7 +550,7 @@ function LiveFightCard({
                     onError={() => setFighter2ImageError(true)}
                   />
                   {/* User prediction indicator - yellow circle with user icon (bottom-right for fighter 2) */}
-                  {aggregateStats?.userPrediction?.winner === `${fight.fighter2.firstName} ${fight.fighter2.lastName}` && (
+                  {aggregateStats?.userPrediction?.winner === getFighterDisplayName(fight.fighter2) && (
                     <View style={styles.userPredictionIndicatorRight}>
                       <FontAwesome name="user" size={11} color="#000000" />
                     </View>

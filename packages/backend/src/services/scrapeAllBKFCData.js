@@ -115,12 +115,21 @@ function parseFighterNameFromSlug(slug) {
       return p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
     });
 
-    firstName = capitalizedParts[0];
-    lastName = capitalizedParts.slice(1).join(' ');
+    if (capitalizedParts.length === 1) {
+      // Single-name fighters - store in lastName for proper sorting
+      firstName = '';
+      lastName = capitalizedParts[0];
+    } else {
+      firstName = capitalizedParts[0];
+      lastName = capitalizedParts.slice(1).join(' ');
+    }
   }
 
   // Build display name (without nickname for now)
-  const displayName = `${firstName}${lastName ? ' ' + lastName : ''}`;
+  // Handle single-name fighters stored in lastName
+  const displayName = firstName && lastName
+    ? `${firstName} ${lastName}`
+    : (lastName || firstName);
 
   return { firstName, lastName, nickname, displayName };
 }

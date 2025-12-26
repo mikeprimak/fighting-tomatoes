@@ -71,9 +71,35 @@ export const getFighterImage = (fighter: Fighter) => {
 };
 
 // Get full fighter name with nickname
+// Handles single-name fighters stored in lastName with empty firstName
 export const getFighterName = (fighter: Fighter) => {
-  const name = `${fighter.firstName} ${fighter.lastName}`;
-  return fighter.nickname ? `${name} "${fighter.nickname}"` : name;
+  const first = fighter.firstName?.trim() || '';
+  const last = fighter.lastName?.trim() || '';
+
+  // Single-name fighter (stored in lastName)
+  if (!first && last) {
+    return fighter.nickname ? `${last} "${fighter.nickname}"` : last;
+  }
+
+  // Single-name fighter stored in firstName (legacy data)
+  if (first && !last) {
+    return fighter.nickname ? `${first} "${fighter.nickname}"` : first;
+  }
+
+  // Normal two-part name
+  const fullName = `${first} ${last}`.trim();
+  return fighter.nickname ? `${fullName} "${fighter.nickname}"` : fullName;
+};
+
+// Get display name without nickname
+// Handles single-name fighters stored in lastName with empty firstName
+export const getFighterDisplayName = (fighter: Fighter) => {
+  const first = fighter.firstName?.trim() || '';
+  const last = fighter.lastName?.trim() || '';
+
+  if (!first && last) return last;
+  if (first && !last) return first;
+  return `${first} ${last}`.trim();
 };
 
 // Remove nicknames from fighter names
@@ -83,11 +109,20 @@ export const cleanFighterName = (displayName: string) => {
 };
 
 // Extract last name from full name (everything except the first word)
+// For single-name fighters, returns the single name
 export const getLastName = (fullName: string) => {
   if (!fullName) return fullName;
   const parts = fullName.trim().split(' ');
   if (parts.length === 1) return parts[0];
   return parts.slice(1).join(' ');
+};
+
+// Get the primary name for display (lastName, or firstName if lastName empty)
+// Useful for compact displays like "Jones vs Miocic"
+export const getFighterPrimaryName = (fighter: Fighter) => {
+  const last = fighter.lastName?.trim() || '';
+  const first = fighter.firstName?.trim() || '';
+  return last || first;
 };
 
 // Format date string

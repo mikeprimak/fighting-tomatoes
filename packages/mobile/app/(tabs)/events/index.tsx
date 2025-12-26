@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -256,6 +257,7 @@ export default function UpcomingEventsScreen() {
   const {
     data: eventsData,
     isLoading: eventsLoading,
+    isFetching,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -413,8 +415,9 @@ export default function UpcomingEventsScreen() {
     );
   }, [isFetchingNextPage, colors, styles.loadMoreContainer, styles.loadMoreText]);
 
-  // Empty component when no events match filter
+  // Empty component when no events match filter (don't show while loading)
   const ListEmptyComponent = useCallback(() => {
+    if (isFetching) return null;
     const message = selectedOrgs.size > 0
       ? `No upcoming ${Array.from(selectedOrgs).join(' or ')} events`
       : 'No upcoming events';
@@ -425,7 +428,7 @@ export default function UpcomingEventsScreen() {
         </Text>
       </View>
     );
-  }, [selectedOrgs, colors, styles]);
+  }, [selectedOrgs, colors, styles, isFetching]);
 
   if (eventsLoading) {
     return (
@@ -476,6 +479,14 @@ export default function UpcomingEventsScreen() {
             );
           })}
         </ScrollView>
+        {/* Fade gradient to indicate more content */}
+        <LinearGradient
+          colors={['transparent', colors.card]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.scrollFadeGradient}
+          pointerEvents="none"
+        />
       </View>
 
       <FlatList
@@ -719,8 +730,8 @@ const EventSection = memo(function EventSection({
           {/* More Fights Note - Show when fewer than 7 fights announced */}
           {fights.length < 7 && fights.length > 0 && (
             <View style={styles.moreFightsNote}>
-              <Text style={[styles.moreFightsText, { color: colors.textSecondary }]}>
-                More Fights To Be Announced
+              <Text style={[styles.moreFightsText, { color: colors.textSecondary, opacity: 0.5 }]}>
+                TBA
               </Text>
             </View>
           )}
@@ -915,10 +926,19 @@ const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.card,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    position: 'relative',
+  },
+  scrollFadeGradient: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 40,
   },
   orgFilterTabs: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
+    paddingLeft: 16,
+    paddingRight: 36,
     paddingVertical: 10,
     gap: 8,
   },
