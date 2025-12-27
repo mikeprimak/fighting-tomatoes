@@ -320,12 +320,53 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 
 ### Where to Resume
 ```
-1. Go to Render → Web Service → Manual Deploy → "Clear build cache & deploy"
-2. Wait for deploy to complete
-3. Test email: curl -X POST https://fightcrewapp-backend.onrender.com/api/auth/request-password-reset -H "Content-Type: application/json" -d '{"email":"YOUR_EMAIL"}'
-4. Check Render logs for "[Auth] Password reset email sent" or error
-5. Check SendGrid Activity for new entries
-6. If working → move to Serpapi token rotation
-7. If not working → debug further
+Session continued on 2025-12-27 - see below
+```
+
+---
+
+## Session Log: 2025-12-27
+
+### Completed
+- [x] **CRIT-1**: Added authentication to all 26 admin routes (`requireAdmin` middleware)
+- [x] **CRIT-2**: Removed all hardcoded JWT secret fallbacks (fail-fast if not configured)
+- [x] **CRIT-3**: Verified Firebase service account is properly gitignored (never committed)
+- [x] **CRIT-4**: Created Giphy backend proxy (`/api/giphy/*`) - removed API key from mobile
+- [x] **CRIT-5**: Switched token storage to SecureStore (native) with AsyncStorage fallback (web)
+- [x] **HIGH-7**: Implemented rate limiting with `@fastify/rate-limit`
+  - Global: 100 req/min per user/IP
+  - Auth: 5 attempts per 15 min
+  - Password reset: 3 per hour
+  - Content: 10-30 per minute
+  - Uploads: 10 per hour
+- [x] **Token Strategy**: Updated to industry standard
+  - Access token: 15 minutes (was 1 hour)
+  - Refresh token: 90 days (was 7 days)
+  - Sliding expiration: Each refresh resets 90-day clock
+- [x] Committed and pushed all changes
+
+### Phase 1 Status
+| Task | Status |
+|------|--------|
+| Security Audit | ✅ Complete |
+| Credential Rotation (GitGuardian) | ✅ Complete |
+| Fix Critical Security Issues | ✅ Complete (5/5) |
+| Spam Prevention & Rate Limiting | ✅ Complete |
+| Token Expiry Fix | ✅ Complete |
+| Legacy Data Migration | ⏳ Pending (awaiting fightingtomatoes.com info) |
+
+### Still Pending (HIGH Priority)
+- [ ] HIGH-2: Strengthen password requirements (currently only 6 chars)
+- [ ] HIGH-6: Remove test login buttons from production
+- [ ] HIGH-4/8: Remove sensitive data logging
+
+### Where to Resume
+```
+Phase 1 is essentially complete (only Legacy Data Migration pending).
+Next steps:
+1. Deploy to Render (redeploy to apply security fixes)
+2. Add GIPHY_API_KEY to Render env vars (if using Giphy feature)
+3. Consider Phase 2: Platform Setup (Apple Developer Account, iOS builds)
+4. Or fix remaining HIGH priority issues
 ```
 
