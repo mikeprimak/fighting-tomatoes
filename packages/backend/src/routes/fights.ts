@@ -668,7 +668,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
   });
 
   // POST /api/fights/:id/rate - Rate a fight
+  // Rate limit: 30 ratings per minute to prevent spam
   fastify.post('/fights/:id/rate', {
+    config: {
+      rateLimit: {
+        max: 30,
+        timeWindow: '1 minute',
+      },
+    },
     preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     try {
@@ -942,7 +949,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
   });
 
   // POST /api/fights/:id/review - Create or update a top-level review (with rating)
+  // Rate limit: 10 reviews per minute to prevent spam
   fastify.post('/fights/:id/review', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '1 minute',
+      },
+    },
     preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     try {
@@ -1138,7 +1152,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
   });
 
   // POST /api/fights/:id/reviews/:reviewId/reply - Create a reply to a review
+  // Rate limit: 10 replies per minute to prevent spam
   fastify.post('/fights/:id/reviews/:reviewId/reply', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '1 minute',
+      },
+    },
     preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     try {
@@ -1499,7 +1520,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
   });
 
   // POST /api/fights/:id/pre-fight-comment - Create or update a pre-fight comment (top-level only)
+  // Rate limit: 10 comments per minute to prevent spam
   fastify.post('/fights/:id/pre-fight-comment', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '1 minute',
+      },
+    },
     preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     try {
@@ -1622,7 +1650,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
   });
 
   // POST /api/fights/:id/pre-fight-comments/:commentId/reply - Create a reply to a pre-fight comment
+  // Rate limit: 10 replies per minute to prevent spam
   fastify.post('/fights/:id/pre-fight-comments/:commentId/reply', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '1 minute',
+      },
+    },
     preHandler: [authenticateUser, requireEmailVerification],
   }, async (request, reply) => {
     try {

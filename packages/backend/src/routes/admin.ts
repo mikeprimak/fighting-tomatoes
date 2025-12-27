@@ -6,6 +6,7 @@
 
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { requireAdmin } from '../middleware/auth';
 import {
   triggerDailyUFCScraper,
   triggerFailsafeCleanup,
@@ -76,7 +77,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // ============================================
   // FIGHTER SEARCH (for autocomplete)
   // ============================================
-  fastify.get('/admin/fighters/search', async (request, reply) => {
+  fastify.get('/admin/fighters/search', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     const { q } = request.query as { q?: string };
 
     if (!q || q.length < 2) {
@@ -112,7 +115,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // ============================================
   // FIGHTER CREATE (inline for admin)
   // ============================================
-  fastify.post('/admin/fighters', async (request, reply) => {
+  fastify.post('/admin/fighters', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       const data = CreateFighterSchema.parse(request.body);
 
@@ -144,7 +149,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // ============================================
 
   // List events (with optional promotion filter)
-  fastify.get('/admin/events', async (request, reply) => {
+  fastify.get('/admin/events', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     const { promotion, upcoming, limit = '50', offset = '0' } = request.query as {
       promotion?: string;
       upcoming?: string;
@@ -178,7 +185,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Get single event
-  fastify.get('/admin/events/:id', async (request, reply) => {
+  fastify.get('/admin/events/:id', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
     const event = await prisma.event.findUnique({
@@ -202,7 +211,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Create event
-  fastify.post('/admin/events', async (request, reply) => {
+  fastify.post('/admin/events', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       const data = CreateEventSchema.parse(request.body);
 
@@ -234,7 +245,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Update event
-  fastify.put('/admin/events/:id', async (request, reply) => {
+  fastify.put('/admin/events/:id', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const data = UpdateEventSchema.parse(request.body);
 
@@ -247,7 +260,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Delete event (cascades to fights)
-  fastify.delete('/admin/events/:id', async (request, reply) => {
+  fastify.delete('/admin/events/:id', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
     // First delete all fights for this event
@@ -261,7 +276,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
   // Upload event banner image from URL
   // Downloads from provided URL, uploads to R2, updates event record
-  fastify.post('/admin/events/:id/banner', async (request, reply) => {
+  fastify.post('/admin/events/:id/banner', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const { imageUrl } = request.body as { imageUrl?: string };
 
@@ -319,7 +336,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // ============================================
 
   // Get fights for an event
-  fastify.get('/admin/events/:eventId/fights', async (request, reply) => {
+  fastify.get('/admin/events/:eventId/fights', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     const { eventId } = request.params as { eventId: string };
 
     const fights = await prisma.fight.findMany({
@@ -335,7 +354,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Create fight
-  fastify.post('/admin/fights', async (request, reply) => {
+  fastify.post('/admin/fights', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       const data = CreateFightSchema.parse(request.body);
 
@@ -372,7 +393,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Update fight
-  fastify.put('/admin/fights/:id', async (request, reply) => {
+  fastify.put('/admin/fights/:id', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const parsed = UpdateFightSchema.parse(request.body);
 
@@ -400,7 +423,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Delete fight
-  fastify.delete('/admin/fights/:id', async (request, reply) => {
+  fastify.delete('/admin/fights/:id', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
     await prisma.fight.delete({ where: { id } });
@@ -412,7 +437,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // BACKGROUND JOB TRIGGERS (existing)
   // ============================================
   // Manual trigger: Daily UFC Scraper
-  fastify.post('/admin/trigger/daily-scraper', async (request, reply) => {
+  fastify.post('/admin/trigger/daily-scraper', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: Daily UFC scraper');
       const results = await triggerDailyUFCScraper();
@@ -432,7 +459,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Manual trigger: Failsafe Cleanup
-  fastify.post('/admin/trigger/failsafe-cleanup', async (request, reply) => {
+  fastify.post('/admin/trigger/failsafe-cleanup', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: Failsafe cleanup');
       const results = await triggerFailsafeCleanup();
@@ -452,7 +481,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Manual trigger: Live Event Scheduler (legacy, still works)
-  fastify.post('/admin/trigger/live-event-scheduler', async (request, reply) => {
+  fastify.post('/admin/trigger/live-event-scheduler', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: Live event scheduler');
       await triggerLiveEventScheduler();
@@ -471,7 +502,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Manual trigger: Schedule All Upcoming Events
-  fastify.post('/admin/trigger/schedule-events', async (request, reply) => {
+  fastify.post('/admin/trigger/schedule-events', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: Schedule all upcoming events');
       const eventsScheduled = await scheduleAllUpcomingEvents();
@@ -491,7 +524,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Manual trigger: Event Scheduler Safety Check
-  fastify.post('/admin/trigger/event-safety-check', async (request, reply) => {
+  fastify.post('/admin/trigger/event-safety-check', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: Event scheduler safety check');
       await safetyCheckEvents();
@@ -514,7 +549,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // ============================================
 
   // Manual trigger: BKFC Scraper
-  fastify.post('/admin/trigger/scraper/bkfc', async (request, reply) => {
+  fastify.post('/admin/trigger/scraper/bkfc', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: BKFC scraper');
       const results = await triggerBKFCScraper();
@@ -530,7 +567,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Manual trigger: PFL Scraper
-  fastify.post('/admin/trigger/scraper/pfl', async (request, reply) => {
+  fastify.post('/admin/trigger/scraper/pfl', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: PFL scraper');
       const results = await triggerPFLScraper();
@@ -546,7 +585,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Manual trigger: ONE FC Scraper
-  fastify.post('/admin/trigger/scraper/onefc', async (request, reply) => {
+  fastify.post('/admin/trigger/scraper/onefc', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: ONE FC scraper');
       const results = await triggerOneFCScraper();
@@ -562,7 +603,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Manual trigger: Matchroom Scraper
-  fastify.post('/admin/trigger/scraper/matchroom', async (request, reply) => {
+  fastify.post('/admin/trigger/scraper/matchroom', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: Matchroom scraper');
       const results = await triggerMatchroomScraper();
@@ -578,7 +621,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Manual trigger: Golden Boy Scraper
-  fastify.post('/admin/trigger/scraper/goldenboy', async (request, reply) => {
+  fastify.post('/admin/trigger/scraper/goldenboy', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: Golden Boy scraper');
       const results = await triggerGoldenBoyScraper();
@@ -594,7 +639,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Manual trigger: Top Rank Scraper
-  fastify.post('/admin/trigger/scraper/toprank', async (request, reply) => {
+  fastify.post('/admin/trigger/scraper/toprank', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: Top Rank scraper');
       const results = await triggerTopRankScraper();
@@ -610,7 +657,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Manual trigger: OKTAGON Scraper
-  fastify.post('/admin/trigger/scraper/oktagon', async (request, reply) => {
+  fastify.post('/admin/trigger/scraper/oktagon', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: OKTAGON scraper');
       const results = await triggerOktagonScraper();
@@ -626,7 +675,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // Manual trigger: ALL Organization Scrapers (runs sequentially)
-  fastify.post('/admin/trigger/scraper/all', async (request, reply) => {
+  fastify.post('/admin/trigger/scraper/all', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       console.log('[Admin] Manual trigger: ALL organization scrapers');
       const results = await triggerAllOrganizationScrapers();
@@ -643,7 +694,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // System Health Check
-  fastify.get('/admin/health', async (request, reply) => {
+  fastify.get('/admin/health', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
     try {
       const failsafeStatus = await getFailsafeStatus();
 

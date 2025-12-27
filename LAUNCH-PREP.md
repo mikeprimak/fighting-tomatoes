@@ -17,10 +17,10 @@ Security audit completed. **Found 5 CRITICAL, 12 HIGH, 15 MEDIUM, and 6 LOW seve
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
 | Security Audit | Critical | ✅ Complete | 38 issues found |
-| Credential Rotation (GitGuardian) | Critical | ⏳ Pending | 5 exposed secrets |
-| Fix Critical Security Issues | Critical | ⏳ Pending | 5 critical issues |
-| Spam Prevention & Rate Limiting | Critical | ⏳ Pending | After security fixes |
-| Token Expiry Fix | Critical | ⏳ Pending | Switch to 90-day refresh tokens |
+| Credential Rotation (GitGuardian) | Critical | ✅ Complete | PostgreSQL + SendGrid rotated |
+| Fix Critical Security Issues | Critical | ✅ Complete | All 5 critical issues fixed |
+| Spam Prevention & Rate Limiting | Critical | ✅ Complete | @fastify/rate-limit implemented |
+| Token Expiry Fix | Critical | ✅ Complete | 15min access, 90-day refresh with sliding expiration |
 | Legacy Data Migration | Critical | ⏳ Pending | Awaiting fightingtomatoes.com tech stack info |
 
 ## Phase 2: Platform Setup (Launch Blockers)
@@ -48,20 +48,25 @@ Security audit completed. **Found 5 CRITICAL, 12 HIGH, 15 MEDIUM, and 6 LOW seve
 
 ---
 
-## Token Strategy (Industry Standard)
+## Token Strategy (Industry Standard) ✅ IMPLEMENTED
 
 **Goal**: "Stay logged in forever" like most mobile apps
 
-| Token Type | Current | Target | Purpose |
-|------------|---------|--------|---------|
-| Access Token | 1 hour | 15 minutes | Short-lived, carries permissions |
-| Refresh Token | 7 days | 90 days | Long-lived, renews access token |
-| Refresh on Use | No | Yes | Each refresh extends the 90 days |
+| Token Type | Value | Purpose |
+|------------|-------|---------|
+| Access Token | 15 minutes | Short-lived, carries permissions |
+| Refresh Token | 90 days | Long-lived, renews access token |
+| Refresh on Use | Yes | Each refresh extends the 90 days (sliding expiration) |
 
 **Behavior**:
 - User stays logged in indefinitely as long as they use the app within 90 days
 - Access token silently refreshes in background
 - Only explicit logout or 90 days of inactivity triggers re-login
+
+**Implementation** (2025-12-27):
+- Constants defined in `packages/backend/src/utils/jwt.ts`
+- All auth endpoints updated to use centralized constants
+- Database token expiry updated to 90 days for sliding expiration
 
 ---
 
@@ -109,32 +114,32 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 #### CRIT-1: Unprotected Admin Endpoints
 - **Location**: `packages/backend/src/routes/admin.ts` (lines 79-629)
 - **Issue**: ALL admin routes lack authentication. Anyone can create/delete fighters, events, trigger scrapers.
-- **Fix**: Add `preValidation: [fastify.authenticate]` to all admin routes
-- **Status**: ⏳ Pending
+- **Fix**: Add `preValidation: [fastify.authenticate, requireAdmin]` to all admin routes
+- **Status**: ✅ Fixed (2025-12-27)
 
 #### CRIT-2: Hardcoded JWT Secret Fallbacks
-- **Location**: `packages/backend/src/middleware/auth.fastify.ts` (lines 16, 91)
+- **Location**: `packages/backend/src/middleware/auth.fastify.ts`, `auth.fastify.ts` routes
 - **Issue**: `JWT_SECRET || 'your-secret-key'` allows app to run with weak default secret
-- **Fix**: Remove fallback, fail fast if env var not set
-- **Status**: ⏳ Pending
+- **Fix**: Removed all fallbacks, now throws error if env var not set
+- **Status**: ✅ Fixed (2025-12-27)
 
 #### CRIT-3: Firebase Service Account in Git
 - **Location**: `packages/mobile/fcm-service-account.json`
 - **Issue**: Complete Firebase private key committed to repository
-- **Fix**: Remove from git, add to .gitignore, rotate Firebase keys
-- **Status**: ⏳ Pending
+- **Fix**: Already gitignored, never committed to git history
+- **Status**: ✅ Verified (2025-12-27)
 
 #### CRIT-4: Giphy API Key Hardcoded
 - **Location**: `packages/mobile/components/GifPickerModal.tsx` (line 17)
-- **Issue**: API key `zCND3MgqEm2dDyTue8Qzk0Q30X854Mys` in source code
-- **Fix**: Move to backend proxy or environment variable
-- **Status**: ⏳ Pending
+- **Issue**: API key in source code
+- **Fix**: Created backend proxy (`/api/giphy/*`), mobile calls backend instead
+- **Status**: ✅ Fixed (2025-12-27) - Feature not currently in use
 
 #### CRIT-5: Tokens Stored in Plaintext AsyncStorage
-- **Location**: `packages/mobile/store/AuthContext.tsx` (lines 180-182, 225-226)
+- **Location**: `packages/mobile/store/AuthContext.tsx`
 - **Issue**: Access/refresh tokens stored unencrypted in AsyncStorage
-- **Fix**: Use `expo-secure-store` (already installed) instead
-- **Status**: ⏳ Pending
+- **Fix**: Created `utils/secureStorage.ts`, uses `expo-secure-store` on native, AsyncStorage on web
+- **Status**: ✅ Fixed (2025-12-27)
 
 ---
 
@@ -173,7 +178,8 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 #### HIGH-7: Missing Rate Limiting
 - **Location**: `packages/backend/src/routes/auth.fastify.ts`
 - **Issue**: No rate limiting on login, register, password reset
-- **Fix**: Implement `@fastify/rate-limit`
+- **Fix**: Implemented `@fastify/rate-limit` with per-endpoint limits
+- **Status**: ✅ Fixed (2025-12-27)
 
 #### HIGH-8: User Data Logged to Console
 - **Location**: `packages/mobile/store/AuthContext.tsx` (lines 440-442)

@@ -13,7 +13,12 @@ async function authenticateMiddleware(request: FastifyRequest, reply: FastifyRep
     }
 
     const token = authorization.substring(7);
-    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+    const JWT_SECRET = process.env.JWT_SECRET;
+
+    if (!JWT_SECRET) {
+      console.error('[AUTH] FATAL: JWT_SECRET environment variable is not set');
+      throw new Error('Server configuration error');
+    }
 
     console.log('[AUTH] Verifying token, JWT_SECRET exists:', !!JWT_SECRET);
     const decoded = jwt.verify(token, JWT_SECRET) as any;
@@ -88,7 +93,12 @@ async function optionalAuthenticateMiddleware(request: FastifyRequest, reply: Fa
     }
 
     const token = authorization.substring(7);
-    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+    const JWT_SECRET = process.env.JWT_SECRET;
+
+    if (!JWT_SECRET) {
+      console.error('[AUTH] FATAL: JWT_SECRET environment variable is not set');
+      return; // Silently fail for optional auth if config is broken
+    }
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
 

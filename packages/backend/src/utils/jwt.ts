@@ -4,8 +4,13 @@ import { JWTPayload } from '../types/auth'
 
 const JWT_SECRET = process.env.JWT_SECRET!
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET!
-const ACCESS_TOKEN_EXPIRES = '1h'
-const REFRESH_TOKEN_EXPIRES = '7d'
+
+// Token expiry configuration
+// Access token: Short-lived for security (15 minutes)
+// Refresh token: Long-lived for "stay logged in" experience (90 days)
+// Refresh tokens are renewed on each use (sliding expiration)
+export const ACCESS_TOKEN_EXPIRES = '15m'
+export const REFRESH_TOKEN_EXPIRES = '90d'
 
 export class JWTService {
   static generateAccessToken(payload: JWTPayload): string {

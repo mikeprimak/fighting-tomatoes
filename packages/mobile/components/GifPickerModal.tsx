@@ -13,8 +13,9 @@ import {
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
+import { API_BASE_URL } from '../services/api';
+import { secureStorage } from '../utils/secureStorage';
 
-const GIPHY_API_KEY = 'zCND3MgqEm2dDyTue8Qzk0Q30X854Mys'; 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 interface GifPickerModalProps {
@@ -84,13 +85,19 @@ export const GifPickerModal: React.FC<GifPickerModalProps> = ({
 
     setLoading(true);
     try {
-      // Fetch combat sports related GIFs when no search query
+      // Get auth token securely for API call
+      const token = await secureStorage.getItem('accessToken');
+
+      // Fetch combat sports related GIFs via backend proxy
       const response = await fetch(
-        `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=mma+ufc+knockout+punch+ring+girl+fight+fighter&limit=30&offset=${loadOffset}&rating=pg-13`
+        `${API_BASE_URL}/giphy/trending?limit=30&offset=${loadOffset}&rating=pg-13`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
       );
       const data = await response.json();
 
-      if (data.data.length === 0) {
+      if (!data.data || data.data.length === 0) {
         setHasMore(false);
       } else {
         setGifs(prev => loadOffset === 0 ? data.data : [...prev, ...data.data]);
@@ -108,14 +115,19 @@ export const GifPickerModal: React.FC<GifPickerModalProps> = ({
 
     setLoading(true);
     try {
+      // Get auth token securely for API call
+      const token = await secureStorage.getItem('accessToken');
+
+      // Search GIFs via backend proxy
       const response = await fetch(
-        `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(
-          query
-        )}&limit=30&offset=${loadOffset}&rating=pg-13`
+        `${API_BASE_URL}/giphy/search?q=${encodeURIComponent(query)}&limit=30&offset=${loadOffset}&rating=pg-13`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
       );
       const data = await response.json();
 
-      if (data.data.length === 0) {
+      if (!data.data || data.data.length === 0) {
         setHasMore(false);
       } else {
         setGifs(prev => loadOffset === 0 ? data.data : [...prev, ...data.data]);

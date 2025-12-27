@@ -7,7 +7,14 @@ import { pipeline } from 'stream/promises';
 
 export async function uploadRoutes(fastify: FastifyInstance) {
   // Upload profile image
+  // Rate limit: 10 uploads per hour to prevent storage abuse
   fastify.post('/upload/profile-image', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '1 hour',
+      },
+    },
     preValidation: [fastify.authenticate],
   }, async (request: any, reply: any) => {
     try {

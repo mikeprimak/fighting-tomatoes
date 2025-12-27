@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import { Platform } from 'react-native';
+import { secureStorage } from '../utils/secureStorage';
 
 // ⚙️ DEVELOPMENT CONFIG: Set to true to test production API while developing
 const USE_PRODUCTION_API = false;
@@ -109,7 +109,7 @@ class ApiService {
 
   private async getAuthToken(): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem('accessToken');
+      return await secureStorage.getItem('accessToken');
     } catch (error) {
       console.error('Error getting auth token:', error);
       return null;

@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import appleSignIn from 'apple-signin-auth';
 import { EmailService } from '../utils/email';
+import { ACCESS_TOKEN_EXPIRES, REFRESH_TOKEN_EXPIRES } from '../utils/jwt';
 
 // Google OAuth client (lazily initialized)
 let googleClient: OAuth2Client | null = null;
@@ -20,7 +21,14 @@ function getGoogleClient(): OAuth2Client {
 //
 export async function authRoutes(fastify: FastifyInstance) {
   // Register endpoint
+  // Rate limit: 5 attempts per 15 minutes to prevent spam registrations
   fastify.post('/register', {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: '15 minutes',
+      },
+    },
     schema: {
       description: 'Register a new user',
       tags: ['auth'],
@@ -148,22 +156,23 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Generate tokens
-      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
       const accessToken = jwt.sign(
         { userId: user.id },
         JWT_SECRET,
-        { expiresIn: '1h' }
+        { expiresIn: ACCESS_TOKEN_EXPIRES }
       );
 
       const refreshToken = jwt.sign(
         { userId: user.id, type: 'refresh' },
         JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: REFRESH_TOKEN_EXPIRES }
       );
 
       // Store refresh token in database
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
+      expiresAt.setDate(expiresAt.getDate() + 90);
 
       await fastify.prisma.refreshToken.create({
         data: {
@@ -195,7 +204,14 @@ export async function authRoutes(fastify: FastifyInstance) {
   });
 
   // Login endpoint
+  // Rate limit: 5 attempts per 15 minutes to prevent brute force attacks
   fastify.post('/login', {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: '15 minutes',
+      },
+    },
     schema: {
       description: 'Login user',
       tags: ['auth'],
@@ -307,22 +323,23 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
       // Generate tokens
-      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
       const accessToken = jwt.sign(
         { userId: user.id },
         JWT_SECRET,
-        { expiresIn: '1h' }
+        { expiresIn: ACCESS_TOKEN_EXPIRES }
       );
 
       const refreshToken = jwt.sign(
         { userId: user.id, type: 'refresh' },
         JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: REFRESH_TOKEN_EXPIRES }
       );
 
       // Store refresh token in database
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
+      expiresAt.setDate(expiresAt.getDate() + 90);
 
       await fastify.prisma.refreshToken.create({
         data: {
@@ -438,7 +455,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Verify refresh token
-      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
       const decoded = jwt.verify(refreshToken, JWT_SECRET) as any;
 
       if (decoded.type !== 'refresh') {
@@ -469,18 +487,18 @@ export async function authRoutes(fastify: FastifyInstance) {
       const newAccessToken = jwt.sign(
         { userId: decoded.userId },
         JWT_SECRET,
-        { expiresIn: '1h' }
+        { expiresIn: ACCESS_TOKEN_EXPIRES }
       );
 
       const newRefreshToken = jwt.sign(
         { userId: decoded.userId, type: 'refresh' },
         JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: REFRESH_TOKEN_EXPIRES }
       );
 
-      // Update refresh token in database
+      // Update refresh token in database (sliding expiration - 90 days from now)
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
+      expiresAt.setDate(expiresAt.getDate() + 90);
 
       await fastify.prisma.refreshToken.update({
         where: { id: tokenRecord.id },
@@ -574,7 +592,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       const token = authorization.substring(7);
-      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
 
       const decoded = jwt.verify(token, JWT_SECRET) as any;
 
@@ -808,7 +827,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       const token = authorization.substring(7);
-      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
 
       const decoded = jwt.verify(token, JWT_SECRET) as any;
 
@@ -895,7 +915,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       const token = authorization.substring(7);
-      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       const userId = decoded.userId;
 
@@ -1080,7 +1101,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       const token = authorization.substring(7);
-      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       const userId = decoded.userId;
 
@@ -1225,7 +1247,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       if (authorization && authorization.startsWith('Bearer ')) {
         try {
           const token = authorization.substring(7);
-          const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+          const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
           const decoded = jwt.verify(token, JWT_SECRET) as any;
           currentUserId = decoded.userId;
         } catch (error) {
@@ -1421,22 +1444,23 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Generate tokens
-      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
       const accessToken = jwt.sign(
         { userId: user.id, email: user.email, isEmailVerified: user.isEmailVerified },
         JWT_SECRET,
-        { expiresIn: '1h' }
+        { expiresIn: ACCESS_TOKEN_EXPIRES }
       );
 
       const refreshToken = jwt.sign(
         { userId: user.id, type: 'refresh' },
         JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: REFRESH_TOKEN_EXPIRES }
       );
 
       // Store refresh token in database
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
+      expiresAt.setDate(expiresAt.getDate() + 90);
 
       await fastify.prisma.refreshToken.create({
         data: {
@@ -1677,22 +1701,23 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Generate tokens
-      const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
       const accessToken = jwt.sign(
         { userId: user.id, email: user.email, isEmailVerified: user.isEmailVerified },
         JWT_SECRET,
-        { expiresIn: '1h' }
+        { expiresIn: ACCESS_TOKEN_EXPIRES }
       );
 
       const refreshToken = jwt.sign(
         { userId: user.id, type: 'refresh' },
         JWT_SECRET,
-        { expiresIn: '7d' }
+        { expiresIn: REFRESH_TOKEN_EXPIRES }
       );
 
       // Store refresh token in database
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
+      expiresAt.setDate(expiresAt.getDate() + 90);
 
       await fastify.prisma.refreshToken.create({
         data: {
@@ -1732,7 +1757,14 @@ export async function authRoutes(fastify: FastifyInstance) {
   });
 
   // Resend verification email endpoint
+  // Rate limit: 3 attempts per hour to prevent email spam
   fastify.post('/resend-verification', {
+    config: {
+      rateLimit: {
+        max: 3,
+        timeWindow: '1 hour',
+      },
+    },
     schema: {
       description: 'Resend email verification link',
       tags: ['auth'],
@@ -1891,7 +1923,14 @@ export async function authRoutes(fastify: FastifyInstance) {
   });
 
   // Request password reset endpoint
+  // Rate limit: 3 attempts per hour to prevent abuse
   fastify.post('/request-password-reset', {
+    config: {
+      rateLimit: {
+        max: 3,
+        timeWindow: '1 hour',
+      },
+    },
     schema: {
       description: 'Request password reset email',
       tags: ['auth'],

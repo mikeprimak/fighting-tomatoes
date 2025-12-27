@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { Platform, AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus } from 'react-native';
+import { secureStorage } from '../utils/secureStorage';
 import { AnalyticsService } from '../services/analytics';
 import { notificationService } from '../services/notificationService';
 import type { Notification, NotificationResponse } from 'expo-notifications';
@@ -90,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Internal refresh function for use in effects
   const refreshUserDataInternal = async () => {
     try {
-      const token = await AsyncStorage.getItem('accessToken');
+      const token = await secureStorage.getItem('accessToken');
       if (!token) return;
 
       const response = await fetch(`${API_BASE_URL}/auth/profile`, {
@@ -143,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const initializeAuth = async () => {
     try {
-      const token = await AsyncStorage.getItem('accessToken');
+      const token = await secureStorage.getItem('accessToken');
       const userData = await AsyncStorage.getItem('userData');
 
       if (token && userData) {
@@ -176,9 +177,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(data.error || 'Login failed');
       }
 
-      // Store tokens and user data
-      await AsyncStorage.setItem('accessToken', data.accessToken);
-      await AsyncStorage.setItem('refreshToken', data.refreshToken);
+      // Store tokens securely and user data
+      await secureStorage.setItem('accessToken', data.accessToken);
+      await secureStorage.setItem('refreshToken', data.refreshToken);
       await AsyncStorage.setItem('userData', JSON.stringify(data.user));
 
       setAccessToken(data.accessToken);
@@ -221,9 +222,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(data.error || 'Google authentication failed');
       }
 
-      // Store tokens and user data
-      await AsyncStorage.setItem('accessToken', data.tokens.accessToken);
-      await AsyncStorage.setItem('refreshToken', data.tokens.refreshToken);
+      // Store tokens securely and user data
+      await secureStorage.setItem('accessToken', data.tokens.accessToken);
+      await secureStorage.setItem('refreshToken', data.tokens.refreshToken);
       await AsyncStorage.setItem('userData', JSON.stringify(data.user));
 
       setAccessToken(data.tokens.accessToken);
@@ -260,9 +261,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(data.error || 'Apple authentication failed');
       }
 
-      // Store tokens and user data
-      await AsyncStorage.setItem('accessToken', data.tokens.accessToken);
-      await AsyncStorage.setItem('refreshToken', data.tokens.refreshToken);
+      // Store tokens securely and user data
+      await secureStorage.setItem('accessToken', data.tokens.accessToken);
+      await secureStorage.setItem('refreshToken', data.tokens.refreshToken);
       await AsyncStorage.setItem('userData', JSON.stringify(data.user));
 
       setAccessToken(data.tokens.accessToken);
@@ -299,9 +300,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(data.error || 'Registration failed');
       }
 
-      // Store tokens and user data
-      await AsyncStorage.setItem('accessToken', data.accessToken);
-      await AsyncStorage.setItem('refreshToken', data.refreshToken);
+      // Store tokens securely and user data
+      await secureStorage.setItem('accessToken', data.accessToken);
+      await secureStorage.setItem('refreshToken', data.refreshToken);
       await AsyncStorage.setItem('userData', JSON.stringify(data.user));
 
       setAccessToken(data.accessToken);
@@ -330,7 +331,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      const refreshToken = await secureStorage.getItem('refreshToken');
 
       if (refreshToken) {
         // Call logout endpoint to revoke tokens with a timeout
@@ -358,8 +359,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Logout API error:', error);
     } finally {
       // Clear local storage regardless of API call success
-      await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('refreshToken');
+      await secureStorage.removeItem('accessToken');
+      await secureStorage.removeItem('refreshToken');
       await AsyncStorage.removeItem('userData');
 
       setAccessToken(null);
@@ -380,7 +381,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshToken = async () => {
     try {
-      const storedRefreshToken = await AsyncStorage.getItem('refreshToken');
+      const storedRefreshToken = await secureStorage.getItem('refreshToken');
 
       if (!storedRefreshToken) {
         throw new Error('No refresh token available');
@@ -400,9 +401,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(data.error || 'Token refresh failed');
       }
 
-      // Update stored tokens
-      await AsyncStorage.setItem('accessToken', data.accessToken);
-      await AsyncStorage.setItem('refreshToken', data.refreshToken);
+      // Update stored tokens securely
+      await secureStorage.setItem('accessToken', data.accessToken);
+      await secureStorage.setItem('refreshToken', data.refreshToken);
 
       setAccessToken(data.accessToken);
     } catch (error) {
@@ -415,7 +416,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUserData = async () => {
     try {
-      const token = await AsyncStorage.getItem('accessToken');
+      const token = await secureStorage.getItem('accessToken');
 
       if (!token) {
         console.error('No access token available');

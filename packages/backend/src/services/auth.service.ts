@@ -1,11 +1,13 @@
 import jwt from 'jsonwebtoken';
 import { Request } from 'express';
 import { prisma } from '../app';
+import { ACCESS_TOKEN_EXPIRES, REFRESH_TOKEN_EXPIRES } from '../utils/jwt';
 
 export class AuthService {
   private readonly JWT_SECRET = process.env.JWT_SECRET!;
-  private readonly JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
-  private readonly REFRESH_TOKEN_EXPIRES_IN = process.env.REFRESH_TOKEN_EXPIRES_IN || '7d';
+  // Use centralized token expiry constants (15 min access, 90 days refresh)
+  private readonly JWT_EXPIRES_IN = ACCESS_TOKEN_EXPIRES;
+  private readonly REFRESH_TOKEN_EXPIRES_IN = REFRESH_TOKEN_EXPIRES;
 
   async generateTokens(userId: string, req: Request) {
     // Generate access token
@@ -24,7 +26,7 @@ export class AuthService {
 
     // Store refresh token in database
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
+    expiresAt.setDate(expiresAt.getDate() + 90); // 90 days from now (sliding expiration on refresh)
 
     await prisma.session.create({
       data: {

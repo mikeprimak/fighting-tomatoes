@@ -1,5 +1,6 @@
 import Fastify, { FastifyRequest, FastifyReply } from 'fastify';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import fastifyMultipart from '@fastify/multipart';
 import path from 'path';
@@ -122,6 +123,44 @@ async function start() {
       allowedHeaders: ['Content-Type', 'Authorization'],
       preflightContinue: false,
       optionsSuccessStatus: 200,
+    });
+
+    // Register global rate limiting
+    // Default: 100 requests per minute for all endpoints
+    // Specific endpoints can override with stricter limits
+    await fastify.register(rateLimit, {
+      max: 100,
+      timeWindow: '1 minute',
+      // Use user ID for authenticated requests, IP for anonymous
+      keyGenerator: (request) => {
+        const user = (request as any).user;
+        if (user?.id) {
+          return `user:${user.id}`;
+        }
+        // For unauthenticated requests, use IP with lower limit
+        return `ip:${request.ip}`;
+      },
+      // Custom error response
+      errorResponseBuilder: (request, context) => {
+        return {
+          error: 'Too many requests',
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: `You have exceeded the ${context.max} requests in ${context.after} limit. Please try again later.`,
+          retryAfter: context.after,
+        };
+      },
+      // Add rate limit headers
+      addHeadersOnExceeding: {
+        'x-ratelimit-limit': true,
+        'x-ratelimit-remaining': true,
+        'x-ratelimit-reset': true,
+      },
+      addHeaders: {
+        'x-ratelimit-limit': true,
+        'x-ratelimit-remaining': true,
+        'x-ratelimit-reset': true,
+        'retry-after': true,
+      },
     });
 
     // Register multipart plugin for file uploads
