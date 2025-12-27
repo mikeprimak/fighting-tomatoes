@@ -293,10 +293,10 @@ export default function SettingsScreen() {
         </View>
         )}
 
-        {/* Pre-Event Report */}
+        {/* Hype Fights Report */}
         <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Pre-Event Report</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Hype Fights Report</Text>
             <Switch
               value={preferences.notifyPreEventReport}
               onValueChange={(value) => updatePreference('notifyPreEventReport', value)}
@@ -307,7 +307,7 @@ export default function SettingsScreen() {
           </View>
 
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-            Get a notification 6 hours before events with the most hyped fights and fighters you follow.
+            Get a notification before events with the most hyped fights.
           </Text>
         </View>
 

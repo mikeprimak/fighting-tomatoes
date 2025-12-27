@@ -104,7 +104,7 @@ Fight-specific notifications (notify when a specific fight starts) are **only av
 | Manual fight follow | Live orgs only | Bell icon + menu toggle |
 | Fighter follow | Hidden | Re-enable when more orgs have live tracking |
 | Hyped fights (8.5+) | Hidden | Re-enable when more orgs have live tracking |
-| Pre-Event Report | All orgs | 6 hours before event, no live tracking needed |
+| Hype Fights Report | All orgs | Before events, shows most hyped fights |
 
 **How it works:**
 - Backend adds `hasLiveTracking: boolean` to event objects in API responses
