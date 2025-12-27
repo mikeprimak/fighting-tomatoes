@@ -308,11 +308,13 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Verify password
+      // Check for legacy migrated user (password is null)
       if (!user.password) {
-        return reply.code(401).send({
-          error: 'Invalid credentials',
-          code: 'INVALID_CREDENTIALS',
+        return reply.code(403).send({
+          error: 'Your account was migrated from fightingtomatoes.com. Please verify your email to set up your new password.',
+          code: 'ACCOUNT_CLAIM_REQUIRED',
+          requiresAccountClaim: true,
+          email: user.email,
         });
       }
 
@@ -2096,13 +2098,16 @@ export async function authRoutes(fastify: FastifyInstance) {
       const hashedPassword = await bcrypt.hash(validPassword, 12);
       request.log.info(`[Reset Password] NEW password hash: ${hashedPassword.substring(0, 30)}...`);
 
-      // Update password and clear reset token
+      // Update password, clear reset token, and verify email
+      // (email is verified since user proved ownership via email link)
       const updatedUser = await fastify.prisma.user.update({
         where: { id: user.id },
         data: {
           password: hashedPassword,
           passwordResetToken: null,
-          passwordResetExpires: null
+          passwordResetExpires: null,
+          isEmailVerified: true,
+          emailVerified: true,
         }
       });
 
@@ -2131,6 +2136,109 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'RESET_FAILED',
+      });
+    }
+  });
+
+  // Claim account endpoint for legacy migrated users
+  // This sends an email to verify ownership and set a new password
+  fastify.post('/claim-account', {
+    config: {
+      rateLimit: {
+        max: 3,
+        timeWindow: '1 hour',
+      },
+    },
+    schema: {
+      description: 'Send account claim email to legacy migrated user',
+      tags: ['auth'],
+      body: {
+        type: 'object',
+        required: ['email'],
+        properties: {
+          email: { type: 'string', format: 'email' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+          },
+        },
+        400: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const { email } = request.body as { email: string };
+
+      if (!email) {
+        return reply.code(400).send({
+          error: 'Email is required',
+          code: 'EMAIL_MISSING',
+        });
+      }
+
+      const normalizedEmail = email.toLowerCase();
+
+      // Find user
+      const user = await fastify.prisma.user.findUnique({
+        where: { email: normalizedEmail },
+        select: {
+          id: true,
+          email: true,
+          password: true,
+          displayName: true,
+          isActive: true,
+        }
+      });
+
+      // Always return success message to prevent email enumeration
+      // But only send email if user exists and is a legacy user (password is null)
+      if (user && user.isActive && user.password === null) {
+        // Generate claim token (using same fields as password reset)
+        const claimToken = EmailService.generateVerificationToken();
+        const claimExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        await fastify.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            passwordResetToken: claimToken,
+            passwordResetExpires: claimExpires
+          }
+        });
+
+        try {
+          await EmailService.sendAccountClaimEmail(user.email, claimToken, user.displayName || undefined);
+          request.log.info(`[Claim Account] Email sent to legacy user: ${normalizedEmail}`);
+        } catch (emailError) {
+          const msg = emailError instanceof Error ? emailError.message : String(emailError);
+          request.log.error(`[Claim Account] Failed to send email: ${msg}`);
+        }
+      } else if (user && user.password !== null) {
+        // User exists but already has a password - they should use normal login or password reset
+        request.log.info(`[Claim Account] User ${normalizedEmail} already has password, skipping`);
+      } else {
+        request.log.info(`[Claim Account] No legacy user found for: ${normalizedEmail}`);
+      }
+
+      // Always return success to prevent email enumeration
+      return reply.code(200).send({
+        message: 'If your account was migrated from fightingtomatoes.com, you will receive an email with instructions to set up your password.'
+      });
+
+    } catch (error: any) {
+      request.log.error('Claim account error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'CLAIM_FAILED',
       });
     }
   });

@@ -112,4 +112,55 @@ export class EmailService {
 
     await transporter.sendMail(mailOptions)
   }
+
+  static async sendAccountClaimEmail(email: string, token: string, displayName?: string) {
+    // Use same reset-password URL as password reset - the screen handles both cases
+    const claimUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`
+    const logoUrl = `${process.env.BACKEND_URL || 'https://fightcrewapp-backend.onrender.com'}/images/logo.png`
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM || 'noreply@goodfights.app',
+      to: email,
+      subject: 'Welcome Back! Set Up Your Good Fights Account',
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border-radius: 10px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <img src="${logoUrl}" alt="Good Fights" style="width: 80px; height: auto;" />
+          </div>
+
+          <h1 style="color: #202020; text-align: center; margin-bottom: 20px;">Welcome Back${displayName ? `, ${displayName}` : ''}!</h1>
+
+          <p style="color: #000000;">Great news! Your account from <strong>fightingtomatoes.com</strong> has been transferred to our new <strong>Good Fights</strong> app.</p>
+
+          <p style="color: #000000;">All your ratings, reviews, and history have been preserved. To access your account, you just need to set a new password:</p>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${claimUrl}"
+               style="background-color: #202020; color: #F5C518; padding: 14px 28px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; border: 1px solid #374151;">
+              Set Up My Account
+            </a>
+          </div>
+
+          <p style="color: #000000;">Or copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; color: #4A90D9; font-size: 12px;">${claimUrl}</p>
+
+          <p style="color: #000000; font-size: 14px;">This link will expire in 24 hours for security.</p>
+
+          <p style="color: #000000;"><strong>What's new in Good Fights?</strong></p>
+          <ul style="color: #000000;">
+            <li>Native iOS and Android apps</li>
+            <li>Pre-fight hype predictions</li>
+            <li>Real-time fight notifications</li>
+            <li>Improved performance and design</li>
+          </ul>
+
+          <p style="color: #000000; font-size: 14px;">If you didn't request this, you can safely ignore this email.</p>
+
+          <p style="color: #000000; font-weight: bold;">The Good Fights Team</p>
+        </div>
+      `
+    }
+
+    await transporter.sendMail(mailOptions)
+  }
 }

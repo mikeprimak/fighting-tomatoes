@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, Platform } from 'react-native';
 import { secureStorage } from '../utils/secureStorage';
 import { AnalyticsService } from '../services/analytics';
 import { notificationService } from '../services/notificationService';
@@ -174,6 +174,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
 
       if (!response.ok) {
+        // Check for legacy account claim required
+        if (data.code === 'ACCOUNT_CLAIM_REQUIRED' && data.requiresAccountClaim) {
+          // Navigate to claim account screen with the email
+          router.push({
+            pathname: '/(auth)/claim-account',
+            params: { email: data.email || email }
+          });
+          return; // Don't throw error, we're handling it
+        }
         throw new Error(data.error || 'Login failed');
       }
 

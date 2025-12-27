@@ -2,7 +2,7 @@
 
 **Created**: 2025-12-26
 **Status**: In Progress
-**Last Updated**: 2025-12-26
+**Last Updated**: 2025-12-27
 
 ---
 
@@ -21,7 +21,7 @@ Security audit completed. **Found 5 CRITICAL, 12 HIGH, 15 MEDIUM, and 6 LOW seve
 | Fix Critical Security Issues | Critical | ✅ Complete | All 5 critical issues fixed |
 | Spam Prevention & Rate Limiting | Critical | ✅ Complete | @fastify/rate-limit implemented |
 | Token Expiry Fix | Critical | ✅ Complete | 15min access, 90-day refresh with sliding expiration |
-| Legacy Data Migration | Critical | ⏳ Pending | Awaiting fightingtomatoes.com tech stack info |
+| Legacy Data Migration | Critical | 🔄 In Progress | Account claim flow complete, migration scripts next |
 
 ## Phase 2: Platform Setup (Launch Blockers)
 
@@ -35,7 +35,7 @@ Security audit completed. **Found 5 CRITICAL, 12 HIGH, 15 MEDIUM, and 6 LOW seve
 
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
-| fightingtomatoes.com → app UX flow | High | ⏳ Pending | Design & build transition experience |
+| fightingtomatoes.com → app UX flow | High | ✅ Complete | Account claim flow built & tested |
 | Migration landing page/emails | High | ⏳ Pending | Communication to existing users |
 
 ## Phase 4: Polish (Post-Launch OK)
@@ -276,15 +276,279 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 
 ## Legacy Migration (fightingtomatoes.com)
 
-**Tech Stack**: TBD - awaiting user input
+**Tech Stack**: PHP, vanilla JavaScript, HTML/CSS, MySQL (MariaDB 10.6)
 
-**Data to Migrate**:
-- [ ] User accounts (emails, passwords)
-- [ ] User ratings/reviews
-- [ ] Fight history
-- [ ] Other: TBD
+### Legacy Database Architecture
 
-**UX Flow**: TBD
+The legacy system uses a **non-standard schema** where user-specific data is stored in dynamically-named tables:
+
+| Database | Table Naming | Contents |
+|----------|--------------|----------|
+| `fightdb` | `users`, `fights` | Central tables with normal schema |
+| `userfightratings` | `{MD5(email)}` | Per-user tables: `fightid`, `score` (1-10), `excited`, `time_of_rating` |
+| `userfightreviews` | `{MD5(email)}` | Per-user tables: `fightid` (links to fightreviewsdb) |
+| `userfighttags` | `{MD5(email)}` | Per-user tables: `fightid`, `tagid` |
+| `user-data` | `{MD5(email)}` | Per-user tables: `recommended_fights`, fighter ratings |
+| `fightreviewsdb` | `{fightid}` | Per-fight tables: review content, author email, upvotes |
+
+**Key Challenge**: Table names are MD5 hashes of user emails. The `maptoemail` column in `users` table contains this hash.
+
+### Data Volume Estimates (from SQL dumps)
+
+| Data Type | File Size | Est. Records |
+|-----------|-----------|--------------|
+| Users | 994 KB | ~1,000 users |
+| Ratings | 3.7 MB | ~50,000+ ratings |
+| Reviews | 1.2 MB | ~5,000+ reviews |
+| Tags | ~500 KB | ~10,000+ tags |
+
+### Field Mapping
+
+#### Users (`fightdb.users` → PostgreSQL `users`)
+
+| Legacy Field | New Field | Notes |
+|--------------|-----------|-------|
+| `emailaddress` | `email` | Primary identifier |
+| `password` | `password` | bcrypt hash, compatible with Node.js |
+| `displayname` | `displayName` | |
+| `ismedia` | `isMedia` | Boolean conversion |
+| `mediaorganization` | `mediaOrganization` | |
+| `avatar` | `avatar` | Need to migrate image files too |
+| `wantsemail` | `wantsEmails` | |
+| `confirmedemail` | `emailVerified` | |
+| `reviewerscore` | `points` | Gamification score |
+| `numreviews` | `totalReviews` | |
+| `signupdatetime` | `createdAt` | Parse PHP datetime format |
+| `maptoemail` | — | MD5 hash, used to locate user's data tables |
+
+#### Ratings (`userfightratings.{MD5}` → PostgreSQL `fight_ratings`)
+
+| Legacy Field | New Field | Notes |
+|--------------|-----------|-------|
+| `fightid` | `fightId` | Requires fight ID mapping |
+| `score` | `rating` | 1-10 scale |
+| `time_of_rating` | `createdAt` | Unix timestamp → DateTime |
+
+#### Reviews (`fightreviewsdb.{fightid}` → PostgreSQL `fight_reviews`)
+
+| Legacy Field | New Field | Notes |
+|--------------|-----------|-------|
+| `comment` | `content` | |
+| `score` | `rating` | |
+| `commenteremail` | `userId` | Lookup user by email |
+| `date` | `createdAt` | |
+| `helpful` | `upvotes` | |
+| `link` | `articleUrl` | Media user links |
+| `linktitle` | `articleTitle` | |
+
+#### Tags (`userfighttags.{MD5}` → PostgreSQL `fight_tags`)
+
+| Legacy Field | New Field | Notes |
+|--------------|-----------|-------|
+| `fightid` | `fightId` | Requires fight ID mapping |
+| `tagid` | `tagId` | Requires tag ID mapping |
+
+### Fight ID Mapping Strategy
+
+Legacy uses integer IDs (`6206`, `8291`), new system uses UUIDs.
+
+**Option A (Recommended)**: Add `legacyFightId` column to `fights` table
+- Allows direct lookup during migration
+- Preserves legacy references for debugging
+- Migration script can create mapping on first pass
+
+**Option B**: Create separate mapping table
+- Cleaner schema, but adds join complexity
+
+### Migration Script Architecture
+
+```
+packages/backend/scripts/legacy-migration/
+├── 01-export-legacy-data.ts    # Connect to MySQL, export to JSON
+├── 02-create-fight-mapping.ts  # Build legacy→UUID fight ID map
+├── 03-migrate-users.ts         # Import users (no FK dependencies)
+├── 04-migrate-ratings.ts       # Import ratings (needs user+fight)
+├── 05-migrate-reviews.ts       # Import reviews (needs user+fight)
+├── 06-migrate-tags.ts          # Import tags (needs user+fight+tag)
+├── 07-verify-migration.ts      # Count verification
+└── legacy-data/                # JSON exports from step 01
+    ├── users.json
+    ├── ratings.json
+    ├── reviews.json
+    └── tags.json
+```
+
+### Migration Phases
+
+**Phase 1: Export (run against live fightingtomatoes.com MySQL)**
+- [ ] Connect to legacy MySQL database
+- [ ] Export `users` table to JSON
+- [ ] For each user, compute MD5(email), query their tables in each database
+- [ ] Flatten per-user tables into single JSON arrays
+- [ ] Export reviews from per-fight tables
+
+**Phase 2: Transform**
+- [ ] Create fight ID mapping (legacy int → new UUID)
+- [ ] Create user ID mapping (legacy email → new UUID)
+- [ ] Create tag ID mapping (legacy int → new UUID)
+- [ ] Transform field names and data types
+
+**Phase 3: Import (run against new PostgreSQL)**
+- [ ] Import users (skip duplicates if re-running)
+- [ ] Import ratings with foreign key lookups
+- [ ] Import reviews with foreign key lookups
+- [ ] Import tags with foreign key lookups
+
+**Phase 4: Verify**
+- [ ] Compare record counts
+- [ ] Spot-check specific users' data
+- [ ] Verify user can log in with legacy password
+
+### Password Compatibility
+
+Legacy uses PHP `password_hash()` with bcrypt:
+```php
+$hash = password_hash($password, PASSWORD_BCRYPT);
+// Produces: $2y$10$...
+```
+
+Node.js `bcrypt` can verify these hashes directly:
+```typescript
+import bcrypt from 'bcrypt';
+const isValid = await bcrypt.compare(password, legacyHash);
+// Works! bcrypt handles $2y$ prefix
+```
+
+**No password reset required** - users can log in with existing passwords.
+
+### Prerequisites Before Migration
+
+1. **MySQL access credentials** for fightingtomatoes.com databases
+2. **Add `legacyFightId` column** to Prisma schema (migration)
+3. **Verify fight data exists** - ensure UFC scraper has populated fights that users rated
+
+### Decisions Made
+
+- [x] **MySQL credentials**: Available ✅
+- [x] **Fight ID mapping**: Match by fighter names + date (legacy IDs not in new DB)
+- [x] **Deleted users**: Skip users with `deleted=1`
+- [x] **Avatars**: Do NOT migrate (users can upload new ones)
+- [ ] **Recommended fights**: TBD - probably skip (computed data)
+- [ ] **Fighter ratings** (`other_field_1`): TBD - probably skip (not in new schema)
+
+### User Migration Flow (Account Claiming)
+
+**Strategy**: Pre-migrate users with `password: null`, `authProvider: 'EMAIL'`. OAuth and email/password users have different flows.
+
+#### OAuth Users (Google/Apple) - Backend Ready
+
+Backend OAuth linking logic already handles legacy users:
+
+1. User taps "Sign in with Google" (or Apple when available)
+2. OAuth provider returns their verified email
+3. Backend finds existing user with `authProvider: 'EMAIL'`
+4. Backend links OAuth ID, updates `authProvider` to `'GOOGLE'` or `'APPLE'`
+5. User is logged in with all their legacy data!
+
+| Provider | Status |
+|----------|--------|
+| Google | ✅ Working |
+| Apple | ⏳ Pending (needs Apple Developer Account - see Phase 2) |
+
+**This is the smoothest path** - encourage users to use Google Sign-In in migration communications.
+
+#### Email/Password Users - NEEDS NEW CODE
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    LEGACY USER FIRST LOGIN                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. User downloads new app, taps "Log In"                       │
+│                                                                  │
+│  2. User enters email: mike@example.com                         │
+│                                                                  │
+│  3. Backend checks: user exists + password is null              │
+│     → This is a legacy user who hasn't migrated yet             │
+│                                                                  │
+│  4. Response: "Welcome back! Your account from                  │
+│     fightingtomatoes.com has been transferred.                  │
+│     Verify your email to set up your new password."             │
+│                                                                  │
+│  5. Send verification email with magic link/code                │
+│                                                                  │
+│  6. User clicks link → lands on "Set Password" screen           │
+│                                                                  │
+│  7. User creates password (12+ chars, complexity rules)         │
+│                                                                  │
+│  8. Account activated! All legacy ratings/reviews intact.       │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Why this approach**:
+- ✅ **Secure**: Verifies email ownership before granting access
+- ✅ **No password reuse**: Old bcrypt hashes not imported (security win)
+- ✅ **Simple UX**: User just enters email, we handle the rest
+- ✅ **Data intact**: Ratings, reviews, tags already linked to user record
+
+**Implementation Status**: ✅ **COMPLETE** (2025-12-27)
+
+| Component | File | Status |
+|-----------|------|--------|
+| Login detects legacy users | `auth.fastify.ts:311-319` | ✅ Done |
+| `/auth/claim-account` endpoint | `auth.fastify.ts:2140-2241` | ✅ Done |
+| `/auth/reset-password` verifies email | `auth.fastify.ts:2101-2111` | ✅ Done |
+| Account claim email template | `email.ts:116-164` | ✅ Done |
+| Mobile `claim-account.tsx` | `app/(auth)/claim-account.tsx` | ✅ Done |
+| Mobile `reset-password.tsx` (12+ chars) | `app/(auth)/reset-password.tsx` | ✅ Done |
+| Web `reset-password.html` (12+ chars) | `reset-password.html` (root) | ✅ Done |
+| AuthContext navigation | `AuthContext.tsx:177-184` | ✅ Done |
+
+**Tested**: Local end-to-end flow verified working (2025-12-27)
+
+### Fight Matching Strategy
+
+Since legacy fight IDs aren't in the new database, we need to match fights by content:
+
+```typescript
+// Match logic
+async function findNewFightId(legacyFight: LegacyFight): Promise<string | null> {
+  // Try exact match: fighter1 + fighter2 + date
+  const fight = await prisma.fight.findFirst({
+    where: {
+      fighter1: {
+        firstName: legacyFight.f1fn,
+        lastName: legacyFight.f1ln,
+      },
+      fighter2: {
+        firstName: legacyFight.f2fn,
+        lastName: legacyFight.f2ln,
+      },
+      event: {
+        date: {
+          gte: startOfDay(legacyFight.date),
+          lte: endOfDay(legacyFight.date),
+        }
+      }
+    }
+  });
+
+  // Also try reversed fighter order
+  if (!fight) {
+    // Try fighter2 vs fighter1...
+  }
+
+  return fight?.id ?? null;
+}
+```
+
+**Expected outcome**: Most UFC fights should match. Some legacy fights may not exist in new DB if:
+- Old promotions we don't scrape anymore
+- Cancelled fights
+- Data entry errors in legacy system
+
+**Unmapped fights**: Log them, don't import those ratings (data loss is acceptable for edge cases).
 
 ---
 
@@ -391,11 +655,42 @@ Session continued on 2025-12-27 (afternoon) - see below
 
 ### Where to Resume
 ```
-ALL HIGH priority issues complete (except HIGH-6 deferred by user).
+Session continued on 2025-12-27 (evening) - see below
+```
 
-Next steps:
-1. Deploy latest to Render (commit 645fc8c)
-2. Set ADMIN_COOKIE_SECRET env var in Render (required now)
+---
+
+## Session Log: 2025-12-27 (Evening)
+
+### Completed - Legacy Account Claim Flow
+
+Built complete account claim flow for migrated users from fightingtomatoes.com:
+
+**Backend Changes:**
+- [x] Modified `/auth/login` to detect `password: null` users → returns `ACCOUNT_CLAIM_REQUIRED`
+- [x] Added `/auth/claim-account` endpoint → sends verification email
+- [x] Updated `/auth/reset-password` → also sets `isEmailVerified: true`
+- [x] Added `sendAccountClaimEmail()` with migration-specific messaging
+
+**Mobile Changes:**
+- [x] Created `claim-account.tsx` screen with "Welcome Back" message
+- [x] Updated `reset-password.tsx` to require 12+ chars + special char
+- [x] Modified `AuthContext.tsx` to navigate to claim screen on `ACCOUNT_CLAIM_REQUIRED`
+- [x] Fixed missing `Platform` import in `AuthContext.tsx`
+
+**Web Changes:**
+- [x] Updated `reset-password.html` to require 12+ chars + special char (upload to web host needed)
+
+**Testing:**
+- [x] Created test legacy user with `password: null`
+- [x] Verified claim flow works end-to-end locally
+- [x] Created helper scripts: `create-test-legacy-user.ts`, `get-token.ts`
+
+### Where to Resume
+```
+Account claim flow complete. Next:
+1. Upload updated reset-password.html to web host (goodfights.app)
+2. Build migration scripts (export from MySQL, import to PostgreSQL)
 3. Phase 2: Apple Developer Account setup
 ```
 
