@@ -11,6 +11,9 @@ pnpm-debug.log*
 .env.production
 .env.test
 
+# Claude Code local settings (may contain allowed commands with credentials)
+.claude/settings.local.json
+
 # Build outputs
 dist/
 build/
