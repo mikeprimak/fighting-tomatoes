@@ -520,7 +520,7 @@ Backend OAuth linking logic already handles legacy users:
 | Account claim email template | `email.ts:116-164` | ✅ Done |
 | Mobile `claim-account.tsx` | `app/(auth)/claim-account.tsx` | ✅ Done |
 | Mobile `reset-password.tsx` (12+ chars) | `app/(auth)/reset-password.tsx` | ✅ Done |
-| Web `reset-password.html` (12+ chars) | `reset-password.html` (root) | ✅ Done |
+| Web `reset-password.html` (12+ chars) | `reset-password.html` (root) | ✅ Done + Deployed |
 | AuthContext navigation | `AuthContext.tsx:177-184` | ✅ Done |
 
 **Tested**: Local end-to-end flow verified working (2025-12-27)
@@ -707,7 +707,7 @@ Built complete account claim flow for migrated users from fightingtomatoes.com:
 ### Where to Resume
 ```
 Account claim flow complete. Next:
-1. Upload updated reset-password.html to web host (goodfights.app)
+1. Upload updated reset-password.html to web host (goodfights.app) ✅ DONE
 2. Build migration scripts (export from MySQL, import to PostgreSQL)
 3. Phase 2: Apple Developer Account setup
 ```
