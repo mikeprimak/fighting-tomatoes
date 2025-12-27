@@ -1,13 +1,6 @@
 // Giphy proxy route - keeps API key secure on backend
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import { authenticateUser } from '../middleware/auth';
-
-interface SearchQuery {
-  q?: string;
-  limit?: number;
-  offset?: number;
-  rating?: string;
-}
 
 export default async function giphyRoutes(fastify: FastifyInstance) {
   const GIPHY_API_KEY = process.env.GIPHY_API_KEY;
@@ -15,21 +8,7 @@ export default async function giphyRoutes(fastify: FastifyInstance) {
   // Search GIFs endpoint
   fastify.get('/search', {
     preHandler: authenticateUser,
-    schema: {
-      description: 'Search for GIFs via Giphy API',
-      tags: ['giphy'],
-      querystring: {
-        type: 'object',
-        properties: {
-          q: { type: 'string', description: 'Search query' },
-          limit: { type: 'integer', minimum: 1, maximum: 50, default: 30 },
-          offset: { type: 'integer', minimum: 0, default: 0 },
-          rating: { type: 'string', enum: ['g', 'pg', 'pg-13', 'r'], default: 'pg-13' },
-        },
-        required: ['q'],
-      },
-    },
-  }, async (request: FastifyRequest<{ Querystring: SearchQuery }>, reply: FastifyReply) => {
+  }, async (request: any, reply: any) => {
     if (!GIPHY_API_KEY) {
       console.error('[Giphy] GIPHY_API_KEY not configured');
       return reply.code(500).send({
@@ -40,8 +19,15 @@ export default async function giphyRoutes(fastify: FastifyInstance) {
 
     const { q, limit = 30, offset = 0, rating = 'pg-13' } = request.query;
 
+    if (!q) {
+      return reply.code(400).send({
+        error: 'Search query required',
+        code: 'MISSING_QUERY',
+      });
+    }
+
     try {
-      const url = `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(q || '')}&limit=${limit}&offset=${offset}&rating=${rating}`;
+      const url = `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(q)}&limit=${limit}&offset=${offset}&rating=${rating}`;
 
       const response = await fetch(url);
       const data = await response.json();
@@ -67,19 +53,7 @@ export default async function giphyRoutes(fastify: FastifyInstance) {
   // Trending GIFs endpoint (with combat sports default)
   fastify.get('/trending', {
     preHandler: authenticateUser,
-    schema: {
-      description: 'Get trending/combat sports GIFs',
-      tags: ['giphy'],
-      querystring: {
-        type: 'object',
-        properties: {
-          limit: { type: 'integer', minimum: 1, maximum: 50, default: 30 },
-          offset: { type: 'integer', minimum: 0, default: 0 },
-          rating: { type: 'string', enum: ['g', 'pg', 'pg-13', 'r'], default: 'pg-13' },
-        },
-      },
-    },
-  }, async (request: FastifyRequest<{ Querystring: SearchQuery }>, reply: FastifyReply) => {
+  }, async (request: any, reply: any) => {
     if (!GIPHY_API_KEY) {
       console.error('[Giphy] GIPHY_API_KEY not configured');
       return reply.code(500).send({
