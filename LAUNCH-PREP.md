@@ -148,7 +148,8 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 #### HIGH-1: Raw SQL Injection Risk
 - **Location**: `packages/backend/src/scripts/fix-unique-constraint.ts` (lines 41, 52)
 - **Issue**: Uses `$executeRawUnsafe()` with template literals
-- **Fix**: Use parameterized queries
+- **Fix**: Added identifier validation before use (defense in depth)
+- **Status**: ✅ Fixed (2025-12-27)
 
 #### HIGH-2: Weak Password Requirements
 - **Location**: `packages/backend/src/routes/auth.fastify.ts` (line 32)
@@ -159,7 +160,8 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 #### HIGH-3: Admin Cookie Secret Exposed
 - **Location**: `packages/backend/src/admin/index.ts` (lines 119, 125)
 - **Issue**: Hardcoded fallback secret for admin panel cookies
-- **Fix**: Remove fallback, require env var
+- **Fix**: Removed fallback, now throws error if ADMIN_COOKIE_SECRET not set
+- **Status**: ✅ Fixed (2025-12-27)
 
 #### HIGH-4: Password Hash Logging
 - **Location**: `packages/backend/src/routes/auth.fastify.ts` (lines 291, 2041, 2045)
@@ -170,7 +172,8 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 #### HIGH-5: Google OAuth Client IDs Exposed
 - **Location**: `packages/mobile/hooks/useGoogleAuth.ts` (line 11)
 - **Issue**: OAuth client IDs hardcoded in source
-- **Fix**: Use environment variables, add .env to .gitignore
+- **Fix**: N/A - OAuth client IDs are PUBLIC by design (not secrets). Added documentation.
+- **Status**: ✅ Resolved (2025-12-27) - Not a security issue
 
 #### HIGH-6: Test Account Login Buttons in Production
 - **Location**: `packages/mobile/app/(auth)/login.tsx` (lines 233-339)
@@ -192,7 +195,8 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 #### HIGH-9: File Upload Content Not Validated
 - **Location**: `packages/backend/src/routes/upload.ts` (lines 23-40)
 - **Issue**: Only MIME type checked (can be spoofed)
-- **Fix**: Validate actual file content with `file-type` library
+- **Fix**: Added `file-type` library to validate magic bytes, added rate limiting
+- **Status**: ✅ Fixed (2025-12-27)
 
 ---
 
@@ -377,22 +381,21 @@ Session continued on 2025-12-27 (afternoon) - see below
 - [x] **HIGH-2**: Password now requires 12+ chars with uppercase, lowercase, number, special char
 - [x] **HIGH-4**: Verified no password hash logging present (already clean)
 - [x] **HIGH-8**: Removed user data JSON logging from AuthContext.tsx
+- [x] **HIGH-1**: Added SQL identifier validation to migration script
+- [x] **HIGH-3**: Removed admin cookie secret fallback, now requires env var
+- [x] **HIGH-5**: Documented OAuth client ID as public (not a secret)
+- [x] **HIGH-9**: Added file-type validation + rate limiting to upload endpoints
 
 ### Intentionally Deferred
 - [ ] **HIGH-6**: Test login buttons kept for now (user request)
 
 ### Where to Resume
 ```
-HIGH priority issues mostly complete. Remaining:
-- HIGH-1: Raw SQL injection (script file, not production code)
-- HIGH-3: Admin cookie secret
-- HIGH-5: Google OAuth client IDs
-- HIGH-6: Test login buttons (deferred)
-- HIGH-9: File upload content validation
+ALL HIGH priority issues complete (except HIGH-6 deferred by user).
 
 Next steps:
-1. Deploy latest to Render (commit 64a49da)
-2. Phase 2: Apple Developer Account setup
-3. Or continue with remaining HIGH issues
+1. Deploy latest to Render (commit 645fc8c)
+2. Set ADMIN_COOKIE_SECRET env var in Render (required now)
+3. Phase 2: Apple Developer Account setup
 ```
 
