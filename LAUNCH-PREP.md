@@ -154,6 +154,7 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 - **Location**: `packages/backend/src/routes/auth.fastify.ts` (line 32)
 - **Issue**: Only requires 6 characters, no complexity
 - **Fix**: Require 12+ chars with uppercase, lowercase, number, special char
+- **Status**: ✅ Fixed (2025-12-27)
 
 #### HIGH-3: Admin Cookie Secret Exposed
 - **Location**: `packages/backend/src/admin/index.ts` (lines 119, 125)
@@ -164,6 +165,7 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 - **Location**: `packages/backend/src/routes/auth.fastify.ts` (lines 291, 2041, 2045)
 - **Issue**: Partial password hashes logged to console
 - **Fix**: Remove all password hash logging
+- **Status**: ✅ Already clean (verified 2025-12-27)
 
 #### HIGH-5: Google OAuth Client IDs Exposed
 - **Location**: `packages/mobile/hooks/useGoogleAuth.ts` (line 11)
@@ -185,6 +187,7 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 - **Location**: `packages/mobile/store/AuthContext.tsx` (lines 440-442)
 - **Issue**: Full user JSON logged including sensitive data
 - **Fix**: Remove or gate behind `__DEV__`
+- **Status**: ✅ Fixed (2025-12-27)
 
 #### HIGH-9: File Upload Content Not Validated
 - **Location**: `packages/backend/src/routes/upload.ts` (lines 23-40)
@@ -356,17 +359,40 @@ Session continued on 2025-12-27 - see below
 | Legacy Data Migration | ⏳ Pending (awaiting fightingtomatoes.com info) |
 
 ### Still Pending (HIGH Priority)
-- [ ] HIGH-2: Strengthen password requirements (currently only 6 chars)
-- [ ] HIGH-6: Remove test login buttons from production
-- [ ] HIGH-4/8: Remove sensitive data logging
+- [x] HIGH-2: Strengthen password requirements ✅ Fixed
+- [ ] HIGH-6: Remove test login buttons from production (intentionally deferred)
+- [x] HIGH-4/8: Remove sensitive data logging ✅ Fixed
 
 ### Where to Resume
 ```
-Phase 1 is essentially complete (only Legacy Data Migration pending).
+Session continued on 2025-12-27 (afternoon) - see below
+```
+
+---
+
+## Session Log: 2025-12-27 (Afternoon)
+
+### Completed
+- [x] Merged `distinctmycolumn` branch into `main` and pushed
+- [x] **HIGH-2**: Password now requires 12+ chars with uppercase, lowercase, number, special char
+- [x] **HIGH-4**: Verified no password hash logging present (already clean)
+- [x] **HIGH-8**: Removed user data JSON logging from AuthContext.tsx
+
+### Intentionally Deferred
+- [ ] **HIGH-6**: Test login buttons kept for now (user request)
+
+### Where to Resume
+```
+HIGH priority issues mostly complete. Remaining:
+- HIGH-1: Raw SQL injection (script file, not production code)
+- HIGH-3: Admin cookie secret
+- HIGH-5: Google OAuth client IDs
+- HIGH-6: Test login buttons (deferred)
+- HIGH-9: File upload content validation
+
 Next steps:
-1. Deploy to Render (redeploy to apply security fixes)
-2. Add GIPHY_API_KEY to Render env vars (if using Giphy feature)
-3. Consider Phase 2: Platform Setup (Apple Developer Account, iOS builds)
-4. Or fix remaining HIGH priority issues
+1. Deploy latest to Render (commit 64a49da)
+2. Phase 2: Apple Developer Account setup
+3. Or continue with remaining HIGH issues
 ```
 
