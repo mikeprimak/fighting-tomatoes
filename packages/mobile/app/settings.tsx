@@ -248,7 +248,9 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        {/* Fighter Notifications */}
+        {/* Fighter Notifications - Hidden until live tracking is available for all orgs
+            To re-enable: remove the `false &&` condition below */}
+        {false && (
         <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card, paddingTop: 12 }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Fighter Notifications</Text>
@@ -268,8 +270,11 @@ export default function SettingsScreen() {
             <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
+        )}
 
-        {/* Hyped Fights */}
+        {/* Hyped Fights - Hidden until live tracking is available for all orgs
+            To re-enable: remove the `false &&` condition below */}
+        {false && (
         <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Hyped Fights</Text>
@@ -286,6 +291,7 @@ export default function SettingsScreen() {
             Get notified 15 minutes before fights with 8.5+ hype
           </Text>
         </View>
+        )}
 
         {/* Pre-Event Report */}
         <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>

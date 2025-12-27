@@ -238,10 +238,13 @@ export default function FightDetailScreen() {
       (r: any) => r.type === 'manual' && r.isActive
     );
 
+    // Only show fight-specific notification bell for events with live tracking
+    const hasLiveTracking = fight.event?.hasLiveTracking === true;
+
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
-        {/* Bell icon - always visible for upcoming fights, tappable to toggle notification */}
-        {!isComplete && (
+        {/* Bell icon - only visible for upcoming fights WITH live tracking */}
+        {!isComplete && hasLiveTracking && (
           <TouchableOpacity
             onPress={handleToggleNotification}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

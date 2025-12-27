@@ -15,6 +15,7 @@ interface Event {
   id: string;
   name: string;
   date: string;
+  hasLiveTracking?: boolean;
 }
 
 interface NotificationReasons {
@@ -119,8 +120,8 @@ export default function FightDetailsMenu({
             </TouchableOpacity>
           </View>
 
-          {/* Consolidated Fight Notification Section (only shown for upcoming fights) */}
-          {onToggleNotification !== undefined && (() => {
+          {/* Consolidated Fight Notification Section (only shown for upcoming fights WITH live tracking) */}
+          {onToggleNotification !== undefined && fight.event?.hasLiveTracking === true && (() => {
             // Use notification reasons from the new system if available
             const willBeNotified = fight.notificationReasons?.willBeNotified ?? false;
             const notificationReasons = fight.notificationReasons?.reasons ?? [];

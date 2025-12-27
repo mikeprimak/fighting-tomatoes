@@ -5,6 +5,7 @@ import { authenticateUser, requireEmailVerification, optionalAuth } from '../mid
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 import { calculateQualityThreadScore } from '../utils/commentSorting';
 import { TBA_FIGHTER_ID, isTBAFighter, fightHasTBA } from '../constants/tba';
+import { hasRealTimeTracker } from '../config/liveTrackerConfig';
 
 // Request/Response schemas using Zod for validation
 const CreateFightSchema = z.object({
@@ -307,6 +308,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const transformedFights = await Promise.all(fights.map(async (fight: any) => {
         const transformed = { ...fight };
 
+        // Add hasLiveTracking to event for UI to know if fight-specific notifications are available
+        if (transformed.event) {
+          transformed.event = {
+            ...transformed.event,
+            hasLiveTracking: hasRealTimeTracker(transformed.event.promotion),
+          };
+        }
+
         // Check if fight has a TBA (To Be Announced) fighter - predictions should be disabled
         transformed.hasTBAFighter = fightHasTBA(fight.fighter1Id, fight.fighter2Id);
 
@@ -525,6 +534,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const fightWithRelations = fight as any;
       const transformedFight: any = { ...fight };
 
+      // Add hasLiveTracking to event for UI to know if fight-specific notifications are available
+      if (transformedFight.event) {
+        transformedFight.event = {
+          ...transformedFight.event,
+          hasLiveTracking: hasRealTimeTracker(transformedFight.event.promotion),
+        };
+      }
 
       if (currentUserId) {
         // Transform user rating (take the first/only rating)
@@ -3624,6 +3640,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const transformedFights = fights.map((fight: any) => {
         const transformed = { ...fight };
         const hypeStats = hypeMap.get(fight.id);
+
+        // Add hasLiveTracking to event for UI to know if fight-specific notifications are available
+        if (transformed.event) {
+          transformed.event = {
+            ...transformed.event,
+            hasLiveTracking: hasRealTimeTracker(transformed.event.promotion),
+          };
+        }
 
         // Check if fight has a TBA (To Be Announced) fighter - predictions should be disabled
         transformed.hasTBAFighter = fightHasTBA(fight.fighter1Id, fight.fighter2Id);

@@ -312,8 +312,9 @@ export default function FighterDetailScreen() {
               Record: {fighter.wins}-{fighter.losses}-{fighter.draws}
             </Text>
 
-            {/* Follow Button */}
-            {isAuthenticated && (
+            {/* Follow Button - Hidden until live tracking is available for all orgs
+                To re-enable: remove the `false &&` condition below */}
+            {false && isAuthenticated && (
               <Button
                 onPress={handleFollowPress}
                 disabled={followMutation.isPending}
