@@ -13,6 +13,11 @@ AdminJS.registerAdapter({
 });
 
 export async function setupAdminPanel(fastify: FastifyInstance) {
+  // Require ADMIN_COOKIE_SECRET in production - fail fast if not set
+  if (!process.env.ADMIN_COOKIE_SECRET) {
+    throw new Error('ADMIN_COOKIE_SECRET environment variable is required');
+  }
+
   const admin = new AdminJS({
     resources: [
       {
@@ -116,13 +121,13 @@ export async function setupAdminPanel(fastify: FastifyInstance) {
 
         return { email: user.email, id: user.id };
       },
-      cookiePassword: process.env.ADMIN_COOKIE_SECRET || 'super-secret-cookie-password-change-in-production',
+      cookiePassword: process.env.ADMIN_COOKIE_SECRET,
       cookieName: 'adminjs',
     },
     fastify,
     {
       // Session options
-      secret: process.env.ADMIN_COOKIE_SECRET || 'super-secret-cookie-password-change-in-production',
+      secret: process.env.ADMIN_COOKIE_SECRET,
       cookie: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

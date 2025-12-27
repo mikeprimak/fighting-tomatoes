@@ -5,6 +5,23 @@ import path from 'path';
 import fs from 'fs';
 import { pipeline } from 'stream/promises';
 
+// Allowed image types (validated by magic bytes, not just MIME type)
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+// Validate file content by checking magic bytes
+async function validateImageContent(buffer: Buffer): Promise<{ valid: boolean; detectedType?: string }> {
+  // Dynamic import for ESM-only file-type package
+  const { fileTypeFromBuffer } = await import('file-type');
+  const result = await fileTypeFromBuffer(buffer);
+
+  if (!result) {
+    return { valid: false };
+  }
+
+  const isValid = ALLOWED_IMAGE_TYPES.includes(result.mime);
+  return { valid: isValid, detectedType: result.mime };
+}
+
 export async function uploadRoutes(fastify: FastifyInstance) {
   // Upload profile image
   // Rate limit: 10 uploads per hour to prevent storage abuse

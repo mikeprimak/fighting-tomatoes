@@ -7,6 +7,12 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+// Validate SQL identifier to prevent injection (defense in depth)
+// Only allows alphanumeric, underscores, and must start with letter/underscore
+function isValidSqlIdentifier(name: string): boolean {
+  return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
+}
+
 async function main() {
   console.log('Checking for unique constraints on pre_fight_comments...');
 
@@ -37,6 +43,10 @@ async function main() {
     console.log('\n⚠️  Found problematic unique index! Attempting to drop...');
 
     for (const idx of problematicIndexes) {
+      if (!isValidSqlIdentifier(idx.indexname)) {
+        console.error(`❌ Invalid index name, skipping: ${idx.indexname}`);
+        continue;
+      }
       try {
         await prisma.$executeRawUnsafe(`DROP INDEX IF EXISTS "${idx.indexname}"`);
         console.log(`✅ Dropped index: ${idx.indexname}`);
@@ -48,6 +58,10 @@ async function main() {
     console.log('\nAttempting to drop unique constraints...');
 
     for (const constraint of constraints) {
+      if (!isValidSqlIdentifier(constraint.constraint_name)) {
+        console.error(`❌ Invalid constraint name, skipping: ${constraint.constraint_name}`);
+        continue;
+      }
       try {
         await prisma.$executeRawUnsafe(`ALTER TABLE "pre_fight_comments" DROP CONSTRAINT IF EXISTS "${constraint.constraint_name}"`);
         console.log(`✅ Dropped constraint: ${constraint.constraint_name}`);

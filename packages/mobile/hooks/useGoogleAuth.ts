@@ -7,7 +7,9 @@ import {
 } from '@react-native-google-signin/google-signin';
 import { useAuth } from '../store/AuthContext';
 
-// Google OAuth Client IDs
+// Google OAuth Web Client ID - this is PUBLIC by design (not a secret)
+// Security is enforced via package name, SHA-1 fingerprint, and app store verification
+// See: https://developers.google.com/identity/protocols/oauth2
 const GOOGLE_CLIENT_ID_WEB = '499367908516-f5qu2rjeot6iqnhld7o3tg71tqdqlngk.apps.googleusercontent.com';
 
 // Configure Google Sign-In on module load
