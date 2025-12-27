@@ -311,30 +311,6 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        {/* Test Notification Button */}
-        <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>
-          <TouchableOpacity
-            style={[styles.testButton, { backgroundColor: colors.primary }]}
-            onPress={sendTestNotification}
-            disabled={saving}
-          >
-            {saving ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <>
-                <FontAwesome name="paper-plane" size={16} color="#fff" style={{ marginRight: 8 }} />
-                <Text style={styles.testButtonText}>Send Test Pre-Event</Text>
-              </>
-            )}
-          </TouchableOpacity>
-          <Text style={[styles.sectionDescription, { color: colors.textSecondary, marginTop: 8 }]}>
-            Sends a test pre-event report for UFC Fight Night Tsarukyan vs. Hooker
-          </Text>
-          <Text style={[styles.sectionDescription, { color: colors.textSecondary, marginTop: 4 }]}>
-            Test your notification settings
-          </Text>
-        </View>
-
       </ScrollView>
 
       {/* Custom Alert */}
