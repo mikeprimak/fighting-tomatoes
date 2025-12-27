@@ -21,7 +21,7 @@ Security audit completed. **Found 5 CRITICAL, 12 HIGH, 15 MEDIUM, and 6 LOW seve
 | Fix Critical Security Issues | Critical | ✅ Complete | All 5 critical issues fixed |
 | Spam Prevention & Rate Limiting | Critical | ✅ Complete | @fastify/rate-limit implemented |
 | Token Expiry Fix | Critical | ✅ Complete | 15min access, 90-day refresh with sliding expiration |
-| Legacy Data Migration | Critical | 🔄 In Progress | Account claim flow complete, migration scripts next |
+| Legacy Data Migration | Critical | ✅ Scripts Ready | Account claim flow + migration scripts complete |
 
 ## Phase 2: Platform Setup (Launch Blockers)
 
@@ -281,16 +281,62 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 | Task | Status | Notes |
 |------|--------|-------|
 | Account claim flow (backend + mobile + web) | ✅ Complete | Users can claim migrated accounts |
-| Migration scripts (export/import) | ⏳ TODO | Need to build scripts to move data |
-| Test with real data | ⏳ TODO | After scripts are built |
+| Migration scripts (export/import) | ✅ Complete | All 7 scripts built and ready |
+| Test with real data | ⏳ TODO | Run scripts against local/staging DB |
 | Production migration | ⏳ TODO | Final step before announcing to users |
 
-### What's Next (For New Session)
+### Migration Scripts Location
 
-1. **Build migration scripts** in `packages/backend/scripts/legacy-migration/`
-2. **SQL dump files** are in `databases from fightingtomatoes/` folder (gitignored)
-3. **Key challenge**: Match legacy fights (integer IDs) to new fights (UUIDs) by fighter names + event date
-4. **Import users with `password: null`** so account claim flow works
+All scripts are in `packages/backend/scripts/legacy-migration/`:
+
+| Script | Purpose |
+|--------|---------|
+| `01-parse-legacy-data.ts` | Parse SQL dumps to JSON |
+| `02-create-fight-mapping.ts` | Match legacy fight IDs to new UUIDs |
+| `03-migrate-users.ts` | Import users with null password |
+| `04-migrate-ratings.ts` | Import fight ratings |
+| `05-migrate-reviews.ts` | Import fight reviews |
+| `06-migrate-tags.ts` | Import fight tags |
+| `07-verify-migration.ts` | Verify migration counts |
+| `run-migration.ts` | Master runner script |
+
+### Running the Migration
+
+```bash
+cd packages/backend
+
+# Dry run first (no changes)
+npx ts-node scripts/legacy-migration/run-migration.ts --dry-run
+
+# Actual migration
+npx ts-node scripts/legacy-migration/run-migration.ts
+```
+
+See `packages/backend/scripts/legacy-migration/README.md` for full documentation.
+
+### Verified Script Execution (2025-12-27)
+
+Step 1 parsing results:
+- **Users:** 1,932 (19 deleted filtered out)
+- **Fights:** 13,448 (252 deleted filtered out)
+- **Ratings:** 63,932 (99.1% resolved to user emails)
+- **Tags:** 1,707 (100% resolved to user emails)
+- **Reviews:** 0 (need fightreviewsdb dump for review content)
+
+Step 2 fight mapping:
+- Local test DB has only 256 recent fights
+- Legacy has 13,448 historical fights (mostly 2021 and earlier)
+- **Production Note:** Match rate depends on historical fight data in target DB
+- Main promotions in legacy: UFC (8,389), ONE (1,239), Bellator (528), Pride (514)
+
+### Next Steps for Production Migration
+
+1. Ensure production DB has historical UFC fights from scrapers
+2. Run step 1 (already done - JSON files ready)
+3. Run step 2 against production DB for fight mappings
+4. Run steps 3-6 with `--dry-run` first
+5. Run steps 3-6 for actual import
+6. Run step 7 to verify counts
 
 ---
 

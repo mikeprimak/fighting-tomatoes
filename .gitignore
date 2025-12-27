@@ -139,3 +139,19 @@ nul
 db-backups/
 packages/mobile/fcm-service-account.json
 packages/mobile/fight-app-ba5cd-*.json
+
+# Legacy migration sensitive files
+db-creds.txt
+dburl.txt
+*.dump
+*.sql
+*.stackdump
+gitguardian_messages.txt
+databases from fightingtomatoes/
+
+# Legacy migration - data exports (contains user PII)
+packages/backend/scripts/legacy-migration/legacy-data/
+packages/backend/scripts/legacy-migration/mysql-export/
+
+# Legacy migration - connection test with credentials
+packages/backend/scripts/legacy-migration/test-mysql-connection.ts
