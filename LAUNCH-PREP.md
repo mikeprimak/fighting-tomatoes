@@ -276,6 +276,24 @@ These secrets were detected in your GitHub repository `mikeprimak/fighting-tomat
 
 ## Legacy Migration (fightingtomatoes.com)
 
+### Quick Status Summary
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Account claim flow (backend + mobile + web) | ✅ Complete | Users can claim migrated accounts |
+| Migration scripts (export/import) | ⏳ TODO | Need to build scripts to move data |
+| Test with real data | ⏳ TODO | After scripts are built |
+| Production migration | ⏳ TODO | Final step before announcing to users |
+
+### What's Next (For New Session)
+
+1. **Build migration scripts** in `packages/backend/scripts/legacy-migration/`
+2. **SQL dump files** are in `databases from fightingtomatoes/` folder (gitignored)
+3. **Key challenge**: Match legacy fights (integer IDs) to new fights (UUIDs) by fighter names + event date
+4. **Import users with `password: null`** so account claim flow works
+
+---
+
 **Tech Stack**: PHP, vanilla JavaScript, HTML/CSS, MySQL (MariaDB 10.6)
 
 ### Legacy Database Architecture
@@ -457,7 +475,7 @@ Backend OAuth linking logic already handles legacy users:
 
 **This is the smoothest path** - encourage users to use Google Sign-In in migration communications.
 
-#### Email/Password Users - NEEDS NEW CODE
+#### Email/Password Users - ✅ COMPLETE
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
