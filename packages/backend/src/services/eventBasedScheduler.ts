@@ -13,6 +13,8 @@ import { PrismaClient } from '@prisma/client';
 import { startLiveTracking, stopLiveTracking, getLiveTrackingStatus } from './liveEventTracker';
 import { startMatchroomLiveTracking, stopMatchroomLiveTracking, getMatchroomTrackingStatus } from './matchroomLiveTracker';
 import { startOktagonLiveTracking, stopOktagonLiveTracking, getOktagonTrackingStatus } from './oktagonLiveTracker';
+import { getTrackerType, LiveTrackerType } from '../config/liveTrackerConfig';
+import { scheduleTimeBasedUpdates, cancelAllTimeBasedTimers } from './timeBasedFightStatusUpdater';
 
 const prisma = new PrismaClient();
 
@@ -59,15 +61,11 @@ function getEventUrl(event: { ufcUrl: string | null; name: string }): string {
 }
 
 /**
- * Get promotion type from event
+ * Get promotion type from event.
+ * Now uses centralized config from liveTrackerConfig.ts
  */
-function getPromotionType(promotion: string | null): 'ufc' | 'matchroom' | 'oktagon' | 'other' {
-  if (!promotion) return 'other';
-  const p = promotion.toLowerCase();
-  if (p === 'ufc') return 'ufc';
-  if (p.includes('matchroom')) return 'matchroom';
-  if (p.includes('oktagon')) return 'oktagon';
-  return 'other';
+function getPromotionType(promotion: string | null): LiveTrackerType {
+  return getTrackerType(promotion);
 }
 
 /**
@@ -105,12 +103,19 @@ export async function scheduleEventTracking(eventId: string): Promise<void> {
     const now = new Date();
     const millisecondsUntilStart = trackingStartTime.getTime() - now.getTime();
 
-    const promotionType = getPromotionType(event.promotion);
+    const trackerType = getPromotionType(event.promotion);
 
-    // If event should have already started (or is starting very soon)
+    // Route to time-based fallback for promotions without live trackers
+    if (trackerType === 'time-based') {
+      console.log(`[Event Scheduler] ⏰ ${event.name} (${event.promotion}) - Using TIME-BASED fallback`);
+      await scheduleTimeBasedUpdates(event.id);
+      return;
+    }
+
+    // For real-time trackers, check if event should have already started
     if (millisecondsUntilStart <= 0) {
-      console.log(`[Event Scheduler] Event ${event.name} is starting now or has started, tracking immediately`);
-      await startEventTracking(event.id, event.name, getEventUrl(event), promotionType);
+      console.log(`[Event Scheduler] 🔴 ${event.name} is starting now or has started, tracking immediately (${trackerType})`);
+      await startEventTracking(event.id, event.name, getEventUrl(event), trackerType);
       return;
     }
 
@@ -121,12 +126,12 @@ export async function scheduleEventTracking(eventId: string): Promise<void> {
 
     // Schedule tracking to start at the right time
     const minutesUntilStart = Math.floor(millisecondsUntilStart / (60 * 1000));
-    console.log(`[Event Scheduler] Scheduled ${event.name} to start tracking in ${minutesUntilStart} minutes`);
+    console.log(`[Event Scheduler] 🔴 Scheduled ${event.name} (${trackerType}) to start tracking in ${minutesUntilStart} minutes`);
     console.log(`[Event Scheduler]   Start time: ${trackingStartTime.toISOString()}`);
 
     const timer = setTimeout(async () => {
       console.log(`[Event Scheduler] Timer triggered for ${event.name}`);
-      await startEventTracking(event.id, event.name, getEventUrl(event), promotionType);
+      await startEventTracking(event.id, event.name, getEventUrl(event), trackerType);
       scheduledTimers.delete(eventId);
     }, millisecondsUntilStart);
 
@@ -138,13 +143,14 @@ export async function scheduleEventTracking(eventId: string): Promise<void> {
 }
 
 /**
- * Start tracking an event (UFC, Matchroom, or Oktagon)
+ * Start tracking an event using the appropriate live tracker.
+ * Only called for promotions with real-time trackers (UFC, Matchroom, OKTAGON).
  */
 async function startEventTracking(
   eventId: string,
   eventName: string,
   eventUrl: string,
-  promotionType: 'ufc' | 'matchroom' | 'oktagon' | 'other'
+  trackerType: 'ufc' | 'matchroom' | 'oktagon'
 ): Promise<void> {
   try {
     // Check if already tracking something (check all trackers)
@@ -176,26 +182,25 @@ async function startEventTracking(
       return;
     }
 
-    console.log(`[Event Scheduler] 🔴 Starting live tracking for ${eventName} (${promotionType})`);
+    console.log(`[Event Scheduler] 🔴 Starting live tracking for ${eventName} (${trackerType})`);
     console.log(`[Event Scheduler]   URL: ${eventUrl}`);
 
-    // Use appropriate tracker based on promotion
-    if (promotionType === 'matchroom') {
+    // Use appropriate tracker based on type
+    if (trackerType === 'matchroom') {
       await startMatchroomLiveTracking({
         eventId,
         eventUrl,
         eventName,
         intervalSeconds: 60  // Matchroom: poll every 60s
       });
-    } else if (promotionType === 'oktagon') {
+    } else if (trackerType === 'oktagon') {
       await startOktagonLiveTracking({
         eventId,
         eventUrl,
         eventName,
         intervalSeconds: 60  // Oktagon: poll every 60s
       });
-    } else {
-      // Default to UFC tracker
+    } else if (trackerType === 'ufc') {
       await startLiveTracking({
         eventId,
         eventUrl,
@@ -212,7 +217,9 @@ async function startEventTracking(
 }
 
 /**
- * Schedule all upcoming events (UFC, Matchroom, etc.)
+ * Schedule all upcoming events (all promotions).
+ * - Promotions with live trackers (UFC, Matchroom, OKTAGON) use real-time tracking
+ * - Other promotions use time-based fallback
  * Called on server startup and after daily scraper runs
  */
 export async function scheduleAllUpcomingEvents(): Promise<number> {
@@ -222,22 +229,21 @@ export async function scheduleAllUpcomingEvents(): Promise<number> {
     const now = new Date();
     const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-    // Find all upcoming events from supported promotions in the next 2 weeks
+    // Find ALL upcoming events in the next 2 weeks (not just UFC/Matchroom/OKTAGON)
     const upcomingEvents = await prisma.event.findMany({
       where: {
-        OR: [
-          { promotion: 'UFC' },
-          { promotion: { contains: 'Matchroom', mode: 'insensitive' } },
-          { promotion: { contains: 'OKTAGON', mode: 'insensitive' } },
-        ],
         isComplete: false,
-        AND: [
+        OR: [
+          // Events with section start times in range
+          { mainStartTime: { gte: now, lte: twoWeeksFromNow } },
+          { prelimStartTime: { gte: now, lte: twoWeeksFromNow } },
+          { earlyPrelimStartTime: { gte: now, lte: twoWeeksFromNow } },
+          // Also include events by date if no section times set
           {
-            OR: [
-              { mainStartTime: { gte: now, lte: twoWeeksFromNow } },
-              { prelimStartTime: { gte: now, lte: twoWeeksFromNow } },
-              { earlyPrelimStartTime: { gte: now, lte: twoWeeksFromNow } }
-            ]
+            date: { gte: now, lte: twoWeeksFromNow },
+            mainStartTime: null,
+            prelimStartTime: null,
+            earlyPrelimStartTime: null
           }
         ]
       },
@@ -255,13 +261,32 @@ export async function scheduleAllUpcomingEvents(): Promise<number> {
 
     console.log(`[Event Scheduler] Found ${upcomingEvents.length} upcoming events`);
 
-    // Log by promotion
-    const ufcCount = upcomingEvents.filter(e => e.promotion === 'UFC').length;
-    const matchroomCount = upcomingEvents.filter(e => e.promotion?.includes('Matchroom')).length;
-    const oktagonCount = upcomingEvents.filter(e => e.promotion?.toLowerCase().includes('oktagon')).length;
-    if (ufcCount > 0) console.log(`   - UFC: ${ufcCount}`);
-    if (matchroomCount > 0) console.log(`   - Matchroom: ${matchroomCount}`);
-    if (oktagonCount > 0) console.log(`   - OKTAGON: ${oktagonCount}`);
+    // Group events by tracker type for logging
+    const liveTrackerEvents = upcomingEvents.filter(e => getTrackerType(e.promotion) !== 'time-based');
+    const timeBasedEvents = upcomingEvents.filter(e => getTrackerType(e.promotion) === 'time-based');
+
+    // Log counts by tracker type
+    if (liveTrackerEvents.length > 0) {
+      console.log(`   🔴 Live tracker events: ${liveTrackerEvents.length}`);
+      const ufcCount = liveTrackerEvents.filter(e => e.promotion === 'UFC').length;
+      const matchroomCount = liveTrackerEvents.filter(e => e.promotion?.toLowerCase().includes('matchroom')).length;
+      const oktagonCount = liveTrackerEvents.filter(e => e.promotion?.toLowerCase().includes('oktagon')).length;
+      if (ufcCount > 0) console.log(`      - UFC: ${ufcCount}`);
+      if (matchroomCount > 0) console.log(`      - Matchroom: ${matchroomCount}`);
+      if (oktagonCount > 0) console.log(`      - OKTAGON: ${oktagonCount}`);
+    }
+    if (timeBasedEvents.length > 0) {
+      console.log(`   ⏰ Time-based fallback events: ${timeBasedEvents.length}`);
+      // Group by promotion for logging
+      const promotionCounts: Record<string, number> = {};
+      timeBasedEvents.forEach(e => {
+        const p = e.promotion || 'Unknown';
+        promotionCounts[p] = (promotionCounts[p] || 0) + 1;
+      });
+      Object.entries(promotionCounts).forEach(([promo, count]) => {
+        console.log(`      - ${promo}: ${count}`);
+      });
+    }
 
     // Schedule each event
     for (const event of upcomingEvents) {
@@ -375,9 +400,12 @@ export async function safetyCheckEvents(): Promise<void> {
     });
 
     if (eventToTrack) {
-      const promotionType = getPromotionType(eventToTrack.promotion);
-      console.log(`[Event Scheduler] Safety check found event to track: ${eventToTrack.name} (${promotionType})`);
-      await startEventTracking(eventToTrack.id, eventToTrack.name, getEventUrl(eventToTrack), promotionType);
+      const trackerType = getPromotionType(eventToTrack.promotion);
+      // Safety check only applies to live tracker events (time-based events use scheduled timers)
+      if (trackerType !== 'time-based') {
+        console.log(`[Event Scheduler] Safety check found event to track: ${eventToTrack.name} (${trackerType})`);
+        await startEventTracking(eventToTrack.id, eventToTrack.name, getEventUrl(eventToTrack), trackerType);
+      }
     } else {
       console.log('[Event Scheduler] Safety check: No events need tracking\n');
     }
@@ -391,18 +419,29 @@ export async function safetyCheckEvents(): Promise<void> {
  * Cancel all scheduled timers (for graceful shutdown)
  */
 export function cancelAllScheduledEvents(): void {
-  console.log(`[Event Scheduler] Cancelling ${scheduledTimers.size} scheduled events`);
+  console.log(`[Event Scheduler] Cancelling ${scheduledTimers.size} scheduled live tracker events`);
 
   for (const [eventId, timer] of scheduledTimers.entries()) {
     clearTimeout(timer);
   }
 
   scheduledTimers.clear();
+
+  // Also cancel time-based timers
+  cancelAllTimeBasedTimers();
 }
 
 /**
  * Get info about currently scheduled events
  */
-export function getScheduledEventsInfo(): Array<{ eventId: string }> {
-  return Array.from(scheduledTimers.keys()).map(eventId => ({ eventId }));
+export function getScheduledEventsInfo(): {
+  liveTrackerEvents: Array<{ eventId: string }>;
+  timeBasedEvents: Array<{ eventId: string; timerCount: number }>;
+} {
+  const { getTimeBasedTimersInfo } = require('./timeBasedFightStatusUpdater');
+
+  return {
+    liveTrackerEvents: Array.from(scheduledTimers.keys()).map(eventId => ({ eventId })),
+    timeBasedEvents: getTimeBasedTimersInfo(),
+  };
 }

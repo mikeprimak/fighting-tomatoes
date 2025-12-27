@@ -69,11 +69,31 @@ When switching between work locations (different WiFi networks), update the dev 
 | **Notifications** | ✅ Complete | `services/notificationRuleEngine.ts`, `routes/notifications.ts` |
 | **Image Storage (R2)** | ✅ Complete | `services/imageStorage.ts` |
 | **Live Event Tracker** | ✅ Complete | `services/liveEventTracker.ts`, `services/ufcLiveParser.ts` |
+| **Time-Based Fallback** | ✅ Complete | `services/timeBasedFightStatusUpdater.ts`, `config/liveTrackerConfig.ts` |
 | **Push Notifications** | ✅ Complete | FCM V1, EAS builds |
 | **Pre-Event Scheduler** | ✅ Complete | `services/notificationScheduler.ts` |
 | **UFC Scraper** | ✅ Complete | `services/scrapeAllUFCData.js` |
 | **ONE FC Scraper** | ✅ Complete | `services/scrapeAllOneFCData.js` |
 | **Promotion Logos** | ✅ Complete | `components/PromotionLogo.tsx` |
+
+### Live Event Tracking Strategy
+
+Promotions are handled differently based on whether they have a working live event tracker:
+
+| Promotion | Strategy | How Fights Become Ratable |
+|-----------|----------|---------------------------|
+| UFC | 🔴 Live Tracker | Individually as each fight completes (real-time scraping) |
+| Matchroom | 🔴 Live Tracker | Individually as each fight completes |
+| OKTAGON | 🔴 Live Tracker | Individually as each fight completes |
+| BKFC, PFL, ONE, etc. | ⏰ Time-Based | All fights in section become complete at section start time |
+
+**Time-Based Fallback Logic:**
+- At `earlyPrelimStartTime` → All "Early Prelims" fights marked complete
+- At `prelimStartTime` → All "Prelims" fights marked complete
+- At `mainStartTime` → All "Main Card" fights marked complete
+- If no section times → All fights marked complete at `event.date`
+
+**To promote a new org to live tracking:** Add it to `PROMOTION_TRACKER_CONFIG` in `config/liveTrackerConfig.ts`
 
 ## Recent Features (Summary)
 
