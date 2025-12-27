@@ -307,7 +307,7 @@ export default function SettingsScreen() {
           </View>
 
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-            Get a notification before events with the most hyped fights.
+            Get notified a few hours before hyped fights.
           </Text>
         </View>
 
