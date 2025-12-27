@@ -438,12 +438,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Update user data in state and storage
-      console.log('=== refreshUserData ===');
-      console.log('Response data:', JSON.stringify(data, null, 2));
-      console.log('User avatar from response:', data.user?.avatar);
       setUser(data.user);
       await AsyncStorage.setItem('userData', JSON.stringify(data.user));
-      console.log('User saved to AsyncStorage');
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }

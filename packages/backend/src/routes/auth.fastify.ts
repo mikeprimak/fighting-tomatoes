@@ -37,7 +37,12 @@ export async function authRoutes(fastify: FastifyInstance) {
         required: ['email', 'password'],
         properties: {
           email: { type: 'string', format: 'email' },
-          password: { type: 'string', minLength: 6 },
+          password: {
+            type: 'string',
+            minLength: 12,
+            pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{12,}$',
+            description: 'Password must be at least 12 characters with uppercase, lowercase, number, and special character'
+          },
           firstName: { type: 'string' },
           lastName: { type: 'string' },
         },
@@ -92,6 +97,14 @@ export async function authRoutes(fastify: FastifyInstance) {
         return reply.code(400).send({
           error: 'Email and password are required',
           code: 'VALIDATION_ERROR',
+        });
+      }
+
+      // Validate password strength (12+ chars, uppercase, lowercase, number, special char)
+      if (password.length < 12 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/.test(password)) {
+        return reply.code(400).send({
+          error: 'Password must be at least 12 characters with uppercase, lowercase, number, and special character',
+          code: 'PASSWORD_WEAK',
         });
       }
 
@@ -2012,8 +2025,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         required: ['token'],
         properties: {
           token: { type: 'string' },
-          password: { type: 'string', minLength: 8 },
-          newPassword: { type: 'string', minLength: 8 },
+          password: { type: 'string', minLength: 12 },
+          newPassword: { type: 'string', minLength: 12 },
         },
       },
       response: {
@@ -2050,10 +2063,10 @@ export async function authRoutes(fastify: FastifyInstance) {
       // Type narrowing - actualPassword is definitely a string after the check above
       const validPassword = actualPassword as string;
 
-      // Validate password strength (uppercase, lowercase, number)
-      if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(validPassword)) {
+      // Validate password strength (12+ chars, uppercase, lowercase, number, special char)
+      if (validPassword.length < 12 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/.test(validPassword)) {
         return reply.code(400).send({
-          error: 'Password must contain uppercase, lowercase, and number',
+          error: 'Password must be at least 12 characters with uppercase, lowercase, number, and special character',
           code: 'PASSWORD_WEAK',
         });
       }
