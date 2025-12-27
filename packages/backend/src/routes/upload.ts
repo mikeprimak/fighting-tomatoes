@@ -44,19 +44,11 @@ export async function uploadRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Validate file type
-      const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!allowedMimeTypes.includes(data.mimetype)) {
-        return reply.status(400).send({
-          error: 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.',
-          code: 'INVALID_FILE_TYPE',
-        });
-      }
+      // Get file buffer for validation
+      const fileBuffer = await data.toBuffer();
 
       // Validate file size (max 5MB)
       const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-      const fileBuffer = await data.toBuffer();
-
       if (fileBuffer.length > maxSize) {
         return reply.status(400).send({
           error: 'File too large. Maximum size is 5MB.',
@@ -64,8 +56,23 @@ export async function uploadRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Generate unique filename
-      const fileExt = path.extname(data.filename);
+      // Validate actual file content by magic bytes (not just MIME type which can be spoofed)
+      const validation = await validateImageContent(fileBuffer);
+      if (!validation.valid) {
+        return reply.status(400).send({
+          error: 'Invalid file content. Only JPEG, PNG, GIF, and WebP images are allowed.',
+          code: 'INVALID_FILE_TYPE',
+        });
+      }
+
+      // Use detected type for extension (more secure than trusting client)
+      const extMap: Record<string, string> = {
+        'image/jpeg': '.jpg',
+        'image/png': '.png',
+        'image/gif': '.gif',
+        'image/webp': '.webp',
+      };
+      const fileExt = extMap[validation.detectedType!] || '.jpg';
       const fileName = `${randomUUID()}${fileExt}`;
       const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'profiles');
       const filePath = path.join(uploadDir, fileName);
@@ -97,7 +104,14 @@ export async function uploadRoutes(fastify: FastifyInstance) {
   });
 
   // Upload crew image
+  // Rate limit: 10 uploads per hour to prevent storage abuse
   fastify.post('/upload/crew-image', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '1 hour',
+      },
+    },
     preValidation: [fastify.authenticate],
   }, async (request: any, reply: any) => {
     try {
@@ -110,19 +124,11 @@ export async function uploadRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Validate file type
-      const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!allowedMimeTypes.includes(data.mimetype)) {
-        return reply.status(400).send({
-          error: 'Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.',
-          code: 'INVALID_FILE_TYPE',
-        });
-      }
+      // Get file buffer for validation
+      const fileBuffer = await data.toBuffer();
 
       // Validate file size (max 5MB)
       const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-      const fileBuffer = await data.toBuffer();
-
       if (fileBuffer.length > maxSize) {
         return reply.status(400).send({
           error: 'File too large. Maximum size is 5MB.',
@@ -130,8 +136,23 @@ export async function uploadRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Generate unique filename
-      const fileExt = path.extname(data.filename);
+      // Validate actual file content by magic bytes (not just MIME type which can be spoofed)
+      const validation = await validateImageContent(fileBuffer);
+      if (!validation.valid) {
+        return reply.status(400).send({
+          error: 'Invalid file content. Only JPEG, PNG, GIF, and WebP images are allowed.',
+          code: 'INVALID_FILE_TYPE',
+        });
+      }
+
+      // Use detected type for extension (more secure than trusting client)
+      const extMap: Record<string, string> = {
+        'image/jpeg': '.jpg',
+        'image/png': '.png',
+        'image/gif': '.gif',
+        'image/webp': '.webp',
+      };
+      const fileExt = extMap[validation.detectedType!] || '.jpg';
       const fileName = `${randomUUID()}${fileExt}`;
       const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'crews');
       const filePath = path.join(uploadDir, fileName);
