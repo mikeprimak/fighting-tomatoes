@@ -95,6 +95,31 @@ Promotions are handled differently based on whether they have a working live eve
 
 **To promote a new org to live tracking:** Add it to `PROMOTION_TRACKER_CONFIG` in `config/liveTrackerConfig.ts`
 
+### Fight-Specific Notifications
+
+Fight-specific notifications (notify when a specific fight starts) are **only available for orgs with live tracking**. This is because we can only know when a fight starts in real-time for orgs we actively scrape.
+
+| Notification Type | Availability | Notes |
+|-------------------|--------------|-------|
+| Manual fight follow | Live orgs only | Bell icon + menu toggle |
+| Fighter follow | Hidden | Re-enable when more orgs have live tracking |
+| Hyped fights (8.5+) | Hidden | Re-enable when more orgs have live tracking |
+| Pre-Event Report | All orgs | 6 hours before event, no live tracking needed |
+
+**How it works:**
+- Backend adds `hasLiveTracking: boolean` to event objects in API responses
+- UI conditionally shows notification controls based on this flag
+- Hidden features use `false &&` pattern for easy re-enablement
+
+**Files with hidden features (search for `false &&`):**
+- `fighter/[id].tsx` - "Notify Me" button
+- `settings.tsx` - Fighter Notifications section
+- `settings.tsx` - Hyped Fights section
+
+**Files with conditional display:**
+- `fight/[id].tsx` - Bell icon in header (shows only if `hasLiveTracking`)
+- `FightDetailsMenu.tsx` - Notification toggle section (shows only if `hasLiveTracking`)
+
 ## Recent Features (Summary)
 
 | Feature | Status | Branch |
