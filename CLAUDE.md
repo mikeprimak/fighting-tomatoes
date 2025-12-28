@@ -130,6 +130,63 @@ Fight-specific notifications (notify when a specific fight starts) are **only av
 | Nested Comments | 🚧 Testing | `feature/nested-comments` |
 | Performance Optimizations | ✅ Complete | `condensedevent1` |
 
+## Legacy Migration (fightingtomatoes.com → New App)
+
+**Status: ✅ COMPLETE** (as of 2025-12-27)
+
+### Migration Summary
+
+| Data Type | Count | Notes |
+|-----------|-------|-------|
+| **Events** | 1,427 | Includes banner images |
+| **Fighters** | 6,846 | Includes profile images (1,093) |
+| **Fights** | 13,517 | Order corrected (main event = orderOnCard 1) |
+| **Users** | 1,928 | All have `password: null` for claim flow |
+| **Ratings** | 65,061 | Synced from live MySQL |
+| **Reviews** | 760 | Migrated from SQL dumps |
+| **Tags** | 594 | Migrated from SQL dumps |
+
+### Next Steps (User Invitation)
+
+1. **Account Claim Flow is ready** - Users with `password: null` will be prompted to verify email and set new password
+2. **Send invitation emails** - Notify legacy users they can claim their accounts
+3. **Monitor claim rate** - Track how many users successfully migrate
+
+### Migration Scripts Location
+
+All scripts in `packages/backend/scripts/legacy-migration/`:
+
+| Script | Purpose |
+|--------|---------|
+| `00-migrate-fights.ts` | Import events, fighters, fights from SQL dumps |
+| `03-migrate-users.ts` | Import users with null passwords |
+| `04-migrate-ratings.ts` | Import ratings (uses fight-mapping.json) |
+| `05-migrate-reviews.ts` | Import reviews |
+| `06-migrate-tags.ts` | Import tags |
+| `07-verify-migration.ts` | Verify migration completeness |
+| `mysql-export/sync-all-ratings.js` | Sync ratings from LIVE MySQL |
+| `mysql-export/sync-missing-data.js` | Sync newer fights from LIVE MySQL |
+| `mysql-export/import-images.js` | Import fighter/event images |
+| `mysql-export/fix-fight-order.js` | Invert fight order (main event at top) |
+| `mysql-export/check-ratings.js` | Compare ratings between legacy/new |
+
+### Legacy MySQL Connection (for reference)
+
+```
+Host: 216.69.165.113:3306
+User: fotnadmin
+Databases: fightdb, userfightratings, userfightreviews, userfighttags
+```
+
+**Note**: User rating/review/tag tables are named by MD5 hash of user email address.
+
+### Key Fixes Applied
+
+1. **Fight order reversed** - Legacy used high orderOnCard for main event; fixed with `fix-fight-order.js`
+2. **SQL dumps outdated** - Sept 2024 dumps missing newer data; synced from live MySQL
+3. **Rating discrepancy** - Synced 1,956 additional ratings from live MySQL
+4. **Images missing** - Imported 1,093 fighter + 391 event images from live MySQL
+
 ## Development Guidelines
 
 ### TypeScript
