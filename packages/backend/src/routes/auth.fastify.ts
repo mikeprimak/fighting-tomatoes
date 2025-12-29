@@ -612,6 +612,10 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       const decoded = jwt.verify(token, JWT_SECRET) as any;
 
+      // Get optional org filter from query params
+      const { orgs } = request.query as { orgs?: string };
+      const orgFilter = orgs ? orgs.split(',').map(o => o.trim().toUpperCase()) : [];
+
       const user = await fastify.prisma.user.findUnique({
         where: { id: decoded.userId },
         select: {
@@ -630,7 +634,16 @@ export async function authRoutes(fastify: FastifyInstance) {
           level: true,
           ratings: {
             select: {
-              rating: true
+              rating: true,
+              fight: {
+                select: {
+                  event: {
+                    select: {
+                      promotion: true
+                    }
+                  }
+                }
+              }
             }
           },
           predictions: {
@@ -642,7 +655,12 @@ export async function authRoutes(fastify: FastifyInstance) {
                 select: {
                   isComplete: true,
                   winner: true,
-                  method: true
+                  method: true,
+                  event: {
+                    select: {
+                      promotion: true
+                    }
+                  }
                 }
               }
             }
@@ -657,25 +675,42 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Helper to check if promotion matches org filter
+      const matchesOrgFilter = (promotion: string | null): boolean => {
+        if (orgFilter.length === 0) return true; // No filter = show all
+        const promo = (promotion || '').toUpperCase();
+        return orgFilter.some(org => {
+          const orgWithUnderscore = org.replace(/ /g, '_');
+          return promo.includes(org) || promo.includes(orgWithUnderscore);
+        });
+      };
+
+      // Filter ratings by org
+      const filteredRatings = user.ratings.filter(r => matchesOrgFilter(r.fight?.event?.promotion));
+
       // Calculate average rating
       request.log.info('[GET /profile] User ratings count: ' + user.ratings.length);
-      request.log.info('[GET /profile] User ratings: ' + JSON.stringify(user.ratings.slice(0, 3)));
+      request.log.info('[GET /profile] Filtered ratings count: ' + filteredRatings.length);
+      request.log.info('[GET /profile] Org filter: ' + JSON.stringify(orgFilter));
 
-      const averageRating = user.ratings.length > 0
-        ? user.ratings.reduce((sum, r) => sum + r.rating, 0) / user.ratings.length
+      const averageRating = filteredRatings.length > 0
+        ? filteredRatings.reduce((sum, r) => sum + r.rating, 0) / filteredRatings.length
         : 0;
 
       // Calculate rating distribution
       const ratingDistribution: Record<string, number> = {};
-      user.ratings.forEach((r) => {
+      filteredRatings.forEach((r) => {
         const rating = Math.round(r.rating);
         ratingDistribution[rating] = (ratingDistribution[rating] || 0) + 1;
       });
 
       request.log.info('[GET /profile] Rating distribution keys: ' + Object.keys(ratingDistribution).length);
 
+      // Filter predictions by org
+      const filteredPredictions = user.predictions.filter(p => matchesOrgFilter(p.fight?.event?.promotion));
+
       // Calculate average hype (from predictions)
-      const predictionsWithRating = user.predictions.filter(p => p.predictedRating !== null && p.predictedRating > 0);
+      const predictionsWithRating = filteredPredictions.filter(p => p.predictedRating !== null && p.predictedRating > 0);
       const averageHype = predictionsWithRating.length > 0
         ? predictionsWithRating.reduce((sum, p) => sum + (p.predictedRating || 0), 0) / predictionsWithRating.length
         : 0;
@@ -687,8 +722,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         hypeDistribution[rating] = (hypeDistribution[rating] || 0) + 1;
       });
 
-      // Calculate prediction statistics
-      const predictionsWithWinner = user.predictions.filter(p => p.predictedWinner);
+      // Calculate prediction statistics (also filtered by org)
+      const predictionsWithWinner = filteredPredictions.filter(p => p.predictedWinner);
       // Only count fights that are complete and have a decisive winner (not draw/nc)
       const completedPredictions = predictionsWithWinner.filter(p =>
         p.fight.isComplete &&
@@ -698,7 +733,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       );
       const correctWinnerPredictions = completedPredictions.filter(p => p.predictedWinner === p.fight.winner);
 
-      const predictionsWithMethod = user.predictions.filter(p => p.predictedWinner && p.predictedMethod);
+      const predictionsWithMethod = filteredPredictions.filter(p => p.predictedWinner && p.predictedMethod);
       const completedMethodPredictions = predictionsWithMethod.filter(p =>
         p.fight.isComplete &&
         p.fight.winner &&
@@ -736,6 +771,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.code(200).send({
         user: {
           ...userWithoutArrays,
+          // Override totalRatings with filtered count when org filter is active
+          totalRatings: orgFilter.length > 0 ? filteredRatings.length : userWithoutArrays.totalRatings,
           averageRating: Number(averageRating.toFixed(1)),
           averageHype: Number(averageHype.toFixed(1)),
           totalHype: predictionsWithRating.length,
@@ -976,7 +1013,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         select: {
           id: true,
           name: true,
-          date: true
+          date: true,
+          promotion: true
         },
         orderBy: {
           date: lastEventOnly ? 'desc' : 'asc'
@@ -1013,7 +1051,8 @@ export async function authRoutes(fastify: FastifyInstance) {
                 select: {
                   id: true,
                   name: true,
-                  date: true
+                  date: true,
+                  promotion: true
                 }
               }
             }
@@ -1033,6 +1072,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         eventId: string,
         eventName: string,
         eventDate: Date,
+        promotion: string | null,
         correct: number,
         incorrect: number
       }>();
@@ -1042,6 +1082,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           eventId: event.id,
           eventName: event.name,
           eventDate: event.date,
+          promotion: event.promotion,
           correct: 0,
           incorrect: 0
         });
@@ -1058,6 +1099,7 @@ export async function authRoutes(fastify: FastifyInstance) {
             eventId: event.id,
             eventName: event.name,
             eventDate: event.date,
+            promotion: event.promotion,
             correct: 0,
             incorrect: 0
           });

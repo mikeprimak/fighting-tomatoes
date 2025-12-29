@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,16 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../store/AuthContext';
+import { useOrgFilter } from '../../store/OrgFilterContext';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { CustomAlert } from '../../components/CustomAlert';
 import { CommentCard, PreFightCommentCard } from '../../components';
+import OrgFilterTabs from '../../components/OrgFilterTabs';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import { api, apiService } from '../../services/api';
 import * as Haptics from 'expo-haptics';
@@ -25,6 +27,7 @@ interface EventAccuracy {
   eventId: string;
   eventName: string;
   eventDate: string;
+  promotion?: string;
   correct: number;
   incorrect: number;
 }
@@ -40,10 +43,13 @@ interface TopReview {
   isReply: boolean;
   fight: {
     id: string;
+    isComplete?: boolean;
+    hasStarted?: boolean;
     fighter1Name: string;
     fighter2Name: string;
     eventName: string;
     eventDate: string;
+    promotion?: string;
   };
 }
 
@@ -59,12 +65,15 @@ interface TopPreflightComment {
   isReply: boolean;
   fight: {
     id: string;
+    isComplete?: boolean;
+    hasStarted?: boolean;
     fighter1Id: string;
     fighter2Id: string;
     fighter1Name: string;
     fighter2Name: string;
     eventName: string;
     eventDate: string;
+    promotion?: string;
   };
 }
 
@@ -77,6 +86,15 @@ const getOrdinalSuffix = (n: number): string => {
 
 export default function ProfileScreen() {
   const { user, logout, refreshUserData, isAuthenticated } = useAuth();
+  const { selectedOrgs, filterByPromotion } = useOrgFilter();
+
+  // Refresh user data when org filter changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      const orgsArray = Array.from(selectedOrgs);
+      refreshUserData(orgsArray.length > 0 ? orgsArray : undefined);
+    }
+  }, [selectedOrgs, isAuthenticated]);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { alertState, showConfirm, showError, hideAlert } = useCustomAlert();
@@ -149,43 +167,33 @@ export default function ProfileScreen() {
     }
   }, [user?.id, timeFilter]);
 
-  // Fetch user's top upvoted reviews
-  useEffect(() => {
-    const fetchTopReviews = async () => {
-      try {
-        const data = await api.getMyTopReviews(3);
-        if (data && data.reviews) {
-          setTopReviews(data);
+  // Fetch user's top upvoted reviews and comments when screen comes into focus
+  // This ensures data is fresh after user navigates back from other screens
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        if (!user) return;
+
+        try {
+          const [reviewsData, commentsData] = await Promise.all([
+            api.getMyTopReviews(3),
+            api.getMyTopPreflightComments(3),
+          ]);
+
+          if (reviewsData && reviewsData.reviews) {
+            setTopReviews(reviewsData);
+          }
+          if (commentsData && commentsData.comments) {
+            setTopPreflightComments(commentsData);
+          }
+        } catch (error) {
+          console.log('Error fetching profile comments:', error);
         }
-      } catch (error) {
-        // Silently fail - endpoint may not exist yet
-        console.log('Top reviews not available:', error);
-      }
-    };
+      };
 
-    if (user) {
-      fetchTopReviews();
-    }
-  }, [user?.id]);
-
-  // Fetch user's top upvoted pre-flight comments
-  useEffect(() => {
-    const fetchTopPreflightComments = async () => {
-      try {
-        const data = await api.getMyTopPreflightComments(3);
-        if (data && data.comments) {
-          setTopPreflightComments(data);
-        }
-      } catch (error) {
-        // Silently fail - endpoint may not exist yet
-        console.log('Top pre-flight comments not available:', error);
-      }
-    };
-
-    if (user) {
-      fetchTopPreflightComments();
-    }
-  }, [user?.id]);
+      fetchData();
+    }, [user?.id])
+  );
 
   // Auto-refresh user data if averageRating or averageHype is missing (from old cached data)
   // OR if distributions are empty (to get real data)
@@ -287,6 +295,45 @@ export default function ProfileScreen() {
   };
 
   const styles = createStyles(colors);
+
+  // Filter prediction accuracy data by org
+  const filteredPredictionAccuracy = useMemo(() => {
+    if (selectedOrgs.size === 0) return predictionAccuracy;
+    const filteredEvents = predictionAccuracy.accuracyByEvent.filter(event =>
+      filterByPromotion(event.promotion)
+    );
+    const totalCorrect = filteredEvents.reduce((sum, e) => sum + e.correct, 0);
+    const totalIncorrect = filteredEvents.reduce((sum, e) => sum + e.incorrect, 0);
+    return {
+      accuracyByEvent: filteredEvents,
+      totalCorrect,
+      totalIncorrect,
+    };
+  }, [predictionAccuracy, selectedOrgs.size, filterByPromotion]);
+
+  // Filter reviews by org
+  const filteredTopReviews = useMemo(() => {
+    if (selectedOrgs.size === 0) return topReviews;
+    const filteredReviews = topReviews.reviews.filter(review =>
+      filterByPromotion(review.fight?.promotion)
+    );
+    return {
+      reviews: filteredReviews,
+      totalWithUpvotes: filteredReviews.length,
+    };
+  }, [topReviews, selectedOrgs.size, filterByPromotion]);
+
+  // Filter pre-flight comments by org
+  const filteredTopPreflightComments = useMemo(() => {
+    if (selectedOrgs.size === 0) return topPreflightComments;
+    const filteredComments = topPreflightComments.comments.filter(comment =>
+      filterByPromotion(comment.fight?.promotion)
+    );
+    return {
+      comments: filteredComments,
+      totalWithUpvotes: filteredComments.length,
+    };
+  }, [topPreflightComments, selectedOrgs.size, filterByPromotion]);
 
   // Render star rating display (out of 10) with heatmap colors
   // Rounds to nearest whole number
@@ -399,6 +446,9 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      {/* Organization Filter Tabs */}
+      <OrgFilterTabs />
+
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Predictions Section */}
         <SectionContainer
@@ -409,9 +459,11 @@ export default function ProfileScreen() {
           containerBgColorDark="rgba(34, 197, 94, 0.05)"
           containerBgColorLight="rgba(34, 197, 94, 0.08)"
         >
-          {(predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect) === 0 ? (
+          {(filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect) === 0 ? (
             <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
-              Make fight predictions on the "Upcoming" screen. Check in after the event to see how you did!
+              {selectedOrgs.size > 0
+                ? `No predictions for ${Array.from(selectedOrgs).join(' or ')} events`
+                : 'Make fight predictions on the "Upcoming" screen. Check in after the event to see how you did!'}
             </Text>
           ) : (
             <>
@@ -447,12 +499,12 @@ export default function ProfileScreen() {
                   <Text style={[styles.predictionLabel, { color: colors.text }]}>Prediction{'\n'}Accuracy</Text>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
-                      {(predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect) > 0
-                        ? `${Math.round((predictionAccuracy.totalCorrect / (predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect)) * 100)}%`
+                      {(filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect) > 0
+                        ? `${Math.round((filteredPredictionAccuracy.totalCorrect / (filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect)) * 100)}%`
                         : '—'}
                     </Text>
                     <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-                      ({predictionAccuracy.totalCorrect}/{predictionAccuracy.totalCorrect + predictionAccuracy.totalIncorrect})
+                      ({filteredPredictionAccuracy.totalCorrect}/{filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect})
                     </Text>
                   </View>
                 </View>
@@ -486,9 +538,9 @@ export default function ProfileScreen() {
 
               {/* Prediction Accuracy Chart */}
               <PredictionAccuracyChart
-                data={predictionAccuracy.accuracyByEvent}
-                totalCorrect={predictionAccuracy.totalCorrect}
-                totalIncorrect={predictionAccuracy.totalIncorrect}
+                data={filteredPredictionAccuracy.accuracyByEvent}
+                totalCorrect={filteredPredictionAccuracy.totalCorrect}
+                totalIncorrect={filteredPredictionAccuracy.totalIncorrect}
               />
             </>
           )}
@@ -515,7 +567,9 @@ export default function ProfileScreen() {
           <View style={{ height: 10 }} />
           {!user?.totalRatings ? (
             <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
-              Rate how much you liked fights on the "Past Events" screen.
+              {selectedOrgs.size > 0
+                ? `No ratings for ${Array.from(selectedOrgs).join(' or ')} fights`
+                : 'Rate how much you liked fights on the "Past Events" screen.'}
             </Text>
           ) : (
             <View>
@@ -551,7 +605,7 @@ export default function ProfileScreen() {
                 <FontAwesome name="comments" size={18} color={colors.text} />
                 <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, textTransform: 'uppercase', letterSpacing: 2 }}>My Comments</Text>
               </View>
-              {topReviews?.reviews && topReviews.reviews.length > 0 && (
+              {filteredTopReviews?.reviews && filteredTopReviews.reviews.length > 0 && (
                 <TouchableOpacity
                   onPress={() => router.push('/activity/my-comments' as any)}
                   style={{ position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center', gap: 4 }}
@@ -561,13 +615,15 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               )}
             </View>
-            {!topReviews?.reviews || topReviews.reviews.length === 0 ? (
+            {!filteredTopReviews?.reviews || filteredTopReviews.reviews.length === 0 ? (
               <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
-                Write comments on completed fights. Your most upvoted comments will appear here!
+                {selectedOrgs.size > 0
+                  ? `No comments for ${Array.from(selectedOrgs).join(' or ')} fights`
+                  : 'Write comments on completed fights. Your most upvoted comments will appear here!'}
               </Text>
             ) : (
               <View>
-                {topReviews.reviews.map((review) => (
+                {filteredTopReviews.reviews.map((review) => (
                   <View key={review.id} style={{ marginBottom: 8 }}>
                     <CommentCard
                       comment={{
@@ -584,7 +640,7 @@ export default function ProfileScreen() {
                           eventName: review.fight.eventName,
                         } : undefined,
                       }}
-                      onPress={() => router.push(`/fight/${review.fight?.id}` as any)}
+                      onPress={() => router.push(`/fight/${review.fight?.id}?mode=completed` as any)}
                       onUpvote={() => handleUpvote(review.fightId, review.id)}
                       isUpvoting={upvotingReviewId === review.id}
                       isAuthenticated={isAuthenticated}
@@ -619,7 +675,9 @@ export default function ProfileScreen() {
           <View style={{ height: 10 }} />
           {!user?.totalHype ? (
             <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
-              Choose how Hyped you are for upcoming fights on the "Upcoming" screen. You'll see your data here.
+              {selectedOrgs.size > 0
+                ? `No hype ratings for ${Array.from(selectedOrgs).join(' or ')} fights`
+                : 'Choose how Hyped you are for upcoming fights on the "Upcoming" screen. You\'ll see your data here.'}
             </Text>
           ) : (
             <View>
@@ -665,7 +723,7 @@ export default function ProfileScreen() {
                 <FontAwesome name="comments" size={18} color={colors.text} />
                 <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, textTransform: 'uppercase', letterSpacing: 2 }}>My Comments</Text>
               </View>
-              {topPreflightComments?.comments && topPreflightComments.comments.length > 0 && (
+              {filteredTopPreflightComments?.comments && filteredTopPreflightComments.comments.length > 0 && (
                 <TouchableOpacity
                   onPress={() => router.push('/activity/my-preflight-comments' as any)}
                   style={{ position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center', gap: 4 }}
@@ -675,13 +733,15 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               )}
             </View>
-            {!topPreflightComments?.comments || topPreflightComments.comments.length === 0 ? (
+            {!filteredTopPreflightComments?.comments || filteredTopPreflightComments.comments.length === 0 ? (
               <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
-                Write comments on upcoming fights. Your most upvoted comments will appear here!
+                {selectedOrgs.size > 0
+                  ? `No hype comments for ${Array.from(selectedOrgs).join(' or ')} fights`
+                  : 'Write comments on upcoming fights. Your most upvoted comments will appear here!'}
               </Text>
             ) : (
               <View>
-                {topPreflightComments.comments.map((comment) => (
+                {filteredTopPreflightComments.comments.map((comment) => (
                   <View key={comment.id} style={{ marginBottom: 8 }}>
                     <PreFightCommentCard
                       comment={{
@@ -703,7 +763,7 @@ export default function ProfileScreen() {
                       fighter2Id={comment.fight?.fighter2Id}
                       fighter1Name={comment.fight?.fighter1Name}
                       fighter2Name={comment.fight?.fighter2Name}
-                      onPress={() => router.push(`/fight/${comment.fight?.id}` as any)}
+                      onPress={() => router.push(`/fight/${comment.fight?.id}${comment.fight?.isComplete ? '?mode=completed' : ''}` as any)}
                       onUpvote={() => handleUpvotePreflight(comment.fightId, comment.id)}
                       isUpvoting={upvotingPreflightId === comment.id}
                       isAuthenticated={isAuthenticated}

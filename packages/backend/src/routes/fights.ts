@@ -3913,6 +3913,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
                   id: true,
                   name: true,
                   date: true,
+                  promotion: true,
                 },
               },
             },
@@ -3932,10 +3933,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
         isReply: !!review.parentReviewId,
         fight: {
           id: review.fight.id,
+          isComplete: review.fight.isComplete,
+          hasStarted: review.fight.hasStarted,
           fighter1Name: `${review.fight.fighter1.firstName} ${review.fight.fighter1.lastName}`,
           fighter2Name: `${review.fight.fighter2.firstName} ${review.fight.fighter2.lastName}`,
           eventName: review.fight.event.name,
           eventDate: review.fight.event.date,
+          promotion: review.fight.event.promotion,
         },
       }));
 
@@ -4090,6 +4094,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
           fight: {
             select: {
               id: true,
+              isComplete: true,
+              hasStarted: true,
               fighter1: {
                 select: {
                   id: true,
@@ -4109,6 +4115,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
                   id: true,
                   name: true,
                   date: true,
+                  promotion: true,
                 },
               },
               // Include user's prediction for this fight
@@ -4140,12 +4147,15 @@ export async function fightRoutes(fastify: FastifyInstance) {
           isReply: !!comment.parentCommentId,
           fight: {
             id: comment.fight.id,
+            isComplete: comment.fight.isComplete,
+            hasStarted: comment.fight.hasStarted,
             fighter1Id: comment.fight.fighter1.id,
             fighter2Id: comment.fight.fighter2.id,
             fighter1Name: `${comment.fight.fighter1.firstName} ${comment.fight.fighter1.lastName}`,
             fighter2Name: `${comment.fight.fighter2.firstName} ${comment.fight.fighter2.lastName}`,
             eventName: comment.fight.event.name,
             eventDate: comment.fight.event.date,
+            promotion: comment.fight.event.promotion,
           },
         };
       });

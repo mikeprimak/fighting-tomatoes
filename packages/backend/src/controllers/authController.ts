@@ -839,7 +839,8 @@ export class AuthController {
                 select: {
                   id: true,
                   name: true,
-                  date: true
+                  date: true,
+                  promotion: true
                 }
               }
             }
@@ -859,6 +860,7 @@ export class AuthController {
         eventId: string,
         eventName: string,
         eventDate: Date,
+        promotion: string | null,
         correct: number,
         incorrect: number
       }>()
@@ -872,6 +874,7 @@ export class AuthController {
             eventId: event.id,
             eventName: event.name,
             eventDate: event.date,
+            promotion: event.promotion,
             correct: 0,
             incorrect: 0
           })

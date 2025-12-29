@@ -47,7 +47,7 @@ interface AuthContextType {
   register: (userData: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
-  refreshUserData: () => Promise<void>;
+  refreshUserData: (orgs?: string[]) => Promise<void>;
 }
 
 interface RegisterData {
@@ -89,12 +89,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!user && !!accessToken;
 
   // Internal refresh function for use in effects
-  const refreshUserDataInternal = async () => {
+  const refreshUserDataInternal = async (orgs?: string[]) => {
     try {
       const token = await secureStorage.getItem('accessToken');
       if (!token) return;
 
-      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+      // Build URL with optional org filter
+      let url = `${API_BASE_URL}/auth/profile`;
+      if (orgs && orgs.length > 0) {
+        url += `?orgs=${orgs.join(',')}`;
+      }
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -102,7 +108,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
       if (response.ok && data.user) {
         setUser(data.user);
-        await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+        // Only save to storage if no filter is active (preserve full data)
+        if (!orgs || orgs.length === 0) {
+          await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+        }
       }
     } catch (error) {
       console.error('Error refreshing user data:', error);
@@ -423,7 +432,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const refreshUserData = async () => {
+  const refreshUserData = async (orgs?: string[]) => {
     try {
       const token = await secureStorage.getItem('accessToken');
 
@@ -432,7 +441,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+      // Build URL with optional org filter
+      let url = `${API_BASE_URL}/auth/profile`;
+      if (orgs && orgs.length > 0) {
+        url += `?orgs=${orgs.join(',')}`;
+      }
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -446,9 +461,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Update user data in state and storage
+      // Update user data in state
       setUser(data.user);
-      await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+      // Only save to storage if no filter is active (preserve full data)
+      if (!orgs || orgs.length === 0) {
+        await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+      }
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }

@@ -8,10 +8,8 @@ import {
   Image,
   StatusBar,
   TouchableOpacity,
-  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -19,8 +17,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { FightDisplayCard, EventBannerCard } from '../../../components';
+import OrgFilterTabs from '../../../components/OrgFilterTabs';
 import { useAuth } from '../../../store/AuthContext';
 import { useNotification } from '../../../store/NotificationContext';
+import { useOrgFilter } from '../../../store/OrgFilterContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 // Number of events to load initially and per page
@@ -56,13 +56,6 @@ const getPlaceholderImage = (eventId: string) => {
   const index = lastCharCode % images.length;
   return images[index];
 };
-
-// Available organizations for filtering
-const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'MATCHROOM', 'TOP RANK', 'GOLDEN BOY'] as const;
-type Organization = typeof ORGANIZATIONS[number];
-
-// AsyncStorage key for persisting filter preference
-const ORG_FILTER_STORAGE_KEY = 'events_org_filter';
 
 // Pure formatting functions - defined at module level for stable references
 const formatDate = (dateString: string) => {
@@ -190,41 +183,10 @@ export default function UpcomingEventsScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { preEventMessage, setPreEventMessage } = useNotification();
-
-  // Organization filter state - empty set means "ALL" (show everything)
-  const [selectedOrgs, setSelectedOrgs] = useState<Set<Organization>>(new Set());
+  const { selectedOrgs, filterEventsByOrg } = useOrgFilter();
 
   // Ref to FlatList for scrolling to top on filter change
   const flatListRef = useRef<FlatList>(null);
-
-  // Load saved organization filter on mount
-  useEffect(() => {
-    const loadSavedFilter = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(ORG_FILTER_STORAGE_KEY);
-        if (saved) {
-          const orgs = JSON.parse(saved) as Organization[];
-          setSelectedOrgs(new Set(orgs));
-        }
-      } catch (error) {
-        console.error('[Events] Error loading saved org filter:', error);
-      }
-    };
-    loadSavedFilter();
-  }, []);
-
-  // Save organization filter when it changes
-  useEffect(() => {
-    const saveFilter = async () => {
-      try {
-        const orgsArray = Array.from(selectedOrgs);
-        await AsyncStorage.setItem(ORG_FILTER_STORAGE_KEY, JSON.stringify(orgsArray));
-      } catch (error) {
-        console.error('[Events] Error saving org filter:', error);
-      }
-    };
-    saveFilter();
-  }, [selectedOrgs]);
 
   // Check AsyncStorage for pending notification message on mount
   useEffect(() => {
@@ -311,46 +273,15 @@ export default function UpcomingEventsScreen() {
 
   // Filter events by selected organizations
   const upcomingEvents = React.useMemo(() => {
-    if (selectedOrgs.size === 0) {
-      // "ALL" selected - show everything
-      return sortedEvents;
-    }
-    return sortedEvents.filter((event: Event) => {
-      const eventPromotion = event.promotion?.toUpperCase() || '';
-      return Array.from(selectedOrgs).some(org => {
-        // Handle both space and underscore variants (e.g., "TOP RANK" matches "TOP_RANK")
-        const orgWithUnderscore = org.replace(/ /g, '_');
-        return eventPromotion.includes(org) || eventPromotion.includes(orgWithUnderscore);
-      });
-    });
-  }, [sortedEvents, selectedOrgs]);
+    return filterEventsByOrg(sortedEvents);
+  }, [sortedEvents, filterEventsByOrg]);
 
-  // Handler for organization filter tap
-  const handleOrgPress = useCallback((org: Organization | 'ALL') => {
-    if (org === 'ALL') {
-      // Clear all selections to show all events
-      setSelectedOrgs(new Set());
-    } else {
-      setSelectedOrgs(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(org)) {
-          // Remove if already selected
-          newSet.delete(org);
-        } else {
-          // Add to selection
-          newSet.add(org);
-        }
-        return newSet;
-      });
-    }
-    // Scroll to top when filter changes
+  // Scroll to top when filter changes
+  const handleFilterChange = useCallback(() => {
     setTimeout(() => {
       flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
     }, 50);
   }, []);
-
-  // Check if "ALL" should be highlighted (when no specific orgs selected)
-  const isAllSelected = selectedOrgs.size === 0;
 
   // Handler for loading more events when reaching end of list
   const handleLoadMore = useCallback(() => {
@@ -428,7 +359,7 @@ export default function UpcomingEventsScreen() {
         </Text>
       </View>
     );
-  }, [selectedOrgs, colors, styles, isFetching]);
+  }, [selectedOrgs.size, colors, styles, isFetching]);
 
   if (eventsLoading) {
     return (
@@ -447,47 +378,7 @@ export default function UpcomingEventsScreen() {
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
       {/* Organization Filter Tabs - Outside FlatList to preserve scroll position */}
-      <View style={styles.orgFilterTabsContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.orgFilterTabs}
-        >
-          {/* ALL Tab */}
-          <TouchableOpacity
-            style={[styles.orgFilterTab, isAllSelected && styles.orgFilterTabActive]}
-            onPress={() => handleOrgPress('ALL')}
-          >
-            <Text style={[styles.orgFilterTabText, isAllSelected && styles.orgFilterTabTextActive]}>
-              ALL
-            </Text>
-          </TouchableOpacity>
-
-          {/* Organization Tabs */}
-          {ORGANIZATIONS.map(org => {
-            const isSelected = isAllSelected || selectedOrgs.has(org);
-            return (
-              <TouchableOpacity
-                key={org}
-                style={[styles.orgFilterTab, isSelected && styles.orgFilterTabActive]}
-                onPress={() => handleOrgPress(org)}
-              >
-                <Text style={[styles.orgFilterTabText, isSelected && styles.orgFilterTabTextActive]}>
-                  {org}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-        {/* Fade gradient to indicate more content */}
-        <LinearGradient
-          colors={['transparent', colors.card]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.scrollFadeGradient}
-          pointerEvents="none"
-        />
-      </View>
+      <OrgFilterTabs onFilterChange={handleFilterChange} />
 
       <FlatList
         ref={flatListRef}
@@ -921,46 +812,6 @@ const createStyles = (colors: any) => StyleSheet.create({
   moreFightsText: {
     fontSize: 13,
     fontStyle: 'italic',
-  },
-  orgFilterTabsContainer: {
-    backgroundColor: colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    position: 'relative',
-  },
-  scrollFadeGradient: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    bottom: 0,
-    width: 40,
-  },
-  orgFilterTabs: {
-    flexDirection: 'row',
-    paddingLeft: 16,
-    paddingRight: 36,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  orgFilterTab: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  orgFilterTabActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  orgFilterTabText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  orgFilterTabTextActive: {
-    color: '#000000',
   },
   emptyContainer: {
     paddingVertical: 40,

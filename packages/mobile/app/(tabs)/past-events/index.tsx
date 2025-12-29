@@ -1,4 +1,4 @@
-import React, { useCallback, memo, useState } from 'react';
+import React, { useCallback, memo, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,9 @@ import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { useAuth } from '../../../store/AuthContext';
 import { useSearch } from '../../../store/SearchContext';
+import { useOrgFilter } from '../../../store/OrgFilterContext';
 import CompletedFightCard from '../../../components/fight-cards/CompletedFightCard';
+import OrgFilterTabs from '../../../components/OrgFilterTabs';
 import { EventBannerCard } from '../../../components';
 
 // Number of events to load initially and per page
@@ -288,9 +290,11 @@ export default function PastEventsScreen() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { isSearchVisible, hideSearch } = useSearch();
+  const { selectedOrgs, filterEventsByOrg, filterByPromotion } = useOrgFilter();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('recent');
   const [topRatedPeriod, setTopRatedPeriod] = useState<TimePeriod>('week');
+  const flatListRef = useRef<FlatList>(null);
 
   const handleSearch = () => {
     Keyboard.dismiss();
@@ -339,11 +343,11 @@ export default function PastEventsScreen() {
   });
 
   // Flatten all pages of events into a single array (already sorted by backend - most recent first)
-  // Deduplicate events by ID in case of pagination overlap
+  // Deduplicate events by ID in case of pagination overlap, then filter by org
   const pastEvents = React.useMemo(() => {
     const allEvents = eventsData?.pages.flatMap(page => page.events) || [];
     const seen = new Set<string>();
-    return allEvents.filter((event: Event) => {
+    const dedupedEvents = allEvents.filter((event: Event) => {
       if (seen.has(event.id)) {
         console.warn('[PastEvents] Duplicate event filtered:', event.id, event.name);
         return false;
@@ -351,7 +355,8 @@ export default function PastEventsScreen() {
       seen.add(event.id);
       return true;
     });
-  }, [eventsData?.pages]);
+    return filterEventsByOrg(dedupedEvents);
+  }, [eventsData?.pages, filterEventsByOrg]);
 
   // Handler for loading more events when reaching end of list
   const handleLoadMore = useCallback(() => {
@@ -501,7 +506,20 @@ export default function PastEventsScreen() {
 
   // Determine loading state and data based on view mode
   const isLoading = viewMode === 'recent' ? eventsLoading : topRatedLoading;
-  const topRatedData = topRatedFights?.data || [];
+
+  // Filter top rated fights by org
+  const topRatedData = React.useMemo(() => {
+    const fights = topRatedFights?.data || [];
+    if (selectedOrgs.size === 0) return fights;
+    return fights.filter((fight: any) => filterByPromotion(fight.event?.promotion));
+  }, [topRatedFights?.data, selectedOrgs.size, filterByPromotion]);
+
+  // Scroll to top when filter changes
+  const handleFilterChange = useCallback(() => {
+    setTimeout(() => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    }, 50);
+  }, []);
 
   // Empty component that shows loading or empty state
   const ListEmptyComponent = useCallback(() => {
@@ -515,14 +533,19 @@ export default function PastEventsScreen() {
         </View>
       );
     }
+    const orgMessage = selectedOrgs.size > 0
+      ? ` for ${Array.from(selectedOrgs).join(' or ')}`
+      : '';
     return (
       <View style={styles.emptyContainer}>
         <Text style={[styles.noEventsText, { color: colors.textSecondary }]}>
-          {viewMode === 'recent' ? 'No past events' : 'No top rated fights found for this period'}
+          {viewMode === 'recent'
+            ? `No past events${orgMessage}`
+            : `No top rated fights found${orgMessage} for this period`}
         </Text>
       </View>
     );
-  }, [isLoading, viewMode, colors, styles]);
+  }, [isLoading, viewMode, colors, styles, selectedOrgs.size]);
 
   // Use appropriate data and render function based on view mode
   const listData = viewMode === 'recent' ? pastEvents : topRatedData;
@@ -532,7 +555,12 @@ export default function PastEventsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+
+      {/* Organization Filter Tabs */}
+      <OrgFilterTabs onFilterChange={handleFilterChange} />
+
       <FlatList
+        ref={flatListRef}
         data={listData}
         renderItem={renderItem}
         keyExtractor={listKeyExtractor}

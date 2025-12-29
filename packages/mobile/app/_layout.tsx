@@ -11,6 +11,7 @@ import { VerificationProvider } from '../store/VerificationContext';
 import { PredictionAnimationProvider } from '../store/PredictionAnimationContext';
 import { NotificationProvider } from '../store/NotificationContext';
 import { SearchProvider } from '../store/SearchContext';
+import { OrgFilterProvider } from '../store/OrgFilterContext';
 import { Colors } from '../constants/Colors';
 import { NotificationHandler } from '../components/NotificationHandler';
 
@@ -101,6 +102,7 @@ function RootLayoutNav() {
           <PredictionAnimationProvider>
             <NotificationProvider>
               <SearchProvider>
+              <OrgFilterProvider>
               <ThemeProvider value={colorScheme === 'dark' ? customDarkTheme : customLightTheme}>
                 <NotificationHandler />
               <Stack
@@ -131,6 +133,7 @@ function RootLayoutNav() {
                 />
                 </Stack>
               </ThemeProvider>
+              </OrgFilterProvider>
               </SearchProvider>
             </NotificationProvider>
           </PredictionAnimationProvider>
