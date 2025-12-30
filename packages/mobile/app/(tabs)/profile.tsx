@@ -460,7 +460,7 @@ export default function ProfileScreen() {
           containerBgColorLight="rgba(34, 197, 94, 0.08)"
         >
           {(filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect) === 0 ? (
-            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
               {selectedOrgs.size > 0
                 ? `No predictions for ${Array.from(selectedOrgs).join(' or ')} events`
                 : 'Make fight predictions on the "Upcoming" screen. Check in after the event to see how you did!'}
@@ -566,7 +566,7 @@ export default function ProfileScreen() {
         >
           <View style={{ height: 10 }} />
           {!user?.totalRatings ? (
-            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
               {selectedOrgs.size > 0
                 ? `No ratings for ${Array.from(selectedOrgs).join(' or ')} fights`
                 : 'Rate how much you liked fights on the "Past Events" screen.'}
@@ -616,7 +616,7 @@ export default function ProfileScreen() {
               )}
             </View>
             {!filteredTopReviews?.reviews || filteredTopReviews.reviews.length === 0 ? (
-              <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
                 {selectedOrgs.size > 0
                   ? `No comments for ${Array.from(selectedOrgs).join(' or ')} fights`
                   : 'Write comments on completed fights. Your most upvoted comments will appear here!'}
@@ -674,7 +674,7 @@ export default function ProfileScreen() {
         >
           <View style={{ height: 10 }} />
           {!user?.totalHype ? (
-            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
               {selectedOrgs.size > 0
                 ? `No hype ratings for ${Array.from(selectedOrgs).join(' or ')} fights`
                 : 'Choose how Hyped you are for upcoming fights on the "Upcoming" screen. You\'ll see your data here.'}
@@ -734,7 +734,7 @@ export default function ProfileScreen() {
               )}
             </View>
             {!filteredTopPreflightComments?.comments || filteredTopPreflightComments.comments.length === 0 ? (
-              <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
                 {selectedOrgs.size > 0
                   ? `No hype comments for ${Array.from(selectedOrgs).join(' or ')} fights`
                   : 'Write comments on upcoming fights. Your most upvoted comments will appear here!'}
