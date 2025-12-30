@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, useColorScheme, Pressable } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Text, StyleSheet, useColorScheme, Pressable, ScrollView } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { router } from 'expo-router';
 
@@ -21,9 +21,11 @@ interface PredictionAccuracyChartProps {
  * Diverging Bar Chart showing prediction accuracy per event
  * Green bars go up for correct predictions
  * Red bars go down for incorrect predictions
+ * Scrollable horizontally when more than 12 events
  */
-// Maximum number of events to show in chart (most recent)
-const MAX_EVENTS_SHOWN = 12;
+const MAX_VISIBLE_EVENTS = 12;
+const BAR_WIDTH = 20;
+const BAR_GAP = 8;
 
 export default function PredictionAccuracyChart({
   data,
@@ -32,6 +34,7 @@ export default function PredictionAccuracyChart({
 }: PredictionAccuracyChartProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const scrollViewRef = useRef<ScrollView>(null);
 
   if (data.length === 0) {
     return (
@@ -43,21 +46,17 @@ export default function PredictionAccuracyChart({
     );
   }
 
-  // Limit to most recent events for readability (data is sorted oldest to newest)
-  const displayData = data.length > MAX_EVENTS_SHOWN
-    ? data.slice(-MAX_EVENTS_SHOWN)
-    : data;
-  const hiddenEventCount = data.length - displayData.length;
-
-  // Find max value for scaling
+  // Find max value for scaling (use all data)
   const maxValue = Math.max(
-    ...displayData.map(d => Math.max(d.correct, d.incorrect)),
+    ...data.map(d => Math.max(d.correct, d.incorrect)),
     1
   );
 
   const barMaxHeight = 72; // Max height for bars in each direction (with padding)
-  // Ensure minimum bar width of 8px for visibility
-  const barWidth = Math.max(8, Math.min(20, (280 - (displayData.length - 1) * 4) / displayData.length));
+  const isScrollable = data.length > MAX_VISIBLE_EVENTS;
+
+  // Calculate content width for scrollable area
+  const contentWidth = data.length * BAR_WIDTH + (data.length - 1) * BAR_GAP + 16; // 16 for padding
 
   // Generate y-axis tick values (0, mid, max for each direction)
   const midValue = Math.ceil(maxValue / 2);
@@ -69,9 +68,9 @@ export default function PredictionAccuracyChart({
         Events
       </Text>
 
-      {/* Chart area */}
-      <View style={styles.chartContainer}>
-        {/* Y-axis with labels and tick numbers */}
+      {/* Chart area with fixed Y-axis and scrollable bars */}
+      <View style={styles.chartWrapper}>
+        {/* Y-axis with labels and tick numbers (fixed) */}
         <View style={styles.yAxisContainer}>
           {/* Correct label (rotated) */}
           <View style={[styles.yAxisLabelTop]}>
@@ -111,97 +110,115 @@ export default function PredictionAccuracyChart({
           </View>
         </View>
 
-        {/* Center line */}
-        <View style={[styles.centerLine, { backgroundColor: colors.border }]} />
+        {/* Scrollable chart area */}
+        <ScrollView
+          ref={scrollViewRef}
+          horizontal
+          showsHorizontalScrollIndicator={isScrollable}
+          scrollEnabled={isScrollable}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { width: isScrollable ? contentWidth : '100%' },
+          ]}
+        >
+          {/* Chart container with bars and labels */}
+          <View style={styles.chartContent}>
+            {/* Bars area */}
+            <View style={styles.chartContainer}>
+              {/* Center line */}
+              <View style={[styles.centerLine, { backgroundColor: colors.border }]} />
 
-        {/* Bars container */}
-        <View style={styles.barsContainer}>
-          {displayData.map((event, index) => {
-            const correctHeight = (event.correct / maxValue) * barMaxHeight;
-            const incorrectHeight = (event.incorrect / maxValue) * barMaxHeight;
+              {/* Bars container */}
+              <View style={styles.barsContainer}>
+                {data.map((event, index) => {
+                  const correctHeight = (event.correct / maxValue) * barMaxHeight;
+                  const incorrectHeight = (event.incorrect / maxValue) * barMaxHeight;
 
-            return (
-              <Pressable
-                key={event.eventId}
-                style={[styles.barColumn, { width: barWidth }]}
-                onPress={() => router.push(`/event/${event.eventId}`)}
-              >
-                {({ pressed }) => (
-                  <>
-                    {/* Correct (green) - goes up */}
-                    <View style={styles.upperSection}>
-                      {event.correct > 0 && (
-                        <View
-                          style={[
-                            styles.bar,
-                            styles.correctBar,
-                            { height: correctHeight, width: barWidth - 2 },
-                            pressed && { backgroundColor: '#22c55e' },
-                          ]}
-                        >
-                          <Text style={styles.barNumberTop}>{event.correct}</Text>
-                        </View>
+                  return (
+                    <Pressable
+                      key={event.eventId}
+                      style={[styles.barColumn, { width: BAR_WIDTH }]}
+                      onPress={() => router.push(`/event/${event.eventId}`)}
+                    >
+                      {({ pressed }) => (
+                        <>
+                          {/* Correct (green) - goes up */}
+                          <View style={styles.upperSection}>
+                            {event.correct > 0 && (
+                              <View
+                                style={[
+                                  styles.bar,
+                                  styles.correctBar,
+                                  { height: correctHeight, width: BAR_WIDTH - 2 },
+                                  pressed && { backgroundColor: '#22c55e' },
+                                ]}
+                              >
+                                <Text style={styles.barNumberTop}>{event.correct}</Text>
+                              </View>
+                            )}
+                          </View>
+
+                          {/* Incorrect (red) - goes down */}
+                          <View style={styles.lowerSection}>
+                            {event.incorrect > 0 && (
+                              <View
+                                style={[
+                                  styles.bar,
+                                  styles.incorrectBar,
+                                  { height: incorrectHeight, width: BAR_WIDTH - 2 },
+                                  pressed && { backgroundColor: '#dc2626' },
+                                ]}
+                              >
+                                <Text style={styles.barNumberBottom}>{event.incorrect}</Text>
+                              </View>
+                            )}
+                          </View>
+                        </>
                       )}
-                    </View>
-
-                    {/* Incorrect (red) - goes down */}
-                    <View style={styles.lowerSection}>
-                      {event.incorrect > 0 && (
-                        <View
-                          style={[
-                            styles.bar,
-                            styles.incorrectBar,
-                            { height: incorrectHeight, width: barWidth - 2 },
-                            pressed && { backgroundColor: '#dc2626' },
-                          ]}
-                        >
-                          <Text style={styles.barNumberBottom}>{event.incorrect}</Text>
-                        </View>
-                      )}
-                    </View>
-                  </>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Event labels - show names vertically */}
-      <View style={styles.labelsContainer}>
-        {displayData.map((event, index) => {
-          // Extract event label from name
-          // "UFC 310" -> "UFC 310", "UFC Fight Night: Tsarukyan vs Hooker" -> "Tsarukyan vs Hooker"
-          let label: string;
-          const numberMatch = event.eventName.match(/UFC\s+(\d+)/i);
-          if (numberMatch) {
-            // Numbered events: "UFC 310" -> "UFC 310"
-            label = `UFC ${numberMatch[1]}`;
-          } else {
-            // For "UFC Fight Night: X vs Y", extract "X vs Y"
-            const fightNightMatch = event.eventName.match(/:\s*(.+)$/);
-            if (fightNightMatch) {
-              label = fightNightMatch[1].trim();
-            } else {
-              // Fallback: remove "UFC" and "Fight Night" prefixes
-              label = event.eventName
-                .replace(/^UFC\s*/i, '')
-                .replace(/^Fight\s*Night\s*/i, '')
-                .trim() || event.eventName;
-            }
-          }
-
-          return (
-            <View key={event.eventId} style={[styles.labelWrapper, { width: barWidth }]}>
-              <Text
-                style={[styles.eventLabel, { color: colors.textSecondary, transform: [{ rotate: '-90deg' }] }]}
-                numberOfLines={1}
-              >
-                {label}
-              </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-          );
-        })}
+
+            {/* Event labels - show names vertically */}
+            <View style={styles.labelsContainer}>
+              {data.map((event, index) => {
+                // Extract event label from name
+                // "UFC 310" -> "UFC 310", "UFC Fight Night: Tsarukyan vs Hooker" -> "Tsarukyan vs Hooker"
+                let label: string;
+                const numberMatch = event.eventName.match(/UFC\s+(\d+)/i);
+                if (numberMatch) {
+                  // Numbered events: "UFC 310" -> "UFC 310"
+                  label = `UFC ${numberMatch[1]}`;
+                } else {
+                  // For "UFC Fight Night: X vs Y", extract "X vs Y"
+                  const fightNightMatch = event.eventName.match(/:\s*(.+)$/);
+                  if (fightNightMatch) {
+                    label = fightNightMatch[1].trim();
+                  } else {
+                    // Fallback: remove "UFC" and "Fight Night" prefixes
+                    label = event.eventName
+                      .replace(/^UFC\s*/i, '')
+                      .replace(/^Fight\s*Night\s*/i, '')
+                      .trim() || event.eventName;
+                  }
+                }
+
+                return (
+                  <View key={event.eventId} style={[styles.labelWrapper, { width: BAR_WIDTH }]}>
+                    <Text
+                      style={[styles.eventLabel, { color: colors.textSecondary, transform: [{ rotate: '-90deg' }] }]}
+                      numberOfLines={1}
+                    >
+                      {label}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        </ScrollView>
       </View>
     </View>
   );
@@ -225,14 +242,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 4,
   },
+  chartWrapper: {
+    flexDirection: 'row',
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  chartContent: {
+    flex: 1,
+  },
   chartContainer: {
     height: 176, // 88px up + 88px down
     position: 'relative',
-    flexDirection: 'row',
   },
   yAxisContainer: {
     width: 36,
-    height: '100%',
+    height: 176, // Match chart height
     alignItems: 'flex-end',
     justifyContent: 'center',
     paddingRight: 4,
@@ -282,7 +307,7 @@ const styles = StyleSheet.create({
   },
   centerLine: {
     position: 'absolute',
-    left: 36,
+    left: 0,
     right: 0,
     top: 88,
     height: 1,
@@ -348,7 +373,7 @@ const styles = StyleSheet.create({
   labelsContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    paddingLeft: 44, // 36px for y-axis + 8px padding (matches bar gap)
+    paddingLeft: 8, // Match bars padding
     marginTop: 8,
     gap: 8,
     height: 80,
