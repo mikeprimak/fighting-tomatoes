@@ -22,6 +22,9 @@ interface PredictionAccuracyChartProps {
  * Green bars go up for correct predictions
  * Red bars go down for incorrect predictions
  */
+// Maximum number of events to show in chart (most recent)
+const MAX_EVENTS_SHOWN = 12;
+
 export default function PredictionAccuracyChart({
   data,
   totalCorrect,
@@ -40,14 +43,21 @@ export default function PredictionAccuracyChart({
     );
   }
 
+  // Limit to most recent events for readability (data is sorted oldest to newest)
+  const displayData = data.length > MAX_EVENTS_SHOWN
+    ? data.slice(-MAX_EVENTS_SHOWN)
+    : data;
+  const hiddenEventCount = data.length - displayData.length;
+
   // Find max value for scaling
   const maxValue = Math.max(
-    ...data.map(d => Math.max(d.correct, d.incorrect)),
+    ...displayData.map(d => Math.max(d.correct, d.incorrect)),
     1
   );
 
   const barMaxHeight = 72; // Max height for bars in each direction (with padding)
-  const barWidth = Math.min(20, (280 - (data.length - 1) * 4) / data.length); // Adaptive width
+  // Ensure minimum bar width of 8px for visibility
+  const barWidth = Math.max(8, Math.min(20, (280 - (displayData.length - 1) * 4) / displayData.length));
 
   // Generate y-axis tick values (0, mid, max for each direction)
   const midValue = Math.ceil(maxValue / 2);
@@ -106,7 +116,7 @@ export default function PredictionAccuracyChart({
 
         {/* Bars container */}
         <View style={styles.barsContainer}>
-          {data.map((event, index) => {
+          {displayData.map((event, index) => {
             const correctHeight = (event.correct / maxValue) * barMaxHeight;
             const incorrectHeight = (event.incorrect / maxValue) * barMaxHeight;
 
@@ -159,7 +169,7 @@ export default function PredictionAccuracyChart({
 
       {/* Event labels - show names vertically */}
       <View style={styles.labelsContainer}>
-        {data.map((event, index) => {
+        {displayData.map((event, index) => {
           // Extract event label from name
           // "UFC 310" -> "UFC 310", "UFC Fight Night: Tsarukyan vs Hooker" -> "Tsarukyan vs Hooker"
           let label: string;
