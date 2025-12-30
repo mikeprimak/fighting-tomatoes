@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, useColorScheme, Pressable, ScrollView } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { router } from 'expo-router';
@@ -35,6 +35,16 @@ export default function PredictionAccuracyChart({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const scrollViewRef = useRef<ScrollView>(null);
+
+  // Scroll to the end (most recent events) when component mounts or data changes
+  useEffect(() => {
+    if (data.length > MAX_VISIBLE_EVENTS && scrollViewRef.current) {
+      // Small delay to ensure content is rendered
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: false });
+      }, 100);
+    }
+  }, [data.length]);
 
   if (data.length === 0) {
     return (
