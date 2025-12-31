@@ -373,38 +373,6 @@ export default function PastEventsScreen() {
   const keyExtractor = useCallback((item: Event) => item.id, []);
   const fightKeyExtractor = useCallback((item: any) => item.id, []);
 
-  // Header component with search bar only (tabs moved outside FlatList for sticky behavior)
-  const ListHeaderComponent = isSearchVisible ? (
-    <View style={styles.searchContainer}>
-      <View style={styles.searchBarWrapper}>
-        <View style={styles.searchInputContainer}>
-          <FontAwesome
-            name="search"
-            size={18}
-            color={colors.textSecondary}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search fighters, events..."
-            placeholderTextColor={colors.textSecondary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-            autoFocus={true}
-          />
-        </View>
-        <TouchableOpacity
-          style={styles.searchButton}
-          onPress={handleSearch}
-          disabled={searchQuery.trim().length < 2}
-        >
-          <Text style={styles.searchButtonText}>Search</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  ) : null;
 
   // Determine loading state and data based on view mode
   const isLoading = viewMode === 'recent' ? eventsLoading : topRatedLoading;
@@ -479,6 +447,39 @@ export default function PastEventsScreen() {
         </TouchableOpacity>
       </View>}
 
+      {/* Search Bar - Shown outside FlatList when search is visible */}
+      {isSearchVisible && (
+        <View style={styles.searchContainer}>
+          <View style={styles.searchBarWrapper}>
+            <View style={styles.searchInputContainer}>
+              <FontAwesome
+                name="search"
+                size={18}
+                color={colors.textSecondary}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search fighters, events..."
+                placeholderTextColor={colors.textSecondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
+                autoFocus={true}
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={handleSearch}
+              disabled={searchQuery.trim().length < 2}
+            >
+              <Text style={styles.searchButtonText}>Search</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* Time Period Filter - Sticky below view mode tabs (only for Top Rated), hidden when search is visible */}
       {!isSearchVisible && viewMode === 'top-rated' && (
         <View style={styles.timePeriodTabs}>
@@ -530,7 +531,6 @@ export default function PastEventsScreen() {
         data={listData}
         renderItem={renderItem}
         keyExtractor={listKeyExtractor}
-        ListHeaderComponent={ListHeaderComponent}
         ListFooterComponent={viewMode === 'recent' ? ListFooterComponent : null}
         ListEmptyComponent={ListEmptyComponent}
         contentContainerStyle={styles.scrollContainer}
@@ -700,7 +700,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   searchContainer: {
     backgroundColor: colors.card,
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
