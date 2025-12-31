@@ -76,37 +76,6 @@ const getPlaceholderImage = (eventId: string) => {
   return images[index];
 };
 
-// Parse event name into two lines
-const parseEventName = (eventName: string) => {
-  const colonMatch = eventName.match(/^([^:]+):\s*(.+)$/);
-  if (colonMatch) {
-    return {
-      line1: colonMatch[1].trim(),
-      line2: colonMatch[2].replace(/\./g, '').trim(),
-    };
-  }
-
-  const fightNightMatch = eventName.match(/^(UFC Fight Night)\s+(.+)$/i);
-  if (fightNightMatch) {
-    return {
-      line1: fightNightMatch[1],
-      line2: fightNightMatch[2].replace(/\./g, '').trim(),
-    };
-  }
-
-  const numberedMatch = eventName.match(/^(UFC\s+\d+)\s*(.*)$/i);
-  if (numberedMatch) {
-    return {
-      line1: numberedMatch[1],
-      line2: numberedMatch[2].replace(/\./g, '').trim() || '',
-    };
-  }
-
-  return {
-    line1: eventName,
-    line2: '',
-  };
-};
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -191,8 +160,6 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
     ? fights.filter((f: Fight) => f.orderOnCard > 5 && f.orderOnCard <= 9)
     : fights.filter((f: Fight) => f.orderOnCard > 5);
   const earlyPrelims = hasEarlyPrelims ? fights.filter((f: Fight) => f.orderOnCard > 9) : [];
-
-  const { line1, line2 } = parseEventName(event.name);
 
   const handleFightPress = (fight: Fight) => {
     router.push(`/fight/${fight.id}?mode=completed`);
@@ -290,7 +257,7 @@ export default function PastEventsScreen() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { isSearchVisible, hideSearch } = useSearch();
-  const { selectedOrgs, filterEventsByOrg, filterByPromotion } = useOrgFilter();
+  const { selectedOrgs } = useOrgFilter();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('recent');
   const [topRatedPeriod, setTopRatedPeriod] = useState<TimePeriod>('week');
@@ -303,7 +270,13 @@ export default function PastEventsScreen() {
     }
   };
 
+  // Convert selected orgs to comma-separated string for API
+  const promotionsFilter = selectedOrgs.size > 0
+    ? Array.from(selectedOrgs).join(',')
+    : undefined;
+
   // Fetch past events with fights included using infinite query for lazy loading
+  // Server-side filtering by promotion when filter is active
   const {
     data: eventsData,
     isLoading: eventsLoading,
@@ -311,13 +284,14 @@ export default function PastEventsScreen() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery(
-    ['pastEvents'],
+    ['pastEvents', promotionsFilter],
     async ({ pageParam = 1 }) => {
       return apiService.getEvents({
         type: 'past',
         includeFights: true,
         page: pageParam,
         limit: EVENTS_PER_PAGE,
+        promotions: promotionsFilter,
       });
     },
     {
@@ -332,10 +306,10 @@ export default function PastEventsScreen() {
     }
   );
 
-  // Fetch top rated fights
+  // Fetch top rated fights (with server-side promotion filtering)
   const { data: topRatedFights, isLoading: topRatedLoading } = useQuery({
-    queryKey: ['topRecentFights', isAuthenticated, topRatedPeriod],
-    queryFn: () => apiService.getTopRecentFights(topRatedPeriod),
+    queryKey: ['topRecentFights', isAuthenticated, topRatedPeriod, promotionsFilter],
+    queryFn: () => apiService.getTopRecentFights(topRatedPeriod, promotionsFilter),
     staleTime: 5 * 60 * 1000,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
@@ -343,11 +317,12 @@ export default function PastEventsScreen() {
   });
 
   // Flatten all pages of events into a single array (already sorted by backend - most recent first)
-  // Deduplicate events by ID in case of pagination overlap, then filter by org
+  // Deduplicate events by ID in case of pagination overlap
+  // Note: Filtering is now done server-side via promotions param
   const pastEvents = React.useMemo(() => {
-    const allEvents = eventsData?.pages.flatMap(page => page.events) || [];
+    const events = eventsData?.pages.flatMap(page => page.events) || [];
     const seen = new Set<string>();
-    const dedupedEvents = allEvents.filter((event: Event) => {
+    return events.filter((event: Event) => {
       if (seen.has(event.id)) {
         console.warn('[PastEvents] Duplicate event filtered:', event.id, event.name);
         return false;
@@ -355,8 +330,7 @@ export default function PastEventsScreen() {
       seen.add(event.id);
       return true;
     });
-    return filterEventsByOrg(dedupedEvents);
-  }, [eventsData?.pages, filterEventsByOrg]);
+  }, [eventsData?.pages]);
 
   // Handler for loading more events when reaching end of list
   const handleLoadMore = useCallback(() => {
@@ -399,120 +373,46 @@ export default function PastEventsScreen() {
   const keyExtractor = useCallback((item: Event) => item.id, []);
   const fightKeyExtractor = useCallback((item: any) => item.id, []);
 
-  // Header component with search bar and nav tabs
-  const ListHeaderComponent = (
-    <View>
-      {/* Search Bar - only shown when isSearchVisible is true */}
-      {isSearchVisible && (
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBarWrapper}>
-            <View style={styles.searchInputContainer}>
-              <FontAwesome
-                name="search"
-                size={18}
-                color={colors.textSecondary}
-                style={styles.searchIcon}
-              />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search fighters, events..."
-                placeholderTextColor={colors.textSecondary}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                onSubmitEditing={handleSearch}
-                returnKeyType="search"
-                autoFocus={true}
-              />
-            </View>
-            <TouchableOpacity
-              style={styles.searchButton}
-              onPress={handleSearch}
-              disabled={searchQuery.trim().length < 2}
-            >
-              <Text style={styles.searchButtonText}>Search</Text>
-            </TouchableOpacity>
-          </View>
+  // Header component with search bar only (tabs moved outside FlatList for sticky behavior)
+  const ListHeaderComponent = isSearchVisible ? (
+    <View style={styles.searchContainer}>
+      <View style={styles.searchBarWrapper}>
+        <View style={styles.searchInputContainer}>
+          <FontAwesome
+            name="search"
+            size={18}
+            color={colors.textSecondary}
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search fighters, events..."
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+            autoFocus={true}
+          />
         </View>
-      )}
-
-      {/* View Mode Tabs */}
-      <View style={styles.viewModeTabs}>
         <TouchableOpacity
-          style={[styles.viewModeTab, viewMode === 'recent' && styles.viewModeTabActive]}
-          onPress={() => setViewMode('recent')}
+          style={styles.searchButton}
+          onPress={handleSearch}
+          disabled={searchQuery.trim().length < 2}
         >
-          <Text style={[styles.viewModeTabText, viewMode === 'recent' && styles.viewModeTabTextActive]}>
-            Recent Events
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.viewModeTab, viewMode === 'top-rated' && styles.viewModeTabActive]}
-          onPress={() => setViewMode('top-rated')}
-        >
-          <Text style={[styles.viewModeTabText, viewMode === 'top-rated' && styles.viewModeTabTextActive]}>
-            Top Rated Fights
-          </Text>
+          <Text style={styles.searchButtonText}>Search</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Time Period Filter (only for Top Rated) */}
-      {viewMode === 'top-rated' && (
-        <View style={styles.timePeriodTabs}>
-          <TouchableOpacity
-            style={[styles.timePeriodTab, topRatedPeriod === 'week' && styles.timePeriodTabActive]}
-            onPress={() => setTopRatedPeriod('week')}
-          >
-            <Text style={[styles.timePeriodTabText, topRatedPeriod === 'week' && styles.timePeriodTabTextActive]}>
-              Past Week
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.timePeriodTab, topRatedPeriod === 'month' && styles.timePeriodTabActive]}
-            onPress={() => setTopRatedPeriod('month')}
-          >
-            <Text style={[styles.timePeriodTabText, topRatedPeriod === 'month' && styles.timePeriodTabTextActive]}>
-              Month
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.timePeriodTab, topRatedPeriod === '3months' && styles.timePeriodTabActive]}
-            onPress={() => setTopRatedPeriod('3months')}
-          >
-            <Text style={[styles.timePeriodTabText, topRatedPeriod === '3months' && styles.timePeriodTabTextActive]}>
-              3 Mo.
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.timePeriodTab, topRatedPeriod === 'year' && styles.timePeriodTabActive]}
-            onPress={() => setTopRatedPeriod('year')}
-          >
-            <Text style={[styles.timePeriodTabText, topRatedPeriod === 'year' && styles.timePeriodTabTextActive]}>
-              Year
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.timePeriodTab, topRatedPeriod === 'all' && styles.timePeriodTabActive]}
-            onPress={() => setTopRatedPeriod('all')}
-          >
-            <Text style={[styles.timePeriodTabText, topRatedPeriod === 'all' && styles.timePeriodTabTextActive]}>
-              All Time
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
     </View>
-  );
+  ) : null;
 
   // Determine loading state and data based on view mode
   const isLoading = viewMode === 'recent' ? eventsLoading : topRatedLoading;
 
-  // Filter top rated fights by org
+  // Top rated fights data (filtering is done server-side)
   const topRatedData = React.useMemo(() => {
-    const fights = topRatedFights?.data || [];
-    if (selectedOrgs.size === 0) return fights;
-    return fights.filter((fight: any) => filterByPromotion(fight.event?.promotion));
-  }, [topRatedFights?.data, selectedOrgs.size, filterByPromotion]);
+    return topRatedFights?.data || [];
+  }, [topRatedFights?.data]);
 
   // Scroll to top when filter changes
   const handleFilterChange = useCallback(() => {
@@ -556,8 +456,74 @@ export default function PastEventsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
-      {/* Organization Filter Tabs */}
-      <OrgFilterTabs onFilterChange={handleFilterChange} />
+      {/* Organization Filter Tabs - Hidden when search is visible */}
+      {!isSearchVisible && <OrgFilterTabs onFilterChange={handleFilterChange} />}
+
+      {/* View Mode Tabs - Sticky below org filter, hidden when search is visible */}
+      {!isSearchVisible && <View style={styles.viewModeTabs}>
+        <TouchableOpacity
+          style={[styles.viewModeTab, viewMode === 'recent' && styles.viewModeTabActive]}
+          onPress={() => setViewMode('recent')}
+        >
+          <Text style={[styles.viewModeTabText, viewMode === 'recent' && styles.viewModeTabTextActive]}>
+            Recent Events
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.viewModeTab, viewMode === 'top-rated' && styles.viewModeTabActive]}
+          onPress={() => setViewMode('top-rated')}
+        >
+          <Text style={[styles.viewModeTabText, viewMode === 'top-rated' && styles.viewModeTabTextActive]}>
+            Top Rated Fights
+          </Text>
+        </TouchableOpacity>
+      </View>}
+
+      {/* Time Period Filter - Sticky below view mode tabs (only for Top Rated), hidden when search is visible */}
+      {!isSearchVisible && viewMode === 'top-rated' && (
+        <View style={styles.timePeriodTabs}>
+          <TouchableOpacity
+            style={[styles.timePeriodTab, topRatedPeriod === 'week' && styles.timePeriodTabActive]}
+            onPress={() => setTopRatedPeriod('week')}
+          >
+            <Text style={[styles.timePeriodTabText, topRatedPeriod === 'week' && styles.timePeriodTabTextActive]}>
+              Past Week
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.timePeriodTab, topRatedPeriod === 'month' && styles.timePeriodTabActive]}
+            onPress={() => setTopRatedPeriod('month')}
+          >
+            <Text style={[styles.timePeriodTabText, topRatedPeriod === 'month' && styles.timePeriodTabTextActive]}>
+              Month
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.timePeriodTab, topRatedPeriod === '3months' && styles.timePeriodTabActive]}
+            onPress={() => setTopRatedPeriod('3months')}
+          >
+            <Text style={[styles.timePeriodTabText, topRatedPeriod === '3months' && styles.timePeriodTabTextActive]}>
+              3 Mo.
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.timePeriodTab, topRatedPeriod === 'year' && styles.timePeriodTabActive]}
+            onPress={() => setTopRatedPeriod('year')}
+          >
+            <Text style={[styles.timePeriodTabText, topRatedPeriod === 'year' && styles.timePeriodTabTextActive]}>
+              Year
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.timePeriodTab, topRatedPeriod === 'all' && styles.timePeriodTabActive]}
+            onPress={() => setTopRatedPeriod('all')}
+          >
+            <Text style={[styles.timePeriodTabText, topRatedPeriod === 'all' && styles.timePeriodTabTextActive]}>
+              All Time
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <FlatList
         ref={flatListRef}
