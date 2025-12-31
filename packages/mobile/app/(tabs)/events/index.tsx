@@ -145,36 +145,6 @@ const formatTimeUntil = (dateString: string) => {
   return `IN ${diffYears} YEARS`;
 };
 
-const parseEventName = (eventName: string) => {
-  const colonMatch = eventName.match(/^([^:]+):\s*(.+)$/);
-  if (colonMatch) {
-    return {
-      line1: colonMatch[1].trim(),
-      line2: colonMatch[2].replace(/\./g, '').trim(),
-    };
-  }
-
-  const fightNightMatch = eventName.match(/^(UFC Fight Night)\s+(.+)$/i);
-  if (fightNightMatch) {
-    return {
-      line1: fightNightMatch[1],
-      line2: fightNightMatch[2].replace(/\./g, '').trim(),
-    };
-  }
-
-  const numberedMatch = eventName.match(/^(UFC\s+\d+)\s*(.*)$/i);
-  if (numberedMatch) {
-    return {
-      line1: numberedMatch[1],
-      line2: numberedMatch[2].replace(/\./g, '').trim() || '',
-    };
-  }
-
-  return {
-    line1: eventName,
-    line2: '',
-  };
-};
 
 export default function UpcomingEventsScreen() {
   const colorScheme = useColorScheme();
@@ -183,10 +153,15 @@ export default function UpcomingEventsScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { preEventMessage, setPreEventMessage } = useNotification();
-  const { selectedOrgs, filterEventsByOrg } = useOrgFilter();
+  const { selectedOrgs } = useOrgFilter();
 
   // Ref to FlatList for scrolling to top on filter change
   const flatListRef = useRef<FlatList>(null);
+
+  // Convert selected orgs to comma-separated string for API
+  const promotionsFilter = selectedOrgs.size > 0
+    ? Array.from(selectedOrgs).join(',')
+    : undefined;
 
   // Check AsyncStorage for pending notification message on mount
   useEffect(() => {
@@ -216,6 +191,7 @@ export default function UpcomingEventsScreen() {
   );
 
   // Fetch upcoming events with fights included using infinite query for lazy loading
+  // Server-side filtering by promotion when filter is active
   const {
     data: eventsData,
     isLoading: eventsLoading,
@@ -224,13 +200,14 @@ export default function UpcomingEventsScreen() {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery(
-    ['upcomingEvents', isAuthenticated],
+    ['upcomingEvents', isAuthenticated, promotionsFilter],
     async ({ pageParam = 1 }) => {
       return apiService.getEvents({
         type: 'upcoming',
         includeFights: true,
         page: pageParam,
         limit: EVENTS_PER_PAGE,
+        promotions: promotionsFilter,
       });
     },
     {
@@ -263,18 +240,16 @@ export default function UpcomingEventsScreen() {
   const hasLiveEvent = allEvents.some((event: Event) => event.hasStarted && !event.isComplete);
 
   // Sort upcoming events (live events first, then by date)
-  const sortedEvents = [...allEvents].sort((a: Event, b: Event) => {
-    const aIsLive = a.hasStarted && !a.isComplete;
-    const bIsLive = b.hasStarted && !b.isComplete;
-    if (aIsLive && !bIsLive) return -1;
-    if (!aIsLive && bIsLive) return 1;
-    return new Date(a.date).getTime() - new Date(b.date).getTime();
-  });
-
-  // Filter events by selected organizations
+  // Note: Filtering is now done server-side via promotions param
   const upcomingEvents = React.useMemo(() => {
-    return filterEventsByOrg(sortedEvents);
-  }, [sortedEvents, filterEventsByOrg]);
+    return [...allEvents].sort((a: Event, b: Event) => {
+      const aIsLive = a.hasStarted && !a.isComplete;
+      const bIsLive = b.hasStarted && !b.isComplete;
+      if (aIsLive && !bIsLive) return -1;
+      if (!aIsLive && bIsLive) return 1;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+  }, [allEvents]);
 
   // Scroll to top when filter changes
   const handleFilterChange = useCallback(() => {
@@ -303,7 +278,6 @@ export default function UpcomingEventsScreen() {
       colors={colors}
       isAuthenticated={isAuthenticated}
       onFightPress={handleFightPress}
-      parseEventName={parseEventName}
       formatDate={formatDate}
       formatTime={formatTime}
       formatTimeUntil={formatTimeUntil}
@@ -361,25 +335,19 @@ export default function UpcomingEventsScreen() {
     );
   }, [selectedOrgs.size, colors, styles, isFetching]);
 
-  if (eventsLoading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
-        <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>Loading events...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
-      {/* Organization Filter Tabs - Outside FlatList to preserve scroll position */}
+      {/* Organization Filter Tabs - Always visible, even during loading */}
       <OrgFilterTabs onFilterChange={handleFilterChange} />
 
+      {eventsLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[styles.loadingText, { color: colors.text }]}>Loading events...</Text>
+        </View>
+      ) : (
       <FlatList
         ref={flatListRef}
         data={upcomingEvents}
@@ -399,6 +367,7 @@ export default function UpcomingEventsScreen() {
         maxToRenderPerBatch={10}
         initialNumToRender={5}
       />
+      )}
     </SafeAreaView>
   );
 }
@@ -410,7 +379,6 @@ const EventSection = memo(function EventSection({
   colors,
   isAuthenticated,
   onFightPress,
-  parseEventName,
   formatDate,
   formatTime,
   formatTimeUntil,
@@ -420,13 +388,11 @@ const EventSection = memo(function EventSection({
   colors: any;
   isAuthenticated: boolean;
   onFightPress: (fight: Fight) => void;
-  parseEventName: (name: string) => { line1: string; line2: string };
   formatDate: (date: string) => string;
   formatTime: (date: string) => string;
   formatTimeUntil: (date: string) => string;
   isFirstEvent: boolean;
 }) {
-  const { line1, line2 } = parseEventName(event.name);
   const isLive = event.hasStarted && !event.isComplete;
 
   // Use fights from event data (loaded via includeFights parameter)
