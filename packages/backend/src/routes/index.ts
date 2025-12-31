@@ -19,6 +19,18 @@ import { authenticateUser, requireEmailVerification } from '../middleware/auth';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
+
+// Organization filter groups - maps filter buttons to actual promotions
+// BOXING is an aggregate that includes multiple boxing promoters but excludes Dirty Boxing
+const ORG_FILTER_GROUPS: Record<string, { contains?: string[]; excludes?: string[] }> = {
+  'BOXING': {
+    contains: ['MATCHROOM', 'TOP RANK', 'TOP_RANK', 'GOLDEN BOY', 'GOLDEN_BOY', 'SHOWTIME', 'MOST VALUABLE', 'MVP BOXING', 'PBC', 'PREMIER BOXING', 'DAZN', 'ESPN BOXING'],
+    excludes: ['DIRTY'],
+  },
+  'DIRTY BOXING': {
+    contains: ['DIRTY BOXING'],
+  },
+};
 // import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
 
 export async function registerRoutes(fastify: FastifyInstance) {
@@ -152,6 +164,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
           page: { type: 'integer', minimum: 1, default: 1 },
           type: { type: 'string', enum: ['upcoming', 'past', 'all'], default: 'all' },
           includeFights: { type: 'boolean', default: false },
+          promotions: { type: 'string', description: 'Comma-separated list of promotions to filter by (e.g., "UFC,PFL,ONE")' },
         },
       },
       response: {
@@ -200,7 +213,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       },
     },
   }, async (request, reply) => {
-    const { limit = 20, page = 1, type = 'all', includeFights = false } = request.query as any;
+    const { limit = 20, page = 1, type = 'all', includeFights = false, promotions } = request.query as any;
     const skip = (page - 1) * limit;
     const userId = (request as any).user?.id;
 
@@ -215,6 +228,60 @@ export async function registerRoutes(fastify: FastifyInstance) {
         whereClause.isComplete = false;
       } else if (type === 'past') {
         whereClause.isComplete = true;
+      }
+
+      // Add promotions filter if provided
+      if (promotions && typeof promotions === 'string') {
+        const promotionList = promotions.split(',').map((p: string) => p.trim().toUpperCase());
+
+        // Build OR conditions for each requested promotion
+        const orConditions: any[] = [];
+        const excludeConditions: any[] = [];
+
+        for (const promo of promotionList) {
+          const group = ORG_FILTER_GROUPS[promo];
+          if (group) {
+            // This is a grouped filter (e.g., BOXING includes multiple promoters)
+            if (group.contains) {
+              for (const containsPromo of group.contains) {
+                // Don't convert underscores - add the pattern as-is
+                orConditions.push({
+                  promotion: {
+                    contains: containsPromo,
+                    mode: 'insensitive',
+                  },
+                });
+              }
+            }
+            if (group.excludes) {
+              for (const excludePromo of group.excludes) {
+                excludeConditions.push({
+                  promotion: {
+                    contains: excludePromo,
+                    mode: 'insensitive',
+                  },
+                });
+              }
+            }
+          } else {
+            // Standard filter - just match the promotion name
+            orConditions.push({
+              promotion: {
+                contains: promo.replace(/_/g, ' '),
+                mode: 'insensitive',
+              },
+            });
+          }
+        }
+
+        // Build the final where clause
+        if (orConditions.length > 0) {
+          whereClause.OR = orConditions;
+        }
+        // Add NOT conditions for excludes
+        if (excludeConditions.length > 0) {
+          whereClause.NOT = excludeConditions;
+        }
       }
 
       // Determine sort order based on type
