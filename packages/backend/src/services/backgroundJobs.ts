@@ -145,94 +145,104 @@ export function startBackgroundJobs(): void {
   console.log('[Background Jobs] Failsafe cleanup ENABLED - runs every hour');
 
   // ============================================
-  // ORGANIZATION SCRAPERS - Staggered at night EST
-  // Schedule: One every 30 minutes starting at 12:30am EST
+  // ORGANIZATION SCRAPERS - DAILY, SPREAD THROUGHOUT THE DAY
+  // Running all 7 scrapers back-to-back (30 min apart) caused OOM (>512MB)
+  // Solution: Spread scrapers 3 hours apart throughout the day
+  // This gives Node.js time to garbage collect between scrapers
   // Times are in UTC (EST + 5 hours)
   // ============================================
 
-  // BKFC: 12:30am EST = 5:30am UTC
-  bkfcScraperJob = cron.schedule('30 5 * * *', async () => {
+  // BKFC: Daily at 12:00am EST = 5:00am UTC
+  bkfcScraperJob = cron.schedule('0 5 * * *', async () => {
     console.log('[Background Jobs] Running daily BKFC scraper...');
     try {
       await runDailyBKFCScraper();
       await scheduleAllUpcomingEvents();
+      // Hint for garbage collection
+      if (global.gc) global.gc();
     } catch (error) {
       console.error('[Background Jobs] Daily BKFC scraper failed:', error);
     }
   });
-  console.log('[Background Jobs] Daily BKFC scraper ENABLED - runs at 12:30am EST (5:30am UTC)');
+  console.log('[Background Jobs] Daily BKFC scraper ENABLED - runs at 12:00am EST (5:00am UTC)');
 
-  // PFL: 1:00am EST = 6:00am UTC
-  pflScraperJob = cron.schedule('0 6 * * *', async () => {
+  // PFL: Daily at 3:00am EST = 8:00am UTC
+  pflScraperJob = cron.schedule('0 8 * * *', async () => {
     console.log('[Background Jobs] Running daily PFL scraper...');
     try {
       await runDailyPFLScraper();
       await scheduleAllUpcomingEvents();
+      if (global.gc) global.gc();
     } catch (error) {
       console.error('[Background Jobs] Daily PFL scraper failed:', error);
     }
   });
-  console.log('[Background Jobs] Daily PFL scraper ENABLED - runs at 1:00am EST (6:00am UTC)');
+  console.log('[Background Jobs] Daily PFL scraper ENABLED - runs at 3:00am EST (8:00am UTC)');
 
-  // ONE FC: 1:30am EST = 6:30am UTC
-  oneFCScraperJob = cron.schedule('30 6 * * *', async () => {
+  // ONE FC: Daily at 6:00am EST = 11:00am UTC
+  oneFCScraperJob = cron.schedule('0 11 * * *', async () => {
     console.log('[Background Jobs] Running daily ONE FC scraper...');
     try {
       await runDailyOneFCScraper();
       await scheduleAllUpcomingEvents();
+      if (global.gc) global.gc();
     } catch (error) {
       console.error('[Background Jobs] Daily ONE FC scraper failed:', error);
     }
   });
-  console.log('[Background Jobs] Daily ONE FC scraper ENABLED - runs at 1:30am EST (6:30am UTC)');
+  console.log('[Background Jobs] Daily ONE FC scraper ENABLED - runs at 6:00am EST (11:00am UTC)');
 
-  // Matchroom: 2:00am EST = 7:00am UTC
-  matchroomScraperJob = cron.schedule('0 7 * * *', async () => {
+  // Matchroom: Daily at 9:00am EST = 2:00pm UTC (14:00)
+  matchroomScraperJob = cron.schedule('0 14 * * *', async () => {
     console.log('[Background Jobs] Running daily Matchroom scraper...');
     try {
       await runDailyMatchroomScraper();
       await scheduleAllUpcomingEvents();
+      if (global.gc) global.gc();
     } catch (error) {
       console.error('[Background Jobs] Daily Matchroom scraper failed:', error);
     }
   });
-  console.log('[Background Jobs] Daily Matchroom scraper ENABLED - runs at 2:00am EST (7:00am UTC)');
+  console.log('[Background Jobs] Daily Matchroom scraper ENABLED - runs at 9:00am EST (2:00pm UTC)');
 
-  // Golden Boy: 2:30am EST = 7:30am UTC
-  goldenBoyScraperJob = cron.schedule('30 7 * * *', async () => {
+  // Golden Boy: Daily at 3:00pm EST = 8:00pm UTC (20:00)
+  goldenBoyScraperJob = cron.schedule('0 20 * * *', async () => {
     console.log('[Background Jobs] Running daily Golden Boy scraper...');
     try {
       await runDailyGoldenBoyScraper();
       await scheduleAllUpcomingEvents();
+      if (global.gc) global.gc();
     } catch (error) {
       console.error('[Background Jobs] Daily Golden Boy scraper failed:', error);
     }
   });
-  console.log('[Background Jobs] Daily Golden Boy scraper ENABLED - runs at 2:30am EST (7:30am UTC)');
+  console.log('[Background Jobs] Daily Golden Boy scraper ENABLED - runs at 3:00pm EST (8:00pm UTC)');
 
-  // Top Rank: 3:00am EST = 8:00am UTC
-  topRankScraperJob = cron.schedule('0 8 * * *', async () => {
+  // Top Rank: Daily at 6:00pm EST = 11:00pm UTC (23:00)
+  topRankScraperJob = cron.schedule('0 23 * * *', async () => {
     console.log('[Background Jobs] Running daily Top Rank scraper...');
     try {
       await runDailyTopRankScraper();
       await scheduleAllUpcomingEvents();
+      if (global.gc) global.gc();
     } catch (error) {
       console.error('[Background Jobs] Daily Top Rank scraper failed:', error);
     }
   });
-  console.log('[Background Jobs] Daily Top Rank scraper ENABLED - runs at 3:00am EST (8:00am UTC)');
+  console.log('[Background Jobs] Daily Top Rank scraper ENABLED - runs at 6:00pm EST (11:00pm UTC)');
 
-  // OKTAGON: 3:30am EST = 8:30am UTC
-  oktagonScraperJob = cron.schedule('30 8 * * *', async () => {
+  // OKTAGON: Daily at 9:00pm EST = 2:00am UTC next day
+  oktagonScraperJob = cron.schedule('0 2 * * *', async () => {
     console.log('[Background Jobs] Running daily OKTAGON scraper...');
     try {
       await runDailyOktagonScraper();
       await scheduleAllUpcomingEvents();
+      if (global.gc) global.gc();
     } catch (error) {
       console.error('[Background Jobs] Daily OKTAGON scraper failed:', error);
     }
   });
-  console.log('[Background Jobs] Daily OKTAGON scraper ENABLED - runs at 3:30am EST (8:30am UTC)');
+  console.log('[Background Jobs] Daily OKTAGON scraper ENABLED - runs at 9:00pm EST (2:00am UTC)');
 
   // DISABLED: Initial startup check (also disabled for memory constraints)
   // setTimeout(async () => {
