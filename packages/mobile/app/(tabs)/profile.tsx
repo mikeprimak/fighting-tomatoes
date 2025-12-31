@@ -128,9 +128,9 @@ export default function ProfileScreen() {
   const [upvotingPreflightId, setUpvotingPreflightId] = useState<string | null>(null);
 
   // Time filter state
-  const [timeFilter, setTimeFilter] = useState<string>('lastEvent');
+  const [timeFilter, setTimeFilter] = useState<string>('week');
   const timeFilterOptions = [
-    { key: 'lastEvent', label: 'Last Event' },
+    { key: 'week', label: 'Past Week' },
     { key: 'month', label: 'Month' },
     { key: '3months', label: '3 mo.' },
     { key: 'year', label: 'Year' },
