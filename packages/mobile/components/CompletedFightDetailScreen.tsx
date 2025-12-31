@@ -548,6 +548,7 @@ export default function CompletedFightDetailScreen({
     }
 
     // Return the frozen tags, but update counts from community data
+    // Sort by count descending so most popular tags appear first
     return frozenTagsRef.current.map(tag => {
       const communityTag = communityTags.find(ct => getTagId(ct.name) === tag.id);
       const isSelected = selectedTags.includes(tag.id);
@@ -555,7 +556,7 @@ export default function CompletedFightDetailScreen({
         ...tag,
         count: isSelected ? Math.max(1, communityTag?.count || 0) : (communityTag?.count || 0)
       };
-    });
+    }).sort((a, b) => b.count - a.count);
   }, [showNegativeTags, selectedTags, aggregateStats?.topTags]);
 
   // Keyboard event listeners for dynamic padding
