@@ -538,9 +538,14 @@ export default function CompletedFightDetailScreen({
   const frozenTagsRef = useRef<Array<{ id: string; name: string; count: number }>>([]);
   const lastNegativeStateRef = useRef<boolean | null>(null);
   const hadCommunityTagsRef = useRef<boolean>(false);
+  const selectedTagsRef = useRef<string[]>(selectedTags);
+
+  // Keep ref in sync with state (for use during regeneration)
+  selectedTagsRef.current = selectedTags;
 
   // Calculate available tags: only regenerate when crossing the positive/negative threshold
   // OR when community tags first become available (so we get sorted tags, not random filler)
+  // NOTE: selectedTags is NOT in dependencies to avoid recalculating on every tag toggle
   const availableTags = React.useMemo(() => {
     const communityTags = aggregateStats?.topTags || [];
     const effectiveRating = showNegativeTags ? 3 : 5;
@@ -558,22 +563,29 @@ export default function CompletedFightDetailScreen({
     if (shouldRegenerate) {
       lastNegativeStateRef.current = showNegativeTags;
       hadCommunityTagsRef.current = hasCommunityTags;
-      frozenTagsRef.current = getAvailableTagsForRating(effectiveRating, communityTags, selectedTags);
+      // Use ref to get current selectedTags without adding to dependencies
+      frozenTagsRef.current = getAvailableTagsForRating(effectiveRating, communityTags, selectedTagsRef.current);
     }
 
     // Return the frozen tags in their FROZEN ORDER (no re-sorting!)
-    // Just update counts: if user selected a tag, increment by 1
-    return frozenTagsRef.current.map(tag => {
+    return frozenTagsRef.current;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showNegativeTags, aggregateStats?.topTags]);
+
+  // Compute display tags with updated counts (this is cheap, just mapping over frozen tags)
+  // This updates when selectedTags changes but doesn't trigger the expensive regeneration
+  const displayTags = React.useMemo(() => {
+    const communityTags = aggregateStats?.topTags || [];
+    return availableTags.map(tag => {
       const communityTag = communityTags.find(ct => getTagId(ct.name) === tag.id);
       const baseCount = communityTag?.count || 0;
       const isSelected = selectedTags.includes(tag.id);
       return {
         ...tag,
-        // If selected, add 1 to community count (user's vote). Otherwise just show community count.
         count: isSelected ? baseCount + 1 : baseCount
       };
     });
-  }, [showNegativeTags, selectedTags, aggregateStats?.topTags]);
+  }, [availableTags, selectedTags, aggregateStats?.topTags]);
 
   // Keyboard event listeners for dynamic padding
   useEffect(() => {
@@ -1663,11 +1675,11 @@ export default function CompletedFightDetailScreen({
 
           {/* Tags Content */}
           {/* Tags stay in their current order - only reorder when rating tier changes */}
-          {availableTags.length > 0 && (() => {
+          {displayTags.length > 0 && (() => {
               return (
                 <View style={styles.inlineTagsSection}>
                   <View style={styles.inlineTagsContainer}>
-                    {availableTags.map((tag) => {
+                    {displayTags.map((tag) => {
                       const isSelected = selectedTags.includes(tag.id);
                       return (
                         <View key={tag.id} style={styles.tagWithBadge}>
