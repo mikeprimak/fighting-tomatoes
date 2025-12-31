@@ -514,18 +514,30 @@ export default function CompletedFightDetailScreen({
     }
   }, [reviewsData]);
 
-  // Store frozen tags - only regenerate when showNegativeTags changes
+  // Store frozen tags - only regenerate when showNegativeTags changes OR when community tags first load
   const frozenTagsRef = useRef<Array<{ id: string; name: string; count: number }>>([]);
   const lastNegativeStateRef = useRef<boolean | null>(null);
+  const hadCommunityTagsRef = useRef<boolean>(false);
 
   // Calculate available tags: only regenerate when crossing the positive/negative threshold
+  // OR when community tags first become available (so we get sorted tags, not random filler)
   const availableTags = React.useMemo(() => {
     const communityTags = aggregateStats?.topTags || [];
     const effectiveRating = showNegativeTags ? 3 : 5;
+    const hasCommunityTags = communityTags.length > 0;
 
-    // Only regenerate if this is the first load OR if showNegativeTags changed
-    if (lastNegativeStateRef.current === null || lastNegativeStateRef.current !== showNegativeTags) {
+    // Regenerate if:
+    // 1. First load (lastNegativeStateRef.current === null)
+    // 2. Threshold changed (showNegativeTags changed)
+    // 3. Community tags just loaded (hadCommunityTagsRef was false, now true)
+    const shouldRegenerate =
+      lastNegativeStateRef.current === null ||
+      lastNegativeStateRef.current !== showNegativeTags ||
+      (!hadCommunityTagsRef.current && hasCommunityTags);
+
+    if (shouldRegenerate) {
       lastNegativeStateRef.current = showNegativeTags;
+      hadCommunityTagsRef.current = hasCommunityTags;
       frozenTagsRef.current = getAvailableTagsForRating(effectiveRating, communityTags);
     }
 
