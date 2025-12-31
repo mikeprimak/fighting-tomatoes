@@ -239,9 +239,23 @@ const getAvailableTagsForRating = (
     eligibleTags = ALL_FIGHT_TAGS.filter(tag => tag.maxRating === 4);
   }
 
-  const MAX_TAGS = 12;
+  const MAX_TAGS = 10;
 
-  // 1. Get ALL community tags that match rating tier (sorted by count descending)
+  // 1. Always include user's selected tags (with their community counts if available)
+  const selectedTagObjects = ALL_FIGHT_TAGS.filter(tag => selectedTags.includes(tag.id)).map(tag => {
+    const communityTag = communityTags.find(ct => {
+      const frontendId = getTagId(ct.name);
+      return frontendId === tag.id;
+    });
+    // If selected, ensure count is at least 1 (to account for user's own vote)
+    return {
+      id: tag.id,
+      name: tag.name,
+      count: Math.max(1, communityTag?.count || 0)
+    };
+  });
+
+  // 2. Get top 14 community tags that match rating tier
   const eligibleTagIds = new Set(eligibleTags.map(t => t.id));
   const topCommunityTags = communityTags
     .map(ct => {
@@ -252,18 +266,23 @@ const getAvailableTagsForRating = (
     })
     .filter((tag): tag is { id: string; name: string; count: number } =>
       tag !== null &&
-      eligibleTagIds.has(tag.id)
+      eligibleTagIds.has(tag.id) &&
+      !selectedTags.includes(tag.id)
     )
-    .sort((a, b) => b.count - a.count);
+    .slice(0, 14);
 
-  // 2. Fill remaining slots with random rating-appropriate tags (no community votes yet)
-  const usedTagIds = new Set(topCommunityTags.map(t => t.id));
+  // 3. Fill remaining slots with random rating-appropriate tags
+  const usedTagIds = new Set([
+    ...selectedTagObjects.map(t => t.id),
+    ...topCommunityTags.map(t => t.id)
+  ]);
 
   const remainingEligibleTags = eligibleTags
     .filter(tag => !usedTagIds.has(tag.id))
     .map(tag => ({ id: tag.id, name: tag.name, count: 0 }));
 
-  const remainingSlots = Math.max(0, MAX_TAGS - topCommunityTags.length);
+  const totalSoFar = selectedTagObjects.length + topCommunityTags.length;
+  const remainingSlots = Math.max(0, MAX_TAGS - totalSoFar);
 
   let randomTags: Array<{ id: string; name: string; count: number }> = [];
   if (remainingSlots > 0 && remainingEligibleTags.length > 0) {
@@ -271,8 +290,8 @@ const getAvailableTagsForRating = (
     randomTags = shuffled.slice(0, remainingSlots);
   }
 
-  // Combine: top community tags first (by count), then random filler tags
-  const allTags = [...topCommunityTags, ...randomTags];
+  // Combine: selected tags + top community tags + random filler tags
+  const allTags = [...selectedTagObjects, ...topCommunityTags, ...randomTags];
   return allTags.slice(0, MAX_TAGS);
 };
 
@@ -529,17 +548,13 @@ export default function CompletedFightDetailScreen({
     }
 
     // Return the frozen tags, but update counts from community data
-    // When user selects a tag, increment count by 1 (optimistic update)
     // Sort by count descending so most popular tags appear first
     return frozenTagsRef.current.map(tag => {
       const communityTag = communityTags.find(ct => getTagId(ct.name) === tag.id);
-      const baseCount = communityTag?.count || 0;
       const isSelected = selectedTags.includes(tag.id);
-      // If selected, add 1 to the community count (user's vote)
-      // If not selected, just show the community count
       return {
         ...tag,
-        count: isSelected ? baseCount + 1 : baseCount
+        count: isSelected ? Math.max(1, communityTag?.count || 0) : (communityTag?.count || 0)
       };
     }).sort((a, b) => b.count - a.count);
   }, [showNegativeTags, selectedTags, aggregateStats?.topTags]);
