@@ -110,7 +110,9 @@ export function PreFightCommentCard({
           <View style={styles.topInfoRow}>
             <View style={showMyComment ? { borderBottomWidth: 2, borderBottomColor: '#F5C518' } : undefined}>
               <Text style={[styles.commentAuthor, { color: colors.textSecondary }]}>
-                {comment.user.displayName}
+                {comment.user.displayName && comment.user.displayName !== 'null null' && comment.user.displayName.trim() !== ''
+                  ? comment.user.displayName
+                  : 'Anonymous'}
               </Text>
             </View>
             {comment.hypeRating && comment.hypeRating > 0 && (
