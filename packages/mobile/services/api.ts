@@ -5,6 +5,10 @@ import { secureStorage } from '../utils/secureStorage';
 // ⚙️ DEVELOPMENT CONFIG: Set to true to test production API while developing
 const USE_PRODUCTION_API = false;
 
+// Token refresh state to prevent multiple simultaneous refresh attempts
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
 const getApiBaseUrl = () => {
   const isDevelopment = (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.NODE_ENV === 'development';
 
@@ -116,9 +120,89 @@ class ApiService {
     }
   }
 
+  /**
+   * Attempt to refresh the access token using the stored refresh token.
+   * Returns true if refresh was successful, false otherwise.
+   * Uses a singleton pattern to prevent multiple simultaneous refresh attempts.
+   */
+  private async refreshAccessToken(): Promise<boolean> {
+    // If already refreshing, wait for that refresh to complete
+    if (isRefreshing && refreshPromise) {
+      return refreshPromise;
+    }
+
+    isRefreshing = true;
+    refreshPromise = this._doRefreshToken();
+
+    try {
+      const result = await refreshPromise;
+      return result;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  }
+
+  private async _doRefreshToken(): Promise<boolean> {
+    try {
+      const refreshToken = await secureStorage.getItem('refreshToken');
+
+      if (!refreshToken) {
+        console.log('[API] No refresh token available');
+        return false;
+      }
+
+      console.log('[API] Attempting token refresh...');
+
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.log('[API] Token refresh failed:', data.error || data.code);
+        return false;
+      }
+
+      // Handle both response formats (tokens object or flat)
+      const newAccessToken = data.tokens?.accessToken || data.accessToken;
+      const newRefreshToken = data.tokens?.refreshToken || data.refreshToken;
+
+      if (newAccessToken && newRefreshToken) {
+        await secureStorage.setItem('accessToken', newAccessToken);
+        await secureStorage.setItem('refreshToken', newRefreshToken);
+        console.log('[API] Token refresh successful');
+        return true;
+      }
+
+      console.log('[API] Token refresh response missing tokens');
+      return false;
+    } catch (error) {
+      console.error('[API] Token refresh error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Clear auth data and trigger logout state.
+   * This is called when token refresh fails.
+   */
+  private async clearAuthData(): Promise<void> {
+    console.log('[API] Clearing auth data due to failed token refresh');
+    await secureStorage.removeItem('accessToken');
+    await secureStorage.removeItem('refreshToken');
+    await AsyncStorage.removeItem('userData');
+  }
+
   private async makeRequest<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    isRetry: boolean = false
   ): Promise<T> {
 
     const url = `${API_BASE_URL}${endpoint}`;
@@ -142,6 +226,27 @@ class ApiService {
         ...options,
         headers,
       });
+
+      // Handle 401 Unauthorized - try to refresh token and retry
+      if (response.status === 401 && !isRetry) {
+        console.log('[API] Got 401, attempting token refresh...');
+
+        const refreshed = await this.refreshAccessToken();
+
+        if (refreshed) {
+          // Retry the original request with new token
+          console.log('[API] Retrying request after token refresh');
+          return this.makeRequest<T>(endpoint, options, true);
+        } else {
+          // Refresh failed - clear auth data (will trigger logout via AuthContext)
+          await this.clearAuthData();
+          throw {
+            status: 401,
+            error: 'Session expired. Please log in again.',
+            code: 'SESSION_EXPIRED',
+          } as ApiError & { status: number };
+        }
+      }
 
       const data = await response.json();
 

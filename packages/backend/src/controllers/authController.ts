@@ -101,12 +101,12 @@ export class AuthController {
 
       const tokens = JWTService.generateTokenPair(tokenPayload)
 
-      // Store refresh token
+      // Store refresh token (90 days to match JWT expiry)
       await prisma.refreshToken.create({
         data: {
           token: tokens.refreshToken,
           userId: user.id,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
         }
       })
 
@@ -189,12 +189,12 @@ export class AuthController {
 
       const tokens = JWTService.generateTokenPair(tokenPayload)
 
-      // Store refresh token
+      // Store refresh token (90 days to match JWT expiry)
       await prisma.refreshToken.create({
         data: {
           token: tokens.refreshToken,
           userId: user.id,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
         }
       })
 
@@ -322,12 +322,12 @@ export class AuthController {
 
       const tokens = JWTService.generateTokenPair(tokenPayload)
 
-      // Store refresh token
+      // Store refresh token (90 days to match JWT expiry)
       await prisma.refreshToken.create({
         data: {
           token: tokens.refreshToken,
           userId: user.id,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
         }
       })
 
@@ -458,12 +458,12 @@ export class AuthController {
 
       const tokens = JWTService.generateTokenPair(newTokenPayload)
 
-      // Replace old refresh token with new one
+      // Replace old refresh token with new one (extend to 90 days - sliding expiration)
       await prisma.refreshToken.update({
         where: { id: storedToken.id },
         data: {
           token: tokens.refreshToken,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
         }
       })
 

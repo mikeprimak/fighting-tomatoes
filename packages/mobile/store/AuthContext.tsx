@@ -92,7 +92,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUserDataInternal = async (orgs?: string[]) => {
     try {
       const token = await secureStorage.getItem('accessToken');
-      if (!token) return;
+      if (!token) {
+        // Token was cleared (possibly by API service after failed refresh)
+        // Clear auth state to trigger logout
+        console.log('[Auth] No access token found, clearing auth state');
+        setAccessToken(null);
+        setUser(null);
+        return;
+      }
 
       // Build URL with optional org filter
       let url = `${API_BASE_URL}/auth/profile`;
@@ -105,9 +112,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
+      // Handle 401 - token expired and API service couldn't refresh
+      if (response.status === 401) {
+        console.log('[Auth] Got 401 on profile fetch, clearing auth state');
+        await secureStorage.removeItem('accessToken');
+        await secureStorage.removeItem('refreshToken');
+        await AsyncStorage.removeItem('userData');
+        setAccessToken(null);
+        setUser(null);
+        return;
+      }
+
       const data = await response.json();
       if (response.ok && data.user) {
         setUser(data.user);
+        // Sync access token state in case API service refreshed it
+        const currentToken = await secureStorage.getItem('accessToken');
+        if (currentToken && currentToken !== accessToken) {
+          setAccessToken(currentToken);
+        }
         // Only save to storage if no filter is active (preserve full data)
         if (!orgs || orgs.length === 0) {
           await AsyncStorage.setItem('userData', JSON.stringify(data.user));
@@ -437,7 +460,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = await secureStorage.getItem('accessToken');
 
       if (!token) {
-        console.error('No access token available');
+        // Token was cleared (possibly by API service after failed refresh)
+        console.log('[Auth] No access token available for refresh');
+        setAccessToken(null);
+        setUser(null);
         return;
       }
 
@@ -454,6 +480,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
 
+      // Handle 401 - token expired
+      if (response.status === 401) {
+        console.log('[Auth] Got 401 on refreshUserData, clearing auth state');
+        await secureStorage.removeItem('accessToken');
+        await secureStorage.removeItem('refreshToken');
+        await AsyncStorage.removeItem('userData');
+        setAccessToken(null);
+        setUser(null);
+        return;
+      }
+
       const data = await response.json();
 
       if (!response.ok) {
@@ -463,6 +500,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Update user data in state
       setUser(data.user);
+      // Sync access token state in case API service refreshed it
+      const currentToken = await secureStorage.getItem('accessToken');
+      if (currentToken && currentToken !== accessToken) {
+        setAccessToken(currentToken);
+      }
       // Only save to storage if no filter is active (preserve full data)
       if (!orgs || orgs.length === 0) {
         await AsyncStorage.setItem('userData', JSON.stringify(data.user));
