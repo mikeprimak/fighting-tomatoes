@@ -452,16 +452,7 @@ export default function FighterDetailScreen() {
                   {/* Completed Fights Section */}
                   {completedFights.length > 0 && (
                     <>
-                      <View style={[styles.columnHeadersRow, { marginBottom: 12, marginTop: upcomingFights.length > 0 ? 20 : 0 }]}>
-                        <View style={styles.columnHeadersCompleted}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATINGS</Text>
-                        </View>
-                        <View style={styles.columnHeadersCompletedRight}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
-                        </View>
-                      </View>
+                      {upcomingFights.length > 0 && <View style={{ marginTop: 20 }} />}
                       {completedFights.map((fight: Fight, index: number) => (
                         <FightDisplayCard
                           key={fight.id}
@@ -479,16 +470,6 @@ export default function FighterDetailScreen() {
                   {/* Completed Fights Section (shown first for rating sorts) */}
                   {completedFights.length > 0 && (
                     <>
-                      <View style={[styles.columnHeadersRow, { marginBottom: 12 }]}>
-                        <View style={styles.columnHeadersCompleted}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATINGS</Text>
-                        </View>
-                        <View style={styles.columnHeadersCompletedRight}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
-                        </View>
-                      </View>
                       {completedFights.map((fight: Fight, index: number) => (
                         <FightDisplayCard
                           key={fight.id}
