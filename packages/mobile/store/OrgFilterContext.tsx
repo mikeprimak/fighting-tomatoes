@@ -12,8 +12,8 @@ export type Organization = typeof ORGANIZATIONS[number];
 const ORG_GROUPS: Partial<Record<Organization, { exact?: string[]; contains?: string[]; excludes?: string[] }>> = {
   'BOXING': {
     exact: [],
+    // Note: DIRTY BOXING events won't match these anyway, so no excludes needed
     contains: ['MATCHROOM', 'TOP RANK', 'TOP_RANK', 'GOLDEN BOY', 'GOLDEN_BOY', 'SHOWTIME', 'MOST VALUABLE', 'MVP BOXING', 'PBC', 'PREMIER BOXING', 'DAZN', 'ESPN BOXING'],
-    excludes: ['DIRTY'],  // Exclude Dirty Boxing Championship
   },
   'DIRTY BOXING': {
     exact: [],
@@ -96,17 +96,13 @@ export function OrgFilterProvider({ children }: { children: ReactNode }) {
     if (selectedOrgs.size === 0) return true; // ALL selected
     const eventPromotion = promotion?.toUpperCase() || '';
 
+    // Check each selected org - return true if ANY org matches
     for (const org of Array.from(selectedOrgs)) {
-      // Check if this org has custom matching rules
       const group = ORG_GROUPS[org];
       if (group) {
-        // Check excludes first - if any exclusion matches, skip this org
-        if (group.excludes?.some(excl => eventPromotion.includes(excl))) {
-          continue; // This org explicitly excludes this promotion, try next org
-        }
-        // Check exact matches (e.g., "BOXING" === "BOXING")
+        // Check exact matches
         if (group.exact?.some(promo => eventPromotion === promo)) return true;
-        // Check contains matches (e.g., "MATCHROOM BOXING" contains "MATCHROOM")
+        // Check contains matches
         if (group.contains?.some(promo => eventPromotion.includes(promo))) return true;
       } else {
         // Default: handle both space and underscore variants (e.g., "KARATE COMBAT" matches "KARATE_COMBAT")

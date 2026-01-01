@@ -21,11 +21,11 @@ import { triggerDailyUFCScraper } from '../services/backgroundJobs';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 
 // Organization filter groups - maps filter buttons to actual promotions
-// BOXING is an aggregate that includes multiple boxing promoters but excludes Dirty Boxing
-const ORG_FILTER_GROUPS: Record<string, { contains?: string[]; excludes?: string[] }> = {
+// BOXING is an aggregate that includes multiple boxing promoters
+// Note: DIRTY BOXING events won't match BOXING's contains patterns anyway, so no excludes needed
+const ORG_FILTER_GROUPS: Record<string, { contains?: string[] }> = {
   'BOXING': {
     contains: ['MATCHROOM', 'TOP RANK', 'TOP_RANK', 'GOLDEN BOY', 'GOLDEN_BOY', 'SHOWTIME', 'MOST VALUABLE', 'MVP BOXING', 'PBC', 'PREMIER BOXING', 'DAZN', 'ESPN BOXING'],
-    excludes: ['DIRTY'],
   },
   'DIRTY BOXING': {
     contains: ['DIRTY BOXING'],
@@ -236,7 +236,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
         // Build OR conditions for each requested promotion
         const orConditions: any[] = [];
-        const excludeConditions: any[] = [];
 
         for (const promo of promotionList) {
           const group = ORG_FILTER_GROUPS[promo];
@@ -248,16 +247,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 orConditions.push({
                   promotion: {
                     contains: containsPromo,
-                    mode: 'insensitive',
-                  },
-                });
-              }
-            }
-            if (group.excludes) {
-              for (const excludePromo of group.excludes) {
-                excludeConditions.push({
-                  promotion: {
-                    contains: excludePromo,
                     mode: 'insensitive',
                   },
                 });
@@ -277,10 +266,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
         // Build the final where clause
         if (orConditions.length > 0) {
           whereClause.OR = orConditions;
-        }
-        // Add NOT conditions for excludes
-        if (excludeConditions.length > 0) {
-          whereClause.NOT = excludeConditions;
         }
       }
 
