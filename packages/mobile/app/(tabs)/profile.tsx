@@ -107,6 +107,9 @@ export default function ProfileScreen() {
     totalIncorrect: number;
   }>({ accuracyByEvent: [], totalCorrect: 0, totalIncorrect: 0 });
 
+  // Track if user has ANY predictions (for showing time filter)
+  const [hasAnyPredictions, setHasAnyPredictions] = useState<boolean>(false);
+
   // Global standing data state
   const [globalStanding, setGlobalStanding] = useState<{
     position: number | null;
@@ -127,8 +130,8 @@ export default function ProfileScreen() {
   }>({ comments: [], totalWithUpvotes: 0 });
   const [upvotingPreflightId, setUpvotingPreflightId] = useState<string | null>(null);
 
-  // Time filter state
-  const [timeFilter, setTimeFilter] = useState<string>('week');
+  // Time filter state - default to 'allTime' to show all predictions
+  const [timeFilter, setTimeFilter] = useState<string>('allTime');
   const timeFilterOptions = [
     { key: 'week', label: 'Past Week' },
     { key: 'month', label: 'Month' },
@@ -136,6 +139,22 @@ export default function ProfileScreen() {
     { key: 'year', label: 'Year' },
     { key: 'allTime', label: 'All Time' },
   ];
+
+  // Check if user has ANY predictions (once on mount)
+  useEffect(() => {
+    const checkForAnyPredictions = async () => {
+      try {
+        const data = await api.getPredictionAccuracyByEvent('allTime');
+        setHasAnyPredictions((data.totalCorrect + data.totalIncorrect) > 0);
+      } catch (error) {
+        console.error('Failed to check for predictions:', error);
+      }
+    };
+
+    if (user) {
+      checkForAnyPredictions();
+    }
+  }, [user?.id]);
 
   // Fetch prediction accuracy and global standing data
   useEffect(() => {
@@ -459,7 +478,8 @@ export default function ProfileScreen() {
           containerBgColorDark="rgba(34, 197, 94, 0.05)"
           containerBgColorLight="rgba(34, 197, 94, 0.08)"
         >
-          {(filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect) === 0 ? (
+          {/* Check if user has ANY predictions - if so, show time filter */}
+          {!hasAnyPredictions ? (
             <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
               {selectedOrgs.size > 0
                 ? `No predictions for ${Array.from(selectedOrgs).join(' or ')} events`
@@ -467,7 +487,7 @@ export default function ProfileScreen() {
             </Text>
           ) : (
             <>
-              {/* Time Filter Buttons */}
+              {/* Time Filter Buttons - always visible when user has predictions */}
               <View style={styles.filterTabsContainer}>
                 {timeFilterOptions.map((option) => (
                   <TouchableOpacity
@@ -483,65 +503,75 @@ export default function ProfileScreen() {
                 ))}
               </View>
               <View style={{ height: 4 }} />
-              {/* Two stat boxes side by side */}
-              <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-                {/* Prediction Accuracy - bordered */}
-                <View style={{
-                  flex: 1,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                }}>
-                  <Text style={[styles.predictionLabel, { color: colors.text }]}>Prediction{'\n'}Accuracy</Text>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
-                      {(filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect) > 0
-                        ? `${Math.round((filteredPredictionAccuracy.totalCorrect / (filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect)) * 100)}%`
-                        : '—'}
-                    </Text>
-                    <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-                      ({filteredPredictionAccuracy.totalCorrect}/{filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect})
-                    </Text>
-                  </View>
-                </View>
 
-                {/* Global Standing - bordered */}
-                <View style={{
-                  flex: 1,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                  borderRadius: 8,
-                  padding: 12,
-                }}>
-                  <Text style={[styles.predictionLabel, { color: colors.text }]}>Global{'\n'}Standing</Text>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
-                      {globalStanding.hasRanking
-                        ? getOrdinalSuffix(globalStanding.position!)
-                        : '—'}
-                    </Text>
-                    {globalStanding.hasRanking && globalStanding.totalUsers > 0 && (
-                      <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-                        top {Math.round((globalStanding.position! / globalStanding.totalUsers) * 100)}%
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              </View>
+              {/* Show content or empty message based on filtered data */}
+              {(filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect) === 0 ? (
+                <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 16, textAlign: 'center' }}>
+                  No predictions in this time period
+                </Text>
+              ) : (
+                <>
+                  {/* Two stat boxes side by side */}
+                  <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+                    {/* Prediction Accuracy - bordered */}
+                    <View style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: 8,
+                      padding: 12,
+                    }}>
+                      <Text style={[styles.predictionLabel, { color: colors.text }]}>Prediction{'\n'}Accuracy</Text>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
+                          {(filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect) > 0
+                            ? `${Math.round((filteredPredictionAccuracy.totalCorrect / (filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect)) * 100)}%`
+                            : '—'}
+                        </Text>
+                        <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                          ({filteredPredictionAccuracy.totalCorrect}/{filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect})
+                        </Text>
+                      </View>
+                    </View>
 
-              {/* Prediction Accuracy Chart */}
-              <PredictionAccuracyChart
-                data={filteredPredictionAccuracy.accuracyByEvent}
-                totalCorrect={filteredPredictionAccuracy.totalCorrect}
-                totalIncorrect={filteredPredictionAccuracy.totalIncorrect}
-              />
+                    {/* Global Standing - bordered */}
+                    <View style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: 8,
+                      padding: 12,
+                    }}>
+                      <Text style={[styles.predictionLabel, { color: colors.text }]}>Global{'\n'}Standing</Text>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
+                          {globalStanding.hasRanking
+                            ? getOrdinalSuffix(globalStanding.position!)
+                            : '—'}
+                        </Text>
+                        {globalStanding.hasRanking && globalStanding.totalUsers > 0 && (
+                          <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                            top {Math.round((globalStanding.position! / globalStanding.totalUsers) * 100)}%
+                          </Text>
+                        )}
+                      </View>
+                    </View>
+                  </View>
+
+                  {/* Prediction Accuracy Chart */}
+                  <PredictionAccuracyChart
+                    data={filteredPredictionAccuracy.accuracyByEvent}
+                    totalCorrect={filteredPredictionAccuracy.totalCorrect}
+                    totalIncorrect={filteredPredictionAccuracy.totalIncorrect}
+                  />
+                </>
+              )}
             </>
           )}
         </SectionContainer>
