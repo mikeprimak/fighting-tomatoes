@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet, useWindowDimensions } from 'react-native
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { PromotionLogo } from './PromotionLogo';
+import { normalizeEventName } from './fight-cards/shared/utils';
 
 interface EventBannerCardProps {
   event: {
@@ -37,8 +38,12 @@ const getPlaceholderImage = (eventId: string) => {
 };
 
 // Parse event name into formatted display
-const parseEventName = (eventName: string) => {
-  const colonMatch = eventName.match(/^([^:]+):\s*(.+)$/);
+// Accepts optional promotion to normalize legacy event names
+const parseEventName = (eventName: string, promotion?: string | null) => {
+  // First normalize the event name to include promotion if missing
+  const normalizedName = normalizeEventName(eventName, promotion);
+
+  const colonMatch = normalizedName.match(/^([^:]+):\s*(.+)$/);
   if (colonMatch) {
     return {
       line1: colonMatch[1].trim(),
@@ -46,7 +51,7 @@ const parseEventName = (eventName: string) => {
     };
   }
 
-  const fightNightMatch = eventName.match(/^(UFC Fight Night)\s+(.+)$/i);
+  const fightNightMatch = normalizedName.match(/^(UFC Fight Night)\s+(.+)$/i);
   if (fightNightMatch) {
     return {
       line1: fightNightMatch[1],
@@ -54,7 +59,7 @@ const parseEventName = (eventName: string) => {
     };
   }
 
-  const numberedMatch = eventName.match(/^(UFC\s+\d+)\s*(.*)$/i);
+  const numberedMatch = normalizedName.match(/^(UFC\s+\d+)\s*(.*)$/i);
   if (numberedMatch) {
     return {
       line1: numberedMatch[1],
@@ -63,7 +68,7 @@ const parseEventName = (eventName: string) => {
   }
 
   return {
-    line1: eventName,
+    line1: normalizedName,
     line2: '',
   };
 };
@@ -99,7 +104,7 @@ export function EventBannerCard({
 }: EventBannerCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { line1, line2 } = parseEventName(event.name);
+  const { line1, line2 } = parseEventName(event.name, event.promotion);
   const { width: screenWidth } = useWindowDimensions();
 
   // Use fixed aspect ratio to prevent layout shifts when items remount during scroll
@@ -124,7 +129,14 @@ export function EventBannerCard({
           {/* Promotion Logo */}
           {event.promotion && (
             <View style={styles.logoOverlay}>
-              <PromotionLogo promotion={event.promotion} size={28} color="#FFFFFF" />
+              <PromotionLogo
+                promotion={event.promotion}
+                size={
+                  event.promotion?.toUpperCase() === 'MVP' || event.promotion?.toUpperCase() === 'MOST VALUABLE PROMOTIONS' ? 32 :
+                  event.promotion?.toUpperCase() === 'KARATE COMBAT' ? 34 : 28
+                }
+                color="#FFFFFF"
+              />
             </View>
           )}
 
