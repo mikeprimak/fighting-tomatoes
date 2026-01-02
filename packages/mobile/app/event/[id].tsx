@@ -21,6 +21,7 @@ import { FightDisplayCard, ScreenHeader } from '../../components';
 import { useAuth } from '../../store/AuthContext';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useLiveEventPolling } from '../../hooks/useLiveEventPolling';
+import { normalizeEventName } from '../../components/fight-cards/shared/utils';
 
 interface EventDetails {
   id: string;
@@ -312,7 +313,7 @@ export default function EventDetailScreen() {
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={[styles.eventName, { color: colors.text }]} numberOfLines={1}>
-            {event?.name || 'Loading...'}
+            {event ? normalizeEventName(event.name, event.promotion) : 'Loading...'}
           </Text>
           <View style={styles.eventDateRow}>
             {event && !event.isComplete && eventIsLive ? (
