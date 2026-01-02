@@ -3412,6 +3412,12 @@ export async function fightRoutes(fastify: FastifyInstance) {
         ratingDistribution[rating] = fightRatings.filter(r => r.rating === rating && r.rating > 0).length;
       }
 
+      // 10. Calculate average rating from the ratings
+      const validRatings = fightRatings.filter(r => r.rating > 0);
+      const averageRating = validRatings.length > 0
+        ? Math.round((validRatings.reduce((sum, r) => sum + r.rating, 0) / validRatings.length) * 10) / 10
+        : 0;
+
       return reply.send({
         fightId,
         reviewCount,
@@ -3424,6 +3430,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         communityAverageHype,
         hypeDistribution,
         ratingDistribution,
+        averageRating,
       });
 
     } catch (error) {

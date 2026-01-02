@@ -102,21 +102,30 @@ export default function PredictionBarChart({
     );
   }
 
-  // Determine which side has higher prediction percentage
+  // Determine which fighter won (for coloring based on actual outcome)
+  const fighter1IsActualWinner = actualWinner === fighter1Id;
+  const fighter2IsActualWinner = actualWinner === fighter2Id;
+  const hasWinner = !!actualWinner;
+
+  // Determine majority for pre-fight fallback
   const fighter1HasMajority = winnerPredictions.fighter1.percentage > winnerPredictions.fighter2.percentage;
   const fighter2HasMajority = winnerPredictions.fighter2.percentage > winnerPredictions.fighter1.percentage;
   const isTie = winnerPredictions.fighter1.percentage === winnerPredictions.fighter2.percentage;
 
-  // Calculate background colors
-  // Majority side gets full blue (#83B4F3), minority side gets muted blue
-  // In case of a tie (50/50), fighter1 gets light blue, fighter2 gets muted blue for visual distinction
-  const minorityBgColor = colorScheme === 'dark' ? '#28323F' : '#d4e3f5';
-  const fighter1BgColor = (fighter1HasMajority || isTie) ? '#83B4F3' : minorityBgColor;
-  const fighter2BgColor = fighter2HasMajority ? '#83B4F3' : minorityBgColor;
+  // Calculate which side gets the green fill:
+  // - If fight has a winner: winner side gets green
+  // - If pre-fight (no winner): majority side gets green
+  const winnerColor = '#166534';
+  const fighter1IsGreenSide = hasWinner ? fighter1IsActualWinner : (fighter1HasMajority || isTie);
+  const fighter2IsGreenSide = hasWinner ? fighter2IsActualWinner : fighter2HasMajority;
+  const fighter1BgColor = fighter1IsGreenSide ? winnerColor : 'transparent';
+  const fighter2BgColor = fighter2IsGreenSide ? winnerColor : 'transparent';
+  const fighter1IsWinnerSide = fighter1IsGreenSide;
+  const fighter2IsWinnerSide = fighter2IsGreenSide;
 
-  // Divider color - solid grey with hint of blue matching Community Data container bg
-  // Container uses rgba(59, 130, 246, 0.05) on dark bg, rgba(59, 130, 246, 0.08) on light
-  const dividerColor = colorScheme === 'dark' ? '#1a2230' : '#e8eef5';
+  // Divider color - solid grey with hint of green matching Predictions container bg
+  // Container uses rgba(34, 197, 94, 0.05) on dark bg, rgba(34, 197, 94, 0.08) on light
+  const dividerColor = colorScheme === 'dark' ? '#1a2a1a' : '#e8f5e8';
 
   return (
     <View style={styles.container}>
@@ -129,7 +138,7 @@ export default function PredictionBarChart({
             <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{ width: 4 }} />
               <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-                Winner Predictions ({totalPredictions})
+                Crowd Predictions ({totalPredictions})
               </Text>
               <View style={{ width: 4 }} />
             </View>
@@ -210,9 +219,14 @@ export default function PredictionBarChart({
                 flex: winnerPredictions.fighter1.percentage,
                 flexDirection: 'row',
                 backgroundColor: fighter1BgColor,
-                // Only show right border if fighter2 has predictions
-                borderRightWidth: winnerPredictions.fighter2.percentage > 0 ? 2 : 0,
-                borderRightColor: dividerColor,
+                // Add border for loser side (top, left, bottom only - not right)
+                borderTopWidth: !fighter1IsWinnerSide ? 2 : 0,
+                borderLeftWidth: !fighter1IsWinnerSide ? 2 : 0,
+                borderBottomWidth: !fighter1IsWinnerSide ? 2 : 0,
+                borderColor: !fighter1IsWinnerSide ? winnerColor : 'transparent',
+                // Only show right border if fighter2 has predictions (for winner side), none for loser
+                borderRightWidth: fighter1IsWinnerSide && winnerPredictions.fighter2.percentage > 0 ? 2 : 0,
+                borderRightColor: fighter1IsWinnerSide ? dividerColor : 'transparent',
                 borderTopLeftRadius: 18,
                 borderBottomLeftRadius: 18,
                 // If fighter1 has 100%, also round the right corners
@@ -227,8 +241,8 @@ export default function PredictionBarChart({
                     // Calculate fighter1's total predictions for method percentages (including unspecified)
                     const unspecifiedCount = fighter1Predictions.UNSPECIFIED || 0;
                     const fighter1Total = fighter1Predictions.KO_TKO + fighter1Predictions.SUBMISSION + fighter1Predictions.DECISION + unspecifiedCount;
-                    // Text is dark on light blue bg (majority or tie), light blue on dark bg (minority)
-                    const textColor = (fighter1HasMajority || isTie) ? '#000' : '#83B4F3';
+                    // Text is white for both majority and minority
+                    const textColor = '#FFFFFF';
                     const methods = [
                       { key: 'KO_TKO', count: fighter1Predictions.KO_TKO, shortLabel: 'K', longLabel: 'KO', methodKey: 'KO_TKO' },
                       { key: 'SUBMISSION', count: fighter1Predictions.SUBMISSION, shortLabel: 'S', longLabel: 'SUB', methodKey: 'SUBMISSION' },
@@ -241,9 +255,14 @@ export default function PredictionBarChart({
                       const methodPercentage = totalPredictions > 0 ? (method.count / totalPredictions) * 100 : 0;
                       // Use overall percentage for label sizing (determines visual width)
                       const label = methodPercentage < 10 ? method.shortLabel : method.longLabel;
-                      const isUserPrediction = selectedWinner === fighter1Id && selectedMethod === method.methodKey;
                       const isActualOutcome = actualWinner === fighter1Id && actualMethod === method.methodKey;
                       const isLastMethod = index === methods.length - 1;
+
+                      // On winner's side with actual outcome: matching method = full opacity, others = 0.5 opacity
+                      // On pre-fight (no winner): all methods on green side get full opacity
+                      const methodBgColor = fighter1IsWinnerSide
+                        ? (hasWinner ? (isActualOutcome ? winnerColor : 'rgba(22, 101, 52, 0.5)') : winnerColor)
+                        : 'transparent';
 
                       return (
                         <View
@@ -252,20 +271,11 @@ export default function PredictionBarChart({
                             flex: method.count,
                             justifyContent: 'center',
                             alignItems: 'center',
+                            backgroundColor: methodBgColor,
                             borderRightWidth: isLastMethod ? 0 : 2,
-                            borderRightColor: dividerColor,
+                            borderRightColor: fighter1IsWinnerSide ? dividerColor : winnerColor,
                           }}
                         >
-                          {isUserPrediction && (
-                            <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
-                              <FontAwesome name="user" size={16} color="#000000" />
-                            </View>
-                          )}
-                          {isActualOutcome && (
-                            <View style={[styles.actualOutcomeIndicator, { backgroundColor: '#10b981' }]}>
-                              <FontAwesome name="check" size={14} color="#FFFFFF" />
-                            </View>
-                          )}
                           <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>
                             {label}
                           </Text>
@@ -288,6 +298,12 @@ export default function PredictionBarChart({
                 flex: winnerPredictions.fighter2.percentage,
                 flexDirection: 'row',
                 backgroundColor: fighter2BgColor,
+                // Add border for loser side (top, right, bottom only - not left)
+                borderTopWidth: !fighter2IsWinnerSide ? 2 : 0,
+                borderRightWidth: !fighter2IsWinnerSide ? 2 : 0,
+                borderBottomWidth: !fighter2IsWinnerSide ? 2 : 0,
+                borderLeftWidth: 0,
+                borderColor: !fighter2IsWinnerSide ? winnerColor : 'transparent',
                 borderTopRightRadius: 18,
                 borderBottomRightRadius: 18,
                 // If fighter2 has 100%, also round the left corners
@@ -302,7 +318,8 @@ export default function PredictionBarChart({
                     // Calculate fighter2's total predictions for method percentages (including unspecified)
                     const unspecifiedCount = fighter2Predictions.UNSPECIFIED || 0;
                     const fighter2Total = fighter2Predictions.KO_TKO + fighter2Predictions.SUBMISSION + fighter2Predictions.DECISION + unspecifiedCount;
-                    const textColor = fighter2HasMajority ? '#000' : '#83B4F3';
+                    // Text is white for both majority and minority
+                    const textColor = '#FFFFFF';
                     const methods = [
                       { key: 'KO_TKO', count: fighter2Predictions.KO_TKO, shortLabel: 'K', longLabel: 'KO', methodKey: 'KO_TKO' },
                       { key: 'SUBMISSION', count: fighter2Predictions.SUBMISSION, shortLabel: 'S', longLabel: 'SUB', methodKey: 'SUBMISSION' },
@@ -315,9 +332,14 @@ export default function PredictionBarChart({
                       const methodPercentage = totalPredictions > 0 ? (method.count / totalPredictions) * 100 : 0;
                       // Use overall percentage for label sizing (determines visual width)
                       const label = methodPercentage < 10 ? method.shortLabel : method.longLabel;
-                      const isUserPrediction = selectedWinner === fighter2Id && selectedMethod === method.methodKey;
                       const isActualOutcome = actualWinner === fighter2Id && actualMethod === method.methodKey;
                       const isLastMethod = index === methods.length - 1;
+
+                      // On winner's side with actual outcome: matching method = full opacity, others = 0.5 opacity
+                      // On pre-fight (no winner): all methods on green side get full opacity
+                      const methodBgColor = fighter2IsWinnerSide
+                        ? (hasWinner ? (isActualOutcome ? winnerColor : 'rgba(22, 101, 52, 0.5)') : winnerColor)
+                        : 'transparent';
 
                       return (
                         <View
@@ -326,20 +348,11 @@ export default function PredictionBarChart({
                             flex: method.count,
                             justifyContent: 'center',
                             alignItems: 'center',
+                            backgroundColor: methodBgColor,
                             borderRightWidth: isLastMethod ? 0 : 2,
-                            borderRightColor: dividerColor,
+                            borderRightColor: fighter2IsWinnerSide ? dividerColor : winnerColor,
                           }}
                         >
-                          {isUserPrediction && (
-                            <View style={[styles.userPredictionIndicator, { backgroundColor: '#F5C518' }]}>
-                              <FontAwesome name="user" size={16} color="#000000" />
-                            </View>
-                          )}
-                          {isActualOutcome && (
-                            <View style={[styles.actualOutcomeIndicator, { backgroundColor: '#10b981' }]}>
-                              <FontAwesome name="check" size={14} color="#FFFFFF" />
-                            </View>
-                          )}
                           <Text style={{ fontSize: 14, fontWeight: '600', color: textColor }}>
                             {label}
                           </Text>

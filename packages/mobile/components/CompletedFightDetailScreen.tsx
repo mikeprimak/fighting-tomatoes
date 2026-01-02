@@ -221,11 +221,11 @@ const getTagId = (tagName: string): string | null => {
 };
 
 // Function to get available tags based on rating and community data
-// Returns: user's selected tags first, then community tags sorted by count, then random filler
+// Returns: community tags sorted by count, then random filler
+// Tags stay in fixed positions - selecting/deselecting doesn't reorder
 const getAvailableTagsForRating = (
   rating: number,
-  communityTags: Array<{ name: string; count: number }> = [],
-  selectedTags: string[] = []
+  communityTags: Array<{ name: string; count: number }> = []
 ): Array<{ id: string; name: string; count: number }> => {
   // Simple two-tier system:
   // - Rating 5+ (or no rating) → All positive tags (exclude maxRating: 4 tags)
@@ -242,24 +242,9 @@ const getAvailableTagsForRating = (
   }
 
   const MAX_TAGS = 12;
-
-  // 1. User's selected tags go FIRST (with their community counts)
-  // These persist across threshold crossings
-  const selectedTagObjects = ALL_FIGHT_TAGS
-    .filter(tag => selectedTags.includes(tag.id))
-    .map(tag => {
-      const communityTag = communityTags.find(ct => getTagId(ct.name) === tag.id);
-      return {
-        id: tag.id,
-        name: tag.name,
-        count: (communityTag?.count || 0) + 1 // +1 for user's own selection
-      };
-    });
-
-  // 2. Get community tags that match rating tier, SORTED by count (highest first)
-  // Exclude already-selected tags
-  const selectedIds = new Set(selectedTags);
   const eligibleTagIds = new Set(eligibleTags.map(t => t.id));
+
+  // 1. Get community tags that match rating tier, SORTED by count (highest first)
   const topCommunityTags = communityTags
     .map(ct => {
       const frontendId = getTagId(ct.name);
@@ -268,24 +253,18 @@ const getAvailableTagsForRating = (
       return tag ? { id: tag.id, name: tag.name, count: ct.count } : null;
     })
     .filter((tag): tag is { id: string; name: string; count: number } =>
-      tag !== null &&
-      eligibleTagIds.has(tag.id) &&
-      !selectedIds.has(tag.id) // Exclude already selected
+      tag !== null && eligibleTagIds.has(tag.id)
     )
     .sort((a, b) => b.count - a.count); // Sort by count descending
 
-  // 3. Fill remaining slots with random rating-appropriate tags (no community votes yet)
-  const usedTagIds = new Set([
-    ...selectedTagObjects.map(t => t.id),
-    ...topCommunityTags.map(t => t.id)
-  ]);
+  // 2. Fill remaining slots with random rating-appropriate tags (no community votes yet)
+  const usedTagIds = new Set(topCommunityTags.map(t => t.id));
 
   const remainingEligibleTags = eligibleTags
     .filter(tag => !usedTagIds.has(tag.id))
     .map(tag => ({ id: tag.id, name: tag.name, count: 0 }));
 
-  const totalSoFar = selectedTagObjects.length + topCommunityTags.length;
-  const remainingSlots = Math.max(0, MAX_TAGS - totalSoFar);
+  const remainingSlots = Math.max(0, MAX_TAGS - topCommunityTags.length);
 
   let randomTags: Array<{ id: string; name: string; count: number }> = [];
   if (remainingSlots > 0 && remainingEligibleTags.length > 0) {
@@ -293,8 +272,9 @@ const getAvailableTagsForRating = (
     randomTags = shuffled.slice(0, remainingSlots);
   }
 
-  // Combine: selected tags FIRST, then top community tags, then random filler
-  const allTags = [...selectedTagObjects, ...topCommunityTags, ...randomTags];
+  // Combine: top community tags first, then random filler
+  // Tags stay in this order - selected state doesn't affect position
+  const allTags = [...topCommunityTags, ...randomTags];
   return allTags.slice(0, MAX_TAGS);
 };
 
@@ -527,11 +507,6 @@ export default function CompletedFightDetailScreen({
   const frozenTagsRef = useRef<Array<{ id: string; name: string; count: number }>>([]);
   const lastNegativeStateRef = useRef<boolean | null>(null);
   const hadCommunityTagsRef = useRef<boolean>(false);
-  const selectedTagsRef = useRef<string[]>(selectedTags);
-
-  // Keep ref in sync with state (for use during regeneration)
-  selectedTagsRef.current = selectedTags;
-
   // Calculate available tags: only regenerate when crossing the positive/negative threshold
   // OR when community tags first become available (so we get sorted tags, not random filler)
   // NOTE: selectedTags is NOT in dependencies to avoid recalculating on every tag toggle
@@ -552,8 +527,8 @@ export default function CompletedFightDetailScreen({
     if (shouldRegenerate) {
       lastNegativeStateRef.current = showNegativeTags;
       hadCommunityTagsRef.current = hasCommunityTags;
-      // Use ref to get current selectedTags without adding to dependencies
-      frozenTagsRef.current = getAvailableTagsForRating(effectiveRating, communityTags, selectedTagsRef.current);
+      // Get tags based on rating tier and community data - order is fixed
+      frozenTagsRef.current = getAvailableTagsForRating(effectiveRating, communityTags);
     }
 
     // Return the frozen tags in their FROZEN ORDER (no re-sorting!)
@@ -561,20 +536,18 @@ export default function CompletedFightDetailScreen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showNegativeTags, aggregateStats?.topTags]);
 
-  // Compute display tags with updated counts (this is cheap, just mapping over frozen tags)
-  // This updates when selectedTags changes but doesn't trigger the expensive regeneration
+  // Compute display tags with counts from server
+  // No optimistic updates to prevent flicker - count updates when server responds
   const displayTags = React.useMemo(() => {
     const communityTags = aggregateStats?.topTags || [];
     return availableTags.map(tag => {
       const communityTag = communityTags.find(ct => getTagId(ct.name) === tag.id);
-      const baseCount = communityTag?.count || 0;
-      const isSelected = selectedTags.includes(tag.id);
       return {
         ...tag,
-        count: isSelected ? baseCount + 1 : baseCount
+        count: communityTag?.count || 0
       };
     });
-  }, [availableTags, selectedTags, aggregateStats?.topTags]);
+  }, [availableTags, aggregateStats?.topTags]);
 
   // Keyboard event listeners for dynamic padding
   useEffect(() => {
@@ -1483,8 +1456,301 @@ export default function CompletedFightDetailScreen({
             </View>
           </View>
 
+          </SectionContainer>
+
+        {/* Reactions Section */}
+        <SectionContainer
+          title="REACTIONS"
+          icon="star"
+        >
+          {/* Section Divider - How Good Was This Fight */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <View style={{ paddingHorizontal: 12 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>HOW GOOD WAS THIS FIGHT?</Text>
+            </View>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
+
+          {/* Inline Rating Section */}
+          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: -8 }]}>
+            {/* Centered Star Display */}
+            <View style={{ alignItems: 'center', marginBottom: 40 }}>
+              <View style={styles.animatedFlameContainer}>
+                <View style={styles.wheelContainer} pointerEvents="none">
+                  <Animated.View style={[
+                    styles.wheelNumbers,
+                    {
+                      transform: [{
+                        translateY: wheelAnimation.interpolate({
+                          inputRange: [0, 1150],
+                          outputRange: [487, -663],
+                        })
+                      }]
+                    }
+                  ]}>
+                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
+                      const ratingColor = getHypeHeatmapColor(number);
+
+                      return (
+                        <View key={number} style={styles.ratingWheelBoxContainer}>
+                          <View style={styles.ratingStarContainer}>
+                            <FontAwesome
+                              name="star"
+                              size={90}
+                              color={ratingColor}
+                            />
+                            <Text style={styles.ratingStarText}>{number}</Text>
+                          </View>
+                        </View>
+                      );
+                    })}
+                    {/* Grey placeholder star - shown when no rating selected */}
+                    <View style={styles.ratingWheelBoxContainer}>
+                      <View style={styles.ratingStarContainer}>
+                        <FontAwesome
+                          name="star-o"
+                          size={90}
+                          color="#666666"
+                        />
+                      </View>
+                    </View>
+                  </Animated.View>
+                </View>
+              </View>
+            </View>
+
+            {/* Row of selectable stars (1-10) */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: -5, width: '100%' }}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
+                const isSelected = level <= rating;
+                const starColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
+
+                return (
+                  <TouchableOpacity
+                    key={level}
+                    onPress={() => handleSetRating(level)}
+                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                    style={{ paddingHorizontal: 2.5 }}
+                  >
+                    <FontAwesome
+                      name={isSelected ? "star" : "star-o"}
+                      size={31}
+                      color={starColor}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Section Divider - Fight Ratings */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 24, marginBottom: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <View style={{ paddingHorizontal: 12 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>FIGHT RATINGS ({totalRatings || 0})</Text>
+            </View>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
+
+          {/* Community Rating Layout: Horizontal */}
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
+            {/* Community Rating Box (like CompletedFightCard) */}
+            {(() => {
+              const avgRating = aggregateStats?.averageRating ?? fight.averageRating ?? 0;
+              const ratingColor = avgRating > 0
+                ? getHypeHeatmapColor(Math.round(avgRating))
+                : colors.border;
+
+              return (
+                <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
+                  <View style={{
+                    width: 80,
+                    height: 90,
+                    borderRadius: 12,
+                    backgroundColor: avgRating > 0 ? ratingColor : 'transparent',
+                    borderWidth: avgRating > 0 ? 0 : 1,
+                    borderColor: colors.textSecondary,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
+                    <FontAwesome
+                      name="star"
+                      size={28}
+                      color={avgRating > 0 ? 'rgba(0,0,0,0.45)' : colors.textSecondary}
+                      style={avgRating > 0 ? {} : { opacity: 0.5 }}
+                    />
+                    {avgRating > 0 && (
+                      <Text style={{
+                        fontSize: 28,
+                        fontWeight: 'bold',
+                        color: '#FFFFFF',
+                        textShadowColor: 'rgba(0,0,0,0.7)',
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 3,
+                      }}>
+                        {avgRating % 1 === 0
+                          ? avgRating.toString()
+                          : avgRating.toFixed(1)}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              );
+            })()}
+
+            {/* Rating Distribution Chart */}
+            {aggregateStats?.ratingDistribution && (
+              <View style={{ flex: 1, marginLeft: -10 }}>
+                <RatingDistributionChart
+                  distribution={aggregateStats.ratingDistribution}
+                  totalRatings={totalRatings}
+                />
+              </View>
+            )}
+          </View>
+
+          {/* Section Divider - Tags */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 30 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <View style={{ paddingHorizontal: 12 }}>
+              <FontAwesome name="hashtag" size={20} color={colors.textSecondary} />
+            </View>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
+
+          {/* Tags Content */}
+          {/* Tags stay in their current order - only reorder when rating tier changes */}
+          {displayTags.length > 0 && (() => {
+              return (
+                <View style={styles.inlineTagsSection}>
+                  <View style={styles.inlineTagsContainer}>
+                    {displayTags.map((tag) => {
+                      const isSelected = selectedTags.includes(tag.id);
+                      return (
+                        <View key={tag.id} style={styles.tagWithBadge}>
+                            <TouchableOpacity
+                              onPress={() => handleToggleTag(tag.id)}
+                              style={[
+                                styles.inlineTagButton,
+                                {
+                                  backgroundColor: isSelected ? colors.primary : 'transparent',
+                                  borderColor: colors.border,
+                                }
+                              ]}
+                            >
+                              <Text style={[
+                                styles.inlineTagText,
+                                {
+                                  color: isSelected ? colors.textOnAccent : colors.textSecondary
+                                }
+                              ]}>
+                                {tag.name}
+                              </Text>
+                            </TouchableOpacity>
+                            {tag.count > 0 && (
+                              <View style={[
+                                styles.tagCountBadge,
+                                {
+                                  backgroundColor: isSelected ? colors.primary : colors.card,
+                                  borderColor: isSelected ? colors.primary : colors.border
+                                }
+                              ]}>
+                                <Text style={[styles.tagCountBadgeText, { color: isSelected ? colors.textOnAccent : colors.textSecondary }]}>
+                                  {tag.count}
+                                </Text>
+                              </View>
+                            )}
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+              );
+            })()}
+        </SectionContainer>
+
+        {/* ALL REACTIONS Section */}
+        <SectionContainer
+          title="PREDICTIONS"
+          icon="users"
+          iconColor="#fff"
+          headerBgColor="#166534"
+          containerBgColorDark="rgba(34, 197, 94, 0.05)"
+          containerBgColorLight="rgba(34, 197, 94, 0.08)"
+        >
+          {/* Section Divider - All Ratings - HIDDEN, moved to REACTIONS section */}
+          {false && (
+          <>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <View style={{ paddingHorizontal: 12 }}>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>FIGHT RATINGS ({totalRatings || 0})</Text>
+            </View>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
+
+          {/* Community Rating Layout: Horizontal */}
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
+            {/* Community Rating Box (like CompletedFightCard) */}
+            {(() => {
+              const avgRating = aggregateStats?.averageRating ?? fight.averageRating ?? 0;
+              const ratingColor = avgRating > 0
+                ? getHypeHeatmapColor(Math.round(avgRating))
+                : colors.border;
+
+              return (
+                <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
+                  <View style={{
+                    width: 80,
+                    height: 90,
+                    borderRadius: 12,
+                    backgroundColor: avgRating > 0 ? ratingColor : 'transparent',
+                    borderWidth: avgRating > 0 ? 0 : 1,
+                    borderColor: colors.textSecondary,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
+                    <FontAwesome
+                      name="star"
+                      size={28}
+                      color={avgRating > 0 ? 'rgba(0,0,0,0.45)' : colors.textSecondary}
+                      style={avgRating > 0 ? {} : { opacity: 0.5 }}
+                    />
+                    {avgRating > 0 && (
+                      <Text style={{
+                        fontSize: 28,
+                        fontWeight: 'bold',
+                        color: '#FFFFFF',
+                        textShadowColor: 'rgba(0,0,0,0.7)',
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 3,
+                      }}>
+                        {avgRating % 1 === 0
+                          ? avgRating.toString()
+                          : avgRating.toFixed(1)}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              );
+            })()}
+
+            {/* Rating Distribution Chart */}
+            {aggregateStats?.ratingDistribution && (
+              <View style={{ flex: 1, marginLeft: -10 }}>
+                <RatingDistributionChart
+                  distribution={aggregateStats.ratingDistribution}
+                  totalRatings={totalRatings}
+                />
+              </View>
+            )}
+          </View>
+          </>
+          )}
+
           {/* Section Divider - My Prediction & Hype */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 12, paddingHorizontal: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12, paddingHorizontal: 16 }}>
             <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>WAS MY PICK CORRECT?</Text>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border, marginLeft: 12, marginRight: 12, maxWidth: 80 }} />
             <View style={{ alignItems: 'center' }}>
@@ -1596,244 +1862,6 @@ export default function CompletedFightDetailScreen({
                 )}
               </View>
             </View>
-
-          </SectionContainer>
-
-        {/* My Rating Section */}
-        <SectionContainer
-          title="My Reaction"
-          icon="star"
-        >
-          {/* Section Divider - How Good Was This Fight */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>HOW GOOD WAS THIS FIGHT?</Text>
-            </View>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          </View>
-
-          {/* Inline Rating Section */}
-          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: -8 }]}>
-            {/* Centered Star Display */}
-            <View style={{ alignItems: 'center', marginBottom: 40 }}>
-              <View style={styles.animatedFlameContainer}>
-                <View style={styles.wheelContainer} pointerEvents="none">
-                  <Animated.View style={[
-                    styles.wheelNumbers,
-                    {
-                      transform: [{
-                        translateY: wheelAnimation.interpolate({
-                          inputRange: [0, 1150],
-                          outputRange: [487, -663],
-                        })
-                      }]
-                    }
-                  ]}>
-                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
-                      const ratingColor = getHypeHeatmapColor(number);
-
-                      return (
-                        <View key={number} style={styles.ratingWheelBoxContainer}>
-                          <View style={styles.ratingStarContainer}>
-                            <FontAwesome
-                              name="star"
-                              size={90}
-                              color={ratingColor}
-                            />
-                            <Text style={styles.ratingStarText}>{number}</Text>
-                          </View>
-                        </View>
-                      );
-                    })}
-                    {/* Grey placeholder star - shown when no rating selected */}
-                    <View style={styles.ratingWheelBoxContainer}>
-                      <View style={styles.ratingStarContainer}>
-                        <FontAwesome
-                          name="star-o"
-                          size={90}
-                          color="#666666"
-                        />
-                      </View>
-                    </View>
-                  </Animated.View>
-                </View>
-              </View>
-            </View>
-
-            {/* Row of selectable stars (1-10) */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: -5, width: '100%' }}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
-                const isSelected = level <= rating;
-                const starColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
-
-                return (
-                  <TouchableOpacity
-                    key={level}
-                    onPress={() => handleSetRating(level)}
-                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                    style={{ paddingHorizontal: 2.5 }}
-                  >
-                    <FontAwesome
-                      name={isSelected ? "star" : "star-o"}
-                      size={31}
-                      color={starColor}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Section Divider - Tags */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 30 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            <View style={{ paddingHorizontal: 12 }}>
-              <FontAwesome name="hashtag" size={20} color={colors.textSecondary} />
-            </View>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          </View>
-
-          {/* Tags Content */}
-          {/* Tags stay in their current order - only reorder when rating tier changes */}
-          {displayTags.length > 0 && (() => {
-              return (
-                <View style={styles.inlineTagsSection}>
-                  <View style={styles.inlineTagsContainer}>
-                    {displayTags.map((tag) => {
-                      const isSelected = selectedTags.includes(tag.id);
-                      return (
-                        <View key={tag.id} style={styles.tagWithBadge}>
-                            <TouchableOpacity
-                              onPress={() => handleToggleTag(tag.id)}
-                              style={[
-                                styles.inlineTagButton,
-                                {
-                                  backgroundColor: isSelected ? colors.primary : 'transparent',
-                                  borderColor: colors.border,
-                                }
-                              ]}
-                            >
-                              <Text style={[
-                                styles.inlineTagText,
-                                {
-                                  color: isSelected ? colors.textOnAccent : colors.textSecondary
-                                }
-                              ]}>
-                                {tag.name}
-                              </Text>
-                            </TouchableOpacity>
-                            {tag.count > 0 && (
-                              <View style={[
-                                styles.tagCountBadge,
-                                {
-                                  backgroundColor: isSelected ? colors.primary : colors.card,
-                                  borderColor: isSelected ? colors.primary : colors.border
-                                }
-                              ]}>
-                                <Text style={[styles.tagCountBadgeText, { color: isSelected ? colors.textOnAccent : colors.textSecondary }]}>
-                                  {tag.count}
-                                </Text>
-                              </View>
-                            )}
-                        </View>
-                      );
-                    })}
-                  </View>
-                </View>
-              );
-            })()}
-        </SectionContainer>
-
-        {/* ALL REACTIONS Section */}
-        <SectionContainer
-          title="Crowd Reactions"
-          icon="users"
-          iconColor="#000"
-          headerBgColor="#83B4F3"
-          containerBgColorDark="rgba(131, 180, 243, 0.05)"
-          containerBgColorLight="rgba(131, 180, 243, 0.08)"
-        >
-          {/* Section Divider - All Ratings */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>FIGHT RATINGS ({totalRatings || 0})</Text>
-            </View>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          </View>
-
-          {/* Community Rating Layout: Horizontal */}
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
-            {/* Community Rating Box (like CompletedFightCard) */}
-            {(() => {
-              const ratingColor = fight.averageRating > 0
-                ? getHypeHeatmapColor(Math.round(fight.averageRating))
-                : colors.border;
-
-              return (
-                <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
-                  <View style={{
-                    width: 80,
-                    height: 90,
-                    borderRadius: 12,
-                    backgroundColor: fight.averageRating > 0 ? ratingColor : 'transparent',
-                    borderWidth: fight.averageRating > 0 ? 0 : 1,
-                    borderColor: colors.textSecondary,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                    <FontAwesome
-                      name="star"
-                      size={28}
-                      color={fight.averageRating > 0 ? 'rgba(0,0,0,0.45)' : colors.textSecondary}
-                      style={fight.averageRating > 0 ? {} : { opacity: 0.5 }}
-                    />
-                    {fight.averageRating > 0 && (
-                      <Text style={{
-                        fontSize: 28,
-                        fontWeight: 'bold',
-                        color: '#FFFFFF',
-                        textShadowColor: 'rgba(0,0,0,0.7)',
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 3,
-                      }}>
-                        {fight.averageRating % 1 === 0
-                          ? fight.averageRating.toString()
-                          : fight.averageRating.toFixed(1)}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              );
-            })()}
-
-            {/* Rating Distribution Chart */}
-            {aggregateStats?.ratingDistribution && (
-              <View style={{ flex: 1, marginLeft: -10 }}>
-                <RatingDistributionChart
-                  distribution={aggregateStats.ratingDistribution}
-                  totalRatings={totalRatings}
-                />
-              </View>
-            )}
-          </View>
-
-          {/* Pre-Fight Header Divider */}
-          <View style={{
-            marginTop: 45,
-            marginBottom: -4,
-            backgroundColor: 'rgba(128, 128, 128, 0.05)',
-            paddingVertical: 10,
-            alignItems: 'center',
-          }}>
-            <Text style={{
-              color: colors.text,
-              fontSize: 16,
-              fontWeight: '700',
-              letterSpacing: 1,
-            }}>PRE-FIGHT</Text>
-          </View>
 
           {/* All Predictions Content */}
           {predictionStats && predictionStats.fighter1MethodPredictions && predictionStats.fighter2MethodPredictions && predictionStats.winnerPredictions && (() => {

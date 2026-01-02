@@ -747,6 +747,7 @@ class ApiService {
     communityAverageHype: number | null;
     hypeDistribution: Record<number, number>;
     ratingDistribution: Record<number, number>;
+    averageRating: number;
   }> {
     const result = await this.makeRequest<any>(`/fights/${fightId}/aggregate-stats`);
 
