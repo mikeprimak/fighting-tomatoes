@@ -22,6 +22,7 @@ import { useQueryClient, useQuery, useInfiniteQuery, useMutation } from '@tansta
 import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
+import { getFighterImageUrl } from './fight-cards/shared/utils';
 import { getHypeHeatmapColor, getFlameColor } from '../utils/heatmap';
 import { getFighterDisplayName } from '../utils/formatFighterName';
 import { FlagReviewModal, CommentCard, RatingDistributionChart } from '.';
@@ -297,20 +298,8 @@ const getAvailableTagsForRating = (
   return allTags.slice(0, MAX_TAGS);
 };
 
-// Placeholder image selection for fighters
-const getFighterPlaceholderImage = (fighterId: string) => {
-  const images = [
-    require('../assets/fighters/fighter-1.jpg'),
-    require('../assets/fighters/fighter-2.jpg'),
-    require('../assets/fighters/fighter-3.jpg'),
-    require('../assets/fighters/fighter-4.jpg'),
-    require('../assets/fighters/fighter-5.jpg'),
-    require('../assets/fighters/fighter-6.jpg'),
-  ];
-  const lastCharCode = fighterId.charCodeAt(fighterId.length - 1);
-  const index = lastCharCode % images.length;
-  return images[index];
-};
+// Neutral placeholder image for fighters without profile images
+const FIGHTER_PLACEHOLDER = require('../assets/fighters/fighter-default-alpha.png');
 
 export default function CompletedFightDetailScreen({
   fight,
@@ -627,15 +616,17 @@ export default function CompletedFightDetailScreen({
         queryClient.setQueryData(['fight', fight.id, isAuthenticated], (old: any) => {
           if (!old?.fight) return old;
           const existingReview = old.fight.userReview;
+          const isNewReview = !existingReview;
           return {
             ...old,
             fight: {
               ...old.fight,
               userReview: {
                 ...response.data.review,
-                // Preserve existing fields or set defaults for new reviews
-                upvotes: existingReview?.upvotes ?? 0,
-                userHasUpvoted: existingReview?.userHasUpvoted ?? false,
+                // For new reviews, backend auto-upvotes (upvotes: 1, userHasUpvoted: true)
+                // For existing reviews, preserve existing values
+                upvotes: response.data.review.upvotes ?? existingReview?.upvotes ?? (isNewReview ? 1 : 0),
+                userHasUpvoted: response.data.review.userHasUpvoted ?? existingReview?.userHasUpvoted ?? isNewReview,
                 replies: existingReview?.replies ?? [],
               },
               userRating: response.data.rating,
@@ -656,6 +647,36 @@ export default function CompletedFightDetailScreen({
           };
         });
       }
+
+      // Optimistically update eventFights cache for instant update on event detail screen
+      if (fight.event?.id) {
+        queryClient.setQueryData(['eventFights', fight.event.id, isAuthenticated], (old: any) => {
+          if (!old?.fights) return old;
+          return {
+            ...old,
+            fights: old.fights.map((f: any) =>
+              f.id === fight.id ? { ...f, userRating: response?.data?.rating } : f
+            ),
+          };
+        });
+      }
+
+      // Optimistically update pastEvents cache for instant update on past events screen
+      queryClient.setQueryData(['pastEvents', isAuthenticated], (old: any) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            events: page.events.map((event: any) => ({
+              ...event,
+              fights: event.fights?.map((f: any) =>
+                f.id === fight.id ? { ...f, userRating: response?.data?.rating } : f
+              ) || [],
+            })),
+          })),
+        };
+      });
 
       // Invalidate other queries that need fresh data
       queryClient.invalidateQueries({ queryKey: ['fightTags', fight.id] });
@@ -1410,9 +1431,9 @@ export default function CompletedFightDetailScreen({
                 <Image
                   key={`fighter1-winner-${fight.fighter1.id}`}
                   source={
-                    fight.fighter1.profileImage
-                      ? { uri: fight.fighter1.profileImage }
-                      : getFighterPlaceholderImage(fight.fighter1.id)
+                    getFighterImageUrl(fight.fighter1.profileImage)
+                      ? { uri: getFighterImageUrl(fight.fighter1.profileImage)! }
+                      : FIGHTER_PLACEHOLDER
                   }
                   style={styles.whatHappenedImage}
                 />
@@ -1440,9 +1461,9 @@ export default function CompletedFightDetailScreen({
                 <Image
                   key={`fighter2-winner-${fight.fighter2.id}`}
                   source={
-                    fight.fighter2.profileImage
-                      ? { uri: fight.fighter2.profileImage }
-                      : getFighterPlaceholderImage(fight.fighter2.id)
+                    getFighterImageUrl(fight.fighter2.profileImage)
+                      ? { uri: getFighterImageUrl(fight.fighter2.profileImage)! }
+                      : FIGHTER_PLACEHOLDER
                   }
                   style={styles.whatHappenedImage}
                 />
@@ -1481,8 +1502,8 @@ export default function CompletedFightDetailScreen({
                   <Image
                     source={
                       fight.userPredictedWinner === fight.fighter1.id
-                        ? (fight.fighter1.profileImage ? { uri: fight.fighter1.profileImage } : getFighterPlaceholderImage(fight.fighter1.id))
-                        : (fight.fighter2.profileImage ? { uri: fight.fighter2.profileImage } : getFighterPlaceholderImage(fight.fighter2.id))
+                        ? (getFighterImageUrl(fight.fighter1.profileImage) ? { uri: getFighterImageUrl(fight.fighter1.profileImage)! } : FIGHTER_PLACEHOLDER)
+                        : (getFighterImageUrl(fight.fighter2.profileImage) ? { uri: getFighterImageUrl(fight.fighter2.profileImage)! } : FIGHTER_PLACEHOLDER)
                     }
                     style={{ width: 70, height: 70, borderRadius: 35 }}
                   />
@@ -1830,8 +1851,8 @@ export default function CompletedFightDetailScreen({
                 fighter2Name={fight.fighter2.lastName}
                 fighter1Id={fight.fighter1.id}
                 fighter2Id={fight.fighter2.id}
-                fighter1Image={fight.fighter1.profileImage}
-                fighter2Image={fight.fighter2.profileImage}
+                fighter1Image={getFighterImageUrl(fight.fighter1.profileImage)}
+                fighter2Image={getFighterImageUrl(fight.fighter2.profileImage)}
                 selectedWinner={fight.userPredictedWinner || null}
                 selectedMethod={fight.userPredictedMethod || null}
                 fighter1Predictions={predictionStats.fighter1MethodPredictions}

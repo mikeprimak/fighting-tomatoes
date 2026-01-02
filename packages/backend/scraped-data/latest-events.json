@@ -302,7 +302,7 @@
       "country": "Australia",
       "dateText": "Sat, Jan 31 / 9:00 PM EST / Main Card",
       "status": "Upcoming",
-      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-11/UFC-325_alexander-volkanovski-vs-diego-lopes-2.jpg?h=d1cb525d&itok=rEB0AAUj",
+      "eventImageUrl": "https://ufc.com/images/styles/background_image_sm/s3/2025-12/013125-ufc-325-volkanovski-vs-lopes-2-EVENT-ART-gradient.jpg?h=d1cb525d&itok=FFXSZuWI",
       "eventStartTime": null,
       "sections": [],
       "fights": [
@@ -370,29 +370,8 @@
           }
         },
         {
-          "fightId": "12551",
-          "order": 4,
-          "cardType": "Main Card",
-          "weightClass": "Featherweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Kaan Ofli",
-            "rank": "",
-            "country": "Australia",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/kaan-ofli"
-          },
-          "fighterB": {
-            "name": "Yizha",
-            "rank": "",
-            "country": "China",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/yi-zha"
-          }
-        },
-        {
           "fightId": "12544",
-          "order": 5,
+          "order": 4,
           "cardType": "Main Card",
           "weightClass": "Heavyweight",
           "isTitle": false,
@@ -409,6 +388,27 @@
             "country": "Brazil",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/tallison-teixeira"
+          }
+        },
+        {
+          "fightId": "12561",
+          "order": 5,
+          "cardType": "Main Card",
+          "weightClass": "Welterweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Jonathan Micallef",
+            "rank": "",
+            "country": "Australia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/jonathan-micallef"
+          },
+          "fighterB": {
+            "name": "Oban Elliott",
+            "rank": "",
+            "country": "Wales",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/oban-elliott"
           }
         },
         {
@@ -433,50 +433,29 @@
           }
         },
         {
-          "fightId": "12561",
+          "fightId": "12551",
           "order": 7,
           "cardType": "Main Card",
-          "weightClass": "Welterweight",
+          "weightClass": "Featherweight",
           "isTitle": false,
           "fighterA": {
-            "name": "Jonathan Micallef",
+            "name": "Kaan Ofli",
             "rank": "",
             "country": "Australia",
             "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/jonathan-micallef"
+            "athleteUrl": "https://www.ufc.com/athlete/kaan-ofli"
           },
           "fighterB": {
-            "name": "Oban Elliott",
-            "rank": "",
-            "country": "Wales",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/oban-elliott"
-          }
-        },
-        {
-          "fightId": "12562",
-          "order": 8,
-          "cardType": "Main Card",
-          "weightClass": "Lightweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Quillan Salkilld",
-            "rank": "",
-            "country": "Australia",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/quillan-salkilld"
-          },
-          "fighterB": {
-            "name": "Rongzhu",
+            "name": "Yizha",
             "rank": "",
             "country": "China",
             "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/karlos-olberg-1"
+            "athleteUrl": "https://www.ufc.com/athlete/yi-zha"
           }
         },
         {
           "fightId": "12545",
-          "order": 9,
+          "order": 8,
           "cardType": "Main Card",
           "weightClass": "Light Heavyweight",
           "isTitle": false,
@@ -493,6 +472,27 @@
             "country": "United States",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/dustin-jacoby"
+          }
+        },
+        {
+          "fightId": "12562",
+          "order": 9,
+          "cardType": "Main Card",
+          "weightClass": "Lightweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Quillan Salkilld",
+            "rank": "",
+            "country": "Australia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/quillan-salkilld"
+          },
+          "fighterB": {
+            "name": "Rongzhu",
+            "rank": "",
+            "country": "China",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/karlos-olberg-1"
           }
         },
         {
@@ -517,8 +517,29 @@
           }
         },
         {
-          "fightId": "12554",
+          "fightId": "12556",
           "order": 11,
+          "cardType": "Main Card",
+          "weightClass": "Middleweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Jacob Malkoun",
+            "rank": "",
+            "country": "Australia",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/jacob-malkoun"
+          },
+          "fighterB": {
+            "name": "Torrez Finney",
+            "rank": "",
+            "country": "United States",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/torrez-finney"
+          }
+        },
+        {
+          "fightId": "12554",
+          "order": 12,
           "cardType": "Main Card",
           "weightClass": "Lightweight",
           "isTitle": false,
@@ -539,16 +560,16 @@
         },
         {
           "fightId": "12555",
-          "order": 12,
+          "order": 13,
           "cardType": "Main Card",
           "weightClass": "Featherweight",
           "isTitle": false,
           "fighterA": {
-            "name": "Keiichiro Nakamura",
+            "name": "",
             "rank": "",
-            "country": "Japan",
+            "country": "",
             "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/keiichiro-nakamura"
+            "athleteUrl": "https://www.ufc.com/node/153161"
           },
           "fighterB": {
             "name": "Sebastian Szalay",
@@ -556,27 +577,6 @@
             "country": "Australia",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/sebastian-szalay"
-          }
-        },
-        {
-          "fightId": "12556",
-          "order": 13,
-          "cardType": "Main Card",
-          "weightClass": "Middleweight",
-          "isTitle": false,
-          "fighterA": {
-            "name": "Jacob Malkoun",
-            "rank": "",
-            "country": "Australia",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/jacob-malkoun"
-          },
-          "fighterB": {
-            "name": "Torrez Finney",
-            "rank": "",
-            "country": "United States",
-            "odds": "-",
-            "athleteUrl": "https://www.ufc.com/athlete/torrez-finney"
           }
         },
         {
@@ -886,7 +886,7 @@
           "isTitle": false,
           "fighterA": {
             "name": "Max Holloway",
-            "rank": "C",
+            "rank": "#3",
             "country": "United States",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/max-holloway"
@@ -900,7 +900,7 @@
           }
         },
         {
-          "fightId": "fight-2",
+          "fightId": "12572",
           "order": 2,
           "cardType": "Main Card",
           "weightClass": "Lightweight",
@@ -914,14 +914,14 @@
           },
           "fighterB": {
             "name": "Brian Ortega",
-            "rank": "",
+            "rank": "#9",
             "country": "United States",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/brian-ortega"
           }
         },
         {
-          "fightId": "fight-3",
+          "fightId": "12573",
           "order": 3,
           "cardType": "Main Card",
           "weightClass": "Middleweight",
@@ -942,7 +942,7 @@
           }
         },
         {
-          "fightId": "fight-4",
+          "fightId": "12574",
           "order": 4,
           "cardType": "Main Card",
           "weightClass": "Middleweight",
@@ -963,7 +963,7 @@
           }
         },
         {
-          "fightId": "fight-5",
+          "fightId": "12575",
           "order": 5,
           "cardType": "Main Card",
           "weightClass": "Bantamweight",
@@ -981,6 +981,27 @@
             "country": "China",
             "odds": "-",
             "athleteUrl": "https://www.ufc.com/athlete/shiyao-ron"
+          }
+        },
+        {
+          "fightId": "12576",
+          "order": 6,
+          "cardType": "Main Card",
+          "weightClass": "Flyweight",
+          "isTitle": false,
+          "fighterA": {
+            "name": "Sumudaerji",
+            "rank": "",
+            "country": "China",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/su-mudaerji"
+          },
+          "fighterB": {
+            "name": "Jesus Aguilar",
+            "rank": "",
+            "country": "Mexico",
+            "odds": "-",
+            "athleteUrl": "https://www.ufc.com/athlete/jesus-aguilar"
           }
         }
       ],

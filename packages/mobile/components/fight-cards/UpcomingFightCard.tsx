@@ -505,7 +505,7 @@ function UpcomingFightCard({
               }}
               numberOfLines={1}
             >
-              {formatEventName(fight.event.name)} • {formatDate(fight.event.date)}
+              {formatEventName(fight.event.name, fight.event.promotion)} • {formatDate(fight.event.date)}
             </Text>
           )}
 

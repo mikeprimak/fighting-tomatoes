@@ -2,7 +2,7 @@
 
 **Created**: 2025-12-26
 **Status**: In Progress
-**Last Updated**: 2025-12-27
+**Last Updated**: 2025-12-31
 
 ---
 
@@ -21,15 +21,16 @@ Security audit completed. **Found 5 CRITICAL, 12 HIGH, 15 MEDIUM, and 6 LOW seve
 | Fix Critical Security Issues | Critical | ✅ Complete | All 5 critical issues fixed |
 | Spam Prevention & Rate Limiting | Critical | ✅ Complete | @fastify/rate-limit implemented |
 | Token Expiry Fix | Critical | ✅ Complete | 15min access, 90-day refresh with sliding expiration |
-| Legacy Data Migration | Critical | ✅ Scripts Ready | Account claim flow + migration scripts complete |
+| Legacy Data Migration | Critical | ✅ Complete | Data migrated from fightingtomatoes.com |
 
 ## Phase 2: Platform Setup (Launch Blockers)
 
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
-| Apple Developer Account | Critical | ⏳ Pending | User action - $99/year |
-| iOS App Store Setup | Critical | ⏳ Pending | After dev account created |
-| EAS Build for iOS | Critical | ⏳ Pending | Configure after account setup |
+| Apple Developer Account | Critical | ✅ Complete | $99/year enrolled |
+| iOS App Store Setup | Critical | ✅ Complete | App Store Connect configured |
+| EAS Build for iOS | Critical | ✅ Complete | First TestFlight build uploaded |
+| TestFlight Testing | Critical | ⏳ In Progress | QA testing 60% complete |
 
 ## Phase 3: User Migration (Can soft-launch while building)
 
@@ -38,7 +39,265 @@ Security audit completed. **Found 5 CRITICAL, 12 HIGH, 15 MEDIUM, and 6 LOW seve
 | fightingtomatoes.com → app UX flow | High | ✅ Complete | Account claim flow built & tested |
 | Migration landing page/emails | High | ⏳ Pending | Communication to existing users |
 
-## Phase 4: Polish (Post-Launch OK)
+## Phase 4: Live Event Trackers (Post-Launch, Ongoing)
+
+**Current state**: UFC live tracker works well. Other orgs use time-based fallback (all fights in section become ratable at section start time).
+
+**Goal**: Build live trackers for each organization so fights become ratable individually as they complete.
+
+| Organization | Source Type | Status | Notes |
+|--------------|-------------|--------|-------|
+| UFC | Primary (ufc.com) | ✅ Working | Scrapes every 30s during events |
+| Matchroom | Primary | ⏳ To Build | Boxing - check matchroomboxing.com |
+| OKTAGON | Primary | ⏳ To Build | Check oktagonmma.com |
+| PFL | Primary/Secondary | ⏳ To Build | Check pflmma.com or secondary sources |
+| ONE Championship | Primary/Secondary | ⏳ To Build | Check onefc.com or secondary sources |
+| Bellator | Secondary | ⏳ To Build | No longer active, but historical events |
+| BKFC | Primary/Secondary | ⏳ To Build | Check bkfc.com |
+| Rizin | Secondary | ⏳ To Build | May need Tapology/Wikipedia |
+| Invicta | Secondary | ⏳ To Build | May need Tapology/Wikipedia |
+| LFA | Secondary | ⏳ To Build | May need Tapology/Wikipedia |
+| Other orgs | Secondary | ⏳ To Build | Wikipedia, Tapology as fallback |
+
+### Source Types
+
+| Type | Description | Reliability |
+|------|-------------|-------------|
+| **Primary** | Official org website with real-time updates | Best - direct source |
+| **Secondary** | Third-party sites (Wikipedia, Tapology, Sherdog) | Good - may have slight delay |
+| **Time-Based** | Fallback - all fights ratable at section start time | Works but less granular |
+
+### Secondary Sources to Evaluate
+
+| Source | URL | Update Speed | Notes |
+|--------|-----|--------------|-------|
+| Tapology | tapology.com | Near real-time? | Comprehensive MMA database |
+| Wikipedia | wikipedia.org | Variable | Community-edited, may lag |
+| Sherdog | sherdog.com | Unknown | Long-running MMA site |
+| BoxRec | boxrec.com | Unknown | Boxing-specific |
+
+### Scraper Requirements
+
+#### Time-Critical (Must detect within 5 minutes)
+
+| Requirement | Priority | Why |
+|-------------|----------|-----|
+| Event start (first fight begins) | Critical | Trigger "Event is LIVE" notification |
+| Fight start | Critical | Show fight as "In Progress" in app |
+| Fight end | Critical | Enable rating for that fight |
+| Fight card changes (cancellation/swap) | Critical | Keep app in sync with reality |
+
+#### Not Time-Critical (Can scrape later)
+
+| Requirement | Priority | Why |
+|-------------|----------|-----|
+| Winner | Medium | Can fetch from secondary source after event |
+| Method (KO/TKO/Sub/Dec) | Medium | Can fetch from secondary source after event |
+| Round/Time | Low | Nice to have, not essential |
+
+#### Technical Requirements
+
+- Poll interval: Every 30 seconds during live events
+- Must handle: Network errors, HTML structure changes, rate limiting
+- Must NOT: Overwhelm source servers, break on minor HTML changes
+- Fallback: If scraper fails, time-based fallback still works
+
+---
+
+### Live Tracker Development Process
+
+Follow this checklist for each organization. Work on it during a live event when you can observe real changes.
+
+#### Phase 1: Research (Before Event)
+
+```
+□ Find the org's live results page URL
+  - Check official website during a past event (Wayback Machine)
+  - Or wait until event day and find the live page
+
+□ Identify the page structure
+  - Does it update via JavaScript (SPA) or server-side HTML?
+  - If SPA: May need Puppeteer/Playwright instead of simple fetch
+  - If HTML: Simple fetch + cheerio should work
+
+□ Check for API endpoints
+  - Open browser DevTools → Network tab during event
+  - Look for JSON/XHR requests that fetch fight data
+  - API endpoints are more reliable than HTML scraping
+
+□ Document the URL pattern
+  - Example: ufc.com/event/ufc-309
+  - Note any event ID format needed
+```
+
+#### Phase 2: Initial Build (During First Live Event)
+
+```
+□ Set up the scraper file
+  - Create: packages/backend/src/services/scrapers/{org}LiveParser.ts
+  - Copy structure from ufcLiveParser.ts as template
+
+□ Implement basic fetch
+  - Fetch the page HTML or API
+  - Log raw response to understand structure
+  - Handle errors gracefully
+
+□ Identify key DOM elements / JSON paths
+  - Fight card container
+  - Individual fight elements
+  - Fighter names (to match with our DB)
+  - Status indicators (upcoming/live/complete)
+
+□ Map their status values to ours
+  - What text/class indicates "not started"?
+  - What indicates "in progress"?
+  - What indicates "completed"?
+
+□ Test detection during live event
+  - Watch the actual event
+  - Observe what changes on the page when:
+    - Event starts (first fight begins)
+    - A fight starts
+    - A fight ends
+  - Note the exact changes (class names, text, attributes)
+```
+
+#### Phase 3: Refinement (During Event)
+
+```
+□ Verify event start detection
+  - Did we detect the first fight starting?
+  - Timestamp accuracy (within 5 min?)
+
+□ Verify fight start detection
+  - For each fight, did we detect it starting?
+  - Log: Expected time vs detected time
+
+□ Verify fight end detection
+  - For each fight, did we detect it ending?
+  - Log: Expected time vs detected time
+
+□ Test fight card change handling
+  - If a fight gets cancelled/moved, does scraper handle it?
+  - (May need to simulate this if it doesn't happen)
+
+□ Document any edge cases found
+  - Weird HTML, missing data, timing issues
+```
+
+#### Phase 4: Post-Event Verification
+
+```
+□ Review logs from the event
+  - Any errors or missed detections?
+  - Any false positives?
+
+□ Compare detected times vs actual
+  - Event start: Detected at X, actually started at Y
+  - Each fight: Start/end detection accuracy
+
+□ Implement winner/method parsing (not time-critical)
+  - Add logic to extract winner name
+  - Add logic to extract method (KO, Sub, Dec, etc.)
+  - This can run after event or on next scrape
+
+□ Update scraper status in this doc
+  - Mark confidence level: Testing / Beta / Stable
+```
+
+#### Phase 5: Production Readiness
+
+```
+□ Run through at least 2-3 events successfully
+  - First event: Build and debug
+  - Second event: Verify fixes
+  - Third event: Confirm stability
+
+□ Add to PROMOTION_TRACKER_CONFIG
+  - packages/backend/src/config/liveTrackerConfig.ts
+  - Enable live tracking for this org
+
+□ Monitor first production event
+  - Watch logs during event
+  - Be ready to hotfix if needed
+
+□ Mark as ✅ Working in this doc
+```
+
+---
+
+### Scraper Development Log
+
+Track progress for each org here. Update after each event.
+
+| Org | Events Tested | Confidence | Notes |
+|-----|---------------|------------|-------|
+| UFC | Many | ✅ Stable | Production ready |
+| Matchroom | 0 | ⏳ Not Started | |
+| OKTAGON | 0 | ⏳ Not Started | |
+| PFL | 0 | ⏳ Not Started | |
+| ONE | 0 | ⏳ Not Started | |
+| BKFC | 0 | ⏳ Not Started | |
+| Rizin | 0 | ⏳ Not Started | |
+
+#### Per-Event Development Notes
+
+Use this template for each event you work on:
+
+```
+### [ORG] - [Event Name] - [Date]
+
+**Pre-Event:**
+- [ ] Found live results URL: ___
+- [ ] Page type: HTML / SPA / API
+- [ ] Created scraper file: Y/N
+
+**During Event:**
+- [ ] Event start detected: Y/N (accuracy: ___)
+- [ ] Fight starts detected: ___/___
+- [ ] Fight ends detected: ___/___
+- [ ] Any card changes: Y/N (handled: Y/N)
+
+**Issues Found:**
+-
+
+**Fixes Made:**
+-
+
+**Confidence After Event:** Not Working / Partial / Working
+```
+
+---
+
+### Quick Reference: What to Do on Event Day
+
+```
+BEFORE EVENT STARTS:
+1. Open the org's website in browser
+2. Find their live results page
+3. Open DevTools → Network tab
+4. Keep it open to observe during event
+
+WHEN EVENT STARTS:
+1. Note the exact time first fight begins
+2. Check if your scraper detected it
+3. If not, check what changed on the page
+
+DURING EACH FIGHT:
+1. Note when fight starts/ends
+2. Check scraper logs for detection
+3. If missed, inspect page changes
+
+AFTER EVENT:
+1. Review all logs
+2. Document what worked/didn't
+3. Commit any fixes
+4. Update confidence level
+```
+
+---
+
+## Phase 5: Polish (Post-Launch OK)
 
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
@@ -752,9 +1011,29 @@ Built complete account claim flow for migrated users from fightingtomatoes.com:
 
 ### Where to Resume
 ```
-Account claim flow complete. Next:
-1. Upload updated reset-password.html to web host (goodfights.app) ✅ DONE
-2. Build migration scripts (export from MySQL, import to PostgreSQL)
-3. Phase 2: Apple Developer Account setup
+Session continued on 2025-12-31 - see below
+```
+
+---
+
+## Session Log: 2025-12-31
+
+### Completed
+- [x] Created Apple Developer Account ($99/year)
+- [x] Set up App Store Connect
+- [x] Built first TestFlight build via EAS
+- [x] Legacy data migration from fightingtomatoes.com
+- [x] Downloaded TestFlight build to phone
+
+### In Progress
+- [ ] QA testing (60% complete)
+
+### Where to Resume
+```
+Continue QA testing. Remaining 40%:
+- Complete feature testing
+- Fix any bugs found
+- Rebuild TestFlight if needed
+- Submit to App Store review
 ```
 

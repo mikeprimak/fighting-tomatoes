@@ -132,60 +132,118 @@ Fight-specific notifications (notify when a specific fight starts) are **only av
 
 ## Legacy Migration (fightingtomatoes.com → New App)
 
-**Status: ✅ COMPLETE** (as of 2025-12-27)
+**Status: ✅ COMPLETE** (as of 2025-12-29)
 
 ### Migration Summary
 
 | Data Type | Count | Notes |
 |-----------|-------|-------|
-| **Events** | 1,427 | Includes banner images |
-| **Fighters** | 6,846 | Includes profile images (1,093) |
-| **Fights** | 13,517 | Order corrected (main event = orderOnCard 1) |
+| **Events** | ~1,300 | After deduplication; includes banner images |
+| **Fighters** | ~6,800 | Includes profile images (1,093) |
+| **Fights** | ~13,500 | Order corrected (main event = orderOnCard 1) |
 | **Users** | 1,928 | All have `password: null` for claim flow |
-| **Ratings** | 65,061 | Synced from live MySQL |
-| **Reviews** | 760 | Migrated from SQL dumps |
-| **Tags** | 594 | Migrated from SQL dumps |
+| **Ratings** | ~65,000 | Synced from live MySQL |
+| **Reviews** | ~760 | Migrated from SQL dumps |
+| **Tags** | ~594 | Migrated from SQL dumps |
 
-### Next Steps (User Invitation)
+### Pre-Launch Migration Checklist
 
-1. **Account Claim Flow is ready** - Users with `password: null` will be prompted to verify email and set new password
-2. **Send invitation emails** - Notify legacy users they can claim their accounts
-3. **Monitor claim rate** - Track how many users successfully migrate
+**⚠️ RUN THIS AGAIN BEFORE LAUNCH** to get the latest data from fightingtomatoes.com.
 
-### Migration Scripts Location
+#### Step 1: Sync from Live MySQL (REQUIRED)
+```bash
+cd packages/backend/scripts/legacy-migration/mysql-export
+
+# Sync ratings from live MySQL (gets latest user ratings)
+node sync-all-ratings.js
+
+# Sync any new fights/events added since last migration
+node sync-missing-data.js
+```
+
+#### Step 2: Import Images
+```bash
+# Import fighter profile images
+node import-images.js
+
+# Import event banner images (improved matching)
+node import-event-images-v2.js
+```
+
+#### Step 3: Fix Fight Order (CRITICAL)
+```bash
+# Sync fight order from legacy and invert (main event = order 1)
+node sync-fight-order.js
+```
+
+#### Step 4: Fix Duplicates (CRITICAL)
+```bash
+# Fix events with multiple fights at orderOnCard=1
+node fix-duplicate-orders.js
+
+# Merge duplicate events (same promotion + date)
+node merge-duplicate-events.js
+```
+
+#### Step 5: Manual Fixes
+```bash
+# Mark completed events that show as "LIVE"
+# Use Prisma to update: hasStarted: true, isComplete: true
+```
+
+### Migration Scripts Reference
 
 All scripts in `packages/backend/scripts/legacy-migration/`:
 
-| Script | Purpose |
-|--------|---------|
-| `00-migrate-fights.ts` | Import events, fighters, fights from SQL dumps |
-| `03-migrate-users.ts` | Import users with null passwords |
-| `04-migrate-ratings.ts` | Import ratings (uses fight-mapping.json) |
-| `05-migrate-reviews.ts` | Import reviews |
-| `06-migrate-tags.ts` | Import tags |
-| `07-verify-migration.ts` | Verify migration completeness |
-| `mysql-export/sync-all-ratings.js` | Sync ratings from LIVE MySQL |
-| `mysql-export/sync-missing-data.js` | Sync newer fights from LIVE MySQL |
-| `mysql-export/import-images.js` | Import fighter/event images |
-| `mysql-export/fix-fight-order.js` | Invert fight order (main event at top) |
-| `mysql-export/check-ratings.js` | Compare ratings between legacy/new |
+| Script | Purpose | When to Run |
+|--------|---------|-------------|
+| `00-migrate-fights.ts` | Import events, fighters, fights from SQL dumps | Initial migration only |
+| `03-migrate-users.ts` | Import users with null passwords | Initial migration only |
+| `04-migrate-ratings.ts` | Import ratings (uses fight-mapping.json) | Initial migration only |
+| `05-migrate-reviews.ts` | Import reviews | Initial migration only |
+| `06-migrate-tags.ts` | Import tags | Initial migration only |
+| `07-verify-migration.ts` | Verify migration completeness | After any migration |
 
-### Legacy MySQL Connection (for reference)
+Scripts in `packages/backend/scripts/legacy-migration/mysql-export/`:
+
+| Script | Purpose | When to Run |
+|--------|---------|-------------|
+| `sync-all-ratings.js` | Sync ratings from LIVE MySQL | **Every pre-launch sync** |
+| `sync-missing-data.js` | Sync newer fights from LIVE MySQL | **Every pre-launch sync** |
+| `import-images.js` | Import fighter images | **Every pre-launch sync** |
+| `import-event-images-v2.js` | Import event banners (flexible matching) | **Every pre-launch sync** |
+| `sync-fight-order.js` | Sync & invert fight order from legacy | **Every pre-launch sync** |
+| `fix-duplicate-orders.js` | Fix events with multiple order=1 fights | **Every pre-launch sync** |
+| `merge-duplicate-events.js` | Merge duplicate events (same date/promo) | **Every pre-launch sync** |
+| `check-ratings.js` | Compare ratings between legacy/new | Debugging only |
+
+### Legacy MySQL Connection
 
 ```
 Host: 216.69.165.113:3306
 User: fotnadmin
+Password: HungryMonkey12
 Databases: fightdb, userfightratings, userfightreviews, userfighttags
 ```
 
 **Note**: User rating/review/tag tables are named by MD5 hash of user email address.
 
-### Key Fixes Applied
+### Known Issues & Fixes Applied
 
-1. **Fight order reversed** - Legacy used high orderOnCard for main event; fixed with `fix-fight-order.js`
-2. **SQL dumps outdated** - Sept 2024 dumps missing newer data; synced from live MySQL
-3. **Rating discrepancy** - Synced 1,956 additional ratings from live MySQL
-4. **Images missing** - Imported 1,093 fighter + 391 event images from live MySQL
+1. **Fight order inverted** - Legacy used high orderOnCard for main event; `sync-fight-order.js` inverts this
+2. **Duplicate events** - Legacy + scraper both create events; `merge-duplicate-events.js` deduplicates
+3. **Duplicate fights at order=1** - Some fights not matched in sync; `fix-duplicate-orders.js` re-numbers
+4. **Truncated fighter names** - Some legacy names truncated (e.g., "Park Hy"); manually delete duplicates
+5. **Events with bogus dates** - Some Bellator events have date 1899-11-30; script skips dates before 2000
+6. **Images not matching** - Original script used exact name match; `import-event-images-v2.js` uses flexible matching
+
+### Account Claim Flow (Ready)
+
+Users with `password: null` will be prompted to:
+1. Enter email → Backend detects legacy user
+2. Receive verification email
+3. Click link to set new password (12+ chars, complexity required)
+4. Account activated with all legacy data intact
 
 ## Development Guidelines
 

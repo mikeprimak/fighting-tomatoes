@@ -18,17 +18,26 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.fightcrewapp.mobile",
       "backgroundColor": "#181818",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "runtimeVersion": {
         "policy": "appVersion"
       },
       "infoPlist": {
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["goodfights", "fightcrewapp"]
+            "CFBundleURLSchemes": [
+              "goodfights",
+              "fightcrewapp",
+              "com.googleusercontent.apps.499367908516-j03poule51s7sfvpvdufna0upqa3oseg"
+            ]
           }
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       },
-      "associatedDomains": ["applinks:goodfights.app"]
+      "associatedDomains": [
+        "applinks:goodfights.app"
+      ],
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -98,7 +107,8 @@
         }
       ],
       "expo-web-browser",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "expo-apple-authentication"
     ],
     "scheme": "goodfights",
     "extra": {

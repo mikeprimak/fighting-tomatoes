@@ -430,32 +430,52 @@ export default async function communityRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const userId = request.user?.id;
-      const { period = 'week' } = request.query as { period?: string };
+      const { period = 'week', promotions } = request.query as { period?: string; promotions?: string };
 
-      // Calculate time range based on period
+      // Parse promotions filter (comma-separated list)
+      const promotionList = promotions ? promotions.split(',').map(p => p.trim()).filter(p => p) : null;
+
+      // Determine if this is UFC-only filtering (higher engagement = higher thresholds)
+      const isUfcOnly = promotionList?.length === 1 && promotionList[0].toUpperCase() === 'UFC';
+
+      // Two-tier minimum rating thresholds:
+      // UFC (high engagement): 3, 10, 15, 20, 25
+      // Other orgs (lower engagement): 3, 5, 7, 10, 10
+      const thresholds = isUfcOnly
+        ? { week: 3, month: 10, '3months': 15, year: 20, all: 25 }
+        : { week: 3, month: 5, '3months': 7, year: 10, all: 10 };
+
+      // Calculate time range and minimum rating count based on period
       const now = new Date();
       const startDate = new Date();
+      let minRatingCount = thresholds.week; // Default minimum
 
       switch (period) {
         case 'week':
           startDate.setDate(now.getDate() - 7);
+          minRatingCount = thresholds.week;
           break;
         case 'month':
           startDate.setMonth(now.getMonth() - 1);
+          minRatingCount = thresholds.month;
           break;
         case '3months':
           startDate.setMonth(now.getMonth() - 3);
+          minRatingCount = thresholds['3months'];
           break;
         case 'year':
           startDate.setFullYear(now.getFullYear() - 1);
+          minRatingCount = thresholds.year;
           break;
         case 'all':
           // Set to a very old date to get all fights
           startDate.setFullYear(2000, 0, 1);
+          minRatingCount = thresholds.all;
           break;
         default:
           // Default to week if invalid period
           startDate.setDate(now.getDate() - 7);
+          minRatingCount = thresholds.week;
       }
 
       const fights = await fastify.prisma.fight.findMany({
@@ -465,10 +485,14 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               gte: startDate,
               lte: now,
             },
+            ...(promotionList && promotionList.length > 0 ? { promotion: { in: promotionList } } : {}),
           },
           isComplete: true,
           averageRating: {
             gt: 0,
+          },
+          totalRatings: {
+            gte: minRatingCount,
           },
         },
         include: {

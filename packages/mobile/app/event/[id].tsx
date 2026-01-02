@@ -9,6 +9,7 @@ import {
   Image,
   StatusBar,
   Animated,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, router, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -77,25 +78,14 @@ export default function EventDetailScreen() {
   const { data: fightsData, isLoading: fightsLoading, error: fightsError } = useQuery({
     queryKey: ['eventFights', id, isAuthenticated],
     queryFn: async () => {
-      console.log('[FIGHT ORDER] Fetching fights for event:', id);
       const response = await apiService.getFights({
         eventId: id as string,
         includeUserData: isAuthenticated,
         limit: 50
       });
 
-      console.log('[FIGHT ORDER] API returned fights:', response.fights.map((f: any) => ({
-        fighters: `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName}`,
-        orderOnCard: f.orderOnCard
-      })));
-
       // Sort fights by orderOnCard descending (main event first)
       response.fights.sort((a: any, b: any) => b.orderOnCard - a.orderOnCard);
-
-      console.log('[FIGHT ORDER] After sorting (descending):', response.fights.map((f: any) => ({
-        fighters: `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName}`,
-        orderOnCard: f.orderOnCard
-      })));
 
       return response;
     },
@@ -104,6 +94,18 @@ export default function EventDetailScreen() {
 
   const event = eventData?.event;
   const fights = fightsData?.fights || [];
+
+  // Debug: show alert when fights.length is 0 after loading (temporary debugging)
+  useEffect(() => {
+    if (event && !fightsLoading && !eventLoading) {
+      if (fights.length === 0) {
+        Alert.alert(
+          `Debug: No Fights`,
+          `Promotion: ${event.promotion}\nEvent: ${event.name}\nEvent ID: ${id}\n\nAPI returned 0 fights.`
+        );
+      }
+    }
+  }, [event?.id, fightsLoading, eventLoading, fights.length]);
 
   // Helper to check if event is currently live
   const isEventLive = (event: EventDetails | undefined) => {
@@ -241,31 +243,49 @@ export default function EventDetailScreen() {
       return bTime - aTime; // Most recent first
     })[0];
 
-  // Group fights by card section using cardType from UFC.com scraper (dynamic, no hardcoded thresholds!)
-  // Fallback to orderOnCard if cardType is missing (legacy events)
-  const mainCard = fights.filter((f: Fight) => {
-    if (f.cardType) return f.cardType === 'Main Card';
-    // Legacy fallback
-    return f.orderOnCard <= 6;
-  });
+  // Group fights by card section using cardType from scrapers
+  // Strategy: Be inclusive - only explicitly filter prelims/early prelims,
+  // everything else goes to main card (including unrecognized values)
 
-  const prelimCard = fights.filter((f: Fight) => {
-    if (f.cardType) return f.cardType === 'Prelims';
-    // Legacy fallback
-    return f.orderOnCard > 6 && f.orderOnCard <= 13;
-  });
+  const isPrelims = (cardType: string | null | undefined) => {
+    if (!cardType) return false;
+    const lower = cardType.toLowerCase().trim();
+    // Match: prelims, preliminary, undercard (but not early prelims)
+    return (lower.includes('prelim') && !lower.includes('early')) ||
+           lower === 'undercard' ||
+           lower === 'under card';
+  };
 
+  const isEarlyPrelims = (cardType: string | null | undefined) => {
+    if (!cardType) return false;
+    const lower = cardType.toLowerCase().trim();
+    return lower.includes('early prelim') || lower.includes('early-prelim');
+  };
+
+  // Early prelims first (most specific match)
   const earlyPrelims = fights.filter((f: Fight) => {
-    if (f.cardType) return f.cardType === 'Early Prelims';
+    if (f.cardType) return isEarlyPrelims(f.cardType);
     // Legacy fallback
     return f.orderOnCard > 13;
   });
 
-  // Debug: log fight grouping
-  console.log('[FIGHT ORDER] Grouped fights (using cardType from UFC.com):');
-  console.log('  Main Card:', mainCard.map((f: any) => `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName} (order: ${f.orderOnCard}, cardType: ${f.cardType || 'legacy'})`));
-  console.log('  Prelims:', prelimCard.map((f: any) => `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName} (order: ${f.orderOnCard}, cardType: ${f.cardType || 'legacy'})`));
-  console.log('  Early Prelims:', earlyPrelims.map((f: any) => `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName} (order: ${f.orderOnCard}, cardType: ${f.cardType || 'legacy'})`));
+  // Prelims second
+  const prelimCard = fights.filter((f: Fight) => {
+    if (f.cardType) return isPrelims(f.cardType);
+    // Legacy fallback
+    return !f.cardType && f.orderOnCard > 6 && f.orderOnCard <= 13;
+  });
+
+  // Main card: everything else (most inclusive)
+  const mainCard = fights.filter((f: Fight) => {
+    if (f.cardType) {
+      // Has cardType - include if NOT prelims or early prelims
+      return !isPrelims(f.cardType) && !isEarlyPrelims(f.cardType);
+    }
+    // Legacy fallback - no cardType means use orderOnCard
+    return f.orderOnCard <= 6;
+  });
+
 
   // Helper function to check if any fight in a card section has started
   const hasCardSectionStarted = (fights: Fight[]) => {
@@ -337,59 +357,6 @@ export default function EventDetailScreen() {
         {/* Main Card */}
         {mainCard.length > 0 && (
           <View style={styles.cardSection}>
-            {/* Section Header with Column Headers and Title/Time */}
-            <View style={styles.sectionHeader}>
-              {event.isComplete ? (
-                <>
-                  {/* Left Column Header - ALL / RATINGS */}
-                  <View style={styles.columnHeaders}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATINGS</Text>
-                  </View>
-
-                  {/* Center - Title and Time stacked vertically */}
-                  <View style={styles.sectionHeaderCenter}>
-                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>MAIN CARD</Text>
-                    {event.mainStartTime && !mainCardStarted && (
-                      <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
-                        {formatTime(event.mainStartTime)}
-                      </Text>
-                    )}
-                  </View>
-
-                  {/* Right Column Header - MY / RATING */}
-                  <View style={styles.columnHeadersRight}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
-                  </View>
-                </>
-              ) : (
-                <>
-                  {/* Left Column Header - ALL / HYPE */}
-                  <View style={styles.columnHeaders}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
-                  </View>
-
-                  {/* Center - Title and Time stacked vertically */}
-                  <View style={styles.sectionHeaderCenter}>
-                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>MAIN CARD</Text>
-                    {event.mainStartTime && !mainCardStarted && (
-                      <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
-                        {formatTime(event.mainStartTime)}
-                      </Text>
-                    )}
-                  </View>
-
-                  {/* Right Column Header - MY / HYPE */}
-                  <View style={styles.columnHeadersRight}>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
-                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
-                  </View>
-                </>
-              )}
-            </View>
-
             {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
               <FightDisplayCard
                 key={fight.id}
@@ -408,18 +375,6 @@ export default function EventDetailScreen() {
         {/* Preliminary Card */}
         {prelimCard.length > 0 && (
           <View style={styles.cardSection}>
-            {/* Section Header - Center Only (No Column Headers) */}
-            <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
-              <View style={styles.sectionHeaderCenter}>
-                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>PRELIMINARY CARD</Text>
-                {event.prelimStartTime && !prelimCardStarted && (
-                  <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
-                    {formatTime(event.prelimStartTime)}
-                  </Text>
-                )}
-              </View>
-            </View>
-
             {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
               <FightDisplayCard
                 key={fight.id}
@@ -438,18 +393,6 @@ export default function EventDetailScreen() {
         {/* Early Prelims */}
         {earlyPrelims.length > 0 && (
           <View style={styles.cardSection}>
-            {/* Section Header - Center Only (No Column Headers) */}
-            <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
-              <View style={styles.sectionHeaderCenter}>
-                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>EARLY PRELIMS</Text>
-                {event.earlyPrelimStartTime && !earlyPrelimsStarted && (
-                  <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
-                    {formatTime(event.earlyPrelimStartTime)}
-                  </Text>
-                )}
-              </View>
-            </View>
-
             {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
               <FightDisplayCard
                 key={fight.id}
@@ -532,7 +475,7 @@ const styles = StyleSheet.create({
   eventBanner: {
     width: '100%',
     height: undefined,
-    marginBottom: 16,
+    marginBottom: 0,
   },
   eventInfo: {
     margin: 16,
@@ -574,7 +517,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   cardSection: {
-    marginTop: 20,
+    marginTop: 0,
   },
   sectionHeader: {
     flexDirection: 'row',

@@ -972,15 +972,22 @@ export async function authRoutes(fastify: FastifyInstance) {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       const userId = decoded.userId;
 
+      // Get the user's account creation date - users can only have predictions on events after they joined
+      const user = await fastify.prisma.user.findUnique({
+        where: { id: userId },
+        select: { createdAt: true }
+      });
+      const userCreatedAt = user?.createdAt || new Date(0);
+
       // Get timeFilter from query params (default: 3months)
       const { timeFilter = '3months' } = request.query as { timeFilter?: string };
 
       // Calculate date filter based on timeFilter
       let dateFilter: Date | null = null;
-      let lastEventOnly = false;
 
-      if (timeFilter === 'lastEvent') {
-        lastEventOnly = true;
+      if (timeFilter === 'week') {
+        dateFilter = new Date();
+        dateFilter.setDate(dateFilter.getDate() - 7);
       } else if (timeFilter === 'month') {
         dateFilter = new Date();
         dateFilter.setMonth(dateFilter.getMonth() - 1);
@@ -991,7 +998,19 @@ export async function authRoutes(fastify: FastifyInstance) {
         dateFilter = new Date();
         dateFilter.setFullYear(dateFilter.getFullYear() - 1);
       }
-      // 'allTime' = no date filter (dateFilter stays null)
+      // 'allTime' = no date filter, but still bounded by user's account creation date
+
+      // Ensure dateFilter never goes before user's account creation date
+      // For 'allTime', use user's createdAt as the minimum date
+      if (dateFilter) {
+        // Use the later of the two dates (don't show events before user joined)
+        if (userCreatedAt > dateFilter) {
+          dateFilter = userCreatedAt;
+        }
+      } else if (timeFilter === 'allTime') {
+        // For allTime, use user's createdAt as the minimum
+        dateFilter = userCreatedAt;
+      }
 
       // Build event filter for completed events (events with at least one fight with a result)
       const eventWhereClause: any = {
@@ -1007,7 +1026,6 @@ export async function authRoutes(fastify: FastifyInstance) {
       }
 
       // Get completed events in the time range
-      // For lastEventOnly, only get the most recent event (optimize query)
       const completedEvents = await fastify.prisma.event.findMany({
         where: eventWhereClause,
         select: {
@@ -1017,9 +1035,8 @@ export async function authRoutes(fastify: FastifyInstance) {
           promotion: true
         },
         orderBy: {
-          date: lastEventOnly ? 'desc' : 'asc'
-        },
-        ...(lastEventOnly ? { take: 1 } : {})
+          date: 'asc'
+        }
       });
 
       // Build prediction where clause
@@ -1031,11 +1048,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         }
       };
 
-      // Filter predictions by date range or specific events
-      if (lastEventOnly && completedEvents.length > 0) {
-        // For lastEventOnly, only get predictions for that specific event
-        predictionWhereClause.fight.eventId = completedEvents[0].id;
-      } else if (dateFilter) {
+      // Filter predictions by date range
+      if (dateFilter) {
         predictionWhereClause.fight.event = { date: { gte: dateFilter } };
       }
 
@@ -1117,11 +1131,6 @@ export async function authRoutes(fastify: FastifyInstance) {
       let accuracyByEvent = Array.from(eventMap.values())
         .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
 
-      // If lastEventOnly, only keep the most recent event
-      if (lastEventOnly && accuracyByEvent.length > 0) {
-        accuracyByEvent = [accuracyByEvent[accuracyByEvent.length - 1]];
-      }
-
       return reply.code(200).send({
         accuracyByEvent,
         totalEvents: accuracyByEvent.length,
@@ -1163,25 +1172,22 @@ export async function authRoutes(fastify: FastifyInstance) {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
       const userId = decoded.userId;
 
+      // Get the user's account creation date - rankings should only include events since they joined
+      const user = await fastify.prisma.user.findUnique({
+        where: { id: userId },
+        select: { createdAt: true }
+      });
+      const userCreatedAt = user?.createdAt || new Date(0);
+
       // Get timeFilter from query params (default: 3months)
       const { timeFilter = '3months' } = request.query as { timeFilter?: string };
 
       // Calculate date filter based on timeFilter
       let dateFilter: Date | null = null;
-      let lastEventId: string | null = null;
 
-      if (timeFilter === 'lastEvent') {
-        // Find the most recent completed event
-        const lastEvent = await fastify.prisma.event.findFirst({
-          where: {
-            fights: {
-              some: { winner: { not: null } }
-            }
-          },
-          orderBy: { date: 'desc' },
-          select: { id: true }
-        });
-        lastEventId = lastEvent?.id || null;
+      if (timeFilter === 'week') {
+        dateFilter = new Date();
+        dateFilter.setDate(dateFilter.getDate() - 7);
       } else if (timeFilter === 'month') {
         dateFilter = new Date();
         dateFilter.setMonth(dateFilter.getMonth() - 1);
@@ -1192,7 +1198,17 @@ export async function authRoutes(fastify: FastifyInstance) {
         dateFilter = new Date();
         dateFilter.setFullYear(dateFilter.getFullYear() - 1);
       }
-      // 'allTime' = no date filter
+      // 'allTime' = no date filter, but bounded by user's account creation date
+
+      // Ensure dateFilter never goes before user's account creation date
+      // This ensures rankings only include events from after the user joined
+      if (dateFilter) {
+        if (userCreatedAt > dateFilter) {
+          dateFilter = userCreatedAt;
+        }
+      } else if (timeFilter === 'allTime') {
+        dateFilter = userCreatedAt;
+      }
 
       // Build where clause
       const whereClause: any = {
@@ -1200,9 +1216,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         fight: { winner: { not: null } }
       };
 
-      if (lastEventId) {
-        whereClause.fight.eventId = lastEventId;
-      } else if (dateFilter) {
+      if (dateFilter) {
         whereClause.fight.event = { date: { gte: dateFilter } };
       }
 

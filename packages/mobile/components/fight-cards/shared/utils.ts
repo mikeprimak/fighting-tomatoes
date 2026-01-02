@@ -144,24 +144,59 @@ export const formatMethod = (method: string | null | undefined) => {
   return method;
 };
 
+// Normalize event name to always include promotion prefix
+// Legacy events may have names like "321" or "Friday Fights 137" without the promotion
+// This function ensures names display as "UFC 321" or "ONE Friday Fights 137"
+export const normalizeEventName = (eventName: string, promotion?: string | null): string => {
+  if (!eventName || !promotion) return eventName;
+
+  const nameLower = eventName.toLowerCase();
+  const promoLower = promotion.toLowerCase();
+
+  // Check if the event name already contains the promotion
+  if (nameLower.includes(promoLower)) {
+    return eventName;
+  }
+
+  // Handle multi-word promotions like "Matchroom Boxing" - check first word too
+  const promoFirstWord = promoLower.split(' ')[0];
+  if (promoFirstWord.length > 2 && nameLower.startsWith(promoFirstWord)) {
+    return eventName;
+  }
+
+  // Special case: Don't double-prefix if name starts with a number and promotion is UFC
+  // e.g., "321" should become "UFC 321", not "UFC UFC 321"
+  const startsWithNumber = /^\d+$/.test(eventName.trim());
+  if (startsWithNumber) {
+    return `${promotion} ${eventName}`;
+  }
+
+  // Prepend the promotion
+  return `${promotion} ${eventName}`;
+};
+
 // Format event name for display on fight cards
 // - "UFC 322: Maddalena vs Makhachev" -> "UFC 322"
 // - "UFC Fight Night: Tsarukyan vs Hooker" -> "UFC Tsarukyan vs Hooker"
-export const formatEventName = (eventName: string) => {
+// - "321" with promotion="UFC" -> "UFC 321"
+export const formatEventName = (eventName: string, promotion?: string | null) => {
   if (!eventName) return eventName;
 
+  // First normalize the event name to include promotion if missing
+  const normalizedName = normalizeEventName(eventName, promotion);
+
   // Check if it's a numbered UFC event (e.g., "UFC 322: ...")
-  const numberedMatch = eventName.match(/^(UFC\s+\d+)/i);
+  const numberedMatch = normalizedName.match(/^(UFC\s+\d+)/i);
   if (numberedMatch) {
     return numberedMatch[1];
   }
 
   // Check if it's a Fight Night event (e.g., "UFC Fight Night: Tsarukyan vs Hooker")
-  const fightNightMatch = eventName.match(/^UFC\s+Fight\s+Night[:\s]+(.+)$/i);
+  const fightNightMatch = normalizedName.match(/^UFC\s+Fight\s+Night[:\s]+(.+)$/i);
   if (fightNightMatch) {
     return `UFC ${fightNightMatch[1]}`;
   }
 
-  // Return original name for other formats
-  return eventName;
+  // Return normalized name for other formats
+  return normalizedName;
 };

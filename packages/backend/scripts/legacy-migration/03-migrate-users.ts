@@ -85,7 +85,9 @@ async function main() {
 
   for (let i = 0; i < legacyUsers.length; i++) {
     const legacy = legacyUsers[i];
-    const email = legacy.emailaddress?.toLowerCase().trim();
+    // Safely handle email that may not be a string
+    const rawEmail = legacy.emailaddress;
+    const email = typeof rawEmail === 'string' ? rawEmail.toLowerCase().trim() : '';
 
     // Validate email
     if (!email || !isValidEmail(email)) {

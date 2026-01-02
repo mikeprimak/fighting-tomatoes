@@ -225,20 +225,6 @@
       "localHeadshotPath": "/images/athletes/mauricio-ruffy.png"
     },
     {
-      "name": "Kaan Ofli",
-      "url": "https://www.ufc.com/athlete/kaan-ofli",
-      "record": "13-4-1",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/OFLI_KAAN_10-11.png?itok=eLRUMvqm",
-      "localHeadshotPath": "/images/athletes/kaan-ofli.png"
-    },
-    {
-      "name": "Yizha",
-      "url": "https://www.ufc.com/athlete/yi-zha",
-      "record": "26-5-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/YIZHA_08-23.png?itok=Z0Sw6_i3",
-      "localHeadshotPath": "/images/athletes/yi-zha.png"
-    },
-    {
       "name": "Tai Tuivasa",
       "url": "https://www.ufc.com/athlete/tai-tuivasa",
       "record": "15-8-0",
@@ -251,20 +237,6 @@
       "record": "8-1-0",
       "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-07/TEIXEIRA_TALLISON_07-12.png?itok=jXpiHLnR",
       "localHeadshotPath": "/images/athletes/tallison-teixeira.png"
-    },
-    {
-      "name": "Junior Tafa",
-      "url": "https://www.ufc.com/athlete/shiyunia-tafua",
-      "record": "6-4-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-07/TAFA_JUNIOR_07-12.png?itok=aDDrDQGR",
-      "localHeadshotPath": "/images/athletes/shiyunia-tafua.png"
-    },
-    {
-      "name": "Billy Elekana",
-      "url": "https://www.ufc.com/athlete/billy-elekana",
-      "record": "9-2-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/ELEKANA_BILLY_11-01.png?itok=QwliTb9k",
-      "localHeadshotPath": "/images/athletes/billy-elekana.png"
     },
     {
       "name": "Jonathan Micallef",
@@ -281,18 +253,32 @@
       "localHeadshotPath": "/images/athletes/oban-elliott.png"
     },
     {
-      "name": "Quillan Salkilld",
-      "url": "https://www.ufc.com/athlete/quillan-salkilld",
-      "record": "10-1-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/SALKILLD_QUILLAN_10-25.png?itok=13OiEl6H",
-      "localHeadshotPath": "/images/athletes/quillan-salkilld.png"
+      "name": "Junior Tafa",
+      "url": "https://www.ufc.com/athlete/shiyunia-tafua",
+      "record": "6-4-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-07/TAFA_JUNIOR_07-12.png?itok=aDDrDQGR",
+      "localHeadshotPath": "/images/athletes/shiyunia-tafua.png"
     },
     {
-      "name": "Rongzhu",
-      "url": "https://www.ufc.com/athlete/karlos-olberg-1",
-      "record": "27-6-0",
-      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/RONGZHU_08-23.png?itok=01XquNHQ",
-      "localHeadshotPath": "/images/athletes/karlos-olberg-1.png"
+      "name": "Billy Elekana",
+      "url": "https://www.ufc.com/athlete/billy-elekana",
+      "record": "9-2-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/ELEKANA_BILLY_11-01.png?itok=QwliTb9k",
+      "localHeadshotPath": "/images/athletes/billy-elekana.png"
+    },
+    {
+      "name": "Kaan Ofli",
+      "url": "https://www.ufc.com/athlete/kaan-ofli",
+      "record": "13-4-1",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/OFLI_KAAN_10-11.png?itok=eLRUMvqm",
+      "localHeadshotPath": "/images/athletes/kaan-ofli.png"
+    },
+    {
+      "name": "Yizha",
+      "url": "https://www.ufc.com/athlete/yi-zha",
+      "record": "26-5-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/YIZHA_08-23.png?itok=Z0Sw6_i3",
+      "localHeadshotPath": "/images/athletes/yi-zha.png"
     },
     {
       "name": "Jimmy Crute",
@@ -309,6 +295,20 @@
       "localHeadshotPath": "/images/athletes/dustin-jacoby.png"
     },
     {
+      "name": "Quillan Salkilld",
+      "url": "https://www.ufc.com/athlete/quillan-salkilld",
+      "record": "10-1-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/SALKILLD_QUILLAN_10-25.png?itok=13OiEl6H",
+      "localHeadshotPath": "/images/athletes/quillan-salkilld.png"
+    },
+    {
+      "name": "Rongzhu",
+      "url": "https://www.ufc.com/athlete/karlos-olberg-1",
+      "record": "27-6-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/RONGZHU_08-23.png?itok=01XquNHQ",
+      "localHeadshotPath": "/images/athletes/karlos-olberg-1.png"
+    },
+    {
       "name": "Cam Rowston",
       "url": "https://www.ufc.com/athlete/cameron-rowston",
       "record": "13-3-0",
@@ -323,30 +323,6 @@
       "localHeadshotPath": "/images/athletes/dzhonatan-pirs-1.png"
     },
     {
-      "name": "SangWook Kim",
-      "url": "https://www.ufc.com/athlete/sangwook-kim",
-      "record": "3-1-0",
-      "headshotUrl": null
-    },
-    {
-      "name": "Dom Mar Fan",
-      "url": "https://www.ufc.com/athlete/dom-mar-fan",
-      "record": "2-0-0",
-      "headshotUrl": null
-    },
-    {
-      "name": "Keiichiro Nakamura",
-      "url": "https://www.ufc.com/athlete/keiichiro-nakamura",
-      "record": "2-0-0",
-      "headshotUrl": null
-    },
-    {
-      "name": "Sebastian Szalay",
-      "url": "https://www.ufc.com/athlete/sebastian-szalay",
-      "record": "2-0-0",
-      "headshotUrl": null
-    },
-    {
       "name": "Jacob Malkoun",
       "url": "https://www.ufc.com/athlete/jacob-malkoun",
       "record": "8-3-0",
@@ -359,6 +335,30 @@
       "record": "11-0-0",
       "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-04/FINNEY_TORREZ_04-05.png?itok=TBVY8Rna",
       "localHeadshotPath": "/images/athletes/torrez-finney.png"
+    },
+    {
+      "name": "SangWook Kim",
+      "url": "https://www.ufc.com/athlete/sangwook-kim",
+      "record": "3-1-0",
+      "headshotUrl": null
+    },
+    {
+      "name": "Dom Mar Fan",
+      "url": "https://www.ufc.com/athlete/dom-mar-fan",
+      "record": "2-0-0",
+      "headshotUrl": null
+    },
+    {
+      "name": "",
+      "url": "https://www.ufc.com/node/153161",
+      "record": null,
+      "headshotUrl": null
+    },
+    {
+      "name": "Sebastian Szalay",
+      "url": "https://www.ufc.com/athlete/sebastian-szalay",
+      "record": "2-0-0",
+      "headshotUrl": null
     },
     {
       "name": "Sulangrangbo",
@@ -565,6 +565,20 @@
       "record": "27-10-0",
       "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/LONG_XIAO_08-23.png?itok=uJKGXkAU",
       "localHeadshotPath": "/images/athletes/shiyao-ron.png"
+    },
+    {
+      "name": "Sumudaerji",
+      "url": "https://www.ufc.com/athlete/su-mudaerji",
+      "record": "18-7-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-08/SUMUDAERJI_08-23.png?itok=jSYc9Be2",
+      "localHeadshotPath": "/images/athletes/su-mudaerji.png"
+    },
+    {
+      "name": "Jesus Aguilar",
+      "url": "https://www.ufc.com/athlete/jesus-aguilar",
+      "record": "12-3-0",
+      "headshotUrl": "https://ufc.com/images/styles/event_results_athlete_headshot/s3/2025-09/AGUILAR_JESUS_09-13.png?itok=P-96IBgN",
+      "localHeadshotPath": "/images/athletes/jesus-aguilar.png"
     }
   ]
 }

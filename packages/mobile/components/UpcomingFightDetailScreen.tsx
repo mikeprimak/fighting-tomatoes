@@ -39,7 +39,7 @@ import FightDetailsMenu from './FightDetailsMenu';
 import Button from './Button';
 import SectionContainer from './SectionContainer';
 import { isTBAFighterName } from '../constants/tba';
-import { getFighterImage } from './fight-cards/shared/utils';
+import { getFighterImage, getFighterImageUrl } from './fight-cards/shared/utils';
 
 interface Fighter {
   id: string;
@@ -279,6 +279,7 @@ export default function UpcomingFightDetailScreen({
 
   // Helper to optimistically update events cache for predictions
   const updateEventsCache = (updates: { userPredictedWinner?: string | null; userPredictedMethod?: string | null; userHypePrediction?: number | null; averageHype?: number }) => {
+    // Update upcomingEvents (infinite query with nested fights)
     queryClient.setQueryData(['upcomingEvents', isAuthenticated], (old: any) => {
       if (!old?.pages) return old;
       return {
@@ -294,6 +295,19 @@ export default function UpcomingFightDetailScreen({
         })),
       };
     });
+
+    // Update eventFights (flat fights array for event detail screen)
+    if (fight.event?.id) {
+      queryClient.setQueryData(['eventFights', fight.event.id, isAuthenticated], (old: any) => {
+        if (!old?.fights) return old;
+        return {
+          ...old,
+          fights: old.fights.map((f: any) =>
+            f.id === fight.id ? { ...f, ...updates } : f
+          ),
+        };
+      });
+    }
   };
 
   // Auto-save winner selection
@@ -901,6 +915,21 @@ export default function UpcomingFightDetailScreen({
         };
       });
 
+      // Optimistically update eventFights cache for event detail screen
+      if (fight.event?.id) {
+        queryClient.setQueryData(['eventFights', fight.event.id, isAuthenticated], (old: any) => {
+          if (!old?.fights) return old;
+          return {
+            ...old,
+            fights: old.fights.map((f: any) =>
+              f.id === fight.id
+                ? { ...f, notificationReasons: getNewNotificationReasons(f.notificationReasons) }
+                : f
+            ),
+          };
+        });
+      }
+
       return { previousEvents, previousFight };
     },
     onSuccess: (data, enabled) => {
@@ -1386,8 +1415,8 @@ export default function UpcomingFightDetailScreen({
             fighter2Name={fight.fighter2.lastName}
             fighter1Id={fight.fighter1Id}
             fighter2Id={fight.fighter2Id}
-            fighter1Image={fight.fighter1.profileImage}
-            fighter2Image={fight.fighter2.profileImage}
+            fighter1Image={getFighterImageUrl(fight.fighter1.profileImage)}
+            fighter2Image={getFighterImageUrl(fight.fighter2.profileImage)}
             selectedWinner={selectedWinner}
             selectedMethod={selectedMethod}
             fighter1Predictions={displayPredictionStats.fighter1MethodPredictions}

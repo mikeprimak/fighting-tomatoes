@@ -59,22 +59,20 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ⚙️ DEVELOPMENT CONFIG: Set to true to test production API while developing
-const USE_PRODUCTION_API = false;
-
 const getApiBaseUrl = () => {
-  const isDevelopment = (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.NODE_ENV === 'development';
+  // __DEV__ is true in Expo Go and development builds, false in production/TestFlight builds
+  const isDevBuild = typeof __DEV__ !== 'undefined' && __DEV__ === true;
 
-  // Allow forcing production API during development for testing
-  if (USE_PRODUCTION_API || !isDevelopment) {
+  // Production/TestFlight builds → always use Render
+  if (!isDevBuild) {
     return 'https://fightcrewapp-backend.onrender.com/api';
   }
 
-  // In development, use localhost for web and network IP for mobile
+  // Development builds → use local backend
   if (Platform.OS === 'web') {
     return 'http://localhost:3008/api';
   } else {
-    return 'http://10.0.0.53:3008/api';  // Network IP for mobile devices
+    return 'http://10.0.0.53:3008/api';  // Your local dev machine
   }
 };
 

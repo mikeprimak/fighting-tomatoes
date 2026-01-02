@@ -2641,6 +2641,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           });
 
           let fightReview;
+          let isNewReview = false;
           if (existingTopLevelReview) {
             fightReview = await fastify.prisma.fightReview.update({
               where: { id: existingTopLevelReview.id },
@@ -2650,6 +2651,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
               },
             });
           } else {
+            // Create new review with auto-upvote
             fightReview = await fastify.prisma.fightReview.create({
               data: {
                 userId: currentUserId,
@@ -2657,6 +2659,17 @@ export async function fightRoutes(fastify: FastifyInstance) {
                 content: review,
                 rating: effectiveRating,
                 parentReviewId: null,
+                upvotes: 1, // Auto-upvote on creation
+              },
+            });
+            isNewReview = true;
+
+            // Create auto-upvote vote record
+            await fastify.prisma.reviewVote.create({
+              data: {
+                userId: currentUserId,
+                reviewId: fightReview.id,
+                isUpvote: true,
               },
             });
           }
@@ -2664,6 +2677,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
             id: fightReview.id,
             content: review,
             rating: effectiveRating,
+            upvotes: isNewReview ? 1 : existingTopLevelReview?.upvotes ?? 0,
+            userHasUpvoted: isNewReview ? true : undefined, // Signal to frontend
           };
         }
 

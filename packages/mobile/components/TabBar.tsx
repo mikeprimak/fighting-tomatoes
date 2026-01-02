@@ -2,7 +2,7 @@ import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import { Tabs, useRouter, usePathname } from 'expo-router';
-import { useColorScheme, Text, View, Image, TouchableOpacity } from 'react-native';
+import { useColorScheme, Text, View, Image, TouchableOpacity, Platform } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { useAuth } from '../store/AuthContext';
 import { useHasLiveEvent } from '../hooks/useHasLiveEvent';
@@ -129,8 +129,8 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
-          height: 80,
-          paddingBottom: 15,
+          height: Platform.OS === 'ios' ? 65 : 80,  // iOS: smaller (physical home button), Android: larger (gesture bar)
+          paddingBottom: Platform.OS === 'ios' ? 5 : 15,  // Less padding on iOS
         },
         tabBarItemStyle: {
           justifyContent: 'center',
@@ -146,6 +146,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
         },
         headerTintColor: colors.text,
         headerShadowVisible: false,
+        headerTitleAlign: 'left',  // Force left alignment on iOS (matches Android)
         sceneStyle: {
           backgroundColor: colors.background,
         },

@@ -2,26 +2,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { secureStorage } from '../utils/secureStorage';
 
-// ⚙️ DEVELOPMENT CONFIG: Set to true to test production API while developing
-const USE_PRODUCTION_API = false;
-
 // Token refresh state to prevent multiple simultaneous refresh attempts
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 
 const getApiBaseUrl = () => {
-  const isDevelopment = (typeof __DEV__ !== 'undefined' && __DEV__) || process.env.NODE_ENV === 'development';
+  // __DEV__ is true in Expo Go and development builds, false in production/TestFlight builds
+  const isDevBuild = typeof __DEV__ !== 'undefined' && __DEV__ === true;
 
-  // Allow forcing production API during development for testing
-  if (USE_PRODUCTION_API || !isDevelopment) {
+  // Production/TestFlight builds → always use Render
+  if (!isDevBuild) {
     return 'https://fightcrewapp-backend.onrender.com/api';
   }
 
-  // In development, use localhost for web and network IP for mobile
+  // Development builds → use local backend
   if (Platform.OS === 'web') {
     return 'http://localhost:3008/api';
   } else {
-    return 'http://10.0.0.53:3008/api';  // Network IP for mobile devices (working server)
+    return 'http://10.0.0.53:3008/api';  // Your local dev machine
   }
 };
 
@@ -29,7 +27,7 @@ const API_BASE_URL = getApiBaseUrl();
 
 // Log which API we're using at startup (helps debug local vs production issues)
 console.log(`[API] Using API URL: ${API_BASE_URL}`);
-console.log(`[API] USE_PRODUCTION_API=${USE_PRODUCTION_API}, __DEV__=${typeof __DEV__ !== 'undefined' ? __DEV__ : 'undefined'}`);
+console.log(`[API] __DEV__=${typeof __DEV__ !== 'undefined' ? __DEV__ : 'undefined'}`);
 
 // Export for use in auth screens
 export { API_BASE_URL };
@@ -439,6 +437,7 @@ class ApiService {
     limit?: number;
     type?: 'upcoming' | 'past' | 'all';
     includeFights?: boolean;
+    promotions?: string;  // Comma-separated list of promotions (e.g., "UFC,PFL,ONE")
   } = {}): Promise<{
     events: any[];
     pagination: {
@@ -1084,8 +1083,12 @@ class ApiService {
     return this.makeRequest(`/community/top-upcoming-fights?period=${period}`);
   }
 
-  async getTopRecentFights(period: string = 'week'): Promise<{ data: Fight[] }> {
-    return this.makeRequest(`/community/top-recent-fights?period=${period}`);
+  async getTopRecentFights(period: string = 'week', promotions?: string): Promise<{ data: Fight[] }> {
+    const params = new URLSearchParams({ period });
+    if (promotions) {
+      params.append('promotions', promotions);
+    }
+    return this.makeRequest(`/community/top-recent-fights?${params.toString()}`);
   }
 
   async getHotPredictions(): Promise<{

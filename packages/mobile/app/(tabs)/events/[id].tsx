@@ -9,6 +9,7 @@ import {
   Image,
   StatusBar,
   Animated,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, router, useRouter } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -241,31 +242,62 @@ export default function EventDetailScreen() {
       return bTime - aTime; // Most recent first
     })[0];
 
-  // Group fights by card section using cardType from UFC.com scraper (dynamic, no hardcoded thresholds!)
-  // Fallback to orderOnCard if cardType is missing (legacy events)
-  const mainCard = fights.filter((f: Fight) => {
-    if (f.cardType) return f.cardType === 'Main Card';
-    // Legacy fallback
-    return f.orderOnCard <= 6;
-  });
+  // Group fights by card section using cardType from scrapers
+  // Strategy: Be inclusive - only explicitly filter prelims/early prelims,
+  // everything else goes to main card (including unrecognized values)
 
-  const prelimCard = fights.filter((f: Fight) => {
-    if (f.cardType) return f.cardType === 'Prelims';
-    // Legacy fallback
-    return f.orderOnCard > 6 && f.orderOnCard <= 13;
-  });
+  const isPrelims = (cardType: string | null | undefined) => {
+    if (!cardType) return false;
+    const lower = cardType.toLowerCase().trim();
+    // Match: prelims, preliminary, undercard (but not early prelims)
+    return (lower.includes('prelim') && !lower.includes('early')) ||
+           lower === 'undercard' ||
+           lower === 'under card';
+  };
 
+  const isEarlyPrelims = (cardType: string | null | undefined) => {
+    if (!cardType) return false;
+    const lower = cardType.toLowerCase().trim();
+    return lower.includes('early prelim') || lower.includes('early-prelim');
+  };
+
+  // Early prelims first (most specific match)
   const earlyPrelims = fights.filter((f: Fight) => {
-    if (f.cardType) return f.cardType === 'Early Prelims';
+    if (f.cardType) return isEarlyPrelims(f.cardType);
     // Legacy fallback
     return f.orderOnCard > 13;
   });
 
-  // Debug: log fight grouping
-  console.log('[FIGHT ORDER] Grouped fights (using cardType from UFC.com):');
-  console.log('  Main Card:', mainCard.map((f: any) => `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName} (order: ${f.orderOnCard}, cardType: ${f.cardType || 'legacy'})`));
-  console.log('  Prelims:', prelimCard.map((f: any) => `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName} (order: ${f.orderOnCard}, cardType: ${f.cardType || 'legacy'})`));
-  console.log('  Early Prelims:', earlyPrelims.map((f: any) => `${f.fighter1.lastName} vs ${f.fighter2.lastName || f.fighter2.firstName} (order: ${f.orderOnCard}, cardType: ${f.cardType || 'legacy'})`));
+  // Prelims second
+  const prelimCard = fights.filter((f: Fight) => {
+    if (f.cardType) return isPrelims(f.cardType);
+    // Legacy fallback
+    return !f.cardType && f.orderOnCard > 6 && f.orderOnCard <= 13;
+  });
+
+  // Main card: everything else (most inclusive)
+  const mainCard = fights.filter((f: Fight) => {
+    if (f.cardType) {
+      // Has cardType - include if NOT prelims or early prelims
+      return !isPrelims(f.cardType) && !isEarlyPrelims(f.cardType);
+    }
+    // Legacy fallback - no cardType means use orderOnCard
+    return f.orderOnCard <= 6;
+  });
+
+  // Debug: show alert when fights.length is 0 after loading (temporary debugging)
+  const totalGrouped = mainCard.length + prelimCard.length + earlyPrelims.length;
+  useEffect(() => {
+    if (event && !fightsLoading && !eventLoading) {
+      // Only show debug for events with 0 fights
+      if (fights.length === 0) {
+        Alert.alert(
+          `Debug: No Fights`,
+          `Promotion: ${event.promotion}\nEvent: ${event.name}\nEvent ID: ${id}\n\nAPI returned 0 fights.`
+        );
+      }
+    }
+  }, [event?.id, fightsLoading, eventLoading, fights.length]);
 
   // Helper function to check if any fight in a card section has started
   const hasCardSectionStarted = (fights: Fight[]) => {
