@@ -302,7 +302,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         },
       };
 
-      // Add user predictions if authenticated
+      // Add user predictions and ratings if authenticated
       if (currentUserId) {
         include.predictions = {
           where: { userId: currentUserId },
@@ -312,6 +312,16 @@ export default async function searchRoutes(fastify: FastifyInstance) {
             predictedWinner: true,
             predictedMethod: true,
             predictedRound: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        };
+        // Add user ratings for completed fights
+        include.ratings = {
+          where: { userId: currentUserId },
+          select: {
+            id: true,
+            rating: true,
             createdAt: true,
             updatedAt: true,
           },
@@ -399,6 +409,11 @@ export default async function searchRoutes(fastify: FastifyInstance) {
             transformed.userPredictedRound = prediction.predictedRound;
           }
 
+          // Transform user rating (for completed fights)
+          if (fight.ratings && fight.ratings.length > 0) {
+            transformed.userRating = fight.ratings[0].rating;
+          }
+
           // Add fighter follow info (for UI display)
           transformed.isFollowingFighter1 = followedFighterIds.has(fight.fighter1Id) || undefined;
           transformed.isFollowingFighter2 = followedFighterIds.has(fight.fighter2Id) || undefined;
@@ -415,8 +430,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
             r => r.type === 'manual' && r.isActive
           );
 
-          // Remove raw predictions array to avoid confusion
+          // Remove raw arrays to avoid confusion
           delete transformed.predictions;
+          delete transformed.ratings;
 
           return transformed;
         }));

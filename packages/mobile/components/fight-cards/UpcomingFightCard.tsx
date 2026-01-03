@@ -343,10 +343,28 @@ function UpcomingFightCard({
         justifyContent: 'center',
         backgroundColor: cardBgColor,
       }]}>
+          {/* Event info inside card (when showEvent=true) - above fighter names */}
+          {showEvent && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, marginBottom: 2 }}>
+              <Text
+                style={{
+                  color: colors.textSecondary,
+                  fontSize: 10,
+                  textAlign: 'center',
+                  flex: 1,
+                }}
+                numberOfLines={1}
+              >
+                {formatEventName(fight.event.name, fight.event.promotion)} • {formatDate(fight.event.date)}
+              </Text>
+            </View>
+          )}
+
           {/* Full-height community hype square on the left */}
           <View style={[
             styles.hypeSquare,
             {
+              top: showEvent ? 20 : 6, // Move down when event info is shown
               backgroundColor: (predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0)
                 ? hypeBorderColor
                 : 'transparent',
@@ -378,7 +396,7 @@ function UpcomingFightCard({
           </View>
 
           {/* User hype flame icon on the right */}
-          <View style={styles.userHypeFlameContainer}>
+          <View style={[styles.userHypeFlameContainer, { top: showEvent ? 20 : 6 }]}>
             {(fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0) ? (
               <Animated.View style={[styles.userHypeFlameWrapper, { transform: [{ scale: hypeScaleAnim }] }]}>
                 <FontAwesome6
@@ -493,21 +511,6 @@ function UpcomingFightCard({
             </View>
 
           </View>
-
-          {/* Event info inside card (when showEvent=true) */}
-          {showEvent && (
-            <Text
-              style={{
-                color: colors.textSecondary,
-                fontSize: 10,
-                textAlign: 'center',
-                marginTop: 4,
-              }}
-              numberOfLines={1}
-            >
-              {formatEventName(fight.event.name, fight.event.promotion)} • {formatDate(fight.event.date)}
-            </Text>
-          )}
 
         {/* Bell icon - hidden but functionality preserved */}
         {false && isAuthenticated && (

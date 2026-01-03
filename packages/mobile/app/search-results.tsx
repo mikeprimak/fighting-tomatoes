@@ -179,43 +179,6 @@ export default function SearchResultsScreen() {
       textAlign: 'center',
       marginTop: 12,
     },
-    columnHeadersUpcoming: {
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 0,
-      marginLeft: -11,
-      width: 40,
-      justifyContent: 'center',
-    },
-    columnHeadersUpcomingRight: {
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 0,
-      marginRight: -11,
-      width: 40,
-      justifyContent: 'center',
-    },
-    columnHeadersCompleted: {
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 0,
-      marginLeft: -14,
-      width: 60,
-      justifyContent: 'center',
-    },
-    columnHeadersCompletedRight: {
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 0,
-      marginRight: -17,
-      width: 60,
-      justifyContent: 'center',
-    },
-    columnHeaderText: {
-      fontSize: 10,
-      fontWeight: '600',
-      letterSpacing: 0.5,
-    },
   });
 
   if (!q || q.length < 2) {
@@ -283,27 +246,6 @@ export default function SearchResultsScreen() {
                       <Text style={styles.sectionTitle}>Upcoming Fights</Text>
                       <Text style={styles.resultCount}>({upcomingFights.length})</Text>
                     </View>
-                    <View style={[styles.sectionHeader, { marginBottom: 12 }]}>
-                      {/* Left Column Header - ALL / HYPE */}
-                      <View style={styles.columnHeadersUpcoming}>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          ALL
-                        </Text>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          HYPE
-                        </Text>
-                      </View>
-
-                      {/* Right Column Header - MY / HYPE */}
-                      <View style={styles.columnHeadersUpcomingRight}>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          MY
-                        </Text>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          HYPE
-                        </Text>
-                      </View>
-                    </View>
                     {upcomingFights.map((fight, index) => (
                       <UpcomingFightCard
                         key={fight.id}
@@ -322,27 +264,6 @@ export default function SearchResultsScreen() {
                     <View style={styles.sectionHeader}>
                       <Text style={styles.sectionTitle}>Completed Fights</Text>
                       <Text style={styles.resultCount}>({completedFights.length})</Text>
-                    </View>
-                    <View style={[styles.sectionHeader, { marginBottom: 12 }]}>
-                      {/* Left Column Header - ALL / RATINGS */}
-                      <View style={styles.columnHeadersCompleted}>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          ALL
-                        </Text>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          RATINGS
-                        </Text>
-                      </View>
-
-                      {/* Right Column Header - MY / RATING */}
-                      <View style={styles.columnHeadersCompletedRight}>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          MY
-                        </Text>
-                        <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                          RATING
-                        </Text>
-                      </View>
                     </View>
                     {completedFights.map((fight, index) => (
                       <CompletedFightCard

@@ -668,6 +668,20 @@ export default function CompletedFightDetailScreen({
         };
       });
 
+      // Optimistically update search results cache for instant update on search results screen
+      queryClient.setQueriesData({ queryKey: ['search'] }, (old: any) => {
+        if (!old?.data?.fights) return old;
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            fights: old.data.fights.map((f: any) =>
+              f.id === fight.id ? { ...f, userRating: response?.data?.rating } : f
+            ),
+          },
+        };
+      });
+
       // MINIMAL invalidations - only what's truly needed
       // We use local state for tags, so don't refetch tag-related queries
       queryClient.invalidateQueries({ queryKey: ['myRatings'] }); // User's ratings page
