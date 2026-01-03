@@ -309,6 +309,20 @@ export default function UpcomingFightDetailScreen({
         };
       });
     }
+
+    // Update search results cache (fights are in data.fights array)
+    queryClient.setQueriesData({ queryKey: ['search'] }, (old: any) => {
+      if (!old?.data?.fights) return old;
+      return {
+        ...old,
+        data: {
+          ...old.data,
+          fights: old.data.fights.map((f: any) =>
+            f.id === fight.id ? { ...f, ...updates } : f
+          ),
+        },
+      };
+    });
   };
 
   // Auto-save winner selection
@@ -324,11 +338,13 @@ export default function UpcomingFightDetailScreen({
     },
     onMutate: async (winnerId) => {
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
+      await queryClient.cancelQueries({ queryKey: ['search'] });
       updateEventsCache({ userPredictedWinner: winnerId });
     },
     onError: () => {
       // Invalidate to refetch correct state on error
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+      // Note: Don't invalidate search here - optimistic update handles it
     },
     onSuccess: () => {
       // Mark this fight as needing animation
@@ -349,6 +365,7 @@ export default function UpcomingFightDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
       queryClient.invalidateQueries({ queryKey: ['myRatings'] });
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+      // Note: Don't invalidate search - optimistic update handles it, and refetch loses averageHype
 
       onPredictionSuccess?.();
     },
@@ -368,6 +385,7 @@ export default function UpcomingFightDetailScreen({
     },
     onMutate: async (hypeLevel) => {
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
+      await queryClient.cancelQueries({ queryKey: ['search'] });
       updateEventsCache({ userHypePrediction: hypeLevel });
     },
     onSuccess: (data: any) => {
@@ -404,6 +422,7 @@ export default function UpcomingFightDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
       queryClient.invalidateQueries({ queryKey: ['myRatings'] });
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+      // Note: Don't invalidate search - optimistic update handles it, and refetch loses averageHype
     },
   });
 
@@ -420,11 +439,13 @@ export default function UpcomingFightDetailScreen({
     },
     onMutate: async (method) => {
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
+      await queryClient.cancelQueries({ queryKey: ['search'] });
       updateEventsCache({ userPredictedMethod: method });
     },
     onError: () => {
       // Invalidate to refetch correct state on error
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+      // Note: Don't invalidate search here - optimistic update handles it
     },
     onSuccess: () => {
       // Mark this fight as needing animation
@@ -445,6 +466,7 @@ export default function UpcomingFightDetailScreen({
       queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
       queryClient.invalidateQueries({ queryKey: ['myRatings'] });
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+      // Note: Don't invalidate search - optimistic update handles it, and refetch loses averageHype
 
       onPredictionSuccess?.();
     },

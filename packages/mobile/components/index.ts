@@ -25,3 +25,4 @@ export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 export { default as RatingDistributionChart } from './RatingDistributionChart';
 export { default as PredictionBarChart } from './PredictionBarChart';
 export { default as SectionContainer } from './SectionContainer';
+export { default as SearchBar } from './SearchBar';

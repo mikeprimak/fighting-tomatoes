@@ -147,6 +147,11 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
         headerTintColor: colors.text,
         headerShadowVisible: false,
         headerTitleAlign: 'left',  // Force left alignment on iOS (matches Android)
+        headerTitleContainerStyle: {
+          // Ensure title container takes full width and aligns left on iOS
+          flex: 1,
+          justifyContent: 'flex-start',
+        },
         sceneStyle: {
           backgroundColor: colors.background,
         },
@@ -198,6 +203,18 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
             </Text>
           ),
           headerTitle: () => <HeaderLogo title="Upcoming Fights" />,
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={toggleSearch}
+              style={{ marginRight: 16, padding: 8, marginTop: -16 }}
+            >
+              <FontAwesome
+                name="search"
+                size={20}
+                color={isSearchVisible ? colors.tint : colors.text}
+              />
+            </TouchableOpacity>
+          ),
         }}
       />
       <Tabs.Screen
@@ -214,7 +231,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
           headerRight: () => (
             <TouchableOpacity
               onPress={toggleSearch}
-              style={{ marginRight: 16, padding: 8 }}
+              style={{ marginRight: 16, padding: 8, marginTop: -16 }}
             >
               <FontAwesome
                 name="search"

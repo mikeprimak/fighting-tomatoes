@@ -20,6 +20,7 @@ import { DetailScreenHeader, FightDisplayCard, Button } from '../../components';
 import { useAuth } from '../../store/AuthContext';
 import { useVerification } from '../../store/VerificationContext';
 import { FontAwesome } from '@expo/vector-icons';
+import { getFighterImage } from '../../components/fight-cards/shared/utils';
 
 type SortOption = 'newest' | 'oldest' | 'highest-rating' | 'most-rated';
 
@@ -28,11 +29,6 @@ const SORT_OPTIONS = [
   { value: 'newest' as SortOption, label: 'Date' },
   { value: 'most-rated' as SortOption, label: 'Number of Ratings' },
 ];
-
-// Placeholder image for fighters
-const getFighterPlaceholderImage = (fighterId: string) => {
-  return require('../../assets/fighters/fighter-default-alpha.png');
-};
 
 export default function FighterDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -277,11 +273,7 @@ export default function FighterDetailScreen() {
         <View style={styles.headerContainer}>
           {/* Fighter Image - Left */}
           <Image
-            source={
-              fighter.profileImage
-                ? { uri: fighter.profileImage }
-                : getFighterPlaceholderImage(fighter.id)
-            }
+            source={getFighterImage(fighter)}
             style={styles.fighterImage}
           />
 

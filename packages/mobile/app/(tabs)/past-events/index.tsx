@@ -7,15 +7,12 @@ import {
   StyleSheet,
   Image,
   StatusBar,
-  TextInput,
   TouchableOpacity,
-  Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { useAuth } from '../../../store/AuthContext';
@@ -23,7 +20,7 @@ import { useSearch } from '../../../store/SearchContext';
 import { useOrgFilter } from '../../../store/OrgFilterContext';
 import CompletedFightCard from '../../../components/fight-cards/CompletedFightCard';
 import OrgFilterTabs from '../../../components/OrgFilterTabs';
-import { EventBannerCard } from '../../../components';
+import { EventBannerCard, SearchBar } from '../../../components';
 
 // Number of events to load initially and per page
 const EVENTS_PER_PAGE = 2;
@@ -256,19 +253,11 @@ export default function PastEventsScreen() {
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const { isSearchVisible, hideSearch } = useSearch();
+  const { isSearchVisible } = useSearch();
   const { selectedOrgs } = useOrgFilter();
-  const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('recent');
   const [topRatedPeriod, setTopRatedPeriod] = useState<TimePeriod>('week');
   const flatListRef = useRef<FlatList>(null);
-
-  const handleSearch = () => {
-    Keyboard.dismiss();
-    if (searchQuery.trim().length >= 2) {
-      router.push(`/search-results?q=${encodeURIComponent(searchQuery.trim())}` as any);
-    }
-  };
 
   // Convert selected orgs to comma-separated string for API
   const promotionsFilter = selectedOrgs.size > 0
@@ -447,38 +436,8 @@ export default function PastEventsScreen() {
         </TouchableOpacity>
       </View>}
 
-      {/* Search Bar - Shown outside FlatList when search is visible */}
-      {isSearchVisible && (
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBarWrapper}>
-            <View style={styles.searchInputContainer}>
-              <FontAwesome
-                name="search"
-                size={18}
-                color={colors.textSecondary}
-                style={styles.searchIcon}
-              />
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Search fighters, events..."
-                placeholderTextColor={colors.textSecondary}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                onSubmitEditing={handleSearch}
-                returnKeyType="search"
-                autoFocus={true}
-              />
-            </View>
-            <TouchableOpacity
-              style={styles.searchButton}
-              onPress={handleSearch}
-              disabled={searchQuery.trim().length < 2}
-            >
-              <Text style={styles.searchButtonText}>Search</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+      {/* Search Bar - Shown when search is visible */}
+      <SearchBar />
 
       {/* Time Period Filter - Sticky below view mode tabs (only for Top Rated), hidden when search is visible */}
       {!isSearchVisible && viewMode === 'top-rated' && (
@@ -696,53 +655,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     letterSpacing: 0.5,
     flexWrap: 'nowrap',
     textAlign: 'center',
-  },
-  searchContainer: {
-    backgroundColor: colors.card,
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  searchBarWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 12,
-    height: 44,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: colors.text,
-    height: 44,
-  },
-  searchButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchButtonText: {
-    color: '#000000',
-    fontSize: 15,
-    fontWeight: '600',
   },
   viewModeTabs: {
     flexDirection: 'row',

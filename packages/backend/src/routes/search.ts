@@ -328,12 +328,50 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         ],
       });
 
-      // Add notification data for logged-in users (same pattern as /api/fights endpoint)
-      let fights: any[] = rawFights;
-      if (currentUserId && rawFights.length > 0) {
+      // Calculate averageHype for each fight from predictions
+      const fightIds = rawFights.map(f => f.id);
+      const allPredictions = await prisma.fightPrediction.findMany({
+        where: {
+          fightId: { in: fightIds },
+          predictedRating: { not: null },
+        },
+        select: {
+          fightId: true,
+          predictedRating: true,
+        },
+      });
+
+      // Group predictions by fight and calculate averages
+      const hypeByFight = new Map<string, { total: number; count: number }>();
+      for (const pred of allPredictions) {
+        if (pred.predictedRating !== null) {
+          const existing = hypeByFight.get(pred.fightId) || { total: 0, count: 0 };
+          existing.total += pred.predictedRating;
+          existing.count += 1;
+          hypeByFight.set(pred.fightId, existing);
+        }
+      }
+
+      // Transform fights to add averageHype (for all users) and user data (for logged-in users)
+      let fights: any[] = rawFights.map(fight => {
+        const transformed: any = { ...fight };
+
+        // Add aggregate hype from batch calculation (for all users)
+        const hypeData = hypeByFight.get(fight.id);
+        if (hypeData && hypeData.count > 0) {
+          transformed.averageHype = Math.round((hypeData.total / hypeData.count) * 10) / 10;
+        } else {
+          transformed.averageHype = 0;
+        }
+
+        return transformed;
+      });
+
+      // Add user-specific data for logged-in users
+      if (currentUserId && fights.length > 0) {
         // Get all unique fighter IDs from the search results
         const uniqueFighterIds = new Set<string>();
-        rawFights.forEach(fight => {
+        fights.forEach((fight: any) => {
           uniqueFighterIds.add(fight.fighter1Id);
           uniqueFighterIds.add(fight.fighter2Id);
         });
@@ -348,8 +386,8 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         });
         const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
 
-        // Add notification data to each fight
-        fights = await Promise.all(rawFights.map(async (fight) => {
+        // Add user-specific data to each fight
+        fights = await Promise.all(fights.map(async (fight: any) => {
           const transformed: any = { ...fight };
 
           // Transform user prediction data (same pattern as /api/fights endpoint)

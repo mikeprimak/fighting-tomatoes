@@ -16,11 +16,12 @@ import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
-import { FightDisplayCard, EventBannerCard } from '../../../components';
+import { FightDisplayCard, EventBannerCard, SearchBar } from '../../../components';
 import OrgFilterTabs from '../../../components/OrgFilterTabs';
 import { useAuth } from '../../../store/AuthContext';
 import { useNotification } from '../../../store/NotificationContext';
 import { useOrgFilter } from '../../../store/OrgFilterContext';
+import { useSearch } from '../../../store/SearchContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 // Number of events to load initially and per page
@@ -154,6 +155,7 @@ export default function UpcomingEventsScreen() {
   const router = useRouter();
   const { preEventMessage, setPreEventMessage } = useNotification();
   const { selectedOrgs } = useOrgFilter();
+  const { isSearchVisible } = useSearch();
 
   // Ref to FlatList for scrolling to top on filter change
   const flatListRef = useRef<FlatList>(null);
@@ -339,8 +341,11 @@ export default function UpcomingEventsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
 
-      {/* Organization Filter Tabs - Always visible, even during loading */}
-      <OrgFilterTabs onFilterChange={handleFilterChange} />
+      {/* Organization Filter Tabs - Hidden when search is visible */}
+      {!isSearchVisible && <OrgFilterTabs onFilterChange={handleFilterChange} />}
+
+      {/* Search Bar - Shown when search is visible */}
+      <SearchBar />
 
       {eventsLoading ? (
         <View style={styles.loadingContainer}>

@@ -269,27 +269,6 @@ export default function SearchResultsScreen() {
         </View>
       ) : (
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-          {/* Fighters Section */}
-          {data.data.fighters.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Fighters</Text>
-                <Text style={styles.resultCount}>({data.data.fighters.length})</Text>
-              </View>
-              <View style={{ paddingHorizontal: 16 }}>
-                {data.data.fighters.map((fighter) => (
-                  <FighterCard
-                    key={fighter.id}
-                    fighter={fighter}
-                    avgRating={fighter.averageRating}
-                    fightCount={fighter.totalFights}
-                    onPress={() => router.push(`/fighter/${fighter.id}` as any)}
-                  />
-                ))}
-              </View>
-            </View>
-          )}
-
           {/* Fights Section */}
           {data.data.fights.length > 0 && (() => {
             const upcomingFights = data.data.fights.filter(f => !f.isComplete);
@@ -379,6 +358,25 @@ export default function SearchResultsScreen() {
               </>
             );
           })()}
+
+          {/* Fighters Section */}
+          {data.data.fighters.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Fighters</Text>
+                <Text style={styles.resultCount}>({data.data.fighters.length})</Text>
+              </View>
+              <View style={{ paddingHorizontal: 16 }}>
+                {data.data.fighters.map((fighter) => (
+                  <FighterCard
+                    key={fighter.id}
+                    fighter={fighter}
+                    onPress={() => router.push(`/fighter/${fighter.id}` as any)}
+                  />
+                ))}
+              </View>
+            </View>
+          )}
 
           {/* Events Section */}
           <View style={styles.section}>
