@@ -419,8 +419,10 @@ function UpcomingFightCard({
           </View>
 
           {/* Notification bell indicator - upper right corner above flame */}
-          {/* Covers: manual fight follow, following a fighter, or hype fights notification rule */}
-          {fight.notificationReasons?.willBeNotified && (
+          {/* Covers: manual fight follow or following a fighter (hype fights feature disabled) */}
+          {(fight.notificationReasons?.reasons?.some(
+            (r: any) => r.isActive && r.source !== 'Hyped Fights'
+          ) ?? false) && (
             <View style={styles.notificationBellIndicator}>
               <FontAwesome name="bell" size={10} color="#F5C518" />
             </View>

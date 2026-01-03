@@ -122,16 +122,20 @@ export default function FightDetailsMenu({
 
           {/* Consolidated Fight Notification Section (only shown for upcoming fights WITH live tracking) */}
           {onToggleNotification !== undefined && fight.event?.hasLiveTracking === true && (() => {
-            // Use notification reasons from the new system if available
-            const willBeNotified = fight.notificationReasons?.willBeNotified ?? false;
-            const notificationReasons = fight.notificationReasons?.reasons ?? [];
+            // Filter out "Hyped Fights" reasons (feature disabled)
+            const notificationReasons = (fight.notificationReasons?.reasons ?? []).filter(
+              (r: any) => r.source !== 'Hyped Fights'
+            );
+
+            // Recalculate willBeNotified based on filtered reasons (excluding hype fights)
+            const willBeNotified = notificationReasons.some((r: any) => r.isActive);
 
             // Switch shows MANUAL notification status only (so toggle matches visual)
             const hasManualNotification = notificationReasons.some(
               (r: any) => r.type === 'manual' && r.isActive
             );
 
-            // Build the reasons list from the new notification system
+            // Build the reasons list from the filtered notification reasons
             const reasons: string[] = notificationReasons
               .filter(reason => reason.isActive)
               .map(reason => {

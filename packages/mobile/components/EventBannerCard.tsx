@@ -133,7 +133,9 @@ export function EventBannerCard({
                 promotion={event.promotion}
                 size={
                   event.promotion?.toUpperCase() === 'MVP' || event.promotion?.toUpperCase() === 'MOST VALUABLE PROMOTIONS' ? 32 :
-                  event.promotion?.toUpperCase() === 'KARATE COMBAT' ? 34 : 28
+                  event.promotion?.toUpperCase() === 'KARATE COMBAT' ? 34 :
+                  event.promotion?.toUpperCase() === 'BKFC' ? 18 :
+                  event.promotion?.toUpperCase() === 'OKTAGON' ? 34 : 28
                 }
                 color="#FFFFFF"
               />
