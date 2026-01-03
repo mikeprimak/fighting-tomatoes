@@ -191,16 +191,6 @@ const ALL_FIGHT_TAGS = [
   { id: 'controversial', name: 'Controversial', category: 'EMOTION', maxRating: 4 },
 ];
 
-// Function to shuffle array randomly
-const shuffleArray = <T,>(array: T[]): T[] => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
-
 // Helper function to normalize tag names for matching (lowercase, spaces to hyphens)
 const normalizeTagName = (name: string) => name.toLowerCase().replace(/\s+/g, '-');
 
@@ -218,6 +208,17 @@ const getTagId = (tagName: string): string | null => {
     return nameMatch.id;
   }
   return null;
+};
+
+// Helper to get tag name from a tag ID (for sending to API)
+const getTagName = (tagId: string): string | null => {
+  const tag = ALL_FIGHT_TAGS.find(t => t.id === tagId);
+  return tag ? tag.name : null;
+};
+
+// Helper to convert array of tag IDs to tag names for API submission
+const tagIdsToNames = (tagIds: string[]): string[] => {
+  return tagIds.map(id => getTagName(id)).filter((name): name is string => name !== null);
 };
 
 // Function to get available tags based on rating and community data
@@ -257,7 +258,7 @@ const getAvailableTagsForRating = (
     )
     .sort((a, b) => b.count - a.count); // Sort by count descending
 
-  // 2. Fill remaining slots with random rating-appropriate tags (no community votes yet)
+  // 2. Fill remaining slots with other eligible tags (deterministic order)
   const usedTagIds = new Set(topCommunityTags.map(t => t.id));
 
   const remainingEligibleTags = eligibleTags
@@ -266,16 +267,11 @@ const getAvailableTagsForRating = (
 
   const remainingSlots = Math.max(0, MAX_TAGS - topCommunityTags.length);
 
-  let randomTags: Array<{ id: string; name: string; count: number }> = [];
-  if (remainingSlots > 0 && remainingEligibleTags.length > 0) {
-    const shuffled = shuffleArray(remainingEligibleTags);
-    randomTags = shuffled.slice(0, remainingSlots);
-  }
+  // Take first N remaining tags (deterministic, no shuffling)
+  const fillerTags = remainingEligibleTags.slice(0, remainingSlots);
 
-  // Combine: top community tags first, then random filler
-  // Tags stay in this order - selected state doesn't affect position
-  const allTags = [...topCommunityTags, ...randomTags];
-  return allTags.slice(0, MAX_TAGS);
+  // Combine: top community tags first (sorted by count), then filler tags
+  return [...topCommunityTags, ...fillerTags].slice(0, MAX_TAGS);
 };
 
 // Neutral placeholder image for fighters without profile images
@@ -356,6 +352,9 @@ export default function CompletedFightDetailScreen({
   // Simple tag tier state: false = show positive tags (default), true = show negative tags
   // Only switches to negative when user rates below 5
   const [showNegativeTags, setShowNegativeTags] = useState(false);
+
+  // Tag counts for optimistic updates - maps tag ID to count
+  const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
 
   // Animation values for wheel animation (large star display) - Initialize based on existing rating
   // Using 92px per item for taller rating boxes (48x82)
@@ -503,51 +502,21 @@ export default function CompletedFightDetailScreen({
     }
   }, [reviewsData]);
 
-  // Store frozen tags - only regenerate when showNegativeTags changes OR when community tags first load
-  const frozenTagsRef = useRef<Array<{ id: string; name: string; count: number }>>([]);
-  const lastNegativeStateRef = useRef<boolean | null>(null);
-  const hadCommunityTagsRef = useRef<boolean>(false);
-  // Calculate available tags: only regenerate when crossing the positive/negative threshold
-  // OR when community tags first become available (so we get sorted tags, not random filler)
-  // NOTE: selectedTags is NOT in dependencies to avoid recalculating on every tag toggle
-  const availableTags = React.useMemo(() => {
-    const communityTags = aggregateStats?.topTags || [];
-    const effectiveRating = showNegativeTags ? 3 : 5;
-    const hasCommunityTags = communityTags.length > 0;
-
-    // Regenerate if:
-    // 1. First load (lastNegativeStateRef.current === null)
-    // 2. Threshold changed (showNegativeTags changed)
-    // 3. Community tags just loaded (hadCommunityTagsRef was false, now true)
-    const shouldRegenerate =
-      lastNegativeStateRef.current === null ||
-      lastNegativeStateRef.current !== showNegativeTags ||
-      (!hadCommunityTagsRef.current && hasCommunityTags);
-
-    if (shouldRegenerate) {
-      lastNegativeStateRef.current = showNegativeTags;
-      hadCommunityTagsRef.current = hasCommunityTags;
-      // Get tags based on rating tier and community data - order is fixed
-      frozenTagsRef.current = getAvailableTagsForRating(effectiveRating, communityTags);
-    }
-
-    // Return the frozen tags in their FROZEN ORDER (no re-sorting!)
-    return frozenTagsRef.current;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showNegativeTags, aggregateStats?.topTags]);
-
-  // Compute display tags with counts from server
-  // No optimistic updates to prevent flicker - count updates when server responds
+  // Simple: compute tags once when API data arrives, keep order stable
   const displayTags = React.useMemo(() => {
     const communityTags = aggregateStats?.topTags || [];
-    return availableTags.map(tag => {
-      const communityTag = communityTags.find(ct => getTagId(ct.name) === tag.id);
-      return {
-        ...tag,
-        count: communityTag?.count || 0
-      };
-    });
-  }, [availableTags, aggregateStats?.topTags]);
+    const effectiveRating = showNegativeTags ? 3 : 5;
+
+    // Get tags sorted by community count, with random filler for remaining slots
+    const baseTags = getAvailableTagsForRating(effectiveRating, communityTags);
+
+    // Apply optimistic count adjustments
+    return baseTags.map(tag => ({
+      id: tag.id,
+      name: tag.name,
+      count: Math.max(0, tag.count + (tagCounts[tag.id] || 0))
+    }));
+  }, [showNegativeTags, aggregateStats?.topTags, tagCounts]);
 
   // Keyboard event listeners for dynamic padding
   useEffect(() => {
@@ -666,7 +635,9 @@ export default function CompletedFightDetailScreen({
     },
     onError: (error: any) => {
       console.error('Update error:', error);
-      showError(error?.error || 'Failed to save data', 'Error');
+      console.error('Error details:', JSON.stringify(error?.details, null, 2));
+      const errorMessage = error?.details?.[0]?.message || error?.error || 'Failed to save data';
+      showError(errorMessage, 'Error');
     },
   });
 
@@ -798,7 +769,7 @@ export default function CompletedFightDetailScreen({
           const submissionData = {
             rating: rating > 0 ? rating : null,
             review: null,
-            tags: selectedTags
+            tags: tagIdsToNames(selectedTags)
           };
 
           try {
@@ -820,7 +791,7 @@ export default function CompletedFightDetailScreen({
     const submissionData = {
       rating: rating > 0 ? rating : null,
       review: comment.trim() || null,
-      tags: selectedTags
+      tags: tagIdsToNames(selectedTags)
     };
 
     // Check if this is a new review (not editing existing)
@@ -1145,17 +1116,6 @@ export default function CompletedFightDetailScreen({
     }, 300);
   };
 
-  // Auto-save handler - only auto-saves rating and tags, NOT comment
-  const handleAutoSave = React.useCallback(() => {
-    const submissionData = {
-      rating: rating > 0 ? rating : null,
-      review: null, // Don't auto-save comment
-      tags: selectedTags
-    };
-
-    updateUserDataMutation.mutate(submissionData);
-  }, [rating, selectedTags]);
-
   // Track current animation target to handle interruptions
   const animationTargetRef = useRef<number | null>(null);
 
@@ -1218,7 +1178,7 @@ export default function CompletedFightDetailScreen({
     const submissionData = {
       rating: finalRating > 0 ? finalRating : null,
       review: comment.trim() || null,
-      tags: selectedTags
+      tags: tagIdsToNames(selectedTags)
     };
     updateUserDataMutation.mutate(submissionData);
   };
@@ -1232,17 +1192,21 @@ export default function CompletedFightDetailScreen({
       ? [...selectedTags, tagId]
       : selectedTags.filter(id => id !== tagId);
 
+    // Update selection state
     setSelectedTags(newTags);
 
-    // Immediate save for tags
-    setTimeout(() => {
-      const submissionData = {
-        rating: rating > 0 ? rating : null,
-        review: comment.trim() || null,
-        tags: newTags
-      };
-      updateUserDataMutation.mutate(submissionData);
-    }, 100);
+    // Update count delta (+1 when selecting, -1 when deselecting)
+    setTagCounts(prev => ({
+      ...prev,
+      [tagId]: (prev[tagId] || 0) + (isSelecting ? 1 : -1)
+    }));
+
+    // Save to API
+    updateUserDataMutation.mutate({
+      rating: rating > 0 ? rating : null,
+      review: comment.trim() || null,
+      tags: tagIdsToNames(newTags)
+    });
   };
 
   // Trigger animation when rating is submitted
@@ -1388,13 +1352,7 @@ export default function CompletedFightDetailScreen({
           )}
 
           {/* Winner Content */}
-          {!fight.winner && (
-            <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center', marginTop: -6, marginBottom: 10 }]}>
-              Outcome data not yet available.
-            </Text>
-          )}
-
-          <View style={[styles.whatHappenedContainer, { marginTop: !fight.winner ? 0 : 8, alignItems: 'flex-start', marginBottom: 0 }]}>
+          <View style={[styles.whatHappenedContainer, { marginTop: 8, alignItems: 'flex-start', marginBottom: 0 }]}>
             {/* Fighter 1 */}
             <View style={styles.whatHappenedFighter}>
               <View style={[
@@ -1455,6 +1413,13 @@ export default function CompletedFightDetailScreen({
               </View>
             </View>
           </View>
+
+          {/* Outcome not available message - shown below fighter images */}
+          {!fight.winner && (
+            <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center', marginTop: 0, marginBottom: 10 }]}>
+              Outcome data not yet available.
+            </Text>
+          )}
 
           </SectionContainer>
 

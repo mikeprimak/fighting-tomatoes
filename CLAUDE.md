@@ -13,6 +13,32 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 
 **Critical Ports**: Backend 3008, Expo 8083, PostgreSQL 5433
 
+## 🚧 WIP: CompletedFightDetailScreen Tags (Branch: upcomingfightdetailscreen-v3)
+
+**Status**: Partially fixed, needs testing
+
+**Issues being fixed:**
+1. Tags showing "invalid request data" error when toggling
+2. Tags not showing counters correctly
+3. Tag order was randomizing on each render
+
+**Changes made (2025-01-03):**
+- Added `tagIdsToNames()` helper - converts frontend tag IDs (e.g., 'foty') to API names (e.g., 'FOTY')
+- Simplified tag display logic from 70+ lines to ~15 lines
+- Removed complex refs (`frozenTagsRef`, `lastNegativeStateRef`, `hadCommunityTagsRef`)
+- Removed `shuffleArray` - tags now have deterministic order
+- Added `tagCounts` state for optimistic count updates (+1/-1 deltas)
+- Better error logging in mutation `onError` to show Zod validation details
+
+**Still needs:**
+- Test if "invalid request data" error is fixed
+- Verify tag counts update correctly (up when selecting, down when deselecting)
+- May need debounce to prevent rate limit errors on rapid tapping
+
+**Key files:**
+- `packages/mobile/components/CompletedFightDetailScreen.tsx` - tag logic around lines 520-535, 1201-1225
+- `packages/backend/src/routes/fights.ts` - PUT `/fights/:id/user-data` endpoint, `UpdateUserDataSchema` at line 80
+
 ## Switching Work Locations (IP Change)
 
 When switching between work locations (different WiFi networks), update the dev IP in **2 files**:
