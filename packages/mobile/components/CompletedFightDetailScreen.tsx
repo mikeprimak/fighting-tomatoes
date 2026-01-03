@@ -640,7 +640,8 @@ export default function CompletedFightDetailScreen({
       }
 
       // Optimistically update pastEvents cache for instant update on past events screen
-      queryClient.setQueryData(['pastEvents', isAuthenticated], (old: any) => {
+      // Use setQueriesData with partial key to match all pastEvents queries regardless of filter
+      queryClient.setQueriesData({ queryKey: ['pastEvents'] }, (old: any) => {
         if (!old?.pages) return old;
         return {
           ...old,
@@ -653,6 +654,17 @@ export default function CompletedFightDetailScreen({
               ) || [],
             })),
           })),
+        };
+      });
+
+      // Also update topRecentFights cache if user is viewing top-rated fights
+      queryClient.setQueriesData({ queryKey: ['topRecentFights'] }, (old: any) => {
+        if (!old?.fights) return old;
+        return {
+          ...old,
+          fights: old.fights.map((f: any) =>
+            f.id === fight.id ? { ...f, userRating: response?.data?.rating } : f
+          ),
         };
       });
 
