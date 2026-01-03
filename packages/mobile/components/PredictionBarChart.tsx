@@ -375,6 +375,7 @@ export default function PredictionBarChart({
               borderColor: dividerColor,
               marginTop: 20,
               marginBottom: 10,
+              overflow: 'hidden',
             }}
           >
             {/* Fighter 1 side */}
@@ -391,11 +392,12 @@ export default function PredictionBarChart({
                 // Only show right border if fighter2 has predictions (for winner side), none for loser
                 borderRightWidth: fighter1IsWinnerSide && winnerPredictions.fighter2.percentage > 0 ? 2 : 0,
                 borderRightColor: fighter1IsWinnerSide ? dividerColor : 'transparent',
-                borderTopLeftRadius: 18,
-                borderBottomLeftRadius: 18,
-                // If fighter1 has 100%, also round the right corners
-                borderTopRightRadius: winnerPredictions.fighter1.percentage === 100 ? 18 : 0,
-                borderBottomRightRadius: winnerPredictions.fighter1.percentage === 100 ? 18 : 0,
+                // Round left corners if fighter1 has predictions
+                borderTopLeftRadius: winnerPredictions.fighter1.percentage > 0 ? 18 : 0,
+                borderBottomLeftRadius: winnerPredictions.fighter1.percentage > 0 ? 18 : 0,
+                // Round right corners only if fighter2 has no predictions (fighter1 is the full bar)
+                borderTopRightRadius: winnerPredictions.fighter2.percentage === 0 ? 18 : 0,
+                borderBottomRightRadius: winnerPredictions.fighter2.percentage === 0 ? 18 : 0,
               }}
             >
               {/* Fighter 1 method subdivisions - show if labels revealed or as plain bars */}
@@ -470,11 +472,12 @@ export default function PredictionBarChart({
                 borderBottomWidth: !fighter2IsWinnerSide ? 2 : 0,
                 borderLeftWidth: 0,
                 borderColor: !fighter2IsWinnerSide ? winnerColor : 'transparent',
-                borderTopRightRadius: 18,
-                borderBottomRightRadius: 18,
-                // If fighter2 has 100%, also round the left corners
-                borderTopLeftRadius: winnerPredictions.fighter2.percentage === 100 ? 18 : 0,
-                borderBottomLeftRadius: winnerPredictions.fighter2.percentage === 100 ? 18 : 0,
+                // Round right corners if fighter2 has predictions
+                borderTopRightRadius: winnerPredictions.fighter2.percentage > 0 ? 18 : 0,
+                borderBottomRightRadius: winnerPredictions.fighter2.percentage > 0 ? 18 : 0,
+                // Round left corners only if fighter1 has no predictions (fighter2 is the full bar)
+                borderTopLeftRadius: winnerPredictions.fighter1.percentage === 0 ? 18 : 0,
+                borderBottomLeftRadius: winnerPredictions.fighter1.percentage === 0 ? 18 : 0,
               }}
             >
               {/* Fighter 2 method subdivisions - show if labels revealed or as plain bars */}
