@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -43,6 +43,12 @@ export default function FighterDetailScreen() {
   const [sortBy, setSortBy] = useState<SortOption>('highest-rating');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>('');
+  const [imageLoadError, setImageLoadError] = useState(false);
+
+  // Reset image error state when fighter changes
+  useEffect(() => {
+    setImageLoadError(false);
+  }, [id]);
 
   // Animation for bell ringing
   const bellRotation = useRef(new Animated.Value(0)).current;
@@ -273,8 +279,12 @@ export default function FighterDetailScreen() {
         <View style={styles.headerContainer}>
           {/* Fighter Image - Left */}
           <Image
-            source={getFighterImage(fighter)}
+            source={imageLoadError
+              ? require('../../assets/fighters/fighter-default-alpha.png')
+              : getFighterImage(fighter)
+            }
             style={styles.fighterImage}
+            onError={() => setImageLoadError(true)}
           />
 
           {/* Fighter Info - Right */}
