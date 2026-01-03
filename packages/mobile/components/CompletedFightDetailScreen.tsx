@@ -1749,121 +1749,7 @@ export default function CompletedFightDetailScreen({
           </>
           )}
 
-          {/* Section Divider - My Prediction & Hype */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12, paddingHorizontal: 16 }}>
-            <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>WAS MY PICK CORRECT?</Text>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border, marginLeft: 12, marginRight: 12, maxWidth: 80 }} />
-            <View style={{ alignItems: 'center' }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600', textAlign: 'center' }}>HOW HYPED</Text>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600', textAlign: 'center' }}>WAS I?</Text>
-            </View>
-          </View>
-
-          {/* Prediction & Hype Content */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 8 }}>
-              {/* Left: Winner and Method Prediction */}
-              {fight.userPredictedWinner ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                  {/* Fighter Headshot */}
-                  <Image
-                    source={
-                      fight.userPredictedWinner === fight.fighter1.id
-                        ? (getFighterImageUrl(fight.fighter1.profileImage) ? { uri: getFighterImageUrl(fight.fighter1.profileImage)! } : FIGHTER_PLACEHOLDER)
-                        : (getFighterImageUrl(fight.fighter2.profileImage) ? { uri: getFighterImageUrl(fight.fighter2.profileImage)! } : FIGHTER_PLACEHOLDER)
-                    }
-                    style={{ width: 70, height: 70, borderRadius: 35 }}
-                  />
-                  {/* Fighter Name and Method */}
-                  <View>
-                    {/* Winner Row with Accuracy Icon */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <Text style={[styles.predictionText, { color: colors.text, fontWeight: '700', fontSize: 17 }]}>
-                        {fight.userPredictedWinner === fight.fighter1.id ? fight.fighter1.lastName : fight.fighter2.lastName}
-                      </Text>
-                      {(() => {
-                        const isWinnerCorrect = fight.winner === fight.userPredictedWinner;
-                        return (
-                          <FontAwesome
-                            name={isWinnerCorrect ? "check-circle" : "times-circle"}
-                            size={22}
-                            color={isWinnerCorrect ? "#4CAF50" : "#F44336"}
-                          />
-                        );
-                      })()}
-                    </View>
-                    {/* Method Row with Accuracy Icon - only show if method was predicted */}
-                    {fight.userPredictedMethod && (
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <Text style={[styles.predictionText, { color: colors.textSecondary, fontSize: 14 }]}>
-                          by {fight.userPredictedMethod.charAt(0).toUpperCase() + fight.userPredictedMethod.slice(1).toLowerCase().replace('_', '/')}
-                        </Text>
-                        {(() => {
-                          const isWinnerCorrect = fight.winner === fight.userPredictedWinner;
-                          const normalizedActualMethod = normalizeMethod(fight.method);
-                          const normalizedPredictedMethod = fight.userPredictedMethod?.toUpperCase();
-                          const methodMatchesActual = normalizedActualMethod === normalizedPredictedMethod;
-
-                          // Icon color logic:
-                          // - If winner wrong: gray (irrelevant, doesn't count)
-                          // - If winner correct + method correct: green checkmark
-                          // - If winner correct + method wrong: gray X
-                          const methodIconColor = !isWinnerCorrect
-                            ? colors.textSecondary // gray if winner wrong (irrelevant)
-                            : (methodMatchesActual ? "#4CAF50" : colors.textSecondary); // green if correct, gray if wrong
-
-                          const methodIcon = methodMatchesActual ? "check-circle" : "times-circle";
-
-                          return (
-                            <FontAwesome
-                              name={methodIcon}
-                              size={18}
-                              color={methodIconColor}
-                            />
-                          );
-                        })()}
-                      </View>
-                    )}
-                  </View>
-                </View>
-              ) : (
-                <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic', marginLeft: 45, opacity: 0.5 }]}>
-                  No pick made.
-                </Text>
-              )}
-
-              {/* Right: My Hype - Large flame icon with number */}
-              <View style={{ alignItems: 'center', justifyContent: 'center', marginRight: 26 }}>
-                {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && fight.userHypePrediction > 0 ? (
-                  <View style={{ position: 'relative', justifyContent: 'center', alignItems: 'center' }}>
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={50}
-                      color={getHypeHeatmapColor(fight.userHypePrediction)}
-                    />
-                    <Text style={{
-                      position: 'absolute',
-                      top: 14,
-                      fontSize: 20,
-                      fontWeight: 'bold',
-                      color: '#FFFFFF',
-                      textShadowColor: 'rgba(0,0,0,0.8)',
-                      textShadowOffset: { width: 0, height: 1 },
-                      textShadowRadius: 3,
-                    }}>
-                      {Math.round(fight.userHypePrediction).toString()}
-                    </Text>
-                  </View>
-                ) : (
-                  <Image
-                    source={require('../assets/flame-hollow-alpha-colored.png')}
-                    style={{ width: 50, height: 50, tintColor: colors.textSecondary, opacity: 0.5 }}
-                    resizeMode="contain"
-                  />
-                )}
-              </View>
-            </View>
-
-          {/* All Predictions Content */}
+          {/* Community Predictions Content - user pick integrated into fighter images */}
           {predictionStats && predictionStats.fighter1MethodPredictions && predictionStats.fighter2MethodPredictions && predictionStats.winnerPredictions && (() => {
             const normalized = normalizeMethod(fight.method);
             console.log('[CompletedFight] Passing to chart:', {
@@ -1894,20 +1780,75 @@ export default function CompletedFightDetailScreen({
               />
             );
           })()}
+        </SectionContainer>
 
-          {/* Section Divider - Hype */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 28, marginBottom: 12 }}>
+        {/* HYPE Section */}
+        <SectionContainer
+          title="HYPE"
+          icon="fire-flame-curved"
+          iconFamily="fontawesome6"
+          iconColor="#fff"
+          headerBgColor="#F97316"
+          containerBgColorDark="rgba(249, 115, 22, 0.08)"
+          containerBgColorLight="rgba(249, 115, 22, 0.06)"
+        >
+          {/* User's Hype */}
+          {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && (
+            <View style={{ marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+                <View style={{ paddingHorizontal: 12 }}>
+                  <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>MY HYPE</Text>
+                </View>
+                <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+              </View>
+              <View style={{ alignItems: 'center' }}>
+                <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
+                  {/* Background circle for better text contrast */}
+                  <View style={{
+                    position: 'absolute',
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
+                    backgroundColor: getHypeHeatmapColor(fight.userHypePrediction),
+                    opacity: 0.4,
+                    top: 30,
+                  }} />
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={90}
+                    color={getHypeHeatmapColor(fight.userHypePrediction)}
+                  />
+                  <Text style={{
+                    position: 'absolute',
+                    marginTop: 6,
+                    fontSize: 34,
+                    fontWeight: 'bold',
+                    color: '#FFFFFF',
+                    textShadowColor: 'rgba(0,0,0,0.8)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 4,
+                  }}>
+                    {fight.userHypePrediction === 10 ? '10' : Math.round(fight.userHypePrediction)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Community Hype Section Divider */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>HYPE ({predictionStats?.totalPredictions || 0})</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>CROWD HYPE ({predictionStats?.totalPredictions || 0})</Text>
             </View>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>
 
-          {/* Hype Content */}
+          {/* Community Hype Content */}
           {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
-              {/* Community Hype Box (like UpcomingFightCard) */}
+              {/* Community Hype Box */}
               <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
                 <View style={{
                   width: 80,
