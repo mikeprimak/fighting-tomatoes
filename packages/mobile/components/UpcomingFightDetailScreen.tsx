@@ -1121,9 +1121,227 @@ export default function UpcomingFightDetailScreen({
     >
 
 
-      {/* Your Predictions Section */}
+      {/* Hype Section */}
       <SectionContainer
-        title="My Picks"
+        title="HYPE"
+        icon="fire-flame-curved"
+        iconFamily="fontawesome6"
+        iconColor="#fff"
+        headerBgColor="#F97316"
+        containerBgColorDark="rgba(249, 115, 22, 0.08)"
+        containerBgColorLight="rgba(249, 115, 22, 0.06)"
+      >
+        {/* How Hyped Are You Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 8, marginBottom: 0 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 4 }} />
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              How hyped are you?
+            </Text>
+            <View style={{ width: 4 }} />
+          </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
+        {/* Large Flame Display */}
+        <View style={{ alignItems: 'center', marginTop: 23, marginBottom: 8 }}>
+          <View style={{ alignItems: 'center', justifyContent: 'center', overflow: 'hidden', height: 115 }}>
+            <Animated.View style={[
+              {
+                alignItems: 'center',
+                paddingTop: 188,
+                transform: [{
+                  translateY: wheelAnimation.interpolate({
+                    inputRange: [0, 1150],
+                    outputRange: [479, -671],
+                  })
+                }]
+              }
+            ]}>
+              {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
+                const hypeColor = getHypeHeatmapColor(number);
+                return (
+                  <View key={number} style={{ height: 115, justifyContent: 'center', alignItems: 'center' }}>
+                    <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
+                      {/* Background circle for better text contrast */}
+                      <View style={{
+                        position: 'absolute',
+                        width: 56,
+                        height: 56,
+                        borderRadius: 28,
+                        backgroundColor: hypeColor,
+                        opacity: 0.4,
+                        top: 30,
+                      }} />
+                      <FontAwesome6
+                        name="fire-flame-curved"
+                        size={90}
+                        color={hypeColor}
+                      />
+                      <Text style={{
+                        position: 'absolute',
+                        marginTop: 6,
+                        fontSize: 34,
+                        fontWeight: 'bold',
+                        color: '#FFFFFF',
+                        textShadowColor: 'rgba(0,0,0,0.8)',
+                        textShadowOffset: { width: 0, height: 1 },
+                        textShadowRadius: 4,
+                      }}>{number}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+              {/* Grey placeholder flame - shown when no hype selected */}
+              <View style={{ height: 115, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
+                  <Image
+                    source={require('../assets/flame-hollow-alpha-colored.png')}
+                    style={{ width: 90, height: 90, tintColor: '#666666' }}
+                    resizeMode="contain"
+                  />
+                </View>
+              </View>
+            </Animated.View>
+          </View>
+        </View>
+
+        {/* Row of selectable flames (1-10) */}
+        <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: 10, height: 42, justifyContent: 'center', opacity: isPreFightLocked ? 0.5 : 1 }]}>
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
+            const isSelected = level <= (selectedHype || 0);
+            const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
+
+            return (
+              <TouchableOpacity
+                key={level}
+                onPress={() => handleHypeSelection(level)}
+                style={styles.flameButton}
+                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                disabled={isPreFightLocked}
+              >
+                <View style={{ width: 32, alignItems: 'center' }}>
+                  {isSelected ? (
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={32}
+                      color={flameColor}
+                    />
+                  ) : (
+                    <Image
+                      source={require('../assets/flame-hollow-alpha-thicker-truealpha.png')}
+                      style={{ width: 32, height: 32 }}
+                      resizeMode="contain"
+                    />
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Community Hype Section Divider */}
+        <View style={[styles.sectionDivider, { marginTop: 12, marginBottom: 0 }]}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 4 }} />
+            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
+              Crowd Hype ({aggregateStats?.totalPredictions || 0})
+            </Text>
+            <View style={{ width: 4 }} />
+          </View>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
+      {/* Community Hype Data */}
+      <View style={{ marginTop: 14, marginBottom: 10 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
+          {/* Large Hype Box (like UpcomingFightCard) */}
+          {(() => {
+            const hypeColor = aggregateStats?.communityAverageHype
+              ? getHypeHeatmapColor(aggregateStats.communityAverageHype)
+              : colors.border;
+
+            return (
+              <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
+                {/* Grey placeholder box - shown until revealed */}
+                {!hasRevealedHype && (
+                  <View style={{
+                    width: 80,
+                    height: 90,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: colors.textSecondary,
+                    backgroundColor: 'transparent',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}>
+                    <FontAwesome6
+                      name="fire-flame-curved"
+                      size={28}
+                      color={colors.textSecondary}
+                      style={{ opacity: 0.5 }}
+                    />
+                  </View>
+                )}
+
+                {/* Colored hype box - fades in when revealed */}
+                {hasRevealedHype && (
+                  <Animated.View style={{ opacity: aggregateHypeFadeAnim }}>
+                    <View style={{
+                      width: 80,
+                      height: 90,
+                      borderRadius: 12,
+                      backgroundColor: aggregateStats?.communityAverageHype > 0 ? hypeColor : 'transparent',
+                      borderWidth: aggregateStats?.communityAverageHype > 0 ? 0 : 1,
+                      borderColor: colors.textSecondary,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                      <FontAwesome6
+                        name="fire-flame-curved"
+                        size={28}
+                        color={aggregateStats?.communityAverageHype > 0 ? 'rgba(0,0,0,0.45)' : colors.textSecondary}
+                        style={aggregateStats?.communityAverageHype > 0 ? {} : { opacity: 0.5 }}
+                      />
+                      {aggregateStats?.communityAverageHype > 0 && (
+                        <Text style={{
+                          fontSize: 28,
+                          fontWeight: 'bold',
+                          color: '#FFFFFF',
+                          textShadowColor: 'rgba(0,0,0,0.7)',
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 3,
+                        }}>
+                          {aggregateStats.communityAverageHype === 10 ? '10' : aggregateStats.communityAverageHype.toFixed(1)}
+                        </Text>
+                      )}
+                    </View>
+                  </Animated.View>
+                )}
+              </View>
+            );
+          })()}
+
+          {/* Hype Distribution Chart */}
+            {aggregateStats?.hypeDistribution && (
+              <View style={{ flex: 1, marginLeft: -10 }}>
+                <HypeDistributionChart
+                  distribution={aggregateStats.hypeDistribution}
+                  totalPredictions={aggregateStats.totalPredictions || 0}
+                  hasRevealedHype={hasRevealedHype}
+                  fadeAnim={aggregateHypeFadeAnim}
+                />
+              </View>
+            )}
+        </View>
+      </View>
+      </SectionContainer>
+
+      {/* Predictions Section */}
+      <SectionContainer
+        title="Predictions"
         icon="user"
         iconColor="#000"
         headerBgColor="#F5C518"
@@ -1286,245 +1504,44 @@ export default function UpcomingFightDetailScreen({
           </View>
         </View>
 
-        {/* How Hyped Are You Section Divider */}
+        {/* Crowd Predictions Section Divider */}
         <View style={[styles.sectionDivider, { marginTop: 18, marginBottom: 0 }]}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ width: 4 }} />
             <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              How hyped are you?
+              Crowd Predictions ({displayPredictionStats?.totalPredictions || 0})
             </Text>
             <View style={{ width: 4 }} />
           </View>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
 
-        {/* Large Flame Display */}
-        <View style={{ alignItems: 'center', marginTop: 23, marginBottom: 8 }}>
-          <View style={{ alignItems: 'center', justifyContent: 'center', overflow: 'hidden', height: 115 }}>
-            <Animated.View style={[
-              {
-                alignItems: 'center',
-                paddingTop: 188,
-                transform: [{
-                  translateY: wheelAnimation.interpolate({
-                    inputRange: [0, 1150],
-                    outputRange: [479, -671],
-                  })
-                }]
-              }
-            ]}>
-              {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
-                const hypeColor = getHypeHeatmapColor(number);
-                return (
-                  <View key={number} style={{ height: 115, justifyContent: 'center', alignItems: 'center' }}>
-                    <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
-                      {/* Background circle for better text contrast */}
-                      <View style={{
-                        position: 'absolute',
-                        width: 56,
-                        height: 56,
-                        borderRadius: 28,
-                        backgroundColor: hypeColor,
-                        opacity: 0.4,
-                        top: 30,
-                      }} />
-                      <FontAwesome6
-                        name="fire-flame-curved"
-                        size={90}
-                        color={hypeColor}
-                      />
-                      <Text style={{
-                        position: 'absolute',
-                        marginTop: 6,
-                        fontSize: 34,
-                        fontWeight: 'bold',
-                        color: '#FFFFFF',
-                        textShadowColor: 'rgba(0,0,0,0.8)',
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 4,
-                      }}>{number}</Text>
-                    </View>
-                  </View>
-                );
-              })}
-              {/* Grey placeholder flame - shown when no hype selected */}
-              <View style={{ height: 115, justifyContent: 'center', alignItems: 'center' }}>
-                <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
-                  <Image
-                    source={require('../assets/flame-hollow-alpha-colored.png')}
-                    style={{ width: 90, height: 90, tintColor: '#666666' }}
-                    resizeMode="contain"
-                  />
-                </View>
-              </View>
-            </Animated.View>
-          </View>
+        {/* Community Predictions Bar Chart */}
+        <View style={{ marginTop: 12 }}>
+          {displayPredictionStats && displayPredictionStats.fighter1MethodPredictions && displayPredictionStats.fighter2MethodPredictions && displayPredictionStats.winnerPredictions && (
+            <PredictionBarChart
+              fighter1Name={fight.fighter1.lastName}
+              fighter2Name={fight.fighter2.lastName}
+              fighter1Id={fight.fighter1Id}
+              fighter2Id={fight.fighter2Id}
+              fighter1Image={getFighterImageUrl(fight.fighter1.profileImage)}
+              fighter2Image={getFighterImageUrl(fight.fighter2.profileImage)}
+              selectedWinner={selectedWinner}
+              selectedMethod={selectedMethod}
+              fighter1Predictions={displayPredictionStats.fighter1MethodPredictions}
+              fighter2Predictions={displayPredictionStats.fighter2MethodPredictions}
+              totalPredictions={displayPredictionStats.totalPredictions}
+              winnerPredictions={displayPredictionStats.winnerPredictions}
+              showColors={hasRevealedWinner}
+              showLabels={hasRevealedMethod}
+              showMyPickDivider={false}
+              showCrowdPicksDivider={false}
+              showUserPickHighlight={false}
+              showFighterImages={false}
+            />
+          )}
         </View>
-
-        {/* Row of selectable flames (1-10) */}
-        <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: 10, height: 42, justifyContent: 'center', opacity: isPreFightLocked ? 0.5 : 1 }]}>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
-            const isSelected = level <= (selectedHype || 0);
-            const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
-
-            return (
-              <TouchableOpacity
-                key={level}
-                onPress={() => handleHypeSelection(level)}
-                style={styles.flameButton}
-                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                disabled={isPreFightLocked}
-              >
-                <View style={{ width: 32, alignItems: 'center' }}>
-                  {isSelected ? (
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={32}
-                      color={flameColor}
-                    />
-                  ) : (
-                    <Image
-                      source={require('../assets/flame-hollow-alpha-thicker-truealpha.png')}
-                      style={{ width: 32, height: 32 }}
-                      resizeMode="contain"
-                    />
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </SectionContainer>
-
-      {/* Community Data Section */}
-      <SectionContainer
-        title="Crowd Picks"
-        icon="users"
-        iconColor="#000"
-        headerBgColor="#83B4F3"
-        containerBgColorDark="rgba(131, 180, 243, 0.05)"
-        containerBgColorLight="rgba(131, 180, 243, 0.08)"
-      >
-        {/* Community Predictions Data */}
-        <View style={{ marginTop: -22 }}>
-        {/* Community Predictions Bar Chart - always visible */}
-        {displayPredictionStats && displayPredictionStats.fighter1MethodPredictions && displayPredictionStats.fighter2MethodPredictions && displayPredictionStats.winnerPredictions && (
-          <PredictionBarChart
-            fighter1Name={fight.fighter1.lastName}
-            fighter2Name={fight.fighter2.lastName}
-            fighter1Id={fight.fighter1Id}
-            fighter2Id={fight.fighter2Id}
-            fighter1Image={getFighterImageUrl(fight.fighter1.profileImage)}
-            fighter2Image={getFighterImageUrl(fight.fighter2.profileImage)}
-            selectedWinner={selectedWinner}
-            selectedMethod={selectedMethod}
-            fighter1Predictions={displayPredictionStats.fighter1MethodPredictions}
-            fighter2Predictions={displayPredictionStats.fighter2MethodPredictions}
-            totalPredictions={displayPredictionStats.totalPredictions}
-            winnerPredictions={displayPredictionStats.winnerPredictions}
-            showColors={hasRevealedWinner}
-            showLabels={hasRevealedMethod}
-          />
-        )}
-      </View>
-
-        {/* Community Hype Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 12, marginBottom: 0 }]}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 4 }} />
-            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              How Hyped? ({aggregateStats?.totalPredictions || 0})
-            </Text>
-            <View style={{ width: 4 }} />
-          </View>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        </View>
-
-      {/* Community Hype Data */}
-      <View style={{ marginTop: 14, marginBottom: 10 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
-          {/* Large Hype Box (like UpcomingFightCard) */}
-          {(() => {
-            const hypeColor = aggregateStats?.communityAverageHype
-              ? getHypeHeatmapColor(aggregateStats.communityAverageHype)
-              : colors.border;
-
-            return (
-              <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
-                {/* Grey placeholder box - shown until revealed */}
-                {!hasRevealedHype && (
-                  <View style={{
-                    width: 80,
-                    height: 90,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: colors.textSecondary,
-                    backgroundColor: 'transparent',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={28}
-                      color={colors.textSecondary}
-                      style={{ opacity: 0.5 }}
-                    />
-                  </View>
-                )}
-
-                {/* Colored hype box - fades in when revealed */}
-                {hasRevealedHype && (
-                  <Animated.View style={{ opacity: aggregateHypeFadeAnim }}>
-                    <View style={{
-                      width: 80,
-                      height: 90,
-                      borderRadius: 12,
-                      backgroundColor: aggregateStats?.communityAverageHype > 0 ? hypeColor : 'transparent',
-                      borderWidth: aggregateStats?.communityAverageHype > 0 ? 0 : 1,
-                      borderColor: colors.textSecondary,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}>
-                      <FontAwesome6
-                        name="fire-flame-curved"
-                        size={28}
-                        color={aggregateStats?.communityAverageHype > 0 ? 'rgba(0,0,0,0.45)' : colors.textSecondary}
-                        style={aggregateStats?.communityAverageHype > 0 ? {} : { opacity: 0.5 }}
-                      />
-                      {aggregateStats?.communityAverageHype > 0 && (
-                        <Text style={{
-                          fontSize: 28,
-                          fontWeight: 'bold',
-                          color: '#FFFFFF',
-                          textShadowColor: 'rgba(0,0,0,0.7)',
-                          textShadowOffset: { width: 0, height: 1 },
-                          textShadowRadius: 3,
-                        }}>
-                          {aggregateStats.communityAverageHype === 10 ? '10' : aggregateStats.communityAverageHype.toFixed(1)}
-                        </Text>
-                      )}
-                    </View>
-                  </Animated.View>
-                )}
-              </View>
-            );
-          })()}
-
-          {/* Hype Distribution Chart */}
-            {aggregateStats?.hypeDistribution && (
-              <View style={{ flex: 1, marginLeft: -10 }}>
-                <HypeDistributionChart
-                  distribution={aggregateStats.hypeDistribution}
-                  totalPredictions={aggregateStats.totalPredictions || 0}
-                  hasRevealedHype={hasRevealedHype}
-                  fadeAnim={aggregateHypeFadeAnim}
-                />
-              </View>
-            )}
-        </View>
-      </View>
       </SectionContainer>
 
       {/* Comments Section */}

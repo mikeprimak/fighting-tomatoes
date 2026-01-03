@@ -44,6 +44,11 @@ interface PredictionBarChartProps {
   // Actual outcome (for completed fights)
   actualWinner?: string | null;
   actualMethod?: string | null;
+  // Control visibility of dividers and user pick highlights (for upcoming vs completed)
+  showMyPickDivider?: boolean; // Show "MY PICK" divider - default true
+  showCrowdPicksDivider?: boolean; // Show "CROWD PICKS" divider - default true
+  showUserPickHighlight?: boolean; // Show gold border and method badge on user pick - default true
+  showFighterImages?: boolean; // Show fighter images and names - default true
 }
 
 /**
@@ -67,6 +72,10 @@ export default function PredictionBarChart({
   showLabels = true,
   actualWinner,
   actualMethod,
+  showMyPickDivider = true,
+  showCrowdPicksDivider = true,
+  showUserPickHighlight = true,
+  showFighterImages = true,
 }: PredictionBarChartProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -132,8 +141,8 @@ export default function PredictionBarChart({
       {/* Community Predictions Bar - progressive reveal */}
       {winnerPredictions && (
         <View style={{ flex: 1 }}>
-          {/* MY PICK Divider - only show if user made a prediction */}
-          {selectedWinner && (
+          {/* MY PICK Divider - only show if user made a prediction and divider is enabled */}
+          {showMyPickDivider && selectedWinner && (
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
               <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
               <View style={{ paddingHorizontal: 12 }}>
@@ -144,7 +153,7 @@ export default function PredictionBarChart({
           )}
 
           {/* Both fighter images - user's pick has gold ring and indicators */}
-          {(() => {
+          {showFighterImages && (() => {
             const imageSize = 90;
             const goldColor = '#F5C518';
             const isWinnerCorrect = hasWinner && actualWinner === selectedWinner;
@@ -169,7 +178,7 @@ export default function PredictionBarChart({
                       <View style={{ position: 'relative' }}>
                         <View style={{
                           borderWidth: 3,
-                          borderColor: isUserPick ? goldColor : 'transparent',
+                          borderColor: (showUserPickHighlight && isUserPick) ? goldColor : 'transparent',
                           borderRadius: (imageSize + 6) / 2,
                           padding: 2,
                         }}>
@@ -213,7 +222,7 @@ export default function PredictionBarChart({
                         {fighter1Name}
                       </Text>
                       {/* Method badge - reserve space for alignment */}
-                      {hasMethodPrediction && (
+                      {showUserPickHighlight && hasMethodPrediction && (
                         <View style={{
                           marginTop: 4,
                           paddingHorizontal: 8,
@@ -254,7 +263,7 @@ export default function PredictionBarChart({
                       <View style={{ position: 'relative' }}>
                         <View style={{
                           borderWidth: 3,
-                          borderColor: isUserPick ? goldColor : 'transparent',
+                          borderColor: (showUserPickHighlight && isUserPick) ? goldColor : 'transparent',
                           borderRadius: (imageSize + 6) / 2,
                           padding: 2,
                         }}>
@@ -298,7 +307,7 @@ export default function PredictionBarChart({
                         {fighter2Name}
                       </Text>
                       {/* Method badge - reserve space for alignment */}
-                      {hasMethodPrediction && (
+                      {showUserPickHighlight && hasMethodPrediction && (
                         <View style={{
                           marginTop: 4,
                           paddingHorizontal: 8,
@@ -336,16 +345,18 @@ export default function PredictionBarChart({
           })()}
 
           {/* CROWD PICKS Divider */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>CROWD PICKS ({totalPredictions})</Text>
+          {showCrowdPicksDivider && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+              <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+              <View style={{ paddingHorizontal: 12 }}>
+                <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>CROWD PICKS ({totalPredictions})</Text>
+              </View>
+              <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             </View>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          </View>
+          )}
 
           {/* Fighter percentages */}
-          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 8, alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 8, marginBottom: 8, alignItems: 'center' }}>
             {/* Fighter 1 percentage */}
             <View style={{ alignItems: 'center', flex: 1 }}>
               <Text style={{ fontSize: 22, fontWeight: '700', color: '#FFFFFF', textAlign: 'center' }}>
