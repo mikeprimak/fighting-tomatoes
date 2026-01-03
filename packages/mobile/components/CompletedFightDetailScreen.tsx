@@ -571,7 +571,7 @@ export default function CompletedFightDetailScreen({
         apiService.updateFightUserData(fight.id, {
           rating: r > 0 ? r : null,
           review: c.trim() || null,
-          tags: tagIdsToNames(tags).slice(0, 10)
+          tags: tagIdsToNames(tags).slice(0, 20)
         }).catch(() => {
           // Silent fail on unmount - data will sync next time
         });
@@ -809,7 +809,7 @@ export default function CompletedFightDetailScreen({
           const submissionData = {
             rating: rating > 0 ? rating : null,
             review: null,
-            tags: tagIdsToNames(selectedTags).slice(0, 10)
+            tags: tagIdsToNames(selectedTags).slice(0, 20)
           };
 
           try {
@@ -831,7 +831,7 @@ export default function CompletedFightDetailScreen({
     const submissionData = {
       rating: rating > 0 ? rating : null,
       review: comment.trim() || null,
-      tags: tagIdsToNames(selectedTags).slice(0, 10)
+      tags: tagIdsToNames(selectedTags).slice(0, 20)
     };
 
     // Check if this is a new review (not editing existing)
@@ -1197,7 +1197,7 @@ export default function CompletedFightDetailScreen({
       updateUserDataMutation.mutate({
         rating: newRating > 0 ? newRating : null,
         review: comment.trim() || null,
-        tags: tagIdsToNames(newTags).slice(0, 10)
+        tags: tagIdsToNames(newTags).slice(0, 20)
       });
       saveTimerRef.current = null;
     }, 300);
@@ -1237,8 +1237,8 @@ export default function CompletedFightDetailScreen({
 
     const isSelecting = !selectedTags.includes(tagId);
 
-    // Max 10 tags check
-    if (isSelecting && selectedTags.length >= 10) {
+    // Max 20 tags check
+    if (isSelecting && selectedTags.length >= 20) {
       return;
     }
 

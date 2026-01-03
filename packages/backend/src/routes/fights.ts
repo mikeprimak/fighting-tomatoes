@@ -74,13 +74,13 @@ const UpdateReviewSchema = z.object({
 });
 
 const FightTagsSchema = z.object({
-  tagNames: z.array(z.string()).min(1).max(10),
+  tagNames: z.array(z.string()).min(1).max(20),
 });
 
 const UpdateUserDataSchema = z.object({
   rating: z.number().int().min(1).max(10).nullable().optional(),
   review: z.string().min(1).max(5000).nullable().optional(),
-  tags: z.array(z.string()).max(10).optional(),
+  tags: z.array(z.string()).max(20).optional(),
 });
 
 const SearchQuerySchema = z.object({

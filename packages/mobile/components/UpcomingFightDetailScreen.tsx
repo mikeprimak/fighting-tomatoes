@@ -280,7 +280,8 @@ export default function UpcomingFightDetailScreen({
   // Helper to optimistically update events cache for predictions
   const updateEventsCache = (updates: { userPredictedWinner?: string | null; userPredictedMethod?: string | null; userHypePrediction?: number | null; averageHype?: number }) => {
     // Update upcomingEvents (infinite query with nested fights)
-    queryClient.setQueryData(['upcomingEvents', isAuthenticated], (old: any) => {
+    // Use setQueriesData with partial key to match all upcomingEvents queries regardless of filter
+    queryClient.setQueriesData({ queryKey: ['upcomingEvents'] }, (old: any) => {
       if (!old?.pages) return old;
       return {
         ...old,
@@ -323,14 +324,11 @@ export default function UpcomingFightDetailScreen({
     },
     onMutate: async (winnerId) => {
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
-      const previousEvents = queryClient.getQueryData(['upcomingEvents', isAuthenticated]);
       updateEventsCache({ userPredictedWinner: winnerId });
-      return { previousEvents };
     },
-    onError: (err, winnerId, context: any) => {
-      if (context?.previousEvents) {
-        queryClient.setQueryData(['upcomingEvents', isAuthenticated], context.previousEvents);
-      }
+    onError: () => {
+      // Invalidate to refetch correct state on error
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
     },
     onSuccess: () => {
       // Mark this fight as needing animation
@@ -370,9 +368,7 @@ export default function UpcomingFightDetailScreen({
     },
     onMutate: async (hypeLevel) => {
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
-      const previousEvents = queryClient.getQueryData(['upcomingEvents', isAuthenticated]);
       updateEventsCache({ userHypePrediction: hypeLevel });
-      return { previousEvents };
     },
     onSuccess: (data: any) => {
       console.log('[saveHypeMutation] Success:', data);
@@ -386,11 +382,9 @@ export default function UpcomingFightDetailScreen({
 
       onPredictionSuccess?.();
     },
-    onError: (error, hypeLevel, context: any) => {
+    onError: (error) => {
       console.error('[saveHypeMutation] Error:', error);
-      if (context?.previousEvents) {
-        queryClient.setQueryData(['upcomingEvents', isAuthenticated], context.previousEvents);
-      }
+      // Invalidate to refetch correct state on error (onSettled also invalidates)
     },
     onSettled: () => {
       // Always invalidate queries, even on error (to reset state)
@@ -426,14 +420,11 @@ export default function UpcomingFightDetailScreen({
     },
     onMutate: async (method) => {
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
-      const previousEvents = queryClient.getQueryData(['upcomingEvents', isAuthenticated]);
       updateEventsCache({ userPredictedMethod: method });
-      return { previousEvents };
     },
-    onError: (err, method, context: any) => {
-      if (context?.previousEvents) {
-        queryClient.setQueryData(['upcomingEvents', isAuthenticated], context.previousEvents);
-      }
+    onError: () => {
+      // Invalidate to refetch correct state on error
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
     },
     onSuccess: () => {
       // Mark this fight as needing animation
@@ -851,8 +842,7 @@ export default function UpcomingFightDetailScreen({
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
       await queryClient.cancelQueries({ queryKey: ['fight', fight.id] });
 
-      // Snapshot previous caches for rollback
-      const previousEvents = queryClient.getQueryData(['upcomingEvents', isAuthenticated]);
+      // Snapshot previous fight cache for rollback (exact key match)
       const previousFight = queryClient.getQueryData(['fight', fight.id, isAuthenticated]);
 
       // Helper to calculate new notification state
@@ -897,7 +887,8 @@ export default function UpcomingFightDetailScreen({
       });
 
       // Optimistically update events list (infinite query) for instant bell icon update
-      queryClient.setQueryData(['upcomingEvents', isAuthenticated], (old: any) => {
+      // Use setQueriesData with partial key to match all upcomingEvents queries regardless of filter
+      queryClient.setQueriesData({ queryKey: ['upcomingEvents'] }, (old: any) => {
         if (!old?.pages) return old;
         return {
           ...old,
@@ -930,7 +921,7 @@ export default function UpcomingFightDetailScreen({
         });
       }
 
-      return { previousEvents, previousFight };
+      return { previousFight };
     },
     onSuccess: (data, enabled) => {
       // Show toast when notification is enabled (inside FightDetailsMenu modal)
@@ -953,9 +944,8 @@ export default function UpcomingFightDetailScreen({
       if (context?.previousFight) {
         queryClient.setQueryData(['fight', fight.id, isAuthenticated], context.previousFight);
       }
-      if (context?.previousEvents) {
-        queryClient.setQueryData(['upcomingEvents', isAuthenticated], context.previousEvents);
-      }
+      // Invalidate upcomingEvents to refetch correct state
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
       showError(error?.error || 'Failed to update notification preference');
     },
   });

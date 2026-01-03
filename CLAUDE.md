@@ -174,17 +174,31 @@ Fight-specific notifications (notify when a specific fight starts) are **only av
 
 ### Pre-Launch Migration Checklist
 
-**⚠️ RUN THIS AGAIN BEFORE LAUNCH** to get the latest data from fightingtomatoes.com.
+**⚠️ RUN THIS 1-2 DAYS BEFORE LAUNCH** to get the latest data from fightingtomatoes.com.
 
-#### Step 1: Sync from Live MySQL (REQUIRED)
+#### Step 0: Understanding the System
+
+The migration system has TWO approaches:
+1. **Old (SQL dumps)** - Used September 2024 dump files, OUTDATED - don't use
+2. **New (live MySQL)** - Connects directly to live database, ALWAYS CURRENT ✅
+
+All scripts in `mysql-export/` folder connect to the **live** fightingtomatoes.com database.
+
+#### Step 1: Sync ALL Data from Live MySQL (REQUIRED)
 ```bash
 cd packages/backend/scripts/legacy-migration/mysql-export
 
-# Sync ratings from live MySQL (gets latest user ratings)
-node sync-all-ratings.js
+# ⭐ MASTER SYNC SCRIPT - syncs everything from live database
+node sync-all-from-live.js
 
-# Sync any new fights/events added since last migration
-node sync-missing-data.js
+# Or sync specific data types only:
+node sync-all-from-live.js --only=reviews   # Post-fight comments
+node sync-all-from-live.js --only=ratings   # User ratings
+node sync-all-from-live.js --only=tags      # User tags (FOTY, FOTN, etc.)
+node sync-all-from-live.js --only=fights    # Check for missing fights
+
+# Dry-run mode (see what would sync without making changes):
+node sync-all-from-live.js --dry-run
 ```
 
 #### Step 2: Import Images
