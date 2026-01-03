@@ -154,7 +154,7 @@ export default function EditProfileScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Edit Profile' }} />
+      <Stack.Screen options={{ title: 'Edit Profile', headerBackTitleVisible: false }} />
       <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}

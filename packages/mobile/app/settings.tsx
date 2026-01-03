@@ -178,6 +178,7 @@ export default function SettingsScreen() {
             headerStyle: { backgroundColor: colors.card },
             headerTintColor: colors.text,
             headerShadowVisible: false,
+            headerBackTitleVisible: false,
           }}
         />
         <View style={styles.loadingContainer}>
@@ -195,6 +196,7 @@ export default function SettingsScreen() {
           headerStyle: { backgroundColor: colors.card },
           headerTintColor: colors.text,
           headerShadowVisible: false,
+          headerBackTitleVisible: false,
         }}
       />
 

@@ -158,7 +158,7 @@ Fight-specific notifications (notify when a specific fight starts) are **only av
 
 ## Legacy Migration (fightingtomatoes.com → New App)
 
-**Status: ✅ COMPLETE** (as of 2025-12-29)
+**Status: ✅ COMPLETE** (as of 2025-12-29, updated 2025-01-03)
 
 ### Migration Summary
 
@@ -169,35 +169,48 @@ Fight-specific notifications (notify when a specific fight starts) are **only av
 | **Fights** | ~13,500 | Order corrected (main event = orderOnCard 1) |
 | **Users** | 1,928 | All have `password: null` for claim flow |
 | **Ratings** | ~65,000 | Synced from live MySQL |
-| **Reviews** | ~760 | Migrated from SQL dumps |
+| **Reviews** | ~770 | +10 synced on 2025-01-03 via live MySQL |
 | **Tags** | ~594 | Migrated from SQL dumps |
+
+### Fix Applied (2025-01-03): Missing Reviews
+
+**Problem**: Original migration used September 2024 SQL dump files. Any reviews added after September (like Aspinall vs Gane in October) were missing.
+
+**Solution**: Created `sync-all-from-live.js` script that connects directly to the live MySQL database instead of using outdated dump files.
+
+**Result**: 10 missing reviews synced, including user reviews for fights added after September 2024.
 
 ### Pre-Launch Migration Checklist
 
 **⚠️ RUN THIS 1-2 DAYS BEFORE LAUNCH** to get the latest data from fightingtomatoes.com.
 
-#### Step 0: Understanding the System
-
-The migration system has TWO approaches:
-1. **Old (SQL dumps)** - Used September 2024 dump files, OUTDATED - don't use
-2. **New (live MySQL)** - Connects directly to live database, ALWAYS CURRENT ✅
-
-All scripts in `mysql-export/` folder connect to the **live** fightingtomatoes.com database.
-
-#### Step 1: Sync ALL Data from Live MySQL (REQUIRED)
+#### 🚀 QUICK REFERENCE - Run Before Launch:
 ```bash
 cd packages/backend/scripts/legacy-migration/mysql-export
+node sync-all-from-live.js
+```
+This single command connects to the **live** fightingtomatoes.com MySQL database and syncs all missing reviews, ratings, and tags. Safe to run multiple times - it skips data that already exists.
 
-# ⭐ MASTER SYNC SCRIPT - syncs everything from live database
+#### How It Works
+
+The `sync-all-from-live.js` script:
+1. Connects directly to the live fightingtomatoes.com MySQL database
+2. Compares legacy data with your new PostgreSQL database
+3. Imports only what's missing (skips duplicates)
+4. Works for reviews, ratings, and tags
+
+**Options:**
+```bash
+# Sync everything (recommended)
 node sync-all-from-live.js
 
-# Or sync specific data types only:
+# Sync specific data types only:
 node sync-all-from-live.js --only=reviews   # Post-fight comments
 node sync-all-from-live.js --only=ratings   # User ratings
 node sync-all-from-live.js --only=tags      # User tags (FOTY, FOTN, etc.)
 node sync-all-from-live.js --only=fights    # Check for missing fights
 
-# Dry-run mode (see what would sync without making changes):
+# Dry-run mode (preview without making changes):
 node sync-all-from-live.js --dry-run
 ```
 

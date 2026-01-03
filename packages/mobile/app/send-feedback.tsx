@@ -59,7 +59,10 @@ export default function SendFeedbackScreen() {
       }, 1500);
     } catch (error: any) {
       console.error('Error submitting feedback:', error);
-      showError(error.message || 'Failed to submit feedback. Please try again.');
+      // Show more detailed error message for debugging
+      const errorMessage = error?.error || error?.message || 'Failed to submit feedback. Please try again.';
+      const errorCode = error?.code ? ` (${error.code})` : '';
+      showError(`${errorMessage}${errorCode}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -79,6 +82,7 @@ export default function SendFeedbackScreen() {
           },
           headerTintColor: colors.text,
           headerShadowVisible: false,
+          headerBackTitleVisible: false,
         }}
       />
       <KeyboardAvoidingView

@@ -3,6 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -104,6 +105,7 @@ function RootLayoutNav() {
               <SearchProvider>
               <OrgFilterProvider>
               <ThemeProvider value={colorScheme === 'dark' ? customDarkTheme : customLightTheme}>
+                <StatusBar style="light" />
                 <NotificationHandler />
               <Stack
                 screenOptions={{
@@ -112,6 +114,8 @@ function RootLayoutNav() {
                   headerStyle: {
                     backgroundColor: colors.card,
                   },
+                  // Hide the back button text on iOS (shows just the chevron)
+                  headerBackTitleVisible: false,
                 }}
               >
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
