@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -349,12 +349,19 @@ export default function CompletedFightDetailScreen({
       return getTagId(tagName);
     }).filter(Boolean) as string[];
   });
-  // Simple tag tier state: false = show positive tags (default), true = show negative tags
-  // Only switches to negative when user rates below 5
+  // Which tag set to show: false = positive (rating 5+), true = negative (rating 1-4)
   const [showNegativeTags, setShowNegativeTags] = useState(false);
 
-  // Tag counts for optimistic updates - maps tag ID to count
-  const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
+  // Local count deltas - applied on top of server counts
+  const [countDeltas, setCountDeltas] = useState<Record<string, number>>({});
+
+  // Debounce timer for saves
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Refs to track latest values for unmount flush
+  const latestRatingRef = useRef(rating);
+  const latestTagsRef = useRef(selectedTags);
+  const latestCommentRef = useRef(comment);
 
   // Animation values for wheel animation (large star display) - Initialize based on existing rating
   // Using 92px per item for taller rating boxes (48x82)
@@ -502,21 +509,24 @@ export default function CompletedFightDetailScreen({
     }
   }, [reviewsData]);
 
-  // Simple: compute tags once when API data arrives, keep order stable
+  // Compute tags from server data + local count deltas
   const displayTags = React.useMemo(() => {
     const communityTags = aggregateStats?.topTags || [];
     const effectiveRating = showNegativeTags ? 3 : 5;
-
-    // Get tags sorted by community count, with random filler for remaining slots
     const baseTags = getAvailableTagsForRating(effectiveRating, communityTags);
 
-    // Apply optimistic count adjustments
-    return baseTags.map(tag => ({
-      id: tag.id,
-      name: tag.name,
-      count: Math.max(0, tag.count + (tagCounts[tag.id] || 0))
-    }));
-  }, [showNegativeTags, aggregateStats?.topTags, tagCounts]);
+    // Apply local count deltas and ensure user's selected tags show at least count 1
+    return baseTags.map(tag => {
+      const baseCount = tag.count + (countDeltas[tag.id] || 0);
+      const isUserSelected = selectedTags.includes(tag.id);
+      // If user selected this tag, ensure it shows at least 1 (their contribution)
+      const minCount = isUserSelected ? 1 : 0;
+      return {
+        ...tag,
+        count: Math.max(minCount, baseCount)
+      };
+    });
+  }, [showNegativeTags, aggregateStats?.topTags, countDeltas, selectedTags]);
 
   // Keyboard event listeners for dynamic padding
   useEffect(() => {
@@ -542,6 +552,32 @@ export default function CompletedFightDetailScreen({
       keyboardWillHide.remove();
     };
   }, []);
+
+  // Note: latestRatingRef and latestTagsRef are updated synchronously in handlers
+  // latestCommentRef needs an effect since comment changes via text input
+  useEffect(() => {
+    latestCommentRef.current = comment;
+  }, [comment]);
+
+  // Cleanup: flush pending save on unmount (don't lose data!)
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        // Flush the pending save immediately
+        const r = latestRatingRef.current;
+        const tags = latestTagsRef.current;
+        const c = latestCommentRef.current;
+        apiService.updateFightUserData(fight.id, {
+          rating: r > 0 ? r : null,
+          review: c.trim() || null,
+          tags: tagIdsToNames(tags).slice(0, 10)
+        }).catch(() => {
+          // Silent fail on unmount - data will sync next time
+        });
+      }
+    };
+  }, [fight.id]);
 
   // Mutation for auto-saving rating/review/tags
   const updateUserDataMutation = useMutation({
@@ -620,17 +656,9 @@ export default function CompletedFightDetailScreen({
         };
       });
 
-      // Invalidate other queries that need fresh data
-      queryClient.invalidateQueries({ queryKey: ['fightTags', fight.id] });
-      queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
-      queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] }); // This fetches both prediction and aggregate stats
-      queryClient.invalidateQueries({ queryKey: ['eventFights', fight.event.id] });
-      queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });
-      // Invalidate fight list queries so cards update when navigating back
-      queryClient.invalidateQueries({ queryKey: ['fights'] });
-      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
-      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
-      queryClient.invalidateQueries({ queryKey: ['pastEvents'] }); // Past events screen embeds fights
+      // MINIMAL invalidations - only what's truly needed
+      // We use local state for tags, so don't refetch tag-related queries
+      queryClient.invalidateQueries({ queryKey: ['myRatings'] }); // User's ratings page
       onRatingSuccess?.();
     },
     onError: (error: any) => {
@@ -769,7 +797,7 @@ export default function CompletedFightDetailScreen({
           const submissionData = {
             rating: rating > 0 ? rating : null,
             review: null,
-            tags: tagIdsToNames(selectedTags)
+            tags: tagIdsToNames(selectedTags).slice(0, 10)
           };
 
           try {
@@ -791,7 +819,7 @@ export default function CompletedFightDetailScreen({
     const submissionData = {
       rating: rating > 0 ? rating : null,
       review: comment.trim() || null,
-      tags: tagIdsToNames(selectedTags)
+      tags: tagIdsToNames(selectedTags).slice(0, 10)
     };
 
     // Check if this is a new review (not editing existing)
@@ -1147,19 +1175,32 @@ export default function CompletedFightDetailScreen({
     });
   };
 
-  // Handlers for rating and tags (immediate save) - Simplified like UpcomingFightDetailScreen
+  // Simple debounced save - waits 300ms then saves
+  const debouncedSave = useCallback((newRating: number, newTags: string[]) => {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+
+    saveTimerRef.current = setTimeout(() => {
+      updateUserDataMutation.mutate({
+        rating: newRating > 0 ? newRating : null,
+        review: comment.trim() || null,
+        tags: tagIdsToNames(newTags).slice(0, 10)
+      });
+      saveTimerRef.current = null;
+    }, 300);
+  }, [comment, updateUserDataMutation]);
+
   const handleSetRating = (newRating: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!requireVerification('rate this fight')) return;
     const finalRating = rating === newRating ? 0 : newRating;
 
+    // Update local state immediately
     setRating(finalRating);
-
-    // Switch to negative tags if rating is 1-4, otherwise show positive tags
-    // Rating 0 (unrated) or 5+ = positive tags, 1-4 = negative tags
+    latestRatingRef.current = finalRating; // Update ref immediately for unmount flush
     setShowNegativeTags(finalRating >= 1 && finalRating < 5);
 
-    // If rating > 0, reveal the outcome immediately
     if (finalRating > 0) {
       setHasLocallyRevealed(true);
     }
@@ -1174,13 +1215,8 @@ export default function CompletedFightDetailScreen({
       useNativeDriver: false,
     }).start();
 
-    // Save immediately
-    const submissionData = {
-      rating: finalRating > 0 ? finalRating : null,
-      review: comment.trim() || null,
-      tags: tagIdsToNames(selectedTags)
-    };
-    updateUserDataMutation.mutate(submissionData);
+    // Debounced save (batched with any pending tag changes)
+    debouncedSave(finalRating, selectedTags);
   };
 
   const handleToggleTag = (tagId: string) => {
@@ -1188,25 +1224,27 @@ export default function CompletedFightDetailScreen({
     if (!requireVerification('tag this fight')) return;
 
     const isSelecting = !selectedTags.includes(tagId);
+
+    // Max 10 tags check
+    if (isSelecting && selectedTags.length >= 10) {
+      return;
+    }
+
+    // Update selection state (yellow on/off)
     const newTags = isSelecting
       ? [...selectedTags, tagId]
       : selectedTags.filter(id => id !== tagId);
-
-    // Update selection state
     setSelectedTags(newTags);
+    latestTagsRef.current = newTags; // Update ref immediately for unmount flush
 
-    // Update count delta (+1 when selecting, -1 when deselecting)
-    setTagCounts(prev => ({
+    // Update count delta (+1 or -1)
+    setCountDeltas(prev => ({
       ...prev,
       [tagId]: (prev[tagId] || 0) + (isSelecting ? 1 : -1)
     }));
 
-    // Save to API
-    updateUserDataMutation.mutate({
-      rating: rating > 0 ? rating : null,
-      review: comment.trim() || null,
-      tags: tagIdsToNames(newTags)
-    });
+    // Debounced save
+    debouncedSave(rating, newTags);
   };
 
   // Trigger animation when rating is submitted
