@@ -13,48 +13,40 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 
 **Critical Ports**: Backend 3008, Expo 8083, PostgreSQL 5433
 
-## 🚀 LAUNCH PREP TESTING (2026-01-03)
+## 🚀 LAUNCH PREP TESTING (2026-01-04)
 
-**Status**: In Progress
+**Status**: Android testing in progress - Parts A & B complete
 
-### ✅ Completed Tests
-- **Email Registration**: Working - created account with `babyessentialsco1@gmail.com`
-- **Email Verification**: Working - received email, clicked link, banner disappeared
-- **Verification Email Styling**: Fixed - button now green (#16a34a), removed app store buttons from verify-email.html
+### ✅ Completed Tests (2026-01-04)
+**PART A: Authentication & Onboarding** - ALL PASSED
+- A1. New User Registration
+- A2. Legacy User Claim Flow (email + Google Sign-In)
+- A3. Google Sign-In
+- A4. Password Reset
+- A5. Logout
 
-### 🔧 Fixes Applied This Session
-1. **Email button color**: Changed from grey to green in `packages/backend/src/utils/email.ts`
-2. **verify-email.html**: Removed "Don't have the app yet?" text and app store buttons
-3. **Production DB schema**: Added missing `upvotes` column to `pre_fight_comments` table
+**PART B: Browsing & Navigation** - ALL PASSED
+- B1-B5 all working
 
-### ⚠️ CRITICAL: Dual Database Issue Discovered
-Render has **TWO databases** on the same PostgreSQL instance:
-- `fightcrewapp` - The one Render backend is using (1937 users, 12122 fights)
-- `fightcrewapp-db` - Extra database (different data, out of sync)
+### 🔧 Fixes Applied (2026-01-04)
+1. **Missing `pre_fight_comment_votes` table** - Created in production DB
+2. **`totalRatings`/`totalReviews` out of sync** - Ran UPDATE for all 1937 migrated users
+3. **Crowd Ratings not updating** - Backend now returns `aggregateStats` in PUT /user-data response (best practice pattern)
+4. **ratingDistribution format** - Converted `{ratings1: x}` to `{1: x}` to match GET /aggregate-stats format
+5. **reset-password.html** - Removed app store buttons
 
-**Render DATABASE_URL**: `postgresql://...@dpg-d3oee81r0fns73c59610-a/fightcrewapp` (no `-db` suffix)
-
-**Action needed**: Consider deleting `fightcrewapp-db` to avoid confusion, or consolidate data.
-
-### 📋 Remaining Tests (Next Session)
-- [ ] Login flow (existing user)
-- [ ] Password reset flow
-- [ ] Google Sign-In
-- [ ] Apple Sign-In
-- [ ] Rating a fight
-- [ ] Writing a review
-- [ ] Pre-fight comments on upcoming fights
-- [ ] Push notifications
-- [ ] Profile screen functionality (was showing 500 error, now fixed)
-
-### 🐛 Known Issues
-- **Render email caching**: Previously-registered emails show "already registered" even after deletion. Use fresh emails or restart Render service.
-- **Pre-flight-comments typo**: Comment on line 2068 says "pre-flight" but route is "pre-fight" - cosmetic only
+### 📋 Next Session - Continue Testing
+- [ ] **C1. Rate a Fight** - verify crowd ratings + distribution chart update (fix deployed, needs testing)
+- [ ] C2. Write a Review
+- [ ] C3. Add Tags
+- [ ] C4. Add Hype (Upcoming Fight)
+- [ ] C5. Add Pre-Fight Comment
+- [ ] Parts D, E, F, G, H
 
 ### 📝 Session Notes
-- Current work IP: `192.168.1.69`
-- Mobile configured with `USE_PRODUCTION_FOR_TESTING = true` (pointing at Render)
-- Test user emails available: `fightcrewapp@gmail.com`, `fightingtomatoesofficial@gmail.com` (may need Render restart to clear cache)
+- Current work IP: `10.0.0.53` (home)
+- Mobile configured with `USE_PRODUCTION_FOR_TESTING = true`
+- Test accounts: `avocadomike@hotmail.com` (1234 ratings, 72 reviews), `michaelsprimak@gmail.com`
 
 ---
 
