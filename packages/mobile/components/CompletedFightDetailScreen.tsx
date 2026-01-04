@@ -685,6 +685,22 @@ export default function CompletedFightDetailScreen({
       // MINIMAL invalidations - only what's truly needed
       // We use local state for tags, so don't refetch tag-related queries
       queryClient.invalidateQueries({ queryKey: ['myRatings'] }); // User's ratings page
+
+      // Update fightStats with server-returned aggregate stats (preserves topTags)
+      if (response?.data?.aggregateStats) {
+        queryClient.setQueryData(['fightStats', fight.id], (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            aggregateStats: {
+              ...old.aggregateStats, // Preserve topTags
+              averageRating: response.data.aggregateStats.averageRating,
+              totalRatings: response.data.aggregateStats.totalRatings,
+              ratingDistribution: response.data.aggregateStats.ratingDistribution,
+            },
+          };
+        });
+      }
       onRatingSuccess?.();
     },
     onError: (error: any) => {
@@ -1577,7 +1593,7 @@ export default function CompletedFightDetailScreen({
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 24, marginBottom: 12 }}>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>FIGHT RATINGS ({totalRatings || 0})</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>CROWD RATINGS ({totalRatings || 0})</Text>
             </View>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>
@@ -1714,7 +1730,7 @@ export default function CompletedFightDetailScreen({
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12 }}>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>FIGHT RATINGS ({totalRatings || 0})</Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>CROWD RATINGS ({totalRatings || 0})</Text>
             </View>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
           </View>

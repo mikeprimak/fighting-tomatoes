@@ -61,87 +61,91 @@ Test on Android (now) and iOS (when device available).
 
 ### PART A: AUTHENTICATION & ONBOARDING
 
-#### A1. New User Registration
-- [ ] Open app fresh (logged out)
-- [ ] Tap "Sign Up"
-- [ ] Enter email, password (12+ chars with uppercase, lowercase, number, special char)
-- [ ] Submit registration
-- [ ] Receive verification email (check spam)
-- [ ] Click verification link
-- [ ] See "Email verified" confirmation
-- [ ] Log in with new account
-- [ ] Verify you're logged in (profile shows your email)
+#### A1. New User Registration ✅
+- [x] Open app fresh (logged out)
+- [x] Tap "Sign Up"
+- [x] Enter email, password (8+ chars)
+- [x] Submit registration
+- [x] Receive verification email (check spam)
+- [x] Click verification link
+- [x] See "Email verified" confirmation
+- [x] Log in with new account
+- [x] Verify you're logged in (profile shows your email)
 
-#### A2. Legacy User Claim Flow
-**Test User**: `borjosh103@gmail.com` (has 232 ratings, 16 reviews)
-- [ ] Open app fresh (logged out)
-- [ ] Tap "Log In"
-- [ ] Enter: `borjosh103@gmail.com`
-- [ ] See "Welcome Back" claim account screen (NOT password field)
-- [ ] Tap to send verification email
-- [ ] Check email for "Welcome Back! Set Up Your Good Fights Account"
-- [ ] Click link in email
-- [ ] Set new password (12+ chars with complexity)
-- [ ] Log in with new password
-- [ ] Go to Profile → verify ratings count shows (should be ~232)
+#### A2. Legacy User Claim Flow ✅
+**Tested with**: `avocadomike@hotmail.com` (1234 ratings, 72 reviews)
+- [x] Open app fresh (logged out)
+- [x] Tap "Log In"
+- [x] Enter legacy email
+- [x] See "Welcome Back" claim account screen (NOT password field)
+- [x] Tap to send verification email
+- [x] Check email (may be in spam for Hotmail)
+- [x] Click link in email
+- [x] Set new password (8+ chars)
+- [x] Log in with new password
+- [x] Go to Profile → verify ratings count shows correctly
+**Note**: Fixed bug where `totalRatings`/`totalReviews` fields were out of sync - ran DB update for all 1937 users
 
-#### A3. Google Sign-In
-- [ ] Open app fresh (logged out)
-- [ ] Tap "Continue with Google"
-- [ ] Complete Google OAuth flow
-- [ ] Verify logged in successfully
-- [ ] Profile shows Google account email
+#### A3. Google Sign-In ✅
+- [x] Open app fresh (logged out)
+- [x] Tap "Continue with Google"
+- [x] Complete Google OAuth flow
+- [x] Verify logged in successfully
+- [x] Profile shows Google account email
+- [x] **Bonus**: Tested legacy account claim via Google Sign-In - works!
 
-#### A4. Password Reset (Existing User)
-- [ ] Log out
-- [ ] Tap "Forgot Password"
-- [ ] Enter your email
-- [ ] Receive reset email
-- [ ] Click link, set new password
-- [ ] Log in with new password
+#### A4. Password Reset (Existing User) ✅
+- [x] Log out
+- [x] Tap "Forgot Password"
+- [x] Enter your email
+- [x] Receive reset email
+- [x] Click link, set new password
+- [x] Log in with new password
 
-#### A5. Logout
-- [ ] While logged in, go to Settings/Profile
-- [ ] Tap Logout
-- [ ] Confirm logged out (see login screen)
+#### A5. Logout ✅
+- [x] While logged in, go to Settings/Profile
+- [x] Tap Logout
+- [x] Confirm logged out (see login screen)
 
 ---
 
 ### PART B: BROWSING & NAVIGATION
 
-#### B1. Events List
-- [ ] Open "Events" or "Upcoming" tab
-- [ ] See list of upcoming events with dates, promotions
-- [ ] Scroll to load more events
-- [ ] Filter by promotion (UFC, ONE, etc.) if available
+#### B1. Events List ✅
+- [x] Open "Events" or "Upcoming" tab
+- [x] See list of upcoming events with dates, promotions
+- [x] Scroll to load more events
+- [x] Filter by promotion (UFC, ONE, etc.) if available
 
-#### B2. Past Events
-- [ ] Navigate to "Past Events" tab
-- [ ] See completed events
-- [ ] Events show completion status
+#### B2. Past Events ✅
+- [x] Navigate to "Past Events" tab
+- [x] See completed events
+- [x] Events show completion status
 
-#### B3. Event Detail
+#### B3. Event Detail ✅
 **Test Event**: Look for "OKTAGON 81: FLEURY vs. BUDAY" (Dec 28, 2025)
-- [ ] Tap an event card
-- [ ] See event detail screen with fight list
-- [ ] Fights show fighter names, weight class
-- [ ] Main event appears at top (or clearly marked)
+- [x] Tap an event card
+- [x] See event detail screen with fight list
+- [x] Fights show fighter names, weight class
+- [x] Main event appears at top (or clearly marked)
+**Note**: Fixed missing `pre_fight_comment_votes` table in production DB
 
-#### B4. Fight Detail (Completed Fight)
+#### B4. Fight Detail (Completed Fight) ✅
 **Test Fight**: Miloš Petrášek vs Mateusz Strzelczyk (OKTAGON 81)
-- [ ] From event detail, tap a completed fight
-- [ ] See fight detail screen
-- [ ] See community rating average (if ratings exist)
-- [ ] See rating distribution chart
-- [ ] See reviews section
-- [ ] See tags section
+- [x] From event detail, tap a completed fight
+- [x] See fight detail screen
+- [x] See community rating average (if ratings exist)
+- [x] See rating distribution chart
+- [x] See reviews section
+- [x] See tags section
+**Note**: Changed "FIGHT RATINGS" → "CROWD RATINGS"
 
-#### B5. Fight Detail (Upcoming Fight)
-- [ ] Open an upcoming event
-- [ ] Tap an upcoming fight
-- [ ] See hype meter instead of rating
-- [ ] Can add hype rating (1-10)
-- [ ] Pre-fight comments visible (if any)
+#### B5. Fight Detail (Upcoming Fight) ✅
+- [x] Open an upcoming event
+- [x] Tap an upcoming fight
+- [x] See hype meter instead of rating
+- [x] Can add hype rating (1-10)
+- [x] Pre-fight comments visible (if any)
 
 ---
 

@@ -2612,6 +2612,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
             ...ratingDistribution,
           },
         });
+
+        // Include updated aggregate stats in response for frontend optimistic update
+        resultData.aggregateStats = {
+          averageRating: ratingStats._avg.rating || 0,
+          totalRatings: ratingStats._count.rating || 0,
+          ratingDistribution,
+        };
       }
 
       // Handle review
