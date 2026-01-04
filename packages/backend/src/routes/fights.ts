@@ -2058,9 +2058,15 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
     } catch (error) {
       console.error('Get pre-fight comments error:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
+        // Include error details in non-production for debugging
+        ...(process.env.NODE_ENV !== 'production' && {
+          details: error instanceof Error ? error.message : String(error)
+        })
       });
     }
   });
