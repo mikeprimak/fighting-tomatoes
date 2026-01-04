@@ -19,7 +19,7 @@ export class EmailService {
 
   static async sendVerificationEmail(email: string, token: string, firstName?: string) {
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`
-    const logoUrl = `${process.env.BACKEND_URL || 'https://fightcrewapp-backend.onrender.com'}/images/logo.png`
+    const logoUrl = `${process.env.BACKEND_URL || 'https://fightcrewapp-backend.onrender.com'}/images/logo-v2.png`
 
     const mailOptions = {
       from: process.env.SMTP_FROM || 'noreply@fightcrewapp.com',
@@ -28,7 +28,9 @@ export class EmailService {
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <img src="${logoUrl}" alt="Good Fights" style="width: 80px; height: auto;" />
+            <div style="display: inline-block; background-color: #181818; border-radius: 12px; padding: 20px 30px;">
+              <img src="${logoUrl}" alt="Good Fights" style="width: 120px; height: auto;" />
+            </div>
           </div>
 
           <h1 style="color: #202020; text-align: center; margin-bottom: 20px;">Welcome to Good Fights!</h1>
@@ -73,7 +75,7 @@ export class EmailService {
 
   static async sendPasswordResetEmail(email: string, token: string) {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`
-    const logoUrl = `${process.env.BACKEND_URL || 'https://fightcrewapp-backend.onrender.com'}/images/logo.png`
+    const logoUrl = `${process.env.BACKEND_URL || 'https://fightcrewapp-backend.onrender.com'}/images/logo-v2.png`
 
     const mailOptions = {
       from: process.env.SMTP_FROM || 'noreply@goodfights.app',
@@ -82,7 +84,9 @@ export class EmailService {
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <img src="${logoUrl}" alt="Good Fights" style="width: 80px; height: auto;" />
+            <div style="display: inline-block; background-color: #181818; border-radius: 12px; padding: 20px 30px;">
+              <img src="${logoUrl}" alt="Good Fights" style="width: 120px; height: auto;" />
+            </div>
           </div>
 
           <h1 style="color: #202020; text-align: center; margin-bottom: 20px;">Password Reset Request</h1>
@@ -116,7 +120,7 @@ export class EmailService {
   static async sendAccountClaimEmail(email: string, token: string, displayName?: string) {
     // Use same reset-password URL as password reset - the screen handles both cases
     const claimUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`
-    const logoUrl = `${process.env.BACKEND_URL || 'https://fightcrewapp-backend.onrender.com'}/images/logo.png`
+    const logoUrl = `${process.env.BACKEND_URL || 'https://fightcrewapp-backend.onrender.com'}/images/logo-v2.png`
 
     const mailOptions = {
       from: process.env.SMTP_FROM || 'noreply@goodfights.app',
@@ -125,7 +129,9 @@ export class EmailService {
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 30px;">
-            <img src="${logoUrl}" alt="Good Fights" style="width: 80px; height: auto;" />
+            <div style="display: inline-block; background-color: #181818; border-radius: 12px; padding: 20px 30px;">
+              <img src="${logoUrl}" alt="Good Fights" style="width: 120px; height: auto;" />
+            </div>
           </div>
 
           <h1 style="color: #202020; text-align: center; margin-bottom: 20px;">Welcome Back${displayName ? `, ${displayName}` : ''}!</h1>

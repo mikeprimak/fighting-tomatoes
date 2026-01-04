@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/app-icon.png",
     "splash": {
-      "image": "./assets/app-icon.png",
+      "image": "./assets/splash-logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#181818"
     },
@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fightcrewapp.mobile",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "backgroundColor": "#181818",
       "googleServicesFile": "./GoogleService-Info.plist",
       "runtimeVersion": {

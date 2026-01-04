@@ -1,1039 +1,421 @@
-# Launch Preparation Roadmap
+# Launch Preparation
 
 **Created**: 2025-12-26
-**Status**: In Progress
-**Last Updated**: 2025-12-31
+**Last Updated**: 2026-01-03
+**Status**: Final stretch
 
 ---
 
-## Executive Summary
+## Launch Blockers (5 Items)
 
-Security audit completed. **Found 5 CRITICAL, 12 HIGH, 15 MEDIUM, and 6 LOW severity issues** across backend and mobile. Additionally, **5 GitGuardian alerts** for exposed secrets in git history require immediate credential rotation.
+These MUST be done before launch:
 
----
-
-## Phase 1: Security & Stability (Launch Blockers)
-
-| Task | Priority | Status | Notes |
-|------|----------|--------|-------|
-| Security Audit | Critical | ✅ Complete | 38 issues found |
-| Credential Rotation (GitGuardian) | Critical | ✅ Complete | PostgreSQL + SendGrid rotated |
-| Fix Critical Security Issues | Critical | ✅ Complete | All 5 critical issues fixed |
-| Spam Prevention & Rate Limiting | Critical | ✅ Complete | @fastify/rate-limit implemented |
-| Token Expiry Fix | Critical | ✅ Complete | 15min access, 90-day refresh with sliding expiration |
-| Legacy Data Migration | Critical | ✅ Complete | Data migrated from fightingtomatoes.com |
-
-## Phase 2: Platform Setup (Launch Blockers)
-
-| Task | Priority | Status | Notes |
-|------|----------|--------|-------|
-| Apple Developer Account | Critical | ✅ Complete | $99/year enrolled |
-| iOS App Store Setup | Critical | ✅ Complete | App Store Connect configured |
-| EAS Build for iOS | Critical | ✅ Complete | First TestFlight build uploaded |
-| TestFlight Testing | Critical | ⏳ In Progress | QA testing 60% complete |
-
-## Phase 3: User Migration (Can soft-launch while building)
-
-| Task | Priority | Status | Notes |
-|------|----------|--------|-------|
-| fightingtomatoes.com → app UX flow | High | ✅ Complete | Account claim flow built & tested |
-| Migration landing page/emails | High | ⏳ Pending | Communication to existing users |
-
-## Phase 4: Live Event Trackers (Post-Launch, Ongoing)
-
-**Current state**: UFC live tracker works well. Other orgs use time-based fallback (all fights in section become ratable at section start time).
-
-**Goal**: Build live trackers for each organization so fights become ratable individually as they complete.
-
-| Organization | Source Type | Status | Notes |
-|--------------|-------------|--------|-------|
-| UFC | Primary (ufc.com) | ✅ Working | Scrapes every 30s during events |
-| Matchroom | Primary | ⏳ To Build | Boxing - check matchroomboxing.com |
-| OKTAGON | Primary | ⏳ To Build | Check oktagonmma.com |
-| PFL | Primary/Secondary | ⏳ To Build | Check pflmma.com or secondary sources |
-| ONE Championship | Primary/Secondary | ⏳ To Build | Check onefc.com or secondary sources |
-| Bellator | Secondary | ⏳ To Build | No longer active, but historical events |
-| BKFC | Primary/Secondary | ⏳ To Build | Check bkfc.com |
-| Rizin | Secondary | ⏳ To Build | May need Tapology/Wikipedia |
-| Invicta | Secondary | ⏳ To Build | May need Tapology/Wikipedia |
-| LFA | Secondary | ⏳ To Build | May need Tapology/Wikipedia |
-| Other orgs | Secondary | ⏳ To Build | Wikipedia, Tapology as fallback |
-
-### Source Types
-
-| Type | Description | Reliability |
-|------|-------------|-------------|
-| **Primary** | Official org website with real-time updates | Best - direct source |
-| **Secondary** | Third-party sites (Wikipedia, Tapology, Sherdog) | Good - may have slight delay |
-| **Time-Based** | Fallback - all fights ratable at section start time | Works but less granular |
-
-### Secondary Sources to Evaluate
-
-| Source | URL | Update Speed | Notes |
-|--------|-----|--------------|-------|
-| Tapology | tapology.com | Near real-time? | Comprehensive MMA database |
-| Wikipedia | wikipedia.org | Variable | Community-edited, may lag |
-| Sherdog | sherdog.com | Unknown | Long-running MMA site |
-| BoxRec | boxrec.com | Unknown | Boxing-specific |
-
-### Scraper Requirements
-
-#### Time-Critical (Must detect within 5 minutes)
-
-| Requirement | Priority | Why |
-|-------------|----------|-----|
-| Event start (first fight begins) | Critical | Trigger "Event is LIVE" notification |
-| Fight start | Critical | Show fight as "In Progress" in app |
-| Fight end | Critical | Enable rating for that fight |
-| Fight card changes (cancellation/swap) | Critical | Keep app in sync with reality |
-
-#### Not Time-Critical (Can scrape later)
-
-| Requirement | Priority | Why |
-|-------------|----------|-----|
-| Winner | Medium | Can fetch from secondary source after event |
-| Method (KO/TKO/Sub/Dec) | Medium | Can fetch from secondary source after event |
-| Round/Time | Low | Nice to have, not essential |
-
-#### Technical Requirements
-
-- Poll interval: Every 30 seconds during live events
-- Must handle: Network errors, HTML structure changes, rate limiting
-- Must NOT: Overwhelm source servers, break on minor HTML changes
-- Fallback: If scraper fails, time-based fallback still works
+| # | Task | Status | Notes |
+|---|------|--------|-------|
+| 1 | **Apple Setup** | ⏳ Pending | TestFlight configured, need final test on device |
+| 2 | **Logo/Splash** | ⏳ Pending | Add GOOD-FIGHTS-ICON-LOGO.png to splash, header |
+| 3 | **Test Core Flow** | ⏳ Pending | Sign up → Rate fight → See rating (iOS + Android) |
+| 4 | **Onboarding** | ⏳ Pending | New user flow, legacy user claim flow |
+| 5 | **Switch to Production** | ⏳ Pending | Point app at Render backend |
 
 ---
 
-### Live Tracker Development Process
+## Already Done (Don't Redo These)
 
-Follow this checklist for each organization. Work on it during a live event when you can observe real changes.
+| Task | Status | Evidence |
+|------|--------|----------|
+| **Scrapers** | ✅ Complete | All 8 orgs configured (UFC, BKFC, PFL, ONE, Matchroom, Golden Boy, Top Rank, OKTAGON) |
+| **Live Event Trackers** | ✅ Complete | UFC, Matchroom, OKTAGON have live tracking; others use time-based fallback |
+| **Legacy Migration** | ✅ Complete | ~1,300 events, ~6,800 fighters, ~13,500 fights, 1,928 users, ~65,000 ratings, ~770 reviews |
+| **Security Audit** | ✅ Complete | All 5 critical issues fixed |
+| **Rate Limiting** | ✅ Complete | @fastify/rate-limit implemented |
+| **Token Strategy** | ✅ Complete | 15min access, 90-day refresh with sliding expiration |
+| **Account Claim Flow** | ✅ Complete | Legacy users can claim accounts via email verification |
+| **Apple Developer** | ✅ Complete | $99/year enrolled, App Store Connect configured |
+| **TestFlight Build** | ✅ Complete | First build uploaded |
 
-#### Phase 1: Research (Before Event)
+---
 
+## Post-Launch (Do After Live)
+
+These are nice-to-haves, NOT launch blockers:
+
+| Task | Priority | Notes |
+|------|----------|-------|
+| GitGuardian security issues | Medium | Credentials already rotated, just cleanup |
+| Efficiency audit | Low | App works fine, optimize later |
+| Admin event editing UI | Low | Use Prisma Studio or direct DB for now |
+| Auto database backups | Medium | Render has manual backup option |
+| Website/landing page | Low | Just app store links needed |
+| GitHub copies | Low | Git is already a backup |
+| Monitoring/alerting | Medium | Render has basic logs |
+| More live trackers | Ongoing | Build during events as needed |
+
+---
+
+## Comprehensive Test Checklist
+
+Test on Android (now) and iOS (when device available).
+
+---
+
+### PART A: AUTHENTICATION & ONBOARDING
+
+#### A1. New User Registration
+- [ ] Open app fresh (logged out)
+- [ ] Tap "Sign Up"
+- [ ] Enter email, password (12+ chars with uppercase, lowercase, number, special char)
+- [ ] Submit registration
+- [ ] Receive verification email (check spam)
+- [ ] Click verification link
+- [ ] See "Email verified" confirmation
+- [ ] Log in with new account
+- [ ] Verify you're logged in (profile shows your email)
+
+#### A2. Legacy User Claim Flow
+**Test User**: `borjosh103@gmail.com` (has 232 ratings, 16 reviews)
+- [ ] Open app fresh (logged out)
+- [ ] Tap "Log In"
+- [ ] Enter: `borjosh103@gmail.com`
+- [ ] See "Welcome Back" claim account screen (NOT password field)
+- [ ] Tap to send verification email
+- [ ] Check email for "Welcome Back! Set Up Your Good Fights Account"
+- [ ] Click link in email
+- [ ] Set new password (12+ chars with complexity)
+- [ ] Log in with new password
+- [ ] Go to Profile → verify ratings count shows (should be ~232)
+
+#### A3. Google Sign-In
+- [ ] Open app fresh (logged out)
+- [ ] Tap "Continue with Google"
+- [ ] Complete Google OAuth flow
+- [ ] Verify logged in successfully
+- [ ] Profile shows Google account email
+
+#### A4. Password Reset (Existing User)
+- [ ] Log out
+- [ ] Tap "Forgot Password"
+- [ ] Enter your email
+- [ ] Receive reset email
+- [ ] Click link, set new password
+- [ ] Log in with new password
+
+#### A5. Logout
+- [ ] While logged in, go to Settings/Profile
+- [ ] Tap Logout
+- [ ] Confirm logged out (see login screen)
+
+---
+
+### PART B: BROWSING & NAVIGATION
+
+#### B1. Events List
+- [ ] Open "Events" or "Upcoming" tab
+- [ ] See list of upcoming events with dates, promotions
+- [ ] Scroll to load more events
+- [ ] Filter by promotion (UFC, ONE, etc.) if available
+
+#### B2. Past Events
+- [ ] Navigate to "Past Events" tab
+- [ ] See completed events
+- [ ] Events show completion status
+
+#### B3. Event Detail
+**Test Event**: Look for "OKTAGON 81: FLEURY vs. BUDAY" (Dec 28, 2025)
+- [ ] Tap an event card
+- [ ] See event detail screen with fight list
+- [ ] Fights show fighter names, weight class
+- [ ] Main event appears at top (or clearly marked)
+
+#### B4. Fight Detail (Completed Fight)
+**Test Fight**: Miloš Petrášek vs Mateusz Strzelczyk (OKTAGON 81)
+- [ ] From event detail, tap a completed fight
+- [ ] See fight detail screen
+- [ ] See community rating average (if ratings exist)
+- [ ] See rating distribution chart
+- [ ] See reviews section
+- [ ] See tags section
+
+#### B5. Fight Detail (Upcoming Fight)
+- [ ] Open an upcoming event
+- [ ] Tap an upcoming fight
+- [ ] See hype meter instead of rating
+- [ ] Can add hype rating (1-10)
+- [ ] Pre-fight comments visible (if any)
+
+---
+
+### PART C: CORE INTERACTIONS
+
+#### C1. Rate a Fight
+- [ ] Open a completed fight you haven't rated
+- [ ] Tap to rate (1-10 slider or stars)
+- [ ] Submit rating
+- [ ] See your rating saved (shows "Your Rating: X")
+- [ ] Log out → Log back in → Rating still there
+
+#### C2. Write a Review
+- [ ] Open a completed fight
+- [ ] Scroll to reviews section
+- [ ] Tap "Write a Review"
+- [ ] Enter review text
+- [ ] Submit
+- [ ] See your review appear in the list
+
+#### C3. Add Tags
+- [ ] Open a completed fight
+- [ ] Find tags section
+- [ ] Tap to add a tag (FOTY, FOTN, Brawl, etc.)
+- [ ] See tag count update
+- [ ] Tap again to remove tag
+- [ ] See tag count decrease
+
+#### C4. Add Hype (Upcoming Fight)
+- [ ] Open an upcoming fight
+- [ ] Add hype rating (1-10)
+- [ ] Submit
+- [ ] See hype saved
+
+#### C5. Add Pre-Fight Comment
+- [ ] Open an upcoming fight
+- [ ] Find pre-fight comments section
+- [ ] Add a prediction/comment
+- [ ] Submit
+- [ ] See comment appear
+
+---
+
+### PART D: SEARCH
+
+#### D1. Search for Fighter
+**Test Fighter**: Search for "Michael Morales"
+- [ ] Tap search icon/bar
+- [ ] Type "Michael Morales"
+- [ ] See search results
+- [ ] Tap fighter result
+- [ ] See fighter profile with image (should load UFC headshot)
+
+#### D2. Search for Event
+- [ ] Search for "UFC 300"
+- [ ] See event result
+- [ ] Tap to open event detail
+
+#### D3. Search for Fight
+- [ ] Search for "Volkanovski vs Makhachev"
+- [ ] See fight result
+- [ ] Tap to open fight detail
+
+---
+
+### PART E: FIGHTER PROFILES
+
+#### E1. View Fighter Profile
+**Test Fighter**: Michael Morales (has profile image)
+- [ ] Navigate to a fighter profile
+- [ ] See fighter image loads
+- [ ] See record (W-L-D)
+- [ ] See weight class
+- [ ] See fight history
+
+#### E2. Follow Fighter (if feature visible)
+- [ ] On fighter profile, tap "Follow" button
+- [ ] See confirmation
+- [ ] Go to profile/settings → see followed fighters
+- [ ] Unfollow
+
+---
+
+### PART F: USER PROFILE & SETTINGS
+
+#### F1. View Profile
+- [ ] Navigate to Profile tab
+- [ ] See your display name/email
+- [ ] See your stats (ratings count, reviews count)
+
+#### F2. Settings
+- [ ] Navigate to Settings
+- [ ] See notification preferences
+- [ ] Toggle a setting
+- [ ] Verify it saves
+
+---
+
+### PART G: MIGRATION DATA VERIFICATION
+
+These verify that legacy data from fightingtomatoes.com migrated correctly.
+
+#### G1. Verify Ratings Migrated
+**Test**: UFC 300 - Volkanovski vs Makhachev
+- [ ] Search for "Volkanovski vs Makhachev"
+- [ ] Open the UFC 300 fight
+- [ ] Verify community rating shows (should have many ratings)
+- [ ] Rating should be reasonable (likely 8-10 range for this fight)
+
+#### G2. Verify Reviews Migrated
+**Test**: UFC 300 - Volkanovski vs Makhachev
+- [ ] Same fight as above
+- [ ] Scroll to reviews section
+- [ ] Look for review by "MMAExpert" with 38 upvotes
+- [ ] Content starts with: "Technical grappling showcase..."
+- [ ] Review should appear with correct upvote count
+
+#### G3. Verify Tags Migrated
+**Test Fights with Tags**:
+- Kutateladze vs Fernandes → should have "One-sided" tag
+- Gaethje vs Fiziev → should have "Brawl" tag
+- Mendes vs McGregor → should have "Competitive" tag
+- [ ] Open one of these fights
+- [ ] Verify tag appears in tag section with count > 0
+
+#### G4. Verify Fighter Images
+**Test Fighter**: Michael Morales
+- [ ] Search for "Michael Morales"
+- [ ] Open fighter profile
+- [ ] Image should load from UFC.com
+- [ ] No broken image placeholder
+
+#### G5. Verify Event Banners
+**Test Event**: ONE Fight Night 49 (look in upcoming)
+- [ ] Find event in events list
+- [ ] Banner image should load (from cdn.onefc.com)
+- [ ] No broken image placeholder
+
+#### G6. Verify Legacy User Data After Claim
+**If you claimed a legacy account**:
+- [ ] Check your profile stats (ratings count)
+- [ ] Open fights you previously rated on fightingtomatoes.com
+- [ ] Your old rating should appear
+- [ ] Your old reviews should appear under your name
+
+---
+
+### PART H: ERROR HANDLING
+
+#### H1. Network Error
+- [ ] Turn off WiFi/data
+- [ ] Try to load events
+- [ ] See appropriate error message (not crash)
+- [ ] Turn network back on
+- [ ] Pull to refresh → data loads
+
+#### H2. Invalid Login
+- [ ] Try to log in with wrong password
+- [ ] See error message
+- [ ] App doesn't crash
+
+---
+
+### TEST SUMMARY
+
+| Section | Tests | Pass | Fail |
+|---------|-------|------|------|
+| A. Auth & Onboarding | 5 flows | | |
+| B. Browsing & Navigation | 5 screens | | |
+| C. Core Interactions | 5 actions | | |
+| D. Search | 3 searches | | |
+| E. Fighter Profiles | 2 tests | | |
+| F. Profile & Settings | 2 screens | | |
+| G. Migration Verification | 6 data tests | | |
+| H. Error Handling | 2 tests | | |
+
+### Not Critical for Launch
+- Push notifications (test post-launch)
+- Crews feature (can soft-launch disabled)
+- Web version (focus on mobile)
+- Apple Sign-In (test when iOS device available)
+
+---
+
+## Production Switch Checklist
+
+When ready to go live:
+
+### 1. Update API URLs in Mobile App
+
+**File 1**: `packages/mobile/services/api.ts` (~line 20)
+```typescript
+// Change from:
+return 'http://192.168.x.x:3008/api';
+// To:
+return 'https://your-render-backend.onrender.com/api';
 ```
-□ Find the org's live results page URL
-  - Check official website during a past event (Wayback Machine)
-  - Or wait until event day and find the live page
 
-□ Identify the page structure
-  - Does it update via JavaScript (SPA) or server-side HTML?
-  - If SPA: May need Puppeteer/Playwright instead of simple fetch
-  - If HTML: Simple fetch + cheerio should work
-
-□ Check for API endpoints
-  - Open browser DevTools → Network tab during event
-  - Look for JSON/XHR requests that fetch fight data
-  - API endpoints are more reliable than HTML scraping
-
-□ Document the URL pattern
-  - Example: ufc.com/event/ufc-309
-  - Note any event ID format needed
+**File 2**: `packages/mobile/store/AuthContext.tsx` (~line 76)
+```typescript
+// Same change as above
 ```
 
-#### Phase 2: Initial Build (During First Live Event)
+### 2. Set USE_PRODUCTION_API Flag (if exists)
+Check for any `USE_PRODUCTION_API` or similar flags and set to `true`.
 
-```
-□ Set up the scraper file
-  - Create: packages/backend/src/services/scrapers/{org}LiveParser.ts
-  - Copy structure from ufcLiveParser.ts as template
+### 3. Build Production App
+```bash
+# iOS
+eas build --platform ios --profile production
 
-□ Implement basic fetch
-  - Fetch the page HTML or API
-  - Log raw response to understand structure
-  - Handle errors gracefully
-
-□ Identify key DOM elements / JSON paths
-  - Fight card container
-  - Individual fight elements
-  - Fighter names (to match with our DB)
-  - Status indicators (upcoming/live/complete)
-
-□ Map their status values to ours
-  - What text/class indicates "not started"?
-  - What indicates "in progress"?
-  - What indicates "completed"?
-
-□ Test detection during live event
-  - Watch the actual event
-  - Observe what changes on the page when:
-    - Event starts (first fight begins)
-    - A fight starts
-    - A fight ends
-  - Note the exact changes (class names, text, attributes)
+# Android
+eas build --platform android --profile production
 ```
 
-#### Phase 3: Refinement (During Event)
+### 4. Verify Backend is Ready
+- [ ] Render backend is deployed and healthy
+- [ ] Database has all migrated data
+- [ ] Environment variables set (JWT_SECRET, DATABASE_URL, etc.)
+- [ ] Check `/health` endpoint responds
 
-```
-□ Verify event start detection
-  - Did we detect the first fight starting?
-  - Timestamp accuracy (within 5 min?)
+### 5. Submit to App Stores
+```bash
+# iOS - submit to App Store
+eas submit --platform ios
 
-□ Verify fight start detection
-  - For each fight, did we detect it starting?
-  - Log: Expected time vs detected time
-
-□ Verify fight end detection
-  - For each fight, did we detect it ending?
-  - Log: Expected time vs detected time
-
-□ Test fight card change handling
-  - If a fight gets cancelled/moved, does scraper handle it?
-  - (May need to simulate this if it doesn't happen)
-
-□ Document any edge cases found
-  - Weird HTML, missing data, timing issues
-```
-
-#### Phase 4: Post-Event Verification
-
-```
-□ Review logs from the event
-  - Any errors or missed detections?
-  - Any false positives?
-
-□ Compare detected times vs actual
-  - Event start: Detected at X, actually started at Y
-  - Each fight: Start/end detection accuracy
-
-□ Implement winner/method parsing (not time-critical)
-  - Add logic to extract winner name
-  - Add logic to extract method (KO, Sub, Dec, etc.)
-  - This can run after event or on next scrape
-
-□ Update scraper status in this doc
-  - Mark confidence level: Testing / Beta / Stable
-```
-
-#### Phase 5: Production Readiness
-
-```
-□ Run through at least 2-3 events successfully
-  - First event: Build and debug
-  - Second event: Verify fixes
-  - Third event: Confirm stability
-
-□ Add to PROMOTION_TRACKER_CONFIG
-  - packages/backend/src/config/liveTrackerConfig.ts
-  - Enable live tracking for this org
-
-□ Monitor first production event
-  - Watch logs during event
-  - Be ready to hotfix if needed
-
-□ Mark as ✅ Working in this doc
+# Android - submit to Play Store
+eas submit --platform android
 ```
 
 ---
 
-### Scraper Development Log
-
-Track progress for each org here. Update after each event.
-
-| Org | Events Tested | Confidence | Notes |
-|-----|---------------|------------|-------|
-| UFC | Many | ✅ Stable | Production ready |
-| Matchroom | 0 | ⏳ Not Started | |
-| OKTAGON | 0 | ⏳ Not Started | |
-| PFL | 0 | ⏳ Not Started | |
-| ONE | 0 | ⏳ Not Started | |
-| BKFC | 0 | ⏳ Not Started | |
-| Rizin | 0 | ⏳ Not Started | |
-
-#### Per-Event Development Notes
-
-Use this template for each event you work on:
-
-```
-### [ORG] - [Event Name] - [Date]
-
-**Pre-Event:**
-- [ ] Found live results URL: ___
-- [ ] Page type: HTML / SPA / API
-- [ ] Created scraper file: Y/N
-
-**During Event:**
-- [ ] Event start detected: Y/N (accuracy: ___)
-- [ ] Fight starts detected: ___/___
-- [ ] Fight ends detected: ___/___
-- [ ] Any card changes: Y/N (handled: Y/N)
-
-**Issues Found:**
--
-
-**Fixes Made:**
--
-
-**Confidence After Event:** Not Working / Partial / Working
-```
-
----
-
-### Quick Reference: What to Do on Event Day
-
-```
-BEFORE EVENT STARTS:
-1. Open the org's website in browser
-2. Find their live results page
-3. Open DevTools → Network tab
-4. Keep it open to observe during event
-
-WHEN EVENT STARTS:
-1. Note the exact time first fight begins
-2. Check if your scraper detected it
-3. If not, check what changed on the page
-
-DURING EACH FIGHT:
-1. Note when fight starts/ends
-2. Check scraper logs for detection
-3. If missed, inspect page changes
-
-AFTER EVENT:
-1. Review all logs
-2. Document what worked/didn't
-3. Commit any fixes
-4. Update confidence level
-```
-
----
-
-## Phase 5: Polish (Post-Launch OK)
-
-| Task | Priority | Status | Notes |
-|------|----------|--------|-------|
-| Efficiency Audit | Medium | ⏳ Pending | Scan for unused code, redundancy |
-| Code Cleanup | Medium | ⏳ Pending | Based on efficiency audit |
-| Documentation | Low | ⏳ Pending | Auto-generate API docs, code comments |
-
----
-
-## Token Strategy (Industry Standard) ✅ IMPLEMENTED
-
-**Goal**: "Stay logged in forever" like most mobile apps
-
-| Token Type | Value | Purpose |
-|------------|-------|---------|
-| Access Token | 15 minutes | Short-lived, carries permissions |
-| Refresh Token | 90 days | Long-lived, renews access token |
-| Refresh on Use | Yes | Each refresh extends the 90 days (sliding expiration) |
-
-**Behavior**:
-- User stays logged in indefinitely as long as they use the app within 90 days
-- Access token silently refreshes in background
-- Only explicit logout or 90 days of inactivity triggers re-login
-
-**Implementation** (2025-12-27):
-- Constants defined in `packages/backend/src/utils/jwt.ts`
-- All auth endpoints updated to use centralized constants
-- Database token expiry updated to 90 days for sliding expiration
-
----
-
-## GitGuardian Alerts (IMMEDIATE ACTION REQUIRED)
-
-These secrets were detected in your GitHub repository `mikeprimak/fighting-tomatoes` and must be rotated:
-
-| # | Secret Type | Pushed Date | Status | Action Required |
-|---|-------------|-------------|--------|-----------------|
-| 1 | PostgreSQL Password | Nov 15, 2025 | ⚠️ EXPOSED | Rotate Render DB password |
-| 2 | SMTP Credentials | Dec 4, 2025 | ⚠️ EXPOSED | Rotate email service password |
-| 3 | Serpapi Token | Oct 1, 2025 | ⚠️ EXPOSED | Regenerate Serpapi API key |
-| 4 | PostgreSQL URI | Oct 17, 2025 | ⚠️ EXPOSED | Rotate Render DB password |
-| 5 | PostgreSQL URI | Oct 18, 2025 | ⚠️ EXPOSED | Rotate Render DB password |
-
-### Credential Rotation Checklist
-
-- [ ] **Render PostgreSQL**: Go to Render dashboard → Database → Settings → Reset password
-- [ ] **SMTP/Email**: Go to email provider → Regenerate API key/password
-- [ ] **Serpapi**: Go to serpapi.com → Account → Regenerate API key
-- [ ] **Update `.env` files** with new credentials (DO NOT commit to git)
-- [ ] **Update Render environment variables** with new credentials
-- [ ] **Add to `.gitignore`**: `.env`, `.env.local`, `*.env`, `.claude/settings.local.json`
-
----
-
-## Security Audit Findings
-
-### Scan Date: 2025-12-26
-
-### Summary by Severity
-
-| Severity | Backend | Mobile | Total |
-|----------|---------|--------|-------|
-| CRITICAL | 2 | 3 | 5 |
-| HIGH | 6 | 6 | 12 |
-| MEDIUM | 5 | 10 | 15 |
-| LOW | 3 | 3 | 6 |
-| **TOTAL** | **16** | **22** | **38** |
-
----
-
-### CRITICAL Issues (Fix Before Launch)
-
-#### CRIT-1: Unprotected Admin Endpoints
-- **Location**: `packages/backend/src/routes/admin.ts` (lines 79-629)
-- **Issue**: ALL admin routes lack authentication. Anyone can create/delete fighters, events, trigger scrapers.
-- **Fix**: Add `preValidation: [fastify.authenticate, requireAdmin]` to all admin routes
-- **Status**: ✅ Fixed (2025-12-27)
-
-#### CRIT-2: Hardcoded JWT Secret Fallbacks
-- **Location**: `packages/backend/src/middleware/auth.fastify.ts`, `auth.fastify.ts` routes
-- **Issue**: `JWT_SECRET || 'your-secret-key'` allows app to run with weak default secret
-- **Fix**: Removed all fallbacks, now throws error if env var not set
-- **Status**: ✅ Fixed (2025-12-27)
-
-#### CRIT-3: Firebase Service Account in Git
-- **Location**: `packages/mobile/fcm-service-account.json`
-- **Issue**: Complete Firebase private key committed to repository
-- **Fix**: Already gitignored, never committed to git history
-- **Status**: ✅ Verified (2025-12-27)
-
-#### CRIT-4: Giphy API Key Hardcoded
-- **Location**: `packages/mobile/components/GifPickerModal.tsx` (line 17)
-- **Issue**: API key in source code
-- **Fix**: Created backend proxy (`/api/giphy/*`), mobile calls backend instead
-- **Status**: ✅ Fixed (2025-12-27) - Feature not currently in use
-
-#### CRIT-5: Tokens Stored in Plaintext AsyncStorage
-- **Location**: `packages/mobile/store/AuthContext.tsx`
-- **Issue**: Access/refresh tokens stored unencrypted in AsyncStorage
-- **Fix**: Created `utils/secureStorage.ts`, uses `expo-secure-store` on native, AsyncStorage on web
-- **Status**: ✅ Fixed (2025-12-27)
-
----
-
-### HIGH Priority Issues
-
-#### HIGH-1: Raw SQL Injection Risk
-- **Location**: `packages/backend/src/scripts/fix-unique-constraint.ts` (lines 41, 52)
-- **Issue**: Uses `$executeRawUnsafe()` with template literals
-- **Fix**: Added identifier validation before use (defense in depth)
-- **Status**: ✅ Fixed (2025-12-27)
-
-#### HIGH-2: Weak Password Requirements
-- **Location**: `packages/backend/src/routes/auth.fastify.ts` (line 32)
-- **Issue**: Only requires 6 characters, no complexity
-- **Fix**: Require 12+ chars with uppercase, lowercase, number, special char
-- **Status**: ✅ Fixed (2025-12-27)
-
-#### HIGH-3: Admin Cookie Secret Exposed
-- **Location**: `packages/backend/src/admin/index.ts` (lines 119, 125)
-- **Issue**: Hardcoded fallback secret for admin panel cookies
-- **Fix**: Removed fallback, now throws error if ADMIN_COOKIE_SECRET not set
-- **Status**: ✅ Fixed (2025-12-27)
-
-#### HIGH-4: Password Hash Logging
-- **Location**: `packages/backend/src/routes/auth.fastify.ts` (lines 291, 2041, 2045)
-- **Issue**: Partial password hashes logged to console
-- **Fix**: Remove all password hash logging
-- **Status**: ✅ Already clean (verified 2025-12-27)
-
-#### HIGH-5: Google OAuth Client IDs Exposed
-- **Location**: `packages/mobile/hooks/useGoogleAuth.ts` (line 11)
-- **Issue**: OAuth client IDs hardcoded in source
-- **Fix**: N/A - OAuth client IDs are PUBLIC by design (not secrets). Added documentation.
-- **Status**: ✅ Resolved (2025-12-27) - Not a security issue
-
-#### HIGH-6: Test Account Login Buttons in Production
-- **Location**: `packages/mobile/app/(auth)/login.tsx` (lines 233-339)
-- **Issue**: 8 hardcoded test accounts with one-click login buttons
-- **Fix**: Wrap in `{__DEV__ && (...)}` or remove entirely
-
-#### HIGH-7: Missing Rate Limiting
-- **Location**: `packages/backend/src/routes/auth.fastify.ts`
-- **Issue**: No rate limiting on login, register, password reset
-- **Fix**: Implemented `@fastify/rate-limit` with per-endpoint limits
-- **Status**: ✅ Fixed (2025-12-27)
-
-#### HIGH-8: User Data Logged to Console
-- **Location**: `packages/mobile/store/AuthContext.tsx` (lines 440-442)
-- **Issue**: Full user JSON logged including sensitive data
-- **Fix**: Remove or gate behind `__DEV__`
-- **Status**: ✅ Fixed (2025-12-27)
-
-#### HIGH-9: File Upload Content Not Validated
-- **Location**: `packages/backend/src/routes/upload.ts` (lines 23-40)
-- **Issue**: Only MIME type checked (can be spoofed)
-- **Fix**: Added `file-type` library to validate magic bytes, added rate limiting
-- **Status**: ✅ Fixed (2025-12-27)
-
----
-
-### MEDIUM Priority Issues
-
-| ID | Location | Issue | Fix |
-|----|----------|-------|-----|
-| MED-1 | Backend email.ts | Email tokens in URLs logged | Reduce token logging |
-| MED-2 | Backend server.ts | Error messages may expose info | Consistent error handling |
-| MED-3 | Mobile api.ts | HTTP used in development | Use HTTPS or secure tunnel |
-| MED-4 | Mobile | No certificate pinning | Implement cert pinning |
-| MED-5 | Mobile api.ts | No automatic token refresh on 401 | Add interceptor |
-| MED-6 | Mobile | Deep links not validated | Add deep link validation |
-| MED-7 | Mobile notificationService.ts | Push token logged | Gate behind __DEV__ |
-| MED-8 | Mobile api.ts | API config logged at startup | Remove production logs |
-| MED-9 | Mobile AuthContext.tsx | User data in AsyncStorage | Move sensitive data to SecureStore |
-| MED-10 | Mobile | No screenshot prevention | Add react-native-prevent-screenshot |
-| MED-11 | Mobile | No request timeouts | Add AbortController timeouts |
-| MED-12 | Backend | Insufficient audit logging | Track sensitive actions |
-
----
-
-### LOW Priority Issues
-
-| ID | Location | Issue |
-|----|----------|-------|
-| LOW-1 | Backend admin/index.ts | Secure cookie only in production |
-| LOW-2 | Backend package.json | Check dependencies for CVEs |
-| LOW-3 | Mobile | No biometric authentication option |
-| LOW-4 | Mobile events/index.tsx | Debug logging present |
-| LOW-5 | Mobile analytics.ts | References old storage keys |
-| LOW-6 | Backend | CORS properly configured (no issue) |
-
----
-
-## Rate Limiting Plan
-
-### Endpoints to Protect
-
-| Endpoint Category | Limit | Window | Notes |
-|-------------------|-------|--------|-------|
-| Auth (login/register) | 5 | 15 min | Prevent brute force |
-| Password Reset | 3 | 1 hour | Prevent abuse |
-| API General | 100 | 1 min | Per authenticated user |
-| API Unauthenticated | 20 | 1 min | Per IP |
-| File Uploads | 10 | 1 hour | Prevent storage abuse |
-| Comments/Reviews | 10 | 1 min | Prevent spam |
-
-### Implementation
-- Use `@fastify/rate-limit` plugin
-- Store rate limit data in Redis (or memory for MVP)
-- Return `429 Too Many Requests` with `Retry-After` header
-
----
-
-## Security Fix Priority Order
-
-### Immediate (Before Any Production Use)
-1. Rotate all GitGuardian-flagged credentials
-2. Add authentication to admin routes (CRIT-1)
-3. Remove hardcoded secret fallbacks (CRIT-2)
-4. Remove Firebase service account from git (CRIT-3)
-5. Switch tokens to SecureStore (CRIT-5)
-
-### Before App Store Submission
-6. Remove test login buttons (HIGH-6)
-7. Implement rate limiting (HIGH-7)
-8. Fix password requirements (HIGH-2)
-9. Remove sensitive logging (HIGH-4, HIGH-8)
-
-### Before Wide Release
-10. Add file content validation (HIGH-9)
-11. Implement certificate pinning (MED-4)
-12. Add deep link validation (MED-6)
-
----
-
-## Legacy Migration (fightingtomatoes.com)
-
-### Quick Status Summary
-
-| Task | Status | Notes |
-|------|--------|-------|
-| Account claim flow (backend + mobile + web) | ✅ Complete | Users can claim migrated accounts |
-| Migration scripts (export/import) | ✅ Complete | All 7 scripts built and ready |
-| Test with real data | ⏳ TODO | Run scripts against local/staging DB |
-| Production migration | ⏳ TODO | Final step before announcing to users |
-
-### Migration Scripts Location
-
-All scripts are in `packages/backend/scripts/legacy-migration/`:
-
-| Script | Purpose |
-|--------|---------|
-| `01-parse-legacy-data.ts` | Parse SQL dumps to JSON |
-| `02-create-fight-mapping.ts` | Match legacy fight IDs to new UUIDs |
-| `03-migrate-users.ts` | Import users with null password |
-| `04-migrate-ratings.ts` | Import fight ratings |
-| `05-migrate-reviews.ts` | Import fight reviews |
-| `06-migrate-tags.ts` | Import fight tags |
-| `07-verify-migration.ts` | Verify migration counts |
-| `run-migration.ts` | Master runner script |
-
-### Running the Migration
+## Quick Commands Reference
 
 ```bash
-cd packages/backend
+# Start local dev
+cd packages/backend && PORT=3008 pnpm dev
+cd packages/mobile && npx expo start --port 8083 --lan
 
-# Dry run first (no changes)
-npx ts-node scripts/legacy-migration/run-migration.ts --dry-run
+# Build for TestFlight
+eas build --platform ios --profile preview
 
-# Actual migration
-npx ts-node scripts/legacy-migration/run-migration.ts
-```
+# Push OTA update (for JS-only fixes after launch)
+eas update --branch production --message "Fix description"
 
-See `packages/backend/scripts/legacy-migration/README.md` for full documentation.
+# Check Render logs
+# Go to: https://dashboard.render.com → Your service → Logs
 
-### Verified Script Execution (2025-12-27)
-
-Step 1 parsing results:
-- **Users:** 1,932 (19 deleted filtered out)
-- **Fights:** 13,448 (252 deleted filtered out)
-- **Ratings:** 63,932 (99.1% resolved to user emails)
-- **Tags:** 1,707 (100% resolved to user emails)
-- **Reviews:** 0 (need fightreviewsdb dump for review content)
-
-Step 2 fight mapping:
-- Local test DB has only 256 recent fights
-- Legacy has 13,448 historical fights (mostly 2021 and earlier)
-- **Production Note:** Match rate depends on historical fight data in target DB
-- Main promotions in legacy: UFC (8,389), ONE (1,239), Bellator (528), Pride (514)
-
-### Next Steps for Production Migration
-
-1. Ensure production DB has historical UFC fights from scrapers
-2. Run step 1 (already done - JSON files ready)
-3. Run step 2 against production DB for fight mappings
-4. Run steps 3-6 with `--dry-run` first
-5. Run steps 3-6 for actual import
-6. Run step 7 to verify counts
-
----
-
-**Tech Stack**: PHP, vanilla JavaScript, HTML/CSS, MySQL (MariaDB 10.6)
-
-### Legacy Database Architecture
-
-The legacy system uses a **non-standard schema** where user-specific data is stored in dynamically-named tables:
-
-| Database | Table Naming | Contents |
-|----------|--------------|----------|
-| `fightdb` | `users`, `fights` | Central tables with normal schema |
-| `userfightratings` | `{MD5(email)}` | Per-user tables: `fightid`, `score` (1-10), `excited`, `time_of_rating` |
-| `userfightreviews` | `{MD5(email)}` | Per-user tables: `fightid` (links to fightreviewsdb) |
-| `userfighttags` | `{MD5(email)}` | Per-user tables: `fightid`, `tagid` |
-| `user-data` | `{MD5(email)}` | Per-user tables: `recommended_fights`, fighter ratings |
-| `fightreviewsdb` | `{fightid}` | Per-fight tables: review content, author email, upvotes |
-
-**Key Challenge**: Table names are MD5 hashes of user emails. The `maptoemail` column in `users` table contains this hash.
-
-### Data Volume Estimates (from SQL dumps)
-
-| Data Type | File Size | Est. Records |
-|-----------|-----------|--------------|
-| Users | 994 KB | ~1,000 users |
-| Ratings | 3.7 MB | ~50,000+ ratings |
-| Reviews | 1.2 MB | ~5,000+ reviews |
-| Tags | ~500 KB | ~10,000+ tags |
-
-### Field Mapping
-
-#### Users (`fightdb.users` → PostgreSQL `users`)
-
-| Legacy Field | New Field | Notes |
-|--------------|-----------|-------|
-| `emailaddress` | `email` | Primary identifier |
-| `password` | `password` | bcrypt hash, compatible with Node.js |
-| `displayname` | `displayName` | |
-| `ismedia` | `isMedia` | Boolean conversion |
-| `mediaorganization` | `mediaOrganization` | |
-| `avatar` | `avatar` | Need to migrate image files too |
-| `wantsemail` | `wantsEmails` | |
-| `confirmedemail` | `emailVerified` | |
-| `reviewerscore` | `points` | Gamification score |
-| `numreviews` | `totalReviews` | |
-| `signupdatetime` | `createdAt` | Parse PHP datetime format |
-| `maptoemail` | — | MD5 hash, used to locate user's data tables |
-
-#### Ratings (`userfightratings.{MD5}` → PostgreSQL `fight_ratings`)
-
-| Legacy Field | New Field | Notes |
-|--------------|-----------|-------|
-| `fightid` | `fightId` | Requires fight ID mapping |
-| `score` | `rating` | 1-10 scale |
-| `time_of_rating` | `createdAt` | Unix timestamp → DateTime |
-
-#### Reviews (`fightreviewsdb.{fightid}` → PostgreSQL `fight_reviews`)
-
-| Legacy Field | New Field | Notes |
-|--------------|-----------|-------|
-| `comment` | `content` | |
-| `score` | `rating` | |
-| `commenteremail` | `userId` | Lookup user by email |
-| `date` | `createdAt` | |
-| `helpful` | `upvotes` | |
-| `link` | `articleUrl` | Media user links |
-| `linktitle` | `articleTitle` | |
-
-#### Tags (`userfighttags.{MD5}` → PostgreSQL `fight_tags`)
-
-| Legacy Field | New Field | Notes |
-|--------------|-----------|-------|
-| `fightid` | `fightId` | Requires fight ID mapping |
-| `tagid` | `tagId` | Requires tag ID mapping |
-
-### Fight ID Mapping Strategy
-
-Legacy uses integer IDs (`6206`, `8291`), new system uses UUIDs.
-
-**Option A (Recommended)**: Add `legacyFightId` column to `fights` table
-- Allows direct lookup during migration
-- Preserves legacy references for debugging
-- Migration script can create mapping on first pass
-
-**Option B**: Create separate mapping table
-- Cleaner schema, but adds join complexity
-
-### Migration Script Architecture
-
-```
-packages/backend/scripts/legacy-migration/
-├── 01-export-legacy-data.ts    # Connect to MySQL, export to JSON
-├── 02-create-fight-mapping.ts  # Build legacy→UUID fight ID map
-├── 03-migrate-users.ts         # Import users (no FK dependencies)
-├── 04-migrate-ratings.ts       # Import ratings (needs user+fight)
-├── 05-migrate-reviews.ts       # Import reviews (needs user+fight)
-├── 06-migrate-tags.ts          # Import tags (needs user+fight+tag)
-├── 07-verify-migration.ts      # Count verification
-└── legacy-data/                # JSON exports from step 01
-    ├── users.json
-    ├── ratings.json
-    ├── reviews.json
-    └── tags.json
-```
-
-### Migration Phases
-
-**Phase 1: Export (run against live fightingtomatoes.com MySQL)**
-- [ ] Connect to legacy MySQL database
-- [ ] Export `users` table to JSON
-- [ ] For each user, compute MD5(email), query their tables in each database
-- [ ] Flatten per-user tables into single JSON arrays
-- [ ] Export reviews from per-fight tables
-
-**Phase 2: Transform**
-- [ ] Create fight ID mapping (legacy int → new UUID)
-- [ ] Create user ID mapping (legacy email → new UUID)
-- [ ] Create tag ID mapping (legacy int → new UUID)
-- [ ] Transform field names and data types
-
-**Phase 3: Import (run against new PostgreSQL)**
-- [ ] Import users (skip duplicates if re-running)
-- [ ] Import ratings with foreign key lookups
-- [ ] Import reviews with foreign key lookups
-- [ ] Import tags with foreign key lookups
-
-**Phase 4: Verify**
-- [ ] Compare record counts
-- [ ] Spot-check specific users' data
-- [ ] Verify user can log in with legacy password
-
-### Password Compatibility
-
-Legacy uses PHP `password_hash()` with bcrypt:
-```php
-$hash = password_hash($password, PASSWORD_BCRYPT);
-// Produces: $2y$10$...
-```
-
-Node.js `bcrypt` can verify these hashes directly:
-```typescript
-import bcrypt from 'bcrypt';
-const isValid = await bcrypt.compare(password, legacyHash);
-// Works! bcrypt handles $2y$ prefix
-```
-
-**No password reset required** - users can log in with existing passwords.
-
-### Prerequisites Before Migration
-
-1. **MySQL access credentials** for fightingtomatoes.com databases
-2. **Add `legacyFightId` column** to Prisma schema (migration)
-3. **Verify fight data exists** - ensure UFC scraper has populated fights that users rated
-
-### Decisions Made
-
-- [x] **MySQL credentials**: Available ✅
-- [x] **Fight ID mapping**: Match by fighter names + date (legacy IDs not in new DB)
-- [x] **Deleted users**: Skip users with `deleted=1`
-- [x] **Avatars**: Do NOT migrate (users can upload new ones)
-- [ ] **Recommended fights**: TBD - probably skip (computed data)
-- [ ] **Fighter ratings** (`other_field_1`): TBD - probably skip (not in new schema)
-
-### User Migration Flow (Account Claiming)
-
-**Strategy**: Pre-migrate users with `password: null`, `authProvider: 'EMAIL'`. OAuth and email/password users have different flows.
-
-#### OAuth Users (Google/Apple) - Backend Ready
-
-Backend OAuth linking logic already handles legacy users:
-
-1. User taps "Sign in with Google" (or Apple when available)
-2. OAuth provider returns their verified email
-3. Backend finds existing user with `authProvider: 'EMAIL'`
-4. Backend links OAuth ID, updates `authProvider` to `'GOOGLE'` or `'APPLE'`
-5. User is logged in with all their legacy data!
-
-| Provider | Status |
-|----------|--------|
-| Google | ✅ Working |
-| Apple | ⏳ Pending (needs Apple Developer Account - see Phase 2) |
-
-**This is the smoothest path** - encourage users to use Google Sign-In in migration communications.
-
-#### Email/Password Users - ✅ COMPLETE
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    LEGACY USER FIRST LOGIN                       │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  1. User downloads new app, taps "Log In"                       │
-│                                                                  │
-│  2. User enters email: mike@example.com                         │
-│                                                                  │
-│  3. Backend checks: user exists + password is null              │
-│     → This is a legacy user who hasn't migrated yet             │
-│                                                                  │
-│  4. Response: "Welcome back! Your account from                  │
-│     fightingtomatoes.com has been transferred.                  │
-│     Verify your email to set up your new password."             │
-│                                                                  │
-│  5. Send verification email with magic link/code                │
-│                                                                  │
-│  6. User clicks link → lands on "Set Password" screen           │
-│                                                                  │
-│  7. User creates password (12+ chars, complexity rules)         │
-│                                                                  │
-│  8. Account activated! All legacy ratings/reviews intact.       │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Why this approach**:
-- ✅ **Secure**: Verifies email ownership before granting access
-- ✅ **No password reuse**: Old bcrypt hashes not imported (security win)
-- ✅ **Simple UX**: User just enters email, we handle the rest
-- ✅ **Data intact**: Ratings, reviews, tags already linked to user record
-
-**Implementation Status**: ✅ **COMPLETE** (2025-12-27)
-
-| Component | File | Status |
-|-----------|------|--------|
-| Login detects legacy users | `auth.fastify.ts:311-319` | ✅ Done |
-| `/auth/claim-account` endpoint | `auth.fastify.ts:2140-2241` | ✅ Done |
-| `/auth/reset-password` verifies email | `auth.fastify.ts:2101-2111` | ✅ Done |
-| Account claim email template | `email.ts:116-164` | ✅ Done |
-| Mobile `claim-account.tsx` | `app/(auth)/claim-account.tsx` | ✅ Done |
-| Mobile `reset-password.tsx` (12+ chars) | `app/(auth)/reset-password.tsx` | ✅ Done |
-| Web `reset-password.html` (12+ chars) | `reset-password.html` (root) | ✅ Done + Deployed |
-| AuthContext navigation | `AuthContext.tsx:177-184` | ✅ Done |
-
-**Tested**: Local end-to-end flow verified working (2025-12-27)
-
-### Fight Matching Strategy
-
-Since legacy fight IDs aren't in the new database, we need to match fights by content:
-
-```typescript
-// Match logic
-async function findNewFightId(legacyFight: LegacyFight): Promise<string | null> {
-  // Try exact match: fighter1 + fighter2 + date
-  const fight = await prisma.fight.findFirst({
-    where: {
-      fighter1: {
-        firstName: legacyFight.f1fn,
-        lastName: legacyFight.f1ln,
-      },
-      fighter2: {
-        firstName: legacyFight.f2fn,
-        lastName: legacyFight.f2ln,
-      },
-      event: {
-        date: {
-          gte: startOfDay(legacyFight.date),
-          lte: endOfDay(legacyFight.date),
-        }
-      }
-    }
-  });
-
-  // Also try reversed fighter order
-  if (!fight) {
-    // Try fighter2 vs fighter1...
-  }
-
-  return fight?.id ?? null;
-}
-```
-
-**Expected outcome**: Most UFC fights should match. Some legacy fights may not exist in new DB if:
-- Old promotions we don't scrape anymore
-- Cancelled fights
-- Data entry errors in legacy system
-
-**Unmapped fights**: Log them, don't import those ratings (data loss is acceptable for edge cases).
-
----
-
-## Notes & Decisions
-
-- 2025-12-26: Roadmap created, security audit started
-- 2025-12-26: Security audit completed - 38 issues found (5 critical, 12 high, 15 medium, 6 low)
-- 2025-12-26: GitGuardian alerts incorporated - 5 exposed secrets require rotation
-- Token strategy: Industry standard 90-day refresh tokens confirmed
-
----
-
-## Session Log: 2025-12-26
-
-### Completed
-- [x] Created LAUNCH-PREP.md with full roadmap
-- [x] Security audit completed (backend + mobile)
-- [x] Rotated Render PostgreSQL password (new credentials created)
-- [x] Updated DATABASE_URL in Render environment variables
-- [x] Updated DATABASE_URL in local .env
-- [x] Removed `.claude/settings.local.json` from git tracking
-- [x] Added `.claude/settings.local.json` to .gitignore
-- [x] Created new SendGrid API key
-- [x] Updated SMTP_PASS in Render environment variables
-- [x] Updated SMTP_PASS in local .env
-- [x] Deleted old SendGrid API key (in SendGrid dashboard)
-
-### In Progress - Resume Here
-- [ ] **Verify SendGrid email is working**
-  - Registration email log shows success: `[Email] Verification email sent to testemail5678@gmail.com`
-  - BUT SendGrid Activity shows no new entries
-  - Password reset emails for existing accounts not sending (accounts may not exist in prod DB)
-  - **NEXT STEP**: Do "Clear build cache & deploy" in Render, then test email again
-
-### Still Pending
-- [ ] Rotate Serpapi token (if still used)
-- [ ] Fix critical security issues (admin routes auth, hardcoded secrets, etc.)
-- [ ] Implement rate limiting
-- [ ] Update token strategy to 90-day refresh tokens
-
-### Where to Resume
-```
-Session continued on 2025-12-27 - see below
+# Re-run legacy migration sync (if needed before launch)
+cd packages/backend/scripts/legacy-migration/mysql-export
+node sync-all-from-live.js
 ```
 
 ---
 
-## Session Log: 2025-12-27
+## Emergency Fixes After Launch
 
-### Completed
-- [x] **CRIT-1**: Added authentication to all 26 admin routes (`requireAdmin` middleware)
-- [x] **CRIT-2**: Removed all hardcoded JWT secret fallbacks (fail-fast if not configured)
-- [x] **CRIT-3**: Verified Firebase service account is properly gitignored (never committed)
-- [x] **CRIT-4**: Created Giphy backend proxy (`/api/giphy/*`) - removed API key from mobile
-- [x] **CRIT-5**: Switched token storage to SecureStore (native) with AsyncStorage fallback (web)
-- [x] **HIGH-7**: Implemented rate limiting with `@fastify/rate-limit`
-  - Global: 100 req/min per user/IP
-  - Auth: 5 attempts per 15 min
-  - Password reset: 3 per hour
-  - Content: 10-30 per minute
-  - Uploads: 10 per hour
-- [x] **Token Strategy**: Updated to industry standard
-  - Access token: 15 minutes (was 1 hour)
-  - Refresh token: 90 days (was 7 days)
-  - Sliding expiration: Each refresh resets 90-day clock
-- [x] Committed and pushed all changes
+| Problem | Solution | Time to Fix |
+|---------|----------|-------------|
+| JS bug (logic, styling) | `eas update --branch production` | 2-5 minutes |
+| API bug | Push to main, Render auto-deploys | 1-2 minutes |
+| Native crash | New EAS build + app store review | 1-2 days |
+| Database issue | Fix via Prisma Studio or psql | Minutes |
 
-### Phase 1 Status
-| Task | Status |
-|------|--------|
-| Security Audit | ✅ Complete |
-| Credential Rotation (GitGuardian) | ✅ Complete |
-| Fix Critical Security Issues | ✅ Complete (5/5) |
-| Spam Prevention & Rate Limiting | ✅ Complete |
-| Token Expiry Fix | ✅ Complete |
-| Legacy Data Migration | ⏳ Pending (awaiting fightingtomatoes.com info) |
-
-### Still Pending (HIGH Priority)
-- [x] HIGH-2: Strengthen password requirements ✅ Fixed
-- [ ] HIGH-6: Remove test login buttons from production (intentionally deferred)
-- [x] HIGH-4/8: Remove sensitive data logging ✅ Fixed
-
-### Where to Resume
-```
-Session continued on 2025-12-27 (afternoon) - see below
-```
+**Remember**: Most bugs can be fixed with OTA updates. You have a safety net.
 
 ---
 
-## Session Log: 2025-12-27 (Afternoon)
+## Contacts & Resources
 
-### Completed
-- [x] Merged `distinctmycolumn` branch into `main` and pushed
-- [x] **HIGH-2**: Password now requires 12+ chars with uppercase, lowercase, number, special char
-- [x] **HIGH-4**: Verified no password hash logging present (already clean)
-- [x] **HIGH-8**: Removed user data JSON logging from AuthContext.tsx
-- [x] **HIGH-1**: Added SQL identifier validation to migration script
-- [x] **HIGH-3**: Removed admin cookie secret fallback, now requires env var
-- [x] **HIGH-5**: Documented OAuth client ID as public (not a secret)
-- [x] **HIGH-9**: Added file-type validation + rate limiting to upload endpoints
-
-### Intentionally Deferred
-- [ ] **HIGH-6**: Test login buttons kept for now (user request)
-
-### Where to Resume
-```
-Session continued on 2025-12-27 (evening) - see below
-```
-
----
-
-## Session Log: 2025-12-27 (Evening)
-
-### Completed - Legacy Account Claim Flow
-
-Built complete account claim flow for migrated users from fightingtomatoes.com:
-
-**Backend Changes:**
-- [x] Modified `/auth/login` to detect `password: null` users → returns `ACCOUNT_CLAIM_REQUIRED`
-- [x] Added `/auth/claim-account` endpoint → sends verification email
-- [x] Updated `/auth/reset-password` → also sets `isEmailVerified: true`
-- [x] Added `sendAccountClaimEmail()` with migration-specific messaging
-
-**Mobile Changes:**
-- [x] Created `claim-account.tsx` screen with "Welcome Back" message
-- [x] Updated `reset-password.tsx` to require 12+ chars + special char
-- [x] Modified `AuthContext.tsx` to navigate to claim screen on `ACCOUNT_CLAIM_REQUIRED`
-- [x] Fixed missing `Platform` import in `AuthContext.tsx`
-
-**Web Changes:**
-- [x] Updated `reset-password.html` to require 12+ chars + special char (upload to web host needed)
-
-**Testing:**
-- [x] Created test legacy user with `password: null`
-- [x] Verified claim flow works end-to-end locally
-- [x] Created helper scripts: `create-test-legacy-user.ts`, `get-token.ts`
-
-### Where to Resume
-```
-Session continued on 2025-12-31 - see below
-```
-
----
-
-## Session Log: 2025-12-31
-
-### Completed
-- [x] Created Apple Developer Account ($99/year)
-- [x] Set up App Store Connect
-- [x] Built first TestFlight build via EAS
-- [x] Legacy data migration from fightingtomatoes.com
-- [x] Downloaded TestFlight build to phone
-
-### In Progress
-- [ ] QA testing (60% complete)
-
-### Where to Resume
-```
-Continue QA testing. Remaining 40%:
-- Complete feature testing
-- Fix any bugs found
-- Rebuild TestFlight if needed
-- Submit to App Store review
-```
-
+| Resource | URL/Info |
+|----------|----------|
+| Render Dashboard | https://dashboard.render.com |
+| EAS Dashboard | https://expo.dev |
+| App Store Connect | https://appstoreconnect.apple.com |
+| Play Console | https://play.google.com/console |
+| Legacy MySQL | 216.69.165.113:3306 (user: fotnadmin) |

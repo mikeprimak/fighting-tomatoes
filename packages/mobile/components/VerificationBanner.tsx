@@ -100,7 +100,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: '#166534',
     marginHorizontal: 12,
     marginTop: 8,
-    marginBottom: 0,
+    marginBottom: 10,
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 8,

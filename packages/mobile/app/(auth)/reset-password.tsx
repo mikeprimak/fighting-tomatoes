@@ -26,7 +26,7 @@ export default function ResetPasswordScreen() {
   const params = useLocalSearchParams<{ token?: string }>();
 
   const getPasswordStrength = (pwd: string): { level: string; color: string } => {
-    if (pwd.length < 12) return { level: 'Too short (12+ required)', color: '#dc2626' };
+    if (pwd.length < 8) return { level: 'Too short (8+ required)', color: '#dc2626' };
     const hasLower = /[a-z]/.test(pwd);
     const hasUpper = /[A-Z]/.test(pwd);
     const hasNumber = /\d/.test(pwd);
@@ -47,13 +47,8 @@ export default function ResetPasswordScreen() {
       return;
     }
 
-    if (password.length < 12) {
-      setError('Password must be at least 12 characters');
-      return;
-    }
-
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/.test(password)) {
-      setError('Password must contain uppercase, lowercase, number, and special character');
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
       return;
     }
 
@@ -137,7 +132,7 @@ export default function ResetPasswordScreen() {
         {/* Title */}
         <Text style={styles.title}>Create New Password</Text>
         <Text style={styles.description}>
-          Enter a new password for your account. Must be at least 12 characters with uppercase, lowercase, numbers, and a special character.
+          Enter a new password for your account. Must be at least 8 characters.
         </Text>
 
         {/* Error Message */}

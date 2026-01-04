@@ -310,6 +310,71 @@ eas credentials --platform ios
 
 ---
 
+## EAS Build Notes
+
+### Build Warnings You May See
+
+**`appVersionSource` Warning**
+```
+The field "cli.appVersionSource" is not set, but it will be required in the future.
+```
+This is informational only. You can either:
+- Ignore it for now (still works)
+- Add `"appVersionSource": "local"` to eas.json to manage versions in app.json
+- Add `"appVersionSource": "remote"` to let EAS manage versions (but then local `buildNumber` is ignored)
+
+**Credential Validation Skipped**
+```
+Distribution Certificate is not validated for non-interactive builds.
+Skipping Provisioning Profile validation on Apple Servers because we aren't authenticated.
+```
+This is normal for `--non-interactive` builds. EAS uses cached credentials without re-validating with Apple. Not an issue unless your certificates have expired.
+
+### Reducing Build Upload Time
+
+Large project archives slow down uploads. Our archive is ~262 MB.
+
+To reduce size, create `.easignore` file in `packages/mobile/`:
+```
+# Large dev-only files
+node_modules/
+*.log
+.expo/
+test-results/
+scraped-data/
+```
+
+### Slow Fingerprint Computing
+
+If you see:
+```
+⌛️ Computing the project fingerprint is taking longer than expected...
+```
+
+You can skip this step (useful for quick iteration) by setting:
+```bash
+EAS_SKIP_AUTO_FINGERPRINT=1 eas build --platform ios --profile production --non-interactive
+```
+
+### Build Number Conflicts
+
+App Store Connect rejects builds with duplicate build numbers. If you see:
+```
+ERROR: A build with build number '3' already exists
+```
+
+Increment `buildNumber` in app.json:
+```json
+"ios": {
+  "buildNumber": "4",  // increment this
+  ...
+}
+```
+
+**Note**: If using `appVersionSource: "remote"`, local buildNumber is ignored. Remove that setting to use local build numbers.
+
+---
+
 ## Troubleshooting
 
 ### "No matching provisioning profile"
