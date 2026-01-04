@@ -3,7 +3,7 @@ import { Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 // ⚙️ DEVELOPMENT CONFIG: Set to true to test production API while developing
-const USE_PRODUCTION_API = false;
+const USE_PRODUCTION_API = true;
 
 // Get API base URL
 const getApiBaseUrl = () => {

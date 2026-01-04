@@ -60,11 +60,14 @@ interface RegisterData {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const getApiBaseUrl = () => {
+  // TEMPORARY: Use production API for pre-launch testing
+  const USE_PRODUCTION_FOR_TESTING = true;
+
   // __DEV__ is true in Expo Go and development builds, false in production/TestFlight builds
   const isDevBuild = typeof __DEV__ !== 'undefined' && __DEV__ === true;
 
   // Production/TestFlight builds → always use Render
-  if (!isDevBuild) {
+  if (!isDevBuild || USE_PRODUCTION_FOR_TESTING) {
     return 'https://fightcrewapp-backend.onrender.com/api';
   }
 

@@ -156,7 +156,7 @@ export default function LoginScreen() {
         <View style={[styles.content, { marginBottom: keyboardHeight }]}>
           <View style={styles.header}>
             <Image source={require('../../assets/app-icon.png')} style={styles.logoImage} resizeMode="contain" />
-            <Text style={styles.subtitle}>FightCrewApp</Text>
+            <Text style={styles.subtitle}>Good Fights</Text>
           </View>
 
         {/* OAuth Sign-In Buttons */}

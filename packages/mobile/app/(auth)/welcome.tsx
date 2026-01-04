@@ -33,7 +33,7 @@ export default function WelcomeScreen() {
         {/* Logo and Tagline */}
         <View style={styles.header}>
           <Image source={require('../../assets/app-icon.png')} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.appName}>FightCrewApp</Text>
+          <Text style={styles.appName}>Good Fights</Text>
           <Text style={styles.tagline}>Rate Fights. Predict Winners. Join Crews.</Text>
         </View>
 

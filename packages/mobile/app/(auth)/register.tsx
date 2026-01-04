@@ -112,7 +112,7 @@ export default function RegisterScreen() {
             {/* Header */}
             <View style={styles.header}>
               <Image source={require('../../assets/app-icon.png')} style={styles.logoImage} resizeMode="contain" />
-              <Text style={styles.subtitle}>Join FightCrewApp</Text>
+              <Text style={styles.subtitle}>Join Good Fights</Text>
               <Text style={styles.tagline}>Start rating fights today</Text>
             </View>
 
