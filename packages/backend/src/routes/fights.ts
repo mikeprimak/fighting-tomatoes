@@ -2614,10 +2614,15 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
 
         // Include updated aggregate stats in response for frontend optimistic update
+        // Convert ratingDistribution to numeric keys format { 1: count, 2: count, ... } to match GET /aggregate-stats
+        const ratingDistributionNumeric: Record<number, number> = {};
+        for (let i = 1; i <= 10; i++) {
+          ratingDistributionNumeric[i] = ratingDistribution[`ratings${i}`] || 0;
+        }
         resultData.aggregateStats = {
           averageRating: ratingStats._avg.rating || 0,
           totalRatings: ratingStats._count.rating || 0,
-          ratingDistribution,
+          ratingDistribution: ratingDistributionNumeric,
         };
       }
 

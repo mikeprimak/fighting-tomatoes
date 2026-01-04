@@ -1,0 +1,111 @@
+Getting single fight with ID: 880f4b14-0d26-4a21-a921-816cb9dc9b5e User ID: dc77c080-4e71-4d7c-9e69-1087e0b06a80
+Fighter follow status: { fighter1: undefined, fighter2: undefined }
+Notification reasons: { willBeNotified: false, reasons: [] }
+User is following this fight: false
+Returning fight data with user-specific info: {
+  fightId: '880f4b14-0d26-4a21-a921-816cb9dc9b5e',
+  hasUserRating: false,
+  hasUserReview: false,
+  hasUserTags: false,
+  hasUserPrediction: false
+}
+{"level":30,"time":1767540260382,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7d","res":{"statusCode":200},"responseTime":48.22623538970947,"msg":"request completed"}
+{"level":30,"time":1767540260824,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7e","req":{"method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/predictions","host":"fightcrewapp-backend.onrender.com","remoteAddress":"10.21.13.120","remotePort":47724},"msg":"incoming request"}
+{"level":30,"time":1767540260824,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7e","method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/predictions","userAgent":"okhttp/4.12.0","ip":"10.21.13.120","msg":"Incoming request"}
+{"level":30,"time":1767540260858,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7f","req":{"method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/tags","host":"fightcrewapp-backend.onrender.com","remoteAddress":"10.21.216.192","remotePort":60488},"msg":"incoming request"}
+{"level":30,"time":1767540260858,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7f","method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/tags","userAgent":"okhttp/4.12.0","ip":"10.21.216.192","msg":"Incoming request"}
+{"level":30,"time":1767540260863,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7g","req":{"method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/aggregate-stats","host":"fightcrewapp-backend.onrender.com","remoteAddress":"10.21.116.140","remotePort":57776},"msg":"incoming request"}
+{"level":30,"time":1767540260863,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7g","method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/aggregate-stats","userAgent":"okhttp/4.12.0","ip":"10.21.116.140","msg":"Incoming request"}
+{"level":30,"time":1767540260864,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7h","req":{"method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/pre-fight-comments","host":"fightcrewapp-backend.onrender.com","remoteAddress":"10.21.246.212","remotePort":42950},"msg":"incoming request"}
+{"level":30,"time":1767540260864,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7h","method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/pre-fight-comments","userAgent":"okhttp/4.12.0","ip":"10.21.246.212","msg":"Incoming request"}
+{"level":30,"time":1767540260879,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7e","res":{"statusCode":200},"responseTime":55.084028244018555,"msg":"request completed"}
+{"level":30,"time":1767540260881,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7f","res":{"statusCode":200},"responseTime":22.420111656188965,"msg":"request completed"}
+{"level":30,"time":1767540260886,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7i","req":{"method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/reviews?page=1&limit=10","host":"fightcrewapp-backend.onrender.com","remoteAddress":"10.20.203.195","remotePort":33758},"msg":"incoming request"}
+{"level":30,"time":1767540260886,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7i","method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/reviews?page=1&limit=10","userAgent":"okhttp/4.12.0","ip":"10.20.203.195","msg":"Incoming request"}
+{"level":30,"time":1767540261178,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7i","res":{"statusCode":200},"responseTime":291.6764450073242,"msg":"request completed"}
+Get pre-fight comments error: PrismaClientKnownRequestError: 
+Invalid `prisma.preFightCommentVote.findMany()` invocation:
+The table `public.pre_fight_comment_votes` does not exist in the current database.
+    at $n.handleRequestError (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:7315)
+    at $n.handleAndLogRequestError (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async Object.<anonymous> (/app/packages/backend/dist/routes/fights.js:1822:31) {
+  code: 'P2021',
+  clientVersion: '5.22.0',
+  meta: {
+    modelName: 'PreFightCommentVote',
+    table: 'public.pre_fight_comment_votes'
+  }
+}
+Error stack: PrismaClientKnownRequestError: 
+Invalid `prisma.preFightCommentVote.findMany()` invocation:
+The table `public.pre_fight_comment_votes` does not exist in the current database.
+    at $n.handleRequestError (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:7315)
+    at $n.handleAndLogRequestError (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async Object.<anonymous> (/app/packages/backend/dist/routes/fights.js:1822:31)
+Error message: 
+Invalid `prisma.preFightCommentVote.findMany()` invocation:
+The table `public.pre_fight_comment_votes` does not exist in the current database.
+{"level":30,"time":1767540261181,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7h","res":{"statusCode":500},"responseTime":317.3784055709839,"msg":"request completed"}
+{"level":30,"time":1767540261290,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7g","res":{"statusCode":200},"responseTime":427.07381439208984,"msg":"request completed"}
+{"level":30,"time":1767540262438,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7j","req":{"method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/pre-fight-comments","host":"fightcrewapp-backend.onrender.com","remoteAddress":"10.21.246.85","remotePort":46198},"msg":"incoming request"}
+{"level":30,"time":1767540262438,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7j","method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/pre-fight-comments","userAgent":"okhttp/4.12.0","ip":"10.21.246.85","msg":"Incoming request"}
+Get pre-fight comments error: PrismaClientKnownRequestError: 
+Invalid `prisma.preFightCommentVote.findMany()` invocation:
+The table `public.pre_fight_comment_votes` does not exist in the current database.
+    at $n.handleRequestError (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:7315)
+    at $n.handleAndLogRequestError (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async Object.<anonymous> (/app/packages/backend/dist/routes/fights.js:1822:31) {
+  code: 'P2021',
+  clientVersion: '5.22.0',
+  meta: {
+    modelName: 'PreFightCommentVote',
+    table: 'public.pre_fight_comment_votes'
+  }
+}
+Error stack: PrismaClientKnownRequestError: 
+Invalid `prisma.preFightCommentVote.findMany()` invocation:
+The table `public.pre_fight_comment_votes` does not exist in the current database.
+    at $n.handleRequestError (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:7315)
+    at $n.handleAndLogRequestError (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async Object.<anonymous> (/app/packages/backend/dist/routes/fights.js:1822:31)
+Error message: 
+Invalid `prisma.preFightCommentVote.findMany()` invocation:
+The table `public.pre_fight_comment_votes` does not exist in the current database.
+{"level":30,"time":1767540262446,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7j","res":{"statusCode":500},"responseTime":8.279633522033691,"msg":"request completed"}
+{"level":30,"time":1767540264738,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7k","req":{"method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/pre-fight-comments","host":"fightcrewapp-backend.onrender.com","remoteAddress":"10.21.192.168","remotePort":40490},"msg":"incoming request"}
+{"level":30,"time":1767540264738,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7k","method":"GET","url":"/api/fights/880f4b14-0d26-4a21-a921-816cb9dc9b5e/pre-fight-comments","userAgent":"okhttp/4.12.0","ip":"10.21.192.168","msg":"Incoming request"}
+Get pre-fight comments error: PrismaClientKnownRequestError: 
+Invalid `prisma.preFightCommentVote.findMany()` invocation:
+The table `public.pre_fight_comment_votes` does not exist in the current database.
+    at $n.handleRequestError (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:7315)
+    at $n.handleAndLogRequestError (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async Object.<anonymous> (/app/packages/backend/dist/routes/fights.js:1822:31) {
+  code: 'P2021',
+  clientVersion: '5.22.0',
+  meta: {
+    modelName: 'PreFightCommentVote',
+    table: 'public.pre_fight_comment_votes'
+  }
+}
+Error stack: PrismaClientKnownRequestError: 
+Invalid `prisma.preFightCommentVote.findMany()` invocation:
+The table `public.pre_fight_comment_votes` does not exist in the current database.
+    at $n.handleRequestError (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:7315)
+    at $n.handleAndLogRequestError (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:6623)
+    at $n.request (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:121:6307)
+    at async l (/app/node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client/runtime/library.js:130:9633)
+    at async Object.<anonymous> (/app/packages/backend/dist/routes/fights.js:1822:31)
+Error message: 
+Invalid `prisma.preFightCommentVote.findMany()` invocation:
+The table `public.pre_fight_comment_votes` does not exist in the current database.
+{"level":30,"time":1767540264745,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-797c98fb66-c2pst","reqId":"req-7k","res":{"statusCode":500},"responseTime":6.968896865844727,"msg":"request completed"}
