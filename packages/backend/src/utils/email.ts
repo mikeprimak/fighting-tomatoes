@@ -43,7 +43,7 @@ export class EmailService {
 
           <div style="text-align: center; margin: 30px 0;">
             <a href="${verificationUrl}"
-               style="background-color: #202020; color: #F5C518; padding: 14px 28px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; border: 1px solid #374151;">
+               style="background-color: #16a34a; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               Verify Email Address
             </a>
           </div>
@@ -97,7 +97,7 @@ export class EmailService {
 
           <div style="text-align: center; margin: 30px 0;">
             <a href="${resetUrl}"
-               style="background-color: #202020; color: #F5C518; padding: 14px 28px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; border: 1px solid #374151;">
+               style="background-color: #16a34a; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               Reset Password
             </a>
           </div>
@@ -142,7 +142,7 @@ export class EmailService {
 
           <div style="text-align: center; margin: 30px 0;">
             <a href="${claimUrl}"
-               style="background-color: #202020; color: #F5C518; padding: 14px 28px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; border: 1px solid #374151;">
+               style="background-color: #16a34a; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
               Set Up My Account
             </a>
           </div>
