@@ -195,7 +195,16 @@ function parseTopRankFighterName(
   if (athleteUrl && athleteUrl.includes('/boxers/')) {
     const urlMatch = athleteUrl.match(/\/boxers\/([^/]+)\/?$/);
     if (urlMatch) {
-      const slug = urlMatch[1];
+      // Decode URL-encoded characters (e.g., M%c3%a9l%c3%a8dje → Mélèdje)
+      let slug = urlMatch[1];
+      try {
+        if (/%[0-9A-Fa-f]{2}/.test(slug)) {
+          slug = decodeURIComponent(slug);
+        }
+      } catch (e) {
+        // Keep original slug if decoding fails
+      }
+
       const parts = slug.split('-').map(p =>
         p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
       );

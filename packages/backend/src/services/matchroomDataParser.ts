@@ -131,8 +131,18 @@ function inferGender(weightClassStr: string): Gender {
  * Parse boxer name into first and last name
  */
 function parseBoxerName(name: string): { firstName: string; lastName: string; nickname?: string } {
+  // Decode URL-encoded characters (e.g., M%c3%a9l%c3%a8dje → Mélèdje)
+  let decodedName = name;
+  try {
+    if (/%[0-9A-Fa-f]{2}/.test(name)) {
+      decodedName = decodeURIComponent(name);
+    }
+  } catch (e) {
+    decodedName = name;
+  }
+
   // Clean the name
-  let cleanName = name.trim();
+  let cleanName = decodedName.trim();
 
   // Extract nickname if present (usually in quotes or parentheses)
   let nickname: string | undefined;

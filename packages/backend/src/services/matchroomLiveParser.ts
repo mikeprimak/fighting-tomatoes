@@ -17,7 +17,17 @@ const prisma = new PrismaClient();
  * Parse boxer name into first/last name
  */
 function parseBoxerName(fullName: string): { firstName: string; lastName: string; nickname?: string } {
-  let cleanName = fullName.trim();
+  // Decode URL-encoded characters (e.g., M%c3%a9l%c3%a8dje → Mélèdje)
+  let decodedName = fullName;
+  try {
+    if (/%[0-9A-Fa-f]{2}/.test(fullName)) {
+      decodedName = decodeURIComponent(fullName);
+    }
+  } catch (e) {
+    decodedName = fullName;
+  }
+
+  let cleanName = decodedName.trim();
 
   // Extract nickname if present
   let nickname: string | undefined;

@@ -22,8 +22,18 @@ const prisma = new PrismaClient();
  * @returns Parsed name components
  */
 function parseFighterName(fullName: string): { firstName: string; lastName: string; nickname?: string } {
+  // Decode URL-encoded characters (e.g., M%c3%a9l%c3%a8dje → Mélèdje)
+  let decodedName = fullName;
+  try {
+    if (/%[0-9A-Fa-f]{2}/.test(fullName)) {
+      decodedName = decodeURIComponent(fullName);
+    }
+  } catch (e) {
+    decodedName = fullName;
+  }
+
   // Handle nicknames in quotes: Jon "Bones" Jones
-  const nicknameMatch = fullName.match(/^(.+?)\s+"([^"]+)"\s+(.+)$/);
+  const nicknameMatch = decodedName.match(/^(.+?)\s+"([^"]+)"\s+(.+)$/);
   if (nicknameMatch) {
     return {
       firstName: nicknameMatch[1].trim(),
@@ -33,7 +43,7 @@ function parseFighterName(fullName: string): { firstName: string; lastName: stri
   }
 
   // Simple first/last split: first word = firstName, everything else = lastName
-  const parts = fullName.trim().split(/\s+/);
+  const parts = decodedName.trim().split(/\s+/);
   if (parts.length === 1) {
     // Single-name fighters (e.g., "Tawanchai") - store in lastName for proper sorting
     return { firstName: '', lastName: parts[0] };

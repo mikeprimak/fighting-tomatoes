@@ -340,7 +340,18 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       // Helper to clean fighter name
       function cleanFighterName(name) {
         if (!name) return '';
-        return name
+
+        // Decode URL-encoded characters (e.g., M%c3%a9l%c3%a8dje → Mélèdje)
+        let decodedName = name;
+        try {
+          if (/%[0-9A-Fa-f]{2}/.test(name)) {
+            decodedName = decodeURIComponent(name);
+          }
+        } catch (e) {
+          decodedName = name;
+        }
+
+        return decodedName
           .replace(/\s*\(c\)/gi, '')
           .replace(/\s*#\d+/g, '')
           .replace(/"\s*[^"]+\s*"/g, '') // Remove nicknames in quotes for now

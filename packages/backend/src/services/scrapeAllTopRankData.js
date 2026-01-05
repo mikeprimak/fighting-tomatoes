@@ -157,8 +157,18 @@ async function scrapeEventsList(browser) {
         // Extract event name - prefer URL slug as it's more reliable
         let eventName = '';
         if (urlSlug) {
+          // Decode URL-encoded characters first (e.g., M%c3%a9l%c3%a8dje → Mélèdje)
+          let decodedSlug = urlSlug;
+          try {
+            if (/%[0-9A-Fa-f]{2}/.test(urlSlug)) {
+              decodedSlug = decodeURIComponent(urlSlug);
+            }
+          } catch (e) {
+            decodedSlug = urlSlug;
+          }
+
           // Convert slug to title case: "zayas-vs-baraou" -> "Zayas vs Baraou"
-          eventName = urlSlug
+          eventName = decodedSlug
             .split('-')
             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ')

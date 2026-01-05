@@ -346,7 +346,18 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       // Helper to clean boxer name
       function cleanBoxerName(name) {
         if (!name) return '';
-        return name
+
+        // Decode URL-encoded characters (e.g., M%c3%a9l%c3%a8dje → Mélèdje)
+        let decodedName = name;
+        try {
+          if (/%[0-9A-Fa-f]{2}/.test(name)) {
+            decodedName = decodeURIComponent(name);
+          }
+        } catch (e) {
+          decodedName = name;
+        }
+
+        return decodedName
           .replace(/\s*\(c\)/gi, '')       // Remove champion marker
           .replace(/\s*#\d+/g, '')          // Remove ranking
           .replace(/\s*VS\.?\s*$/i, '')     // Remove trailing VS
@@ -673,7 +684,17 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       // Convert slug parts to proper names
       // "inoue" -> "Inoue", "de-la-hoya" -> "De La Hoya"
       function slugToName(slug) {
-        return slug.split('-').map(part =>
+        // Decode URL-encoded characters first
+        let decodedSlug = slug;
+        try {
+          if (/%[0-9A-Fa-f]{2}/.test(slug)) {
+            decodedSlug = decodeURIComponent(slug);
+          }
+        } catch (e) {
+          decodedSlug = slug;
+        }
+
+        return decodedSlug.split('-').map(part =>
           part.charAt(0).toUpperCase() + part.slice(1)
         ).join(' ');
       }

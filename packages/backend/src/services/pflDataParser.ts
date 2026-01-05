@@ -113,11 +113,24 @@ function inferGenderFromWeightClass(weightClassStr: string): Gender {
 
 /**
  * Parse PFL fighter name into first and last name
+ * Handles URL-encoded characters (e.g., %c3%a9 → é)
  */
 function parsePFLFighterName(
   name: string
 ): { firstName: string; lastName: string } {
-  const cleanName = name.trim();
+  // Decode URL-encoded characters (e.g., M%c3%a9l%c3%a8dje → Mélèdje)
+  let decodedName = name;
+  try {
+    // Only decode if it looks URL-encoded (contains %XX patterns)
+    if (/%[0-9A-Fa-f]{2}/.test(name)) {
+      decodedName = decodeURIComponent(name);
+    }
+  } catch (e) {
+    // If decoding fails, use original name
+    decodedName = name;
+  }
+
+  const cleanName = decodedName.trim();
   const nameParts = cleanName.split(/\s+/);
 
   if (nameParts.length === 1) {

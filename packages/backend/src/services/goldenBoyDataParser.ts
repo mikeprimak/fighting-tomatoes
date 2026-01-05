@@ -135,7 +135,17 @@ function inferGenderFromWeightClass(weightClassStr: string): Gender {
 function parseGoldenBoyFighterName(
   name: string
 ): { firstName: string; lastName: string } {
-  const cleanName = name.trim();
+  // Decode URL-encoded characters (e.g., M%c3%a9l%c3%a8dje → Mélèdje)
+  let decodedName = name;
+  try {
+    if (/%[0-9A-Fa-f]{2}/.test(name)) {
+      decodedName = decodeURIComponent(name);
+    }
+  } catch (e) {
+    decodedName = name;
+  }
+
+  const cleanName = decodedName.trim();
   const nameParts = cleanName.split(/\s+/);
 
   if (nameParts.length === 1) {
