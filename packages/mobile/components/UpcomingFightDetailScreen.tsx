@@ -126,6 +126,13 @@ export default function UpcomingFightDetailScreen({
     (fight.userPredictedMethod as 'KO_TKO' | 'SUBMISSION' | 'DECISION') || null
   );
 
+  // Sync local state with fight prop when it changes (e.g., after cache update/refetch)
+  useEffect(() => {
+    setSelectedWinner(fight.userPredictedWinner || null);
+    setSelectedHype(fight.userHypePrediction || null);
+    setSelectedMethod((fight.userPredictedMethod as 'KO_TKO' | 'SUBMISSION' | 'DECISION') || null);
+  }, [fight.userPredictedWinner, fight.userHypePrediction, fight.userPredictedMethod]);
+
   // Pre-flight comment state
   const [preFightComment, setPreFightComment] = useState<string>('');
   const [isCommentFocused, setIsCommentFocused] = useState(false);
@@ -396,6 +403,22 @@ export default function UpcomingFightDetailScreen({
       // Immediately update cache with the returned aggregate hype (no refetch delay)
       if (data.averageHype !== undefined) {
         updateEventsCache({ averageHype: data.averageHype });
+      }
+
+      // Update fightStats cache with the new hype distribution for instant chart update
+      if (data.hypeDistribution || data.averageHype !== undefined) {
+        queryClient.setQueryData(['fightStats', fight.id], (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            aggregateStats: {
+              ...old.aggregateStats,
+              communityAverageHype: data.averageHype ?? old.aggregateStats?.communityAverageHype,
+              hypeDistribution: data.hypeDistribution ?? old.aggregateStats?.hypeDistribution,
+              totalPredictions: data.totalHypePredictions ?? old.aggregateStats?.totalPredictions,
+            },
+          };
+        });
       }
 
       onPredictionSuccess?.();

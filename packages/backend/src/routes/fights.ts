@@ -2990,6 +2990,22 @@ export async function fightRoutes(fastify: FastifyInstance) {
         ? Math.round(aggregateResult._avg.predictedRating * 10) / 10
         : 0;
 
+      // Calculate hype distribution for instant frontend chart update
+      const hypePredictions = await fastify.prisma.fightPrediction.findMany({
+        where: {
+          fightId,
+          predictedRating: { not: null },
+        },
+        select: {
+          predictedRating: true,
+        },
+      });
+
+      const hypeDistribution: Record<number, number> = {};
+      for (let hype = 1; hype <= 10; hype++) {
+        hypeDistribution[hype] = hypePredictions.filter(p => p.predictedRating === hype).length;
+      }
+
       return reply.send({
         prediction: {
           id: prediction.id,
@@ -3007,6 +3023,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         // Return updated aggregate for instant frontend cache update
         averageHype,
         totalHypePredictions: aggregateResult._count,
+        hypeDistribution,
         message: 'Prediction saved successfully',
       });
 

@@ -872,12 +872,8 @@ export default function CompletedFightDetailScreen({
       const response = await updateUserDataMutation.mutateAsync(submissionData);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      // If it's a new review with content, auto-upvote it
-      if (isNewReview && response?.data?.review?.id) {
-        const reviewId = response.data.review.id;
-        // Auto-upvote the newly created review
-        await upvoteMutation.mutateAsync({ reviewId });
-      }
+      // Note: Backend auto-upvotes new reviews (upvotes: 1, userHasUpvoted: true)
+      // No need to call upvoteMutation here - that would toggle it OFF
 
       // Exit edit mode and hide form after successful save
       setIsEditingComment(false);
