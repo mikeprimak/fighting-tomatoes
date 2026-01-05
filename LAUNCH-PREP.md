@@ -1,8 +1,72 @@
 # Launch Preparation
 
 **Created**: 2025-12-26
-**Last Updated**: 2026-01-03
-**Status**: Final stretch
+**Last Updated**: 2026-01-05
+**Status**: Testing in progress (Android) - Parts A-F complete
+
+---
+
+## 📋 Session Notes (2026-01-05)
+
+### Testing Completed (Android)
+- ✅ **PART C: Core Interactions** - ALL PASSED
+  - C1. Rate a Fight - crowd ratings + distribution update working
+  - C2. Write a Review - fixed auto-upvote bug
+  - C3. Add Tags - working
+  - C4. Add Hype (Upcoming Fight) - fixed persistence + chart update bugs
+  - C5. Add Pre-Fight Comment - working
+- ✅ **PART D: Search** - ALL PASSED
+  - D1. Search for Fighter - working
+  - D2. Search for Event - fixed UFC 300 relevance scoring
+  - D3. Search for Fight - working
+- ✅ **PART E: Fighter Profiles** - PASSED
+  - E1. View Fighter Profile - working
+  - E2. Follow Fighter - N/A (feature hidden for launch)
+- ✅ **PART F: User Profile & Settings** - PASSED
+
+### Bugs Fixed (2026-01-05)
+1. **Review auto-upvote toggling OFF** - Backend creates auto-upvote, frontend was calling upvoteMutation which toggled it off. Removed redundant frontend upvote call.
+2. **Hype selection not persisting** - Cache invalidation was erasing optimistic updates. Fixed by removing upcomingEvents/eventFights from invalidation lists + added useEffect to sync local state.
+3. **Hype distribution chart not updating** - Backend now returns hypeDistribution in prediction response.
+4. **Large flame icon not syncing** - Added useEffect to animate wheel when fight.userHypePrediction changes.
+5. **UFC 300 search not at top** - Added relevance scoring to event search (exact/prefix matches rank higher).
+
+### Part G: Migration Data Investigation
+- Found fake/test fights in production (Jon Jones vs Makhachev, Nunes vs Taylor, etc.)
+- Created `launch-day-reset.js` script to wipe and re-import from live MySQL before launch
+- Decision: Don't worry about fake data now - will do full reset before launch
+
+### Still Need to Test
+- Part G: Migration Data Verification (will verify after launch day reset)
+- Part H: Error Handling (2 tests)
+
+---
+
+## 📋 Session Notes (2026-01-04)
+
+### Testing Completed (Android)
+- ✅ **PART A: Authentication & Onboarding** - ALL PASSED
+  - A1. New User Registration
+  - A2. Legacy User Claim Flow (email + Google Sign-In)
+  - A3. Google Sign-In
+  - A4. Password Reset
+  - A5. Logout
+- ✅ **PART B: Browsing & Navigation** - ALL PASSED
+  - B1. Events List
+  - B2. Past Events
+  - B3. Event Detail
+  - B4. Fight Detail (Completed)
+  - B5. Fight Detail (Upcoming)
+
+### Bugs Fixed (2026-01-04)
+1. **Missing `pre_fight_comment_votes` table** - Created in production DB
+2. **`totalRatings`/`totalReviews` out of sync** - Ran UPDATE for all 1937 users
+3. **Crowd Ratings not updating after rating** - Backend now returns aggregateStats in rating response (best practice)
+4. **ratingDistribution format mismatch** - Converted `{ratings1: x}` to `{1: x}` format
+
+### UI Changes
+- Changed "FIGHT RATINGS" → "CROWD RATINGS" label
+- Removed app store buttons from reset-password.html
 
 ---
 
@@ -14,9 +78,10 @@ These MUST be done before launch:
 |---|------|--------|-------|
 | 1 | **Apple Setup** | ⏳ Pending | TestFlight configured, need final test on device |
 | 2 | **Logo/Splash** | ⏳ Pending | Add GOOD-FIGHTS-ICON-LOGO.png to splash, header |
-| 3 | **Test Core Flow** | ⏳ Pending | Sign up → Rate fight → See rating (iOS + Android) |
-| 4 | **Onboarding** | ⏳ Pending | New user flow, legacy user claim flow |
-| 5 | **Switch to Production** | ⏳ Pending | Point app at Render backend |
+| 3 | **Test Core Flow** | 🟡 In Progress | Android: Parts A-F done, Part H remaining |
+| 4 | **Onboarding** | ✅ Done | New user + legacy claim both tested on Android |
+| 5 | **Switch to Production** | ✅ Done | Mobile pointing at Render backend |
+| 6 | **Launch Day Reset** | ✅ Ready | `launch-day-reset.js` script created to wipe fake data |
 
 ---
 
