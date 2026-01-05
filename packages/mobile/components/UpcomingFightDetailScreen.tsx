@@ -128,6 +128,7 @@ export default function UpcomingFightDetailScreen({
 
   // Sync local state with fight prop when it changes (e.g., after cache update/refetch)
   useEffect(() => {
+    console.log('[UpcomingFightDetail] Sync effect - fight.userHypePrediction:', fight.userHypePrediction, 'fight.id:', fight.id);
     setSelectedWinner(fight.userPredictedWinner || null);
     setSelectedHype(fight.userHypePrediction || null);
     setSelectedMethod((fight.userPredictedMethod as 'KO_TKO' | 'SUBMISSION' | 'DECISION') || null);
@@ -286,6 +287,7 @@ export default function UpcomingFightDetailScreen({
 
   // Helper to optimistically update events cache for predictions
   const updateEventsCache = (updates: { userPredictedWinner?: string | null; userPredictedMethod?: string | null; userHypePrediction?: number | null; averageHype?: number }) => {
+    console.log('[updateEventsCache] Called with:', updates, 'fight.id:', fight.id, 'fight.event?.id:', fight.event?.id);
     // Update upcomingEvents (infinite query with nested fights)
     // Use setQueriesData with partial key to match all upcomingEvents queries regardless of filter
     queryClient.setQueriesData({ queryKey: ['upcomingEvents'] }, (old: any) => {
@@ -357,22 +359,15 @@ export default function UpcomingFightDetailScreen({
       // Mark this fight as needing animation
       setPendingAnimation(fight.id);
 
-      // Invalidate fight-specific queries
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      // Invalidate stats queries to refresh aggregate data
+      // Note: Don't invalidate upcomingEvents/eventFights - optimistic update handles user predictions
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
-
-      // Invalidate list queries that show this fight
-      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
       queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
       queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });
       queryClient.invalidateQueries({ queryKey: ['hotPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
-      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
-      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
-      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
-      // Note: Don't invalidate search - optimistic update handles it, and refetch loses averageHype
 
       onPredictionSuccess?.();
     },
@@ -391,6 +386,7 @@ export default function UpcomingFightDetailScreen({
       });
     },
     onMutate: async (hypeLevel) => {
+      console.log('[saveHypeMutation] onMutate - hypeLevel:', hypeLevel, 'fight.event?.id:', fight.event?.id);
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
       await queryClient.cancelQueries({ queryKey: ['search'] });
       updateEventsCache({ userHypePrediction: hypeLevel });
@@ -428,24 +424,16 @@ export default function UpcomingFightDetailScreen({
       // Invalidate to refetch correct state on error (onSettled also invalidates)
     },
     onSettled: () => {
-      // Always invalidate queries, even on error (to reset state)
-      console.log('[saveHypeMutation] Invalidating queries');
-      // Invalidate fight-specific queries
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      // Invalidate stats queries to refresh aggregate data
+      // Note: Don't invalidate upcomingEvents/eventFights - optimistic update handles userHypePrediction
+      // Invalidating would trigger a refetch that races with navigation and shows stale data
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
-
-      // Invalidate list queries that show this fight
-      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
       queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
       queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });
       queryClient.invalidateQueries({ queryKey: ['hotPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
-      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
-      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
-      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
-      // Note: Don't invalidate search - optimistic update handles it, and refetch loses averageHype
     },
   });
 
@@ -474,22 +462,15 @@ export default function UpcomingFightDetailScreen({
       // Mark this fight as needing animation
       setPendingAnimation(fight.id);
 
-      // Invalidate fight-specific queries
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      // Invalidate stats queries to refresh aggregate data
+      // Note: Don't invalidate upcomingEvents/eventFights - optimistic update handles user predictions
       queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightPredictionStats', fight.id] });
       queryClient.invalidateQueries({ queryKey: ['fightAggregateStats', fight.id] });
-
-      // Invalidate list queries that show this fight
-      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
       queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
       queryClient.invalidateQueries({ queryKey: ['topRecentFights'] });
       queryClient.invalidateQueries({ queryKey: ['hotPredictions'] });
       queryClient.invalidateQueries({ queryKey: ['evenPredictions'] });
-      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
-      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
-      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
-      // Note: Don't invalidate search - optimistic update handles it, and refetch loses averageHype
 
       onPredictionSuccess?.();
     },
@@ -1073,6 +1054,23 @@ export default function UpcomingFightDetailScreen({
       });
     });
   };
+
+  // Track if this is initial mount (to avoid animating on first render)
+  const isInitialMountRef = useRef(true);
+
+  // Sync wheel animation when fight.userHypePrediction changes from refetch
+  // (handleHypeSelection already animates when user taps, this handles refetch updates)
+  useEffect(() => {
+    if (isInitialMountRef.current) {
+      // Skip animation on initial mount - wheelAnimation is already initialized correctly
+      isInitialMountRef.current = false;
+      return;
+    }
+    // Animate to the new value from refetch
+    const hype = fight.userHypePrediction;
+    console.log('[UpcomingFightDetail] Wheel sync effect - animating to:', hype);
+    animateToNumber(hype || 0);
+  }, [fight.userHypePrediction]);
 
   const handleWinnerSelection = (fighterId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
