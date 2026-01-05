@@ -180,15 +180,57 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Sort: upcoming events first (soonest first), then past events (most recent first)
+      // Calculate relevance score for events
+      // Higher score = more relevant match
+      const getEventRelevanceScore = (event: typeof allEvents[0]): number => {
+        const nameLower = event.name.toLowerCase();
+        const searchLower = searchTerm.toLowerCase();
+
+        // Exact match on name (highest priority)
+        if (nameLower === searchLower) return 1000;
+
+        // Name starts with search term
+        if (nameLower.startsWith(searchLower)) return 500;
+
+        // Name contains full search term as a distinct part (e.g., "UFC 300" in "UFC 300: Pereira vs Hill")
+        if (nameLower.includes(searchLower)) return 300;
+
+        // For multi-word queries, check how many words match
+        const matchedWords = searchTerms.filter(term =>
+          nameLower.includes(term.toLowerCase())
+        ).length;
+
+        return matchedWords * 50;
+      };
+
+      // Sort: by relevance first, then upcoming events (soonest), then past events (most recent)
       const now = new Date();
-      const upcomingEvents = allEvents
-        .filter(e => new Date(e.date) >= now)
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      const pastEvents = allEvents
-        .filter(e => new Date(e.date) < now)
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      const events = [...upcomingEvents, ...pastEvents].slice(0, resultLimit);
+      const scoredEvents = allEvents.map(e => ({
+        ...e,
+        relevanceScore: getEventRelevanceScore(e),
+        isUpcoming: new Date(e.date) >= now,
+      }));
+
+      // Sort by: relevance (desc), then upcoming before past, then by date
+      scoredEvents.sort((a, b) => {
+        // First by relevance score
+        if (b.relevanceScore !== a.relevanceScore) {
+          return b.relevanceScore - a.relevanceScore;
+        }
+        // Then upcoming events before past
+        if (a.isUpcoming !== b.isUpcoming) {
+          return a.isUpcoming ? -1 : 1;
+        }
+        // Then by date (upcoming: soonest first, past: most recent first)
+        if (a.isUpcoming) {
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+        } else {
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        }
+      });
+
+      // Remove the helper fields before returning
+      const events = scoredEvents.slice(0, resultLimit).map(({ relevanceScore, isUpcoming, ...event }) => event);
 
       // Search fights (by fighter names and event/promotion)
       // For multi-word queries like "UFC Jon", require ALL words to match across different fields
