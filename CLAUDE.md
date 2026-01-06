@@ -13,6 +13,19 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 
 **Critical Ports**: Backend 3008, Expo 8083, PostgreSQL 5433
 
+## Installing Test Builds
+
+**Android (EAS Build)**:
+- JavaScript-only changes: Automatic via OTA updates when backend deploys
+- Native changes (splash screen, app.json config, new native modules): Requires new APK install
+  1. Go to https://expo.dev/accounts/mikeprimak/projects/fightcrewapp/builds
+  2. Find latest Android build, scan QR code or download APK directly
+  3. Install on device (may need to allow "Install from unknown sources")
+
+**iOS (TestFlight)**:
+- Requires `eas build --platform ios` then `eas submit --platform ios`
+- Wait for Apple processing (~5-10 min), then update via TestFlight app
+
 ## 🚀 LAUNCH PREP TESTING (2026-01-04)
 
 **Status**: Android testing in progress - Parts A & B complete
@@ -28,12 +41,14 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 **PART B: Browsing & Navigation** - ALL PASSED
 - B1-B5 all working
 
-### 🔧 Fixes Applied (2026-01-04)
+### 🔧 Fixes Applied (2026-01-04/05)
 1. **Missing `pre_fight_comment_votes` table** - Created in production DB
 2. **`totalRatings`/`totalReviews` out of sync** - Ran UPDATE for all 1937 migrated users
 3. **Crowd Ratings not updating** - Backend now returns `aggregateStats` in PUT /user-data response (best practice pattern)
 4. **ratingDistribution format** - Converted `{ratings1: x}` to `{1: x}` to match GET /aggregate-stats format
 5. **reset-password.html** - Removed app store buttons
+6. **Event names missing promotion prefix** - "200" → "UFC 200" for 981 events (both local + production)
+7. **Relative banner image paths** - UFC 300, UFC 301, ONE Fight Night 38 banners now have full URLs
 
 ### 📋 Next Session - Continue Testing
 - [ ] **C1. Rate a Fight** - verify crowd ratings + distribution chart update (fix deployed, needs testing)
@@ -352,7 +367,7 @@ All scripts in `packages/backend/scripts/legacy-migration/`:
 
 | Script | Purpose | When to Run |
 |--------|---------|-------------|
-| `00-migrate-fights.ts` | Import events, fighters, fights from SQL dumps | Initial migration only |
+| `00-migrate-fights.ts` | Import events, fighters, fights from SQL dumps (auto-normalizes event names) | Initial migration only |
 | `03-migrate-users.ts` | Import users with null passwords | Initial migration only |
 | `04-migrate-ratings.ts` | Import ratings (uses fight-mapping.json) | Initial migration only |
 | `05-migrate-reviews.ts` | Import reviews | Initial migration only |
@@ -370,6 +385,8 @@ Scripts in `packages/backend/scripts/legacy-migration/mysql-export/`:
 | `sync-fight-order.js` | Sync & invert fight order from legacy | **Every pre-launch sync** |
 | `fix-duplicate-orders.js` | Fix events with multiple order=1 fights | **Every pre-launch sync** |
 | `merge-duplicate-events.js` | Merge duplicate events (same date/promo) | **Every pre-launch sync** |
+| `normalize-event-names.js` | Add promotion prefix to event names ("200" → "UFC 200") | One-time fix (done 2026-01-05) |
+| `fix-relative-banner-paths.js` | Convert relative image paths to full URLs | One-time fix (done 2026-01-05) |
 | `check-ratings.js` | Compare ratings between legacy/new | Debugging only |
 
 ### Legacy MySQL Connection
@@ -391,6 +408,8 @@ Databases: fightdb, userfightratings, userfightreviews, userfighttags
 4. **Truncated fighter names** - Some legacy names truncated (e.g., "Park Hy"); manually delete duplicates
 5. **Events with bogus dates** - Some Bellator events have date 1899-11-30; script skips dates before 2000
 6. **Images not matching** - Original script used exact name match; `import-event-images-v2.js` uses flexible matching
+7. **Event names missing promotion prefix** - Legacy events named "200" instead of "UFC 200"; fixed with `normalize-event-names.js` (981 events fixed 2026-01-05)
+8. **Relative image paths** - Some legacy banners had relative paths like `images/events/UFC300.jpg`; fixed with `fix-relative-banner-paths.js`
 
 ### Account Claim Flow (Ready)
 
