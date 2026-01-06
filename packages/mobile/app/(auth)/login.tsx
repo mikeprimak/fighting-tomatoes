@@ -22,6 +22,7 @@ import { AppleSignInButton } from '../../components/AppleSignInButton';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -202,15 +203,25 @@ export default function LoginScreen() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter your password"
-              placeholderTextColor={colors.textSecondary}
-              secureTextEntry
-              autoCapitalize="none"
-            />
+            <View style={styles.passwordInputContainer}>
+              <TextInput
+                style={styles.passwordInput}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter your password"
+                placeholderTextColor={colors.textSecondary}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={styles.showPasswordButton}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Text style={styles.showPasswordText}>
+                  {showPassword ? 'Hide' : 'Show'}
+                </Text>
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity
               style={styles.forgotPassword}
               onPress={() => router.push('/(auth)/forgot-password')}
@@ -420,6 +431,29 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     backgroundColor: colors.card,
+  },
+  passwordInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    backgroundColor: colors.card,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 16,
+    fontSize: 16,
+    color: colors.text,
+  },
+  showPasswordButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  showPasswordText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
   button: {
     backgroundColor: colors.primary,
