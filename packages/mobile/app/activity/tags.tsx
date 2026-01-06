@@ -27,6 +27,7 @@ export default function TagsActivityScreen() {
           },
           headerTintColor: colors.text,
           headerShadowVisible: false,
+          headerBackTitleVisible: false,
         }}
       />
       <SafeAreaView style={styles.container}>

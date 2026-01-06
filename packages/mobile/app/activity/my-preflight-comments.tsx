@@ -183,6 +183,7 @@ export default function MyPreflightCommentsScreen() {
           },
           headerTintColor: colors.text,
           headerShadowVisible: false,
+          headerBackTitleVisible: false,
         }}
       />
       <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>

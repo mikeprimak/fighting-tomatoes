@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -18,13 +18,30 @@ interface VerificationBannerProps {
 }
 
 export function VerificationBanner({ onDismiss }: VerificationBannerProps) {
-  const { user } = useAuth();
+  const { user, refreshUserData } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const insets = useSafeAreaInsets();
 
   const [isResending, setIsResending] = useState(false);
   const [resendStatus, setResendStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Poll for verification status every 5 seconds while banner is visible
+  useEffect(() => {
+    if (user && !user.isEmailVerified) {
+      pollingRef.current = setInterval(() => {
+        refreshUserData?.();
+      }, 5000);
+    }
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, [user?.isEmailVerified, refreshUserData]);
 
   // Don't show if user is verified or not logged in
   if (!user || user.isEmailVerified) {

@@ -2,7 +2,7 @@
 
 **Created**: 2025-12-26
 **Last Updated**: 2026-01-05
-**Status**: Testing in progress (Android) - Parts A-F complete
+**Status**: Testing in progress (Android) - Parts A-F, H complete
 
 ---
 
@@ -23,6 +23,9 @@
   - E1. View Fighter Profile - working
   - E2. Follow Fighter - N/A (feature hidden for launch)
 - ✅ **PART F: User Profile & Settings** - PASSED
+- ✅ **PART H: Error Handling** - ALL PASSED
+  - H1. Network Error - shows "failed to load data", recovers on refresh
+  - H2. Invalid Login - shows error message, no crash
 
 ### Bugs Fixed (2026-01-05)
 1. **Review auto-upvote toggling OFF** - Backend creates auto-upvote, frontend was calling upvoteMutation which toggled it off. Removed redundant frontend upvote call.
@@ -38,7 +41,7 @@
 
 ### Still Need to Test
 - Part G: Migration Data Verification (will verify after launch day reset)
-- Part H: Error Handling (2 tests)
+- ✅ Part H: Error Handling - PASSED (2026-01-05)
 
 ---
 
@@ -77,8 +80,8 @@ These MUST be done before launch:
 | # | Task | Status | Notes |
 |---|------|--------|-------|
 | 1 | **Apple Setup** | ⏳ Pending | TestFlight configured, need final test on device |
-| 2 | **Logo/Splash** | ⏳ Pending | Add GOOD-FIGHTS-ICON-LOGO.png to splash, header |
-| 3 | **Test Core Flow** | 🟡 In Progress | Android: Parts A-F done, Part H remaining |
+| 2 | **Logo/Splash** | ✅ Done | App icon = hand, Splash = hand + "GOOD FIGHTS" |
+| 3 | **Test Core Flow** | ✅ Done | Android: Parts A-F, H complete. Part G after launch reset |
 | 4 | **Onboarding** | ✅ Done | New user + legacy claim both tested on Android |
 | 5 | **Switch to Production** | ✅ Done | Mobile pointing at Render backend |
 | 6 | **Launch Day Reset** | ✅ Ready | `launch-day-reset.js` script created to wipe fake data |
@@ -358,19 +361,19 @@ These verify that legacy data from fightingtomatoes.com migrated correctly.
 
 ---
 
-### PART H: ERROR HANDLING
+### PART H: ERROR HANDLING ✅
 
-#### H1. Network Error
-- [ ] Turn off WiFi/data
-- [ ] Try to load events
-- [ ] See appropriate error message (not crash)
-- [ ] Turn network back on
-- [ ] Pull to refresh → data loads
+#### H1. Network Error ✅
+- [x] Turn off WiFi/data
+- [x] Try to load events
+- [x] See appropriate error message (not crash) - Shows "failed to load data"
+- [x] Turn network back on
+- [x] Pull to refresh → data loads
 
-#### H2. Invalid Login
-- [ ] Try to log in with wrong password
-- [ ] See error message
-- [ ] App doesn't crash
+#### H2. Invalid Login ✅
+- [x] Try to log in with wrong password
+- [x] See error message
+- [x] App doesn't crash
 
 ---
 
