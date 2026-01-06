@@ -49,6 +49,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 5. **reset-password.html** - Removed app store buttons
 6. **Event names missing promotion prefix** - "200" → "UFC 200" for 981 events (both local + production)
 7. **Relative banner image paths** - UFC 300, UFC 301, ONE Fight Night 38 banners now have full URLs
+8. **Fighter deduplication schema removed** - Removed tapologyId, sherdogId, ufcId, FighterAlias from schema (was causing production errors)
 
 ### 📋 Next Session - Continue Testing
 - [ ] **C1. Rate a Fight** - verify crowd ratings + distribution chart update (fix deployed, needs testing)
@@ -210,68 +211,26 @@ Fight-specific notifications (notify when a specific fight starts) are **only av
 
 ## Fighter Deduplication System
 
-Handles duplicate fighter entries caused by name variations (Alex vs Alexander, Jon vs Jonathan).
+**Status: TEMPORARILY DISABLED** (as of 2026-01-05)
 
-### Schema Additions
+The deduplication schema (tapologyId, sherdogId, ufcId, FighterAlias) was removed to fix production errors. The schema changes were committed but not yet deployed, causing a mismatch between the Prisma client and production database.
 
-```prisma
-model Fighter {
-  // ... existing fields ...
-  tapologyId    String?   @unique  // External ID for deduplication
-  sherdogId     String?   @unique
-  ufcId         String?   @unique
-  aliases       FighterAlias[]
-}
+### Re-enabling Later
 
-model FighterAlias {
-  id          String   @id @default(uuid())
-  fighterId   String
-  fighter     Fighter  @relation(...)
-  firstName   String
-  lastName    String
-  source      String?  // "legacy_migration", "scraper", "manual", "merge"
-  @@unique([firstName, lastName])
-}
-```
+To re-enable deduplication in the future:
+1. Add back the schema fields to `schema.prisma`
+2. Run `prisma db push` on production
+3. Re-deploy backend
 
-### Scripts
+### Existing Scripts (Disabled)
 
-```bash
-# Detect potential duplicates (run before pre-launch migration)
-npx ts-node packages/backend/scripts/fighter-dedup/detect-duplicates.ts
-npx ts-node packages/backend/scripts/fighter-dedup/detect-duplicates.ts --output duplicates.json
+Scripts in `packages/backend/scripts/fighter-dedup/` are still available but will not work until the schema is re-added:
+- `detect-duplicates.ts` - Find potential duplicate fighters
+- `merge-fighters.ts` - Merge two fighters
 
-# Merge two fighters (keep first, merge second into it)
-npx ts-node packages/backend/scripts/fighter-dedup/merge-fighters.ts <keep-id> <merge-id>
-npx ts-node packages/backend/scripts/fighter-dedup/merge-fighters.ts <keep-id> <merge-id> --dry-run
-```
+### Current Approach
 
-### Scraper Integration
-
-Use `upsertFighterWithFuzzyMatch()` instead of `prisma.fighter.upsert()`:
-
-```typescript
-import { upsertFighterWithFuzzyMatch } from '../utils/fighterMatcher';
-
-// Instead of prisma.fighter.upsert(...)
-const fighter = await upsertFighterWithFuzzyMatch(prisma, {
-  firstName, lastName, gender,
-  profileImage, wins, losses, draws
-}, { logMatches: true });
-```
-
-### How It Works
-
-1. **Exact match**: Check `firstName + lastName` (case-insensitive)
-2. **Alias lookup**: Check `fighter_aliases` table
-3. **Fuzzy match**: Levenshtein distance + name variation detection (Alex↔Alexander)
-4. **Create new**: Only if no match found; auto-creates alias for future
-
-### Pre-Launch Checklist
-
-1. Run `detect-duplicates.ts --output duplicates.json` after final migration
-2. Review output, merge confirmed duplicates
-3. Aliases created during merge prevent future duplicates
+Without the alias table, fighter matching relies on exact `firstName + lastName` matching only. Duplicates may occur for name variations (Alex vs Alexander).
 
 ## Legacy Migration (fightingtomatoes.com → New App)
 
