@@ -42,6 +42,41 @@ function normalizeName(name: string | null | undefined | number): string {
   return name.trim().toLowerCase();
 }
 
+// Normalize event name to include promotion prefix
+// e.g., "200" → "UFC 200", "Fight Night X vs Y" → "UFC Fight Night X vs Y"
+function normalizeEventName(promotion: string, eventName: string): string {
+  const lowerName = eventName.toLowerCase();
+  const lowerPromo = promotion.toLowerCase();
+
+  // Already has the promotion prefix at start
+  if (eventName.startsWith(promotion + ' ') || eventName.startsWith(promotion + ':')) {
+    return eventName;
+  }
+  if (lowerName.startsWith(lowerPromo + ' ') || lowerName.startsWith(lowerPromo + ':')) {
+    return eventName;
+  }
+  // Event name contains promotion name anywhere (e.g., "2026 PFL Madrid", "Super Rizin 4")
+  const promoRegex = new RegExp(`\\b${lowerPromo}\\b`, 'i');
+  if (promoRegex.test(eventName)) {
+    return eventName;
+  }
+
+  // Check if it's a numbered event (just digits, maybe with subtitle)
+  const isNumberedEvent = /^\d+/.test(eventName);
+  // Check if it's a "Fight Night" style event
+  const isFightNight = /^Fight\s*Night/i.test(eventName);
+  // Check if it already has a colon
+  const hasColon = eventName.includes(':');
+
+  if (isNumberedEvent || isFightNight) {
+    return `${promotion} ${eventName}`;
+  } else if (hasColon) {
+    return `${promotion} ${eventName}`;
+  } else {
+    return `${promotion}: ${eventName}`;
+  }
+}
+
 // Create a unique key for an event
 function eventKey(promotion: string, eventname: string, date: string): string {
   return `${promotion}|${eventname}|${date}`;
@@ -118,8 +153,10 @@ async function main() {
 
   for (const fight of legacyFights) {
     // Safely convert event name to string (can be number like 262 for UFC events)
-    const eventName = String(fight.eventname || '');
+    const rawEventName = String(fight.eventname || '');
     const promotion = String(fight.promotion || '');
+    // Normalize event name to include promotion prefix (e.g., "200" → "UFC 200")
+    const eventName = normalizeEventName(promotion, rawEventName);
 
     // Validate and parse date
     const parsedDate = new Date(fight.date);
@@ -290,9 +327,10 @@ async function main() {
     const f2fn = typeof legacy.f2fn === 'string' ? legacy.f2fn : '';
     const f2ln = typeof legacy.f2ln === 'string' ? legacy.f2ln : '';
 
-    // Safely convert event fields to strings
-    const eventName = String(legacy.eventname || '');
+    // Safely convert event fields to strings and normalize
+    const rawEventName = String(legacy.eventname || '');
     const promotion = String(legacy.promotion || '');
+    const eventName = normalizeEventName(promotion, rawEventName);
 
     // Get event ID
     const evtKey = eventKey(promotion, eventName, legacy.date);
