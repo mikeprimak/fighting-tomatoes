@@ -55,11 +55,11 @@ export class EmailService {
 
           <p style="color: #000000;">Once verified, you can:</p>
           <ul style="color: #000000;">
-            <li>Hype and Rate fights from 1-10</li>
-            <li>Write reviews and get upvotes</li>
-            <li>Follow your favorite fighters to know when they're fighting</li>
-            <li>Get notifications for upcoming fights</li>
-            <li>Predict fight outcomes and compare your accuracy to a global leaderboard</li>
+            <li>Hype upcoming fights and rate completed ones from 1-10</li>
+            <li>See which upcoming fights are most hyped by the community</li>
+            <li>Write reviews and get upvotes from the community</li>
+            <li>Tag fights with awards like Fight of the Night and Fight of the Year</li>
+            <li>Browse events from UFC, ONE, PFL, BKFC, and more</li>
           </ul>
 
           <p style="color: #000000; font-size: 14px;">If you didn't create this account, you can safely ignore this email.</p>
@@ -155,8 +155,8 @@ export class EmailService {
           <p style="color: #000000;"><strong>What's new in Good Fights?</strong></p>
           <ul style="color: #000000;">
             <li>Native iOS and Android apps</li>
-            <li>Pre-fight hype predictions</li>
-            <li>Real-time fight notifications</li>
+            <li>Pre-fight hype ratings - see which fights are most anticipated</li>
+            <li>Coverage of UFC, ONE, PFL, BKFC, and more</li>
             <li>Improved performance and design</li>
           </ul>
 
