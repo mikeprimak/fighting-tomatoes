@@ -51,6 +51,25 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 7. **Relative banner image paths** - UFC 300, UFC 301, ONE Fight Night 38 banners now have full URLs
 8. **Fighter deduplication schema removed** - Removed tapologyId, sherdogId, ufcId, FighterAlias from schema (was causing production errors)
 
+### ✅ FIXED: Upcoming Events Screen Not Loading (2026-01-05)
+
+**Root Cause Found**: The `/api/events?type=upcoming` filter was only checking `isComplete=false`,
+not whether the event date was in the future. This caused past events (Nov/Dec 2025) that weren't
+marked complete to appear in the upcoming list, while future events (Jan 2026+) were mixed in.
+
+**Fix Applied** (commit 493bf31):
+1. Added `date >= NOW()` check to upcoming filter in `routes/index.ts`
+2. Past filter now uses OR logic: `isComplete=true OR date < NOW()`
+3. Fixed 1 past event that was incorrectly marked incomplete ("Zayas vs Baraou" 2026-01-01)
+4. Added error handling UI and debug logging to events screen
+
+**Files Changed**:
+- `packages/backend/src/routes/index.ts` - Fixed upcoming/past date filtering
+- `packages/mobile/app/(tabs)/events/index.tsx` - Added error UI and logging
+- `packages/mobile/services/api.ts` - Added request/response logging
+
+---
+
 ### 📋 Next Session - Continue Testing
 - [ ] **C1. Rate a Fight** - verify crowd ratings + distribution chart update (fix deployed, needs testing)
 - [ ] C2. Write a Review
