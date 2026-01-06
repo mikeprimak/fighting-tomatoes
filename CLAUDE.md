@@ -13,6 +13,26 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 
 **Critical Ports**: Backend 3008, Expo 8083, PostgreSQL 5433
 
+## Domain & Hosting (TODO)
+
+**Domain**: goodfights.app (currently at GoDaddy - plan to transfer)
+
+**Planned Setup**:
+| Need | Solution | Cost |
+|------|----------|------|
+| Domain | Transfer to Cloudflare Registrar | ~$12/year |
+| Web Hosting | Vercel (landing page at `packages/landing`) | Free |
+| Backend | Render (already deployed) | Current plan |
+| Email | Cloudflare Email Routing → Gmail | Free |
+
+**Steps to complete**:
+1. Transfer domain from GoDaddy to Cloudflare (~5-7 days)
+2. Set up Cloudflare Email Routing for contact@goodfights.app
+3. Connect Vercel to Cloudflare DNS
+4. Cancel GoDaddy hosting
+
+**Landing page**: `packages/landing/index.html` - simple page with App Store/Play Store links
+
 ## Installing Test Builds
 
 **Android (EAS Build)**:
