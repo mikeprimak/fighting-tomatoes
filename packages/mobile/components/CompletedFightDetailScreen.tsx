@@ -1448,7 +1448,7 @@ export default function CompletedFightDetailScreen({
               <Text style={[styles.whatHappenedName, { color: colors.text }]}>
                 {getFighterDisplayName(fight.fighter1)}
               </Text>
-              <View style={{ height: 24, marginTop: 4, justifyContent: 'center' }}>
+              <View style={{ minHeight: 24, marginTop: 4, justifyContent: 'center' }}>
                 {isOutcomeRevealed && fight.winner === fight.fighter1.id && (
                   <Text style={{ color: '#4CAF50', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
                     by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
@@ -1478,7 +1478,7 @@ export default function CompletedFightDetailScreen({
               <Text style={[styles.whatHappenedName, { color: colors.text }]}>
                 {getFighterDisplayName(fight.fighter2)}
               </Text>
-              <View style={{ height: 24, marginTop: 4, justifyContent: 'center' }}>
+              <View style={{ minHeight: 24, marginTop: 4, justifyContent: 'center' }}>
                 {isOutcomeRevealed && fight.winner === fight.fighter2.id && (
                   <Text style={{ color: '#4CAF50', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
                     by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}

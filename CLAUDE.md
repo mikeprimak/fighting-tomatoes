@@ -193,6 +193,71 @@ Fight-specific notifications (notify when a specific fight starts) are **only av
 | Nested Comments | 🚧 Testing | `feature/nested-comments` |
 | Performance Optimizations | ✅ Complete | `condensedevent1` |
 
+## Fighter Deduplication System
+
+Handles duplicate fighter entries caused by name variations (Alex vs Alexander, Jon vs Jonathan).
+
+### Schema Additions
+
+```prisma
+model Fighter {
+  // ... existing fields ...
+  tapologyId    String?   @unique  // External ID for deduplication
+  sherdogId     String?   @unique
+  ufcId         String?   @unique
+  aliases       FighterAlias[]
+}
+
+model FighterAlias {
+  id          String   @id @default(uuid())
+  fighterId   String
+  fighter     Fighter  @relation(...)
+  firstName   String
+  lastName    String
+  source      String?  // "legacy_migration", "scraper", "manual", "merge"
+  @@unique([firstName, lastName])
+}
+```
+
+### Scripts
+
+```bash
+# Detect potential duplicates (run before pre-launch migration)
+npx ts-node packages/backend/scripts/fighter-dedup/detect-duplicates.ts
+npx ts-node packages/backend/scripts/fighter-dedup/detect-duplicates.ts --output duplicates.json
+
+# Merge two fighters (keep first, merge second into it)
+npx ts-node packages/backend/scripts/fighter-dedup/merge-fighters.ts <keep-id> <merge-id>
+npx ts-node packages/backend/scripts/fighter-dedup/merge-fighters.ts <keep-id> <merge-id> --dry-run
+```
+
+### Scraper Integration
+
+Use `upsertFighterWithFuzzyMatch()` instead of `prisma.fighter.upsert()`:
+
+```typescript
+import { upsertFighterWithFuzzyMatch } from '../utils/fighterMatcher';
+
+// Instead of prisma.fighter.upsert(...)
+const fighter = await upsertFighterWithFuzzyMatch(prisma, {
+  firstName, lastName, gender,
+  profileImage, wins, losses, draws
+}, { logMatches: true });
+```
+
+### How It Works
+
+1. **Exact match**: Check `firstName + lastName` (case-insensitive)
+2. **Alias lookup**: Check `fighter_aliases` table
+3. **Fuzzy match**: Levenshtein distance + name variation detection (Alex↔Alexander)
+4. **Create new**: Only if no match found; auto-creates alias for future
+
+### Pre-Launch Checklist
+
+1. Run `detect-duplicates.ts --output duplicates.json` after final migration
+2. Review output, merge confirmed duplicates
+3. Aliases created during merge prevent future duplicates
+
 ## Legacy Migration (fightingtomatoes.com → New App)
 
 **Status: ✅ COMPLETE** (as of 2025-12-29, updated 2025-01-03)

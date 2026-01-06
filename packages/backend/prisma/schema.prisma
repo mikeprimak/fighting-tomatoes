@@ -119,13 +119,18 @@ model Fighter {
   firstName       String
   lastName        String
   nickname        String?
-  
+
+  // External IDs for deduplication (stable identifiers from external sources)
+  tapologyId      String?   @unique  // Tapology fighter URL slug or ID
+  sherdogId       String?   @unique  // Sherdog fighter ID
+  ufcId           String?   @unique  // UFC.com fighter ID/slug
+
   // Record
   wins            Int       @default(0)
   losses          Int       @default(0)
   draws           Int       @default(0)
   noContests      Int       @default(0)
-  
+
   // Profile
   profileImage    String?   // headshot
   actionImage     String?   // action shot
@@ -136,24 +141,49 @@ model Fighter {
   isActive        Boolean   @default(true)
   isChampion      Boolean   @default(false)
   championshipTitle String?
-  
+
   // Stats
   averageRating   Float     @default(0)
   totalRatings    Int       @default(0)
   totalFights     Int       @default(0)
   greatFights     Int       @default(0) // fights rated 85+
-  
+
   // Timestamps
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  
+
   // Relations
   fightsAsFighter1 Fight[]  @relation("Fighter1")
   fightsAsFighter2 Fight[]  @relation("Fighter2")
   followers        UserFighterFollow[]
+  aliases          FighterAlias[]
 
   @@unique([firstName, lastName])
   @@map("fighters")
+}
+
+// Fighter name aliases for deduplication
+// Stores alternate names/spellings that should resolve to the same fighter
+model FighterAlias {
+  id          String    @id @default(uuid())
+
+  // The canonical fighter this alias points to
+  fighterId   String
+  fighter     Fighter   @relation(fields: [fighterId], references: [id], onDelete: Cascade)
+
+  // The alternate name
+  firstName   String
+  lastName    String
+
+  // Source of the alias (for tracking)
+  source      String?   // "legacy_migration", "scraper", "manual", etc.
+
+  // Timestamps
+  createdAt   DateTime  @default(now())
+
+  @@unique([firstName, lastName])  // Each alias can only point to one fighter
+  @@index([fighterId])
+  @@map("fighter_aliases")
 }
 
 enum WeightClass {
