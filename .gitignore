@@ -155,3 +155,14 @@ packages/backend/scripts/legacy-migration/mysql-export/
 
 # Legacy migration - connection test with credentials
 packages/backend/scripts/legacy-migration/test-mysql-connection.ts
+
+# Apple Auth Keys (NEVER commit these!)
+AuthKey*.p8
+*.p8
+
+# Firebase/Google service files (contain API keys)
+# Note: GoogleService-Info.plist is needed for builds but keys are restricted by bundle ID
+# google-services.json is needed for Android builds
+
+# Security alert tracking
+gitissues.txt

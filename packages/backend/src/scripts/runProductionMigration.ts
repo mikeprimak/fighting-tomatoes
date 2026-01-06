@@ -1,6 +1,8 @@
 /**
  * Run Prisma migration directly on production database
  * This is a one-time script to add the cardType column
+ *
+ * Usage: DATABASE_URL="postgresql://..." npx ts-node runProductionMigration.ts
  */
 
 import { exec } from 'child_process';
@@ -8,8 +10,12 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
-// Override DATABASE_URL to production
-process.env.DATABASE_URL = 'postgresql://fightcrewapp_user:WjU2ZdAJESuMaMumbyRGgIV1HXJWg8KU@dpg-d3oee81r0fns73c59610-a.oregon-postgres.render.com/fightcrewapp';
+// Use environment variable - NEVER hardcode credentials!
+if (!process.env.DATABASE_URL) {
+  console.error('ERROR: DATABASE_URL environment variable is required');
+  console.error('Usage: DATABASE_URL="postgresql://..." npx ts-node runProductionMigration.ts');
+  process.exit(1);
+}
 
 async function main() {
   console.log('🚀 Running Prisma migration on PRODUCTION database...\n');

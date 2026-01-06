@@ -25,7 +25,15 @@ const { execSync } = require('child_process');
 const path = require('path');
 const { PrismaClient } = require('@prisma/client');
 
-const PRODUCTION_DB_URL = 'postgresql://fightcrewappdb_k127_user:DLeYZBwCclr4JOEKDndStpQT0hBGNRlL@dpg-d3oee81r0fns73c59610-a.oregon-postgres.render.com/fightcrewapp-db';
+// Use environment variable - NEVER hardcode credentials!
+// Usage: PRODUCTION_DATABASE_URL="postgresql://..." node launch-day-reset.js --execute
+const PRODUCTION_DB_URL = process.env.PRODUCTION_DATABASE_URL;
+
+if (!PRODUCTION_DB_URL) {
+  console.error('ERROR: PRODUCTION_DATABASE_URL environment variable is required');
+  console.error('Usage: PRODUCTION_DATABASE_URL="postgresql://..." node launch-day-reset.js --execute');
+  process.exit(1);
+}
 
 const MYSQL_EXPORT_DIR = path.join(__dirname, 'mysql-export');
 

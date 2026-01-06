@@ -1,10 +1,19 @@
 /**
  * Fast sync ratings using batch inserts
+ *
+ * Usage: LOCAL_DATABASE_URL="..." RENDER_DATABASE_URL="..." node fast-sync-ratings.js
  */
 const { PrismaClient } = require('@prisma/client');
 
-const LOCAL_URL = 'postgresql://dev:devpassword@localhost:5433/yourapp_dev';
-const RENDER_URL = 'postgresql://fightcrewappdb_k127_user:DLeYZBwCclr4JOEKDndStpQT0hBGNRlL@dpg-d3oee81r0fns73c59610-a.oregon-postgres.render.com/fightcrewapp';
+// Use environment variables - NEVER hardcode credentials!
+const LOCAL_URL = process.env.LOCAL_DATABASE_URL || 'postgresql://dev:devpassword@localhost:5433/yourapp_dev';
+const RENDER_URL = process.env.RENDER_DATABASE_URL;
+
+if (!RENDER_URL) {
+  console.error('ERROR: RENDER_DATABASE_URL environment variable is required');
+  console.error('Usage: LOCAL_DATABASE_URL="..." RENDER_DATABASE_URL="..." node fast-sync-ratings.js');
+  process.exit(1);
+}
 
 const localDb = new PrismaClient({ datasources: { db: { url: LOCAL_URL } } });
 const renderDb = new PrismaClient({ datasources: { db: { url: RENDER_URL } } });

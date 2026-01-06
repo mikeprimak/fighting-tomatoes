@@ -2,7 +2,15 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-const RENDER_URL = 'postgresql://fightcrewappdb_k127_user:DLeYZBwCclr4JOEKDndStpQT0hBGNRlL@dpg-d3oee81r0fns73c59610-a.oregon-postgres.render.com/fightcrewappdb_k127';
+// Use environment variable for database URL - NEVER hardcode credentials!
+// Usage: DATABASE_URL="postgresql://..." node clean-import-to-render.js
+const RENDER_URL = process.env.DATABASE_URL;
+
+if (!RENDER_URL) {
+  console.error('ERROR: DATABASE_URL environment variable is required');
+  console.error('Usage: DATABASE_URL="postgresql://user:pass@host/db" node clean-import-to-render.js');
+  process.exit(1);
+}
 
 // Tables in correct deletion order (children first, then parents)
 const TABLES_TO_TRUNCATE = [

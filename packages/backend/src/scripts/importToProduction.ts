@@ -1,13 +1,18 @@
 /**
  * Import scraped UFC data directly to production database
- * Run with: npx ts-node src/scripts/importToProduction.ts
+ *
+ * Usage: DATABASE_URL="postgresql://..." npx ts-node src/scripts/importToProduction.ts
  */
 
 import { importUFCData } from '../services/ufcDataParser';
 import * as path from 'path';
 
-// Override DATABASE_URL to production
-process.env.DATABASE_URL = 'postgresql://fightcrewapp_user:WjU2ZdAJESuMaMumbyRGgIV1HXJWg8KU@dpg-d3oee81r0fns73c59610-a.oregon-postgres.render.com/fightcrewapp';
+// Use environment variable - NEVER hardcode credentials!
+if (!process.env.DATABASE_URL) {
+  console.error('ERROR: DATABASE_URL environment variable is required');
+  console.error('Usage: DATABASE_URL="postgresql://..." npx ts-node src/scripts/importToProduction.ts');
+  process.exit(1);
+}
 
 // Override BASE_URL to production for image URLs
 process.env.BASE_URL = 'https://fightcrewapp-backend.onrender.com';

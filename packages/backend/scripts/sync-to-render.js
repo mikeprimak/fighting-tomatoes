@@ -1,12 +1,20 @@
 /**
  * Sync local database to Render production database
- * Run with: node scripts/sync-to-render.js
+ *
+ * Usage: LOCAL_DATABASE_URL="..." RENDER_DATABASE_URL="..." node scripts/sync-to-render.js
  */
 
 const { PrismaClient } = require('@prisma/client');
 
-const LOCAL_URL = 'postgresql://dev:devpassword@localhost:5433/yourapp_dev';
-const RENDER_URL = 'postgresql://fightcrewappdb_k127_user:DLeYZBwCclr4JOEKDndStpQT0hBGNRlL@dpg-d3oee81r0fns73c59610-a.oregon-postgres.render.com/fightcrewapp-db';
+// Use environment variables - NEVER hardcode credentials!
+const LOCAL_URL = process.env.LOCAL_DATABASE_URL || 'postgresql://dev:devpassword@localhost:5433/yourapp_dev';
+const RENDER_URL = process.env.RENDER_DATABASE_URL;
+
+if (!RENDER_URL) {
+  console.error('ERROR: RENDER_DATABASE_URL environment variable is required');
+  console.error('Usage: LOCAL_DATABASE_URL="..." RENDER_DATABASE_URL="..." node scripts/sync-to-render.js');
+  process.exit(1);
+}
 
 const localDb = new PrismaClient({ datasources: { db: { url: LOCAL_URL } } });
 const renderDb = new PrismaClient({ datasources: { db: { url: RENDER_URL } } });

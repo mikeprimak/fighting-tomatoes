@@ -1,11 +1,17 @@
 /**
  * Release all Prisma advisory locks on production database
+ *
+ * Usage: DATABASE_URL="postgresql://..." npx ts-node releaseLocks.ts
  */
 
 import { PrismaClient } from '@prisma/client';
 
-// Override DATABASE_URL to production
-process.env.DATABASE_URL = 'postgresql://fightcrewapp_user:WjU2ZdAJESuMaMumbyRGgIV1HXJWg8KU@dpg-d3oee81r0fns73c59610-a.oregon-postgres.render.com/fightcrewapp';
+// Use environment variable - NEVER hardcode credentials!
+if (!process.env.DATABASE_URL) {
+  console.error('ERROR: DATABASE_URL environment variable is required');
+  console.error('Usage: DATABASE_URL="postgresql://..." npx ts-node releaseLocks.ts');
+  process.exit(1);
+}
 
 const prisma = new PrismaClient();
 
