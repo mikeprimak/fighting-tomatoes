@@ -223,11 +223,17 @@ class ApiService {
       (headers as any).Authorization = `Bearer ${token}`;
     }
 
+    // Debug logging for request
+    console.log(`[API] Request: ${options.method || 'GET'} ${url}`);
+
     try {
+      const startTime = Date.now();
       const response = await fetch(url, {
         ...options,
         headers,
       });
+      const duration = Date.now() - startTime;
+      console.log(`[API] Response: ${response.status} (${duration}ms) - ${url}`);
 
       // Handle 401 Unauthorized - try to refresh token and retry
       if (response.status === 401 && !isRetry) {
@@ -262,10 +268,16 @@ class ApiService {
 
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
-      console.error('Request details:', { url, hasToken: !!token });
+      console.error('[API] Request failed:', error);
+      console.error('[API] Request details:', {
+        url,
+        hasToken: !!token,
+        errorType: error?.constructor?.name,
+        errorMessage: (error as any)?.message,
+      });
 
       if (error instanceof TypeError && error.message.includes('Network request failed')) {
+        console.error('[API] Network error detected');
         throw {
           error: 'Network error - please check your connection',
           code: 'NETWORK_ERROR',

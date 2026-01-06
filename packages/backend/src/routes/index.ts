@@ -224,10 +224,17 @@ export async function registerRoutes(fastify: FastifyInstance) {
       };
 
       // Add type filter for upcoming/past events
+      // Note: For upcoming, we check BOTH that the event is not complete AND the date is in the future
+      // This prevents past events that weren't marked complete from appearing in upcoming
       if (type === 'upcoming') {
         whereClause.isComplete = false;
+        whereClause.date = { gte: new Date() };
       } else if (type === 'past') {
-        whereClause.isComplete = true;
+        // Past events: either completed OR date is in the past
+        whereClause.OR = [
+          { isComplete: true },
+          { date: { lt: new Date() } }
+        ];
       }
 
       // Add promotions filter if provided

@@ -201,16 +201,26 @@ export default function UpcomingEventsScreen() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    error: eventsError,
+    isError,
   } = useInfiniteQuery(
     ['upcomingEvents', isAuthenticated, promotionsFilter],
     async ({ pageParam = 1 }) => {
-      return apiService.getEvents({
-        type: 'upcoming',
-        includeFights: true,
-        page: pageParam,
-        limit: EVENTS_PER_PAGE,
-        promotions: promotionsFilter,
-      });
+      console.log('[Events] Fetching upcoming events - page:', pageParam, 'filter:', promotionsFilter);
+      try {
+        const result = await apiService.getEvents({
+          type: 'upcoming',
+          includeFights: true,
+          page: pageParam,
+          limit: EVENTS_PER_PAGE,
+          promotions: promotionsFilter,
+        });
+        console.log('[Events] Successfully fetched', result.events?.length || 0, 'events');
+        return result;
+      } catch (err) {
+        console.error('[Events] API Error:', err);
+        throw err;
+      }
     },
     {
       getNextPageParam: (lastPage) => {
@@ -220,8 +230,18 @@ export default function UpcomingEventsScreen() {
       staleTime: 30 * 1000, // 30 seconds - refresh frequently for live status
       refetchOnMount: 'always',
       refetchOnWindowFocus: true,
+      onError: (err: any) => {
+        console.error('[Events] Query error:', err?.message || err);
+      },
     }
   );
+
+  // Debug logging for error state
+  useEffect(() => {
+    if (isError) {
+      console.error('[Events] Query is in error state:', eventsError);
+    }
+  }, [isError, eventsError]);
 
   // Flatten all pages of events into a single array and deduplicate by ID
   const allEvents = React.useMemo(() => {
@@ -351,6 +371,21 @@ export default function UpcomingEventsScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>Loading events...</Text>
+        </View>
+      ) : isError ? (
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: colors.danger || '#ff0000' }]}>
+            Error loading events
+          </Text>
+          <Text style={[styles.noEventsText, { color: colors.textSecondary, marginTop: 8 }]}>
+            {(eventsError as any)?.message || (eventsError as any)?.error || 'Unknown error'}
+          </Text>
+          <TouchableOpacity
+            style={{ marginTop: 16, padding: 12, backgroundColor: colors.primary, borderRadius: 8 }}
+            onPress={() => queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] })}
+          >
+            <Text style={{ color: '#fff', fontWeight: '600' }}>Retry</Text>
+          </TouchableOpacity>
         </View>
       ) : (
       <FlatList
