@@ -168,7 +168,28 @@ export default function EditProfileScreen() {
             showsVerticalScrollIndicator={false}
             automaticallyAdjustKeyboardInsets={true}
           >
-        {/* Form Fields */}
+        {/* Account (Email - Read-only) */}
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Email</Text>
+            <TextInput
+              style={[styles.input, {
+                backgroundColor: colors.backgroundSecondary,
+                color: colors.textSecondary,
+                borderColor: colors.border
+              }]}
+              value={user?.email}
+              editable={false}
+            />
+            <Text style={[styles.helperText, { color: colors.textSecondary }]}>
+              Email cannot be changed
+            </Text>
+          </View>
+        </View>
+
+        {/* Profile Information */}
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Profile Information</Text>
 
@@ -216,6 +237,9 @@ export default function EditProfileScreen() {
             </Text>
           </View>
 
+          {/* Hidden for launch - first/last name not needed */}
+          {false && (
+          <>
           <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.textSecondary }]}>First Name</Text>
             <TextInput
@@ -247,27 +271,8 @@ export default function EditProfileScreen() {
               autoCapitalize="words"
             />
           </View>
-        </View>
-
-        {/* Email (Read-only) */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
-
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: colors.textSecondary }]}>Email</Text>
-            <TextInput
-              style={[styles.input, {
-                backgroundColor: colors.backgroundSecondary,
-                color: colors.textSecondary,
-                borderColor: colors.border
-              }]}
-              value={user?.email}
-              editable={false}
-            />
-            <Text style={[styles.helperText, { color: colors.textSecondary }]}>
-              Email cannot be changed
-            </Text>
-          </View>
+          </>
+          )}
         </View>
           </ScrollView>
 
