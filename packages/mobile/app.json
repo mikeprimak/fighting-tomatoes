@@ -35,7 +35,7 @@
         ],
         "ITSAppUsesNonExemptEncryption": false,
         "UIStatusBarStyle": "UIStatusBarStyleLightContent",
-        "UIViewControllerBasedStatusBarAppearance": true
+        "UIViewControllerBasedStatusBarAppearance": false
       },
       "associatedDomains": [
         "applinks:goodfights.app"

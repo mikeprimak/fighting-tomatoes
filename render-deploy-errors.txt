@@ -1,0 +1,200 @@
+2026-01-07T23:17:30.327830376Z #14 CACHED
+2026-01-07T23:17:30.327861418Z 
+2026-01-07T23:17:30.327867619Z #15 [ 9/14] COPY packages/backend ./packages/backend
+2026-01-07T23:17:30.767869316Z #15 DONE 0.6s
+2026-01-07T23:17:30.96466362Z 
+2026-01-07T23:17:30.964709563Z #16 [10/14] COPY packages/shared ./packages/shared
+2026-01-07T23:17:30.964718034Z #16 DONE 0.0s
+2026-01-07T23:17:30.964723584Z 
+2026-01-07T23:17:30.964730535Z #17 [11/14] WORKDIR /app/packages/backend
+2026-01-07T23:17:30.964742905Z #17 DONE 0.0s
+2026-01-07T23:17:30.964748176Z 
+2026-01-07T23:17:30.964753546Z #18 [12/14] RUN pnpm run db:generate
+2026-01-07T23:17:31.710436516Z #18 0.896 
+2026-01-07T23:17:31.71049401Z #18 0.896 > @yourapp/backend@1.0.0 db:generate /app/packages/backend
+2026-01-07T23:17:31.710503061Z #18 0.896 > prisma generate
+2026-01-07T23:17:31.710508221Z #18 0.896 
+2026-01-07T23:17:32.507266325Z #18 1.693 Prisma schema loaded from prisma/schema.prisma
+2026-01-07T23:17:34.417377032Z #18 3.604 
+2026-01-07T23:17:34.417419334Z #18 3.604 ✔ Generated Prisma Client (v5.22.0) to ./../../node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client in 856ms
+2026-01-07T23:17:34.417428415Z #18 3.604 
+2026-01-07T23:17:34.417435655Z #18 3.604 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+2026-01-07T23:17:34.417442596Z #18 3.604 
+2026-01-07T23:17:34.417449206Z #18 3.604 Tip: Want to react to database changes in your app as they happen? Discover how with Pulse: https://pris.ly/tip-1-pulse
+2026-01-07T23:17:34.417484509Z #18 3.604 
+2026-01-07T23:17:34.686912208Z #18 DONE 3.9s
+2026-01-07T23:17:34.838227789Z 
+2026-01-07T23:17:34.838280022Z #19 [13/14] RUN pnpm run build
+2026-01-07T23:17:35.561480114Z #19 0.874 
+2026-01-07T23:17:35.561531777Z #19 0.874 > @yourapp/backend@1.0.0 build /app/packages/backend
+2026-01-07T23:17:35.561541357Z #19 0.874 > prisma generate && tsc --project tsconfig.production.json --noEmitOnError false || true && cp src/services/*.js dist/services/ 2>/dev/null || true
+2026-01-07T23:17:35.561547988Z #19 0.874 
+2026-01-07T23:17:36.305412573Z #19 1.618 Prisma schema loaded from prisma/schema.prisma
+2026-01-07T23:17:38.123272836Z #19 3.435 
+2026-01-07T23:17:38.123301128Z #19 3.435 ✔ Generated Prisma Client (v5.22.0) to ./../../node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/@prisma/client in 809ms
+2026-01-07T23:17:38.123308618Z #19 3.435 
+2026-01-07T23:17:38.123316889Z #19 3.435 Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+2026-01-07T23:17:38.123322989Z #19 3.435 
+2026-01-07T23:17:38.12332968Z #19 3.435 Help us improve the Prisma ORM for everyone. Share your feedback in a short 2-min survey: https://pris.ly/orm/survey/release-5-22
+2026-01-07T23:17:38.12333559Z #19 3.435 
+2026-01-07T23:17:38.328603516Z #19 3.490 ┌─────────────────────────────────────────────────────────┐
+2026-01-07T23:17:38.328632078Z #19 3.490 │  Update available 5.22.0 -> 7.2.0                       │
+2026-01-07T23:17:38.328639418Z #19 3.490 │                                                         │
+2026-01-07T23:17:38.328645589Z #19 3.490 │  This is a major update - please follow the guide at    │
+2026-01-07T23:17:38.328652109Z #19 3.490 │  https://pris.ly/d/major-version-upgrade                │
+2026-01-07T23:17:38.3286585Z #19 3.490 │                                                         │
+2026-01-07T23:17:38.328678881Z #19 3.490 │  Run the following to update                            │
+2026-01-07T23:17:38.328683201Z #19 3.490 │    npm i --save-dev prisma@latest                       │
+2026-01-07T23:17:38.328686811Z #19 3.490 │    npm i @prisma/client@latest                          │
+2026-01-07T23:17:38.328690051Z #19 3.490 └─────────────────────────────────────────────────────────┘
+2026-01-07T23:17:52.813389813Z #19 18.13 src/routes/analytics.ts(37,11): error TS2430: Interface 'AuthenticatedRequest' incorrectly extends interface 'FastifyRequest<RouteGenericInterface, RawServerDefault, IncomingMessage, FastifySchema, FastifyTypeProviderDefault, unknown, FastifyBaseLogger, ResolveFastifyRequestType<...>>'.
+2026-01-07T23:17:52.813423474Z #19 18.13   Types of property 'user' are incompatible.
+2026-01-07T23:17:52.813429274Z #19 18.13     Type '{ id: string; email: string; displayName?: string; isEmailVerified: boolean; }' is missing the following properties from type '{ id: string; email: string; firstName: string; lastName: string; displayName: string; isActive: boolean; isEmailVerified: boolean; isMedia: boolean; mediaOrganization: string; points: number; level: number; }': firstName, lastName, isActive, isMedia, and 3 more.
+2026-01-07T23:17:52.976616185Z #19 18.13 src/routes/auth.fastify.ts(33,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976718896Z #19 18.13 src/routes/auth.fastify.ts(210,48): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976725006Z #19 18.13 src/routes/auth.fastify.ts(228,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976729406Z #19 18.13 src/routes/auth.fastify.ts(377,41): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976733196Z #19 18.13 src/routes/auth.fastify.ts(388,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976737036Z #19 18.13 src/routes/auth.fastify.ts(423,42): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976740606Z #19 18.13 src/routes/auth.fastify.ts(434,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976744876Z #19 18.13 src/routes/auth.fastify.ts(531,49): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976749206Z #19 18.13 src/routes/auth.fastify.ts(542,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976753116Z #19 18.13 src/routes/auth.fastify.ts(792,47): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976756686Z #19 18.13 src/routes/auth.fastify.ts(803,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976760436Z #19 18.13 src/routes/auth.fastify.ts(942,50): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976764246Z #19 18.13 src/routes/auth.fastify.ts(1142,59): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976767906Z #19 18.13 src/routes/auth.fastify.ts(1287,55): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976784896Z #19 18.13 src/routes/auth.fastify.ts(1345,53): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976788897Z #19 18.13 src/routes/auth.fastify.ts(1356,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976792947Z #19 18.14 src/routes/auth.fastify.ts(1438,64): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976796867Z #19 18.14 src/routes/auth.fastify.ts(1564,47): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976800497Z #19 18.14 src/routes/auth.fastify.ts(1575,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976804217Z #19 18.14 src/routes/auth.fastify.ts(1664,63): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976840817Z #19 18.14 src/routes/auth.fastify.ts(1821,46): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976845217Z #19 18.14 src/routes/auth.fastify.ts(1839,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976849237Z #19 18.14 src/routes/auth.fastify.ts(1906,55): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976852937Z #19 18.14 src/routes/auth.fastify.ts(1917,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976856547Z #19 18.14 src/routes/auth.fastify.ts(1987,54): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976861147Z #19 18.14 src/routes/auth.fastify.ts(2005,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976865027Z #19 18.14 src/routes/auth.fastify.ts(2067,58): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976868867Z #19 18.14 src/routes/auth.fastify.ts(2078,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976872287Z #19 18.14 src/routes/auth.fastify.ts(2190,50): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976875987Z #19 18.14 src/routes/auth.fastify.ts(2208,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976880017Z #19 18.14 src/routes/auth.fastify.ts(2293,49): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976883577Z #19 18.14 src/routes/feedback.ts(15,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976890098Z #19 18.14 src/routes/index.ts(511,48): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976894228Z #19 18.14 src/routes/index.ts(607,47): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976897878Z #19 18.14 src/routes/index.ts(768,58): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976908788Z #19 18.14 src/routes/index.ts(988,59): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976912708Z #19 18.14 src/routes/index.ts(1088,50): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976924588Z #19 18.14 src/routes/index.ts(1212,49): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976928758Z #19 18.14 src/routes/index.ts(1316,50): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976932468Z #19 18.14 src/routes/index.ts(1383,52): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976936108Z #19 18.14 src/routes/index.ts(1465,57): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976939668Z #19 18.14 src/routes/index.ts(1549,75): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976943188Z #19 18.14 src/routes/index.ts(1640,48): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976946758Z #19 18.14 src/routes/index.ts(1701,50): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976950668Z #19 18.14 src/routes/index.ts(1772,61): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976956668Z #19 18.14 src/routes/news.ts(8,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976959938Z #19 18.14 src/routes/news.ts(88,55): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976962988Z #19 18.14 src/routes/news.ts(99,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976965998Z #19 18.14 src/routes/news.ts(161,54): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976969038Z #19 18.14 src/routes/news.ts(172,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976972198Z #19 18.14 src/routes/news.ts(257,49): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976975268Z #19 18.14 src/routes/news.ts(268,7): error TS2353: Object literal may only specify known properties, and 'description' does not exist in type 'FastifySchema'.
+2026-01-07T23:17:52.976978278Z #19 18.14 src/routes/news.ts(317,54): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+2026-01-07T23:17:52.976981538Z #19 18.14 src/services/newsScraperService.ts(5,24): error TS2307: Cannot find module '../utils/prisma' or its corresponding type declarations.
+2026-01-07T23:17:52.976984769Z #19 18.14 src/utils/fighterMatcher.ts(105,3): error TS1117: An object literal cannot have multiple properties with the same name.
+2026-01-07T23:17:52.976988259Z #19 18.14 src/utils/fighterMatcher.ts(189,37): error TS2339: Property 'fighterAlias' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+2026-01-07T23:17:52.976991649Z #19 18.14 src/utils/fighterMatcher.ts(362,42): error TS2339: Property 'fighterAlias' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+2026-01-07T23:17:52.976995099Z #19 18.14 src/utils/fighterMatcher.ts(370,22): error TS2339: Property 'fighterAlias' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+2026-01-07T23:17:52.977020459Z #19 18.14 src/utils/fighterMatcher.ts(395,5): error TS2322: Type '{ nickname?: string; wins?: number; losses?: number; draws?: number; weightClass?: string; profileImage?: string; firstName: string; lastName: string; gender: "MALE" | "FEMALE"; }' is not assignable to type '(Without<FighterCreateInput, FighterUncheckedCreateInput> & FighterUncheckedCreateInput) | (Without<...> & FighterCreateInput)'.
+2026-01-07T23:17:52.977032909Z #19 18.14   Type '{ nickname?: string; wins?: number; losses?: number; draws?: number; weightClass?: string; profileImage?: string; firstName: string; lastName: string; gender: "MALE" | "FEMALE"; }' is not assignable to type 'Without<FighterUncheckedCreateInput, FighterCreateInput> & FighterCreateInput'.
+2026-01-07T23:17:52.977038739Z #19 18.14     Type '{ nickname?: string; wins?: number; losses?: number; draws?: number; weightClass?: string; profileImage?: string; firstName: string; lastName: string; gender: "MALE" | "FEMALE"; }' is not assignable to type 'FighterCreateInput'.
+2026-01-07T23:17:52.977044939Z #19 18.14       Types of property 'weightClass' are incompatible.
+2026-01-07T23:17:52.977048889Z #19 18.14         Type 'string' is not assignable to type 'WeightClass'.
+2026-01-07T23:17:52.977053039Z #19 18.14 src/utils/fighterMatcher.ts(482,35): error TS2339: Property 'fighterAlias' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+2026-01-07T23:17:52.977057239Z #19 18.14 src/utils/fighterMatcher.ts(518,20): error TS2339: Property 'fighterAlias' does not exist on type 'PrismaClient<PrismaClientOptions, never, DefaultArgs>'.
+2026-01-07T23:17:54.885553074Z #19 DONE 20.2s
+2026-01-07T23:17:55.037012616Z 
+2026-01-07T23:17:55.037044944Z #20 [14/14] RUN mkdir -p public/uploads public/news-images
+2026-01-07T23:17:55.106422118Z #20 DONE 0.2s
+2026-01-07T23:17:55.260017602Z 
+2026-01-07T23:17:55.26004666Z #21 exporting to docker image format
+2026-01-07T23:17:55.26005636Z #21 exporting layers
+2026-01-07T23:17:59.726212208Z #21 exporting layers 4.6s done
+2026-01-07T23:17:59.932540342Z #21 exporting manifest sha256:c1eeebbb3fa8c534680ce524b6b567e887a770571c8d8fdb380b262979783d5a done
+2026-01-07T23:17:59.932578581Z #21 exporting config sha256:4af555dd1b042104a96f4b5ea0722569cd54876c6f6ab14c9ac2d196482448fc done
+2026-01-07T23:18:20.830356884Z #21 DONE 25.7s
+2026-01-07T23:18:20.830388865Z 
+2026-01-07T23:18:20.830397725Z #22 exporting cache to client directory
+2026-01-07T23:18:20.830403055Z #22 preparing build cache for export
+2026-01-07T23:18:22.945532931Z #22 writing cache image manifest sha256:df5fb62897491a26d5d3133a0e914a6199123d6e53a2fc486891855df6a1b057 done
+2026-01-07T23:18:22.945561732Z #22 DONE 2.1s
+2026-01-07T23:18:26.71789479Z Pushing image to registry...
+2026-01-07T23:18:32.409246296Z Upload succeeded
+2026-01-07T23:18:35.257357324Z ==> Deploying...
+2026-01-07T23:19:34.139415025Z 
+2026-01-07T23:19:34.139456638Z > @yourapp/backend@1.0.0 db:migrate:deploy /app/packages/backend
+2026-01-07T23:19:34.139461808Z > prisma migrate deploy
+2026-01-07T23:19:34.139464538Z 
+2026-01-07T23:19:35.906568005Z Prisma schema loaded from prisma/schema.prisma
+2026-01-07T23:19:35.999158118Z Datasource "db": PostgreSQL database "fightcrewapp", schema "public" at "dpg-d3oee81r0fns73c59610-a"
+2026-01-07T23:19:36.220159435Z 
+2026-01-07T23:19:36.220184957Z 27 migrations found in prisma/migrations
+2026-01-07T23:19:36.220187517Z 
+2026-01-07T23:19:36.38002841Z 
+2026-01-07T23:19:36.380397912Z No pending migrations to apply.
+2026-01-07T23:19:37.715689786Z 
+2026-01-07T23:19:37.715717208Z > @yourapp/backend@1.0.0 start /app/packages/backend
+2026-01-07T23:19:37.715722768Z > node dist/server.js
+2026-01-07T23:19:37.715726118Z 
+2026-01-07T23:19:39.82195385Z (node:84) [FSTDPE022] FastifyWarning: The router options for ignoreTrailingSlash property access is deprecated. Please use "options.routerOptions" instead for accessing router options. The router options will be removed in `fastify@6`.
+2026-01-07T23:19:39.822009373Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-01-07T23:19:40.540238004Z Database connected successfully
+2026-01-07T23:19:40.616779262Z [Notification Scheduler] Initialized - will check for pre-event reports every hour
+2026-01-07T23:19:40.616985165Z [Background Jobs] Starting background jobs...
+2026-01-07T23:19:40.617017927Z [Background Jobs] Event completion checker DISABLED (memory constraints)
+2026-01-07T23:19:40.617055319Z [Background Jobs] News scraper DISABLED (memory constraints - run manually via API)
+2026-01-07T23:19:40.619213578Z [Background Jobs] Event-based scheduler ENABLED - safety check every 15 minutes
+2026-01-07T23:19:40.622946233Z [Background Jobs] Daily UFC scraper ENABLED - runs at 12pm EST (5pm UTC)
+2026-01-07T23:19:40.626027838Z [Background Jobs] Failsafe cleanup ENABLED - runs every hour
+2026-01-07T23:19:40.629129564Z [Background Jobs] Daily BKFC scraper ENABLED - runs at 12:00am EST (5:00am UTC)
+2026-01-07T23:19:40.632343707Z [Background Jobs] Daily PFL scraper ENABLED - runs at 3:00am EST (8:00am UTC)
+2026-01-07T23:19:40.635336637Z [Background Jobs] Daily ONE FC scraper ENABLED - runs at 6:00am EST (11:00am UTC)
+2026-01-07T23:19:40.638012578Z [Background Jobs] Daily Matchroom scraper ENABLED - runs at 9:00am EST (2:00pm UTC)
+2026-01-07T23:19:40.641061041Z [Background Jobs] Daily Golden Boy scraper ENABLED - runs at 3:00pm EST (8:00pm UTC)
+2026-01-07T23:19:40.645486387Z [Background Jobs] Daily Top Rank scraper ENABLED - runs at 6:00pm EST (11:00pm UTC)
+2026-01-07T23:19:40.647677579Z [Background Jobs] Daily OKTAGON scraper ENABLED - runs at 9:00pm EST (2:00am UTC)
+2026-01-07T23:19:41.020426683Z {"level":30,"time":1767827981019,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-7697f6999b-7rqng","msg":"Server listening at http://127.0.0.1:10000"}
+2026-01-07T23:19:41.02071144Z FightCrewApp API server started on http://0.0.0.0:10000
+2026-01-07T23:19:41.020732962Z Environment: production
+2026-01-07T23:19:41.02086501Z Node version: v20.19.6
+2026-01-07T23:19:41.021163507Z {"level":30,"time":1767827981020,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-7697f6999b-7rqng","msg":"Server listening at http://10.20.189.172:10000"}
+2026-01-07T23:19:41.898090773Z {"level":30,"time":1767827981895,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-7697f6999b-7rqng","reqId":"req-1","req":{"method":"HEAD","url":"/","host":"fightcrewapp-backend.onrender.com","remoteAddress":"127.0.0.1","remotePort":38762},"msg":"incoming request"}
+2026-01-07T23:19:41.899493227Z {"level":30,"time":1767827981896,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-7697f6999b-7rqng","reqId":"req-1","method":"HEAD","url":"/","userAgent":"Go-http-client/1.1","ip":"127.0.0.1","msg":"Incoming request"}
+2026-01-07T23:19:41.909206641Z {"level":30,"time":1767827981908,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-7697f6999b-7rqng","reqId":"req-1","res":{"statusCode":404},"responseTime":12.69692325592041,"msg":"request completed"}
+2026-01-07T23:19:45.62175588Z [Background Jobs] Initializing event-based scheduler...
+2026-01-07T23:19:45.622022536Z 
+2026-01-07T23:19:45.622033776Z [Event Scheduler] Scheduling all upcoming events...
+2026-01-07T23:19:45.673128246Z [Event Scheduler] Found 3 upcoming events
+2026-01-07T23:19:45.673241573Z    🔴 Live tracker events: 1
+2026-01-07T23:19:45.673304526Z       - OKTAGON: 1
+2026-01-07T23:19:45.673311747Z    ⏰ Time-based fallback events: 2
+2026-01-07T23:19:45.673445605Z       - ONE: 1
+2026-01-07T23:19:45.673450155Z       - BKFC: 1
+2026-01-07T23:19:45.675744183Z [Event Scheduler] No start time for ONE Friday Fights 138, skipping
+2026-01-07T23:19:45.676781815Z [Event Scheduler] ⏰ BKFC 86 Mohegan Sun Lane vs. Pague (BKFC) - Using TIME-BASED fallback
+2026-01-07T23:19:45.799415053Z [Time-Based] BKFC 86 Mohegan Sun Lane vs. Pague: Scheduling Main Card in 14680 minutes (2026-01-18T04:00:00.000Z)
+2026-01-07T23:19:45.799454866Z [Time-Based] BKFC 86 Mohegan Sun Lane vs. Pague: Scheduled 1 section timer(s)
+2026-01-07T23:19:45.80085372Z [Event Scheduler] 🔴 Scheduled OKTAGON 82: ENGIZEK VS. JOTKO (oktagon) to start tracking in 14005 minutes
+2026-01-07T23:19:45.800882481Z [Event Scheduler]   Start time: 2026-01-17T16:45:00.000Z
+2026-01-07T23:19:45.800930584Z [Event Scheduler] ✅ Scheduled 3 events
+2026-01-07T23:19:45.800933994Z 
+2026-01-07T23:19:46.558022663Z ==> Your service is live 🎉
+2026-01-07T23:19:47.000030503Z ==> 
+2026-01-07T23:19:47.030188179Z ==> ///////////////////////////////////////////////////////////
+2026-01-07T23:19:47.059784614Z ==> 
+2026-01-07T23:19:47.476752908Z ==> Available at your primary URL https://fightcrewapp-backend.onrender.com
+2026-01-07T23:19:47.507605433Z ==> 
+2026-01-07T23:19:48.242759427Z ==> ///////////////////////////////////////////////////////////
