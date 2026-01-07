@@ -179,6 +179,11 @@ export default function SettingsScreen() {
             headerTintColor: colors.text,
             headerShadowVisible: false,
             headerBackTitleVisible: false,
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.back()} style={{ paddingRight: 16 }}>
+                <FontAwesome name="chevron-left" size={20} color={colors.text} />
+              </TouchableOpacity>
+            ),
           }}
         />
         <View style={styles.loadingContainer}>
@@ -197,6 +202,11 @@ export default function SettingsScreen() {
           headerTintColor: colors.text,
           headerShadowVisible: false,
           headerBackTitleVisible: false,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={{ paddingRight: 16 }}>
+              <FontAwesome name="chevron-left" size={20} color={colors.text} />
+            </TouchableOpacity>
+          ),
         }}
       />
 

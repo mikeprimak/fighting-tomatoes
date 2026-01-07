@@ -359,7 +359,7 @@ export default function UpcomingEventsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
-      <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle="light-content" />
 
       {/* Organization Filter Tabs - Hidden when search is visible */}
       {!isSearchVisible && <OrgFilterTabs onFilterChange={handleFilterChange} />}

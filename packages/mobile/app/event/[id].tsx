@@ -198,7 +198,7 @@ export default function EventDetailScreen() {
   if (eventLoading || fightsLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar translucent backgroundColor="transparent" barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+        <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>Loading event...</Text>
@@ -210,7 +210,7 @@ export default function EventDetailScreen() {
   if (eventError || fightsError) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <StatusBar translucent backgroundColor="transparent" barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+        <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: colors.danger }]}>
             Error loading event details
@@ -300,7 +300,7 @@ export default function EventDetailScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
-      <StatusBar translucent backgroundColor="transparent" barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
+      <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
 
       {/* Custom Header */}
       <View style={[styles.header, { backgroundColor: colors.card, paddingTop: insets.top + 12 }]}>

@@ -154,7 +154,17 @@ export default function EditProfileScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Edit Profile', headerBackTitleVisible: false }} />
+      <Stack.Screen
+        options={{
+          title: 'Edit Profile',
+          headerBackTitleVisible: false,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} style={{ paddingRight: 16 }}>
+              <FontAwesome name="chevron-left" size={20} color={colors.text} />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
