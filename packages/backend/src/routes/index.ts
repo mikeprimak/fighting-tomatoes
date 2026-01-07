@@ -223,21 +223,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
         fights: { some: {} }
       };
 
-      // Add type filter for upcoming/past events
-      // Note: For upcoming, we check BOTH that the event is not complete AND the date is in the future
-      // This prevents past events that weren't marked complete from appearing in upcoming
-      if (type === 'upcoming') {
-        whereClause.isComplete = false;
-        whereClause.date = { gte: new Date() };
-      } else if (type === 'past') {
-        // Past events: either completed OR date is in the past
-        whereClause.OR = [
-          { isComplete: true },
-          { date: { lt: new Date() } }
-        ];
-      }
-
-      // Add promotions filter if provided
+      // Build promotions filter first (if provided)
+      let promotionFilter: any = null;
       if (promotions && typeof promotions === 'string') {
         const promotionList = promotions.split(',').map((p: string) => p.trim().toUpperCase());
 
@@ -270,9 +257,41 @@ export async function registerRoutes(fastify: FastifyInstance) {
           }
         }
 
-        // Build the final where clause
         if (orConditions.length > 0) {
-          whereClause.OR = orConditions;
+          promotionFilter = { OR: orConditions };
+        }
+      }
+
+      // Add type filter for upcoming/past events
+      // Note: For upcoming, we check BOTH that the event is not complete AND the date is in the future
+      // This prevents past events that weren't marked complete from appearing in upcoming
+      if (type === 'upcoming') {
+        whereClause.isComplete = false;
+        whereClause.date = { gte: new Date() };
+        // Add promotion filter if present
+        if (promotionFilter) {
+          whereClause.AND = [promotionFilter];
+        }
+      } else if (type === 'past') {
+        // Past events: either completed OR date is in the past
+        // Need to combine with promotion filter using AND if present
+        const pastCondition = {
+          OR: [
+            { isComplete: true },
+            { date: { lt: new Date() } }
+          ]
+        };
+
+        if (promotionFilter) {
+          // Combine past condition AND promotion filter
+          whereClause.AND = [pastCondition, promotionFilter];
+        } else {
+          whereClause.OR = pastCondition.OR;
+        }
+      } else {
+        // type === 'all' - just add promotion filter if present
+        if (promotionFilter) {
+          whereClause.AND = [promotionFilter];
         }
       }
 
