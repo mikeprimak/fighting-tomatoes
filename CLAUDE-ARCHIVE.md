@@ -2273,7 +2273,7 @@ const userHypeColor = useMemo(
 
 ## Launch Prep Testing (2026-01-04)
 
-**Status**: Android testing in progress - Parts A & B complete
+**Status**: Android testing in progress - Parts A & B complete, infrastructure setup complete
 
 ### Completed Tests (2026-01-04)
 **PART A: Authentication & Onboarding** - ALL PASSED
@@ -2304,6 +2304,50 @@ const userHypeColor = useMemo(
 1. Added `date >= NOW()` check to upcoming filter in `routes/index.ts`
 2. Past filter now uses OR logic: `isComplete=true OR date < NOW()`
 3. Fixed 1 past event that was incorrectly marked incomplete
+
+### Infrastructure Setup (2026-01-07)
+
+**Domain & Hosting - COMPLETE**
+- Domain `goodfights.app` transferred from GoDaddy DNS to Cloudflare
+- Nameservers: `hattie.ns.cloudflare.com`, `noah.ns.cloudflare.com`
+- Landing page deployed to Vercel (`packages/landing/`)
+- DNS records configured:
+  - `A` → `@` → `216.198.79.1` (Vercel)
+  - `CNAME` → `www` → Vercel DNS
+- SSL certificates auto-provisioned by Vercel
+
+**Email Routing - COMPLETE**
+- Cloudflare Email Routing enabled
+- `contact@goodfights.app` → forwards to Gmail
+- MX records configured for Cloudflare routing
+- DKIM and SPF records added
+
+**Landing Page - COMPLETE**
+- Live at `https://goodfights.app`
+- Tagline: "Hype and Rate Combat Sports Fights"
+- App Store / Play Store buttons (placeholder links - update when published)
+- Favicon: hand-pointing-down logo
+- Files: `packages/landing/index.html`
+
+**Auth Pages Migrated to Vercel - COMPLETE**
+- `https://goodfights.app/reset-password.html` - password reset form
+- `https://goodfights.app/verify-email.html` - email verification
+- Updated support email from `support@` to `contact@goodfights.app`
+
+**App Changes (2026-01-07)**
+1. **Forced dark mode** - Removed light mode option, all users get dark theme
+   - Modified `packages/mobile/app/_layout.tsx`
+   - Created `packages/mobile/hooks/useColors.ts` for future use
+2. **Disabled notification permissions** - Commented out `registerPushToken()` calls
+   - Modified `packages/mobile/store/AuthContext.tsx` (5 places)
+   - Modified `packages/mobile/app/settings.tsx`
+   - Easy to re-enable when notifications are restored
+
+### Remaining Tasks
+- [ ] Continue testing Parts C-H
+- [ ] Build & submit iOS app to App Store
+- [ ] Update landing page with real App Store / Play Store links
+- [ ] (Future) Re-enable notifications
 
 ---
 
