@@ -1,11 +1,10 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '../store/AuthContext';
 import { VerificationProvider } from '../store/VerificationContext';
@@ -68,22 +67,10 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  // Force dark mode for all users
+  const colors = Colors.dark;
 
-  // Custom navigation themes that match app colors
-  const customLightTheme = {
-    ...DefaultTheme,
-    colors: {
-      ...DefaultTheme.colors,
-      background: colors.background,
-      card: colors.card,
-      text: colors.text,
-      border: colors.border,
-      primary: colors.primary,
-    },
-  };
-
+  // Custom dark theme that matches app colors
   const customDarkTheme = {
     ...DarkTheme,
     colors: {
@@ -104,7 +91,7 @@ function RootLayoutNav() {
             <NotificationProvider>
               <SearchProvider>
               <OrgFilterProvider>
-              <ThemeProvider value={colorScheme === 'dark' ? customDarkTheme : customLightTheme}>
+              <ThemeProvider value={customDarkTheme}>
                 <StatusBar style="light" />
                 <NotificationHandler />
               <Stack

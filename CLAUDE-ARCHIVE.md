@@ -2234,4 +2234,206 @@ const userHypeColor = useMemo(
 
 ---
 
+## Domain & Hosting (TODO)
+
+**Domain**: goodfights.app (currently at GoDaddy - plan to transfer)
+
+**Planned Setup**:
+| Need | Solution | Cost |
+|------|----------|------|
+| Domain | Transfer to Cloudflare Registrar | ~$12/year |
+| Web Hosting | Vercel (landing page at `packages/landing`) | Free |
+| Backend | Render (already deployed) | Current plan |
+| Email | Cloudflare Email Routing → Gmail | Free |
+
+**Steps to complete**:
+1. Transfer domain from GoDaddy to Cloudflare (~5-7 days)
+2. Set up Cloudflare Email Routing for contact@goodfights.app
+3. Connect Vercel to Cloudflare DNS
+4. Cancel GoDaddy hosting
+
+**Landing page**: `packages/landing/index.html` - simple page with App Store/Play Store links
+
+---
+
+## Installing Test Builds
+
+**Android (EAS Build)**:
+- JavaScript-only changes: Automatic via OTA updates when backend deploys
+- Native changes (splash screen, app.json config, new native modules): Requires new APK install
+  1. Go to https://expo.dev/accounts/mikeprimak/projects/fightcrewapp/builds
+  2. Find latest Android build, scan QR code or download APK directly
+  3. Install on device (may need to allow "Install from unknown sources")
+
+**iOS (TestFlight)**:
+- Requires `eas build --platform ios` then `eas submit --platform ios`
+- Wait for Apple processing (~5-10 min), then update via TestFlight app
+
+---
+
+## Launch Prep Testing (2026-01-04)
+
+**Status**: Android testing in progress - Parts A & B complete
+
+### Completed Tests (2026-01-04)
+**PART A: Authentication & Onboarding** - ALL PASSED
+- A1. New User Registration
+- A2. Legacy User Claim Flow (email + Google Sign-In)
+- A3. Google Sign-In
+- A4. Password Reset
+- A5. Logout
+
+**PART B: Browsing & Navigation** - ALL PASSED
+- B1-B5 all working
+
+### Fixes Applied (2026-01-04/05)
+1. **Missing `pre_fight_comment_votes` table** - Created in production DB
+2. **`totalRatings`/`totalReviews` out of sync** - Ran UPDATE for all 1937 migrated users
+3. **Crowd Ratings not updating** - Backend now returns `aggregateStats` in PUT /user-data response
+4. **ratingDistribution format** - Converted `{ratings1: x}` to `{1: x}` format
+5. **reset-password.html** - Removed app store buttons
+6. **Event names missing promotion prefix** - "200" → "UFC 200" for 981 events
+7. **Relative banner image paths** - Fixed UFC 300, UFC 301, ONE Fight Night 38 banners
+8. **Fighter deduplication schema removed** - Removed tapologyId, sherdogId, ufcId, FighterAlias
+
+### FIXED: Upcoming Events Screen Not Loading (2026-01-05)
+
+**Root Cause**: The `/api/events?type=upcoming` filter was only checking `isComplete=false`, not whether the event date was in the future.
+
+**Fix Applied** (commit 493bf31):
+1. Added `date >= NOW()` check to upcoming filter in `routes/index.ts`
+2. Past filter now uses OR logic: `isComplete=true OR date < NOW()`
+3. Fixed 1 past event that was incorrectly marked incomplete
+
+---
+
+## WIP: CompletedFightDetailScreen Tags
+
+**Status**: Partially fixed, needs testing
+**Branch**: upcomingfightdetailscreen-v3
+
+**Issues being fixed:**
+1. Tags showing "invalid request data" error when toggling
+2. Tags not showing counters correctly
+3. Tag order was randomizing on each render
+
+**Changes made (2025-01-03):**
+- Added `tagIdsToNames()` helper
+- Simplified tag display logic from 70+ lines to ~15 lines
+- Added `tagCounts` state for optimistic count updates
+- Better error logging in mutation `onError`
+
+**Key files:**
+- `packages/mobile/components/CompletedFightDetailScreen.tsx` - tag logic around lines 520-535, 1201-1225
+- `packages/backend/src/routes/fights.ts` - PUT `/fights/:id/user-data` endpoint
+
+---
+
+## Startup Debugging Checklist
+
+1. **Network connectivity**: Ensure phone and computer are on the SAME WiFi network
+2. **Zombie processes**: Check for stale Node processes blocking ports
+3. **Firewall**: Windows Firewall may block Metro port 8083
+
+**Killing Zombie Processes (Windows)**:
+1. List all Node processes: `powershell -Command "Get-Process node | Select-Object Id, ProcessName, StartTime"`
+2. Check port usage: `netstat -ano | findstr ":3008"` (backend) or `findstr ":8083"` (Expo)
+3. Identify blocker: `powershell -Command "Get-CimInstance Win32_Process -Filter 'ProcessId = <PID>' | Select-Object CommandLine"`
+4. Kill zombie: `powershell -Command "Stop-Process -Id <PID> -Force"`
+
+---
+
+## Live Event Tracking Strategy
+
+Promotions are handled differently based on whether they have a working live event tracker:
+
+| Promotion | Strategy | How Fights Become Ratable |
+|-----------|----------|---------------------------|
+| UFC | Live Tracker | Individually as each fight completes (real-time scraping) |
+| Matchroom | Live Tracker | Individually as each fight completes |
+| OKTAGON | Live Tracker | Individually as each fight completes |
+| BKFC, PFL, ONE, etc. | Time-Based | All fights in section become complete at section start time |
+
+**Time-Based Fallback Logic:**
+- At `earlyPrelimStartTime` → All "Early Prelims" fights marked complete
+- At `prelimStartTime` → All "Prelims" fights marked complete
+- At `mainStartTime` → All "Main Card" fights marked complete
+
+**To promote a new org to live tracking:** Add it to `PROMOTION_TRACKER_CONFIG` in `config/liveTrackerConfig.ts`
+
+---
+
+## Fighter Deduplication System
+
+**Status: TEMPORARILY DISABLED** (as of 2026-01-05)
+
+The deduplication schema (tapologyId, sherdogId, ufcId, FighterAlias) was removed to fix production errors.
+
+### Re-enabling Later
+
+1. Add back the schema fields to `schema.prisma`
+2. Run `prisma db push` on production
+3. Re-deploy backend
+
+Scripts in `packages/backend/scripts/fighter-dedup/` are still available but won't work until schema is re-added.
+
+---
+
+## Legacy Migration (fightingtomatoes.com → New App)
+
+**Status: COMPLETE** (as of 2025-12-29)
+
+### Migration Summary
+
+| Data Type | Count |
+|-----------|-------|
+| Events | ~1,300 |
+| Fighters | ~6,800 |
+| Fights | ~13,500 |
+| Users | 1,928 |
+| Ratings | ~65,000 |
+| Reviews | ~770 |
+| Tags | ~594 |
+
+### Pre-Launch Sync Command
+```bash
+cd packages/backend/scripts/legacy-migration/mysql-export
+node sync-all-from-live.js
+```
+
+### Legacy MySQL Connection
+```
+Host: 216.69.165.113:3306
+User: fotnadmin
+Password: HungryMonkey12
+Databases: fightdb, userfightratings, userfightreviews, userfighttags
+```
+
+### Account Claim Flow
+Users with `password: null` are prompted to:
+1. Enter email → Backend detects legacy user
+2. Receive verification email
+3. Click link to set new password
+4. Account activated with all legacy data intact
+
+---
+
+## Color Redesign Plan (Branch: color-option2)
+
+**Goal**: Implement semantic color system for clarity
+
+| Category | Color Scale | Purpose |
+|----------|-------------|---------|
+| **HYPE** | Orange → Red | Warm, energetic excitement |
+| **RATINGS** | Blue → Purple | Cool, analytical judgment |
+| **User ownership** | Gold border | "This is yours" indicator |
+| **Winners/Success** | Green | Positive outcomes |
+
+**Files to Update**:
+1. `packages/mobile/utils/heatmap.ts` - Create separate hype/rating color functions
+2. `packages/mobile/constants/Colors.ts` - Add semantic color constants
+3. `packages/mobile/components/RatingDistributionChart.tsx` - Use rating colors
+
+---
+
 **End of Archive** - Return to `CLAUDE.md` for current development info.

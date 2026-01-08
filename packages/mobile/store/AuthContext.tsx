@@ -185,7 +185,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(JSON.parse(userData));
 
         // Register push token if user is logged in
-        await notificationService.registerPushToken();
+        // DISABLED: Notifications removed from app scope
+        // await notificationService.registerPushToken();
       }
     } catch (error) {
       console.error('Error initializing auth:', error);
@@ -237,8 +238,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Track successful login - TEMPORARILY DISABLED
       // await AnalyticsService.trackUserLogin();
 
-      // Register push token
-      await notificationService.registerPushToken();
+      // Register push token - DISABLED: Notifications removed from app scope
+      // await notificationService.registerPushToken();
 
       // Navigate to main app
       router.replace('/(tabs)');
@@ -276,8 +277,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       queryClient.clear();
       console.log('Query cache cleared on Google login');
 
-      // Register push token
-      await notificationService.registerPushToken();
+      // Register push token - DISABLED: Notifications removed from app scope
+      // await notificationService.registerPushToken();
 
       // Navigate to main app
       router.replace('/(tabs)');
@@ -315,8 +316,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       queryClient.clear();
       console.log('Query cache cleared on Apple login');
 
-      // Register push token
-      await notificationService.registerPushToken();
+      // Register push token - DISABLED: Notifications removed from app scope
+      // await notificationService.registerPushToken();
 
       // Navigate to main app
       router.replace('/(tabs)');
@@ -356,8 +357,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Track successful registration - TEMPORARILY DISABLED
       // await AnalyticsService.trackUserRegistration();
 
-      // Register push token
-      await notificationService.registerPushToken();
+      // Register push token - DISABLED: Notifications removed from app scope
+      // await notificationService.registerPushToken();
 
       // Navigate to email verification pending screen for email signups
       // (Google signups are already verified and go straight to main app)

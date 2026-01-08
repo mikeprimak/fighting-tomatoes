@@ -46,7 +46,8 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     loadPreferences();
-    checkPermissions();
+    // DISABLED: Notifications removed from app scope
+    // checkPermissions();
   }, []);
 
   const checkPermissions = async () => {
