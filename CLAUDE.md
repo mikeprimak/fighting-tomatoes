@@ -1,5 +1,16 @@
 # CLAUDE.md
 
+## NEXT SESSION: Final Launch Tasks
+
+1. Gather screenshots for both App Store and Play Store
+2. Write app description & keywords
+3. Run EAS builds (`eas build --platform ios/android --profile production`)
+4. Submit to stores & fill in questionnaires
+
+See `final-launch-steps.md` for full checklist.
+
+---
+
 FightCrewApp: React Native + Node.js combat sports fight rating app.
 
 **Archive**: See `CLAUDE-ARCHIVE.md` for detailed setup guides, troubleshooting, feature implementations, and history.
