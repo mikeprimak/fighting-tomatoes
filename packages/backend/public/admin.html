@@ -813,6 +813,7 @@
             <option value="Oktagon">Oktagon MMA</option>
             <option value="Karate Combat">Karate Combat</option>
             <option value="Dirty Boxing">Dirty Boxing Championship</option>
+            <option value="Zuffa Boxing">Zuffa Boxing</option>
           </select>
         </div>
 
@@ -827,8 +828,19 @@
             <input type="date" id="eventDate" class="form-input" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Time (Main Card)</label>
+            <label class="form-label">Main Card Start</label>
             <input type="time" id="eventTime" class="form-input" value="22:00">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Prelims Start</label>
+            <input type="time" id="eventPrelimTime" class="form-input" placeholder="Optional">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Early Prelims Start</label>
+            <input type="time" id="eventEarlyPrelimTime" class="form-input" placeholder="Optional">
           </div>
         </div>
 
@@ -1389,6 +1401,12 @@
         document.getElementById('eventLocation').value = selectedEvent.location || '';
         document.getElementById('eventMainChannel').value = selectedEvent.mainChannel || '';
 
+        // Populate time fields
+        const extractTime = (dateStr) => dateStr ? dateStr.split('T')[1]?.substring(0, 5) : '';
+        document.getElementById('eventTime').value = extractTime(selectedEvent.mainStartTime) || extractTime(selectedEvent.date) || '22:00';
+        document.getElementById('eventPrelimTime').value = extractTime(selectedEvent.prelimStartTime) || '';
+        document.getElementById('eventEarlyPrelimTime').value = extractTime(selectedEvent.earlyPrelimStartTime) || '';
+
         // Show banner section for existing events
         document.getElementById('bannerImageSection').style.display = 'block';
 
@@ -1402,6 +1420,10 @@
         document.getElementById('eventId').value = '';
         // Hide banner section for new events (need to save first)
         document.getElementById('bannerImageSection').style.display = 'none';
+        // Reset time fields
+        document.getElementById('eventTime').value = '22:00';
+        document.getElementById('eventPrelimTime').value = '';
+        document.getElementById('eventEarlyPrelimTime').value = '';
         // Copy promotion from global filter if set
         const globalPromo = document.getElementById('globalPromotion').value;
         if (globalPromo) {
@@ -1422,6 +1444,8 @@
       const eventId = document.getElementById('eventId').value;
       const date = document.getElementById('eventDate').value;
       const time = document.getElementById('eventTime').value || '22:00';
+      const prelimTime = document.getElementById('eventPrelimTime').value;
+      const earlyPrelimTime = document.getElementById('eventEarlyPrelimTime').value;
 
       const data = {
         name: document.getElementById('eventName').value,
@@ -1430,6 +1454,9 @@
         venue: document.getElementById('eventVenue').value || undefined,
         location: document.getElementById('eventLocation').value || undefined,
         mainChannel: document.getElementById('eventMainChannel').value || undefined,
+        mainStartTime: `${date}T${time}:00`,
+        prelimStartTime: prelimTime ? `${date}T${prelimTime}:00` : undefined,
+        earlyPrelimStartTime: earlyPrelimTime ? `${date}T${earlyPrelimTime}:00` : undefined,
       };
 
       try {
