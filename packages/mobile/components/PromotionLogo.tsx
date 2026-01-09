@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Image, ImageSourcePropType } from 'react-native';
 import { SvgXml } from 'react-native-svg';
+
+// PNG logos
+const ZUFFA_BOXING_LOGO = require('../assets/promotions/zuffa_boxing_logo.png');
 
 // SVG logos for each promotion
 const UFC_LOGO = `<svg viewBox="0 0 1675 580" xmlns="http://www.w3.org/2000/svg">
@@ -150,9 +153,16 @@ export function PromotionLogo({ promotion, size = 40, style, color }: PromotionL
   const normalizedPromotion = promotion?.toUpperCase() || '';
 
   let svgXml: string | null = null;
+  let pngSource: ImageSourcePropType | null = null;
   let aspectRatio = 1;
 
   switch (normalizedPromotion) {
+    case 'ZUFFA BOXING':
+    case 'ZUFFA_BOXING':
+    case 'ZUFFA':
+      pngSource = ZUFFA_BOXING_LOGO;
+      aspectRatio = 1; // Square logo
+      break;
     case 'UFC':
       svgXml = UFC_LOGO;
       aspectRatio = 1675 / 580; // ~2.89
@@ -227,14 +237,27 @@ export function PromotionLogo({ promotion, size = 40, style, color }: PromotionL
       return null;
   }
 
-  // Apply color override if specified
+  const width = size * aspectRatio;
+  const height = size;
+
+  // Handle PNG logos
+  if (pngSource) {
+    return (
+      <View style={[styles.container, style]}>
+        <Image
+          source={pngSource}
+          style={{ width, height }}
+          resizeMode="contain"
+        />
+      </View>
+    );
+  }
+
+  // Apply color override if specified for SVG
   if (color && svgXml) {
     // Replace all fill colors with the specified color
     svgXml = svgXml.replace(/fill="[^"]+"/g, `fill="${color}"`);
   }
-
-  const width = size * aspectRatio;
-  const height = size;
 
   return (
     <View style={[styles.container, style]}>

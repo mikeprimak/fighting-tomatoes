@@ -13,7 +13,7 @@ const ORG_GROUPS: Partial<Record<Organization, { exact?: string[]; contains?: st
   'BOXING': {
     exact: [],
     // Note: DIRTY BOXING events won't match these anyway, so no excludes needed
-    contains: ['MATCHROOM', 'TOP RANK', 'TOP_RANK', 'GOLDEN BOY', 'GOLDEN_BOY', 'SHOWTIME', 'MOST VALUABLE', 'MVP BOXING', 'PBC', 'PREMIER BOXING', 'DAZN', 'ESPN BOXING'],
+    contains: ['MATCHROOM', 'TOP RANK', 'TOP_RANK', 'GOLDEN BOY', 'GOLDEN_BOY', 'SHOWTIME', 'MOST VALUABLE', 'MVP BOXING', 'PBC', 'PREMIER BOXING', 'DAZN', 'ESPN BOXING', 'ZUFFA BOXING', 'ZUFFA_BOXING', 'ZUFFA'],
   },
   'DIRTY BOXING': {
     exact: [],

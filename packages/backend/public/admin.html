@@ -611,13 +611,123 @@
       color: var(--accent-blue);
       margin-bottom: 0.75rem;
     }
+    /* Login Screen */
+    .login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--bg-primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+
+    .login-overlay.hidden {
+      display: none;
+    }
+
+    .login-container {
+      background: var(--bg-card);
+      padding: 2.5rem;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .login-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .login-title::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 24px;
+      background: var(--accent-gold);
+      border-radius: 2px;
+    }
+
+    .login-subtitle {
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    .login-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--accent-red);
+      color: var(--accent-red);
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .login-error.visible {
+      display: block;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+
+    .logout-btn:hover {
+      background: var(--bg-input);
+      color: var(--text-primary);
+    }
   </style>
 </head>
 <body>
+  <!-- Login Overlay -->
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-container">
+      <h2 class="login-title">Fight Admin</h2>
+      <p class="login-subtitle">Sign in with your admin account</p>
+      <div id="loginError" class="login-error"></div>
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="loginEmail" class="form-control" required placeholder="admin@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="loginPassword" class="form-control" required placeholder="Your password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Sign In</button>
+      </form>
+    </div>
+  </div>
+
   <!-- Header -->
   <header class="header">
     <h1>Fight Admin</h1>
     <div class="header-controls">
+      <div id="userInfo" class="user-info" style="display: none;">
+        <span id="userEmail"></span>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      </div>
       <select id="globalPromotion" class="form-select" style="width: 200px;">
         <option value="">All Promotions</option>
         <option value="UFC">UFC</option>
@@ -634,6 +744,7 @@
         <option value="Oktagon">Oktagon MMA</option>
         <option value="Karate Combat">Karate Combat</option>
         <option value="Dirty Boxing">Dirty Boxing Championship</option>
+        <option value="Zuffa Boxing">Zuffa Boxing</option>
       </select>
     </div>
   </header>
@@ -939,10 +1050,143 @@
     let searchTimeout = null;
 
     // ============================================
+    // AUTHENTICATION
+    // ============================================
+    const AUTH_TOKEN_KEY = 'admin_auth_token';
+    const AUTH_USER_KEY = 'admin_auth_user';
+
+    function getAuthToken() {
+      return localStorage.getItem(AUTH_TOKEN_KEY);
+    }
+
+    function setAuthToken(token, user) {
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    }
+
+    function clearAuth() {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(AUTH_USER_KEY);
+    }
+
+    function getAuthUser() {
+      const user = localStorage.getItem(AUTH_USER_KEY);
+      return user ? JSON.parse(user) : null;
+    }
+
+    function getAuthHeaders() {
+      const token = getAuthToken();
+      return token ? { 'Authorization': `Bearer ${token}` } : {};
+    }
+
+    // Authenticated fetch wrapper
+    async function authFetch(url, options = {}) {
+      const headers = {
+        ...options.headers,
+        ...getAuthHeaders(),
+      };
+      const response = await fetch(url, { ...options, headers });
+
+      // If unauthorized, redirect to login
+      if (response.status === 401 || response.status === 403) {
+        clearAuth();
+        showLoginScreen();
+        throw new Error('Authentication required');
+      }
+
+      return response;
+    }
+
+    function showLoginScreen() {
+      document.getElementById('loginOverlay').classList.remove('hidden');
+      document.getElementById('userInfo').style.display = 'none';
+    }
+
+    function hideLoginScreen() {
+      document.getElementById('loginOverlay').classList.add('hidden');
+      const user = getAuthUser();
+      if (user) {
+        document.getElementById('userEmail').textContent = user.email;
+        document.getElementById('userInfo').style.display = 'flex';
+      }
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const errorDiv = document.getElementById('loginError');
+
+      errorDiv.classList.remove('visible');
+
+      try {
+        const response = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Login failed');
+        }
+
+        // Check if user is admin by making an admin request
+        setAuthToken(data.accessToken, data.user);
+
+        // Verify admin access
+        const adminCheck = await fetch(`${API_BASE}/admin/events?limit=1`, {
+          headers: { 'Authorization': `Bearer ${data.accessToken}` },
+        });
+
+        if (adminCheck.status === 403) {
+          clearAuth();
+          throw new Error('Admin access required. Your account is not authorized.');
+        }
+
+        if (!adminCheck.ok) {
+          clearAuth();
+          throw new Error('Failed to verify admin access');
+        }
+
+        hideLoginScreen();
+        loadEvents();
+        showToast('Logged in successfully', 'success');
+      } catch (error) {
+        errorDiv.textContent = error.message;
+        errorDiv.classList.add('visible');
+      }
+    }
+
+    function handleLogout() {
+      clearAuth();
+      showLoginScreen();
+      showToast('Logged out', 'info');
+    }
+
+    // ============================================
     // INITIALIZATION
     // ============================================
     document.addEventListener('DOMContentLoaded', () => {
-      loadEvents();
+      // Check if already authenticated
+      const token = getAuthToken();
+      if (token) {
+        // Verify token is still valid
+        authFetch(`${API_BASE}/admin/events?limit=1`)
+          .then(res => {
+            if (res.ok) {
+              hideLoginScreen();
+              loadEvents();
+            } else {
+              showLoginScreen();
+            }
+          })
+          .catch(() => showLoginScreen());
+      } else {
+        showLoginScreen();
+      }
 
       // Global promotion filter
       document.getElementById('globalPromotion').addEventListener('change', loadEvents);
@@ -969,7 +1213,7 @@
       params.set('limit', '100');
 
       try {
-        const res = await fetch(`${API_BASE}/admin/events?${params}`);
+        const res = await authFetch(`${API_BASE}/admin/events?${params}`);
         const data = await res.json();
 
         const container = document.getElementById('eventList');
@@ -1007,7 +1251,7 @@
 
     async function selectEvent(eventId) {
       try {
-        const res = await fetch(`${API_BASE}/admin/events/${eventId}`);
+        const res = await authFetch(`${API_BASE}/admin/events/${eventId}`);
         const data = await res.json();
         selectedEvent = data.event;
 
@@ -1192,7 +1436,7 @@
         const url = eventId ? `${API_BASE}/admin/events/${eventId}` : `${API_BASE}/admin/events`;
         const method = eventId ? 'PUT' : 'POST';
 
-        const res = await fetch(url, {
+        const res = await authFetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
@@ -1219,7 +1463,7 @@
       if (!confirm('Delete this event and all its fights? This cannot be undone.')) return;
 
       try {
-        const res = await fetch(`${API_BASE}/admin/events/${eventId}`, { method: 'DELETE' });
+        const res = await authFetch(`${API_BASE}/admin/events/${eventId}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete event');
 
         showToast('Event deleted', 'success');
@@ -1265,7 +1509,7 @@
       statusEl.style.color = 'var(--accent-blue)';
 
       try {
-        const res = await fetch(`${API_BASE}/admin/events/${eventId}/banner`, {
+        const res = await authFetch(`${API_BASE}/admin/events/${eventId}/banner`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageUrl }),
@@ -1393,7 +1637,7 @@
         const url = fightId ? `${API_BASE}/admin/fights/${fightId}` : `${API_BASE}/admin/fights`;
         const method = fightId ? 'PUT' : 'POST';
 
-        const res = await fetch(url, {
+        const res = await authFetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
@@ -1437,7 +1681,7 @@
       if (!confirm('Delete this fight?')) return;
 
       try {
-        const res = await fetch(`${API_BASE}/admin/fights/${fightId}`, { method: 'DELETE' });
+        const res = await authFetch(`${API_BASE}/admin/fights/${fightId}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete fight');
 
         showToast('Fight deleted', 'success');
@@ -1465,7 +1709,7 @@
       clearTimeout(searchTimeout);
       searchTimeout = setTimeout(async () => {
         try {
-          const res = await fetch(`${API_BASE}/admin/fighters/search?q=${encodeURIComponent(query)}`);
+          const res = await authFetch(`${API_BASE}/admin/fighters/search?q=${encodeURIComponent(query)}`);
           const data = await res.json();
 
           if (lastSearchQuery[num] !== query) return; // Outdated
@@ -1538,7 +1782,7 @@
       }
 
       try {
-        const res = await fetch(`${API_BASE}/admin/fighters`, {
+        const res = await authFetch(`${API_BASE}/admin/fighters`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ firstName, lastName, wins, losses, draws }),
