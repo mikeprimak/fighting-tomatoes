@@ -585,6 +585,9 @@ export default function CompletedFightDetailScreen({
       return await apiService.updateFightUserData(fight.id, data);
     },
     onSuccess: (response: any) => {
+      console.log('[Rating] Update success, response:', JSON.stringify(response?.data, null, 2));
+      console.log('[Rating] New averageRating:', response?.data?.aggregateStats?.averageRating);
+
       // Mark this fight as needing animation
       setPendingRatingAnimation(fight.id);
 
@@ -628,12 +631,19 @@ export default function CompletedFightDetailScreen({
 
       // Optimistically update eventFights cache for instant update on event detail screen
       if (fight.event?.id) {
+        const newAverageRating = response?.data?.aggregateStats?.averageRating;
+        console.log('[Rating] Updating eventFights cache for event:', fight.event.id, 'newAvgRating:', newAverageRating);
         queryClient.setQueryData(['eventFights', fight.event.id, isAuthenticated], (old: any) => {
+          console.log('[Rating] eventFights cache old data exists:', !!old, 'has fights:', !!old?.fights);
           if (!old?.fights) return old;
           return {
             ...old,
             fights: old.fights.map((f: any) =>
-              f.id === fight.id ? { ...f, userRating: response?.data?.rating } : f
+              f.id === fight.id ? {
+                ...f,
+                userRating: response?.data?.rating,
+                averageRating: newAverageRating ?? f.averageRating,
+              } : f
             ),
           };
         });
@@ -641,6 +651,7 @@ export default function CompletedFightDetailScreen({
 
       // Optimistically update pastEvents cache for instant update on past events screen
       // Use setQueriesData with partial key to match all pastEvents queries regardless of filter
+      const newAvgRating = response?.data?.aggregateStats?.averageRating;
       queryClient.setQueriesData({ queryKey: ['pastEvents'] }, (old: any) => {
         if (!old?.pages) return old;
         return {
@@ -650,7 +661,11 @@ export default function CompletedFightDetailScreen({
             events: page.events.map((event: any) => ({
               ...event,
               fights: event.fights?.map((f: any) =>
-                f.id === fight.id ? { ...f, userRating: response?.data?.rating } : f
+                f.id === fight.id ? {
+                  ...f,
+                  userRating: response?.data?.rating,
+                  averageRating: newAvgRating ?? f.averageRating,
+                } : f
               ) || [],
             })),
           })),
@@ -663,7 +678,11 @@ export default function CompletedFightDetailScreen({
         return {
           ...old,
           fights: old.fights.map((f: any) =>
-            f.id === fight.id ? { ...f, userRating: response?.data?.rating } : f
+            f.id === fight.id ? {
+              ...f,
+              userRating: response?.data?.rating,
+              averageRating: newAvgRating ?? f.averageRating,
+            } : f
           ),
         };
       });
@@ -676,7 +695,11 @@ export default function CompletedFightDetailScreen({
           data: {
             ...old.data,
             fights: old.data.fights.map((f: any) =>
-              f.id === fight.id ? { ...f, userRating: response?.data?.rating } : f
+              f.id === fight.id ? {
+                ...f,
+                userRating: response?.data?.rating,
+                averageRating: newAvgRating ?? f.averageRating,
+              } : f
             ),
           },
         };
