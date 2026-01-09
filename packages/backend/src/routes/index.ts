@@ -25,7 +25,7 @@ import { notificationRuleEngine } from '../services/notificationRuleEngine';
 // Note: DIRTY BOXING events won't match BOXING's contains patterns anyway, so no excludes needed
 const ORG_FILTER_GROUPS: Record<string, { contains?: string[] }> = {
   'BOXING': {
-    contains: ['MATCHROOM', 'TOP RANK', 'TOP_RANK', 'GOLDEN BOY', 'GOLDEN_BOY', 'SHOWTIME', 'MOST VALUABLE', 'MVP BOXING', 'PBC', 'PREMIER BOXING', 'DAZN', 'ESPN BOXING'],
+    contains: ['MATCHROOM', 'TOP RANK', 'TOP_RANK', 'GOLDEN BOY', 'GOLDEN_BOY', 'SHOWTIME', 'MOST VALUABLE', 'MVP BOXING', 'PBC', 'PREMIER BOXING', 'DAZN', 'ESPN BOXING', 'ZUFFA BOXING', 'ZUFFA_BOXING', 'ZUFFA'],
   },
   'DIRTY BOXING': {
     contains: ['DIRTY BOXING'],
