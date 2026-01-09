@@ -682,9 +682,12 @@ export default function CompletedFightDetailScreen({
         };
       });
 
-      // MINIMAL invalidations - only what's truly needed
-      // We use local state for tags, so don't refetch tag-related queries
+      // Invalidate related queries to ensure fresh data on navigation
       queryClient.invalidateQueries({ queryKey: ['myRatings'] }); // User's ratings page
+      // Invalidate eventFights to ensure the fight card updates when navigating back
+      if (fight.event?.id) {
+        queryClient.invalidateQueries({ queryKey: ['eventFights', fight.event.id] });
+      }
 
       // Update fightStats with server-returned aggregate stats (preserves topTags)
       if (response?.data?.aggregateStats) {
