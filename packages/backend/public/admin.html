@@ -697,6 +697,67 @@
       background: var(--bg-input);
       color: var(--text-primary);
     }
+
+    /* Fighter Image Upload */
+    .fighter-image-section {
+      display: none;
+      margin-top: 0.5rem;
+      padding: 0.75rem;
+      background: var(--bg-input);
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .fighter-image-section.visible {
+      display: block;
+    }
+
+    .fighter-image-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .fighter-image-preview {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--border-color);
+      background: var(--bg-card);
+    }
+
+    .fighter-image-placeholder {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 2px dashed var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      color: var(--text-muted);
+    }
+
+    .fighter-image-upload-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .fighter-image-upload-row input {
+      flex: 1;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.6rem;
+    }
+
+    .fighter-image-status {
+      font-size: 0.7rem;
+      margin-top: 0.25rem;
+      color: var(--text-secondary);
+    }
   </style>
 </head>
 <body>
@@ -922,6 +983,19 @@
                   <button type="button" class="btn btn-secondary btn-sm" onclick="cancelCreateFighter(1)">Cancel</button>
                 </div>
               </div>
+              <div id="fighter1ImageSection" class="fighter-image-section">
+                <div class="fighter-image-header">
+                  <div id="fighter1ImagePreviewContainer">
+                    <div class="fighter-image-placeholder">?</div>
+                  </div>
+                  <span style="font-size: 0.75rem; color: var(--text-secondary);">Upload Image</span>
+                </div>
+                <div class="fighter-image-upload-row">
+                  <input type="text" id="fighter1ImageUrl" class="form-input" placeholder="Paste image URL...">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="uploadFighterImage(1)" id="fighter1ImageBtn">Upload</button>
+                </div>
+                <div id="fighter1ImageStatus" class="fighter-image-status"></div>
+              </div>
             </div>
           </div>
           <div class="form-group">
@@ -949,6 +1023,19 @@
                   <button type="button" class="btn btn-primary btn-sm" onclick="createFighter(2)">Create Fighter</button>
                   <button type="button" class="btn btn-secondary btn-sm" onclick="cancelCreateFighter(2)">Cancel</button>
                 </div>
+              </div>
+              <div id="fighter2ImageSection" class="fighter-image-section">
+                <div class="fighter-image-header">
+                  <div id="fighter2ImagePreviewContainer">
+                    <div class="fighter-image-placeholder">?</div>
+                  </div>
+                  <span style="font-size: 0.75rem; color: var(--text-secondary);">Upload Image</span>
+                </div>
+                <div class="fighter-image-upload-row">
+                  <input type="text" id="fighter2ImageUrl" class="form-input" placeholder="Paste image URL...">
+                  <button type="button" class="btn btn-primary btn-sm" onclick="uploadFighterImage(2)" id="fighter2ImageBtn">Upload</button>
+                </div>
+                <div id="fighter2ImageStatus" class="fighter-image-status"></div>
               </div>
             </div>
           </div>
@@ -1574,6 +1661,93 @@
     }
 
     // ============================================
+    // FIGHTER IMAGE UPLOAD
+    // ============================================
+    async function uploadFighterImage(num) {
+      const fighterId = document.getElementById(`fighter${num}Id`).value;
+      const imageUrl = document.getElementById(`fighter${num}ImageUrl`).value.trim();
+      const statusEl = document.getElementById(`fighter${num}ImageStatus`);
+      const uploadBtn = document.getElementById(`fighter${num}ImageBtn`);
+
+      if (!fighterId) {
+        showToast('Please select a fighter first', 'error');
+        return;
+      }
+
+      if (!imageUrl) {
+        showToast('Please enter an image URL', 'error');
+        return;
+      }
+
+      // Validate URL format
+      try {
+        new URL(imageUrl);
+      } catch {
+        showToast('Invalid URL format', 'error');
+        return;
+      }
+
+      // Show loading state
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span class="spinner"></span>';
+      statusEl.textContent = 'Uploading...';
+      statusEl.style.color = 'var(--accent-blue)';
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/fighters/${fighterId}/image`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || data.message || 'Upload failed');
+        }
+
+        // Success - update preview
+        updateFighterImagePreview(num, data.profileImage);
+        document.getElementById(`fighter${num}ImageUrl`).value = '';
+
+        statusEl.textContent = 'Image uploaded!';
+        statusEl.style.color = 'var(--accent-green)';
+
+        showToast('Fighter image uploaded', 'success');
+
+      } catch (err) {
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.style.color = 'var(--accent-red)';
+        showToast(err.message, 'error');
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = 'Upload';
+      }
+    }
+
+    function updateFighterImagePreview(num, imageUrl) {
+      const container = document.getElementById(`fighter${num}ImagePreviewContainer`);
+      if (imageUrl) {
+        container.innerHTML = `<img src="${imageUrl}" class="fighter-image-preview" alt="Fighter">`;
+      } else {
+        container.innerHTML = `<div class="fighter-image-placeholder">?</div>`;
+      }
+    }
+
+    function showFighterImageSection(num, show, imageUrl = null) {
+      const section = document.getElementById(`fighter${num}ImageSection`);
+      if (show) {
+        section.classList.add('visible');
+        updateFighterImagePreview(num, imageUrl);
+      } else {
+        section.classList.remove('visible');
+      }
+      // Reset status and URL input
+      document.getElementById(`fighter${num}ImageUrl`).value = '';
+      document.getElementById(`fighter${num}ImageStatus`).textContent = '';
+    }
+
+    // ============================================
     // FIGHTS
     // ============================================
     function openFightModal(fightId = null) {
@@ -1593,6 +1767,9 @@
       document.getElementById('fighter2Search').value = '';
       document.getElementById('fighter1Create').style.display = 'none';
       document.getElementById('fighter2Create').style.display = 'none';
+      // Reset fighter image sections
+      showFighterImageSection(1, false);
+      showFighterImageSection(2, false);
 
       document.getElementById('fightEventId').value = selectedEvent.id;
 
@@ -1605,6 +1782,13 @@
           document.getElementById('fighter2Id').value = fight.fighter2?.id || '';
           document.getElementById('fighter1Search').value = fight.fighter1 ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}` : '';
           document.getElementById('fighter2Search').value = fight.fighter2 ? `${fight.fighter2.firstName} ${fight.fighter2.lastName}` : '';
+          // Show fighter image sections for existing fighters
+          if (fight.fighter1?.id) {
+            showFighterImageSection(1, true, fight.fighter1.profileImage);
+          }
+          if (fight.fighter2?.id) {
+            showFighterImageSection(2, true, fight.fighter2.profileImage);
+          }
           document.getElementById('fightWeightClass').value = fight.weightClass || '';
           document.getElementById('fightCardType').value = fight.cardType || 'Main Card';
           document.getElementById('fightOrder').value = fight.orderOnCard || 1;
@@ -1687,6 +1871,9 @@
           document.getElementById('fighter2Id').value = '';
           document.getElementById('fighter1Search').value = '';
           document.getElementById('fighter2Search').value = '';
+          // Reset fighter image sections
+          showFighterImageSection(1, false);
+          showFighterImageSection(2, false);
           const maxOrder = Math.max(0, ...selectedEvent.fights.map(f => f.orderOnCard || 0));
           document.getElementById('fightOrder').value = maxOrder + 1;
         } else {
@@ -1744,7 +1931,7 @@
           let html = '';
           if (data.fighters && data.fighters.length > 0) {
             html = data.fighters.map(f => `
-              <div class="autocomplete-item" onclick="selectFighter(${num}, '${f.id}', '${escapeHtml(f.firstName)} ${escapeHtml(f.lastName)}')">
+              <div class="autocomplete-item" onclick="selectFighter(${num}, '${f.id}', '${escapeHtml(f.firstName)} ${escapeHtml(f.lastName)}', ${f.profileImage ? `'${escapeHtml(f.profileImage)}'` : 'null'})">
                 <span class="autocomplete-name">${escapeHtml(f.firstName)} ${escapeHtml(f.lastName)}${f.nickname ? ` "${escapeHtml(f.nickname)}"` : ''}</span>
                 <span class="autocomplete-record">${f.wins}-${f.losses}-${f.draws}</span>
               </div>
@@ -1767,10 +1954,12 @@
       }, 200);
     }
 
-    function selectFighter(num, id, name) {
+    function selectFighter(num, id, name, profileImage = null) {
       document.getElementById(`fighter${num}Id`).value = id;
       document.getElementById(`fighter${num}Search`).value = name;
       document.getElementById(`fighter${num}Dropdown`).style.display = 'none';
+      // Show the image upload section
+      showFighterImageSection(num, true, profileImage);
     }
 
     function showCreateFighter(num, query) {
@@ -1826,6 +2015,8 @@
         document.getElementById(`fighter${num}Id`).value = fighter.id;
         document.getElementById(`fighter${num}Search`).value = `${fighter.firstName} ${fighter.lastName}`;
         document.getElementById(`fighter${num}Create`).style.display = 'none';
+        // Show image section for newly created fighter (no image yet)
+        showFighterImageSection(num, true, null);
 
         showToast('Fighter created', 'success');
       } catch (err) {

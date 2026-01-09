@@ -22,7 +22,7 @@ import {
 } from '../services/backgroundJobs';
 import { getFailsafeStatus } from '../services/failsafeCleanup';
 import { scheduleAllUpcomingEvents, safetyCheckEvents } from '../services/eventBasedScheduler';
-import { uploadEventImage } from '../services/imageStorage';
+import { uploadEventImage, uploadFighterImage } from '../services/imageStorage';
 
 // Zod schemas for admin CRUD operations
 const CreateEventSchema = z.object({
@@ -326,6 +326,64 @@ export async function adminRoutes(fastify: FastifyInstance) {
       console.error(`[Admin] Banner upload failed:`, error.message);
       return reply.code(500).send({
         error: 'Failed to upload banner image',
+        message: error.message,
+      });
+    }
+  });
+
+  // Upload fighter profile image from URL
+  // Downloads from provided URL, uploads to R2, updates fighter record
+  fastify.post('/admin/fighters/:id/image', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { imageUrl } = request.body as { imageUrl?: string };
+
+    if (!imageUrl) {
+      return reply.code(400).send({ error: 'imageUrl is required' });
+    }
+
+    // Validate URL format
+    try {
+      new URL(imageUrl);
+    } catch {
+      return reply.code(400).send({ error: 'Invalid URL format' });
+    }
+
+    // Get fighter to use their name for the image filename
+    const fighter = await prisma.fighter.findUnique({
+      where: { id },
+      select: { id: true, firstName: true, lastName: true },
+    });
+
+    if (!fighter) {
+      return reply.code(404).send({ error: 'Fighter not found' });
+    }
+
+    try {
+      const fighterName = `${fighter.firstName} ${fighter.lastName}`;
+      console.log(`[Admin] Uploading image for fighter ${fighterName} from: ${imageUrl}`);
+
+      // Download from URL and upload to R2
+      const profileImageUrl = await uploadFighterImage(imageUrl, fighterName);
+
+      // Update fighter with new profile image URL
+      const updatedFighter = await prisma.fighter.update({
+        where: { id },
+        data: { profileImage: profileImageUrl },
+      });
+
+      console.log(`[Admin] Fighter image uploaded successfully: ${profileImageUrl}`);
+
+      return reply.send({
+        success: true,
+        profileImage: profileImageUrl,
+        fighter: updatedFighter,
+      });
+    } catch (error: any) {
+      console.error(`[Admin] Fighter image upload failed:`, error.message);
+      return reply.code(500).send({
+        error: 'Failed to upload fighter image',
         message: error.message,
       });
     }
