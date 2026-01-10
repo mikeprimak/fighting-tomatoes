@@ -879,12 +879,12 @@ export default function ProfileScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.logoutButton, { backgroundColor: colors.primary }]}
+            style={[styles.actionButtonFull, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
             onPress={handleLogout}
           >
             <View style={styles.actionButtonContent}>
-              <FontAwesome name="sign-out" size={18} color={colors.textOnAccent} />
-              <Text style={[styles.logoutButtonText, { color: colors.textOnAccent }]}>Sign Out</Text>
+              <FontAwesome name="sign-out" size={18} color={colors.text} />
+              <Text style={[styles.actionButtonText, { color: colors.text }]}>Sign Out</Text>
             </View>
           </TouchableOpacity>
         </View>

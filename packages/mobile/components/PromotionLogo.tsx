@@ -161,7 +161,7 @@ export function PromotionLogo({ promotion, size = 40, style, color }: PromotionL
     case 'ZUFFA_BOXING':
     case 'ZUFFA':
       pngSource = ZUFFA_BOXING_LOGO;
-      aspectRatio = 1; // Square logo
+      aspectRatio = 1080 / 350; // ~3.09
       break;
     case 'UFC':
       svgXml = UFC_LOGO;

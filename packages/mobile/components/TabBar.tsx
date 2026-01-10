@@ -129,14 +129,15 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
         tabBarStyle: {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
-          height: Platform.OS === 'ios' ? 65 : 80,  // iOS: smaller (physical home button), Android: larger (gesture bar)
+          height: Platform.OS === 'ios' ? 65 : 85,  // iOS: smaller (physical home button), Android: larger (gesture bar)
           paddingBottom: Platform.OS === 'ios' ? 5 : 15,  // Less padding on iOS
+          paddingTop: Platform.OS === 'ios' ? 0 : 10,  // Extra top padding on Android
         },
         tabBarItemStyle: {
           justifyContent: 'center',
         },
         tabBarIconStyle: {
-          marginTop: 3,
+          marginTop: Platform.OS === 'ios' ? 3 : 0,
         },
         tabBarLabelStyle: {
           marginBottom: 5,
