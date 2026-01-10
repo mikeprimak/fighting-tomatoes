@@ -73,78 +73,6 @@ export default function LoginScreen() {
     }
   };
 
-  const fillTestCredentials = () => {
-    setEmail('test@fightingtomatoes.com');
-    setPassword('password123');
-    setStatus('Test credentials filled');
-  };
-
-  const fillDerpCredentials = () => {
-    setEmail('derp@fightingtomatoes.com');
-    setPassword('password123');
-    setStatus('Derp credentials filled');
-  };
-
-  const fillFartCredentials = () => {
-    setEmail('fart@fightingtomatoes.com');
-    setPassword('password123');
-    setStatus('Fart credentials filled');
-  };
-
-  const fillPoopCredentials = () => {
-    setEmail('poop@fightingtomatoes.com');
-    setPassword('password123');
-    setStatus('Poop credentials filled');
-  };
-
-  const fillNeonCredentials = () => {
-    setEmail('neon@fightingtomatoes.com');
-    setPassword('password123');
-    setStatus('Neon credentials filled');
-  };
-
-  const fillTimeCredentials = () => {
-    setEmail('time@fightingtomatoes.com');
-    setPassword('password123');
-    setStatus('Time credentials filled');
-  };
-
-  const fillOneCredentials = () => {
-    setEmail('one@fightingtomatoes.com');
-    setPassword('password123');
-    setStatus('One credentials filled');
-  };
-
-  const fillTwoCredentials = () => {
-    setEmail('two@fightingtomatoes.com');
-    setPassword('password123');
-    setStatus('Two credentials filled');
-  };
-
-  const fillThreeCredentials = () => {
-    setEmail('three@fightingtomatoes.com');
-    setPassword('password123');
-    setStatus('Three credentials filled');
-  };
-
-  const fillFourCredentials = () => {
-    setEmail('four@fightingtomatoes.com');
-    setPassword('password123');
-    setStatus('Four credentials filled');
-  };
-
-  const fillFiveCredentials = () => {
-    setEmail('five@fightingtomatoes.com');
-    setPassword('password123');
-    setStatus('Five credentials filled');
-  };
-
-  const fillSixCredentials = () => {
-    setEmail('six@fightingtomatoes.com');
-    setPassword('password123');
-    setStatus('Six credentials filled');
-  };
-
   const styles = createStyles(colors);
 
   return (
@@ -156,8 +84,7 @@ export default function LoginScreen() {
       >
         <View style={[styles.content, { marginBottom: keyboardHeight }]}>
           <View style={styles.header}>
-            <Image source={require('../../assets/app-icon.png')} style={styles.logoImage} resizeMode="contain" />
-            <Text style={styles.subtitle}>Good Fights</Text>
+            <Image source={require('../../assets/login-logo.png')} style={styles.logoImage} resizeMode="contain" />
           </View>
 
         {/* OAuth Sign-In Buttons */}
@@ -240,115 +167,6 @@ export default function LoginScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Development Login Buttons */}
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={fillTestCredentials}
-          >
-            <Text style={styles.devButtonText}>
-              🧪 Fill Test Credentials (Dev)
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={fillDerpCredentials}
-          >
-            <Text style={styles.devButtonText}>
-              🧪 Fill Derp Credentials (Dev)
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={fillFartCredentials}
-          >
-            <Text style={styles.devButtonText}>
-              💨 Fill Fart Credentials (Dev)
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={fillPoopCredentials}
-          >
-            <Text style={styles.devButtonText}>
-              💩 Fill Poop Credentials (Dev)
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={fillNeonCredentials}
-          >
-            <Text style={styles.devButtonText}>
-              🌟 Fill Neon Credentials (Dev)
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={fillTimeCredentials}
-          >
-            <Text style={styles.devButtonText}>
-              ⏰ Fill Time Credentials (Dev)
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={fillOneCredentials}
-          >
-            <Text style={styles.devButtonText}>
-              1️⃣ Fill One Credentials (Dev)
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={fillTwoCredentials}
-          >
-            <Text style={styles.devButtonText}>
-              2️⃣ Fill Two Credentials (Dev)
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={fillThreeCredentials}
-          >
-            <Text style={styles.devButtonText}>
-              3️⃣ Fill Three Credentials (Dev)
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={fillFourCredentials}
-          >
-            <Text style={styles.devButtonText}>
-              4️⃣ Fill Four Credentials (Dev)
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={fillFiveCredentials}
-          >
-            <Text style={styles.devButtonText}>
-              5️⃣ Fill Five Credentials (Dev)
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.devButton}
-            onPress={fillSixCredentials}
-          >
-            <Text style={styles.devButtonText}>
-              6️⃣ Fill Six Credentials (Dev)
-            </Text>
-          </TouchableOpacity>
-
         </View>
 
         {/* Sign Up Link */}
@@ -388,15 +206,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: 32,
   },
   logoImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 8,
+    width: 320,
+    height: 200,
+    marginBottom: 16,
   },
   statusContainer: {
     backgroundColor: colors.card,
@@ -468,20 +280,6 @@ const createStyles = (colors: any) => StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontWeight: '600',
-  },
-  devButton: {
-    backgroundColor: colors.textSecondary,
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  devButtonText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '500',
   },
   signUpLink: {
     marginTop: 24,

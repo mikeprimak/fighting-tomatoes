@@ -483,7 +483,18 @@ export default function ProfileScreen() {
             <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
               {selectedOrgs.size > 0
                 ? `No predictions for ${Array.from(selectedOrgs).join(' or ')} events`
-                : 'Make fight predictions on the "Upcoming" screen. Check in after the event to see how you did!'}
+                : (
+                  <>
+                    Predict winners on{' '}
+                    <Text
+                      style={{ color: colors.primary, fontWeight: '600' }}
+                      onPress={() => router.push('/(tabs)')}
+                    >
+                      Upcoming Fights
+                    </Text>
+                    .
+                  </>
+                )}
             </Text>
           ) : (
             <>
@@ -588,6 +599,7 @@ export default function ProfileScreen() {
             <TouchableOpacity
               onPress={() => router.push('/activity/my-ratings' as any)}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
               <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>See All</Text>
               <FontAwesome name="chevron-right" size={10} color="rgba(255,255,255,0.8)" />
@@ -599,7 +611,18 @@ export default function ProfileScreen() {
             <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
               {selectedOrgs.size > 0
                 ? `No ratings for ${Array.from(selectedOrgs).join(' or ')} fights`
-                : 'Rate how much you liked fights on the "Past Events" screen.'}
+                : (
+                  <>
+                    Rate fights on{' '}
+                    <Text
+                      style={{ color: colors.primary, fontWeight: '600' }}
+                      onPress={() => router.push('/(tabs)/completed')}
+                    >
+                      Completed Fights
+                    </Text>
+                    .
+                  </>
+                )}
             </Text>
           ) : (
             <View>
@@ -639,6 +662,7 @@ export default function ProfileScreen() {
                 <TouchableOpacity
                   onPress={() => router.push('/activity/my-comments' as any)}
                   style={{ position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
                   <Text style={{ fontSize: 11, color: colors.textSecondary }}>See All</Text>
                   <FontAwesome name="chevron-right" size={10} color={colors.textSecondary} />
@@ -649,7 +673,7 @@ export default function ProfileScreen() {
               <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
                 {selectedOrgs.size > 0
                   ? `No comments for ${Array.from(selectedOrgs).join(' or ')} fights`
-                  : 'Write comments on completed fights. Your most upvoted comments will appear here!'}
+                  : 'None yet.'}
               </Text>
             ) : (
               <View>
@@ -696,6 +720,7 @@ export default function ProfileScreen() {
             <TouchableOpacity
               onPress={() => router.push('/activity/my-hype' as any)}
               style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
               <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>See All</Text>
               <FontAwesome name="chevron-right" size={10} color="rgba(255,255,255,0.8)" />
@@ -707,7 +732,18 @@ export default function ProfileScreen() {
             <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
               {selectedOrgs.size > 0
                 ? `No hype ratings for ${Array.from(selectedOrgs).join(' or ')} fights`
-                : 'Choose how Hyped you are for upcoming fights on the "Upcoming" screen. You\'ll see your data here.'}
+                : (
+                  <>
+                    Hype fights on{' '}
+                    <Text
+                      style={{ color: colors.primary, fontWeight: '600' }}
+                      onPress={() => router.push('/(tabs)')}
+                    >
+                      Upcoming Fights
+                    </Text>
+                    .
+                  </>
+                )}
             </Text>
           ) : (
             <View>
@@ -757,6 +793,7 @@ export default function ProfileScreen() {
                 <TouchableOpacity
                   onPress={() => router.push('/activity/my-preflight-comments' as any)}
                   style={{ position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                 >
                   <Text style={{ fontSize: 11, color: colors.textSecondary }}>See All</Text>
                   <FontAwesome name="chevron-right" size={10} color={colors.textSecondary} />
@@ -767,7 +804,7 @@ export default function ProfileScreen() {
               <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
                 {selectedOrgs.size > 0
                   ? `No hype comments for ${Array.from(selectedOrgs).join(' or ')} fights`
-                  : 'Write comments on upcoming fights. Your most upvoted comments will appear here!'}
+                  : 'None yet.'}
               </Text>
             ) : (
               <View>
