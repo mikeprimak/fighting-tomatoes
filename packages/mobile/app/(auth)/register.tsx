@@ -133,6 +133,8 @@ export default function RegisterScreen() {
 
             {/* Registration Form */}
             <View style={styles.form}>
+              {/* Hidden for launch - name fields not needed */}
+              {false && (
               <View style={styles.row}>
                 <View style={styles.halfInput}>
                   <Text style={styles.label}>First Name</Text>
@@ -157,6 +159,7 @@ export default function RegisterScreen() {
                   />
                 </View>
               </View>
+              )}
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Email *</Text>
