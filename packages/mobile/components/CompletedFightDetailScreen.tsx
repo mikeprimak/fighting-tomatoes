@@ -674,10 +674,10 @@ export default function CompletedFightDetailScreen({
 
       // Also update topRecentFights cache if user is viewing top-rated fights
       queryClient.setQueriesData({ queryKey: ['topRecentFights'] }, (old: any) => {
-        if (!old?.fights) return old;
+        if (!old?.data) return old;
         return {
           ...old,
-          fights: old.fights.map((f: any) =>
+          data: old.data.map((f: any) =>
             f.id === fight.id ? {
               ...f,
               userRating: response?.data?.rating,

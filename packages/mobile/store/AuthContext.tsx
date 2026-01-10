@@ -181,15 +181,74 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await AsyncStorage.getItem('userData');
 
       if (token && userData) {
-        setAccessToken(token);
-        setUser(JSON.parse(userData));
+        // Validate token by calling profile endpoint
+        console.log('[Auth] Found stored token, validating...');
+        const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
 
-        // Register push token if user is logged in
-        // DISABLED: Notifications removed from app scope
-        // await notificationService.registerPushToken();
+        if (response.status === 401) {
+          // Token expired, try to refresh
+          console.log('[Auth] Token expired, attempting refresh...');
+          const refreshTokenStored = await secureStorage.getItem('refreshToken');
+
+          if (refreshTokenStored) {
+            const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refreshToken: refreshTokenStored }),
+            });
+
+            if (refreshResponse.ok) {
+              const refreshData = await refreshResponse.json();
+              const newAccessToken = refreshData.tokens?.accessToken || refreshData.accessToken;
+              const newRefreshToken = refreshData.tokens?.refreshToken || refreshData.refreshToken;
+
+              if (newAccessToken && newRefreshToken) {
+                console.log('[Auth] Token refresh successful');
+                await secureStorage.setItem('accessToken', newAccessToken);
+                await secureStorage.setItem('refreshToken', newRefreshToken);
+                setAccessToken(newAccessToken);
+                setUser(JSON.parse(userData));
+                return;
+              }
+            }
+          }
+
+          // Refresh failed - clear everything and send to login
+          console.log('[Auth] Token refresh failed, clearing auth state');
+          await secureStorage.removeItem('accessToken');
+          await secureStorage.removeItem('refreshToken');
+          await AsyncStorage.removeItem('userData');
+          return;
+        }
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('[Auth] Token valid, user authenticated');
+          setAccessToken(token);
+          setUser(data.user);
+          // Update cached user data with fresh data
+          await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+        } else {
+          // Some other error, clear auth state to be safe
+          console.log('[Auth] Profile fetch failed with status:', response.status);
+          await secureStorage.removeItem('accessToken');
+          await secureStorage.removeItem('refreshToken');
+          await AsyncStorage.removeItem('userData');
+        }
       }
     } catch (error) {
       console.error('Error initializing auth:', error);
+      // On network error, use cached data but it will revalidate when online
+      const token = await secureStorage.getItem('accessToken');
+      const userData = await AsyncStorage.getItem('userData');
+      if (token && userData) {
+        console.log('[Auth] Network error during validation, using cached data');
+        setAccessToken(token);
+        setUser(JSON.parse(userData));
+      }
     } finally {
       setIsLoading(false);
     }
