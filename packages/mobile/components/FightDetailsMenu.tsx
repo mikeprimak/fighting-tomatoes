@@ -120,8 +120,8 @@ export default function FightDetailsMenu({
             </TouchableOpacity>
           </View>
 
-          {/* Consolidated Fight Notification Section (only shown for upcoming fights WITH live tracking) */}
-          {onToggleNotification !== undefined && fight.event?.hasLiveTracking === true && (() => {
+          {/* Consolidated Fight Notification Section - HIDDEN: notifications system not finished app-wide. Re-enable by removing "false &&" below */}
+          {false && onToggleNotification !== undefined && fight.event?.hasLiveTracking === true && (() => {
             // Filter out "Hyped Fights" reasons (feature disabled)
             const notificationReasons = (fight.notificationReasons?.reasons ?? []).filter(
               (r: any) => r.source !== 'Hyped Fights'

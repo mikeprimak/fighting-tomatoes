@@ -247,8 +247,8 @@ export default function FightDetailScreen() {
 
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
-        {/* Bell icon - only visible for upcoming fights WITH live tracking */}
-        {!isComplete && hasLiveTracking && (
+        {/* Bell icon - HIDDEN: notifications system not finished app-wide. Re-enable by removing "false &&" below */}
+        {false && !isComplete && hasLiveTracking && (
           <TouchableOpacity
             onPress={handleToggleNotification}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
