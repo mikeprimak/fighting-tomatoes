@@ -145,104 +145,21 @@ export function startBackgroundJobs(): void {
   console.log('[Background Jobs] Failsafe cleanup ENABLED - runs every hour');
 
   // ============================================
-  // ORGANIZATION SCRAPERS - DAILY, SPREAD THROUGHOUT THE DAY
-  // Running all 7 scrapers back-to-back (30 min apart) caused OOM (>512MB)
-  // Solution: Spread scrapers 3 hours apart throughout the day
-  // This gives Node.js time to garbage collect between scrapers
-  // Times are in UTC (EST + 5 hours)
+  // ORGANIZATION SCRAPERS - DISABLED FOR MEMORY CONSTRAINTS
+  // Puppeteer scrapers use 300-400MB each, causing OOM on Render free tier (512MB)
+  // Run manually via API when needed: POST /api/admin/scrape/:org
   // ============================================
 
-  // BKFC: Daily at 12:00am EST = 5:00am UTC
-  bkfcScraperJob = cron.schedule('0 5 * * *', async () => {
-    console.log('[Background Jobs] Running daily BKFC scraper...');
-    try {
-      await runDailyBKFCScraper();
-      await scheduleAllUpcomingEvents();
-      // Hint for garbage collection
-      if (global.gc) global.gc();
-    } catch (error) {
-      console.error('[Background Jobs] Daily BKFC scraper failed:', error);
-    }
-  });
-  console.log('[Background Jobs] Daily BKFC scraper ENABLED - runs at 12:00am EST (5:00am UTC)');
-
-  // PFL: Daily at 3:00am EST = 8:00am UTC
-  pflScraperJob = cron.schedule('0 8 * * *', async () => {
-    console.log('[Background Jobs] Running daily PFL scraper...');
-    try {
-      await runDailyPFLScraper();
-      await scheduleAllUpcomingEvents();
-      if (global.gc) global.gc();
-    } catch (error) {
-      console.error('[Background Jobs] Daily PFL scraper failed:', error);
-    }
-  });
-  console.log('[Background Jobs] Daily PFL scraper ENABLED - runs at 3:00am EST (8:00am UTC)');
-
-  // ONE FC: Daily at 6:00am EST = 11:00am UTC
-  oneFCScraperJob = cron.schedule('0 11 * * *', async () => {
-    console.log('[Background Jobs] Running daily ONE FC scraper...');
-    try {
-      await runDailyOneFCScraper();
-      await scheduleAllUpcomingEvents();
-      if (global.gc) global.gc();
-    } catch (error) {
-      console.error('[Background Jobs] Daily ONE FC scraper failed:', error);
-    }
-  });
-  console.log('[Background Jobs] Daily ONE FC scraper ENABLED - runs at 6:00am EST (11:00am UTC)');
-
-  // Matchroom: Daily at 9:00am EST = 2:00pm UTC (14:00)
-  matchroomScraperJob = cron.schedule('0 14 * * *', async () => {
-    console.log('[Background Jobs] Running daily Matchroom scraper...');
-    try {
-      await runDailyMatchroomScraper();
-      await scheduleAllUpcomingEvents();
-      if (global.gc) global.gc();
-    } catch (error) {
-      console.error('[Background Jobs] Daily Matchroom scraper failed:', error);
-    }
-  });
-  console.log('[Background Jobs] Daily Matchroom scraper ENABLED - runs at 9:00am EST (2:00pm UTC)');
-
-  // Golden Boy: Daily at 3:00pm EST = 8:00pm UTC (20:00)
-  goldenBoyScraperJob = cron.schedule('0 20 * * *', async () => {
-    console.log('[Background Jobs] Running daily Golden Boy scraper...');
-    try {
-      await runDailyGoldenBoyScraper();
-      await scheduleAllUpcomingEvents();
-      if (global.gc) global.gc();
-    } catch (error) {
-      console.error('[Background Jobs] Daily Golden Boy scraper failed:', error);
-    }
-  });
-  console.log('[Background Jobs] Daily Golden Boy scraper ENABLED - runs at 3:00pm EST (8:00pm UTC)');
-
-  // Top Rank: Daily at 6:00pm EST = 11:00pm UTC (23:00)
-  topRankScraperJob = cron.schedule('0 23 * * *', async () => {
-    console.log('[Background Jobs] Running daily Top Rank scraper...');
-    try {
-      await runDailyTopRankScraper();
-      await scheduleAllUpcomingEvents();
-      if (global.gc) global.gc();
-    } catch (error) {
-      console.error('[Background Jobs] Daily Top Rank scraper failed:', error);
-    }
-  });
-  console.log('[Background Jobs] Daily Top Rank scraper ENABLED - runs at 6:00pm EST (11:00pm UTC)');
-
-  // OKTAGON: Daily at 9:00pm EST = 2:00am UTC next day
-  oktagonScraperJob = cron.schedule('0 2 * * *', async () => {
-    console.log('[Background Jobs] Running daily OKTAGON scraper...');
-    try {
-      await runDailyOktagonScraper();
-      await scheduleAllUpcomingEvents();
-      if (global.gc) global.gc();
-    } catch (error) {
-      console.error('[Background Jobs] Daily OKTAGON scraper failed:', error);
-    }
-  });
-  console.log('[Background Jobs] Daily OKTAGON scraper ENABLED - runs at 9:00pm EST (2:00am UTC)');
+  // DISABLED: All organization scrapers (BKFC, PFL, ONE FC, Matchroom, Golden Boy, Top Rank, OKTAGON)
+  // To run manually:
+  //   - POST /api/admin/scrape/bkfc
+  //   - POST /api/admin/scrape/pfl
+  //   - POST /api/admin/scrape/onefc
+  //   - POST /api/admin/scrape/matchroom
+  //   - POST /api/admin/scrape/goldenboy
+  //   - POST /api/admin/scrape/toprank
+  //   - POST /api/admin/scrape/oktagon
+  console.log('[Background Jobs] Organization scrapers DISABLED (memory constraints - run manually via API)');
 
   // DISABLED: Initial startup check (also disabled for memory constraints)
   // setTimeout(async () => {
