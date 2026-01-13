@@ -10,8 +10,8 @@ import { useAuth } from '../store/AuthContext';
 // Google OAuth Client IDs - these are PUBLIC by design (not secrets)
 // Security is enforced via package name, SHA-1 fingerprint, and app store verification
 // See: https://developers.google.com/identity/protocols/oauth2
-const GOOGLE_CLIENT_ID_WEB = '499367908516-f5qu2rjeot6iqnhld7o3tg71tqdqlngk.apps.googleusercontent.com';
-const GOOGLE_CLIENT_ID_IOS = '499367908516-j03poule51s7sfvpvdufna0upqa3oseg.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID_WEB = '1082468109842-pehb7kkuclbv8g4acjba9eeeajprd8j7.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID_IOS = '1082468109842-qpifgfjjg3ve22bnhofhk99purj0aidf.apps.googleusercontent.com';
 
 // Configure Google Sign-In on module load
 GoogleSignin.configure({

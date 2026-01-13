@@ -919,6 +919,13 @@ class ApiService {
     });
   }
 
+  async deleteAccount(confirmation: string): Promise<{ message: string }> {
+    return this.makeRequest('/auth/account', {
+      method: 'DELETE',
+      body: JSON.stringify({ confirmation }),
+    });
+  }
+
   async uploadProfileImage(formData: FormData): Promise<{ imageUrl: string; message: string }> {
     const token = await this.getAuthToken();
     const url = `${API_BASE_URL}/upload/profile-image`;

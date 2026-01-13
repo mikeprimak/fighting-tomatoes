@@ -44,6 +44,7 @@ router.get('/profile', authenticateToken, AuthController.getProfile)
 router.get('/profile/prediction-accuracy', authenticateToken, AuthController.getPredictionAccuracyByEvent)
 router.put('/profile', authenticateToken, generalLimiter, AuthController.updateProfile)
 router.post('/logout', authenticateToken, AuthController.logout)
+router.delete('/account', authenticateToken, AuthController.deleteAccount)
 
 // Email verification required routes (examples for later)
 router.get('/protected-example', authenticateToken, requireEmailVerification, (req, res) => {

@@ -33,13 +33,21 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="fightcrewapp"/>
+        <data android:scheme="goodfights"/>
         <data android:scheme="exp+fightcrewapp"/>
       </intent-filter>
       <intent-filter data-generated="true">
         <action android:name="android.intent.action.VIEW"/>
+        <data android:scheme="goodfights"/>
         <data android:scheme="fightcrewapp"/>
         <data android:scheme="exp+fightcrewapp"/>
+        <category android:name="android.intent.category.BROWSABLE"/>
+        <category android:name="android.intent.category.DEFAULT"/>
+      </intent-filter>
+      <intent-filter android:autoVerify="true" data-generated="true">
+        <action android:name="android.intent.action.VIEW"/>
+        <data android:scheme="https" android:host="goodfights.app" android:pathPrefix="/verify-email"/>
+        <data android:scheme="https" android:host="goodfights.app" android:pathPrefix="/reset-password"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <category android:name="android.intent.category.DEFAULT"/>
       </intent-filter>
