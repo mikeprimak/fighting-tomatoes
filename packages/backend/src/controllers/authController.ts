@@ -806,6 +806,94 @@ export class AuthController {
 
 
   /**
+   * Delete user account - anonymizes user data but keeps their ratings, reviews, etc.
+   * This satisfies Apple/Google requirements for account deletion while preserving content.
+   */
+  static async deleteAccount(req: AuthRequest, res: Response) {
+    try {
+      const userId = req.user!.userId
+      const { confirmation } = req.body
+
+      // Require user to confirm by typing "DELETE"
+      if (confirmation !== 'DELETE') {
+        return res.status(400).json({
+          error: 'Please type DELETE to confirm account deletion',
+          code: 'CONFIRMATION_REQUIRED'
+        })
+      }
+
+      // Generate a random anonymous email to satisfy unique constraint
+      const anonymousEmail = `deleted_${Date.now()}_${Math.random().toString(36).substring(7)}@deleted.local`
+
+      // Anonymize user data (keep the record for content attribution)
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          email: anonymousEmail,
+          password: null,
+          firstName: null,
+          lastName: null,
+          displayName: 'Deleted User',
+          avatar: null,
+          googleId: null,
+          appleId: null,
+          emailVerificationToken: null,
+          emailVerificationExpires: null,
+          passwordResetToken: null,
+          passwordResetExpires: null,
+          pushToken: null,
+          isActive: false,
+          isEmailVerified: false,
+          wantsEmails: false,
+          isMedia: false,
+          mediaOrganization: null,
+          mediaWebsite: null,
+        }
+      })
+
+      // Delete all refresh tokens (log out all sessions)
+      await prisma.refreshToken.deleteMany({
+        where: { userId }
+      })
+
+      // Delete notification rules and matches (user-specific settings)
+      await prisma.fightNotificationMatch.deleteMany({
+        where: { userId }
+      })
+      await prisma.userNotificationRule.deleteMany({
+        where: { userId }
+      })
+
+      // Delete user notifications
+      await prisma.userNotification.deleteMany({
+        where: { userId }
+      })
+
+      // Note: We intentionally keep:
+      // - FightRating (user's ratings)
+      // - FightReview (user's reviews)
+      // - PreFightComment (user's comments)
+      // - FightPrediction (user's predictions)
+      // - FightTag (user's tags)
+      // - ReviewVote, PreFightCommentVote (user's votes)
+      // These are anonymized by the user becoming "Deleted User"
+
+      console.log(`[Auth] Account deleted and anonymized for user ${userId}`)
+
+      res.json({
+        message: 'Account deleted successfully. Your ratings and reviews have been anonymized.'
+      })
+
+    } catch (error) {
+      console.error('Delete account error:', error)
+      res.status(500).json({
+        error: 'Failed to delete account',
+        code: 'DELETE_FAILED'
+      })
+    }
+  }
+
+  /**
    * Get user's prediction accuracy grouped by event (last 3 months)
    * Returns correct/incorrect prediction counts per event for diverging bar chart
    */

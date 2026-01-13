@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack } from 'expo-router';
@@ -21,7 +22,7 @@ import { api } from '../services/api';
 import { FontAwesome } from '@expo/vector-icons';
 
 export default function EditProfileScreen() {
-  const { user, refreshUserData } = useAuth();
+  const { user, refreshUserData, logout } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { alertState, showSuccess, showError, showInfo, hideAlert } = useCustomAlert();
@@ -34,6 +35,11 @@ export default function EditProfileScreen() {
   const [displayNameAvailable, setDisplayNameAvailable] = useState<boolean | null>(null);
   const originalDisplayNameRef = useRef<string>('');
   const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Delete account state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Sync state with user data when it changes (only on mount or when user ID changes)
   useEffect(() => {
@@ -140,6 +146,31 @@ export default function EditProfileScreen() {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'DELETE') {
+      showError('Please type DELETE to confirm');
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await api.deleteAccount(deleteConfirmation);
+      setShowDeleteModal(false);
+      showSuccess('Account deleted successfully');
+
+      // Log out and redirect to login screen
+      setTimeout(async () => {
+        await logout();
+        router.replace('/(auth)/welcome');
+      }, 1500);
+    } catch (error: any) {
+      console.error('Error deleting account:', error);
+      showError(error.message || 'Failed to delete account');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -284,6 +315,21 @@ export default function EditProfileScreen() {
           </>
           )}
         </View>
+
+        {/* Danger Zone */}
+        <View style={[styles.section, styles.dangerSection]}>
+          <Text style={[styles.sectionTitle, { color: '#DC2626' }]}>Danger Zone</Text>
+          <Text style={[styles.dangerDescription, { color: colors.textSecondary }]}>
+            Permanently delete your account. Your ratings and reviews will be anonymized but preserved.
+          </Text>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => setShowDeleteModal(true)}
+          >
+            <FontAwesome name="trash" size={16} color="#FFFFFF" />
+            <Text style={styles.deleteButtonText}>Delete Account</Text>
+          </TouchableOpacity>
+        </View>
           </ScrollView>
 
           {/* Full-width Save Button */}
@@ -303,6 +349,65 @@ export default function EditProfileScreen() {
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
+
+        {/* Delete Account Confirmation Modal */}
+        <Modal
+          visible={showDeleteModal}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowDeleteModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Delete Account</Text>
+              <Text style={[styles.modalDescription, { color: colors.textSecondary }]}>
+                This action cannot be undone. Your account will be permanently deleted, but your ratings and reviews will be anonymized and preserved.
+              </Text>
+              <Text style={[styles.modalDescription, { color: colors.textSecondary, marginTop: 12 }]}>
+                Type <Text style={{ fontWeight: 'bold', color: '#DC2626' }}>DELETE</Text> to confirm:
+              </Text>
+              <TextInput
+                style={[styles.modalInput, {
+                  backgroundColor: colors.backgroundSecondary,
+                  color: colors.text,
+                  borderColor: deleteConfirmation === 'DELETE' ? '#DC2626' : colors.border
+                }]}
+                value={deleteConfirmation}
+                onChangeText={setDeleteConfirmation}
+                placeholder="Type DELETE"
+                placeholderTextColor={colors.textSecondary}
+                autoCapitalize="characters"
+                autoCorrect={false}
+              />
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton, { borderColor: colors.border }]}
+                  onPress={() => {
+                    setShowDeleteModal(false);
+                    setDeleteConfirmation('');
+                  }}
+                  disabled={isDeleting}
+                >
+                  <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmDeleteButton, {
+                    opacity: deleteConfirmation === 'DELETE' ? 1 : 0.5
+                  }]}
+                  onPress={handleDeleteAccount}
+                  disabled={isDeleting || deleteConfirmation !== 'DELETE'}
+                >
+                  {isDeleting ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.confirmDeleteButtonText}>Delete Account</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
         <CustomAlert {...alertState} onDismiss={hideAlert} />
       </SafeAreaView>
     </>
@@ -370,6 +475,89 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   availabilityText: {
     fontSize: 14,
+    fontWeight: '600',
+  },
+  // Danger Zone styles
+  dangerSection: {
+    borderColor: '#DC2626',
+    backgroundColor: 'rgba(220, 38, 38, 0.05)',
+  },
+  dangerDescription: {
+    fontSize: 14,
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#DC2626',
+    padding: 14,
+    borderRadius: 8,
+  },
+  deleteButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 16,
+    padding: 24,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  modalDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  modalInput: {
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 2,
+    fontSize: 16,
+    marginTop: 12,
+    textAlign: 'center',
+    letterSpacing: 2,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    borderWidth: 1,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  confirmDeleteButton: {
+    backgroundColor: '#DC2626',
+  },
+  confirmDeleteButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
   },
 });

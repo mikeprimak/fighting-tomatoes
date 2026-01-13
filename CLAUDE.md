@@ -1,13 +1,13 @@
 # CLAUDE.md
 
-## NEXT SESSION: Final Launch Tasks
+## NEXT SESSION: Fix Apple Review Issues
 
-1. Gather screenshots for both App Store and Play Store
-2. Write app description & keywords
-3. Run EAS builds (`eas build --platform ios/android --profile production`)
-4. Submit to stores & fill in questionnaires
+Apple rejected the iOS build. Two fixes required before resubmitting:
 
-See `final-launch-steps.md` for full checklist.
+1. **Delete Account** - Add option to delete account from within the app
+2. **Guest Access** - Allow users to browse without logging in
+
+See `LAUNCH-DOC.md` for full status and checklists.
 
 ---
 
