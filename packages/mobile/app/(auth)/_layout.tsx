@@ -23,7 +23,6 @@ export default function AuthLayout() {
       <Stack.Screen name="verify-email-success" />
       <Stack.Screen name="forgot-password" />
       <Stack.Screen name="reset-password" />
-      <Stack.Screen name="welcome" />
     </Stack>
   );
 }

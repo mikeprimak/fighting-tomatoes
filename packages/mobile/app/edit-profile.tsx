@@ -164,7 +164,7 @@ export default function EditProfileScreen() {
       // Log out and redirect to login screen
       setTimeout(async () => {
         await logout();
-        router.replace('/(auth)/welcome');
+        router.replace('/(auth)/login');
       }, 1500);
     } catch (error: any) {
       console.error('Error deleting account:', error);
