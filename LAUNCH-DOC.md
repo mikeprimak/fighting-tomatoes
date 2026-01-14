@@ -8,8 +8,8 @@
 
 | Platform | Status | Notes |
 |----------|--------|-------|
-| **iOS** | REJECTED | Apple review flagged 2 issues - must fix and resubmit |
-| **Android** | In Internal Testing | v18 building - all major issues fixed |
+| **iOS** | IN REVIEW | Build 11 submitted - awaiting Apple review |
+| **Android** | In Internal Testing | v20 ready - waiting 12 more days for 14-day testing requirement |
 
 ---
 
@@ -28,10 +28,10 @@ These were flagged by Apple and should be fixed for both iOS and Android:
 
 | Issue | Description | Status |
 |-------|-------------|--------|
-| **Google Sign-In** | DEVELOPER_ERROR - SHA-1 mismatch with Play Store signing cert | Pending retest |
+| **Google Sign-In** | DEVELOPER_ERROR - SHA-1 mismatch with Play Store signing cert | FIXED |
 | **App Name** | Was "FightCrewApp", now "Good Fights" | FIXED |
 | **App Icon** | Centered hand icon on home screen | FIXED (v18) |
-| **Splash Screen** | Hand-only icon for Android 12+ | FIXED (v18) |
+| **Splash Screen** | Hand-only icon for Android 12+ | FIXED (v20) |
 
 ---
 
@@ -148,10 +148,11 @@ See which fights fans are hyped for, make your predictions, then rate the action
 
 | Build | Platform | Artifact | Notes |
 |-------|----------|----------|-------|
-| 18 | Android | (building) | Recentered app icon, hand-only splash |
-| 16 | Android | (internal test) | Modal close fix, splash/icon updates |
+| 11 | iOS | 5vK9U7m8rh5q4ncU1fbg6E.ipa | Submitted for review - includes all fixes |
+| 20 | Android | nRbEt1HoRZwXdhCxnKaXXF.aab | Splash screen fix (imageWidth 200) |
+| 19 | Android | ksbEbjT2KCbYs8fQCaAJbP.aab | Splash fix attempt (still cached) |
+| 18 | Android | (internal test) | Recentered app icon, hand-only splash |
 | 10 | iOS | qwMALBMWpbRToV73AS7vW8.ipa | iPhone-only, rejected by Apple |
-| 9 | Android | naFpmPAUJiajy7Sa4gXMgh.apk | Closed testing |
 
 ---
 
@@ -167,7 +168,7 @@ All core functionality has been tested on Android:
 - [x] Error handling
 
 ### Still Needs Testing
-- [ ] Google Sign-In after SHA-1 fix (Android)
+- [x] Google Sign-In after SHA-1 fix (Android) - WORKING
 - [x] Guest mode - working (login screen has "Continue as Guest")
 - [x] Delete account flow - working (Edit Profile > Danger Zone)
 
@@ -216,3 +217,21 @@ All core functionality has been tested on Android:
 
 **Test Accounts:**
 - `one@fightingtomatoes.com` through `six@fightingtomatoes.com` - Password: `Password1!`
+
+### 2026-01-14 (Evening) - iOS Resubmission & Splash Fix
+
+**Completed:**
+- **Splash Screen Fix**: Changed `imageWidth` from 400 to 200 in expo-splash-screen config. This prevents the hand icon from being cropped/zoomed.
+- **Android v20**: Built with `--clear-cache` flag - this was required for EAS to pick up the updated splash assets.
+- **iOS v11**: Built and submitted to App Store for review.
+- **Google Sign-In**: Confirmed working on Android.
+
+**Key Learnings:**
+- `eas build --clear-cache` is REQUIRED when updating native assets (splash, icons). Without it, EAS uses cached assets from previous builds.
+- The splash screen `imageWidth` controls how large the icon appears. 400 was too large and caused cropping; 200 shows the full hand.
+- When splash changes don't appear: delete android folder → `npx expo prebuild --clean` → `eas build --clear-cache`
+
+**Next Steps:**
+- Wait for Apple review (iOS v11)
+- Wait 12 more days for Google's 14-day testing requirement
+- Then submit Android v20 to production
