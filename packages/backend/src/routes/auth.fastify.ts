@@ -460,7 +460,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const userId = (request as any).user.userId;
+      const userId = (request as any).user?.id;
       const { confirmation } = request.body as { confirmation: string };
 
       // Require user to confirm by typing "DELETE"
