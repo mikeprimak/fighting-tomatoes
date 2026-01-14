@@ -43,12 +43,17 @@
       "usesAppleSignIn": true
     },
     "android": {
+      "splash": {
+        "image": "./assets/splash-logo.png",
+        "resizeMode": "native",
+        "backgroundColor": "#181818"
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon-foreground.png",
         "backgroundColor": "#1a1a1a"
       },
       "package": "com.fightcrewapp.mobile",
-      "versionCode": 16,
+      "versionCode": 17,
       "backgroundColor": "#181818",
       "statusBar": {
         "translucent": true,
@@ -99,6 +104,14 @@
       "output": "static"
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-logo.png",
+          "imageWidth": 400,
+          "backgroundColor": "#181818"
+        }
+      ],
       "expo-router",
       "expo-font",
       "expo-secure-store",
