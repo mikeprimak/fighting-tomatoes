@@ -22,7 +22,7 @@ export function TappableHeaderLogo({ onPress, marginLeft = 16 }: TappableHeaderL
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
     >
       <Image
-        source={require('../assets/app-icon.png')}
+        source={require('../assets/app-icon-internal.png')}
         style={{ width: 48, height: 48, marginLeft }}
         resizeMode="contain"
       />

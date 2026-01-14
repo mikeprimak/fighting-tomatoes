@@ -144,6 +144,27 @@ export const formatMethod = (method: string | null | undefined) => {
   return method;
 };
 
+// Format promotion name for display
+// e.g., "TOP_RANK" -> "Top Rank", "GOLDEN_BOY" -> "Golden Boy"
+// Preserves known acronyms like UFC, PFL, ONE, BKFC, etc.
+export const formatPromotionName = (promotion: string): string => {
+  // Known acronyms that should stay uppercase
+  const acronyms = ['UFC', 'PFL', 'ONE', 'BKFC', 'RIZIN', 'OKTAGON', 'MVP', 'PBC', 'DAZN', 'ESPN'];
+
+  // Replace underscores with spaces
+  const withSpaces = promotion.replace(/_/g, ' ');
+
+  // Title case each word, but preserve acronyms
+  return withSpaces
+    .split(' ')
+    .map(word => {
+      const upper = word.toUpperCase();
+      if (acronyms.includes(upper)) return upper;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
+};
+
 // Normalize event name to always include promotion prefix
 // Legacy events may have names like "321" or "Friday Fights 137" without the promotion
 // This function ensures names display as "UFC 321" or "ONE Friday Fights 137"
@@ -164,15 +185,18 @@ export const normalizeEventName = (eventName: string, promotion?: string | null)
     return eventName;
   }
 
+  // Format the promotion name for display
+  const formattedPromo = formatPromotionName(promotion);
+
   // Special case: Don't double-prefix if name starts with a number and promotion is UFC
   // e.g., "321" should become "UFC 321", not "UFC UFC 321"
   const startsWithNumber = /^\d+$/.test(eventName.trim());
   if (startsWithNumber) {
-    return `${promotion} ${eventName}`;
+    return `${formattedPromo} ${eventName}`;
   }
 
   // Prepend the promotion
-  return `${promotion} ${eventName}`;
+  return `${formattedPromo} ${eventName}`;
 };
 
 // Format event name for display on fight cards

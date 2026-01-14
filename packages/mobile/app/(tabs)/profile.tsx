@@ -616,7 +616,7 @@ export default function ProfileScreen() {
                     Rate fights on{' '}
                     <Text
                       style={{ color: colors.primary, fontWeight: '600' }}
-                      onPress={() => router.push('/(tabs)/completed')}
+                      onPress={() => router.push('/(tabs)/past-events')}
                     >
                       Completed Fights
                     </Text>
