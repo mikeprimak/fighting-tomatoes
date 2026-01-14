@@ -218,7 +218,7 @@ export default function PredictionAccuracyChart({
                 return (
                   <View key={event.eventId} style={[styles.labelWrapper, { width: BAR_WIDTH }]}>
                     <Text
-                      style={[styles.eventLabel, { color: colors.textSecondary, transform: [{ rotate: '-90deg' }] }]}
+                      style={[styles.eventLabel, { color: colors.textSecondary, transform: [{ rotate: '-90deg' }, { translateX: 6 }] }]}
                       numberOfLines={1}
                     >
                       {label}
@@ -260,6 +260,7 @@ const styles = StyleSheet.create({
   },
   chartContent: {
     flex: 1,
+    overflow: 'visible',
   },
   chartContainer: {
     height: 176, // 88px up + 88px down
@@ -387,6 +388,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     gap: 8,
     height: 80,
+    overflow: 'visible',
   },
   labelWrapper: {
     alignItems: 'center',
