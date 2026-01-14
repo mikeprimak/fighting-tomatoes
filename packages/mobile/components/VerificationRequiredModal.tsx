@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { useAuth } from '../store/AuthContext';
 import { api } from '../services/api';
@@ -17,12 +18,14 @@ interface VerificationRequiredModalProps {
   visible: boolean;
   onClose: () => void;
   actionDescription?: string;
+  isGuest?: boolean;
 }
 
 export const VerificationRequiredModal: React.FC<VerificationRequiredModalProps> = ({
   visible,
   onClose,
   actionDescription = 'perform this action',
+  isGuest = false,
 }) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -30,6 +33,16 @@ export const VerificationRequiredModal: React.FC<VerificationRequiredModalProps>
 
   const [isResending, setIsResending] = useState(false);
   const [resendStatus, setResendStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleSignUp = () => {
+    onClose();
+    router.push('/(auth)/register');
+  };
+
+  const handleSignIn = () => {
+    onClose();
+    router.push('/(auth)/login');
+  };
 
   const handleResend = async () => {
     if (isResending || !user?.email) return;
@@ -57,6 +70,52 @@ export const VerificationRequiredModal: React.FC<VerificationRequiredModalProps>
     return 'Resend Verification Email';
   };
 
+  // Guest mode - show account creation prompt
+  if (isGuest) {
+    return (
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={onClose}
+      >
+        <View style={styles.overlay}>
+          <View style={[styles.content, { backgroundColor: colors.card }]}>
+            <View style={styles.iconContainer}>
+              <FontAwesome name="user-plus" size={48} color={colors.primary} />
+            </View>
+
+            <Text style={[styles.title, { color: colors.text }]}>
+              Create an Account
+            </Text>
+
+            <Text style={[styles.message, { color: colors.textSecondary }]}>
+              Sign up to {actionDescription}. It only takes a moment!
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.resendButton, { backgroundColor: colors.primary }]}
+              onPress={handleSignUp}
+            >
+              <FontAwesome name="user-plus" size={16} color="#fff" style={styles.buttonIcon} />
+              <Text style={styles.resendButtonText}>Sign Up</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.closeButton, { backgroundColor: colors.background }]}
+              onPress={handleSignIn}
+            >
+              <Text style={[styles.closeButtonText, { color: colors.text }]}>
+                Already have an account? Sign In
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
+  // Unverified email mode - show verification prompt
   return (
     <Modal
       visible={visible}

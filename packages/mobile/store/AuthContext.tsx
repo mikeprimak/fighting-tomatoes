@@ -41,6 +41,7 @@ interface AuthContextType {
   accessToken: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isGuest: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   loginWithApple: (identityToken: string, email?: string, firstName?: string, lastName?: string) => Promise<void>;
@@ -48,6 +49,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
   refreshUserData: (orgs?: string[]) => Promise<void>;
+  continueAsGuest: () => void;
 }
 
 interface RegisterData {
@@ -85,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
   const appState = useRef(AppState.currentState);
 
   const isAuthenticated = !!user && !!accessToken;
@@ -286,6 +289,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAccessToken(data.accessToken);
       setUser(data.user);
+      setIsGuest(false); // Clear guest mode on login
 
       // Clear query cache to ensure fresh data for the new user
       queryClient.clear();
@@ -331,6 +335,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAccessToken(data.tokens.accessToken);
       setUser(data.user);
+      setIsGuest(false); // Clear guest mode on login
 
       // Clear query cache to ensure fresh data for the new user
       queryClient.clear();
@@ -370,6 +375,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAccessToken(data.tokens.accessToken);
       setUser(data.user);
+      setIsGuest(false); // Clear guest mode on login
 
       // Clear query cache to ensure fresh data for the new user
       queryClient.clear();
@@ -409,6 +415,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAccessToken(data.accessToken);
       setUser(data.user);
+      setIsGuest(false); // Clear guest mode on registration
 
       // Set user ID for analytics - TEMPORARILY DISABLED
       // await AnalyticsService.setUserId(data.user.id);
@@ -591,11 +598,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const continueAsGuest = () => {
+    setIsGuest(true);
+    router.replace('/(tabs)');
+  };
+
   const value: AuthContextType = {
     user,
     accessToken,
     isLoading,
     isAuthenticated,
+    isGuest,
     login,
     loginWithGoogle,
     loginWithApple,
@@ -603,6 +616,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     refreshToken,
     refreshUserData,
+    continueAsGuest,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

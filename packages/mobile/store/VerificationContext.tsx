@@ -19,22 +19,32 @@ interface VerificationContextType {
 const VerificationContext = createContext<VerificationContextType | undefined>(undefined);
 
 export function VerificationProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
   const [actionDescription, setActionDescription] = useState<string>('perform this action');
+  const [isGuestPrompt, setIsGuestPrompt] = useState(false);
 
   // Google/Apple sign-in users are auto-verified, email users need to verify
-  const isVerified = !user || user.isEmailVerified;
+  // Guests are NOT verified (they need to create an account)
+  const isVerified = !isGuest && (!user || user.isEmailVerified);
 
   const requireVerification = useCallback((description: string = 'perform this action'): boolean => {
+    if (isGuest) {
+      setActionDescription(description);
+      setIsGuestPrompt(true);
+      setModalVisible(true);
+      return false;
+    }
+
     if (isVerified) {
       return true;
     }
 
     setActionDescription(description);
+    setIsGuestPrompt(false);
     setModalVisible(true);
     return false;
-  }, [isVerified]);
+  }, [isVerified, isGuest]);
 
   const handleCloseModal = useCallback(() => {
     setModalVisible(false);
@@ -47,6 +57,7 @@ export function VerificationProvider({ children }: { children: React.ReactNode }
         visible={modalVisible}
         onClose={handleCloseModal}
         actionDescription={actionDescription}
+        isGuest={isGuestPrompt}
       />
     </VerificationContext.Provider>
   );
