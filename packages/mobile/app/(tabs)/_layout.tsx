@@ -15,7 +15,7 @@ export default function TabLayout() {
 
   // Allow access if authenticated OR guest
   if (!isAuthenticated && !isGuest) {
-    return <Redirect href="/(auth)/welcome" />;
+    return <Redirect href="/(auth)/login" />;
   }
 
   const showBanner = !!(user && !user.isEmailVerified);

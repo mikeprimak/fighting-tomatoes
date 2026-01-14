@@ -26,7 +26,7 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const { login } = useAuth();
+  const { login, continueAsGuest } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -178,6 +178,14 @@ export default function LoginScreen() {
             New? <Text style={[styles.signUpLinkText, { color: colors.tint }]}>Sign Up</Text>
           </Text>
         </TouchableOpacity>
+
+        {/* Continue as Guest */}
+        <TouchableOpacity
+          style={styles.guestButton}
+          onPress={continueAsGuest}
+        >
+          <Text style={styles.guestButtonText}>Continue as Guest</Text>
+        </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -318,6 +326,16 @@ const createStyles = (colors: any) => StyleSheet.create({
   forgotPasswordText: {
     fontSize: 14,
     color: colors.primary,
+    fontWeight: '500',
+  },
+  guestButton: {
+    marginTop: 16,
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  guestButtonText: {
+    fontSize: 16,
+    color: colors.textSecondary,
     fontWeight: '500',
   },
 });
