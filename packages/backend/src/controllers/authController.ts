@@ -856,18 +856,18 @@ export class AuthController {
         where: { userId }
       })
 
-      // Delete notification rules and matches (user-specific settings)
-      await prisma.fightNotificationMatch.deleteMany({
-        where: { userId }
-      })
-      await prisma.userNotificationRule.deleteMany({
-        where: { userId }
-      })
+      // Delete notification-related data (wrapped in try-catch in case tables don't exist)
+      try {
+        await prisma.fightNotificationMatch.deleteMany({ where: { userId } })
+      } catch (e) { console.log('Note: fightNotificationMatch cleanup skipped') }
 
-      // Delete user notifications
-      await prisma.userNotification.deleteMany({
-        where: { userId }
-      })
+      try {
+        await prisma.userNotificationRule.deleteMany({ where: { userId } })
+      } catch (e) { console.log('Note: userNotificationRule cleanup skipped') }
+
+      try {
+        await prisma.userNotification.deleteMany({ where: { userId } })
+      } catch (e) { console.log('Note: userNotification cleanup skipped') }
 
       // Note: We intentionally keep:
       // - FightRating (user's ratings)

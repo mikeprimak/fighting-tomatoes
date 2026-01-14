@@ -463,6 +463,29 @@ export default function ProfileScreen() {
     );
   };
 
+  // Guest user view - show login prompt
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={styles.container} edges={['left', 'right']}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+          <FontAwesome name="user-circle-o" size={80} color={colors.textSecondary} />
+          <Text style={{ fontSize: 20, fontWeight: '600', color: colors.text, marginTop: 24, textAlign: 'center' }}>
+            Log in to track your activity
+          </Text>
+          <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 8, textAlign: 'center', lineHeight: 20 }}>
+            See your predictions, ratings, comments, and more
+          </Text>
+          <TouchableOpacity
+            style={{ backgroundColor: colors.primary, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 8, marginTop: 24 }}
+            onPress={() => router.push('/(auth)/login')}
+          >
+            <Text style={{ color: colors.textOnAccent, fontSize: 16, fontWeight: '600' }}>Log In / Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       {/* Organization Filter Tabs */}
