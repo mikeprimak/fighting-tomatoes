@@ -48,7 +48,7 @@
         "backgroundColor": "#1a1a1a"
       },
       "package": "com.fightcrewapp.mobile",
-      "versionCode": 15,
+      "versionCode": 16,
       "backgroundColor": "#181818",
       "statusBar": {
         "translucent": true,
