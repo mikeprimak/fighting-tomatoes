@@ -13,10 +13,12 @@ import { router } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { GoogleSignInButton } from '../../components/GoogleSignInButton';
 import { AppleSignInButton } from '../../components/AppleSignInButton';
+import { useAuth } from '../../store/AuthContext';
 
 export default function WelcomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { continueAsGuest } = useAuth();
 
   const features = [
     { icon: 'star', text: 'Rate every UFC fight from 1-10' },
@@ -73,6 +75,11 @@ export default function WelcomeScreen() {
             <Text style={styles.signInLink}>Sign In</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Browse as Guest */}
+        <TouchableOpacity style={styles.guestButton} onPress={continueAsGuest}>
+          <Text style={styles.guestButtonText}>Browse as Guest</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -161,5 +168,15 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     color: colors.primary,
     fontWeight: '600',
+  },
+  guestButton: {
+    marginTop: 16,
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  guestButtonText: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    textDecorationLine: 'underline',
   },
 });

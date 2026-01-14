@@ -6,16 +6,16 @@ import { FightCrewAppTabBar } from '../../components';
 import { VerificationBanner } from '../../components/VerificationBanner';
 
 export default function TabLayout() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, isGuest } = useAuth();
 
   // Show loading state while checking auth
   if (isLoading) {
     return null;
   }
 
-  // If user is not authenticated, redirect to login
-  if (!isAuthenticated) {
-    return <Redirect href="/(auth)/login" />;
+  // Allow access if authenticated OR guest
+  if (!isAuthenticated && !isGuest) {
+    return <Redirect href="/(auth)/welcome" />;
   }
 
   const showBanner = !!(user && !user.isEmailVerified);
