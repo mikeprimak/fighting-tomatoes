@@ -1,0 +1,82 @@
+[Failsafe] Running cleanup at 2026-01-11T05:00:00.026Z
+[Failsafe] Step 1: Looking for stuck fights from events that started 6+ hours ago
+[Notification Scheduler] Running hourly check for pre-event reports
+[Pre-Event Report] Checking for events starting between 2026-01-11T12:00:00.027Z and 2026-01-11T13:00:00.027Z
+[Background Jobs] Running event scheduler safety check...
+[Event Scheduler] Running safety check...
+[Background Jobs] Running daily BKFC scraper...
+========================================
+🗓️  DAILY BKFC SCRAPER - Starting
+   Organization: BKFC (Bare Knuckle FC)
+   Time: 1/11/2026, 12:00:00 AM EST
+========================================
+[Daily BKFC Scraper] Step 1: Running scraper...
+[Event Scheduler] Safety check: No events need tracking
+[Pre-Event Report] Found 0 events to send reports for
+[Notification Scheduler] Pre-event report check completed
+[Failsafe] Found 0 stuck fights (checked 0 candidates)
+[Failsafe] Step 2: Looking for events with all fights complete
+[Failsafe] Checking 0 incomplete events
+[Failsafe] Step 3: Looking for events to force complete (started 8+ hours ago)
+[Failsafe] Found 0 events to force complete (checked 0 candidates)
+[Failsafe] ✓ No cleanup needed - all data current
+> @yourapp/backend@1.0.0 db:migrate:deploy /app/packages/backend
+> prisma migrate deploy
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "fightcrewapp", schema "public" at "dpg-d3oee81r0fns73c59610-a"
+28 migrations found in prisma/migrations
+No pending migrations to apply.
+> @yourapp/backend@1.0.0 start /app/packages/backend
+> node dist/server.js
+(node:66) [FSTDPE022] FastifyWarning: The router options for ignoreTrailingSlash property access is deprecated. Please use "options.routerOptions" instead for accessing router options. The router options will be removed in `fastify@6`.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Database connected successfully
+[Notification Scheduler] Initialized - will check for pre-event reports every hour
+[Background Jobs] Starting background jobs...
+[Background Jobs] Event completion checker DISABLED (memory constraints)
+[Background Jobs] News scraper DISABLED (memory constraints - run manually via API)
+[Background Jobs] Event-based scheduler ENABLED - safety check every 15 minutes
+[Background Jobs] Daily UFC scraper ENABLED - runs at 12pm EST (5pm UTC)
+[Background Jobs] Failsafe cleanup ENABLED - runs every hour
+[Background Jobs] Daily BKFC scraper ENABLED - runs at 12:00am EST (5:00am UTC)
+[Background Jobs] Daily PFL scraper ENABLED - runs at 3:00am EST (8:00am UTC)
+[Background Jobs] Daily ONE FC scraper ENABLED - runs at 6:00am EST (11:00am UTC)
+[Background Jobs] Daily Matchroom scraper ENABLED - runs at 9:00am EST (2:00pm UTC)
+[Background Jobs] Daily Golden Boy scraper ENABLED - runs at 3:00pm EST (8:00pm UTC)
+[Background Jobs] Daily Top Rank scraper ENABLED - runs at 6:00pm EST (11:00pm UTC)
+[Background Jobs] Daily OKTAGON scraper ENABLED - runs at 9:00pm EST (2:00am UTC)
+{"level":30,"time":1768107720299,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-5788f4b7f4-hnx6h","msg":"Server listening at http://127.0.0.1:10000"}
+FightCrewApp API server started on http://0.0.0.0:10000
+Environment: production
+Node version: v20.19.6
+{"level":30,"time":1768107720300,"pid":66,"hostname":"srv-d3opgf6mcj7s739fv57g-5788f4b7f4-hnx6h","msg":"Server listening at http://10.21.255.67:10000"}
+[Background Jobs] Initializing event-based scheduler...
+[Event Scheduler] Scheduling all upcoming events...
+[Event Scheduler] Found 9 upcoming events
+   🔴 Live tracker events: 3
+      - UFC: 1
+      - Matchroom: 1
+      - OKTAGON: 1
+   ⏰ Time-based fallback events: 6
+      - ONE: 4
+      - BKFC: 1
+      - Zuffa Boxing: 1
+[Event Scheduler] No start time for ONE Friday Fights 138, skipping
+[Event Scheduler] ⏰ BKFC 86 Mohegan Sun Lane vs. Pague (BKFC) - Using TIME-BASED fallback
+[Time-Based] BKFC 86 Mohegan Sun Lane vs. Pague: Scheduling Main Card in 10017 minutes (2026-01-18T04:00:00.000Z)
+[Time-Based] BKFC 86 Mohegan Sun Lane vs. Pague: Scheduled 1 section timer(s)
+[Event Scheduler] 🔴 Scheduled OKTAGON 82: ENGIZEK VS. JOTKO (oktagon) to start tracking in 9342 minutes
+[Event Scheduler]   Start time: 2026-01-17T16:45:00.000Z
+[Event Scheduler] No start time for ONE Friday Fights 139, skipping
+[Event Scheduler] ⏰ Zuffa Boxing 01 (Zuffa Boxing) - Using TIME-BASED fallback
+[Time-Based] Zuffa Boxing 01: Scheduling Prelims in 18177 minutes (2026-01-23T20:00:00.000Z)
+[Time-Based] Zuffa Boxing 01: Scheduling Main Card in 18297 minutes (2026-01-23T22:00:00.000Z)
+[Time-Based] Zuffa Boxing 01: Scheduled 2 section timer(s)
+[Event Scheduler] ⏰ ONE Fight Night 39 (ONE) - Using TIME-BASED fallback
+[Time-Based] ONE Fight Night 39: Scheduling Main Card in 18537 minutes (2026-01-24T02:00:00.000Z)
+[Time-Based] ONE Fight Night 39: Scheduled 1 section timer(s)
+[Event Scheduler] No start time for ONE Fight Night 39: Rambolek vs. Dayakaev, skipping
+[Event Scheduler] 🔴 Scheduled UFC 324: Gaethje vs. Pimblett (ufc) to start tracking in 19962 minutes
+[Event Scheduler]   Start time: 2026-01-25T01:45:00.000Z
+[Event Scheduler] No start time for Muratalla vs. Cruz, skipping
+[Event Scheduler] ✅ Scheduled 9 events
