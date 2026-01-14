@@ -1,6 +1,11 @@
-{"level":30,"time":1768415182316,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-558775ccd7-vgltr","reqId":"req-h","req":{"method":"GET","url":"/api/events","host":"fightcrewapp-backend.onrender.com","remoteAddress":"10.21.221.176","remotePort":45852},"msg":"incoming request"}
-{"level":30,"time":1768415182316,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-558775ccd7-vgltr","reqId":"req-h","method":"GET","url":"/api/events","userAgent":"okhttp/4.12.0","ip":"10.21.221.176","msg":"Incoming request"}
-{"level":30,"time":1768415182381,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-558775ccd7-vgltr","reqId":"req-h","res":{"statusCode":200},"responseTime":64.06758403778076,"msg":"request completed"}
-{"level":30,"time":1768415189666,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-558775ccd7-vgltr","reqId":"req-i","req":{"method":"DELETE","url":"/api/auth/account","host":"fightcrewapp-backend.onrender.com","remoteAddress":"10.23.79.3","remotePort":45904},"msg":"incoming request"}
-{"level":30,"time":1768415189666,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-558775ccd7-vgltr","reqId":"req-i","method":"DELETE","url":"/api/auth/account","userAgent":"okhttp/4.12.0","ip":"10.23.79.3","msg":"Incoming request"}
-{"level":30,"time":1768415189667,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-558775ccd7-vgltr","reqId":"req-i","res":{"statusCode":404},"responseTime":0.965693473815918,"msg":"request completed"}
+{"level":30,"time":1768415772362,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-58779997bc-rbkqz","reqId":"req-i","req":{"method":"DELETE","url":"/api/auth/account","host":"fightcrewapp-backend.onrender.com","remoteAddress":"10.20.84.218","remotePort":33782},"msg":"incoming request"}
+[AUTH] Verifying token, JWT_SECRET exists: true
+[AUTH] Token decoded, userId: 7be56662-3b02-4a2d-87a3-48b957e9597f
+{"level":30,"time":1768415772363,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-58779997bc-rbkqz","reqId":"req-i","method":"DELETE","url":"/api/auth/account","userAgent":"okhttp/4.12.0","ip":"10.20.84.218","msg":"Incoming request"}
+[AUTH] User lookup result: Found user one@fightingtomatoes.com
+[AUTH] Authentication successful for user: one@fightingtomatoes.com
+{"level":50,"time":1768415772368,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-58779997bc-rbkqz","reqId":"req-i","msg":"Delete account error:"}
+{"level":30,"time":1768415772369,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-58779997bc-rbkqz","reqId":"req-i","res":{"statusCode":500},"responseTime":6.01441764831543,"msg":"request completed"}
+{"level":30,"time":1768415773800,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-58779997bc-rbkqz","reqId":"req-j","req":{"method":"GET","url":"/api/events","host":"fightcrewapp-backend.onrender.com","remoteAddress":"10.20.13.188","remotePort":44512},"msg":"incoming request"}
+{"level":30,"time":1768415773800,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-58779997bc-rbkqz","reqId":"req-j","method":"GET","url":"/api/events","userAgent":"okhttp/4.12.0","ip":"10.20.13.188","msg":"Incoming request"}
+{"level":30,"time":1768415773880,"pid":84,"hostname":"srv-d3opgf6mcj7s739fv57g-58779997bc-rbkqz","reqId":"req-j","res":{"statusCode":200},"responseTime":80.13650321960449,"msg":"request completed"}

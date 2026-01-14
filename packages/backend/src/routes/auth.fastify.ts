@@ -524,9 +524,9 @@ export async function authRoutes(fastify: FastifyInstance) {
         message: 'Account deleted successfully. Your ratings and reviews have been anonymized.',
       });
     } catch (error: any) {
-      request.log.error('Delete account error:', error);
+      request.log.error({ err: error, message: error?.message, stack: error?.stack }, 'Delete account error');
       return reply.code(500).send({
-        error: 'Failed to delete account',
+        error: 'Failed to delete account: ' + (error?.message || 'Unknown error'),
         code: 'DELETE_FAILED',
       });
     }
