@@ -336,6 +336,5 @@ const createStyles = (colors: any) => StyleSheet.create({
   guestButtonText: {
     fontSize: 16,
     color: colors.textSecondary,
-    fontWeight: '500',
   },
 });
