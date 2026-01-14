@@ -4,6 +4,7 @@ import {
   Text,
   Modal,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   StyleSheet,
   useColorScheme,
   ActivityIndicator,
@@ -79,38 +80,42 @@ export const VerificationRequiredModal: React.FC<VerificationRequiredModalProps>
         animationType="fade"
         onRequestClose={onClose}
       >
-        <View style={styles.overlay}>
-          <View style={[styles.content, { backgroundColor: colors.card }]}>
-            <View style={styles.iconContainer}>
-              <FontAwesome name="user-plus" size={48} color={colors.primary} />
-            </View>
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={styles.overlay}>
+            <TouchableWithoutFeedback>
+              <View style={[styles.content, { backgroundColor: colors.card }]}>
+                <View style={styles.iconContainer}>
+                  <FontAwesome name="user-plus" size={48} color={colors.primary} />
+                </View>
 
-            <Text style={[styles.title, { color: colors.text }]}>
-              Create an Account
-            </Text>
+                <Text style={[styles.title, { color: colors.text }]}>
+                  Create an Account
+                </Text>
 
-            <Text style={[styles.message, { color: colors.textSecondary }]}>
-              Sign up to {actionDescription}. It only takes a moment!
-            </Text>
+                <Text style={[styles.message, { color: colors.textSecondary }]}>
+                  Sign up to {actionDescription}. It only takes a moment!
+                </Text>
 
-            <TouchableOpacity
-              style={[styles.resendButton, { backgroundColor: colors.primary }]}
-              onPress={handleSignUp}
-            >
-              <FontAwesome name="user-plus" size={16} color="#fff" style={styles.buttonIcon} />
-              <Text style={styles.resendButtonText}>Sign Up</Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.resendButton, { backgroundColor: colors.primary }]}
+                  onPress={handleSignUp}
+                >
+                  <FontAwesome name="user-plus" size={16} color="#fff" style={styles.buttonIcon} />
+                  <Text style={styles.resendButtonText}>Sign Up</Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.closeButton, { backgroundColor: colors.background }]}
-              onPress={handleSignIn}
-            >
-              <Text style={[styles.closeButtonText, { color: colors.text }]}>
-                Already have an account? Sign In
-              </Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.closeButton, { backgroundColor: colors.background }]}
+                  onPress={handleSignIn}
+                >
+                  <Text style={[styles.closeButtonText, { color: colors.text }]}>
+                    Already have an account? Sign In
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     );
   }
