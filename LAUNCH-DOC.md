@@ -1,6 +1,6 @@
 # Good Fights - Launch Documentation
 
-**Last Updated**: 2026-01-13
+**Last Updated**: 2026-01-14
 
 ---
 
@@ -9,7 +9,7 @@
 | Platform | Status | Notes |
 |----------|--------|-------|
 | **iOS** | REJECTED | Apple review flagged 2 issues - must fix and resubmit |
-| **Android** | In Closed Testing | Rebuilding to fix branding issues, Google Sign-In pending |
+| **Android** | In Internal Testing | v18 building - all major issues fixed |
 
 ---
 
@@ -22,7 +22,7 @@ These were flagged by Apple and should be fixed for both iOS and Android:
 | Issue | Description | Status |
 |-------|-------------|--------|
 | **Delete Account** | Must provide a way to delete account from within the app | DONE |
-| **Guest Access** | Must allow users to enter app without logging in or creating account | TODO |
+| **Guest Access** | Must allow users to enter app without logging in or creating account | DONE |
 
 ### Android-Specific Issues
 
@@ -30,8 +30,8 @@ These were flagged by Apple and should be fixed for both iOS and Android:
 |-------|-------------|--------|
 | **Google Sign-In** | DEVELOPER_ERROR - SHA-1 mismatch with Play Store signing cert | Pending retest |
 | **App Name** | Was "FightCrewApp", now "Good Fights" | FIXED |
-| **App Icon** | Wrong orientation | FIXED |
-| **Splash Screen** | Wrong image | FIXED |
+| **App Icon** | Centered hand icon on home screen | FIXED (v18) |
+| **Splash Screen** | Hand-only icon for Android 12+ | FIXED (v18) |
 
 ---
 
@@ -148,6 +148,8 @@ See which fights fans are hyped for, make your predictions, then rate the action
 
 | Build | Platform | Artifact | Notes |
 |-------|----------|----------|-------|
+| 18 | Android | (building) | Recentered app icon, hand-only splash |
+| 16 | Android | (internal test) | Modal close fix, splash/icon updates |
 | 10 | iOS | qwMALBMWpbRToV73AS7vW8.ipa | iPhone-only, rejected by Apple |
 | 9 | Android | naFpmPAUJiajy7Sa4gXMgh.apk | Closed testing |
 
@@ -166,8 +168,8 @@ All core functionality has been tested on Android:
 
 ### Still Needs Testing
 - [ ] Google Sign-In after SHA-1 fix (Android)
-- [ ] Guest mode (after implementation)
-- [ ] Delete account flow (after implementation)
+- [x] Guest mode - working (login screen has "Continue as Guest")
+- [x] Delete account flow - working (Edit Profile > Danger Zone)
 
 ---
 
@@ -192,3 +194,25 @@ All core functionality has been tested on Android:
 | API bug | Push to main, Render auto-deploys | Minutes |
 | Native crash | New EAS build + store review | 1-2 days |
 | Database issue | Fix via Prisma Studio | Minutes |
+
+---
+
+## Session Notes
+
+### 2026-01-14 - Android Fixes
+
+**Completed:**
+- **Delete Account**: Added to Fastify routes (production uses Fastify, not Express). Fixed `user.id` vs `user.userId` bug. Working on production.
+- **Guest Access**: Added "Continue as Guest" button to login screen. Removed separate welcome screen. Profile screen shows login prompt for guests.
+- **App Icon**: Using recentered hand-only icon for Android adaptive icon (home screen).
+- **Splash Screen**: Android 12+ has strict 240dp icon limit. Using hand-only image that fills the icon area.
+- **Auth Modal**: Now closes when tapping outside the modal.
+
+**Key Learnings:**
+- Production backend uses Fastify (`auth.fastify.ts`), not Express (`auth.ts`)
+- Android 12+ splash screen API limits icon to ~240dp - design around it
+- EAS builds require `--clear-cache` and `expo prebuild --clean` to pick up new assets
+- Always bump `versionCode` in BOTH `app.json` AND `android/app/build.gradle`
+
+**Test Accounts:**
+- `one@fightingtomatoes.com` through `six@fightingtomatoes.com` - Password: `Password1!`
