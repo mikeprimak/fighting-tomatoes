@@ -16,6 +16,7 @@ Detailed setup guides, troubleshooting procedures, and feature implementation de
 7. [Recent Features (Detailed)](#recent-features-detailed)
 8. [Performance Optimizations (Dec 2025)](#performance-optimizations-dec-2025)
 9. [Feature History](#feature-history)
+10. [Guest Access Implementation (Jan 2026)](#guest-access-implementation-jan-2026)
 
 ---
 
@@ -2477,6 +2478,133 @@ Users with `password: null` are prompted to:
 1. `packages/mobile/utils/heatmap.ts` - Create separate hype/rating color functions
 2. `packages/mobile/constants/Colors.ts` - Add semantic color constants
 3. `packages/mobile/components/RatingDistributionChart.tsx` - Use rating colors
+
+---
+
+## Guest Access Implementation (Jan 2026)
+
+**Purpose**: Allow users to browse app content without creating an account, as required by Apple App Store guidelines.
+
+### Architecture Overview
+
+The guest access system piggybacks on the existing email verification framework. Unverified users could already browse but not interact - we extended this pattern to guests.
+
+| State | Can Browse | Can Interact | Modal Shown |
+|-------|------------|--------------|-------------|
+| Authenticated + Verified | Yes | Yes | None |
+| Authenticated + Unverified | Yes | No | "Verify Email" |
+| Guest | Yes | No | "Create Account" |
+
+### Files Modified
+
+1. **`packages/mobile/store/AuthContext.tsx`**
+   - Added `isGuest: boolean` state
+   - Added `continueAsGuest()` function that sets guest mode and navigates to tabs
+   - Clear guest mode on login/register (`setIsGuest(false)`)
+
+2. **`packages/mobile/app/(tabs)/_layout.tsx`**
+   - Changed auth check from `if (!isAuthenticated)` to `if (!isAuthenticated && !isGuest)`
+   - Redirect goes to `/welcome` (not `/login`) so users see the guest option
+
+3. **`packages/mobile/store/VerificationContext.tsx`**
+   - Added `isGuestPrompt` state to track modal type
+   - Modified `isVerified` check: `!isGuest && (!user || user.isEmailVerified)`
+   - `requireVerification()` now checks for guest first, shows appropriate modal
+
+4. **`packages/mobile/components/VerificationRequiredModal.tsx`**
+   - Added `isGuest` prop
+   - Guest mode UI: user-plus icon, "Create an Account" title, Sign Up/Sign In buttons
+   - Unverified mode: unchanged (envelope icon, verify email message)
+
+5. **`packages/mobile/app/(auth)/welcome.tsx`**
+   - Added "Browse as Guest" button below Sign In link
+   - Calls `continueAsGuest()` from AuthContext
+
+### Guest Experience Flow
+
+```
+Welcome Screen → "Browse as Guest" → Main App (tabs)
+                                          ↓
+                              Browse events, fights, fighters
+                                          ↓
+                              Try to rate/comment/predict
+                                          ↓
+                              "Create Account" modal appears
+                                          ↓
+                              Sign Up → Registration → Authenticated
+```
+
+### What Guests Can Do
+- View all events, fights, fighters
+- Read comments and reviews
+- See community stats and predictions
+- Use search
+- Browse fighter profiles
+
+### What Guests Cannot Do (blocked by modal)
+- Rate fights
+- Write reviews/comments
+- Make predictions
+- Follow fighters/fights
+- Join/create crews
+- Access profile/settings
+
+### Key Code Patterns
+
+**AuthContext - Guest state:**
+```typescript
+const [isGuest, setIsGuest] = useState(false);
+
+const continueAsGuest = () => {
+  setIsGuest(true);
+  router.replace('/(tabs)');
+};
+
+// Clear on any successful auth
+setIsGuest(false); // in login, loginWithGoogle, loginWithApple, register
+```
+
+**VerificationContext - Guard logic:**
+```typescript
+const { user, isGuest } = useAuth();
+const isVerified = !isGuest && (!user || user.isEmailVerified);
+
+const requireVerification = useCallback((description) => {
+  if (isGuest) {
+    setIsGuestPrompt(true);
+    setModalVisible(true);
+    return false;
+  }
+  if (isVerified) return true;
+  setIsGuestPrompt(false);
+  setModalVisible(true);
+  return false;
+}, [isVerified, isGuest]);
+```
+
+**Modal - Conditional UI:**
+```typescript
+if (isGuest) {
+  return (
+    <Modal>
+      <FontAwesome name="user-plus" />
+      <Text>Create an Account</Text>
+      <Text>Sign up to {actionDescription}</Text>
+      <Button onPress={() => router.push('/(auth)/register')}>Sign Up</Button>
+      <Button onPress={() => router.push('/(auth)/login')}>Sign In</Button>
+    </Modal>
+  );
+}
+// ... existing verification modal
+```
+
+### Testing Checklist
+- [ ] Tap "Browse as Guest" → enters main app
+- [ ] Can browse events, fights, fighters
+- [ ] Try to rate fight → "Create Account" modal appears
+- [ ] Tap "Sign Up" → goes to registration
+- [ ] Complete registration → authenticated, can interact
+- [ ] Log out → returns to welcome screen (not guest mode)
 
 ---
 
