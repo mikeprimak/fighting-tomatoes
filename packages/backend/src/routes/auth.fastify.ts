@@ -428,6 +428,110 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Delete account endpoint
+  // Anonymizes user data while preserving ratings/reviews (Apple/Google requirement)
+  fastify.delete('/account', {
+    preHandler: [fastify.authenticate],
+    schema: {
+      description: 'Delete user account (anonymizes data, preserves content)',
+      tags: ['auth'],
+      body: {
+        type: 'object',
+        required: ['confirmation'],
+        properties: {
+          confirmation: { type: 'string', description: 'Must be "DELETE" to confirm' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            message: { type: 'string' },
+          },
+        },
+        400: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const userId = (request as any).user.userId;
+      const { confirmation } = request.body as { confirmation: string };
+
+      // Require user to confirm by typing "DELETE"
+      if (confirmation !== 'DELETE') {
+        return reply.code(400).send({
+          error: 'Please type DELETE to confirm account deletion',
+          code: 'CONFIRMATION_REQUIRED',
+        });
+      }
+
+      // Generate a random anonymous email to satisfy unique constraint
+      const anonymousEmail = `deleted_${Date.now()}_${Math.random().toString(36).substring(7)}@deleted.local`;
+
+      // Anonymize user data (keep the record for content attribution)
+      await fastify.prisma.user.update({
+        where: { id: userId },
+        data: {
+          email: anonymousEmail,
+          password: null,
+          firstName: null,
+          lastName: null,
+          displayName: 'Deleted User',
+          avatar: null,
+          googleId: null,
+          appleId: null,
+          emailVerificationToken: null,
+          emailVerificationExpires: null,
+          passwordResetToken: null,
+          passwordResetExpires: null,
+          pushToken: null,
+          isActive: false,
+          isEmailVerified: false,
+          wantsEmails: false,
+          isMedia: false,
+          mediaOrganization: null,
+          mediaWebsite: null,
+        },
+      });
+
+      // Delete all refresh tokens (log out all sessions)
+      await fastify.prisma.refreshToken.deleteMany({
+        where: { userId },
+      });
+
+      // Delete notification-related data (wrapped in try-catch in case tables don't exist)
+      try {
+        await fastify.prisma.fightNotificationMatch.deleteMany({ where: { userId } });
+      } catch (e) { request.log.info('Note: fightNotificationMatch cleanup skipped'); }
+
+      try {
+        await fastify.prisma.userNotificationRule.deleteMany({ where: { userId } });
+      } catch (e) { request.log.info('Note: userNotificationRule cleanup skipped'); }
+
+      try {
+        await fastify.prisma.userNotification.deleteMany({ where: { userId } });
+      } catch (e) { request.log.info('Note: userNotification cleanup skipped'); }
+
+      request.log.info(`[Auth] Account deleted and anonymized for user ${userId}`);
+
+      return reply.code(200).send({
+        message: 'Account deleted successfully. Your ratings and reviews have been anonymized.',
+      });
+    } catch (error: any) {
+      request.log.error('Delete account error:', error);
+      return reply.code(500).send({
+        error: 'Failed to delete account',
+        code: 'DELETE_FAILED',
+      });
+    }
+  });
+
   // Refresh token endpoint
   fastify.post('/refresh', {
     schema: {
