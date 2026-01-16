@@ -161,11 +161,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
       const fighterCount = await prisma.fighter.count({
         where: {
-          fights: {
-            some: {
-              event: { promotion: org }
-            }
-          }
+          OR: [
+            { fightsAsFighter1: { some: { event: { promotion: org } } } },
+            { fightsAsFighter2: { some: { event: { promotion: org } } } },
+          ]
         }
       });
 
