@@ -49,10 +49,34 @@ async function scrapeEventsList(browser) {
 
   await page.goto('https://www.ufc.com/events', {
     waitUntil: 'networkidle2',
-    timeout: 30000
+    timeout: 60000
   });
 
-  await page.waitForSelector('.c-card-event--result__logo', { timeout: 10000 });
+  // Wait for event cards to load - try multiple selectors with longer timeout
+  // UFC.com loads content via JavaScript, so we need to wait for it
+  const selectors = ['.c-card-event--result__logo', '.c-card-event--result', '.l-listing__item'];
+  let selectorFound = false;
+
+  for (const selector of selectors) {
+    try {
+      await page.waitForSelector(selector, { timeout: 30000 });
+      console.log(`✓ Found selector: ${selector}`);
+      selectorFound = true;
+      break;
+    } catch (e) {
+      console.log(`⚠ Selector ${selector} not found, trying next...`);
+    }
+  }
+
+  if (!selectorFound) {
+    // Log page content for debugging
+    const pageTitle = await page.title();
+    const bodyText = await page.evaluate(() => document.body?.innerText?.substring(0, 500) || 'No body');
+    console.error(`❌ No event selectors found on UFC.com/events`);
+    console.error(`Page title: ${pageTitle}`);
+    console.error(`Body preview: ${bodyText}`);
+    throw new Error('UFC.com events page did not load expected content - possible bot detection or site change');
+  }
 
   const events = await page.evaluate(() => {
     const eventCards = document.querySelectorAll('.l-listing__item');
