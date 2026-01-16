@@ -145,39 +145,39 @@ export async function adminRoutes(fastify: FastifyInstance) {
     const organizations = ['UFC', 'BKFC', 'PFL', 'ONE', 'Matchroom Boxing', 'Golden Boy', 'Top Rank', 'OKTAGON'];
 
     const statusPromises = organizations.map(async (org) => {
-      const latestEvent = await prisma.event.findFirst({
-        where: { promotion: org },
-        orderBy: { updatedAt: 'desc' },
-        select: {
-          name: true,
-          updatedAt: true,
-          date: true,
-        }
-      });
+      try {
+        const latestEvent = await prisma.event.findFirst({
+          where: { promotion: org },
+          orderBy: { updatedAt: 'desc' },
+          select: {
+            name: true,
+            updatedAt: true,
+            date: true,
+          }
+        });
 
-      const eventCount = await prisma.event.count({
-        where: { promotion: org }
-      });
+        const eventCount = await prisma.event.count({
+          where: { promotion: org }
+        });
 
-      const fighterCount = await prisma.fighter.count({
-        where: {
-          OR: [
-            { fightsAsFighter1: { some: { event: { promotion: org } } } },
-            { fightsAsFighter2: { some: { event: { promotion: org } } } },
-          ]
-        }
-      });
-
-      return {
-        organization: org,
-        lastUpdated: latestEvent?.updatedAt || null,
-        lastUpdatedEvent: latestEvent?.name || null,
-        totalEvents: eventCount,
-        totalFighters: fighterCount,
-        timeSinceUpdate: latestEvent?.updatedAt
-          ? Math.round((Date.now() - new Date(latestEvent.updatedAt).getTime()) / (1000 * 60 * 60)) + ' hours ago'
-          : 'never'
-      };
+        return {
+          organization: org,
+          lastUpdated: latestEvent?.updatedAt || null,
+          lastUpdatedEvent: latestEvent?.name || null,
+          totalEvents: eventCount,
+          timeSinceUpdate: latestEvent?.updatedAt
+            ? Math.round((Date.now() - new Date(latestEvent.updatedAt).getTime()) / (1000 * 60 * 60)) + ' hours ago'
+            : 'never'
+        };
+      } catch (err: any) {
+        return {
+          organization: org,
+          error: err.message,
+          lastUpdated: null,
+          totalEvents: 0,
+          timeSinceUpdate: 'error'
+        };
+      }
     });
 
     const statuses = await Promise.all(statusPromises);
