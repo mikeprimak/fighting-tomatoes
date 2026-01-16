@@ -1,0 +1,79 @@
+name: UFC Scraper
+
+on:
+  schedule:
+    # Run daily at 5pm UTC (12pm EST)
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub UI
+
+jobs:
+  scrape-ufc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd packages/backend
+          pnpm install
+
+      - name: Generate Prisma client
+        run: |
+          cd packages/backend
+          npx prisma generate
+
+      - name: Build TypeScript
+        run: |
+          cd packages/backend
+          pnpm build
+
+      - name: Install Chromium for Puppeteer
+        run: |
+          cd packages/backend
+          npx puppeteer browsers install chrome
+
+      - name: Run UFC Scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
+          R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          SCRAPER_MODE: automated
+          SCRAPER_TIMEOUT: '1200000'
+        run: |
+          cd packages/backend
+          echo "Starting UFC scraper..."
+          node dist/services/scrapeAllUFCData.js
+          echo "Scraper finished. Importing to database..."
+          node -e "
+            const { importUFCData } = require('./dist/services/ufcDataParser.js');
+            importUFCData().then(() => {
+              console.log('Import complete!');
+              process.exit(0);
+            }).catch(err => {
+              console.error('Import failed:', err);
+              process.exit(1);
+            });
+          "
+          echo "Done!"
+
+      - name: Report result
+        if: always()
+        run: |
+          echo "UFC Scraper workflow completed at $(date)"
