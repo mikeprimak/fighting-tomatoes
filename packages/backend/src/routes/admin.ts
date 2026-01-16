@@ -146,7 +146,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
     const statusPromises = organizations.map(async (org) => {
       const latestEvent = await prisma.event.findFirst({
-        where: { organization: org },
+        where: { promotion: org },
         orderBy: { updatedAt: 'desc' },
         select: {
           name: true,
@@ -156,14 +156,14 @@ export async function adminRoutes(fastify: FastifyInstance) {
       });
 
       const eventCount = await prisma.event.count({
-        where: { organization: org }
+        where: { promotion: org }
       });
 
       const fighterCount = await prisma.fighter.count({
         where: {
           fights: {
             some: {
-              event: { organization: org }
+              event: { promotion: org }
             }
           }
         }
