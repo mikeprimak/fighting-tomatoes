@@ -70,10 +70,16 @@ async function scrapeEventsList(browser) {
 
   // Visit homepage first to establish cookies/session
   console.log('  Visiting UFC.com homepage first...');
-  await page.goto('https://www.ufc.com/', {
-    waitUntil: 'domcontentloaded',
-    timeout: 30000
-  });
+  try {
+    await page.goto('https://www.ufc.com/', {
+      waitUntil: 'domcontentloaded',
+      timeout: 30000
+    });
+    const homeTitle = await page.title();
+    console.log(`  ✓ Homepage loaded: "${homeTitle}"`);
+  } catch (homeError) {
+    console.log(`  ⚠ Homepage failed: ${homeError.message}`);
+  }
 
   // Small delay to seem more human
   await new Promise(r => setTimeout(r, 2000));
@@ -754,7 +760,7 @@ async function main() {
   console.log('='.repeat(60));
 
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: 'new',  // Use Chrome's new headless mode - harder to detect
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -763,6 +769,7 @@ async function main() {
       '--disable-gpu',
       '--window-size=1920,1080',
       '--disable-blink-features=AutomationControlled',
+      '--lang=en-US,en',
     ]
   });
 
