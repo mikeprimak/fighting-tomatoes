@@ -492,33 +492,75 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         console.log(`      Found ${boxersFound.length} boxers: ${boxersFound.map(b => b.name).join(', ')}`);
       }
 
-      // Pair boxers that are separated by VS
-      // They should appear in order on the page
-      for (let i = 0; i < boxersFound.length - 1; i += 2) {
-        const boxerA = boxersFound[i];
-        const boxerB = boxersFound[i + 1];
+      // Pair boxers by verifying there's a VS separator between them
+      // This prevents incorrectly pairing fighters who have TBA opponents
+      const weightClasses = [
+        'Heavyweight', 'Cruiserweight', 'Light Heavyweight', 'Super Middleweight',
+        'Middleweight', 'Super Welterweight', 'Welterweight', 'Super Lightweight',
+        'Lightweight', 'Super Featherweight', 'Featherweight', 'Super Bantamweight',
+        'Bantamweight', 'Super Flyweight', 'Flyweight', 'Light Flyweight', 'Minimumweight'
+      ];
 
-        if (!boxerA || !boxerB) continue;
+      // For each boxer, look for VS followed by another boxer (not TBA/TBD)
+      for (let i = 0; i < boxersFound.length; i++) {
+        const boxerA = boxersFound[i];
+
+        // Get text after this boxer's record ends (position + approximate record length)
+        const afterBoxerA = normalizedText.substring(boxerA.position + boxerA.name.length);
+
+        // Check if there's a VS pattern after this boxer
+        // Pattern: some text, then VS, then either another boxer name OR TBA/TBD
+        const vsMatch = afterBoxerA.match(/^[^V]*?\bVS\.?\b\s*/i);
+
+        if (!vsMatch) {
+          // No VS after this boxer - they might have TBA opponent, skip
+          continue;
+        }
+
+        const afterVs = afterBoxerA.substring(vsMatch.index + vsMatch[0].length);
+
+        // Check if opponent is TBA/TBD - if so, skip this fight
+        if (/^(TBA|TBD|TO BE ANNOUNCED|OPPONENT TBA)/i.test(afterVs.trim())) {
+          console.log(`      Skipping ${boxerA.name} - opponent is TBA`);
+          continue;
+        }
+
+        // Find the next boxer in our list that appears after VS
+        let boxerB = null;
+        for (let j = i + 1; j < boxersFound.length; j++) {
+          const candidate = boxersFound[j];
+          // Check if this candidate's position is after the VS
+          // and reasonably close (within ~500 chars to avoid matching wrong fights)
+          const distanceFromVs = candidate.position - (boxerA.position + vsMatch.index + vsMatch[0].length);
+          if (distanceFromVs > 0 && distanceFromVs < 500) {
+            boxerB = candidate;
+            // Mark this boxer as used so we don't pair them again
+            boxersFound.splice(j, 1);
+            break;
+          }
+        }
+
+        if (!boxerB) {
+          // No valid opponent found after VS - might be TBA
+          continue;
+        }
 
         const pairKey = [boxerA.name, boxerB.name].sort().join('|');
         if (processedPairs.has(pairKey)) continue;
         processedPairs.add(pairKey);
 
-        // Check if this is a title fight
-        const isTitle = pageText.toLowerCase().includes('championship') ||
-                       pageText.toLowerCase().includes('world title') ||
-                       pageText.toLowerCase().includes('undisputed');
+        // Check if this is a title fight (look in text between the two boxers)
+        const textBetween = normalizedText.substring(boxerA.position, boxerB.position).toUpperCase();
+        const isTitle = textBetween.includes('CHAMPIONSHIP') ||
+                       textBetween.includes('WORLD TITLE') ||
+                       textBetween.includes('UNDISPUTED') ||
+                       textBetween.includes('WBC') ||
+                       textBetween.includes('WBA') ||
+                       textBetween.includes('WBO') ||
+                       textBetween.includes('IBF');
 
         // Try to determine weight class from text between the two boxers
         let weightClass = '';
-        const weightClasses = [
-          'Heavyweight', 'Cruiserweight', 'Light Heavyweight', 'Super Middleweight',
-          'Middleweight', 'Super Welterweight', 'Welterweight', 'Super Lightweight',
-          'Lightweight', 'Super Featherweight', 'Featherweight', 'Super Bantamweight',
-          'Bantamweight', 'Super Flyweight', 'Flyweight', 'Light Flyweight', 'Minimumweight'
-        ];
-
-        const textBetween = normalizedText.substring(boxerA.position, boxerB.position).toUpperCase();
         for (const wc of weightClasses) {
           if (textBetween.includes(wc.toUpperCase())) {
             weightClass = wc;
@@ -531,7 +573,7 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
           order: globalOrder,
           cardType: globalOrder === 1 ? 'Main Event' : 'Undercard',
           weightClass,
-          isTitle: isTitle && globalOrder === 1,
+          isTitle,
           boxerA: {
             name: boxerA.name,
             record: boxerA.record,
