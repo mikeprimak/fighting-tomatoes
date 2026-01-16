@@ -75,6 +75,61 @@ export async function adminRoutes(fastify: FastifyInstance) {
   const prisma = fastify.prisma;
 
   // ============================================
+  // TEST SCRAPER ENDPOINT (no JWT, uses secret key)
+  // Use this for testing scrapers in production:
+  //   curl "https://fightcrewapp-backend.onrender.com/api/admin/test-scraper/bkfc?key=YOUR_KEY"
+  // ============================================
+  const TEST_SCRAPER_KEY = process.env.TEST_SCRAPER_KEY || 'fightcrew-test-2026';
+
+  const scraperMap: Record<string, () => Promise<any>> = {
+    'ufc': triggerDailyUFCScraper,
+    'bkfc': triggerBKFCScraper,
+    'pfl': triggerPFLScraper,
+    'onefc': triggerOneFCScraper,
+    'matchroom': triggerMatchroomScraper,
+    'goldenboy': triggerGoldenBoyScraper,
+    'toprank': triggerTopRankScraper,
+    'oktagon': triggerOktagonScraper,
+  };
+
+  fastify.get('/admin/test-scraper/:org', async (request, reply) => {
+    const { org } = request.params as { org: string };
+    const { key } = request.query as { key?: string };
+
+    // Validate secret key
+    if (key !== TEST_SCRAPER_KEY) {
+      return reply.code(401).send({ error: 'Invalid key' });
+    }
+
+    const scraperFn = scraperMap[org.toLowerCase()];
+    if (!scraperFn) {
+      return reply.code(400).send({
+        error: `Unknown org: ${org}`,
+        available: Object.keys(scraperMap)
+      });
+    }
+
+    console.log(`[Test Scraper] Triggering ${org.toUpperCase()} scraper...`);
+
+    try {
+      const results = await scraperFn();
+      console.log(`[Test Scraper] ${org.toUpperCase()} completed:`, results);
+      return reply.send({
+        success: true,
+        org: org.toUpperCase(),
+        results
+      });
+    } catch (error: any) {
+      console.error(`[Test Scraper] ${org.toUpperCase()} failed:`, error);
+      return reply.code(500).send({
+        success: false,
+        org: org.toUpperCase(),
+        error: error.message
+      });
+    }
+  });
+
+  // ============================================
   // FIGHTER SEARCH (for autocomplete)
   // ============================================
   fastify.get('/admin/fighters/search', {
