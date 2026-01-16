@@ -130,6 +130,70 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // ============================================
+  // SCRAPER STATUS - Shows last successful scrape times per org
+  // Use: curl "https://fightcrewapp-backend.onrender.com/api/admin/scraper-status?key=YOUR_KEY"
+  // ============================================
+  fastify.get('/admin/scraper-status', async (request, reply) => {
+    const { key } = request.query as { key?: string };
+
+    if (key !== TEST_SCRAPER_KEY) {
+      return reply.code(401).send({ error: 'Invalid key' });
+    }
+
+    // Get the most recent event updatedAt per organization
+    // This serves as a proxy for "when did the scraper last successfully update data"
+    const organizations = ['UFC', 'BKFC', 'PFL', 'ONE', 'Matchroom Boxing', 'Golden Boy', 'Top Rank', 'OKTAGON'];
+
+    const statusPromises = organizations.map(async (org) => {
+      const latestEvent = await prisma.event.findFirst({
+        where: { organization: org },
+        orderBy: { updatedAt: 'desc' },
+        select: {
+          name: true,
+          updatedAt: true,
+          date: true,
+        }
+      });
+
+      const eventCount = await prisma.event.count({
+        where: { organization: org }
+      });
+
+      const fighterCount = await prisma.fighter.count({
+        where: {
+          fights: {
+            some: {
+              event: { organization: org }
+            }
+          }
+        }
+      });
+
+      return {
+        organization: org,
+        lastUpdated: latestEvent?.updatedAt || null,
+        lastUpdatedEvent: latestEvent?.name || null,
+        totalEvents: eventCount,
+        totalFighters: fighterCount,
+        timeSinceUpdate: latestEvent?.updatedAt
+          ? Math.round((Date.now() - new Date(latestEvent.updatedAt).getTime()) / (1000 * 60 * 60)) + ' hours ago'
+          : 'never'
+      };
+    });
+
+    const statuses = await Promise.all(statusPromises);
+
+    return reply.send({
+      generatedAt: new Date().toISOString(),
+      scrapers: statuses.sort((a, b) => {
+        if (!a.lastUpdated) return 1;
+        if (!b.lastUpdated) return -1;
+        return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime();
+      })
+    });
+  });
+
+  // ============================================
   // FIGHTER SEARCH (for autocomplete)
   // ============================================
   fastify.get('/admin/fighters/search', {
