@@ -13,9 +13,13 @@
  * - SCRAPER_TIMEOUT: Overall timeout in milliseconds (default: 600000 = 10min)
  */
 
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const fs = require('fs');
 const path = require('path');
+
+// Add stealth plugin to evade bot detection
+puppeteer.use(StealthPlugin());
 
 // Configuration based on mode
 const SCRAPER_MODE = process.env.SCRAPER_MODE || 'manual';
@@ -45,7 +49,7 @@ async function scrapeEventsList(browser) {
 
   const page = await browser.newPage();
   await page.setViewport({ width: 1920, height: 1080 });
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
   await page.goto('https://www.ufc.com/events', {
     waitUntil: 'networkidle2',
@@ -249,7 +253,7 @@ async function scrapeEventsList(browser) {
 async function scrapeEventPage(browser, eventUrl, eventName) {
   const page = await browser.newPage();
   await page.setViewport({ width: 1920, height: 1080 });
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
   try {
     await page.goto(eventUrl, {
@@ -551,7 +555,7 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
 async function scrapeAthletePage(browser, athleteUrl) {
   const page = await browser.newPage();
   await page.setViewport({ width: 1920, height: 1080 });
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
   try {
     await page.goto(athleteUrl, {
@@ -721,7 +725,18 @@ async function main() {
   console.log('\n🚀 Starting UFC Data Scraping Orchestrator\n');
   console.log('='.repeat(60));
 
-  const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox'] });
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--disable-gpu',
+      '--window-size=1920,1080',
+      '--disable-blink-features=AutomationControlled',
+    ]
+  });
 
   try {
     // STEP 1: Get events list
