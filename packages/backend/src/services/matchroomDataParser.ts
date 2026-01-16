@@ -458,10 +458,23 @@ async function importMatchroomEvents(
     let fightsImported = 0;
     const fights = allFights;
 
+    // TBA fighter ID for opponents not yet announced
+    const TBA_FIGHTER_ID = 'tba-fighter-global';
+
     for (const fightData of fights) {
       // Find or create boxers
       let boxer1Id = boxerNameToId.get(fightData.boxerA.name);
       let boxer2Id = boxerNameToId.get(fightData.boxerB.name);
+
+      // Handle TBA opponents - use the global TBA fighter
+      if (fightData.boxerB.name === 'TBA' || fightData.boxerB.name.toUpperCase() === 'TBA') {
+        boxer2Id = TBA_FIGHTER_ID;
+        console.log(`    Using TBA fighter for ${fightData.boxerA.name}'s opponent`);
+      }
+      if (fightData.boxerA.name === 'TBA' || fightData.boxerA.name.toUpperCase() === 'TBA') {
+        boxer1Id = TBA_FIGHTER_ID;
+        console.log(`    Using TBA fighter for ${fightData.boxerB.name}'s opponent`);
+      }
 
       // Create boxers on the fly if not found
       // Single-name fighters are stored with firstName empty, lastName containing the name
