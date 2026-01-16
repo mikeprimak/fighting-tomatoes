@@ -1,4 +1,5 @@
 name: UFC Scraper
+# Runs from GitHub Actions IPs to bypass UFC.com CDN block
 
 on:
   schedule:
