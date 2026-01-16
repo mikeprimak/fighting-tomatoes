@@ -492,8 +492,9 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         console.log(`      Found ${boxersFound.length} boxers: ${boxersFound.map(b => b.name).join(', ')}`);
       }
 
-      // Pair boxers by verifying there's a VS separator between them
-      // This prevents incorrectly pairing fighters who have TBA opponents
+      // Pair boxers by finding VS patterns and determining if opponent is named or TBA
+      // TBA pattern: "VS W KO L D" (stats without a name before W)
+      // Named pattern: "VS [NAME] W [stats]"
       const weightClasses = [
         'Heavyweight', 'Cruiserweight', 'Light Heavyweight', 'Super Middleweight',
         'Middleweight', 'Super Welterweight', 'Welterweight', 'Super Lightweight',
@@ -501,68 +502,99 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         'Bantamweight', 'Super Flyweight', 'Flyweight', 'Light Flyweight', 'Minimumweight'
       ];
 
-      // For each boxer, look for VS followed by another boxer (not TBA/TBD)
+      // TBA placeholder for fights with unannounced opponents
+      const TBA_BOXER = {
+        name: 'TBA',
+        record: '0-0-0',
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        kos: 0,
+        imageUrl: null,
+        country: '',
+        isTBA: true
+      };
+
+      // Track which boxers have been paired
+      const pairedBoxerIndices = new Set();
+
+      // For each boxer, look for VS and determine opponent
       for (let i = 0; i < boxersFound.length; i++) {
+        if (pairedBoxerIndices.has(i)) continue;
+
         const boxerA = boxersFound[i];
 
-        // Get text after this boxer's record ends (position + approximate record length)
-        const afterBoxerA = normalizedText.substring(boxerA.position + boxerA.name.length);
+        // Get text after this boxer's record (estimate ~30-40 chars for "W ## KO ## L ## D ##")
+        const recordEndPos = boxerA.position + boxerA.name.length + 40;
+        const afterBoxerA = normalizedText.substring(boxerA.position);
 
-        // Check if there's a VS pattern after this boxer
-        // Pattern: some text, then VS, then either another boxer name OR TBA/TBD
-        const vsMatch = afterBoxerA.match(/^[^V]*?\bVS\.?\b\s*/i);
+        // Find VS after this boxer's record
+        const vsMatch = afterBoxerA.match(/W\s*\d+\s*KO\s*\d+\s*L\s*\d*\s*D?\s*\d*[^V]*?\bVS\.?\b\s*/i);
 
         if (!vsMatch) {
-          // No VS after this boxer - they might have TBA opponent, skip
+          // No VS after this boxer - skip
           continue;
         }
 
-        const afterVs = afterBoxerA.substring(vsMatch.index + vsMatch[0].length);
+        const vsEndPos = boxerA.position + vsMatch.index + vsMatch[0].length;
+        const afterVs = normalizedText.substring(vsEndPos);
 
-        // Check if opponent is TBA/TBD - if so, skip this fight
-        if (/^(TBA|TBD|TO BE ANNOUNCED|OPPONENT TBA)/i.test(afterVs.trim())) {
-          console.log(`      Skipping ${boxerA.name} - opponent is TBA`);
-          continue;
-        }
+        // Check if opponent is TBA - pattern: "W KO L D" immediately after VS (no name)
+        // TBA shows as: "VS W KO L D" where W has no number or empty stats
+        const tbaPattern = /^W\s*KO\s*L\s*D\s/i;
+        const isTBA = tbaPattern.test(afterVs.trim());
 
-        // Find the next boxer in our list that appears after VS
         let boxerB = null;
-        for (let j = i + 1; j < boxersFound.length; j++) {
-          const candidate = boxersFound[j];
-          // Check if this candidate's position is after the VS
-          // and reasonably close (within ~500 chars to avoid matching wrong fights)
-          const distanceFromVs = candidate.position - (boxerA.position + vsMatch.index + vsMatch[0].length);
-          if (distanceFromVs > 0 && distanceFromVs < 500) {
-            boxerB = candidate;
-            // Mark this boxer as used so we don't pair them again
-            boxersFound.splice(j, 1);
-            break;
+
+        if (isTBA) {
+          // Opponent is TBA
+          boxerB = { ...TBA_BOXER };
+          console.log(`      Found TBA opponent for ${boxerA.name}`);
+        } else {
+          // Find the next boxer in our list that appears after VS
+          for (let j = i + 1; j < boxersFound.length; j++) {
+            if (pairedBoxerIndices.has(j)) continue;
+
+            const candidate = boxersFound[j];
+            // Check if this candidate's position is right after VS
+            // Should be within ~100 chars (just the name before their stats)
+            const distanceFromVs = candidate.position - vsEndPos;
+            if (distanceFromVs >= 0 && distanceFromVs < 100) {
+              boxerB = candidate;
+              pairedBoxerIndices.add(j);
+              break;
+            }
           }
         }
 
         if (!boxerB) {
-          // No valid opponent found after VS - might be TBA
+          // No valid opponent found after VS
+          console.log(`      No opponent found for ${boxerA.name}, skipping`);
           continue;
         }
 
-        const pairKey = [boxerA.name, boxerB.name].sort().join('|');
+        pairedBoxerIndices.add(i);
+
+        const pairKey = boxerB.isTBA
+          ? `${boxerA.name}|TBA`
+          : [boxerA.name, boxerB.name].sort().join('|');
         if (processedPairs.has(pairKey)) continue;
         processedPairs.add(pairKey);
 
-        // Check if this is a title fight (look in text between the two boxers)
-        const textBetween = normalizedText.substring(boxerA.position, boxerB.position).toUpperCase();
-        const isTitle = textBetween.includes('CHAMPIONSHIP') ||
-                       textBetween.includes('WORLD TITLE') ||
-                       textBetween.includes('UNDISPUTED') ||
-                       textBetween.includes('WBC') ||
-                       textBetween.includes('WBA') ||
-                       textBetween.includes('WBO') ||
-                       textBetween.includes('IBF');
+        // Check if this is a title fight (look in text after boxerA up to ~300 chars)
+        const textAfterA = normalizedText.substring(boxerA.position, boxerA.position + 300).toUpperCase();
+        const isTitle = textAfterA.includes('CHAMPIONSHIP') ||
+                       textAfterA.includes('WORLD TITLE') ||
+                       textAfterA.includes('UNDISPUTED') ||
+                       textAfterA.includes('WBC WORLD') ||
+                       textAfterA.includes('WBA WORLD') ||
+                       textAfterA.includes('WBO WORLD') ||
+                       textAfterA.includes('IBF WORLD');
 
-        // Try to determine weight class from text between the two boxers
+        // Try to determine weight class from text around the fight
         let weightClass = '';
         for (const wc of weightClasses) {
-          if (textBetween.includes(wc.toUpperCase())) {
+          if (textAfterA.includes(wc.toUpperCase())) {
             weightClass = wc;
             break;
           }
