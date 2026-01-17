@@ -134,10 +134,11 @@ class OktagonLiveTracker {
       // Log status
       console.log(`  📊 Fights updated: ${result.fightsUpdated}, Cancelled: ${result.cancelledCount}, Un-cancelled: ${result.unCancelledCount}`);
 
-      // Check if event is complete
-      if (scrapedData.isComplete) {
-        await autoCompleteOktagonEvent(this.config.eventId);
-        console.log('  🎉 Event is complete, stopping tracker...');
+      // Check if event should be auto-completed (all non-cancelled fights in DB are complete)
+      // This checks DB state, not scraped data, so it handles cancelled fights correctly
+      const eventCompleted = await autoCompleteOktagonEvent(this.config.eventId);
+      if (eventCompleted) {
+        console.log('  🎉 All fights complete - event marked complete, stopping tracker...');
         await this.stop();
       }
 
