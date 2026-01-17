@@ -92,6 +92,16 @@ async function scrapeEventsList(browser) {
 
       if (!eventSlug) return;
 
+      // Skip sub-pages (schedule, tickets, results, etc.) - these are not event pages
+      const subPagePatterns = ['/fight-week-schedule', '/schedule', '/tickets', '/results', '/media', '/gallery', '/photos'];
+      if (subPagePatterns.some(pattern => eventSlug.includes(pattern.replace('/', '')))) {
+        return;
+      }
+      // Also skip if slug contains a slash (indicates a sub-page)
+      if (eventSlug.includes('/')) {
+        return;
+      }
+
       // Try to find the event card container
       const container = link.closest('[class*="event"]') ||
                        link.closest('[class*="card"]') ||
