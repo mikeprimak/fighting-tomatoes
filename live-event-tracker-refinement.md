@@ -9,16 +9,16 @@ Build and refine live event trackers for each promotion so users can watch fight
 
 ## Current Status (Jan 17, 2026)
 
-| Promotion | Live Tracker | Status | Notes |
-|-----------|--------------|--------|-------|
-| UFC | ✅ Working | Production | Uses ufc.com scraping |
-| OKTAGON | ✅ Working | Production | Uses api.oktagonmma.com REST API |
-| Matchroom | ⚠️ Exists | Untested | Needs live event testing |
-| BKFC | ❌ None | Planned | |
-| PFL | ❌ None | Planned | |
-| ONE FC | ❌ None | Planned | |
-| Top Rank | ❌ None | Planned | |
-| Golden Boy | ❌ None | Planned | |
+| Promotion | Live Tracker | Status | Cancellation Detection | Notes |
+|-----------|--------------|--------|------------------------|-------|
+| UFC | ✅ Working | Production | ✅ Yes | Uses ufc.com scraping |
+| OKTAGON | ✅ Working | Production | ✅ Yes | Uses api.oktagonmma.com REST API |
+| Matchroom | ⚠️ Exists | Untested | ❌ Missing | Needs live event testing + ADD cancellation logic |
+| BKFC | ❌ None | Planned | - | |
+| PFL | ❌ None | Planned | - | |
+| ONE FC | ❌ None | Planned | - | |
+| Top Rank | ❌ None | Planned | - | |
+| Golden Boy | ❌ None | Planned | - | |
 
 ### Time-Based Fallback
 Promotions without live trackers use time-based completion:
@@ -63,10 +63,24 @@ Promotions without live trackers use time-based completion:
    - Match scraped fighters to database fighters (by name)
    - Match scraped fights to database fights (by fighter pairing)
    - Update fight records: `hasStarted`, `isComplete`, `winner`, `method`, `round`, `time`
-3. Handle edge cases:
+3. **CRITICAL: Implement cancellation detection** (see below)
+4. Handle edge cases:
    - Fighter name mismatches (accents, nicknames)
-   - Cancelled fights
    - No-contests, draws
+
+#### Cancellation Detection (REQUIRED)
+
+Every live parser MUST include cancellation detection logic. This catches fights that were scheduled but later removed from the card.
+
+**How it works:**
+1. Track which fights appear in the scraped data (using a Set of fight signatures)
+2. After processing scraped fights, iterate through DB fights for the event
+3. If a DB fight is NOT in the scraped data AND event has started → mark as `isCancelled: true`
+4. If a previously cancelled fight reappears in scraped data → set `isCancelled: false`
+
+**Reference implementation:** See `ufcLiveParser.ts` lines 550-614 or `oktagonLiveParser.ts` lines 251-307
+
+**Why this matters:** Without this, cancelled fights remain visible in the app even though they're not happening. Discovered during Oktagon 82 when Doussis vs Orlov was cancelled but still showing in the app.
 
 ### Phase 4: Build Tracker
 
@@ -306,11 +320,18 @@ See `IMPLEMENTATION_COMPLETE.md` for details.
 3. Fixed event categorization bug (live events in wrong tab)
 4. Deployed and ran tracker throughout event
 5. Verified mobile app updates in real-time
+6. **Added cancellation detection** - matches UFC live tracker behavior
 
 **Stats:**
 - Scrape time: ~300ms per poll
 - Fights updated: 4+ (3 complete by end of session)
-- Issues found: Event categorization (fixed)
+- Issues found: Event categorization (fixed), Missing cancellation detection (fixed)
+
+**Cancellation Detection (added during Oktagon 82):**
+- Issue: Fight "Marc Doussis vs Yevhenii Orlov" was in app but not on Oktagon website (cancelled)
+- Fix: Added cancellation detection logic to `oktagonLiveParser.ts` (same as UFC parser)
+- Behavior: If a fight is in DB but not in scraped data AND event has started → mark as `isCancelled: true`
+- Also handles un-cancelling if fight reappears in scraped data
 
 ---
 
