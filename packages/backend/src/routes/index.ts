@@ -263,30 +263,37 @@ export async function registerRoutes(fastify: FastifyInstance) {
       }
 
       // Add type filter for upcoming/past events
-      // Note: For upcoming, we check BOTH that the event is not complete AND the date is in the future
-      // This prevents past events that weren't marked complete from appearing in upcoming
+      // Upcoming includes:
+      //   1. Future events (date >= now, not complete)
+      //   2. Live events (hasStarted = true, not complete) - these show even if date passed
+      // Past includes:
+      //   - Only events that are actually complete (isComplete = true)
       if (type === 'upcoming') {
-        whereClause.isComplete = false;
-        whereClause.date = { gte: new Date() };
-        // Add promotion filter if present
-        if (promotionFilter) {
-          whereClause.AND = [promotionFilter];
-        }
-      } else if (type === 'past') {
-        // Past events: either completed OR date is in the past
-        // Need to combine with promotion filter using AND if present
-        const pastCondition = {
-          OR: [
-            { isComplete: true },
-            { date: { lt: new Date() } }
+        // Not complete AND (future date OR currently live)
+        const upcomingCondition = {
+          AND: [
+            { isComplete: false },
+            {
+              OR: [
+                { date: { gte: new Date() } },     // Future events
+                { hasStarted: true }               // Live events (date passed but still in progress)
+              ]
+            }
           ]
         };
 
         if (promotionFilter) {
-          // Combine past condition AND promotion filter
-          whereClause.AND = [pastCondition, promotionFilter];
+          whereClause.AND = [upcomingCondition, promotionFilter];
         } else {
-          whereClause.OR = pastCondition.OR;
+          whereClause.AND = [upcomingCondition];
+        }
+      } else if (type === 'past') {
+        // Past events: only show events that are actually complete
+        // Don't show events just because their date passed (they might be live)
+        whereClause.isComplete = true;
+
+        if (promotionFilter) {
+          whereClause.AND = [promotionFilter];
         }
       } else {
         // type === 'all' - just add promotion filter if present
