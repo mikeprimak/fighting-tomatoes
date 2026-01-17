@@ -23,6 +23,7 @@ import {
 import { getFailsafeStatus } from '../services/failsafeCleanup';
 import { scheduleAllUpcomingEvents, safetyCheckEvents } from '../services/eventBasedScheduler';
 import { uploadEventImage, uploadFighterImage } from '../services/imageStorage';
+import oktagonTracker, { startOktagonLiveTracking, stopOktagonLiveTracking, getOktagonTrackingStatus } from '../services/oktagonLiveTracker';
 
 // Zod schemas for admin CRUD operations
 const CreateEventSchema = z.object({
@@ -229,6 +230,172 @@ export async function adminRoutes(fastify: FastifyInstance) {
     } catch (err: any) {
       return reply.code(500).send({ error: 'Failed to delete event', message: err.message });
     }
+  });
+
+  // ============================================
+  // OKTAGON LIVE TRACKER - Start/Stop/Status
+  // ============================================
+
+  // Start Oktagon live tracker
+  // Use: curl -X POST "https://fightcrewapp-backend.onrender.com/api/admin/live-tracker/oktagon/start?key=YOUR_KEY" \
+  //        -H "Content-Type: application/json" \
+  //        -d '{"eventId":"...", "eventUrl":"https://oktagonmma.com/en/events/...", "eventName":"OKTAGON 82"}'
+  fastify.post('/admin/live-tracker/oktagon/start', async (request, reply) => {
+    const { key } = request.query as { key?: string };
+
+    if (key !== TEST_SCRAPER_KEY) {
+      return reply.code(401).send({ error: 'Invalid key' });
+    }
+
+    const { eventId, eventUrl, eventName, intervalSeconds } = request.body as {
+      eventId?: string;
+      eventUrl?: string;
+      eventName?: string;
+      intervalSeconds?: number;
+    };
+
+    // If eventId provided but no URL, look up event in database
+    let finalEventId = eventId;
+    let finalEventUrl = eventUrl;
+    let finalEventName = eventName;
+
+    if (eventId && !eventUrl) {
+      const event = await prisma.event.findUnique({
+        where: { id: eventId },
+        select: { id: true, name: true, date: true }
+      });
+
+      if (!event) {
+        return reply.code(404).send({ error: 'Event not found' });
+      }
+
+      finalEventName = event.name;
+      // Construct Oktagon URL from event name
+      const slug = event.name.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+      finalEventUrl = `https://oktagonmma.com/en/events/${slug}/?eventDetail=true`;
+    }
+
+    if (!finalEventId || !finalEventUrl) {
+      return reply.code(400).send({
+        error: 'Missing required fields',
+        required: 'eventId (or eventId + eventUrl)',
+        example: {
+          eventId: 'uuid-here',
+          eventUrl: 'https://oktagonmma.com/en/events/oktagon-82-dusseldorf/?eventDetail=true',
+          eventName: 'OKTAGON 82',
+          intervalSeconds: 60
+        }
+      });
+    }
+
+    // Check if already running
+    const currentStatus = getOktagonTrackingStatus();
+    if (currentStatus.isRunning) {
+      return reply.code(409).send({
+        error: 'Tracker already running',
+        currentEvent: currentStatus.eventName,
+        startedAt: currentStatus.startedAt
+      });
+    }
+
+    // Also mark event as started in database based on start time
+    const event = await prisma.event.findUnique({
+      where: { id: finalEventId },
+      select: { id: true, date: true, hasStarted: true }
+    });
+
+    if (event && !event.hasStarted) {
+      const now = new Date();
+      const eventDate = new Date(event.date);
+      if (now >= eventDate) {
+        await prisma.event.update({
+          where: { id: finalEventId },
+          data: { hasStarted: true }
+        });
+        console.log(`[Live Tracker] Marked event ${finalEventId} as started (based on start time)`);
+      }
+    }
+
+    try {
+      await startOktagonLiveTracking({
+        eventId: finalEventId,
+        eventUrl: finalEventUrl,
+        eventName: finalEventName || 'OKTAGON Event',
+        intervalSeconds: intervalSeconds || 60
+      });
+
+      return reply.send({
+        success: true,
+        message: 'Oktagon live tracker started',
+        event: {
+          id: finalEventId,
+          name: finalEventName,
+          url: finalEventUrl
+        },
+        intervalSeconds: intervalSeconds || 60
+      });
+    } catch (error: any) {
+      return reply.code(500).send({
+        error: 'Failed to start tracker',
+        message: error.message
+      });
+    }
+  });
+
+  // Stop Oktagon live tracker
+  // Use: curl -X POST "https://fightcrewapp-backend.onrender.com/api/admin/live-tracker/oktagon/stop?key=YOUR_KEY"
+  fastify.post('/admin/live-tracker/oktagon/stop', async (request, reply) => {
+    const { key } = request.query as { key?: string };
+
+    if (key !== TEST_SCRAPER_KEY) {
+      return reply.code(401).send({ error: 'Invalid key' });
+    }
+
+    const currentStatus = getOktagonTrackingStatus();
+    if (!currentStatus.isRunning) {
+      return reply.send({
+        success: true,
+        message: 'Tracker was not running'
+      });
+    }
+
+    try {
+      await stopOktagonLiveTracking();
+
+      return reply.send({
+        success: true,
+        message: 'Oktagon live tracker stopped',
+        stats: {
+          totalScrapes: currentStatus.totalScrapes,
+          fightsUpdated: currentStatus.fightsUpdated
+        }
+      });
+    } catch (error: any) {
+      return reply.code(500).send({
+        error: 'Failed to stop tracker',
+        message: error.message
+      });
+    }
+  });
+
+  // Get Oktagon live tracker status
+  // Use: curl "https://fightcrewapp-backend.onrender.com/api/admin/live-tracker/oktagon/status?key=YOUR_KEY"
+  fastify.get('/admin/live-tracker/oktagon/status', async (request, reply) => {
+    const { key } = request.query as { key?: string };
+
+    if (key !== TEST_SCRAPER_KEY) {
+      return reply.code(401).send({ error: 'Invalid key' });
+    }
+
+    const status = getOktagonTrackingStatus();
+
+    return reply.send({
+      success: true,
+      tracker: status
+    });
   });
 
   // ============================================

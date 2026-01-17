@@ -167,15 +167,42 @@ class OktagonLiveScraper {
       const nextData = JSON.parse(nextDataScript);
       const queries = nextData.props?.pageProps?.dehydratedState?.queries || [];
 
-      // Find the query with event data (has cards array)
+      // Find event details query and fightCard query
+      let eventDetails: any = null;
+      let fightCards: any[] = [];
+
       for (const query of queries) {
+        const queryKey = query.queryKey || [];
         const data = query.state?.data;
+
+        // Look for event details (has title, startDate, etc.)
+        if (queryKey.includes('events') && queryKey.includes('detail') && data?.title) {
+          eventDetails = data;
+        }
+
+        // Look for fightCard query (queryKey includes 'fightCard')
+        if (queryKey.includes('fightCard') && Array.isArray(data)) {
+          fightCards = data;
+        }
+
+        // Legacy: also check for cards directly in data
         if (data && data.cards && data.cards.length > 0) {
-          return data;
+          fightCards = data.cards;
+          if (!eventDetails) {
+            eventDetails = data;
+          }
         }
       }
 
-      throw new Error('No event data found in __NEXT_DATA__');
+      if (fightCards.length === 0) {
+        throw new Error('No fight card data found in __NEXT_DATA__');
+      }
+
+      // Return combined data structure
+      return {
+        ...eventDetails,
+        cards: fightCards,
+      };
 
     } catch (error: any) {
       console.error(`  ❌ Fetch error: ${error.message}`);
@@ -234,23 +261,46 @@ class OktagonLiveScraper {
           isComplete = true;
           hasStarted = true;
 
-          const winnerId = fight.result.winner?.id;
+          // New format: result is a string like "FIGHTER_1_WIN" or "FIGHTER_2_WIN"
+          // resultType is the method, time and numRounds are at fight level
+          const resultStr = typeof fight.result === 'string' ? fight.result : null;
           let winnerName: string | undefined;
+          let winnerId: number | undefined;
 
-          if (winnerId === fighterA.id) {
+          if (resultStr === 'FIGHTER_1_WIN') {
             fighterA.isWinner = true;
             winnerName = fighterA.lastName;
-          } else if (winnerId === fighterB.id) {
+            winnerId = fighterA.id;
+          } else if (resultStr === 'FIGHTER_2_WIN') {
             fighterB.isWinner = true;
             winnerName = fighterB.lastName;
+            winnerId = fighterB.id;
+          } else if (typeof fight.result === 'object' && fight.result?.winner?.id) {
+            // Legacy format: result is an object with winner.id
+            const legacyWinnerId = fight.result.winner.id;
+            if (legacyWinnerId === fighterA.id) {
+              fighterA.isWinner = true;
+              winnerName = fighterA.lastName;
+              winnerId = legacyWinnerId;
+            } else if (legacyWinnerId === fighterB.id) {
+              fighterB.isWinner = true;
+              winnerName = fighterB.lastName;
+              winnerId = legacyWinnerId;
+            }
           }
+
+          // resultType contains the method (DEC, TKO, SUB, etc.)
+          // time and numRounds are at fight level
+          const method = fight.resultType
+            ? parseMethod(fight.resultType)
+            : (typeof fight.result === 'object' ? parseMethod(fight.result?.method) : undefined);
 
           result = {
             winner: winnerName,
             winnerId: winnerId,
-            method: parseMethod(fight.result.method),
-            round: fight.result.round,
-            time: fight.result.time,
+            method: method,
+            round: fight.numRounds || (typeof fight.result === 'object' ? fight.result?.round : undefined),
+            time: fight.time || (typeof fight.result === 'object' ? fight.result?.time : undefined),
           };
         }
 
@@ -281,7 +331,6 @@ class OktagonLiveScraper {
 
     // Determine event status
     const completedFights = fights.filter(f => f.isComplete).length;
-    const liveFights = fights.filter(f => f.hasStarted && !f.isComplete).length;
 
     let status: 'upcoming' | 'live' | 'complete' = 'upcoming';
     let hasStarted = false;
@@ -291,9 +340,25 @@ class OktagonLiveScraper {
       status = 'complete';
       hasStarted = true;
       isComplete = true;
-    } else if (completedFights > 0 || liveFights > 0) {
+    } else if (completedFights > 0) {
       status = 'live';
       hasStarted = true;
+
+      // Infer which fight is currently live
+      // Fights are ordered from main event (1) to prelims (highest number)
+      // Fights happen in reverse order (highest order number first)
+      // So the "currently live" fight is the one with the highest order that isn't complete
+      const incompleteFights = fights.filter(f => !f.isComplete);
+      if (incompleteFights.length > 0) {
+        // Sort by order descending to find the first incomplete fight (highest order = next to fight)
+        incompleteFights.sort((a, b) => b.order - a.order);
+        const currentFight = incompleteFights[0];
+        // Mark it as started (live)
+        const fightIndex = fights.findIndex(f => f.fightId === currentFight.fightId);
+        if (fightIndex !== -1) {
+          fights[fightIndex].hasStarted = true;
+        }
+      }
     }
 
     return {
