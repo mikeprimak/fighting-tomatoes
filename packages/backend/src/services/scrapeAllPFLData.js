@@ -376,7 +376,7 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
           /^stats$/i, /^info$/i, /^main\s*card/i, /^prelims/i,
           /^round\s*\d/i, /^r\d$/i, /submission/i, /decision/i,
           /knockout/i, /^ko$/i, /^tko$/i, /^unanimous/i,
-          /^split$/i, /^majority/i, /^draw$/i, /^nc$/i,
+          /^split$/i, /^majority$/i, /^draw$/i, /^nc$/i,
           /buy\s*now/i, /ticket/i, /matchup/i, /result/i,
           /championship/i, /title\s*bout/i, /^vs\.?$/i,
           /^\d+$/,  // Just numbers
@@ -385,6 +385,11 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
           /featherweight/i, /bantamweight/i, /flyweight/i,
           /middleweight/i, /women's/i, /men's/i,
           /^main$/i, /^card$/i, /^bout$/i, /^fight$/i,
+          // Filter out placeholder/template names from PFL website
+          /^fighter\s*headshot/i, /^fighter\s*bodyshot/i,
+          /headshot$/i, /bodyshot$/i,
+          /^fighter$/i,  // Just "Fighter" alone
+          /placeholder/i, /default/i, /template/i,
         ];
 
         for (const pattern of invalidPatterns) {

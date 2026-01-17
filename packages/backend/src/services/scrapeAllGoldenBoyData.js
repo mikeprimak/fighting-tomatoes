@@ -93,12 +93,16 @@ async function scrapeEventsList(browser) {
       if (!eventSlug) return;
 
       // Skip sub-pages (schedule, tickets, results, etc.) - these are not event pages
-      const subPagePatterns = ['/fight-week-schedule', '/schedule', '/tickets', '/results', '/media', '/gallery', '/photos'];
-      if (subPagePatterns.some(pattern => eventSlug.includes(pattern.replace('/', '')))) {
+      // Use case-insensitive comparison since slugs may have mixed case
+      const eventSlugLower = eventSlug.toLowerCase();
+      const subPagePatterns = ['fight-week-schedule', 'schedule', 'tickets', 'results', 'media', 'gallery', 'photos', 'fight-week'];
+      if (subPagePatterns.some(pattern => eventSlugLower.includes(pattern))) {
+        console.log(`   ⏭️ Skipping sub-page: ${eventSlug}`);
         return;
       }
       // Also skip if slug contains a slash (indicates a sub-page)
       if (eventSlug.includes('/')) {
+        console.log(`   ⏭️ Skipping sub-page (has slash): ${eventSlug}`);
         return;
       }
 

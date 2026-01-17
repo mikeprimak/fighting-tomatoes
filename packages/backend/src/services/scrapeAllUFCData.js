@@ -439,11 +439,22 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
         if (sectionClass === 'anchors-bar') return;
 
         let cardType = '';
-        // Use includes() to handle multiple classes (e.g., "fight-card-prelims-early active")
-        // Check fight-card-prelims-early BEFORE fight-card-prelims (substring match)
-        if (sectionClass.includes('main-card')) cardType = 'Main Card';
-        else if (sectionClass.includes('fight-card-prelims-early')) cardType = 'Early Prelims';
-        else if (sectionClass.includes('fight-card-prelims')) cardType = 'Prelims';
+        // Normalize class to lowercase for case-insensitive matching
+        const sectionClassLower = sectionClass.toLowerCase();
+
+        // Check for various class name patterns used by UFC
+        // IMPORTANT: Check "early" patterns BEFORE generic "prelims" to avoid substring matching issues
+        if (sectionClassLower.includes('main-card') || sectionClassLower.includes('main_card')) {
+          cardType = 'Main Card';
+        } else if (sectionClassLower.includes('early-prelims') ||
+                   sectionClassLower.includes('early_prelims') ||
+                   sectionClassLower.includes('prelims-early') ||
+                   sectionClassLower.includes('prelims_early') ||
+                   sectionClassLower.includes('fight-card-prelims-early')) {
+          cardType = 'Early Prelims';
+        } else if (sectionClassLower.includes('prelims') || sectionClassLower.includes('prelim')) {
+          cardType = 'Prelims';
+        }
 
         const timeEl = section.querySelector('.c-event-fight-card-broadcaster__time');
         const startTime = timeEl?.textContent?.trim() || '';

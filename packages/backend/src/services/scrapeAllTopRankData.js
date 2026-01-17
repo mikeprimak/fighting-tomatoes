@@ -441,6 +441,50 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
         fighterAName = fighterAName.replace(/\s+/g, ' ').replace(/^\d+\s*lbs?\s*/i, '').trim();
         fighterBName = fighterBName.replace(/\s+/g, ' ').replace(/\s*\d+\s*lbs?$/i, '').trim();
 
+        // Try to extract fighter records from nearby text
+        // Common formats: "25-1-0", "(25-1)", "25W-1L-0D", "25 wins, 1 loss"
+        let fighterARecord = '';
+        let fighterBRecord = '';
+
+        // Look for record patterns near fighter names in the element text
+        // Pattern 1: "(W-L-D)" or "(W-L)" format
+        const recordPatterns = [
+          /\((\d{1,3})\s*[-–]\s*(\d{1,3})\s*[-–]?\s*(\d{1,3})?\)/g,  // (25-1-0) or (25-1)
+          /(\d{1,3})\s*[-–]\s*(\d{1,3})\s*[-–]\s*(\d{1,3})/g,        // 25-1-0
+          /(\d{1,3})W\s*[-–]?\s*(\d{1,3})L\s*[-–]?\s*(\d{1,3})?D?/gi, // 25W-1L-0D
+        ];
+
+        // Get text before and after "vs" to find records for each fighter
+        const textLower = text.toLowerCase();
+        const vsIndex = textLower.indexOf(' vs');
+        const textBeforeVs = vsIndex > 0 ? text.substring(0, vsIndex) : '';
+        const textAfterVs = vsIndex > 0 ? text.substring(vsIndex + 3) : '';
+
+        for (const pattern of recordPatterns) {
+          // Try to find record for fighter A (before vs)
+          if (!fighterARecord) {
+            const matchA = textBeforeVs.match(pattern);
+            if (matchA) {
+              const w = matchA[1] || '0';
+              const l = matchA[2] || '0';
+              const d = matchA[3] || '0';
+              fighterARecord = `${w}-${l}-${d}`;
+            }
+          }
+          // Try to find record for fighter B (after vs)
+          if (!fighterBRecord) {
+            const matchB = textAfterVs.match(pattern);
+            if (matchB) {
+              const w = matchB[1] || '0';
+              const l = matchB[2] || '0';
+              const d = matchB[3] || '0';
+              fighterBRecord = `${w}-${l}-${d}`;
+            }
+          }
+          // Reset lastIndex for global regex
+          pattern.lastIndex = 0;
+        }
+
         // Validate fighter names - skip junk entries
         // Valid names should be 2-40 chars, mostly letters/spaces
         const isValidName = (name) => {
@@ -529,14 +573,14 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
             name: fighterAName,
             athleteUrl: fighterAUrl,
             imageUrl: fighterAImage,
-            record: '',
+            record: fighterARecord,
             country: '',
           },
           fighterB: {
             name: fighterBName,
             athleteUrl: fighterBUrl,
             imageUrl: fighterBImage,
-            record: '',
+            record: fighterBRecord,
             country: '',
           }
         };

@@ -290,15 +290,48 @@ async function scrapeAthletePage(browser, athleteUrl) {
     });
 
     const athleteData = await page.evaluate(() => {
-      // Get athlete's record
+      // Get athlete's record from ONE FC's "Breakdown" section
+      // ONE FC format: "Wins - 7\nLosses - 2" in separate lines
       let record = null;
-      const recordEl = document.querySelector('.record, .athlete-record, [class*="record"]');
-      if (recordEl) {
-        const recordText = recordEl.textContent.trim();
-        // ONE FC format might be "10-2-0" or "10W-2L-0D"
-        const recordMatch = recordText.match(/(\d+)[W-]*\s*-?\s*(\d+)[L-]*\s*-?\s*(\d+)[D-]*/i);
-        if (recordMatch) {
-          record = `${recordMatch[1]}-${recordMatch[2]}-${recordMatch[3]}`;
+      let wins = 0;
+      let losses = 0;
+      let draws = 0;
+
+      // Get full page text to find the breakdown section
+      const pageText = document.body.innerText || '';
+
+      // Look for "Wins - X" pattern
+      const winsMatch = pageText.match(/Wins\s*[-:]\s*(\d+)/i);
+      if (winsMatch) {
+        wins = parseInt(winsMatch[1], 10);
+      }
+
+      // Look for "Losses - X" pattern
+      const lossesMatch = pageText.match(/Losses\s*[-:]\s*(\d+)/i);
+      if (lossesMatch) {
+        losses = parseInt(lossesMatch[1], 10);
+      }
+
+      // Look for "Draws - X" pattern (may not exist)
+      const drawsMatch = pageText.match(/Draws\s*[-:]\s*(\d+)/i);
+      if (drawsMatch) {
+        draws = parseInt(drawsMatch[1], 10);
+      }
+
+      // Only set record if we found at least wins or losses
+      if (winsMatch || lossesMatch) {
+        record = `${wins}-${losses}-${draws}`;
+      }
+
+      // Fallback: try traditional "10-2-0" format if no structured data found
+      if (!record) {
+        const recordEl = document.querySelector('.record, .athlete-record, [class*="record"]');
+        if (recordEl) {
+          const recordText = recordEl.textContent.trim();
+          const recordMatch = recordText.match(/(\d+)\s*-\s*(\d+)\s*-\s*(\d+)/);
+          if (recordMatch) {
+            record = `${recordMatch[1]}-${recordMatch[2]}-${recordMatch[3]}`;
+          }
         }
       }
 
