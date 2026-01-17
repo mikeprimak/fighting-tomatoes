@@ -9,6 +9,17 @@ Apple rejected the iOS build. Two fixes required before resubmitting:
 
 See `LAUNCH-DOC.md` for full status and checklists.
 
+### Other TODOs
+
+3. **Test New Homescreen Icon** - New icon configured in `app.json` (`homescreen-icon.png`). Rebuild app to test on device. Only affects homescreen, not App Store icons (those are uploaded separately).
+
+4. **Fix Reset Password 404** - `https://goodfights.app/reset-password?token=...` returns 404. The `FRONTEND_URL` env var on Render points to `goodfights.app` but the Vercel web frontend has no `/reset-password` route. Options:
+   - A) Create reset-password page on web frontend (Vercel)
+   - B) Change `FRONTEND_URL` to a deep link that opens the mobile app
+   - C) Build a simple web page that redirects to the app
+
+5. **Fix Email SPF/DKIM** - Emails from goodfights.app show "unverified" warning in recipients' inboxes ("We can't verify that this email came from the sender"). Need to configure SPF, DKIM, and DMARC records for the goodfights.app domain to authenticate outgoing emails from the SMTP provider.
+
 ---
 
 FightCrewApp: React Native + Node.js combat sports fight rating app.

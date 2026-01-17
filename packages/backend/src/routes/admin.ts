@@ -1140,6 +1140,32 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // ============================================
+  // TEST EMAIL ALERTS
+  // ============================================
+
+  // Test scraper failure alert email
+  // Use: POST /api/admin/test-alert?key=YOUR_KEY&type=scraper
+  fastify.post('/admin/test-alert', async (request, reply) => {
+    const { key, type } = request.query as { key?: string; type?: string };
+
+    if (key !== TEST_SCRAPER_KEY) {
+      return reply.code(401).send({ error: 'Invalid key' });
+    }
+
+    const { EmailService } = await import('../utils/email');
+
+    if (type === 'scraper') {
+      await EmailService.sendScraperFailureAlert('TEST', 'This is a test scraper failure alert.');
+      return reply.send({ success: true, message: 'Scraper failure alert sent' });
+    } else if (type === 'feedback') {
+      await EmailService.sendFeedbackNotification('test-id', 'test@example.com', 'This is a test feedback notification.', 'Test', '1.0.0');
+      return reply.send({ success: true, message: 'Feedback notification sent' });
+    } else {
+      return reply.code(400).send({ error: 'Invalid type. Use type=scraper or type=feedback' });
+    }
+  });
+
+  // ============================================
   // SCRAPER LOGS
   // ============================================
 
