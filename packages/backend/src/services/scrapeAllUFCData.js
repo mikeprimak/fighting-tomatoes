@@ -439,9 +439,11 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
         if (sectionClass === 'anchors-bar') return;
 
         let cardType = '';
-        if (sectionClass === 'main-card') cardType = 'Main Card';
-        else if (sectionClass === 'fight-card-prelims') cardType = 'Prelims';
-        else if (sectionClass === 'fight-card-prelims-early') cardType = 'Early Prelims';
+        // Use includes() to handle multiple classes (e.g., "fight-card-prelims-early active")
+        // Check fight-card-prelims-early BEFORE fight-card-prelims (substring match)
+        if (sectionClass.includes('main-card')) cardType = 'Main Card';
+        else if (sectionClass.includes('fight-card-prelims-early')) cardType = 'Early Prelims';
+        else if (sectionClass.includes('fight-card-prelims')) cardType = 'Prelims';
 
         const timeEl = section.querySelector('.c-event-fight-card-broadcaster__time');
         const startTime = timeEl?.textContent?.trim() || '';
