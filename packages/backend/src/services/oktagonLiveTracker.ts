@@ -132,7 +132,7 @@ class OktagonLiveTracker {
       delete this.status.lastError;
 
       // Log status
-      console.log(`  📊 Fights updated this scrape: ${result.fightsUpdated}`);
+      console.log(`  📊 Fights updated: ${result.fightsUpdated}, Cancelled: ${result.cancelledCount}, Un-cancelled: ${result.unCancelledCount}`);
 
       // Check if event is complete
       if (scrapedData.isComplete) {

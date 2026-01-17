@@ -102,7 +102,7 @@ async function notifyNextFight(eventId: string, completedFightOrder: number): Pr
 export async function parseOktagonLiveData(
   liveData: OktagonEventData,
   eventId: string
-): Promise<{ fightsUpdated: number; eventUpdated: boolean }> {
+): Promise<{ fightsUpdated: number; eventUpdated: boolean; cancelledCount: number; unCancelledCount: number }> {
   console.log(`\n📊 [OKTAGON PARSER] Processing live data for: ${liveData.eventName}`);
 
   let fightsUpdated = 0;
@@ -124,7 +124,7 @@ export async function parseOktagonLiveData(
 
     if (!event) {
       console.error(`  ❌ Event not found with ID: ${eventId}`);
-      return { fightsUpdated: 0, eventUpdated: false };
+      return { fightsUpdated: 0, eventUpdated: false, cancelledCount: 0, unCancelledCount: 0 };
     }
 
     console.log(`  ✓ Found event: ${event.name} (${event.fights.length} fights)`);
@@ -154,9 +154,19 @@ export async function parseOktagonLiveData(
     // Process each fight from scraped data
     console.log(`  🔍 Processing ${liveData.fights.length} fight updates...`);
 
+    // Track which fights from scraped data we've seen (for cancellation detection)
+    const scrapedFightSignatures = new Set<string>();
+
     for (const fightUpdate of liveData.fights) {
       const fighterALast = fightUpdate.fighterA.lastName;
       const fighterBLast = fightUpdate.fighterB.lastName;
+
+      // Create a signature to track which fights we've seen in the scraped data
+      const fightSignature = [fighterALast, fighterBLast]
+        .map(n => n.toLowerCase().trim())
+        .sort()
+        .join('|');
+      scrapedFightSignatures.add(fightSignature);
 
       console.log(`  🔎 Looking for: ${fighterALast} vs ${fighterBLast}`);
 
@@ -238,8 +248,73 @@ export async function parseOktagonLiveData(
       }
     }
 
-    console.log(`  ✅ Parser complete: ${fightsUpdated} fights updated\n`);
-    return { fightsUpdated, eventUpdated };
+    // ============== CANCELLATION DETECTION ==============
+    // Check for fights in DB that were NOT in the scraped data (possibly cancelled)
+    // Also check for previously cancelled fights that have reappeared (un-cancel them)
+
+    console.log(`  🔍 Checking for cancelled/un-cancelled fights...`);
+    let cancelledCount = 0;
+    let unCancelledCount = 0;
+
+    for (const dbFight of event.fights) {
+      // Skip fights that are already complete
+      if (dbFight.isComplete) {
+        continue;
+      }
+
+      // Create signature for this DB fight
+      const dbFightSignature = [dbFight.fighter1.lastName, dbFight.fighter2.lastName]
+        .map(n => n.toLowerCase().trim())
+        .sort()
+        .join('|');
+
+      const fightIsInScrapedData = scrapedFightSignatures.has(dbFightSignature);
+
+      // Case 1: Fight was cancelled but has reappeared in scraped data -> UN-CANCEL it
+      if (dbFight.isCancelled && fightIsInScrapedData) {
+        console.log(`  ✅ Fight reappeared in scraped data, UN-CANCELLING: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
+
+        await prisma.fight.update({
+          where: { id: dbFight.id },
+          data: {
+            isCancelled: false,
+          }
+        });
+
+        unCancelledCount++;
+      }
+      // Case 2: Fight is NOT cancelled and missing from scraped data -> CANCEL it
+      else if (!dbFight.isCancelled && !fightIsInScrapedData) {
+        console.log(`  ⚠️  Fight missing from scraped data: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
+
+        // Only mark as cancelled if event has started (to avoid false positives before event begins)
+        if (event.hasStarted || liveData.hasStarted) {
+          console.log(`  ❌ Marking fight as CANCELLED: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
+
+          await prisma.fight.update({
+            where: { id: dbFight.id },
+            data: {
+              isCancelled: true,
+              // Don't mark as complete - cancelled fights stay incomplete
+            }
+          });
+
+          cancelledCount++;
+        } else {
+          console.log(`  ℹ️  Event hasn't started yet, not marking as cancelled (might be missing from preliminary data)`);
+        }
+      }
+    }
+
+    if (cancelledCount > 0) {
+      console.log(`  ⚠️  Marked ${cancelledCount} fights as cancelled`);
+    }
+    if (unCancelledCount > 0) {
+      console.log(`  ✅ Un-cancelled ${unCancelledCount} fights (reappeared in scraped data)`);
+    }
+
+    console.log(`  ✅ Parser complete: ${fightsUpdated} fights updated, ${cancelledCount} cancelled, ${unCancelledCount} un-cancelled\n`);
+    return { fightsUpdated, eventUpdated, cancelledCount, unCancelledCount };
 
   } catch (error) {
     console.error('  ❌ Parser error:', error);
