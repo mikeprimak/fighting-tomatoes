@@ -169,4 +169,108 @@ export class EmailService {
 
     await transporter.sendMail(mailOptions)
   }
+
+  /**
+   * Send admin alert when a scraper fails
+   */
+  static async sendScraperFailureAlert(org: string, errorMessage: string) {
+    const adminEmail = process.env.ADMIN_ALERT_EMAIL
+    if (!adminEmail) {
+      console.log('[Email] ADMIN_ALERT_EMAIL not configured, skipping scraper failure alert')
+      return
+    }
+
+    const timestamp = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })
+    const adminUrl = process.env.BACKEND_URL || 'https://fightcrewapp-backend.onrender.com'
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM || 'noreply@goodfights.app',
+      to: adminEmail,
+      subject: `⚠️ [Good Fights] Scraper Failed: ${org}`,
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border-radius: 10px;">
+          <h1 style="color: #ef4444; margin-bottom: 20px;">⚠️ Scraper Failure Alert</h1>
+
+          <p style="color: #000000;">The <strong>${org}</strong> scraper failed at <strong>${timestamp} ET</strong>.</p>
+
+          <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 15px; margin: 20px 0;">
+            <p style="color: #991b1b; margin: 0; font-weight: 600;">Error:</p>
+            <pre style="color: #991b1b; margin: 10px 0 0 0; white-space: pre-wrap; word-break: break-word; font-size: 13px;">${errorMessage}</pre>
+          </div>
+
+          <p style="color: #000000;">
+            <a href="${adminUrl}/admin.html" style="color: #3b82f6;">View Admin Dashboard →</a>
+          </p>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+          <p style="color: #6b7280; font-size: 12px;">This is an automated alert from Good Fights.</p>
+        </div>
+      `
+    }
+
+    try {
+      await transporter.sendMail(mailOptions)
+      console.log(`[Email] Scraper failure alert sent for ${org}`)
+    } catch (error) {
+      console.error('[Email] Failed to send scraper failure alert:', error)
+    }
+  }
+
+  /**
+   * Send admin notification when new user feedback is submitted
+   */
+  static async sendFeedbackNotification(feedbackId: string, userEmail: string | null, content: string, platform?: string, appVersion?: string) {
+    const adminEmail = process.env.ADMIN_ALERT_EMAIL
+    if (!adminEmail) {
+      console.log('[Email] ADMIN_ALERT_EMAIL not configured, skipping feedback notification')
+      return
+    }
+
+    const timestamp = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })
+    const adminUrl = process.env.BACKEND_URL || 'https://fightcrewapp-backend.onrender.com'
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM || 'noreply@goodfights.app',
+      to: adminEmail,
+      subject: `📬 [Good Fights] New Feedback from ${userEmail || 'Anonymous'}`,
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border-radius: 10px;">
+          <h1 style="color: #202020; margin-bottom: 20px;">📬 New User Feedback</h1>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280; width: 100px;">From:</td>
+              <td style="padding: 8px 0; color: #000000;">${userEmail || 'Anonymous'}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Platform:</td>
+              <td style="padding: 8px 0; color: #000000;">${platform || 'Unknown'} ${appVersion ? `v${appVersion}` : ''}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6b7280;">Time:</td>
+              <td style="padding: 8px 0; color: #000000;">${timestamp} ET</td>
+            </tr>
+          </table>
+
+          <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin: 20px 0;">
+            <p style="color: #000000; margin: 0; white-space: pre-wrap; line-height: 1.6;">${content}</p>
+          </div>
+
+          <p style="color: #000000;">
+            <a href="${adminUrl}/admin.html" style="color: #3b82f6;">View in Admin Dashboard →</a>
+          </p>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+          <p style="color: #6b7280; font-size: 12px;">Feedback ID: ${feedbackId}</p>
+        </div>
+      `
+    }
+
+    try {
+      await transporter.sendMail(mailOptions)
+      console.log(`[Email] Feedback notification sent for feedback ${feedbackId}`)
+    } catch (error) {
+      console.error('[Email] Failed to send feedback notification:', error)
+    }
+  }
 }
