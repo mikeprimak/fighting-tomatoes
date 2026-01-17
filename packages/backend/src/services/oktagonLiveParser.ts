@@ -323,9 +323,9 @@ export async function parseOktagonLiveData(
 }
 
 /**
- * Check if all fights in event are complete
+ * Check if all non-cancelled fights in event are complete
  */
-export async function checkOktagonEventComplete(eventId: string): Promise<boolean> {
+export async function checkOktagonEventComplete(eventId: string): Promise<{ allComplete: boolean; eventAlreadyComplete: boolean }> {
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     include: {
@@ -337,18 +337,26 @@ export async function checkOktagonEventComplete(eventId: string): Promise<boolea
   });
 
   if (!event || event.fights.length === 0) {
-    return false;
+    return { allComplete: false, eventAlreadyComplete: false };
   }
 
-  return event.fights.every(fight => fight.isComplete);
+  const allFightsComplete = event.fights.every(fight => fight.isComplete);
+  return { allComplete: allFightsComplete, eventAlreadyComplete: event.isComplete };
 }
 
 /**
  * Auto-complete event if all fights are done
+ * Returns true if event is now complete (either just marked or already was)
  */
 export async function autoCompleteOktagonEvent(eventId: string): Promise<boolean> {
-  const allComplete = await checkOktagonEventComplete(eventId);
+  const { allComplete, eventAlreadyComplete } = await checkOktagonEventComplete(eventId);
 
+  // Event already marked complete - just return true to stop tracker
+  if (eventAlreadyComplete) {
+    return true;
+  }
+
+  // All fights complete but event not yet marked - update it
   if (allComplete) {
     await prisma.event.update({
       where: { id: eventId },
