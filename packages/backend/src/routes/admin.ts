@@ -1144,8 +1144,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // ============================================
 
   // Test scraper failure alert email
-  // Use: POST /api/admin/test-alert?key=YOUR_KEY&type=scraper
-  fastify.post('/admin/test-alert', async (request, reply) => {
+  // Use: GET /api/admin/test-alert?key=YOUR_KEY&type=scraper
+  fastify.get('/admin/test-alert', async (request, reply) => {
     const { key, type } = request.query as { key?: string; type?: string };
 
     if (key !== TEST_SCRAPER_KEY) {
