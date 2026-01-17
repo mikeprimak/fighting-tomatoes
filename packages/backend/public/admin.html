@@ -571,6 +571,10 @@
       border-left: 4px solid var(--accent-red);
     }
 
+    .toast.info {
+      border-left: 4px solid var(--accent-blue);
+    }
+
     @keyframes slideIn {
       from {
         transform: translateX(100%);
@@ -758,6 +762,295 @@
       margin-top: 0.25rem;
       color: var(--text-secondary);
     }
+
+    /* Tab Navigation */
+    .tab-nav {
+      display: flex;
+      gap: 0.5rem;
+      margin-right: 1rem;
+    }
+
+    .tab-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-input);
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    /* Tab Content */
+    .tab-content {
+      display: none;
+      height: calc(100vh - 60px);
+      overflow-y: auto;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Operations Tab Styles */
+    .ops-container {
+      padding: 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .ops-section {
+      background: var(--bg-card);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .ops-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .ops-section-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+    }
+
+    .scraper-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .scraper-card {
+      background: var(--bg-input);
+      border-radius: 6px;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .scraper-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .scraper-status {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .scraper-status.success { background: var(--accent-green); }
+    .scraper-status.failed { background: var(--accent-red); }
+    .scraper-status.running { background: var(--accent-orange); animation: pulse 1s infinite; }
+    .scraper-status.idle { background: var(--text-muted); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .scraper-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .scraper-meta {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    .scraper-stats {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    .tracker-card {
+      background: var(--bg-input);
+      border-radius: 6px;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .tracker-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .activity-log {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .activity-item {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+
+    .activity-time {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      min-width: 60px;
+    }
+
+    .activity-icon {
+      font-size: 0.8rem;
+    }
+
+    .activity-text {
+      color: var(--text-secondary);
+    }
+
+    /* Feedback Tab Styles */
+    .feedback-container {
+      padding: 1.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .feedback-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .feedback-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .feedback-count {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .feedback-filters {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .feedback-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .feedback-card {
+      background: var(--bg-card);
+      border-radius: 8px;
+      padding: 1.25rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .feedback-card.unread {
+      border-left: 3px solid var(--accent-blue);
+    }
+
+    .feedback-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+
+    .feedback-user {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .feedback-status-icon {
+      font-size: 0.9rem;
+    }
+
+    .feedback-email {
+      font-weight: 500;
+    }
+
+    .feedback-platform {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      background: var(--bg-input);
+      padding: 0.125rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .feedback-time {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .feedback-content {
+      color: var(--text-primary);
+      line-height: 1.5;
+      margin-bottom: 0.75rem;
+      white-space: pre-wrap;
+    }
+
+    .feedback-notes {
+      background: var(--bg-input);
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    .feedback-notes-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 0.25rem;
+    }
+
+    .feedback-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .badge-unread {
+      background: var(--accent-blue);
+      color: white;
+      font-size: 0.7rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 10px;
+      margin-left: 0.5rem;
+    }
   </style>
 </head>
 <body>
@@ -785,6 +1078,11 @@
   <header class="header">
     <h1>Fight Admin</h1>
     <div class="header-controls">
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('events')">Events</button>
+        <button class="tab-btn" onclick="switchTab('operations')">Operations</button>
+        <button class="tab-btn" onclick="switchTab('feedback')">Feedback<span id="feedbackBadge" class="badge-unread" style="display: none;"></span></button>
+      </div>
       <div id="userInfo" class="user-info" style="display: none;">
         <span id="userEmail"></span>
         <button class="logout-btn" onclick="handleLogout()">Logout</button>
@@ -810,36 +1108,108 @@
     </div>
   </header>
 
-  <!-- Main Container -->
-  <div class="main-container">
-    <!-- Events Panel -->
-    <div class="panel events-panel">
-      <div class="panel-header">
-        <span class="panel-title">Events</span>
-        <button class="btn btn-primary btn-sm" onclick="openEventModal()">+ New Event</button>
+  <!-- Events Tab (default) -->
+  <div id="eventsTab" class="tab-content active">
+    <div class="main-container">
+      <!-- Events Panel -->
+      <div class="panel events-panel">
+        <div class="panel-header">
+          <span class="panel-title">Events</span>
+          <button class="btn btn-primary btn-sm" onclick="openEventModal()">+ New Event</button>
+        </div>
+
+        <div class="filter-bar">
+          <select id="eventFilter" class="form-select" onchange="loadEvents()">
+            <option value="upcoming">Upcoming</option>
+            <option value="all">All Events</option>
+          </select>
+        </div>
+
+        <div id="eventList" class="event-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <div class="empty-state-text">Loading events...</div>
+          </div>
+        </div>
       </div>
 
-      <div class="filter-bar">
-        <select id="eventFilter" class="form-select" onchange="loadEvents()">
-          <option value="upcoming">Upcoming</option>
-          <option value="all">All Events</option>
-        </select>
-      </div>
-
-      <div id="eventList" class="event-list">
-        <div class="empty-state">
-          <div class="empty-state-icon">📅</div>
-          <div class="empty-state-text">Loading events...</div>
+      <!-- Fights Panel -->
+      <div class="panel fights-panel">
+        <div id="fightsContent">
+          <div class="empty-state">
+            <div class="empty-state-icon">👈</div>
+            <div class="empty-state-text">Select an event to view and manage fights</div>
+          </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Fights Panel -->
-    <div class="panel fights-panel">
-      <div id="fightsContent">
+  <!-- Operations Tab -->
+  <div id="operationsTab" class="tab-content">
+    <div class="ops-container">
+      <!-- Daily Scrapers Section -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Daily Scrapers</span>
+          <button class="btn btn-primary btn-sm" onclick="runAllScrapers()">Run All</button>
+        </div>
+        <div id="scraperGrid" class="scraper-grid">
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <div class="empty-state-text" style="margin-top: 0.5rem;">Loading scraper status...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Trackers Section -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Live Event Trackers</span>
+        </div>
+        <div id="trackerList">
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <div class="empty-state-text" style="margin-top: 0.5rem;">Loading tracker status...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Activity Section -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Recent Activity</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadRecentActivity()">Refresh</button>
+        </div>
+        <div id="activityLog" class="activity-log">
+          <div class="empty-state">
+            <div class="empty-state-text">No recent activity</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Tab -->
+  <div id="feedbackTab" class="tab-content">
+    <div class="feedback-container">
+      <div class="feedback-header">
+        <div>
+          <span class="feedback-title">User Feedback</span>
+          <span id="feedbackCount" class="feedback-count"></span>
+        </div>
+        <div class="feedback-filters">
+          <select id="feedbackFilter" class="form-select" style="width: 150px;" onchange="loadFeedback()">
+            <option value="all">All</option>
+            <option value="unread">Unread</option>
+            <option value="unresolved">Unresolved</option>
+          </select>
+        </div>
+      </div>
+      <div id="feedbackList" class="feedback-list">
         <div class="empty-state">
-          <div class="empty-state-icon">👈</div>
-          <div class="empty-state-text">Select an event to view and manage fights</div>
+          <div class="spinner"></div>
+          <div class="empty-state-text" style="margin-top: 0.5rem;">Loading feedback...</div>
         </div>
       </div>
     </div>
@@ -2058,6 +2428,430 @@
         toast.style.animation = 'slideIn 0.3s ease reverse';
         setTimeout(() => toast.remove(), 300);
       }, 3000);
+    }
+
+    // ============================================
+    // TAB NAVIGATION
+    // ============================================
+    let currentTab = 'events';
+
+    function switchTab(tabName) {
+      currentTab = tabName;
+
+      // Update tab buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(tabName));
+      });
+
+      // Update tab content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(`${tabName}Tab`).classList.add('active');
+
+      // Load tab-specific data
+      if (tabName === 'operations') {
+        loadOperationsData();
+      } else if (tabName === 'feedback') {
+        loadFeedback();
+      }
+    }
+
+    // ============================================
+    // OPERATIONS TAB
+    // ============================================
+    const scraperOrgs = [
+      { key: 'ufc', name: 'UFC', dbName: 'UFC' },
+      { key: 'bkfc', name: 'BKFC', dbName: 'BKFC' },
+      { key: 'pfl', name: 'PFL', dbName: 'PFL' },
+      { key: 'onefc', name: 'ONE', dbName: 'ONE' },
+      { key: 'matchroom', name: 'Matchroom', dbName: 'Matchroom Boxing' },
+      { key: 'goldenboy', name: 'Golden Boy', dbName: 'Golden Boy' },
+      { key: 'toprank', name: 'Top Rank', dbName: 'Top Rank' },
+      { key: 'oktagon', name: 'OKTAGON', dbName: 'OKTAGON' },
+    ];
+
+    async function loadOperationsData() {
+      await Promise.all([
+        loadScraperStatus(),
+        loadTrackerStatus(),
+        loadRecentActivity(),
+      ]);
+    }
+
+    async function loadScraperStatus() {
+      const container = document.getElementById('scraperGrid');
+
+      try {
+        // Get latest logs per org
+        const res = await authFetch(`${API_BASE}/admin/scraper-logs/latest`);
+        const data = await res.json();
+
+        // Also get scraper-status for last update info
+        const statusRes = await authFetch(`${API_BASE}/admin/scraper-status?key=${getScraperKey()}`);
+        const statusData = await statusRes.json();
+
+        const statusMap = {};
+        if (statusData.scrapers) {
+          statusData.scrapers.forEach(s => {
+            statusMap[s.organization] = s;
+          });
+        }
+
+        const logMap = {};
+        if (data.latestLogs) {
+          data.latestLogs.forEach(l => {
+            logMap[l.organization] = l.log;
+          });
+        }
+
+        container.innerHTML = scraperOrgs.map(org => {
+          const log = logMap[org.dbName];
+          const status = statusMap[org.dbName];
+          const statusClass = log?.status === 'completed' ? 'success' : log?.status === 'failed' ? 'failed' : 'idle';
+          const timeAgo = status?.timeSinceUpdate || (log ? formatTimeAgo(log.completedAt || log.startedAt) : 'Never');
+          const stats = log?.eventsScraped !== undefined ? `${log.eventsScraped} events, ${log.fightsUpdated || 0} fights` : '';
+
+          return `
+            <div class="scraper-card">
+              <div class="scraper-info">
+                <div class="scraper-status ${statusClass}"></div>
+                <div>
+                  <div class="scraper-name">${org.name}</div>
+                  <div class="scraper-meta">${log?.status === 'failed' ? 'Failed' : timeAgo}</div>
+                  ${stats ? `<div class="scraper-stats">${stats}</div>` : ''}
+                </div>
+              </div>
+              <button class="btn btn-secondary btn-sm" onclick="runScraper('${org.key}', '${org.name}')">Run</button>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Failed to load scraper status:', err);
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-text">Failed to load scraper status</div></div>`;
+      }
+    }
+
+    async function loadTrackerStatus() {
+      const container = document.getElementById('trackerList');
+
+      try {
+        // Get OKTAGON tracker status
+        const res = await authFetch(`${API_BASE}/admin/live-tracker/oktagon/status?key=${getScraperKey()}`);
+        const data = await res.json();
+        const oktagon = data.tracker || {};
+
+        container.innerHTML = `
+          <div class="tracker-card">
+            <div class="tracker-info">
+              <div class="scraper-status ${oktagon.isRunning ? 'running' : 'idle'}"></div>
+              <div>
+                <div class="scraper-name">OKTAGON</div>
+                <div class="scraper-meta">${oktagon.isRunning ? `Tracking: ${oktagon.eventName || 'Unknown'}` : 'Idle'}</div>
+                ${oktagon.isRunning ? `<div class="scraper-stats">${oktagon.totalScrapes || 0} scrapes, ${oktagon.fightsUpdated || 0} fights updated</div>` : ''}
+              </div>
+            </div>
+            ${oktagon.isRunning
+              ? `<button class="btn btn-danger btn-sm" onclick="stopTracker('oktagon')">Stop</button>`
+              : `<button class="btn btn-success btn-sm" onclick="showStartTrackerModal('oktagon')">Start</button>`
+            }
+          </div>
+        `;
+
+      } catch (err) {
+        console.error('Failed to load tracker status:', err);
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-text">Failed to load tracker status</div></div>`;
+      }
+    }
+
+    async function loadRecentActivity() {
+      const container = document.getElementById('activityLog');
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/scraper-logs?limit=20`);
+        const data = await res.json();
+
+        if (!data.logs || data.logs.length === 0) {
+          container.innerHTML = `<div class="empty-state"><div class="empty-state-text">No recent activity</div></div>`;
+          return;
+        }
+
+        container.innerHTML = data.logs.map(log => {
+          const icon = log.status === 'completed' ? '✅' : log.status === 'failed' ? '❌' : '🔄';
+          const time = new Date(log.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+          let text = `${log.organization} ${log.type === 'live_tracker' ? 'tracker' : 'scraper'} ${log.status}`;
+          if (log.status === 'completed' && log.eventsScraped !== null) {
+            text += ` - ${log.eventsScraped} events, ${log.fightsUpdated || 0} fights`;
+          }
+          if (log.status === 'failed' && log.errorMessage) {
+            text += ` - ${log.errorMessage.substring(0, 50)}${log.errorMessage.length > 50 ? '...' : ''}`;
+          }
+          if (log.eventName) {
+            text += ` (${log.eventName})`;
+          }
+
+          return `
+            <div class="activity-item">
+              <span class="activity-time">${time}</span>
+              <span class="activity-icon">${icon}</span>
+              <span class="activity-text">${escapeHtml(text)}</span>
+            </div>
+          `;
+        }).join('');
+
+      } catch (err) {
+        console.error('Failed to load activity:', err);
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-text">Failed to load activity</div></div>`;
+      }
+    }
+
+    function getScraperKey() {
+      // Return the test scraper key - in production this should be stored securely
+      return 'fightcrew-test-2026';
+    }
+
+    async function runScraper(orgKey, orgName) {
+      if (!confirm(`Run the ${orgName} scraper now?`)) return;
+
+      showToast(`Starting ${orgName} scraper...`, 'info');
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/trigger/scraper/${orgKey}`, { method: 'POST' });
+        const data = await res.json();
+
+        if (res.ok) {
+          showToast(`${orgName} scraper completed`, 'success');
+        } else {
+          showToast(`${orgName} scraper failed: ${data.message || data.error}`, 'error');
+        }
+
+        // Refresh the status
+        loadScraperStatus();
+        loadRecentActivity();
+
+      } catch (err) {
+        showToast(`Failed to run ${orgName} scraper`, 'error');
+      }
+    }
+
+    async function runAllScrapers() {
+      if (!confirm('Run ALL scrapers? This may take several minutes.')) return;
+
+      showToast('Starting all scrapers...', 'info');
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/trigger/scraper/all`, { method: 'POST' });
+        const data = await res.json();
+
+        if (res.ok) {
+          showToast(data.message || 'All scrapers completed', 'success');
+        } else {
+          showToast(`Scrapers failed: ${data.message || data.error}`, 'error');
+        }
+
+        loadScraperStatus();
+        loadRecentActivity();
+
+      } catch (err) {
+        showToast('Failed to run scrapers', 'error');
+      }
+    }
+
+    async function stopTracker(trackerKey) {
+      if (!confirm('Stop the live tracker?')) return;
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/live-tracker/${trackerKey}/stop?key=${getScraperKey()}`, { method: 'POST' });
+        const data = await res.json();
+
+        if (res.ok) {
+          showToast('Tracker stopped', 'success');
+        } else {
+          showToast(`Failed to stop tracker: ${data.message || data.error}`, 'error');
+        }
+
+        loadTrackerStatus();
+
+      } catch (err) {
+        showToast('Failed to stop tracker', 'error');
+      }
+    }
+
+    function showStartTrackerModal(trackerKey) {
+      const eventId = prompt('Enter the Event ID to track:');
+      if (!eventId) return;
+
+      startTracker(trackerKey, eventId);
+    }
+
+    async function startTracker(trackerKey, eventId) {
+      try {
+        const res = await authFetch(`${API_BASE}/admin/live-tracker/${trackerKey}/start?key=${getScraperKey()}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventId }),
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          showToast('Tracker started', 'success');
+        } else {
+          showToast(`Failed to start tracker: ${data.message || data.error}`, 'error');
+        }
+
+        loadTrackerStatus();
+
+      } catch (err) {
+        showToast('Failed to start tracker', 'error');
+      }
+    }
+
+    function formatTimeAgo(dateStr) {
+      if (!dateStr) return 'Never';
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return `${diffDays}d ago`;
+    }
+
+    // ============================================
+    // FEEDBACK TAB
+    // ============================================
+    let feedbackData = [];
+
+    async function loadFeedback() {
+      const container = document.getElementById('feedbackList');
+      const filter = document.getElementById('feedbackFilter').value;
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/feedback?filter=${filter}&limit=50`);
+        const data = await res.json();
+
+        feedbackData = data.feedback || [];
+        const total = data.total || 0;
+        const unreadCount = data.unreadCount || 0;
+
+        // Update count display
+        document.getElementById('feedbackCount').textContent = `(${total} total${unreadCount > 0 ? `, ${unreadCount} unread` : ''})`;
+
+        // Update badge
+        const badge = document.getElementById('feedbackBadge');
+        if (unreadCount > 0) {
+          badge.textContent = unreadCount;
+          badge.style.display = 'inline';
+        } else {
+          badge.style.display = 'none';
+        }
+
+        if (feedbackData.length === 0) {
+          container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📬</div><div class="empty-state-text">No feedback found</div></div>`;
+          return;
+        }
+
+        container.innerHTML = feedbackData.map(fb => renderFeedbackCard(fb)).join('');
+
+      } catch (err) {
+        console.error('Failed to load feedback:', err);
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-text">Failed to load feedback</div></div>`;
+      }
+    }
+
+    function renderFeedbackCard(fb) {
+      const statusIcon = fb.isResolved ? '✅' : (fb.isRead ? '👀' : '🔵');
+      const email = fb.userEmail || fb.user?.email || 'Anonymous';
+      const platform = fb.platform ? `${fb.platform}${fb.appVersion ? ' v' + fb.appVersion : ''}` : '';
+      const timeAgo = formatTimeAgo(fb.createdAt);
+
+      return `
+        <div class="feedback-card ${fb.isRead ? '' : 'unread'}" data-id="${fb.id}">
+          <div class="feedback-card-header">
+            <div class="feedback-user">
+              <span class="feedback-status-icon">${statusIcon}</span>
+              <span class="feedback-email">${escapeHtml(email)}</span>
+              ${platform ? `<span class="feedback-platform">${escapeHtml(platform)}</span>` : ''}
+            </div>
+            <span class="feedback-time">${timeAgo}</span>
+          </div>
+          <div class="feedback-content">${escapeHtml(fb.content)}</div>
+          ${fb.adminNotes ? `
+            <div class="feedback-notes">
+              <div class="feedback-notes-label">Admin Notes</div>
+              ${escapeHtml(fb.adminNotes)}
+            </div>
+          ` : ''}
+          <div class="feedback-actions">
+            ${!fb.isRead ? `<button class="btn btn-secondary btn-sm" onclick="markFeedbackRead('${fb.id}')">Mark Read</button>` : ''}
+            ${!fb.isResolved ? `<button class="btn btn-success btn-sm" onclick="markFeedbackResolved('${fb.id}')">Resolve</button>` : ''}
+            <button class="btn btn-secondary btn-sm" onclick="addFeedbackNotes('${fb.id}')">Add Notes</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteFeedback('${fb.id}')">Delete</button>
+          </div>
+        </div>
+      `;
+    }
+
+    async function markFeedbackRead(id) {
+      try {
+        await authFetch(`${API_BASE}/admin/feedback/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isRead: true }),
+        });
+        showToast('Marked as read', 'success');
+        loadFeedback();
+      } catch (err) {
+        showToast('Failed to update feedback', 'error');
+      }
+    }
+
+    async function markFeedbackResolved(id) {
+      try {
+        await authFetch(`${API_BASE}/admin/feedback/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isResolved: true, isRead: true }),
+        });
+        showToast('Marked as resolved', 'success');
+        loadFeedback();
+      } catch (err) {
+        showToast('Failed to update feedback', 'error');
+      }
+    }
+
+    async function addFeedbackNotes(id) {
+      const fb = feedbackData.find(f => f.id === id);
+      const notes = prompt('Enter admin notes:', fb?.adminNotes || '');
+      if (notes === null) return;
+
+      try {
+        await authFetch(`${API_BASE}/admin/feedback/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminNotes: notes }),
+        });
+        showToast('Notes saved', 'success');
+        loadFeedback();
+      } catch (err) {
+        showToast('Failed to save notes', 'error');
+      }
+    }
+
+    async function deleteFeedback(id) {
+      if (!confirm('Delete this feedback permanently?')) return;
+
+      try {
+        await authFetch(`${API_BASE}/admin/feedback/${id}`, { method: 'DELETE' });
+        showToast('Feedback deleted', 'success');
+        loadFeedback();
+      } catch (err) {
+        showToast('Failed to delete feedback', 'error');
+      }
     }
   </script>
 </body>

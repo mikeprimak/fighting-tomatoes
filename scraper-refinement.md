@@ -1,5 +1,7 @@
 # Scraper Refinement Session
 
+**Related doc:** See `live-event-tracker-refinement.md` for live event tracker status and development.
+
 ## Goal
 Investigate all daily event scrapers to ensure they are working accurately.
 
@@ -543,3 +545,55 @@ const textAfterVs = vsIndex > 0 ? text.substring(vsIndex + 3) : '';
 
 ### Note
 The "limited data (0-1 events)" issue may be due to Top Rank's website structure. The record parsing is now in place, but event discovery may need adjustment if the site changes.
+
+---
+
+## Admin Dashboard Integration (Jan 17, 2026)
+
+Added Operations tab to the admin panel (`/admin.html`) for monitoring scrapers. See `ADMIN-DASHBOARD-IMPLEMENTATION.md` for details.
+
+### When Adding a New Organization/Scraper
+
+When you add a new scraper for a new organization, you must also update the admin dashboard to track it:
+
+**1. Add to scraper list in `admin.html`**
+
+Update the `scraperOrgs` array (~line 2459):
+```javascript
+const scraperOrgs = [
+  { key: 'ufc', name: 'UFC', dbName: 'UFC' },
+  { key: 'bkfc', name: 'BKFC', dbName: 'BKFC' },
+  // ... existing scrapers ...
+  { key: 'neworg', name: 'New Org', dbName: 'New Organization' }, // ADD THIS
+];
+```
+
+- `key` - lowercase key used in API endpoints (e.g., `trigger/scraper/neworg`)
+- `name` - display name in UI
+- `dbName` - organization name as stored in database (matches `promotion` field in Events)
+
+**2. Add to latest logs endpoint in `admin.ts`**
+
+Update the organizations array in `/admin/scraper-logs/latest` (~line 1263):
+```typescript
+const organizations = ['UFC', 'BKFC', 'PFL', 'ONE', 'Matchroom Boxing', 'Golden Boy', 'Top Rank', 'OKTAGON', 'New Organization'];
+```
+
+**3. Add trigger endpoint (if using JWT auth from admin panel)**
+
+Add a new POST endpoint in `admin.ts`:
+```typescript
+fastify.post('/admin/trigger/scraper/neworg', {
+  preValidation: [fastify.authenticate, requireAdmin],
+}, async (request, reply) => {
+  // Import and call your new scraper
+});
+```
+
+**4. Add to GitHub Actions (if IP-blocked)**
+
+Create `.github/workflows/neworg-scraper.yml` if the scraper fails on Render due to IP blocking.
+
+**5. Update health check (optional)**
+
+Add cron schedule info to `/admin/health` endpoint crons object.

@@ -1138,4 +1138,278 @@ export async function adminRoutes(fastify: FastifyInstance) {
       });
     }
   });
+
+  // ============================================
+  // SCRAPER LOGS
+  // ============================================
+
+  // Get scraper logs
+  // Use: GET /api/admin/scraper-logs?type=daily_scraper&org=UFC&limit=50
+  fastify.get('/admin/scraper-logs', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { type, org, status, limit = '50', offset = '0' } = request.query as {
+      type?: string;
+      org?: string;
+      status?: string;
+      limit?: string;
+      offset?: string;
+    };
+
+    const where: any = {};
+    if (type) where.type = type;
+    if (org) where.organization = org;
+    if (status) where.status = status;
+
+    try {
+      const [logs, total] = await Promise.all([
+        prisma.scraperLog.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          take: parseInt(limit),
+          skip: parseInt(offset),
+        }),
+        prisma.scraperLog.count({ where }),
+      ]);
+
+      return reply.send({ logs, total });
+    } catch (error: any) {
+      console.error('[Admin] Failed to fetch scraper logs:', error);
+      return reply.code(500).send({ error: 'Failed to fetch scraper logs', message: error.message });
+    }
+  });
+
+  // Create scraper log (called by scrapers/trackers)
+  // Use: POST /api/admin/scraper-logs?key=YOUR_KEY
+  fastify.post('/admin/scraper-logs', async (request, reply) => {
+    const { key } = request.query as { key?: string };
+
+    // Allow both JWT auth and key-based auth (for GitHub Actions)
+    if (key !== TEST_SCRAPER_KEY) {
+      // Try JWT auth
+      try {
+        await fastify.authenticate(request, reply);
+        await requireAdmin(request, reply);
+      } catch {
+        return reply.code(401).send({ error: 'Invalid key or unauthorized' });
+      }
+    }
+
+    const {
+      type,
+      organization,
+      status,
+      eventId,
+      eventName,
+      eventsScraped,
+      fightsUpdated,
+      fightersAdded,
+      errorMessage,
+      duration,
+      startedAt,
+      completedAt,
+    } = request.body as {
+      type: string;
+      organization: string;
+      status: string;
+      eventId?: string;
+      eventName?: string;
+      eventsScraped?: number;
+      fightsUpdated?: number;
+      fightersAdded?: number;
+      errorMessage?: string;
+      duration?: number;
+      startedAt: string;
+      completedAt?: string;
+    };
+
+    if (!type || !organization || !status || !startedAt) {
+      return reply.code(400).send({
+        error: 'Missing required fields',
+        required: ['type', 'organization', 'status', 'startedAt'],
+      });
+    }
+
+    try {
+      const log = await prisma.scraperLog.create({
+        data: {
+          type,
+          organization,
+          status,
+          eventId,
+          eventName,
+          eventsScraped,
+          fightsUpdated,
+          fightersAdded,
+          errorMessage,
+          duration,
+          startedAt: new Date(startedAt),
+          completedAt: completedAt ? new Date(completedAt) : null,
+        },
+      });
+
+      return reply.code(201).send({ log });
+    } catch (error: any) {
+      console.error('[Admin] Failed to create scraper log:', error);
+      return reply.code(500).send({ error: 'Failed to create scraper log', message: error.message });
+    }
+  });
+
+  // Get latest log per organization (for Operations dashboard)
+  // Use: GET /api/admin/scraper-logs/latest
+  fastify.get('/admin/scraper-logs/latest', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const organizations = ['UFC', 'BKFC', 'PFL', 'ONE', 'Matchroom Boxing', 'Golden Boy', 'Top Rank', 'OKTAGON'];
+
+    try {
+      const latestLogs = await Promise.all(
+        organizations.map(async (org) => {
+          const log = await prisma.scraperLog.findFirst({
+            where: { organization: org, type: 'daily_scraper' },
+            orderBy: { createdAt: 'desc' },
+          });
+          return { organization: org, log };
+        })
+      );
+
+      return reply.send({ latestLogs });
+    } catch (error: any) {
+      console.error('[Admin] Failed to fetch latest scraper logs:', error);
+      return reply.code(500).send({ error: 'Failed to fetch latest logs', message: error.message });
+    }
+  });
+
+  // ============================================
+  // FEEDBACK MANAGEMENT
+  // ============================================
+
+  // List all feedback
+  // Use: GET /api/admin/feedback?filter=unread&limit=50
+  fastify.get('/admin/feedback', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { filter, limit = '50', offset = '0' } = request.query as {
+      filter?: 'unread' | 'unresolved' | 'all';
+      limit?: string;
+      offset?: string;
+    };
+
+    const where: any = {};
+    if (filter === 'unread') {
+      where.isRead = false;
+    } else if (filter === 'unresolved') {
+      where.isResolved = false;
+    }
+
+    try {
+      const [feedback, total, unreadCount] = await Promise.all([
+        prisma.userFeedback.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          take: parseInt(limit),
+          skip: parseInt(offset),
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                displayName: true,
+              },
+            },
+          },
+        }),
+        prisma.userFeedback.count({ where }),
+        prisma.userFeedback.count({ where: { isRead: false } }),
+      ]);
+
+      return reply.send({ feedback, total, unreadCount });
+    } catch (error: any) {
+      console.error('[Admin] Failed to fetch feedback:', error);
+      return reply.code(500).send({ error: 'Failed to fetch feedback', message: error.message });
+    }
+  });
+
+  // Get single feedback
+  fastify.get('/admin/feedback/:id', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    try {
+      const feedback = await prisma.userFeedback.findUnique({
+        where: { id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              displayName: true,
+              totalRatings: true,
+              totalReviews: true,
+              createdAt: true,
+            },
+          },
+        },
+      });
+
+      if (!feedback) {
+        return reply.code(404).send({ error: 'Feedback not found' });
+      }
+
+      return reply.send({ feedback });
+    } catch (error: any) {
+      console.error('[Admin] Failed to fetch feedback:', error);
+      return reply.code(500).send({ error: 'Failed to fetch feedback', message: error.message });
+    }
+  });
+
+  // Update feedback (mark read, add notes, resolve)
+  fastify.put('/admin/feedback/:id', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { isRead, isResolved, adminNotes } = request.body as {
+      isRead?: boolean;
+      isResolved?: boolean;
+      adminNotes?: string;
+    };
+
+    try {
+      const feedback = await prisma.userFeedback.update({
+        where: { id },
+        data: {
+          ...(isRead !== undefined && { isRead }),
+          ...(isResolved !== undefined && { isResolved }),
+          ...(adminNotes !== undefined && { adminNotes }),
+        },
+      });
+
+      return reply.send({ feedback });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        return reply.code(404).send({ error: 'Feedback not found' });
+      }
+      console.error('[Admin] Failed to update feedback:', error);
+      return reply.code(500).send({ error: 'Failed to update feedback', message: error.message });
+    }
+  });
+
+  // Delete feedback
+  fastify.delete('/admin/feedback/:id', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    try {
+      await prisma.userFeedback.delete({ where: { id } });
+      return reply.send({ success: true });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        return reply.code(404).send({ error: 'Feedback not found' });
+      }
+      console.error('[Admin] Failed to delete feedback:', error);
+      return reply.code(500).send({ error: 'Failed to delete feedback', message: error.message });
+    }
+  });
 }

@@ -1231,3 +1231,38 @@ model SentPreEventNotification {
 
   @@map("sent_pre_event_notifications")
 }
+
+// ============== SCRAPER & LIVE TRACKER LOGS ==============
+model ScraperLog {
+  id            String    @id @default(uuid())
+
+  // Log type and organization
+  type          String    // "daily_scraper" | "live_tracker"
+  organization  String    // "UFC", "BKFC", "OKTAGON", etc.
+  status        String    // "started" | "completed" | "failed"
+
+  // Event context (for live trackers)
+  eventId       String?
+  eventName     String?
+
+  // Scraper results
+  eventsScraped Int?
+  fightsUpdated Int?
+  fightersAdded Int?
+
+  // Error tracking
+  errorMessage  String?   @db.Text
+
+  // Timing
+  duration      Int?      // milliseconds
+  startedAt     DateTime
+  completedAt   DateTime?
+
+  // Timestamps
+  createdAt     DateTime  @default(now())
+
+  @@index([type, createdAt])
+  @@index([organization, createdAt])
+  @@index([status, createdAt])
+  @@map("scraper_logs")
+}

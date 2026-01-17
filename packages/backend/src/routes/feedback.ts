@@ -1,5 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { authenticateUser } from '../middleware/auth';
+import { EmailService } from '../utils/email';
 
 interface SubmitFeedbackBody {
   content: string;
@@ -114,6 +115,17 @@ export default async function feedbackRoutes(fastify: FastifyInstance) {
       console.log(`Content: ${content}`);
       console.log(`Timestamp: ${feedback.createdAt.toISOString()}`);
       console.log('========================');
+
+      // Send email notification to admin (non-blocking)
+      EmailService.sendFeedbackNotification(
+        feedback.id,
+        user?.email || null,
+        content.trim(),
+        platform,
+        appVersion
+      ).catch((err) => {
+        console.error('[Feedback] Failed to send admin notification email:', err);
+      });
 
       return reply.code(201).send({
         message: 'Feedback submitted successfully. Thank you!',
