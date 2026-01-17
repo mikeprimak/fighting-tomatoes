@@ -104,7 +104,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
     try {
       const query = FightQuerySchema.parse(request.query);
 
-      const where: any = {};
+      const where: any = {
+        isCancelled: false,  // Always exclude cancelled fights
+      };
 
       // Apply filters
       if (query.eventId) where.eventId = query.eventId;

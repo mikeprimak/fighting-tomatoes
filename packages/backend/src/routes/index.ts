@@ -324,6 +324,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       // Include fights if requested
       if (includeFights) {
         select.fights = {
+          where: { isCancelled: false },
           orderBy: { orderOnCard: 'asc' },
           select: {
             id: true,
@@ -631,13 +632,14 @@ export async function registerRoutes(fastify: FastifyInstance) {
     const user = (request as any).user;
 
     try {
-      // Get event with all fights
+      // Get event with all fights (excluding cancelled)
       const event = await fastify.prisma.event.findUnique({
         where: { id: eventId },
         select: {
           id: true,
           name: true,
           fights: {
+            where: { isCancelled: false },
             select: {
               id: true,
             },
