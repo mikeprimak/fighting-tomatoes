@@ -39,6 +39,9 @@ export const getEvents = async (req: Request, res: Response) => {
           }
         },
         fights: {
+          where: {
+            isCancelled: false
+          },
           include: {
             fighterA: {
               select: {
@@ -94,6 +97,9 @@ export const getEventById = async (req: Request, res: Response) => {
           }
         },
         fights: {
+          where: {
+            isCancelled: false
+          },
           include: {
             fighterA: {
               select: {

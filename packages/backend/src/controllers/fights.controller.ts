@@ -5,7 +5,9 @@ export const getFights = async (req: Request, res: Response) => {
   try {
     const { eventId, limit = '20', offset = '0' } = req.query;
 
-    const where: any = {};
+    const where: any = {
+      isCancelled: false  // Always exclude cancelled fights
+    };
     if (eventId) {
       where.eventId = eventId;
     }
