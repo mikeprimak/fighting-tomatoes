@@ -1,21 +1,24 @@
 /**
  * OKTAGON MMA Live Event Scraper
  *
- * Scrapes live fight data from oktagonmma.com event pages during active events.
- * OKTAGON uses Next.js with server-side rendered data in __NEXT_DATA__ script.
+ * Fetches live fight data from OKTAGON's REST API during active events.
+ * Uses the direct API at api.oktagonmma.com for faster, more reliable data.
+ *
+ * API Endpoints:
+ * - GET /v1/events/{slug} - Event details
+ * - GET /v1/events/{id}/fightcard - Full fight card with results
+ * - GET /v1/fights/{id} - Individual fight details
  *
  * Data structure:
- * - Event data in dehydratedState.queries[].state.data
  * - Fights grouped by cards (Title fights, Main Card, Prelims, Free Prelims)
- * - Each fight has fighter1, fighter2, weightClass, result
- * - Result includes winner, method, round, time
+ * - Each fight has fighter1, fighter2, weightClass, result, resultType, time, numRounds
+ * - Result is "FIGHTER_1_WIN" or "FIGHTER_2_WIN" string
  *
  * Usage:
- *   npx ts-node src/services/oktagonLiveScraper.ts [eventUrl] [intervalSeconds]
+ *   npx ts-node src/services/oktagonLiveScraper.ts [eventSlugOrUrl] [intervalSeconds]
  */
 
 import axios from 'axios';
-import * as cheerio from 'cheerio';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -121,14 +124,28 @@ function parseMethod(methodObj: any): string | undefined {
 // ============== OKTAGON LIVE SCRAPER CLASS ==============
 
 class OktagonLiveScraper {
+  private static readonly API_BASE = 'https://api.oktagonmma.com/v1';
   private outputDir: string;
   private eventUrl: string;
+  private eventSlug: string;
+  private eventApiId: number | null = null;
   private snapshots: OktagonScraperSnapshot[] = [];
   private previousState: OktagonEventData | null = null;
   private intervalId: NodeJS.Timeout | null = null;
 
-  constructor(eventUrl: string, outputDir?: string) {
-    this.eventUrl = eventUrl;
+  constructor(eventUrlOrSlug: string, outputDir?: string) {
+    // Extract slug from URL or use directly if already a slug
+    if (eventUrlOrSlug.includes('oktagonmma.com')) {
+      // URL format: https://oktagonmma.com/en/events/oktagon-82-dusseldorf/?eventDetail=true
+      const match = eventUrlOrSlug.match(/events\/([^/?]+)/);
+      this.eventSlug = match ? match[1] : eventUrlOrSlug;
+      this.eventUrl = eventUrlOrSlug;
+    } else {
+      // Already a slug
+      this.eventSlug = eventUrlOrSlug;
+      this.eventUrl = `https://oktagonmma.com/en/events/${eventUrlOrSlug}/?eventDetail=true`;
+    }
+
     this.outputDir = outputDir || path.join(__dirname, '../../live-event-data/oktagon');
 
     if (!fs.existsSync(this.outputDir)) {
@@ -137,75 +154,55 @@ class OktagonLiveScraper {
   }
 
   /**
-   * Fetch the OKTAGON event page and extract Next.js data
+   * Fetch event data from OKTAGON REST API
+   * Uses direct API for faster, more reliable data than HTML scraping
    */
   private async fetchEventData(): Promise<any> {
     const startTime = Date.now();
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0',
+      'Accept': 'application/json',
+    };
 
     try {
-      const response = await axios.get(this.eventUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Cache-Control': 'no-cache',
-        },
-        timeout: 30000,
-      });
+      // First, get event details to obtain the numeric event ID
+      if (!this.eventApiId) {
+        const eventUrl = `${OktagonLiveScraper.API_BASE}/events/${this.eventSlug}`;
+        console.log(`  📡 Fetching event details: ${eventUrl}`);
+
+        const eventResponse = await axios.get(eventUrl, { headers, timeout: 10000 });
+        this.eventApiId = eventResponse.data.id;
+
+        console.log(`  ✓ Event ID: ${this.eventApiId}`);
+      }
+
+      // Now fetch the fight card using the numeric ID
+      const fightCardUrl = `${OktagonLiveScraper.API_BASE}/events/${this.eventApiId}/fightcard`;
+      console.log(`  📡 Fetching fight card: ${fightCardUrl}`);
+
+      const [eventResponse, fightCardResponse] = await Promise.all([
+        axios.get(`${OktagonLiveScraper.API_BASE}/events/${this.eventSlug}`, { headers, timeout: 10000 }),
+        axios.get(fightCardUrl, { headers, timeout: 10000 }),
+      ]);
 
       const duration = Date.now() - startTime;
-      console.log(`  📥 Page fetched in ${duration}ms`);
+      console.log(`  📥 API fetched in ${duration}ms`);
 
-      // Parse HTML and extract __NEXT_DATA__
-      const $ = cheerio.load(response.data);
-      const nextDataScript = $('#__NEXT_DATA__').html();
-
-      if (!nextDataScript) {
-        throw new Error('No __NEXT_DATA__ found on page');
-      }
-
-      const nextData = JSON.parse(nextDataScript);
-      const queries = nextData.props?.pageProps?.dehydratedState?.queries || [];
-
-      // Find event details query and fightCard query
-      let eventDetails: any = null;
-      let fightCards: any[] = [];
-
-      for (const query of queries) {
-        const queryKey = query.queryKey || [];
-        const data = query.state?.data;
-
-        // Look for event details (has title, startDate, etc.)
-        if (queryKey.includes('events') && queryKey.includes('detail') && data?.title) {
-          eventDetails = data;
-        }
-
-        // Look for fightCard query (queryKey includes 'fightCard')
-        if (queryKey.includes('fightCard') && Array.isArray(data)) {
-          fightCards = data;
-        }
-
-        // Legacy: also check for cards directly in data
-        if (data && data.cards && data.cards.length > 0) {
-          fightCards = data.cards;
-          if (!eventDetails) {
-            eventDetails = data;
-          }
-        }
-      }
-
-      if (fightCards.length === 0) {
-        throw new Error('No fight card data found in __NEXT_DATA__');
-      }
-
-      // Return combined data structure
+      // Combine event details with fight cards
       return {
-        ...eventDetails,
-        cards: fightCards,
+        ...eventResponse.data,
+        cards: fightCardResponse.data,
       };
 
     } catch (error: any) {
-      console.error(`  ❌ Fetch error: ${error.message}`);
+      console.error(`  ❌ API fetch error: ${error.message}`);
+
+      // Log more details for debugging
+      if (error.response) {
+        console.error(`  Status: ${error.response.status}`);
+        console.error(`  URL: ${error.config?.url}`);
+      }
+
       throw error;
     }
   }
@@ -232,12 +229,13 @@ class OktagonLiveScraper {
         globalOrder++;
 
         // Parse fighters
+        // API returns nationality as string directly (e.g., "AL") not nested object
         const fighterA: OktagonFighterInfo = {
           id: fight.fighter1?.id,
           firstName: fight.fighter1?.firstName || 'TBA',
           lastName: fight.fighter1?.lastName || '',
           nickname: fight.fighter1?.nickName,
-          country: fight.fighter1?.nationality?.code,
+          country: fight.fighter1?.nationality || fight.fighter1?.nationality?.code,
           record: parseRecord(fight.fighter1?.scores),
           isWinner: false,
         };
@@ -247,7 +245,7 @@ class OktagonLiveScraper {
           firstName: fight.fighter2?.firstName || 'TBA',
           lastName: fight.fighter2?.lastName || '',
           nickname: fight.fighter2?.nickName,
-          country: fight.fighter2?.nationality?.code,
+          country: fight.fighter2?.nationality || fight.fighter2?.nationality?.code,
           record: parseRecord(fight.fighter2?.scores),
           isWinner: false,
         };
