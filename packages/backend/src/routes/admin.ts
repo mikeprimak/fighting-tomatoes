@@ -193,6 +193,45 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // ============================================
+  // DELETE EVENT - Key-based auth for cleanup
+  // Use: curl -X DELETE "https://fightcrewapp-backend.onrender.com/api/admin/delete-event/EVENT_ID?key=YOUR_KEY"
+  // ============================================
+  fastify.delete('/admin/delete-event/:id', async (request, reply) => {
+    const { key } = request.query as { key?: string };
+    const { id } = request.params as { id: string };
+
+    if (key !== TEST_SCRAPER_KEY) {
+      return reply.code(401).send({ error: 'Invalid key' });
+    }
+
+    try {
+      // Get event info first
+      const event = await prisma.event.findUnique({
+        where: { id },
+        select: { name: true, promotion: true }
+      });
+
+      if (!event) {
+        return reply.code(404).send({ error: 'Event not found' });
+      }
+
+      // Delete all fights for this event first
+      const deletedFights = await prisma.fight.deleteMany({ where: { eventId: id } });
+
+      // Then delete the event
+      await prisma.event.delete({ where: { id } });
+
+      return reply.send({
+        success: true,
+        deletedEvent: event.name,
+        deletedFightsCount: deletedFights.count
+      });
+    } catch (err: any) {
+      return reply.code(500).send({ error: 'Failed to delete event', message: err.message });
+    }
+  });
+
+  // ============================================
   // FIGHTER SEARCH (for autocomplete)
   // ============================================
   fastify.get('/admin/fighters/search', {
