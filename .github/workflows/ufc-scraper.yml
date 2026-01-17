@@ -74,7 +74,13 @@ jobs:
           "
           echo "Done!"
 
-      - name: Report result
-        if: always()
+      - name: Report success
+        if: success()
         run: |
-          echo "UFC Scraper workflow completed at $(date)"
+          echo "UFC Scraper workflow completed successfully at $(date)"
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "UFC Scraper workflow FAILED at $(date)"
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=scraper&org=UFC" || echo "Failed to send alert"

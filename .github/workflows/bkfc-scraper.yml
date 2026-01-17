@@ -38,3 +38,7 @@ jobs:
           cd packages/backend
           node dist/services/scrapeAllBKFCData.js
           node -e "require('./dist/services/bkfcDataParser.js').importBKFCData().then(() => process.exit(0))"
+      - name: Report failure
+        if: failure()
+        run: |
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=scraper&org=BKFC" || true
