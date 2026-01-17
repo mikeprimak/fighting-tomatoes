@@ -231,8 +231,23 @@ async function scrapeEventsList(browser) {
 
   await page.close();
 
-  console.log(`✅ Found ${events.length} upcoming Golden Boy events\n`);
-  return events;
+  // Filter out sub-pages that might have slipped through
+  const filteredEvents = events.filter(event => {
+    const slugLower = (event.eventSlug || '').toLowerCase();
+    const isSubPage = slugLower.includes('/') ||
+                      slugLower.includes('fight-week') ||
+                      slugLower.includes('schedule') ||
+                      slugLower.includes('tickets') ||
+                      slugLower.includes('results');
+    if (isSubPage) {
+      console.log(`   ⏭️ Filtering out sub-page: ${event.eventSlug}`);
+      return false;
+    }
+    return true;
+  });
+
+  console.log(`✅ Found ${filteredEvents.length} upcoming Golden Boy events (filtered from ${events.length})\n`);
+  return filteredEvents;
 }
 
 // ========================================
