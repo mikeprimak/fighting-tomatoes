@@ -518,50 +518,82 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       // Track which boxers have been paired
       const pairedBoxerIndices = new Set();
 
-      // For each boxer, look for VS and determine opponent
-      for (let i = 0; i < boxersFound.length; i++) {
-        if (pairedBoxerIndices.has(i)) continue;
+      // NEW ALGORITHM: VS-centric pairing
+      // 1. Find all VS separators with their positions
+      // 2. For each VS, find the closest boxer BEFORE and AFTER it
+      // 3. Verify the pairing is valid (VS appears between their stats)
 
-        const boxerA = boxersFound[i];
+      // Find all VS positions in the text
+      const vsPositions = [];
+      const vsRegex = /\bVS\.?\b/gi;
+      let vsMatchResult;
+      while ((vsMatchResult = vsRegex.exec(normalizedText)) !== null) {
+        vsPositions.push({
+          position: vsMatchResult.index,
+          text: vsMatchResult[0]
+        });
+      }
 
-        // Get text after this boxer's record (estimate ~30-40 chars for "W ## KO ## L ## D ##")
-        const recordEndPos = boxerA.position + boxerA.name.length + 40;
-        const afterBoxerA = normalizedText.substring(boxerA.position);
+      console.log(`      Found ${vsPositions.length} VS separators, ${boxersFound.length} boxers`);
 
-        // Find VS after this boxer's record
-        const vsMatch = afterBoxerA.match(/W\s*\d+\s*KO\s*\d+\s*L\s*\d*\s*D?\s*\d*[^V]*?\bVS\.?\b\s*/i);
+      // Sort boxers by position (should already be sorted, but ensure it)
+      boxersFound.sort((a, b) => a.position - b.position);
 
-        if (!vsMatch) {
-          // No VS after this boxer - skip
+      // For each VS, find the boxer immediately before and after
+      for (const vs of vsPositions) {
+        // Find boxer A: the closest boxer whose stats END before this VS
+        // A boxer's stats end approximately at: position + name.length + 40 (for "W ## KO ## L ## D ##")
+        let boxerA = null;
+        let boxerAIndex = -1;
+
+        for (let i = boxersFound.length - 1; i >= 0; i--) {
+          if (pairedBoxerIndices.has(i)) continue;
+
+          const candidate = boxersFound[i];
+          const statsEndPos = candidate.position + candidate.name.length + 50; // Estimate where stats end
+
+          // Boxer A should be before VS, with stats ending near VS (within 100 chars)
+          if (statsEndPos < vs.position && vs.position - statsEndPos < 100) {
+            boxerA = candidate;
+            boxerAIndex = i;
+            break;
+          }
+        }
+
+        if (!boxerA) {
+          // No valid boxer found before this VS
           continue;
         }
 
-        const vsEndPos = boxerA.position + vsMatch.index + vsMatch[0].length;
-        const afterVs = normalizedText.substring(vsEndPos);
+        // Find boxer B: check text immediately after VS
+        const afterVs = normalizedText.substring(vs.position + vs.text.length);
 
         // Check if opponent is TBA - pattern: "W KO L D" immediately after VS (no name)
-        // TBA shows as: "VS W KO L D" where W has no number or empty stats
-        const tbaPattern = /^W\s*KO\s*L\s*D\s/i;
-        const isTBA = tbaPattern.test(afterVs.trim());
+        const tbaPattern = /^\s*W\s*KO\s*L\s*D\s/i;
+        const isTBA = tbaPattern.test(afterVs);
 
         let boxerB = null;
+        let boxerBIndex = -1;
 
         if (isTBA) {
           // Opponent is TBA
           boxerB = { ...TBA_BOXER };
           console.log(`      Found TBA opponent for ${boxerA.name}`);
         } else {
-          // Find the next boxer in our list that appears after VS
-          for (let j = i + 1; j < boxersFound.length; j++) {
+          // Find the boxer whose name appears right after VS
+          const vsEndPos = vs.position + vs.text.length;
+
+          for (let j = 0; j < boxersFound.length; j++) {
             if (pairedBoxerIndices.has(j)) continue;
+            if (j === boxerAIndex) continue; // Skip boxer A
 
             const candidate = boxersFound[j];
-            // Check if this candidate's position is right after VS
-            // Should be within ~100 chars (just the name before their stats)
+            // Boxer B's position should be right after VS (within ~50 chars for whitespace/formatting)
             const distanceFromVs = candidate.position - vsEndPos;
-            if (distanceFromVs >= 0 && distanceFromVs < 100) {
+
+            if (distanceFromVs >= 0 && distanceFromVs < 50) {
               boxerB = candidate;
-              pairedBoxerIndices.add(j);
+              boxerBIndex = j;
               break;
             }
           }
@@ -569,11 +601,15 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
 
         if (!boxerB) {
           // No valid opponent found after VS
-          console.log(`      No opponent found for ${boxerA.name}, skipping`);
+          console.log(`      No opponent found for ${boxerA.name} at VS position ${vs.position}, skipping`);
           continue;
         }
 
-        pairedBoxerIndices.add(i);
+        // Mark both boxers as paired
+        pairedBoxerIndices.add(boxerAIndex);
+        if (boxerBIndex >= 0) {
+          pairedBoxerIndices.add(boxerBIndex);
+        }
 
         const pairKey = boxerB.isTBA
           ? `${boxerA.name}|TBA`
