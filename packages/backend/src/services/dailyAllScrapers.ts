@@ -13,6 +13,7 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
+import { EmailService } from '../utils/email';
 
 // Import functions from each parser
 import { importBKFCData } from './bkfcDataParser';
@@ -167,6 +168,11 @@ export async function runOrganizationScraper(org: OrganizationType): Promise<Org
     console.error(`   Duration: ${results.duration}s`);
     console.error(`   Error: ${error.message}`);
     console.error('========================================\n');
+
+    // Send email alert for scraper failure
+    EmailService.sendScraperFailureAlert(org, error.message).catch((emailErr) => {
+      console.error(`[${org}] Failed to send failure alert email:`, emailErr);
+    });
 
     // Don't throw - let the scheduler continue with other scrapers
   }

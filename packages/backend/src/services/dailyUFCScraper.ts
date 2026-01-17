@@ -14,6 +14,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import { importUFCData } from './ufcDataParser';
+import { EmailService } from '../utils/email';
 
 const execAsync = promisify(exec);
 
@@ -127,6 +128,11 @@ export async function runDailyUFCScraper(): Promise<DailyScraperResults> {
     console.error(`   Duration: ${results.duration}s`);
     console.error(`   Error: ${error.message}`);
     console.error('========================================\n');
+
+    // Send email alert for scraper failure
+    EmailService.sendScraperFailureAlert('UFC', error.message).catch((emailErr) => {
+      console.error('[UFC] Failed to send failure alert email:', emailErr);
+    });
 
     throw error;
   }
