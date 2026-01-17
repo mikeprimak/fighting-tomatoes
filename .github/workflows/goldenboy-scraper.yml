@@ -36,5 +36,5 @@ jobs:
           SCRAPER_MODE: automated
         run: |
           cd packages/backend
-          node dist/services/scrapeAllGoldenBoyData.js
+          node src/services/scrapeAllGoldenBoyData.js
           node -e "require('./dist/services/goldenBoyDataParser.js').importGoldenBoyData().then(() => process.exit(0))"
