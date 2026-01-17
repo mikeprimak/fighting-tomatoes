@@ -1143,10 +1143,15 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // TEST EMAIL ALERTS
   // ============================================
 
-  // Test scraper failure alert email
-  // Use: GET /api/admin/test-alert?key=YOUR_KEY&type=scraper
+  // Scraper failure alert endpoint (used by GitHub Actions and for testing)
+  // Use: GET /api/admin/test-alert?key=YOUR_KEY&type=scraper&org=UFC&error=message
   fastify.get('/admin/test-alert', async (request, reply) => {
-    const { key, type } = request.query as { key?: string; type?: string };
+    const { key, type, org, error: errorMsg } = request.query as {
+      key?: string;
+      type?: string;
+      org?: string;
+      error?: string;
+    };
 
     if (key !== TEST_SCRAPER_KEY) {
       return reply.code(401).send({ error: 'Invalid key' });
@@ -1155,8 +1160,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
     const { EmailService } = await import('../utils/email');
 
     if (type === 'scraper') {
-      await EmailService.sendScraperFailureAlert('TEST', 'This is a test scraper failure alert.');
-      return reply.send({ success: true, message: 'Scraper failure alert sent' });
+      const orgName = org || 'TEST';
+      const message = errorMsg || 'GitHub Actions workflow failed. Check workflow logs for details.';
+      await EmailService.sendScraperFailureAlert(orgName, message);
+      return reply.send({ success: true, message: `Scraper failure alert sent for ${orgName}` });
     } else if (type === 'feedback') {
       await EmailService.sendFeedbackNotification('test-id', 'test@example.com', 'This is a test feedback notification.', 'Test', '1.0.0');
       return reply.send({ success: true, message: 'Feedback notification sent' });
