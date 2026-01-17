@@ -186,10 +186,10 @@ export class EmailService {
     const mailOptions = {
       from: process.env.SMTP_FROM || 'noreply@goodfights.app',
       to: adminEmail,
-      subject: `⚠️ [Good Fights] Scraper Failed: ${org}`,
+      subject: `[Good Fights] Scraper Failed: ${org}`,
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border-radius: 10px;">
-          <h1 style="color: #ef4444; margin-bottom: 20px;">⚠️ Scraper Failure Alert</h1>
+          <h1 style="color: #ef4444; margin-bottom: 20px;">Scraper Failure Alert</h1>
 
           <p style="color: #000000;">The <strong>${org}</strong> scraper failed at <strong>${timestamp} ET</strong>.</p>
 
@@ -232,10 +232,10 @@ export class EmailService {
     const mailOptions = {
       from: process.env.SMTP_FROM || 'noreply@goodfights.app',
       to: adminEmail,
-      subject: `📬 [Good Fights] New Feedback from ${userEmail || 'Anonymous'}`,
+      subject: `[Good Fights] New Feedback from ${userEmail || 'Anonymous'}`,
       html: `
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border-radius: 10px;">
-          <h1 style="color: #202020; margin-bottom: 20px;">📬 New User Feedback</h1>
+          <h1 style="color: #202020; margin-bottom: 20px;">New User Feedback</h1>
 
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
             <tr>
