@@ -200,10 +200,10 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
                 textAlign: 'center',
               }}
             >
-              {hasLiveEvent ? 'Live' : 'Upcoming Fights'}
+              {hasLiveEvent ? 'Live Fights' : 'Upcoming Fights'}
             </Text>
           ),
-          headerTitle: () => <HeaderLogo title="Upcoming Fights" />,
+          headerTitle: () => <HeaderLogo title={hasLiveEvent ? 'Live Fights' : 'Upcoming Fights'} />,
           headerRight: () => (
             <TouchableOpacity
               onPress={toggleSearch}

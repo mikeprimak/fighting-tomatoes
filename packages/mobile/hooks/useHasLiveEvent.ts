@@ -13,13 +13,14 @@ interface Event {
  */
 export function useHasLiveEvent() {
   const { data: eventsData } = useQuery({
-    queryKey: ['events'],
-    queryFn: () => apiService.getEvents(),
+    queryKey: ['upcomingEvents', 'liveCheck'],
+    queryFn: () => apiService.getEvents({ type: 'upcoming', limit: 20 }),
     staleTime: 30 * 1000, // 30 seconds
     refetchInterval: 30 * 1000, // Refetch every 30 seconds
   });
 
   const allEvents = eventsData?.events || [];
+  // Live event = hasStarted but not isComplete
   const hasLiveEvent = allEvents.some((event: Event) => event.hasStarted && !event.isComplete);
 
   return hasLiveEvent;
