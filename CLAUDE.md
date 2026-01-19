@@ -22,6 +22,56 @@ See `LAUNCH-DOC.md` for full status and checklists.
 
 ---
 
+## Live Tracker Preview Mode (Future Implementation)
+
+Once the app has real users, use this pattern to safely develop live event trackers without affecting what users see.
+
+### Concept: Shadow Fields
+
+Add parallel "tracker" fields to the Fight model. The live tracker writes to shadow fields, regular users see published fields, admin sees both.
+
+```
+Fight table:
+├── status          (published - what users see)
+├── winnerId        (published)
+├── method          (published)
+├── round           (published)
+├── time            (published)
+│
+├── trackerStatus   (draft - what live tracker writes)
+├── trackerWinnerId (draft)
+├── trackerMethod   (draft)
+├── trackerRound    (draft)
+├── trackerTime     (draft)
+├── trackerUpdatedAt
+```
+
+### Data Flow
+
+| Component | Reads | Writes |
+|-----------|-------|--------|
+| Live Tracker | - | `tracker*` fields only |
+| Admin Panel | Both (side by side) | Published fields |
+| Regular Users | Published fields | - |
+| Admin in App | `tracker*` fields | - |
+
+### Admin Workflow During Events
+
+1. Live tracker runs, writing to `tracker*` fields
+2. Admin watches tracker output in the app (sees draft data)
+3. If correct → "Publish" button copies tracker values to published fields
+4. If wrong → manually enter correct values in admin panel
+5. Regular users only ever see the published (approved) data
+
+### Benefits
+
+- Tracker bugs can't affect real users
+- Admin can compare tracker output vs reality in real-time
+- Simple "publish" action when tracker is working correctly
+- Graceful fallback to manual entry when needed
+
+---
+
 FightCrewApp: React Native + Node.js combat sports fight rating app.
 
 **Archive**: See `CLAUDE-ARCHIVE.md` for detailed setup guides, troubleshooting, feature implementations, and history.

@@ -270,7 +270,9 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
           const bgImage = computedStyle.backgroundImage;
           if (bgImage && bgImage !== 'none') {
             const computedMatch = bgImage.match(/url\(['"]?([^'")\s]+)['"]?\)/i);
-            if (computedMatch && computedMatch[1] && !computedMatch[1].includes('schedule-banner-default')) {
+            if (computedMatch && computedMatch[1]) {
+              // Accept any banner image including the default one
+              // Previously excluded schedule-banner-default but that's better than no image
               eventImageUrl = computedMatch[1];
             }
           }
@@ -897,17 +899,23 @@ async function main() {
     });
 
     // Download event banners
+    // Force update images for upcoming events (in case website updated them)
+    const forceUpdateImages = process.env.FORCE_UPDATE_IMAGES === 'true';
     console.log('   Event banners:');
     for (const event of allEventData) {
       if (event.eventImageUrl) {
         const filename = `${event.eventSlug}.jpg`;
         const filepath = path.join(eventImagesDir, filename);
 
-        if (!fs.existsSync(filepath)) {
+        // Check if we should download: either file doesn't exist OR force update is enabled
+        const fileExists = fs.existsSync(filepath);
+        const shouldDownload = !fileExists || forceUpdateImages;
+
+        if (shouldDownload) {
           try {
             await downloadImage(browser, event.eventImageUrl, filepath);
             event.localImagePath = `/images/events/pfl/${filename}`;
-            console.log(`      ✅ ${filename}`);
+            console.log(`      ✅ ${filename}${fileExists ? ' (updated)' : ''}`);
 
             await new Promise(resolve => setTimeout(resolve, delays.betweenImages));
           } catch (error) {

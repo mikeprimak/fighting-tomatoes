@@ -127,13 +127,21 @@ async function scrapeEventsList(browser) {
         const monthNum = months[firstPart];
         const dayNum = parseInt(slugParts[1], 10);
 
-        // Determine year - if date is in the past, assume next year
+        // Use current year - do NOT assume past dates are next year
+        // Past events will be filtered out by the "Skip past events" check later
+        // This prevents recently-completed events from being incorrectly bumped to next year
         let year = now.getFullYear();
         let testDate = new Date(year, monthNum, dayNum);
         testDate.setHours(0, 0, 0, 0);
-        if (testDate < now) {
+
+        // Only bump to next year if we're in late months (Oct-Dec) and
+        // the event month is early (Jan-Mar) - this handles year rollover for FUTURE events
+        const currentMonth = now.getMonth(); // 0-11
+        if (testDate < now && currentMonth >= 9 && monthNum <= 2) {
+          // Late in year, event is early next year
           year = now.getFullYear() + 1;
         }
+        // Do NOT bump year for other past dates - they are completed events
 
         eventDate = new Date(year, monthNum, dayNum);
         eventDate.setHours(0, 0, 0, 0);
@@ -232,17 +240,38 @@ async function scrapeEventsList(browser) {
   await page.close();
 
   // Filter out sub-pages that might have slipped through
+  // This is a second-layer filter outside page.evaluate() for better logging visibility
   const filteredEvents = events.filter(event => {
     const slugLower = (event.eventSlug || '').toLowerCase();
-    const isSubPage = slugLower.includes('/') ||
-                      slugLower.includes('fight-week') ||
-                      slugLower.includes('schedule') ||
-                      slugLower.includes('tickets') ||
-                      slugLower.includes('results');
-    if (isSubPage) {
-      console.log(`   ⏭️ Filtering out sub-page: ${event.eventSlug}`);
+    const nameLower = (event.eventName || '').toLowerCase();
+
+    // Check slug for sub-page patterns
+    const slugIsSubPage = slugLower.includes('/') ||
+                          slugLower.includes('fight-week') ||
+                          slugLower.includes('schedule') ||
+                          slugLower.includes('tickets') ||
+                          slugLower.includes('results') ||
+                          slugLower.includes('media') ||
+                          slugLower.includes('gallery');
+
+    // ALSO check the event name for sub-page words that shouldn't be there
+    const nameHasSubPageWords = nameLower.includes('fight week') ||
+                                nameLower.includes('schedule') ||
+                                nameLower.includes('tickets') ||
+                                nameLower.includes('results') ||
+                                nameLower.includes('/fight') ||
+                                nameLower.includes('/schedule');
+
+    if (slugIsSubPage) {
+      console.log(`   ⏭️ Filtering out sub-page (slug): ${event.eventSlug}`);
       return false;
     }
+
+    if (nameHasSubPageWords) {
+      console.log(`   ⏭️ Filtering out sub-page (name): ${event.eventName}`);
+      return false;
+    }
+
     return true;
   });
 
