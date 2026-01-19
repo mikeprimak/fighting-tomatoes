@@ -1,0 +1,157 @@
+name: Database Backup
+# Daily automated backup of PostgreSQL database to R2 storage
+
+on:
+  schedule:
+    # Run daily at 4am UTC (11pm EST) - before any scrapers run
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from GitHub UI
+
+jobs:
+  backup-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Create backup directory
+        run: mkdir -p backups
+
+      - name: Generate backup filename
+        id: filename
+        run: |
+          TIMESTAMP=$(date +%Y-%m-%d_%H%M%S)
+          FILENAME="goodfights-backup-${TIMESTAMP}.sql.gz"
+          echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
+          echo "timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
+
+      - name: Run pg_dump
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo "Starting database backup..."
+          # Extract connection details from DATABASE_URL
+          # Format: postgres://user:pass@host:port/dbname
+          pg_dump "$DATABASE_URL" --no-owner --no-acl | gzip > "backups/${{ steps.filename.outputs.filename }}"
+
+          # Check backup file size
+          BACKUP_SIZE=$(ls -lh "backups/${{ steps.filename.outputs.filename }}" | awk '{print $5}')
+          echo "Backup created: ${{ steps.filename.outputs.filename }} (${BACKUP_SIZE})"
+
+          # Fail if backup is too small (likely empty/failed)
+          BACKUP_BYTES=$(stat -f%z "backups/${{ steps.filename.outputs.filename }}" 2>/dev/null || stat -c%s "backups/${{ steps.filename.outputs.filename }}")
+          if [ "$BACKUP_BYTES" -lt 1000 ]; then
+            echo "ERROR: Backup file is suspiciously small (${BACKUP_BYTES} bytes). Backup may have failed."
+            exit 1
+          fi
+
+      - name: Upload backup to R2
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
+          R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          # Install AWS CLI (works with R2)
+          pip install awscli
+
+          # Configure AWS CLI for R2
+          aws configure set aws_access_key_id "$R2_ACCESS_KEY"
+          aws configure set aws_secret_access_key "$R2_SECRET_KEY"
+
+          # Upload to R2 with backup retention folder
+          echo "Uploading backup to R2..."
+          aws s3 cp "backups/${{ steps.filename.outputs.filename }}" \
+            "s3://${R2_BUCKET}/database-backups/${{ steps.filename.outputs.filename }}" \
+            --endpoint-url "$R2_ENDPOINT"
+
+          echo "Backup uploaded successfully!"
+
+      - name: Archive monthly backup (1st of month only)
+        if: ${{ github.event.schedule == '0 4 1 * *' || contains(steps.filename.outputs.timestamp, '-01_') }}
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
+          R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          # Check if today is the 1st of the month
+          DAY_OF_MONTH=$(date +%d)
+          if [ "$DAY_OF_MONTH" = "01" ]; then
+            MONTH_YEAR=$(date +%Y-%m)
+            MONTHLY_FILENAME="goodfights-monthly-${MONTH_YEAR}.sql.gz"
+
+            echo "Creating monthly archive: ${MONTHLY_FILENAME}"
+            aws s3 cp "backups/${{ steps.filename.outputs.filename }}" \
+              "s3://${R2_BUCKET}/database-backups/monthly/${MONTHLY_FILENAME}" \
+              --endpoint-url "$R2_ENDPOINT"
+            echo "Monthly backup archived!"
+          else
+            echo "Not the 1st of month, skipping monthly archive"
+          fi
+
+      - name: Cleanup old daily backups (keep last 14)
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
+          R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          # List daily backups (not monthly), sorted by date (oldest first)
+          BACKUPS=$(aws s3 ls "s3://${R2_BUCKET}/database-backups/" \
+            --endpoint-url "$R2_ENDPOINT" | \
+            grep "goodfights-backup-" | \
+            grep -v "monthly" | \
+            sort | \
+            awk '{print $4}')
+
+          # Count backups
+          BACKUP_COUNT=$(echo "$BACKUPS" | wc -l | tr -d ' ')
+          echo "Found ${BACKUP_COUNT} daily backups"
+
+          # Keep last 14 daily backups (2 weeks)
+          KEEP_COUNT=14
+          if [ "$BACKUP_COUNT" -gt "$KEEP_COUNT" ]; then
+            DELETE_COUNT=$((BACKUP_COUNT - KEEP_COUNT))
+            echo "Deleting ${DELETE_COUNT} old daily backups..."
+
+            echo "$BACKUPS" | head -n "$DELETE_COUNT" | while read BACKUP; do
+              echo "Deleting: ${BACKUP}"
+              aws s3 rm "s3://${R2_BUCKET}/database-backups/${BACKUP}" \
+                --endpoint-url "$R2_ENDPOINT"
+            done
+          else
+            echo "No old daily backups to delete (keeping last ${KEEP_COUNT})"
+          fi
+
+          # Monthly backups are NEVER deleted - they stay forever
+          echo ""
+          echo "Monthly backups (kept forever):"
+          aws s3 ls "s3://${R2_BUCKET}/database-backups/monthly/" \
+            --endpoint-url "$R2_ENDPOINT" || echo "  No monthly backups yet"
+
+      - name: Report success
+        if: success()
+        run: |
+          echo "Database backup completed successfully at $(date)"
+          echo "Backup file: ${{ steps.filename.outputs.filename }}"
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "Database backup FAILED at $(date)"
+          # Send alert (optional - uses existing alert endpoint)
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=backup&org=Database" || echo "Failed to send alert"

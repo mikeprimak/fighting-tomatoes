@@ -2317,11 +2317,16 @@ const userHypeColor = useMemo(
   - `CNAME` → `www` → Vercel DNS
 - SSL certificates auto-provisioned by Vercel
 
-**Email Routing - COMPLETE**
-- Cloudflare Email Routing enabled
-- `contact@goodfights.app` → forwards to Gmail
-- MX records configured for Cloudflare routing
-- DKIM and SPF records added
+**Email - COMPLETE (Updated 2026-01-15)**
+- **Provider**: Zoho Mail Lite ($1/month)
+- **Address**: `contact@goodfights.app` (alias on avocadomike@hotmail.com Zoho account)
+- **Send & Receive**: Full capability via https://mail.zoho.com
+- **DNS Records** (in Cloudflare):
+  - MX: `mx.zoho.com` (10), `mx2.zoho.com` (20), `mx3.zoho.com` (50)
+  - TXT (SPF): `v=spf1 include:zohomail.com ~all`
+  - TXT (DKIM): `default._domainkey` → Zoho DKIM key
+  - TXT (DMARC): `_dmarc` → `v=DMARC1; p=none; rua=mailto:michaelsprimak@gmail.com...`
+- **Previous setup**: Cloudflare Email Routing (receive-only, forwarded to Gmail) - disabled
 
 **Landing Page - COMPLETE**
 - Live at `https://goodfights.app`
