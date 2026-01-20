@@ -329,32 +329,99 @@ npx ts-node src/scripts/fixEventDates.ts --apply
 |------|--------|-------|
 | 1. Database Backups | DONE | Created `.github/workflows/database-backup.yml` |
 | 2. Golden Boy Duplicate Fix | DONE | Strengthened sub-page filtering in scraper |
-| 3. GitGuardian Alert | DOCUMENTED | User needs to rotate DB password on Render |
-| 4. App Icon | DONE | Copied icon files to correct locations |
-| 5. Zuffa Boxing Scraper | DONE | Created scraper, parser, and data files |
+| 3. GitGuardian Alert | **DONE** | Rotated DB password, updated GitHub secrets & Render env |
+| 4. App Icon | IN PROGRESS | Testing different icon versions |
+| 5. Zuffa Boxing Scraper | **DONE** | Created scraper, imported 16 fighters + 8 fights to prod DB |
 | 6. PFL Event Image | DONE | Fixed scraper to accept default banner |
-| 7-9. Date Issues | DONE | Fixed scraper logic + created fix script |
+| 7-9. Date Issues | **DONE** | Fixed UFC 321/322/323, fixed PFL mainStartTime bug |
 
 ### New Files Created
-- `.github/workflows/database-backup.yml` - Daily automated backups
+- `.github/workflows/database-backup.yml` - Daily automated backups (monthly kept forever)
 - `packages/backend/src/services/scrapeZuffaBoxingTapology.js` - Zuffa scraper
 - `packages/backend/src/services/zuffaBoxingDataParser.ts` - Zuffa parser
 - `packages/backend/scraped-data/zuffa-boxing/latest-events.json` - Event data
 - `packages/backend/scraped-data/zuffa-boxing/latest-athletes.json` - Athletes data
 - `packages/backend/src/scripts/fixEventDates.ts` - Date fix utility
-- `packages/mobile/assets/homescreen-icon.png` - iOS app icon
+- `packages/mobile/assets/homescreen-icon.png` - App icon (updated to filled-glove version)
 - `packages/mobile/assets/adaptive-icon-foreground-new.png` - Android adaptive icon
 
 ### Files Modified
 - `packages/backend/src/services/scrapeAllGoldenBoyData.js` - Date logic + filtering
 - `packages/backend/src/services/scrapeAllPFLData.js` - Image handling
+- `packages/backend/src/services/pflDataParser.ts` - Fixed mainStartTime validation bug
+- `packages/backend/src/services/zuffaBoxingDataParser.ts` - Removed invalid organization references
+- `packages/backend/src/scripts/fixEventDates.ts` - Removed invalid organization references
+- `packages/mobile/app.json` - Updated version to 1.0.1, buildNumber to 12, versionCode to 22
+- `packages/mobile/android/app/build.gradle` - Updated versionCode to 22
+- `packages/backend/.env` - Updated to use Render External Database URL
 
-### Manual Actions Required
-1. **Rotate Render database password** (GitGuardian alert)
-2. **Rebuild the app** (`eas build`) for new icon to take effect
-3. **Run Zuffa Boxing import**: `node -e "require('./dist/services/zuffaBoxingDataParser.js').importZuffaBoxingData()"`
-4. **Run date fixes**: `npx ts-node src/scripts/fixEventDates.ts --apply`
-5. **Update PFL images**: `FORCE_UPDATE_IMAGES=true node src/services/scrapeAllPFLData.js`
+### Builds Created
+| Platform | Version | Build # | Status |
+|----------|---------|---------|--------|
+| Android | 1.0.0 | versionCode 21 | Uploaded to Internal Testing |
+| Android | 1.0.0 | versionCode 22 | Old icon (before prebuild fix) |
+| Android | 1.0.0 | versionCode 23 | Failed - bad mipmap sizes |
+| Android | 1.0.0 | versionCode 24 | Canceled / Failed - Play Console rejected as versionCode 1 |
+| Android | 1.0.1 | versionCode 25 | **Building** - with proper icons via expo prebuild |
+| iOS | 1.0.1 | buildNumber 12 | Built, EAS Submit outage - manual upload needed |
+
+---
+
+## Task 10: PFL "in 3 weeks" Bug - Root Cause Found
+
+**Issue**: PFL Madrid (Mar 20) and Pittsburgh (Mar 28) showing "in 3 weeks" instead of "in 9 weeks".
+
+### Root Cause
+The `mainStartTime` field was wrong for all PFL events:
+| Event | date (correct) | mainStartTime (WRONG) |
+|-------|----------------|----------------------|
+| PFL Road To Dubai | Feb 7 | Feb 7 ✓ |
+| PFL Madrid | Mar 20 | **Feb 7** ✗ |
+| PFL Pittsburgh | Mar 28 | **Feb 7** ✗ |
+
+The PFL website returns the same `DateTime.fromISO` value in page scripts for all events, and the scraper was using it directly without validation.
+
+### Solution
+1. **Fixed database** - Updated mainStartTime for Madrid (Mar 20) and Pittsburgh (Mar 28)
+2. **Fixed parser** - Added validation in `parsePFLEventStartTime()` to check if ISO date matches event date. If not, uses event date with time portion from ISO.
+
+### Files Changed
+- `packages/backend/src/services/pflDataParser.ts` (lines 162-220)
+
+---
+
+## Manual Actions Completed This Session
+
+1. ✅ **Rotated Render database password** - Created new credentials, deleted old ones
+2. ✅ **Updated GitHub secret** - DATABASE_URL with new External URL
+3. ✅ **Updated Render env var** - DATABASE_URL with Internal URL
+4. ✅ **Imported Zuffa Boxing data** - 16 fighters, 1 event, 8 fights
+5. ✅ **Ran fixEventDates script** - UFC 321/322/323 marked complete
+6. ✅ **Ran PFL scraper** - 3 events, 23 fights, 46 fighters, 27 images
+7. ✅ **Fixed PFL mainStartTime** - Madrid and Pittsburgh corrected
+8. ✅ **Built Android versionCode 21** - Uploaded to Internal Testing
+9. ⏳ **Building Android versionCode 22** - New filled-glove icon
+10. ⏳ **iOS 1.0.1 submission** - EAS Submit outage, need manual Transporter upload
+
+---
+
+## Pending Actions
+
+1. **iOS App Store submission** - Download IPA and upload via Transporter:
+   - IPA: https://expo.dev/artifacts/eas/97Znvwu3ivgw1Ysa7YrBvt.ipa
+   - Use Transporter app on Mac to upload
+
+2. **Android versionCode 25 build completing** - Check build status:
+   - Build URL: https://expo.dev/accounts/mikeprimak/projects/fightcrewapp/builds/728a8d23-6a49-4d9b-989c-efea802e7561
+   - Once complete, download AAB and upload to Play Console Internal Testing
+
+3. **Test new icon** - Verify filled-glove icon appears on Android homescreen
+
+## Important Notes for Next Session
+
+- **Always ask before starting builds** - Build credits at 91% (41/45 used)
+- **Icon fix**: Use `expo prebuild --clean` to regenerate native resources from app.json
+- **Never use local DB** - Always use Render External URL unless explicitly asked
 
 ---
 
@@ -364,8 +431,8 @@ npx ts-node src/scripts/fixEventDates.ts --apply
 - Created this tracking document
 - Tasks identified and prioritized
 
-### 2026-01-19 - Work Completed
-- Investigated and fixed all 9 tasks
+### 2026-01-19 - Morning Work
+- Investigated and documented all 9 tasks
 - Created database backup workflow
 - Fixed Golden Boy scraper issues (duplicates + dates)
 - Identified GitGuardian issue source
@@ -373,4 +440,36 @@ npx ts-node src/scripts/fixEventDates.ts --apply
 - Built complete Zuffa Boxing scraper system
 - Fixed PFL image handling
 - Created comprehensive date fix script
+
+### 2026-01-19 - Afternoon Work (Continued Session)
+- Rotated Render database password (GitGuardian fix complete)
+- Fixed TypeScript build errors in zuffaBoxingDataParser.ts and fixEventDates.ts
+- Imported Zuffa Boxing data to production (16 fighters, 8 fights)
+- Ran fixEventDates.ts --apply (UFC 321/322/323 marked complete)
+- Ran PFL scraper with FORCE_UPDATE_IMAGES=true
+- Imported PFL data (46 fighters, 3 events, 23 fights)
+- Discovered PFL "in 3 weeks" bug was due to wrong mainStartTime in database
+- Fixed PFL mainStartTime for Madrid and Pittsburgh events
+- Fixed PFL parser to validate dates before using eventStartTimeISO
+- Built Android versionCode 21, uploaded to Internal Testing
+- Built iOS buildNumber 12 (version 1.0.1)
+- EAS Submit experiencing outage - iOS needs manual upload
+- Changed icon to filled-glove version (GOOD-FIGHTS-ICON-HAND-THICKER-FINGER.png)
+- Building Android versionCode 22 with new icon
+
+### 2026-01-19 - Evening Work (Icon Debug Session)
+- Android icon still showing old version after versionCode 22 build
+- **Root cause found**: Native Android mipmap files override app.json config
+- Attempted manual fix by deleting/recreating mipmap files - failed (wrong sizes)
+- **The issue**: Copied same 33KB image to all density folders (should be different sizes)
+- **The fix**: Ran `expo prebuild --clean` to regenerate proper mipmap sizes:
+  - mdpi: 48x48 (icon) / 108x108 (foreground)
+  - hdpi: 72x72 / 162x162
+  - xhdpi: 96x96 / 216x216
+  - xxhdpi: 144x144 / 324x324
+  - xxxhdpi: 192x192 / 432x432
+- Expo now generates .webp files instead of .png for efficiency
+- Multiple builds used debugging (versionCode 23, 24 failed/canceled)
+- **versionCode 25 currently building**: https://expo.dev/accounts/mikeprimak/projects/fightcrewapp/builds/728a8d23-6a49-4d9b-989c-efea802e7561
+- Build credits at 91% (41/45 used this month)
 

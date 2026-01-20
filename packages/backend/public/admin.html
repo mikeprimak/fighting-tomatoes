@@ -921,6 +921,65 @@
       border-bottom: none;
     }
 
+    /* Backup Status Styles */
+    .backup-status {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .backup-card {
+      background: var(--bg-input);
+      border-radius: 6px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .backup-icon {
+      font-size: 2rem;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .backup-info h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .backup-info p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .backup-status-text {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      display: inline-block;
+      margin-top: 0.25rem;
+    }
+
+    .backup-status-text.success {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--accent-green);
+    }
+
+    .backup-status-text.failed {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--accent-red);
+    }
+
+    .backup-status-text.pending {
+      background: rgba(245, 197, 24, 0.2);
+      color: var(--accent-gold);
+    }
+
     .activity-time {
       color: var(--text-muted);
       font-size: 0.75rem;
@@ -1171,6 +1230,20 @@
           <div class="empty-state">
             <div class="spinner"></div>
             <div class="empty-state-text" style="margin-top: 0.5rem;">Loading tracker status...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Database Backups Section -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Database Backups</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadBackupStatus()">Refresh</button>
+        </div>
+        <div id="backupStatus" class="backup-status">
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <div class="empty-state-text" style="margin-top: 0.5rem;">Loading backup status...</div>
           </div>
         </div>
       </div>
@@ -2475,8 +2548,79 @@
       await Promise.all([
         loadScraperStatus(),
         loadTrackerStatus(),
+        loadBackupStatus(),
         loadRecentActivity(),
       ]);
+    }
+
+    async function loadBackupStatus() {
+      const container = document.getElementById('backupStatus');
+
+      try {
+        // Get backup logs (type=database_backup)
+        const res = await authFetch(`${API_BASE}/admin/scraper-logs?type=database_backup&limit=7`);
+        const data = await res.json();
+
+        if (!data.logs || data.logs.length === 0) {
+          container.innerHTML = `
+            <div class="backup-card">
+              <div class="backup-icon">📦</div>
+              <div class="backup-info">
+                <h4>Database Backups</h4>
+                <p>No backup logs yet</p>
+                <span class="backup-status-text pending">Waiting for first backup</span>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        // Get the latest backup
+        const latestBackup = data.logs[0];
+        const latestDate = new Date(latestBackup.createdAt);
+        const formattedDate = latestDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        const formattedTime = latestDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+        const statusClass = latestBackup.status === 'completed' ? 'success' : 'failed';
+        const statusIcon = latestBackup.status === 'completed' ? '✅' : '❌';
+        const statusText = latestBackup.status === 'completed' ? 'Backup successful' : 'Backup failed';
+
+        // Count recent successes/failures
+        const recentSuccesses = data.logs.filter(l => l.status === 'completed').length;
+        const recentFailures = data.logs.filter(l => l.status === 'failed').length;
+
+        container.innerHTML = `
+          <div class="backup-card">
+            <div class="backup-icon">${statusIcon}</div>
+            <div class="backup-info">
+              <h4>Latest Backup</h4>
+              <p>${formattedDate} at ${formattedTime}</p>
+              <span class="backup-status-text ${statusClass}">${statusText}</span>
+              ${latestBackup.errorMessage ? `<p style="color: var(--accent-red); font-size: 0.75rem; margin-top: 0.25rem;">${escapeHtml(latestBackup.errorMessage.substring(0, 100))}</p>` : ''}
+            </div>
+          </div>
+          <div class="backup-card">
+            <div class="backup-icon">📊</div>
+            <div class="backup-info">
+              <h4>Last 7 Days</h4>
+              <p>${recentSuccesses} successful, ${recentFailures} failed</p>
+              <span class="backup-status-text ${recentFailures > 0 ? 'failed' : 'success'}">${recentFailures === 0 ? 'All backups OK' : `${recentFailures} failures`}</span>
+            </div>
+          </div>
+        `;
+
+      } catch (err) {
+        container.innerHTML = `
+          <div class="backup-card">
+            <div class="backup-icon">⚠️</div>
+            <div class="backup-info">
+              <h4>Database Backups</h4>
+              <p>Failed to load backup status</p>
+              <span class="backup-status-text failed">Error</span>
+            </div>
+          </div>
+        `;
+      }
     }
 
     async function loadScraperStatus() {

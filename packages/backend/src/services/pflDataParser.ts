@@ -164,9 +164,30 @@ function parsePFLEventStartTime(
   eventStartTimeISO: string | null | undefined,
   eventStartTime: string | null | undefined
 ): Date | null {
-  // Priority 1: Use ISO format if available (most reliable)
+  // Priority 1: Use ISO format if available, but VALIDATE the date matches
   if (eventStartTimeISO) {
-    return new Date(eventStartTimeISO);
+    const isoDate = new Date(eventStartTimeISO);
+    const eventDateOnly = new Date(eventDate.getUTCFullYear(), eventDate.getUTCMonth(), eventDate.getUTCDate());
+    const isoDateOnly = new Date(isoDate.getUTCFullYear(), isoDate.getUTCMonth(), isoDate.getUTCDate());
+
+    // If dates match, use the ISO time directly
+    if (eventDateOnly.getTime() === isoDateOnly.getTime()) {
+      return isoDate;
+    }
+
+    // If dates DON'T match (scraper bug), use event date with ISO time portion
+    // This fixes the bug where all events get the same eventStartTimeISO from PFL's site
+    const hours = isoDate.getUTCHours();
+    const minutes = isoDate.getUTCMinutes();
+    return new Date(Date.UTC(
+      eventDate.getUTCFullYear(),
+      eventDate.getUTCMonth(),
+      eventDate.getUTCDate(),
+      hours,
+      minutes,
+      0,
+      0
+    ));
   }
 
   // Priority 2: Parse time string and combine with event date

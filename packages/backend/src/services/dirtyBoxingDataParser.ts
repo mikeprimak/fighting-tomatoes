@@ -1,4 +1,4 @@
-// Zuffa Boxing Data Parser - Imports scraped Tapology data into database
+// Dirty Boxing Data Parser - Imports scraped Tapology data into database
 import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -7,14 +7,14 @@ const prisma = new PrismaClient();
 
 // ============== TYPE DEFINITIONS ==============
 
-interface ScrapedZuffaFighter {
+interface ScrapedDirtyFighter {
   name: string;
   url?: string;
   imageUrl?: string | null;
   record?: string | null;
 }
 
-interface ScrapedZuffaFight {
+interface ScrapedDirtyFight {
   fightId: string;
   order: number;
   cardType: string;
@@ -37,7 +37,7 @@ interface ScrapedZuffaFight {
   };
 }
 
-interface ScrapedZuffaEvent {
+interface ScrapedDirtyEvent {
   eventName: string;
   eventUrl: string;
   eventSlug: string;
@@ -49,15 +49,15 @@ interface ScrapedZuffaEvent {
   eventDate: string | null;
   eventImageUrl?: string | null;
   status: string;
-  fights?: ScrapedZuffaFight[];
+  fights?: ScrapedDirtyFight[];
 }
 
-interface ScrapedZuffaEventsData {
-  events: ScrapedZuffaEvent[];
+interface ScrapedDirtyEventsData {
+  events: ScrapedDirtyEvent[];
 }
 
-interface ScrapedZuffaAthletesData {
-  athletes: ScrapedZuffaFighter[];
+interface ScrapedDirtyAthletesData {
+  athletes: ScrapedDirtyFighter[];
 }
 
 // ============== UTILITY FUNCTIONS ==============
@@ -121,7 +121,7 @@ function parseBoxingWeightClass(weightClassStr: string): WeightClass | null {
 /**
  * Parse fighter name into first and last name
  */
-function parseZuffaFighterName(name: string): { firstName: string; lastName: string } {
+function parseDirtyFighterName(name: string): { firstName: string; lastName: string } {
   const cleanName = name.trim();
   const nameParts = cleanName.split(/\s+/);
 
@@ -152,7 +152,7 @@ function parseRecord(record: string | null | undefined): { wins: number; losses:
 /**
  * Parse ISO date string to Date object
  */
-function parseZuffaDate(dateStr: string | null): Date {
+function parseDirtyDate(dateStr: string | null): Date {
   if (!dateStr) {
     return new Date('2099-01-01');
   }
@@ -164,15 +164,15 @@ function parseZuffaDate(dateStr: string | null): Date {
 /**
  * Import fighters from scraped data
  */
-async function importZuffaFighters(
-  athletesData: ScrapedZuffaAthletesData
+async function importDirtyFighters(
+  athletesData: ScrapedDirtyAthletesData
 ): Promise<Map<string, string>> {
   const fighterNameToId = new Map<string, string>();
 
-  console.log(`\n📦 Importing ${athletesData.athletes.length} Zuffa Boxing fighters...`);
+  console.log(`\n📦 Importing ${athletesData.athletes.length} Dirty Boxing fighters...`);
 
   for (const athlete of athletesData.athletes) {
-    const { firstName, lastName } = parseZuffaFighterName(athlete.name);
+    const { firstName, lastName } = parseDirtyFighterName(athlete.name);
 
     if (!firstName && !lastName) {
       console.warn(`  ⚠ Skipping athlete with no valid name: ${athlete.name}`);
@@ -215,21 +215,21 @@ async function importZuffaFighters(
     }
   }
 
-  console.log(`✅ Imported ${fighterNameToId.size} Zuffa Boxing fighters\n`);
+  console.log(`✅ Imported ${fighterNameToId.size} Dirty Boxing fighters\n`);
   return fighterNameToId;
 }
 
 /**
  * Import events and fights from scraped data
  */
-async function importZuffaEvents(
-  eventsData: ScrapedZuffaEventsData,
+async function importDirtyEvents(
+  eventsData: ScrapedDirtyEventsData,
   fighterNameToId: Map<string, string>
 ): Promise<void> {
-  console.log(`\n📦 Importing ${eventsData.events.length} Zuffa Boxing events...`);
+  console.log(`\n📦 Importing ${eventsData.events.length} Dirty Boxing events...`);
 
   for (const eventData of eventsData.events) {
-    const eventDate = parseZuffaDate(eventData.eventDate);
+    const eventDate = parseDirtyDate(eventData.eventDate);
     const location = [eventData.city, eventData.state, eventData.country]
       .filter(Boolean)
       .join(', ') || 'TBA';
@@ -240,7 +240,7 @@ async function importZuffaEvents(
         OR: [
           { ufcUrl: eventData.eventUrl },
           { name: eventData.eventName },
-          { name: { contains: 'Zuffa Boxing' } }
+          { name: { contains: 'Dirty Boxing' } }
         ]
       }
     });
@@ -255,7 +255,7 @@ async function importZuffaEvents(
           venue: eventData.venue || undefined,
           location,
           ufcUrl: eventData.eventUrl,
-          promotion: 'Zuffa Boxing',
+          promotion: 'Dirty Boxing',
           hasStarted: eventData.status === 'Live',
           isComplete: eventData.status === 'Complete',
         }
@@ -266,7 +266,7 @@ async function importZuffaEvents(
       event = await prisma.event.create({
         data: {
           name: eventData.eventName,
-          promotion: 'Zuffa Boxing',
+          promotion: 'Dirty Boxing',
           date: eventDate,
           venue: eventData.venue || undefined,
           location,
@@ -288,7 +288,7 @@ async function importZuffaEvents(
       let fighter2Id = fighterNameToId.get(fightData.fighterB.name.toLowerCase());
 
       if (!fighter1Id) {
-        const { firstName, lastName } = parseZuffaFighterName(fightData.fighterA.name);
+        const { firstName, lastName } = parseDirtyFighterName(fightData.fighterA.name);
         const recordParts = parseRecord(fightData.fighterA.record);
         try {
           const fighter = await prisma.fighter.upsert({
@@ -314,7 +314,7 @@ async function importZuffaEvents(
       }
 
       if (!fighter2Id) {
-        const { firstName, lastName } = parseZuffaFighterName(fightData.fighterB.name);
+        const { firstName, lastName } = parseDirtyFighterName(fightData.fighterB.name);
         const recordParts = parseRecord(fightData.fighterB.record);
         try {
           const fighter = await prisma.fighter.upsert({
@@ -387,7 +387,7 @@ async function importZuffaEvents(
     console.log(`    ✓ Imported ${fightsImported}/${fights.length} fights`);
   }
 
-  console.log(`✅ Imported all Zuffa Boxing events\n`);
+  console.log(`✅ Imported all Dirty Boxing events\n`);
 }
 
 // ============== MAIN IMPORT FUNCTION ==============
@@ -395,26 +395,26 @@ async function importZuffaEvents(
 /**
  * Main import function
  */
-export async function importZuffaBoxingData(options: {
+export async function importDirtyBoxingData(options: {
   eventsFilePath?: string;
   athletesFilePath?: string;
 } = {}): Promise<void> {
   const {
-    eventsFilePath = path.join(__dirname, '../../scraped-data/zuffa-boxing/latest-events.json'),
-    athletesFilePath = path.join(__dirname, '../../scraped-data/zuffa-boxing/latest-athletes.json'),
+    eventsFilePath = path.join(__dirname, '../../scraped-data/dirty-boxing/latest-events.json'),
+    athletesFilePath = path.join(__dirname, '../../scraped-data/dirty-boxing/latest-athletes.json'),
   } = options;
 
-  console.log('\n🚀 Starting Zuffa Boxing data import...');
+  console.log('\n🚀 Starting Dirty Boxing data import...');
   console.log(`📁 Events file: ${eventsFilePath}`);
   console.log(`📁 Athletes file: ${athletesFilePath}\n`);
 
   try {
     // Read JSON files
     const eventsJson = await fs.readFile(eventsFilePath, 'utf-8');
-    const eventsData: ScrapedZuffaEventsData = JSON.parse(eventsJson);
+    const eventsData: ScrapedDirtyEventsData = JSON.parse(eventsJson);
 
     // Athletes file is optional
-    let athletesData: ScrapedZuffaAthletesData = { athletes: [] };
+    let athletesData: ScrapedDirtyAthletesData = { athletes: [] };
     try {
       const athletesJson = await fs.readFile(athletesFilePath, 'utf-8');
       athletesData = JSON.parse(athletesJson);
@@ -423,14 +423,14 @@ export async function importZuffaBoxingData(options: {
     }
 
     // Step 1: Import fighters
-    const fighterNameToId = await importZuffaFighters(athletesData);
+    const fighterNameToId = await importDirtyFighters(athletesData);
 
     // Step 2: Import events and fights
-    await importZuffaEvents(eventsData, fighterNameToId);
+    await importDirtyEvents(eventsData, fighterNameToId);
 
-    console.log('✅ Zuffa Boxing data import completed successfully!\n');
+    console.log('✅ Dirty Boxing data import completed successfully!\n');
   } catch (error) {
-    console.error('❌ Error during Zuffa Boxing import:', error);
+    console.error('❌ Error during Dirty Boxing import:', error);
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -439,7 +439,7 @@ export async function importZuffaBoxingData(options: {
 
 // Run if called directly
 if (require.main === module) {
-  importZuffaBoxingData()
+  importDirtyBoxingData()
     .then(() => process.exit(0))
     .catch(() => process.exit(1));
 }
