@@ -1,12 +1,12 @@
 /**
- * Zuffa Boxing Scraper - Scrapes event data from Tapology
+ * Dirty Boxing Scraper - Scrapes event data from Tapology
  *
- * Tapology is used because Zuffa Boxing doesn't have their own website yet.
+ * Tapology is used because Dirty Boxing Championship doesn't have detailed event pages.
  * This scraper extracts fight cards from Tapology event pages.
  *
  * Usage:
- * - Manual: node src/services/scrapeZuffaBoxingTapology.js
- * - Automated: SCRAPER_MODE=automated node src/services/scrapeZuffaBoxingTapology.js
+ * - Manual: node src/services/scrapeDirtyBoxingTapology.js
+ * - Automated: SCRAPER_MODE=automated node src/services/scrapeDirtyBoxingTapology.js
  */
 
 const puppeteer = require('puppeteer');
@@ -17,8 +17,8 @@ const path = require('path');
 const SCRAPER_MODE = process.env.SCRAPER_MODE || 'manual';
 const OVERALL_TIMEOUT = parseInt(process.env.SCRAPER_TIMEOUT || '600000', 10);
 
-// Tapology URLs for Zuffa Boxing
-const TAPOLOGY_PROMOTION_URL = 'https://www.tapology.com/fightcenter/promotions/6299-zuffa-boxing-zb';
+// Tapology URLs for Dirty Boxing Championship
+const TAPOLOGY_PROMOTION_URL = 'https://www.tapology.com/fightcenter/promotions/5649-dirty-boxing-championship-dbc';
 const TAPOLOGY_BASE_URL = 'https://www.tapology.com';
 
 // Delays in milliseconds
@@ -87,7 +87,7 @@ function getEventSlug(url) {
  * Scrape upcoming events list from Tapology promotion page
  */
 async function scrapeEventsList(browser) {
-  console.log('\n📋 Scraping Zuffa Boxing events from Tapology...\n');
+  console.log('\n📋 Scraping Dirty Boxing events from Tapology...\n');
 
   const page = await browser.newPage();
   await page.setViewport({ width: 1920, height: 1080 });
@@ -153,7 +153,7 @@ async function scrapeEventsList(browser) {
       }
     }
 
-    console.log(`✅ Found ${uniqueEvents.length} Zuffa Boxing events\n`);
+    console.log(`✅ Found ${uniqueEvents.length} Dirty Boxing events\n`);
     return uniqueEvents;
 
   } catch (error) {
@@ -258,7 +258,7 @@ async function scrapeEventPage(browser, eventUrl) {
           const fighterB = fightersFound[i + 1];
           if (fighterA && fighterB) {
             data.fights.push({
-              fightId: `zuffa-fight-${data.fights.length + 1}`,
+              fightId: `dirty-boxing-fight-${data.fights.length + 1}`,
               order: data.fights.length + 1,
               cardType: data.fights.length === 0 ? 'Main Event' : 'Main Card',
               weightClass: '',
@@ -334,7 +334,7 @@ async function scrapeEventPage(browser, eventUrl) {
                             rowText.toLowerCase().includes('championship');
 
         data.fights.push({
-          fightId: `zuffa-fight-${fightOrder}`,
+          fightId: `dirty-boxing-fight-${fightOrder}`,
           order: fightOrder++,
           cardType: fightOrder === 1 ? 'Main Event' : 'Main Card',
           weightClass,
@@ -429,7 +429,7 @@ async function scrapeFighterImage(browser, fighterUrl) {
  * Main scraper function
  */
 async function main() {
-  console.log('\n🚀 Starting Zuffa Boxing Tapology Scraper\n');
+  console.log('\n🚀 Starting Dirty Boxing Tapology Scraper\n');
   console.log('='.repeat(60));
 
   const browser = await puppeteer.launch({
@@ -439,7 +439,7 @@ async function main() {
 
   try {
     // For now, scrape the specific event URL directly
-    const eventUrl = 'https://www.tapology.com/fightcenter/events/137070-zuffa-boxing';
+    const eventUrl = 'https://www.tapology.com/fightcenter/events/137440-dbx-5';
 
     const eventData = await scrapeEventPage(browser, eventUrl);
 
@@ -453,23 +453,23 @@ async function main() {
 
     // Build complete event object
     const event = {
-      eventName: eventData.eventName || 'Zuffa Boxing 1: Walsh vs. Ocampo',
+      eventName: eventData.eventName || 'DBX 5',
       eventType: 'Regular',
       eventUrl: eventUrl,
-      eventSlug: 'zuffa-boxing-1-walsh-vs-ocampo',
-      venue: eventData.venue || 'UFC APEX',
-      city: eventData.city || 'Las Vegas',
-      state: 'NV',
+      eventSlug: 'dbx-5',
+      venue: eventData.venue || 'TBA',
+      city: eventData.city || 'TBA',
+      state: '',
       country: eventData.country || 'USA',
-      dateText: eventData.dateText || 'January 23, 2026',
-      eventDate: eventData.eventDate || new Date(2026, 0, 23).toISOString(),
+      dateText: eventData.dateText || 'January 30, 2026',
+      eventDate: eventData.eventDate || new Date(2026, 0, 30).toISOString(),
       eventImageUrl: null,
       status: 'Upcoming',
       fights: eventData.fights
     };
 
     // Save scraped data
-    const outputDir = path.join(__dirname, '../../scraped-data/zuffa-boxing');
+    const outputDir = path.join(__dirname, '../../scraped-data/dirty-boxing');
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
@@ -581,7 +581,7 @@ async function runWithTimeout() {
 // Run if called directly
 if (require.main === module) {
   const startTime = Date.now();
-  console.log(`🚀 Starting Zuffa Boxing scraper in ${SCRAPER_MODE} mode...`);
+  console.log(`🚀 Starting Dirty Boxing scraper in ${SCRAPER_MODE} mode...`);
 
   runWithTimeout()
     .then(() => {

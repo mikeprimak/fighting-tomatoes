@@ -1,5 +1,12 @@
 {
   "buildCommand": "",
   "outputDirectory": ".",
-  "framework": null
+  "framework": null,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/reset-password", "destination": "/reset-password.html" },
+    { "source": "/verify-email", "destination": "/verify-email.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/delete-account", "destination": "/delete-account.html" }
+  ]
 }

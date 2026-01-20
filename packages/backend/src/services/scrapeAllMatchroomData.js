@@ -707,56 +707,72 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
 
       console.log(`      Found ${collectedBoxerImages.length} boxer images in boxer-image containers`);
 
-      // Assign images to fighters in order (each fight has 2 images: boxerA then boxerB)
-      // The images appear in the same order as the fights on the page
-      let imageIndex = 0;
-      for (const fight of allFights) {
-        if (imageIndex < collectedBoxerImages.length && !fight.boxerA.imageUrl) {
-          fight.boxerA.imageUrl = collectedBoxerImages[imageIndex];
-          imageIndex++;
-        }
-        if (imageIndex < collectedBoxerImages.length && !fight.boxerB.imageUrl) {
-          fight.boxerB.imageUrl = collectedBoxerImages[imageIndex];
-          imageIndex++;
-        }
-      }
-
-      // Strategy 2: Fallback - try to match by alt text or URL containing fighter name
+      // STRATEGY 1 (PRIMARY): Match images by name in alt text or URL
+      // This is more reliable than sequential assignment
       const allImages = document.querySelectorAll('img');
+      const assignedImages = new Set();
 
       allImages.forEach(img => {
         const src = img.src || img.getAttribute('data-src') || '';
         const alt = (img.alt || '').toLowerCase();
         const srcLower = src.toLowerCase();
 
-        // Skip logos, icons, flags
-        if (src.includes('logo') || src.includes('icon') || src.includes('flag') ||
-            src.includes('sponsor') || src.includes('dazn') || src.includes('placeholder')) return;
+        // Skip logos, icons, flags, placeholders
+        if (!src || src.includes('logo') || src.includes('icon') || src.includes('flag') ||
+            src.includes('sponsor') || src.includes('dazn') || src.includes('placeholder') ||
+            src.includes('share') || src.includes('social')) return;
 
         // Check if alt text or src URL matches a boxer name
         for (const fight of allFights) {
-          // Skip if already has image
-          if (fight.boxerA.imageUrl && fight.boxerB.imageUrl) continue;
-
           const boxerAFirst = fight.boxerA.name.toLowerCase().split(' ')[0];
           const boxerALast = fight.boxerA.name.toLowerCase().split(' ').pop();
           const boxerBFirst = fight.boxerB.name.toLowerCase().split(' ')[0];
           const boxerBLast = fight.boxerB.name.toLowerCase().split(' ').pop();
 
-          // Check alt text OR URL for name match
-          const matchesBoxerA = (alt.includes(boxerAFirst) || alt.includes(boxerALast) ||
-                                  srcLower.includes(boxerAFirst) || srcLower.includes(boxerALast));
-          const matchesBoxerB = (alt.includes(boxerBFirst) || alt.includes(boxerBLast) ||
-                                  srcLower.includes(boxerBFirst) || srcLower.includes(boxerBLast));
+          // Check alt text OR URL for name match (require at least 3 chars to avoid false positives)
+          const matchesBoxerA = boxerALast.length >= 3 && (
+            alt.includes(boxerAFirst) || alt.includes(boxerALast) ||
+            srcLower.includes(boxerAFirst) || srcLower.includes(boxerALast)
+          );
+          const matchesBoxerB = boxerBLast.length >= 3 && (
+            alt.includes(boxerBFirst) || alt.includes(boxerBLast) ||
+            srcLower.includes(boxerBFirst) || srcLower.includes(boxerBLast)
+          );
 
-          if (matchesBoxerA && !fight.boxerA.imageUrl) {
+          if (matchesBoxerA && !fight.boxerA.imageUrl && !assignedImages.has(src)) {
             fight.boxerA.imageUrl = src;
+            assignedImages.add(src);
           }
-          if (matchesBoxerB && !fight.boxerB.imageUrl) {
+          if (matchesBoxerB && !fight.boxerB.imageUrl && !assignedImages.has(src)) {
             fight.boxerB.imageUrl = src;
+            assignedImages.add(src);
           }
         }
       });
+
+      // STRATEGY 2 (FALLBACK): Sequential assignment for fighters without images
+      // Only assign if fighter doesn't already have an image from name matching
+      let imageIndex = 0;
+      for (const fight of allFights) {
+        // Skip images that were already assigned by name matching
+        while (imageIndex < collectedBoxerImages.length && assignedImages.has(collectedBoxerImages[imageIndex])) {
+          imageIndex++;
+        }
+        if (imageIndex < collectedBoxerImages.length && !fight.boxerA.imageUrl) {
+          fight.boxerA.imageUrl = collectedBoxerImages[imageIndex];
+          assignedImages.add(collectedBoxerImages[imageIndex]);
+          imageIndex++;
+        }
+
+        while (imageIndex < collectedBoxerImages.length && assignedImages.has(collectedBoxerImages[imageIndex])) {
+          imageIndex++;
+        }
+        if (imageIndex < collectedBoxerImages.length && !fight.boxerB.imageUrl) {
+          fight.boxerB.imageUrl = collectedBoxerImages[imageIndex];
+          assignedImages.add(collectedBoxerImages[imageIndex]);
+          imageIndex++;
+        }
+      }
 
       // Extract actual event date from page content
       // Look for pattern like "SATURDAY 27 DECEMBER 2025"

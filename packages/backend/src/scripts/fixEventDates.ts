@@ -74,12 +74,6 @@ async function analyzeEvents() {
       isComplete: true,
       hasStarted: true,
       promotion: true,
-      organization: {
-        select: {
-          name: true,
-          shortName: true,
-        },
-      },
     },
     orderBy: {
       date: 'asc',
@@ -96,14 +90,14 @@ async function analyzeEvents() {
     e.name?.includes('UFC 323')
   );
   const goldenBoyJan = suspiciousEvents.filter(e =>
-    (e.promotion === 'Golden Boy' || e.organization?.name === 'Golden Boy') &&
+    e.promotion === 'Golden Boy' &&
     e.name?.toLowerCase().includes('jan')
   );
 
   if (farFutureEvents.length > 0) {
     console.log('⚠️  Events dated > 1 year in future (possibly wrong):');
     for (const event of farFutureEvents) {
-      console.log(`   - ${event.name} (${event.date.toLocaleDateString()}) - ${event.promotion || event.organization?.name}`);
+      console.log(`   - ${event.name} (${event.date.toLocaleDateString()}) - ${event.promotion}`);
     }
     console.log('');
   }

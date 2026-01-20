@@ -1,17 +1,20 @@
 # CLAUDE.md
 
-## NEXT SESSION: Fix Apple Review Issues
+## Apple Review Issues - RESOLVED
 
-Apple rejected the iOS build. Two fixes required before resubmitting:
-
-1. **Delete Account** - Add option to delete account from within the app
-2. **Guest Access** - Allow users to browse without logging in
+1. ~~**Delete Account** - Add option to delete account from within the app~~ **DONE**
+2. ~~**Guest Access** - Allow users to browse without logging in~~ **DONE**
 
 See `LAUNCH-DOC.md` for full status and checklists.
 
+### Important Rules
+
+- **Always ask before starting EAS builds** - Build credits are limited (91% used as of Jan 19)
+- **Never use local DB** - Always use Render External URL unless explicitly asked
+
 ### Other TODOs
 
-3. **Test New Homescreen Icon** - New icon configured in `app.json` (`homescreen-icon.png`). Rebuild app to test on device. Only affects homescreen, not App Store icons (those are uploaded separately).
+3. **Test New Homescreen Icon** - versionCode 25 building with new icon (filled-glove version). Used `expo prebuild --clean` to fix icon sizing. Build URL: https://expo.dev/accounts/mikeprimak/projects/fightcrewapp/builds/728a8d23-6a49-4d9b-989c-efea802e7561
 
 4. **Fix Reset Password 404** - `https://goodfights.app/reset-password?token=...` returns 404. The `FRONTEND_URL` env var on Render points to `goodfights.app` but the Vercel web frontend has no `/reset-password` route. Options:
    - A) Create reset-password page on web frontend (Vercel)
