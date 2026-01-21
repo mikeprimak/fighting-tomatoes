@@ -951,6 +951,7 @@ async function main() {
 
   } catch (error) {
     console.error('\n❌ Fatal error:', error);
+    throw error; // Re-throw to propagate failure to the caller
   } finally {
     await browser.close();
   }
