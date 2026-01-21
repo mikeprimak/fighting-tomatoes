@@ -148,30 +148,28 @@ jobs:
 
       - name: Report success
         if: success()
-        env:
-          SCRAPER_KEY: ${{ secrets.SCRAPER_KEY }}
         run: |
           echo "Database backup completed successfully at $(date)"
           echo "Backup file: ${{ steps.filename.outputs.filename }}"
 
           # Log backup success to admin panel
-          curl -s -X POST "https://fightcrewapp-backend.onrender.com/api/admin/scraper-logs?key=${SCRAPER_KEY}" \
+          STARTED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          curl -s -X POST "https://fightcrewapp-backend.onrender.com/api/admin/scraper-logs?key=fightcrew-test-2026" \
             -H "Content-Type: application/json" \
-            -d "{\"type\":\"database_backup\",\"organization\":\"Database\",\"status\":\"completed\",\"details\":\"Backup: ${{ steps.filename.outputs.filename }}\"}" \
+            -d "{\"type\":\"database_backup\",\"organization\":\"Database\",\"status\":\"completed\",\"eventName\":\"${{ steps.filename.outputs.filename }}\",\"startedAt\":\"${STARTED_AT}\",\"completedAt\":\"${STARTED_AT}\"}" \
             || echo "Failed to log backup status"
 
       - name: Report failure
         if: failure()
-        env:
-          SCRAPER_KEY: ${{ secrets.SCRAPER_KEY }}
         run: |
           echo "Database backup FAILED at $(date)"
 
           # Log backup failure to admin panel
-          curl -s -X POST "https://fightcrewapp-backend.onrender.com/api/admin/scraper-logs?key=${SCRAPER_KEY}" \
+          STARTED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          curl -s -X POST "https://fightcrewapp-backend.onrender.com/api/admin/scraper-logs?key=fightcrew-test-2026" \
             -H "Content-Type: application/json" \
-            -d "{\"type\":\"database_backup\",\"organization\":\"Database\",\"status\":\"failed\",\"details\":\"Backup failed - check workflow logs\"}" \
+            -d "{\"type\":\"database_backup\",\"organization\":\"Database\",\"status\":\"failed\",\"errorMessage\":\"Backup failed - check workflow logs\",\"startedAt\":\"${STARTED_AT}\"}" \
             || echo "Failed to log backup status"
 
-          # Send alert
-          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=backup&org=Database" || echo "Failed to send alert"
+          # Send alert email
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=scraper&org=Database%20Backup" || echo "Failed to send alert"
