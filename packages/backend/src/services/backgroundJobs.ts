@@ -113,21 +113,24 @@ export function startBackgroundJobs(): void {
 
   console.log('[Background Jobs] Event-based scheduler ENABLED - safety check every 15 minutes');
 
-  // ENABLED: Daily UFC scraper - runs at 12pm EST (5pm UTC)
-  dailyScraperJob = cron.schedule('0 17 * * *', async () => {
-    console.log('[Background Jobs] Running daily UFC scraper...');
-    try {
-      await runDailyUFCScraper();
+  // DISABLED: Daily UFC scraper - UFC.com blocks Render IPs
+  // The UFC scraper now runs via GitHub Actions workflow (.github/workflows/ufc-scraper.yml)
+  // which uses GitHub's IPs that aren't blocked by UFC.com's CDN
+  //
+  // dailyScraperJob = cron.schedule('0 17 * * *', async () => {
+  //   console.log('[Background Jobs] Running daily UFC scraper...');
+  //   try {
+  //     await runDailyUFCScraper();
+  //
+  //     // After scraper completes, re-schedule all upcoming events
+  //     console.log('[Background Jobs] Re-scheduling events after daily scrape...');
+  //     await scheduleAllUpcomingEvents();
+  //   } catch (error) {
+  //     console.error('[Background Jobs] Daily UFC scraper failed:', error);
+  //   }
+  // });
 
-      // After scraper completes, re-schedule all upcoming events
-      console.log('[Background Jobs] Re-scheduling events after daily scrape...');
-      await scheduleAllUpcomingEvents();
-    } catch (error) {
-      console.error('[Background Jobs] Daily UFC scraper failed:', error);
-    }
-  });
-
-  console.log('[Background Jobs] Daily UFC scraper ENABLED - runs at 12pm EST (5pm UTC)');
+  console.log('[Background Jobs] Daily UFC scraper DISABLED - runs via GitHub Actions instead');
 
   // ENABLED: Failsafe cleanup - runs every hour
   failsafeCleanupJob = cron.schedule('0 * * * *', async () => {
