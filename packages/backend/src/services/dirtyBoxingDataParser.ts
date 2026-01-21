@@ -63,6 +63,17 @@ interface ScrapedDirtyAthletesData {
 // ============== UTILITY FUNCTIONS ==============
 
 /**
+ * Normalize name by removing accents/diacritics for consistent matching
+ * "Cárdenas" -> "Cardenas", "José" -> "Jose"
+ */
+function normalizeName(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
+    .trim();
+}
+
+/**
  * Parse boxing weight class string to WeightClass enum
  */
 function parseBoxingWeightClass(weightClassStr: string): WeightClass | null {
@@ -120,9 +131,11 @@ function parseBoxingWeightClass(weightClassStr: string): WeightClass | null {
 
 /**
  * Parse fighter name into first and last name
+ * Names are normalized (accents removed) for consistent database matching
  */
 function parseDirtyFighterName(name: string): { firstName: string; lastName: string } {
-  const cleanName = name.trim();
+  // Normalize to remove accents for consistent matching
+  const cleanName = normalizeName(name);
   const nameParts = cleanName.split(/\s+/);
 
   if (nameParts.length === 1) {
@@ -208,7 +221,7 @@ async function importDirtyFighters(
         }
       });
 
-      fighterNameToId.set(athlete.name.toLowerCase(), fighter.id);
+      fighterNameToId.set(normalizeName(athlete.name).toLowerCase(), fighter.id);
       console.log(`  ✓ ${firstName} ${lastName}`);
     } catch (error) {
       console.error(`  ✗ Failed to import ${firstName} ${lastName}:`, error);
@@ -284,8 +297,8 @@ async function importDirtyEvents(
 
     for (const fightData of fights) {
       // Find or create fighters
-      let fighter1Id = fighterNameToId.get(fightData.fighterA.name.toLowerCase());
-      let fighter2Id = fighterNameToId.get(fightData.fighterB.name.toLowerCase());
+      let fighter1Id = fighterNameToId.get(normalizeName(fightData.fighterA.name).toLowerCase());
+      let fighter2Id = fighterNameToId.get(normalizeName(fightData.fighterB.name).toLowerCase());
 
       if (!fighter1Id) {
         const { firstName, lastName } = parseDirtyFighterName(fightData.fighterA.name);
@@ -306,7 +319,7 @@ async function importDirtyEvents(
             }
           });
           fighter1Id = fighter.id;
-          fighterNameToId.set(fightData.fighterA.name.toLowerCase(), fighter.id);
+          fighterNameToId.set(normalizeName(fightData.fighterA.name).toLowerCase(), fighter.id);
         } catch (e) {
           console.warn(`    ⚠ Failed to create fighter: ${fightData.fighterA.name}`);
           continue;
@@ -332,7 +345,7 @@ async function importDirtyEvents(
             }
           });
           fighter2Id = fighter.id;
-          fighterNameToId.set(fightData.fighterB.name.toLowerCase(), fighter.id);
+          fighterNameToId.set(normalizeName(fightData.fighterB.name).toLowerCase(), fighter.id);
         } catch (e) {
           console.warn(`    ⚠ Failed to create fighter: ${fightData.fighterB.name}`);
           continue;
