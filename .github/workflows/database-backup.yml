@@ -46,9 +46,9 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           echo "Starting database backup..."
-          # Extract connection details from DATABASE_URL
-          # Format: postgres://user:pass@host:port/dbname
-          pg_dump "$DATABASE_URL" --no-owner --no-acl | gzip > "backups/${{ steps.filename.outputs.filename }}"
+          # Use PostgreSQL 17 pg_dump explicitly (must match server version)
+          /usr/lib/postgresql/17/bin/pg_dump --version
+          /usr/lib/postgresql/17/bin/pg_dump "$DATABASE_URL" --no-owner --no-acl | gzip > "backups/${{ steps.filename.outputs.filename }}"
 
           # Check backup file size
           BACKUP_SIZE=$(ls -lh "backups/${{ steps.filename.outputs.filename }}" | awk '{print $5}')
