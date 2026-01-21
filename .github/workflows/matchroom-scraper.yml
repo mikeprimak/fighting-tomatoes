@@ -17,15 +17,14 @@ jobs:
       - uses: pnpm/action-setup@v2
         with:
           version: 8
-      - name: Install and Build
+      - name: Install dependencies
         run: |
           cd packages/backend
           pnpm install
           npx prisma generate
-          pnpm build
       - name: Install Chromium
         run: cd packages/backend && npx puppeteer browsers install chrome
-      - name: Run Matchroom Scraper
+      - name: Run Matchroom Scraper V2
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
@@ -33,11 +32,9 @@ jobs:
           R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
-          SCRAPER_MODE: automated
         run: |
           cd packages/backend
-          node dist/services/scrapeAllMatchroomData.js
-          node -e "require('./dist/services/matchroomDataParser.js').importMatchroomData().then(() => process.exit(0))"
+          node src/services/scrapeMatchroomV2.js
       - name: Report failure
         if: failure()
         run: |
