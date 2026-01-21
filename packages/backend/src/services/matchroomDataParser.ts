@@ -250,13 +250,15 @@ async function importMatchroomBoxers(
     let profileImageUrl: string | null = null;
     const displayName = firstName && lastName ? `${firstName} ${lastName}` : (lastName || firstName);
 
-    // Check for local cropped image first
-    const localImagePath = (boxer as any).localImagePath;
+    // IMPORTANT: Only use localImagePath if the boxer has a valid imageUrl in scraped data
+    // This prevents using stale/wrong images from previous scraper runs
+    const hasValidImageSource = boxer.imageUrl && !boxer.imageUrl.includes('placeholder') && !boxer.imageUrl.includes('silhouette');
+    const localImagePath = hasValidImageSource ? (boxer as any).localImagePath : null;
     const localFilePath = localImagePath ? path.join(__dirname, '../../public', localImagePath) : null;
     const hasLocalImage = localFilePath && fsSync.existsSync(localFilePath);
 
     if (hasLocalImage && localImagePath) {
-      // Local cropped image exists - use it
+      // Local cropped image exists AND boxer has valid source URL - use it
       // For now, use local path directly (will be served by backend)
       // When R2 is configured, we'll need to upload the local file
       const isR2Configured = !!(process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET);
@@ -277,13 +279,17 @@ async function importMatchroomBoxers(
         profileImageUrl = localImagePath;
         console.log(`[Local] Using cropped image: ${localImagePath}`);
       }
-    } else if (boxer.imageUrl && !boxer.imageUrl.includes('placeholder') && !boxer.imageUrl.includes('silhouette')) {
+    } else if (hasValidImageSource && boxer.imageUrl) {
       try {
         profileImageUrl = await uploadFighterImage(boxer.imageUrl, displayName);
       } catch (error) {
         console.warn(`  ⚠ Image upload failed for ${displayName}`);
         profileImageUrl = boxer.imageUrl;
       }
+    } else {
+      // No valid image source - explicitly clear any existing profileImage
+      // This ensures fighters without images don't keep stale/wrong images
+      profileImageUrl = null;
     }
 
     try {
@@ -300,7 +306,8 @@ async function importMatchroomBoxers(
           wins: boxer.wins || undefined,
           losses: boxer.losses || undefined,
           draws: boxer.draws || undefined,
-          profileImage: profileImageUrl || undefined,
+          // IMPORTANT: Use null (not undefined) to CLEAR profileImage when no valid source
+          profileImage: profileImageUrl,
           nickname: nickname || undefined,
         },
         create: {
