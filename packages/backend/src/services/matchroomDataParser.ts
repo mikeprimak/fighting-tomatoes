@@ -261,7 +261,7 @@ async function importMatchroomBoxers(
       // Local cropped image exists AND boxer has valid source URL - use it
       // For now, use local path directly (will be served by backend)
       // When R2 is configured, we'll need to upload the local file
-      const isR2Configured = !!(process.env.R2_ACCOUNT_ID && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY && process.env.R2_BUCKET);
+      const isR2Configured = !!(process.env.R2_ENDPOINT && process.env.R2_ACCESS_KEY && process.env.R2_SECRET_KEY && process.env.R2_BUCKET);
 
       if (isR2Configured) {
         // Read local file and upload to R2

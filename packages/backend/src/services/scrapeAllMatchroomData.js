@@ -456,8 +456,13 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         return nameParts.join(' ').trim();
       }
 
+      // Track used image URLs to prevent duplicate assignments (Matchroom sometimes reuses images)
+      const usedImageUrls = new Set();
+
       // Helper to extract boxer data from a boxer div
-      function extractBoxerFromDiv(boxerDiv, allFighterNames = []) {
+      // SIMPLE RULE: Image is determined by DOM position only (the img inside this fighter's div)
+      // No filename analysis - just trust the page structure
+      function extractBoxerFromDiv(boxerDiv) {
         if (!boxerDiv) return null;
 
         const name = extractName(boxerDiv.querySelector('h2'));
@@ -465,72 +470,45 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         const img = boxerDiv.querySelector('.boxer-image img.main') || boxerDiv.querySelector('.boxer-image img');
         let imageUrl = img?.src || img?.getAttribute('data-src') || null;
 
-        // Only mark as TBA if there's no name - silhouette images just mean no photo uploaded yet
+        // Only mark as TBA if there's no name
         const isTBA = !name || name === '';
 
-        // IMPORTANT: Validate image is not reused from another fighter
-        // Matchroom reuses images for fighters without photos
-        // Only reject if the image filename matches ANOTHER fighter's name
-        if (imageUrl && !imageUrl.includes('silhouette') && name) {
-          const filename = imageUrl.toLowerCase().split('/').pop().replace(/\.(png|jpg|jpeg|webp).*$/i, '');
-          const myFirstName = name.toLowerCase().split(' ')[0];
-          const myLastName = name.toLowerCase().split(' ').pop();
+        // Skip silhouette/placeholder images
+        if (imageUrl && (imageUrl.includes('silhouette') || imageUrl.includes('placeholder'))) {
+          imageUrl = null;
+        }
 
-          // Check if this image belongs to a DIFFERENT fighter
-          for (const otherName of allFighterNames) {
-            if (otherName.toLowerCase() === name.toLowerCase()) continue; // Skip self
+        // Reject if this exact URL was already used by another fighter (Matchroom reuses images)
+        if (imageUrl && usedImageUrls.has(imageUrl)) {
+          console.log(`      ⚠️ Duplicate image URL for ${name} - already used by another fighter, skipping`);
+          imageUrl = null;
+        }
 
-            const otherParts = otherName.toLowerCase().split(' ');
-            const otherFirst = otherParts[0];
-            const otherLast = otherParts[otherParts.length - 1];
-
-            // If filename matches another fighter's name, this is a reused image - reject it
-            const matchesOtherFirst = otherFirst.length >= 4 && filename.includes(otherFirst);
-            const matchesOtherLast = otherLast.length >= 3 && filename.includes(otherLast);
-
-            if (matchesOtherFirst || matchesOtherLast) {
-              console.log(`      ⚠️ Reused image: ${name} has ${otherName}'s image (${filename}) - skipping`);
-              imageUrl = null;
-              break;
-            }
-          }
+        // Mark URL as used
+        if (imageUrl) {
+          usedImageUrls.add(imageUrl);
         }
 
         return {
           name: isTBA ? 'TBA' : name,
           ...record,
-          imageUrl: (imageUrl && !imageUrl.includes('silhouette')) ? imageUrl : null,
+          imageUrl: imageUrl,
           country: '',
           isTBA
         };
       }
 
-      // STEP 0: Collect all fighter names first (for image reuse detection)
-      const allFighterNames = [];
-      const heroSection = document.querySelector('section.single-event-hero');
-      if (heroSection) {
-        const name1 = extractName(heroSection.querySelector('.boxer-1 h2'));
-        const name2 = extractName(heroSection.querySelector('.boxer-2 h2'));
-        if (name1) allFighterNames.push(name1);
-        if (name2) allFighterNames.push(name2);
-      }
-      const fightDivs = document.querySelectorAll('section.undercard div.fight');
-      fightDivs.forEach(fightDiv => {
-        const name1 = extractName(fightDiv.querySelector('.boxer-1 h2'));
-        const name2 = extractName(fightDiv.querySelector('.boxer-2 h2'));
-        if (name1) allFighterNames.push(name1);
-        if (name2) allFighterNames.push(name2);
-      });
-      console.log(`      Collected ${allFighterNames.length} fighter names for image validation`);
-
       // STEP 1: Extract MAIN EVENT from hero section first
       // Structure: <section class="single-event-hero"><div class="boxer-1">...</div><div class="vs">...</div><div class="boxer-2">...</div></section>
+      const heroSection = document.querySelector('section.single-event-hero');
+      const fightDivs = document.querySelectorAll('section.undercard div.fight');
+
       if (heroSection) {
         const boxer1Div = heroSection.querySelector('.boxer-1');
         const boxer2Div = heroSection.querySelector('.boxer-2');
 
-        const boxerA = extractBoxerFromDiv(boxer1Div, allFighterNames);
-        const boxerB = extractBoxerFromDiv(boxer2Div, allFighterNames);
+        const boxerA = extractBoxerFromDiv(boxer1Div);
+        const boxerB = extractBoxerFromDiv(boxer2Div);
 
         if (boxerA && boxerA.name && !boxerA.isTBA) {
           console.log(`      📋 Main Event (hero): ${boxerA.name} vs ${boxerB?.name || 'TBA'}`);
@@ -562,8 +540,8 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         const boxer1Div = fightDiv.querySelector('.boxer-1');
         const boxer2Div = fightDiv.querySelector('.boxer-2');
 
-        const boxerA = extractBoxerFromDiv(boxer1Div, allFighterNames);
-        const boxerB = extractBoxerFromDiv(boxer2Div, allFighterNames);
+        const boxerA = extractBoxerFromDiv(boxer1Div);
+        const boxerB = extractBoxerFromDiv(boxer2Div);
 
         if (!boxerA || boxerA.isTBA) return;
 
@@ -876,77 +854,9 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
 
       console.log(`      Found ${collectedBoxerImages.length} boxer images in boxer-image containers`);
 
-      // STRATEGY 1 (PRIMARY): Build name-to-image map from ALL images first
-      // This ensures we find the best match for each name before assigning
-      const allImages = document.querySelectorAll('img');
-      const nameToImageMap = new Map(); // Maps lowercase last name -> image URL
-      const assignedImages = new Set();
-
-      // First pass: collect all potential boxer images with name matches
-      allImages.forEach(img => {
-        const src = img.src || img.getAttribute('data-src') || '';
-        const alt = (img.alt || '').toLowerCase();
-        const srcLower = src.toLowerCase();
-
-        // Skip logos, icons, flags, placeholders, silhouettes
-        if (!src || src.includes('logo') || src.includes('icon') || src.includes('flag') ||
-            src.includes('sponsor') || src.includes('dazn') || src.includes('placeholder') ||
-            src.includes('share') || src.includes('social') || src.includes('silhouette')) return;
-
-        // Extract the filename from URL for better matching
-        const urlParts = src.split('/');
-        const filename = urlParts[urlParts.length - 1].toLowerCase().replace(/\.(png|jpg|jpeg|webp).*$/i, '');
-
-        // Build name-to-image map using BOTH first and last names
-        // e.g., "khalil.png" should match "Khalil Coe" via first name
-        // e.g., "cruz-cutout" should match "Andy Cruz" via last name
-        for (const fight of allFights) {
-          const boxerAName = fight.boxerA.name.toLowerCase();
-          const boxerAFirst = boxerAName.split(' ')[0];
-          const boxerALast = boxerAName.split(' ').pop();
-
-          const boxerBName = fight.boxerB.name.toLowerCase();
-          const boxerBFirst = boxerBName.split(' ')[0];
-          const boxerBLast = boxerBName.split(' ').pop();
-
-          // Match by last name first (more unique), then first name
-          if (boxerALast.length >= 3 && filename.includes(boxerALast) && !nameToImageMap.has(boxerAName)) {
-            nameToImageMap.set(boxerAName, src);
-            console.log(`      📸 Last name match: "${boxerALast}" -> ${filename}`);
-          } else if (boxerAFirst.length >= 4 && filename.includes(boxerAFirst) && !nameToImageMap.has(boxerAName)) {
-            nameToImageMap.set(boxerAName, src);
-            console.log(`      📸 First name match: "${boxerAFirst}" -> ${filename}`);
-          }
-
-          if (boxerBLast.length >= 3 && filename.includes(boxerBLast) && !nameToImageMap.has(boxerBName)) {
-            nameToImageMap.set(boxerBName, src);
-            console.log(`      📸 Last name match: "${boxerBLast}" -> ${filename}`);
-          } else if (boxerBFirst.length >= 4 && filename.includes(boxerBFirst) && !nameToImageMap.has(boxerBName)) {
-            nameToImageMap.set(boxerBName, src);
-            console.log(`      📸 First name match: "${boxerBFirst}" -> ${filename}`);
-          }
-        }
-      });
-
-      console.log(`      Built name-to-image map with ${nameToImageMap.size} entries`);
-
-      // Second pass: assign images to fighters based on the map (using full name as key)
-      for (const fight of allFights) {
-        const boxerAName = fight.boxerA.name.toLowerCase();
-        const boxerBName = fight.boxerB.name.toLowerCase();
-
-        if (nameToImageMap.has(boxerAName) && !fight.boxerA.imageUrl) {
-          fight.boxerA.imageUrl = nameToImageMap.get(boxerAName);
-          assignedImages.add(fight.boxerA.imageUrl);
-        }
-        if (nameToImageMap.has(boxerBName) && !fight.boxerB.imageUrl) {
-          fight.boxerB.imageUrl = nameToImageMap.get(boxerBName);
-          assignedImages.add(fight.boxerB.imageUrl);
-        }
-      }
-
-      // NOTE: Removed fallback sequential assignment - it causes wrong images to be assigned
-      // Better to have no image than a wrong image. Only name-matched images are assigned.
+      // NOTE: Removed filename-based image matching (nameToImageMap) - it caused wrong image assignments
+      // Images are now ONLY assigned based on DOM position (the img inside each fighter's div)
+      // This is more reliable because Matchroom uses inconsistent filenames
 
       // Extract actual event date from page content
       // Look for pattern like "SATURDAY 27 DECEMBER 2025"
