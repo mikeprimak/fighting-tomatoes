@@ -30,7 +30,7 @@ export class EmailService {
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 30px;">
             <div style="display: inline-block; background-color: #181818; border-radius: 12px; padding: 20px 30px;">
-              <img src="${logoUrl}" alt="Good Fights" style="width: 120px; height: auto;" />
+              <img src="${logoUrl}" alt="Good Fights" style="max-height: 150px; width: auto;" />
             </div>
           </div>
 
@@ -86,7 +86,7 @@ export class EmailService {
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 30px;">
             <div style="display: inline-block; background-color: #181818; border-radius: 12px; padding: 20px 30px;">
-              <img src="${logoUrl}" alt="Good Fights" style="width: 120px; height: auto;" />
+              <img src="${logoUrl}" alt="Good Fights" style="max-height: 150px; width: auto;" />
             </div>
           </div>
 
@@ -131,7 +131,7 @@ export class EmailService {
         <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 30px;">
             <div style="display: inline-block; background-color: #181818; border-radius: 12px; padding: 20px 30px;">
-              <img src="${logoUrl}" alt="Good Fights" style="width: 120px; height: auto;" />
+              <img src="${logoUrl}" alt="Good Fights" style="max-height: 150px; width: auto;" />
             </div>
           </div>
 
