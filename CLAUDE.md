@@ -14,7 +14,7 @@ See `LAUNCH-DOC.md` for full status and checklists.
 
 ### Other TODOs
 
-3. **Test New Homescreen Icon** - versionCode 25 building with new icon (filled-glove version). Used `expo prebuild --clean` to fix icon sizing. Build URL: https://expo.dev/accounts/mikeprimak/projects/fightcrewapp/builds/728a8d23-6a49-4d9b-989c-efea802e7561
+3. ~~**Test New Homescreen Icon**~~ **DONE** - versionCode 28 has correct icon (thick stroke, no fill)
 
 4. **Fix Reset Password 404** - `https://goodfights.app/reset-password?token=...` returns 404. The `FRONTEND_URL` env var on Render points to `goodfights.app` but the Vercel web frontend has no `/reset-password` route. Options:
    - A) Create reset-password page on web frontend (Vercel)
@@ -93,6 +93,35 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 **Monorepo**: backend (Fastify, Prisma, PostgreSQL), mobile (React Native Expo, Expo Router, React Query)
 **Database**: 20+ tables, UUID v4 keys, JWT dual-token (15min/7day)
 **Mobile**: iOS/Android/Web, Stack-inside-Tabs pattern
+
+## How to Update App Icon
+
+**Icon files** (in project root):
+- `GOOD-FIGHTS-ICON-HAND-THICKER-GREY-BG.png` - thick stroke, NO fill (current)
+- `GOOD-FIGHTS-ICON-HAND-THICKER-FINGER.png` - thick stroke, WITH fill
+
+**Steps to change icon:**
+
+1. Copy new icon to assets:
+   ```bash
+   cp "GOOD-FIGHTS-ICON-HAND-THICKER-GREY-BG.png" "packages/mobile/assets/homescreen-icon.png"
+   cp "GOOD-FIGHTS-ICON-HAND-THICKER-GREY-BG.png" "packages/mobile/assets/adaptive-icon-foreground-new.png"
+   ```
+
+2. Clear ALL caches and regenerate native files:
+   ```bash
+   cd packages/mobile && rm -rf .expo dist && npx expo prebuild --clean --platform android
+   ```
+
+3. Update versionCode in BOTH files:
+   - `packages/mobile/app.json` (line ~56)
+   - `packages/mobile/android/app/build.gradle` (line ~95)
+
+4. Build: `eas build --platform android --profile production`
+
+5. **After installing on device**: If icon doesn't update, clear Android launcher cache:
+   - Settings > Apps > [Your Launcher] > Storage > Clear Cache
+   - Or Force Stop the launcher
 
 ## Switching Work Locations (IP Change)
 
