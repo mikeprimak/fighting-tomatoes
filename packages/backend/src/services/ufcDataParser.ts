@@ -374,23 +374,43 @@ async function importEvents(
 
     console.log(`  Banner image for ${eventData.eventName}: ${bannerImageUrl || 'none'}`);
 
+    // Check if event already exists - we want to preserve existing dates to prevent
+    // year parsing bugs from overwriting correct dates (e.g., "Sat, Oct 25" could be
+    // parsed as 2026 when it should be 2025 if scraper runs in early 2026)
+    const existingEvent = await prisma.event.findUnique({
+      where: { ufcUrl: eventData.eventUrl },
+      select: { id: true, date: true, isComplete: true },
+    });
+
+    // Build update data - only include date if event doesn't exist yet
+    const updateData: any = {
+      name: eventData.eventName,
+      venue: eventData.venue,
+      location: `${eventData.city}, ${eventData.state || eventData.country}`,
+      bannerImage: bannerImageUrl,
+      earlyPrelimStartTime,
+      prelimStartTime,
+      mainStartTime,
+      hasStarted: eventData.status === 'Live',
+      isComplete: eventData.status === 'Complete',
+    };
+
+    // Only update date if:
+    // 1. Event doesn't exist yet, OR
+    // 2. Event exists but is not complete (still upcoming, might need date correction)
+    // This prevents year parsing bugs from corrupting completed event dates
+    if (!existingEvent || !existingEvent.isComplete) {
+      updateData.date = eventDate;
+    } else {
+      console.log(`    ℹ Preserving existing date for completed event: ${existingEvent.date.toISOString()}`);
+    }
+
     // Upsert event using ufcUrl as unique identifier (most reliable for UFC events)
     const event = await prisma.event.upsert({
       where: {
         ufcUrl: eventData.eventUrl,
       },
-      update: {
-        name: eventData.eventName,
-        date: eventDate,
-        venue: eventData.venue,
-        location: `${eventData.city}, ${eventData.state || eventData.country}`,
-        bannerImage: bannerImageUrl,
-        earlyPrelimStartTime,
-        prelimStartTime,
-        mainStartTime,
-        hasStarted: eventData.status === 'Live',
-        isComplete: eventData.status === 'Complete',
-      },
+      update: updateData,
       create: {
         name: eventData.eventName,
         promotion: 'UFC',
