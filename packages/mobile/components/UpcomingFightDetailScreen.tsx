@@ -41,6 +41,8 @@ import SectionContainer from './SectionContainer';
 import { isTBAFighterName } from '../constants/tba';
 import { getFighterImage, getFighterImageUrl } from './fight-cards/shared/utils';
 
+type Sport = 'MMA' | 'BOXING' | 'BARE_KNUCKLE_BOXING' | 'MUAY_THAI' | 'KICKBOXING';
+
 interface Fighter {
   id: string;
   firstName: string;
@@ -50,6 +52,7 @@ interface Fighter {
   wins: number;
   losses: number;
   draws: number;
+  sport?: Sport;
 }
 
 interface Event {
@@ -1506,9 +1509,13 @@ export default function UpcomingFightDetailScreen({
         </View>
 
         {/* Method Selection */}
+        {/* Only show SUBMISSION option for MMA fights - boxing/kickboxing/muay thai don't have submissions */}
         <View style={{ marginTop: 17 }}>
           <View style={styles.methodButtons}>
-            {(['KO_TKO', 'SUBMISSION', 'DECISION'] as const).map((method) => {
+            {(fight.fighter1.sport === 'MMA' || !fight.fighter1.sport
+              ? ['KO_TKO', 'SUBMISSION', 'DECISION'] as const
+              : ['KO_TKO', 'DECISION'] as const
+            ).map((method) => {
               return (
                 <TouchableOpacity
                   key={method}
