@@ -1,5 +1,7 @@
 // Shared types for fight card components
 
+export type Sport = 'MMA' | 'BOXING' | 'BARE_KNUCKLE_BOXING' | 'MUAY_THAI' | 'KICKBOXING';
+
 export interface Fighter {
   id: string;
   firstName: string;
@@ -9,6 +11,7 @@ export interface Fighter {
   wins: number;
   losses: number;
   draws: number;
+  sport?: Sport;
 }
 
 export interface Event {

@@ -168,6 +168,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
             wins: true,
             losses: true,
             draws: true,
+            sport: true,
           },
         },
         fighter2: {
@@ -180,6 +181,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
             wins: true,
             losses: true,
             draws: true,
+            sport: true,
           },
         },
       };
@@ -3610,6 +3612,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
               wins: true,
               losses: true,
               draws: true,
+              sport: true,
             },
           },
           fighter2: {
@@ -3622,6 +3625,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
               wins: true,
               losses: true,
               draws: true,
+              sport: true,
             },
           },
           ratings: {
