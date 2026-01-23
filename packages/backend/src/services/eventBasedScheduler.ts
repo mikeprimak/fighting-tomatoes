@@ -105,6 +105,12 @@ export async function scheduleEventTracking(eventId: string): Promise<void> {
 
     const trackerType = getPromotionType(event.promotion);
 
+    // Manual mode - no automatic updates, admin enters results
+    if (trackerType === 'manual') {
+      console.log(`[Event Scheduler] 📝 ${event.name} (${event.promotion}) - MANUAL mode, skipping`);
+      return;
+    }
+
     // Route to time-based fallback for promotions without live trackers
     if (trackerType === 'time-based') {
       console.log(`[Event Scheduler] ⏰ ${event.name} (${event.promotion}) - Using TIME-BASED fallback`);
