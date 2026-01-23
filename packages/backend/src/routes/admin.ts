@@ -280,6 +280,103 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // ============================================
+  // CANCEL/UNCANCEL FIGHT - Key-based auth
+  // Use: curl -X POST "https://fightcrewapp-backend.onrender.com/api/admin/cancel-fight/FIGHT_ID?key=YOUR_KEY"
+  // Use: curl -X POST "https://fightcrewapp-backend.onrender.com/api/admin/uncancel-fight/FIGHT_ID?key=YOUR_KEY"
+  // ============================================
+  fastify.post('/admin/cancel-fight/:id', async (request, reply) => {
+    const { key } = request.query as { key?: string };
+    const { id } = request.params as { id: string };
+
+    if (key !== TEST_SCRAPER_KEY) {
+      return reply.code(401).send({ error: 'Invalid key' });
+    }
+
+    try {
+      const fight = await prisma.fight.findUnique({
+        where: { id },
+        include: {
+          fighter1: { select: { lastName: true } },
+          fighter2: { select: { lastName: true } },
+        }
+      });
+
+      if (!fight) {
+        return reply.code(404).send({ error: 'Fight not found' });
+      }
+
+      if (fight.isCancelled) {
+        return reply.send({
+          success: true,
+          message: 'Fight was already cancelled',
+          fight: `${fight.fighter1.lastName} vs ${fight.fighter2.lastName}`
+        });
+      }
+
+      await prisma.fight.update({
+        where: { id },
+        data: { isCancelled: true }
+      });
+
+      console.log(`[Admin] Cancelled fight: ${fight.fighter1.lastName} vs ${fight.fighter2.lastName}`);
+
+      return reply.send({
+        success: true,
+        message: 'Fight cancelled',
+        fight: `${fight.fighter1.lastName} vs ${fight.fighter2.lastName}`
+      });
+    } catch (err: any) {
+      return reply.code(500).send({ error: 'Failed to cancel fight', message: err.message });
+    }
+  });
+
+  fastify.post('/admin/uncancel-fight/:id', async (request, reply) => {
+    const { key } = request.query as { key?: string };
+    const { id } = request.params as { id: string };
+
+    if (key !== TEST_SCRAPER_KEY) {
+      return reply.code(401).send({ error: 'Invalid key' });
+    }
+
+    try {
+      const fight = await prisma.fight.findUnique({
+        where: { id },
+        include: {
+          fighter1: { select: { lastName: true } },
+          fighter2: { select: { lastName: true } },
+        }
+      });
+
+      if (!fight) {
+        return reply.code(404).send({ error: 'Fight not found' });
+      }
+
+      if (!fight.isCancelled) {
+        return reply.send({
+          success: true,
+          message: 'Fight was not cancelled',
+          fight: `${fight.fighter1.lastName} vs ${fight.fighter2.lastName}`
+        });
+      }
+
+      await prisma.fight.update({
+        where: { id },
+        data: { isCancelled: false }
+      });
+
+      console.log(`[Admin] Un-cancelled fight: ${fight.fighter1.lastName} vs ${fight.fighter2.lastName}`);
+
+      return reply.send({
+        success: true,
+        message: 'Fight un-cancelled',
+        fight: `${fight.fighter1.lastName} vs ${fight.fighter2.lastName}`
+      });
+    } catch (err: any) {
+      return reply.code(500).send({ error: 'Failed to un-cancel fight', message: err.message });
+    }
+  });
+
+  // ============================================
   // OKTAGON LIVE TRACKER - Start/Stop/Status
   // ============================================
 
