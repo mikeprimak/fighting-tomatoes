@@ -623,9 +623,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
   fastify.get('/admin/events', {
     preValidation: [fastify.authenticate, requireAdmin],
   }, async (request, reply) => {
-    const { promotion, upcoming, limit = '50', offset = '0' } = request.query as {
+    const { promotion, upcoming, current, limit = '50', offset = '0' } = request.query as {
       promotion?: string;
       upcoming?: string;
+      current?: string;
       limit?: string;
       offset?: string;
     };
@@ -637,12 +638,29 @@ export async function adminRoutes(fastify: FastifyInstance) {
     if (upcoming === 'true') {
       where.date = { gte: new Date() };
     }
+    if (current === 'true') {
+      // Events between yesterday and 2 days from now
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+
+      const twoDaysFromNow = new Date();
+      twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
+      twoDaysFromNow.setHours(23, 59, 59, 999);
+
+      where.date = {
+        gte: yesterday,
+        lte: twoDaysFromNow,
+      };
+    }
+
+    // Determine sort order: current = desc (furthest future first), upcoming = asc (soonest first), all = desc
+    const orderDirection = upcoming === 'true' ? 'asc' : 'desc';
 
     const [events, total] = await Promise.all([
       prisma.event.findMany({
         where,
-        // For upcoming events, show soonest first; for all events, show most recent first
-        orderBy: { date: upcoming === 'true' ? 'asc' : 'desc' },
+        orderBy: { date: orderDirection },
         take: parseInt(limit),
         skip: parseInt(offset),
         include: {
