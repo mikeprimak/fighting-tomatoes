@@ -949,10 +949,19 @@ export async function adminRoutes(fastify: FastifyInstance) {
     // Exclude relation IDs and fields that need type casting
     const { eventId, fighter1Id, fighter2Id, weightClass, ...updateData } = parsed;
 
+    // If resetting fight to incomplete, clear completionMethod to prevent
+    // time-based system from re-marking it complete
+    const additionalData: any = {};
+    if (updateData.isComplete === false) {
+      additionalData.completionMethod = null;
+      additionalData.completedAt = null;
+    }
+
     const fight = await prisma.fight.update({
       where: { id },
       data: {
         ...updateData,
+        ...additionalData,
         // Cast weightClass to enum if provided
         ...(weightClass && { weightClass: weightClass as any }),
         // Only update relations if provided

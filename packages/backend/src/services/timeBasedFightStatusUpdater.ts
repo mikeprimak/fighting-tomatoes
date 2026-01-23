@@ -55,6 +55,21 @@ export async function scheduleTimeBasedUpdates(eventId: string): Promise<void> {
       return;
     }
 
+    // Check if this event has already been processed by time-based system
+    // If any fights have completionMethod='time-based', skip re-processing
+    // This prevents overwriting manual admin changes
+    const timeBasedFights = await prisma.fight.count({
+      where: {
+        eventId,
+        completionMethod: 'time-based',
+      }
+    });
+
+    if (timeBasedFights > 0) {
+      console.log(`[Time-Based] ${event.name}: Already processed (${timeBasedFights} fights), skipping`);
+      return;
+    }
+
     // Cancel any existing timers for this event
     cancelTimeBasedTimers(eventId);
 
