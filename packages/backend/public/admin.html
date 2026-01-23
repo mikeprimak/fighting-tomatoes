@@ -1245,6 +1245,7 @@
 
         <div class="filter-bar">
           <select id="eventFilter" class="form-select" onchange="loadEvents()">
+            <option value="current">Current</option>
             <option value="upcoming">Upcoming</option>
             <option value="all">All Events</option>
           </select>
@@ -1818,6 +1819,7 @@
 
       if (promotion) params.set('promotion', promotion);
       if (filter === 'upcoming') params.set('upcoming', 'true');
+      if (filter === 'current') params.set('current', 'true');
       params.set('limit', '100');
 
       try {
