@@ -8,12 +8,13 @@
  * - Time-based fallback: Mark all fights in a section as complete at section start time
  */
 
-export type LiveTrackerType = 'ufc' | 'matchroom' | 'oktagon' | 'time-based';
+export type LiveTrackerType = 'ufc' | 'matchroom' | 'oktagon' | 'time-based' | 'manual';
 
 /**
  * Map of promotions to their tracker type.
- * Only promotions with confirmed working live trackers are listed here.
- * All unlisted promotions default to 'time-based' fallback.
+ * - Real-time trackers (ufc, matchroom, oktagon): Scrape live data during events
+ * - time-based: Auto-mark fights complete at section start times
+ * - manual: No automatic updates - admin manually enters results
  */
 export const PROMOTION_TRACKER_CONFIG: Record<string, LiveTrackerType> = {
   // Real-time live trackers
@@ -22,6 +23,9 @@ export const PROMOTION_TRACKER_CONFIG: Record<string, LiveTrackerType> = {
   'Matchroom Boxing': 'matchroom',
   'OKTAGON': 'oktagon',
   'OKTAGON MMA': 'oktagon',
+
+  // Manual mode - no automatic updates, admin enters results
+  'Zuffa Boxing': 'manual',
 
   // All others (BKFC, PFL, ONE, Golden Boy, Top Rank, etc.) will fall through
   // to 'time-based' by default
