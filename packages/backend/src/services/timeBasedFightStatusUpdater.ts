@@ -132,6 +132,7 @@ export async function scheduleTimeBasedUpdates(eventId: string): Promise<void> {
 
 /**
  * Mark all fights in a section (or all fights) as complete.
+ * Also marks the event as started (for proper "upcoming" filter behavior).
  */
 export async function markSectionComplete(
   eventId: string,
@@ -139,6 +140,12 @@ export async function markSectionComplete(
 ): Promise<number> {
   try {
     const now = new Date();
+
+    // Mark the event as started (important for upcoming filter)
+    await prisma.event.update({
+      where: { id: eventId },
+      data: { hasStarted: true }
+    });
 
     // Build the where clause
     const whereClause: any = {
