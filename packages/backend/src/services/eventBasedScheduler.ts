@@ -228,19 +228,32 @@ export async function scheduleAllUpcomingEvents(): Promise<number> {
   try {
     const now = new Date();
     const twoWeeksFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+    // Also catch events that started recently (within last 12 hours) - handles server restarts
+    const twelveHoursAgo = new Date(now.getTime() - 12 * 60 * 60 * 1000);
 
-    // Find ALL upcoming events in the next 2 weeks (not just UFC/Matchroom/OKTAGON)
+    // Find ALL incomplete events: future events OR recently started events
     const upcomingEvents = await prisma.event.findMany({
       where: {
         isComplete: false,
         OR: [
-          // Events with section start times in range
+          // Events with section start times in future
           { mainStartTime: { gte: now, lte: twoWeeksFromNow } },
           { prelimStartTime: { gte: now, lte: twoWeeksFromNow } },
           { earlyPrelimStartTime: { gte: now, lte: twoWeeksFromNow } },
+          // Events with section times in the recent past (catch currently live events after restart)
+          { mainStartTime: { gte: twelveHoursAgo, lt: now } },
+          { prelimStartTime: { gte: twelveHoursAgo, lt: now } },
+          { earlyPrelimStartTime: { gte: twelveHoursAgo, lt: now } },
           // Also include events by date if no section times set
           {
             date: { gte: now, lte: twoWeeksFromNow },
+            mainStartTime: null,
+            prelimStartTime: null,
+            earlyPrelimStartTime: null
+          },
+          // Or events that started today by date (no section times)
+          {
+            date: { gte: twelveHoursAgo, lt: now },
             mainStartTime: null,
             prelimStartTime: null,
             earlyPrelimStartTime: null

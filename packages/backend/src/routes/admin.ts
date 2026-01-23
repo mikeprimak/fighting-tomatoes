@@ -233,6 +233,53 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // ============================================
+  // MARK EVENT AS STARTED - Key-based auth
+  // Use: curl -X POST "https://fightcrewapp-backend.onrender.com/api/admin/mark-event-started/EVENT_ID?key=YOUR_KEY"
+  // ============================================
+  fastify.post('/admin/mark-event-started/:id', async (request, reply) => {
+    const { key } = request.query as { key?: string };
+    const { id } = request.params as { id: string };
+
+    if (key !== TEST_SCRAPER_KEY) {
+      return reply.code(401).send({ error: 'Invalid key' });
+    }
+
+    try {
+      const event = await prisma.event.findUnique({
+        where: { id },
+        select: { name: true, hasStarted: true, isComplete: true }
+      });
+
+      if (!event) {
+        return reply.code(404).send({ error: 'Event not found' });
+      }
+
+      if (event.hasStarted) {
+        return reply.send({
+          success: true,
+          message: 'Event was already marked as started',
+          eventName: event.name
+        });
+      }
+
+      await prisma.event.update({
+        where: { id },
+        data: { hasStarted: true }
+      });
+
+      console.log(`[Admin] Marked event as started: ${event.name}`);
+
+      return reply.send({
+        success: true,
+        message: 'Event marked as started',
+        eventName: event.name
+      });
+    } catch (err: any) {
+      return reply.code(500).send({ error: 'Failed to update event', message: err.message });
+    }
+  });
+
+  // ============================================
   // OKTAGON LIVE TRACKER - Start/Stop/Status
   // ============================================
 
