@@ -1,10 +1,4 @@
-import { useState, useEffect } from 'react';
-import {
-  GoogleSignin,
-  statusCodes,
-  isSuccessResponse,
-  isErrorWithCode,
-} from '@react-native-google-signin/google-signin';
+import { useState } from 'react';
 import { useAuth } from '../store/AuthContext';
 
 // Google OAuth Client IDs - these are PUBLIC by design (not secrets)
@@ -13,13 +7,32 @@ import { useAuth } from '../store/AuthContext';
 const GOOGLE_CLIENT_ID_WEB = '1082468109842-pehb7kkuclbv8g4acjba9eeeajprd8j7.apps.googleusercontent.com';
 const GOOGLE_CLIENT_ID_IOS = '1082468109842-qpifgfjjg3ve22bnhofhk99purj0aidf.apps.googleusercontent.com';
 
-// Configure Google Sign-In on module load
-GoogleSignin.configure({
-  webClientId: GOOGLE_CLIENT_ID_WEB,
-  iosClientId: GOOGLE_CLIENT_ID_IOS,
-  offlineAccess: true,
-  scopes: ['profile', 'email'],
-});
+// Try to import Google Sign-In, but gracefully handle if not available (e.g., Expo Go dev)
+let GoogleSignin: any = null;
+let statusCodes: any = {};
+let isSuccessResponse: any = () => false;
+let isErrorWithCode: any = () => false;
+let isGoogleSignInAvailable = false;
+
+try {
+  const googleSignIn = require('@react-native-google-signin/google-signin');
+  GoogleSignin = googleSignIn.GoogleSignin;
+  statusCodes = googleSignIn.statusCodes;
+  isSuccessResponse = googleSignIn.isSuccessResponse;
+  isErrorWithCode = googleSignIn.isErrorWithCode;
+
+  // Configure Google Sign-In
+  GoogleSignin.configure({
+    webClientId: GOOGLE_CLIENT_ID_WEB,
+    iosClientId: GOOGLE_CLIENT_ID_IOS,
+    offlineAccess: true,
+    scopes: ['profile', 'email'],
+  });
+  isGoogleSignInAvailable = true;
+  console.log('[GoogleAuth] Native Google Sign-In configured successfully');
+} catch (e) {
+  console.log('[GoogleAuth] Native Google Sign-In not available (expected in Expo Go dev mode)');
+}
 
 export function useGoogleAuth() {
   const { loginWithGoogle } = useAuth();
@@ -29,6 +42,13 @@ export function useGoogleAuth() {
   const signInWithGoogle = async () => {
     setError(null);
     setIsLoading(true);
+
+    // Check if Google Sign-In is available
+    if (!isGoogleSignInAvailable || !GoogleSignin) {
+      setError('Google Sign-In not available in dev mode. Use email login.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       console.log('[GoogleAuth] Starting native Google Sign-In...');
@@ -88,7 +108,8 @@ export function useGoogleAuth() {
     signInWithGoogle,
     isLoading,
     error,
-    isReady: true, // Native sign-in is always ready
+    isReady: isGoogleSignInAvailable,
+    isAvailable: isGoogleSignInAvailable,
   };
 }
 

@@ -46,22 +46,29 @@ export default function SmallEventCard({ event, onPress }: SmallEventCardProps) 
     });
   };
 
-  const formatTimeUntil = (dateString: string) => {
-    const eventDate = new Date(dateString);
+  // Use event DATE for days until, start time for granular hours when event is today
+  const formatTimeUntil = (eventDateString: string, startTimeString?: string) => {
+    const eventDate = new Date(eventDateString);
     const now = new Date();
 
-    // Use hours-based calculation for accuracy across timezones
-    const hoursUntil = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    // Get LOCAL calendar dates for comparison
+    const eventLocalDate = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+    const todayLocalDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    if (hoursUntil <= 0) {
-      return 'TODAY';
-    }
+    const diffMs = eventLocalDate.getTime() - todayLocalDate.getTime();
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-    if (hoursUntil < 1) {
-      return 'STARTING SOON';
-    }
+    // If event is TODAY, use start time for granular output
+    if (diffDays === 0) {
+      const startTime = startTimeString ? new Date(startTimeString) : eventDate;
+      const hoursUntil = (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
-    if (hoursUntil < 12) {
+      if (hoursUntil <= 0) {
+        return 'TODAY';
+      }
+      if (hoursUntil < 1) {
+        return 'STARTING SOON';
+      }
       const hours = Math.floor(hoursUntil);
       if (hours === 1) {
         return 'IN 1 HOUR';
@@ -69,21 +76,15 @@ export default function SmallEventCard({ event, onPress }: SmallEventCardProps) 
       return `IN ${hours} HOURS`;
     }
 
-    if (hoursUntil < 24) {
-      return 'TODAY';
-    }
-
-    if (hoursUntil < 48) {
+    if (diffDays === 1) {
       return 'TOMORROW';
     }
 
-    const daysUntil = Math.floor(hoursUntil / 24);
-
-    if (daysUntil < 7) {
-      return `IN ${daysUntil} DAYS`;
+    if (diffDays < 7) {
+      return `IN ${diffDays} DAYS`;
     }
 
-    const weeksUntil = Math.round(daysUntil / 7);
+    const weeksUntil = Math.round(diffDays / 7);
     if (weeksUntil === 1) {
       return 'IN 1 WEEK';
     }
@@ -92,7 +93,7 @@ export default function SmallEventCard({ event, onPress }: SmallEventCardProps) 
       return `IN ${weeksUntil} WEEKS`;
     }
 
-    const monthsUntil = Math.round(daysUntil / 30);
+    const monthsUntil = Math.round(diffDays / 30);
     if (monthsUntil === 1) {
       return 'IN 1 MONTH';
     }
@@ -101,7 +102,7 @@ export default function SmallEventCard({ event, onPress }: SmallEventCardProps) 
       return `IN ${monthsUntil} MONTHS`;
     }
 
-    const yearsUntil = Math.round(daysUntil / 365);
+    const yearsUntil = Math.round(diffDays / 365);
     if (yearsUntil === 1) {
       return 'IN 1 YEAR';
     }
@@ -184,7 +185,7 @@ export default function SmallEventCard({ event, onPress }: SmallEventCardProps) 
         {isUpcoming && (
           <View style={styles.eventTimeUntil}>
             <Text style={styles.eventTimeUntilText}>
-              {formatTimeUntil(getEarliestStartTime())}
+              {formatTimeUntil(event.date, getEarliestStartTime())}
             </Text>
           </View>
         )}
