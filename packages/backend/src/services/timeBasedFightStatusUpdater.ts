@@ -155,8 +155,17 @@ export async function markSectionComplete(
     };
 
     // Filter by cardType unless marking all
+    // Note: "Main Card" also includes "Main Event" fights
     if (cardType !== 'all') {
-      whereClause.cardType = cardType;
+      if (cardType === 'Main Card') {
+        // Main Card section includes both "Main Card" and "Main Event" fights
+        whereClause.OR = [
+          { cardType: 'Main Card' },
+          { cardType: 'Main Event' }
+        ];
+      } else {
+        whereClause.cardType = cardType;
+      }
     }
 
     // Get fights that match the criteria
