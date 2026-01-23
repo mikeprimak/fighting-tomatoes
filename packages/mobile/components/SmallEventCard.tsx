@@ -15,6 +15,9 @@ interface Event {
   date: string;
   bannerImage?: string;
   promotion?: string;
+  earlyPrelimStartTime?: string | null;
+  prelimStartTime?: string | null;
+  mainStartTime?: string | null;
 }
 
 interface SmallEventCardProps {
@@ -25,6 +28,14 @@ interface SmallEventCardProps {
 export default function SmallEventCard({ event, onPress }: SmallEventCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+
+  // Get the earliest start time for countdown display
+  const getEarliestStartTime = () => {
+    if (event.earlyPrelimStartTime) return event.earlyPrelimStartTime;
+    if (event.prelimStartTime) return event.prelimStartTime;
+    if (event.mainStartTime) return event.mainStartTime;
+    return event.date;
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -93,7 +104,7 @@ export default function SmallEventCard({ event, onPress }: SmallEventCardProps) 
     return `IN ${diffYears} YEARS`;
   };
 
-  const isUpcoming = new Date(event.date) > new Date();
+  const isUpcoming = new Date(getEarliestStartTime()) > new Date();
 
   const styles = StyleSheet.create({
     container: {
@@ -168,7 +179,7 @@ export default function SmallEventCard({ event, onPress }: SmallEventCardProps) 
         {isUpcoming && (
           <View style={styles.eventTimeUntil}>
             <Text style={styles.eventTimeUntilText}>
-              {formatTimeUntil(event.date)}
+              {formatTimeUntil(getEarliestStartTime())}
             </Text>
           </View>
         )}
