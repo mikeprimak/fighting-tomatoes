@@ -58,7 +58,10 @@ const CreateFightSchema = z.object({
   fighter2Odds: z.string().optional(),
 });
 
-const UpdateFightSchema = CreateFightSchema.partial();
+const UpdateFightSchema = CreateFightSchema.partial().extend({
+  hasStarted: z.boolean().optional(),
+  isComplete: z.boolean().optional(),
+});
 
 const CreateFighterSchema = z.object({
   firstName: z.string().min(1).max(100),

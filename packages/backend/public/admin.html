@@ -392,6 +392,72 @@
       opacity: 1;
     }
 
+    /* Fight Status */
+    .fight-status-section {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-right: 1rem;
+    }
+
+    .fight-status-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    .fight-status-badge.upcoming {
+      background: var(--bg-input);
+      color: var(--text-secondary);
+    }
+
+    .fight-status-badge.live {
+      background: var(--accent-red);
+      color: white;
+      animation: pulse 2s infinite;
+    }
+
+    .fight-status-badge.completed {
+      background: var(--accent-green);
+      color: white;
+    }
+
+    .fight-status-badge.cancelled {
+      background: var(--text-muted);
+      color: white;
+      text-decoration: line-through;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .status-btn {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.65rem;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      background: var(--bg-input);
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .status-btn:hover {
+      background: var(--border-color);
+      color: var(--text-primary);
+    }
+
+    .status-btn.active {
+      border-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--accent-blue);
+    }
+
     /* Autocomplete */
     .autocomplete-wrapper {
       position: relative;
@@ -1889,6 +1955,20 @@
       const f1Name = f1 ? `${f1.firstName} ${f1.lastName}` : 'TBD';
       const f2Name = f2 ? `${f2.firstName} ${f2.lastName}` : 'TBD';
 
+      // Determine fight status
+      let status = 'upcoming';
+      let statusLabel = 'Upcoming';
+      if (fight.isCancelled) {
+        status = 'cancelled';
+        statusLabel = 'Cancelled';
+      } else if (fight.isComplete) {
+        status = 'completed';
+        statusLabel = 'Completed';
+      } else if (fight.hasStarted) {
+        status = 'live';
+        statusLabel = 'Live';
+      }
+
       return `
         <div class="fight-card">
           <div class="fight-info">
@@ -1902,6 +1982,12 @@
                 ${fight.weightClass || 'Catchweight'} • ${fight.scheduledRounds} rounds
               </div>
             </div>
+          </div>
+          <div class="fight-status-section">
+            <span class="fight-status-badge ${status}">${statusLabel}</span>
+            <button class="status-btn ${status === 'upcoming' ? 'active' : ''}" onclick="setFightStatus('${fight.id}', 'upcoming')" title="Mark as Upcoming">U</button>
+            <button class="status-btn ${status === 'live' ? 'active' : ''}" onclick="setFightStatus('${fight.id}', 'live')" title="Mark as Live">L</button>
+            <button class="status-btn ${status === 'completed' ? 'active' : ''}" onclick="setFightStatus('${fight.id}', 'completed')" title="Mark as Completed">C</button>
           </div>
           <div class="fight-actions">
             <button class="btn btn-icon btn-sm" onclick="openFightModal('${fight.id}')" title="Edit">✏️</button>
@@ -2342,6 +2428,46 @@
         if (!res.ok) throw new Error('Failed to delete fight');
 
         showToast('Fight deleted', 'success');
+        await selectEvent(selectedEvent.id);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // ============================================
+    // FIGHT STATUS
+    // ============================================
+    async function setFightStatus(fightId, status) {
+      // status: 'upcoming' | 'live' | 'completed'
+      let data = {};
+
+      switch (status) {
+        case 'upcoming':
+          data = { hasStarted: false, isComplete: false };
+          break;
+        case 'live':
+          data = { hasStarted: true, isComplete: false };
+          break;
+        case 'completed':
+          data = { hasStarted: true, isComplete: true };
+          break;
+        default:
+          return;
+      }
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/fights/${fightId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to update fight status');
+        }
+
+        showToast(`Fight marked as ${status}`, 'success');
         await selectEvent(selectedEvent.id);
       } catch (err) {
         showToast(err.message, 'error');
