@@ -295,7 +295,16 @@ async function importZuffaEvents(
     let fightsImported = 0;
     const fights = eventData.fights || [];
 
+    // Track scraped fight signatures for cancellation detection
+    const scrapedFightSignatures = new Set<string>();
+
     for (const fightData of fights) {
+      // Build signature for this scraped fight (sorted last names)
+      const scrapedSignature = [
+        normalizeName(fightData.fighterA.name).split(/\s+/).pop()?.toLowerCase() || '',
+        normalizeName(fightData.fighterB.name).split(/\s+/).pop()?.toLowerCase() || ''
+      ].sort().join('|');
+      scrapedFightSignatures.add(scrapedSignature);
       // Find or create fighters (use normalized names for lookup)
       let fighter1Id = fighterNameToId.get(normalizeName(fightData.fighterA.name).toLowerCase());
       let fighter2Id = fighterNameToId.get(normalizeName(fightData.fighterB.name).toLowerCase());
@@ -398,6 +407,66 @@ async function importZuffaEvents(
     }
 
     console.log(`    ✓ Imported ${fightsImported}/${fights.length} fights`);
+
+    // ============== CANCELLATION DETECTION ==============
+    // Check for fights in DB that were NOT in the scraped data (possibly cancelled)
+    // Also check for previously cancelled fights that have reappeared (un-cancel them)
+
+    const dbFights = await prisma.fight.findMany({
+      where: { eventId: event.id },
+      include: {
+        fighter1: { select: { lastName: true } },
+        fighter2: { select: { lastName: true } },
+      }
+    });
+
+    let cancelledCount = 0;
+    let unCancelledCount = 0;
+
+    for (const dbFight of dbFights) {
+      // Skip fights that are already complete
+      if (dbFight.isComplete) {
+        continue;
+      }
+
+      // Create signature for this DB fight
+      const dbFightSignature = [
+        dbFight.fighter1.lastName.toLowerCase().trim(),
+        dbFight.fighter2.lastName.toLowerCase().trim()
+      ].sort().join('|');
+
+      const fightIsInScrapedData = scrapedFightSignatures.has(dbFightSignature);
+
+      // Case 1: Fight was cancelled but has reappeared in scraped data -> UN-CANCEL it
+      if (dbFight.isCancelled && fightIsInScrapedData) {
+        console.log(`    ✅ Fight reappeared, UN-CANCELLING: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
+
+        await prisma.fight.update({
+          where: { id: dbFight.id },
+          data: { isCancelled: false }
+        });
+
+        unCancelledCount++;
+      }
+      // Case 2: Fight is NOT cancelled and missing from scraped data -> CANCEL it
+      else if (!dbFight.isCancelled && !fightIsInScrapedData) {
+        console.log(`    ❌ Fight missing from scraped data, CANCELLING: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
+
+        await prisma.fight.update({
+          where: { id: dbFight.id },
+          data: { isCancelled: true }
+        });
+
+        cancelledCount++;
+      }
+    }
+
+    if (cancelledCount > 0) {
+      console.log(`    ⚠️  Marked ${cancelledCount} fights as cancelled`);
+    }
+    if (unCancelledCount > 0) {
+      console.log(`    ✅ Un-cancelled ${unCancelledCount} fights`);
+    }
   }
 
   console.log(`✅ Imported all Zuffa Boxing events\n`);
