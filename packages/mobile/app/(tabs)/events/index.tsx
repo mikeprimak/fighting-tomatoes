@@ -82,26 +82,31 @@ const formatTime = (dateString: string) => {
   return `${hour12}:${minutes.toString().padStart(2, '0')}${ampm}`;
 };
 
-const formatTimeUntil = (dateString: string) => {
-  const eventDate = new Date(dateString);
+// For determining days until, use the event DATE (not start time)
+// For granular "hours until" on event day, use the actual start time
+const formatTimeUntil = (eventDateString: string, startTimeString?: string) => {
+  const eventDate = new Date(eventDateString);
   const now = new Date();
 
-  // Use hours-based calculation for accuracy across timezones
-  // This avoids issues where UTC dates don't match local calendar dates
-  const hoursUntil = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+  // Get LOCAL calendar dates for comparison
+  const eventLocalDate = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+  const todayLocalDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  // Less than 0 hours - event started or starting now
-  if (hoursUntil <= 0) {
-    return 'TODAY';
-  }
+  // Calculate difference in calendar days (using local dates)
+  const diffMs = eventLocalDate.getTime() - todayLocalDate.getTime();
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-  // Less than 1 hour
-  if (hoursUntil < 1) {
-    return 'STARTING SOON';
-  }
+  // If event is TODAY, use start time for granular output
+  if (diffDays === 0) {
+    const startTime = startTimeString ? new Date(startTimeString) : eventDate;
+    const hoursUntil = (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
-  // Less than 12 hours - show hours
-  if (hoursUntil < 12) {
+    if (hoursUntil <= 0) {
+      return 'TODAY';
+    }
+    if (hoursUntil < 1) {
+      return 'STARTING SOON';
+    }
     const hours = Math.floor(hoursUntil);
     if (hours === 1) {
       return 'IN 1 HOUR';
@@ -109,30 +114,20 @@ const formatTimeUntil = (dateString: string) => {
     return `IN ${hours} HOURS`;
   }
 
-  // Less than 24 hours - TODAY
-  if (hoursUntil < 24) {
-    return 'TODAY';
-  }
-
-  // Less than 48 hours - TOMORROW
-  if (hoursUntil < 48) {
+  // Future events - use calendar days
+  if (diffDays === 1) {
     return 'TOMORROW';
   }
 
-  // Calculate days from hours
-  const daysUntil = Math.floor(hoursUntil / 24);
-
-  if (daysUntil < 7) {
-    return `IN ${daysUntil} DAYS`;
+  if (diffDays < 7) {
+    return `IN ${diffDays} DAYS`;
   }
 
-  const weeksUntil = Math.round(daysUntil / 7);
+  const weeksUntil = Math.round(diffDays / 7);
   if (weeksUntil === 1) {
     return 'IN 1 WEEK';
   }
 
-  // Show weeks for 2-3 weeks, then 5-7 weeks
-  // 4 weeks = 1 month, 8 weeks = 2 months
   if (weeksUntil <= 3) {
     return `IN ${weeksUntil} WEEKS`;
   }
@@ -141,7 +136,7 @@ const formatTimeUntil = (dateString: string) => {
     return `IN ${weeksUntil} WEEKS`;
   }
 
-  const monthsUntil = Math.round(daysUntil / 30);
+  const monthsUntil = Math.round(diffDays / 30);
   if (monthsUntil === 1) {
     return 'IN 1 MONTH';
   }
@@ -150,7 +145,7 @@ const formatTimeUntil = (dateString: string) => {
     return `IN ${monthsUntil} MONTHS`;
   }
 
-  const yearsUntil = Math.round(daysUntil / 365);
+  const yearsUntil = Math.round(diffDays / 365);
   if (yearsUntil === 1) {
     return 'IN 1 YEAR';
   }
@@ -530,7 +525,7 @@ const EventSection = memo(function EventSection({
     console.log('startTime:', startTime.toISOString());
     console.log('now >= startTime:', now >= startTime);
     console.log('isEventLive:', isEventLive);
-    console.log('formatTimeUntil result:', formatTimeUntil(earliestTime));
+    console.log('formatTimeUntil result:', formatTimeUntil(event.date, earliestTime));
     console.log('event.prelimStartTime:', event.prelimStartTime);
     console.log('event.mainStartTime:', event.mainStartTime);
     console.log('event.date:', event.date);
@@ -542,7 +537,7 @@ const EventSection = memo(function EventSection({
       <EventBannerCard
         event={event}
         statusBadge={{
-          text: isEventLive ? 'LIVE NOW' : formatTimeUntil(getEarliestStartTime()),
+          text: isEventLive ? 'LIVE NOW' : formatTimeUntil(event.date, getEarliestStartTime()),
           backgroundColor: isEventLive ? colors.danger : '#F5C518',
           textColor: isEventLive ? '#FFFFFF' : '#000000',
         }}
