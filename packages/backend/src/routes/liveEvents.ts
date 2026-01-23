@@ -6,6 +6,7 @@
 import { FastifyInstance } from 'fastify';
 import liveTracker, { startLiveTracking, stopLiveTracking, getLiveTrackingStatus } from '../services/liveEventTracker';
 import { getEventStatus } from '../services/ufcLiveParser';
+import { startOneFCLiveTracking, stopOneFCLiveTracking, getOneFCTrackingStatus } from '../services/oneFCLiveTracker';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -287,6 +288,195 @@ export default async function liveEventsRoutes(fastify: FastifyInstance) {
       return reply.status(500).send({
         error: 'Failed to start UFC 320 tracking',
         code: 'UFC320_START_ERROR',
+        details: error.message
+      });
+    }
+  });
+
+  // ============== ONE FC LIVE TRACKING ROUTES ==============
+
+  /**
+   * POST /api/live-events/onefc/start
+   * Start live tracking for a ONE FC event
+   */
+  fastify.post('/onefc/start', async (request, reply) => {
+    try {
+      const { eventId, eventUrl, eventName, intervalSeconds } = request.body as {
+        eventId: string;
+        eventUrl: string;
+        eventName: string;
+        intervalSeconds?: number;
+      };
+
+      if (!eventId || !eventUrl || !eventName) {
+        return reply.status(400).send({
+          error: 'Missing required fields',
+          code: 'VALIDATION_ERROR',
+          details: 'eventId, eventUrl and eventName are required'
+        });
+      }
+
+      // Check if already running
+      const currentStatus = getOneFCTrackingStatus();
+      if (currentStatus.isRunning) {
+        return reply.status(400).send({
+          error: 'ONE FC tracker already running',
+          code: 'TRACKER_RUNNING',
+          details: `Currently tracking: ${currentStatus.eventName}`
+        });
+      }
+
+      // Start tracking
+      await startOneFCLiveTracking({
+        eventId,
+        eventUrl,
+        eventName,
+        intervalSeconds: intervalSeconds || 60
+      });
+
+      const status = getOneFCTrackingStatus();
+
+      return reply.status(200).send({
+        data: {
+          message: '🔴 ONE FC live tracking started',
+          status
+        }
+      });
+    } catch (error: any) {
+      fastify.log.error(error);
+      return reply.status(500).send({
+        error: 'Failed to start ONE FC live tracking',
+        code: 'ONEFC_TRACKER_START_ERROR',
+        details: error.message
+      });
+    }
+  });
+
+  /**
+   * POST /api/live-events/onefc/stop
+   * Stop ONE FC live tracking
+   */
+  fastify.post('/onefc/stop', async (request, reply) => {
+    try {
+      const currentStatus = getOneFCTrackingStatus();
+
+      if (!currentStatus.isRunning) {
+        return reply.status(400).send({
+          error: 'ONE FC tracker not running',
+          code: 'TRACKER_NOT_RUNNING'
+        });
+      }
+
+      await stopOneFCLiveTracking();
+
+      return reply.status(200).send({
+        data: {
+          message: 'ONE FC live tracking stopped',
+          finalStatus: currentStatus
+        }
+      });
+    } catch (error: any) {
+      fastify.log.error(error);
+      return reply.status(500).send({
+        error: 'Failed to stop ONE FC live tracking',
+        code: 'ONEFC_TRACKER_STOP_ERROR',
+        details: error.message
+      });
+    }
+  });
+
+  /**
+   * GET /api/live-events/onefc/status
+   * Get current ONE FC tracker status
+   */
+  fastify.get('/onefc/status', async (request, reply) => {
+    try {
+      const status = getOneFCTrackingStatus();
+
+      return reply.status(200).send({
+        data: status
+      });
+    } catch (error: any) {
+      fastify.log.error(error);
+      return reply.status(500).send({
+        error: 'Failed to get ONE FC tracker status',
+        code: 'ONEFC_TRACKER_STATUS_ERROR',
+        details: error.message
+      });
+    }
+  });
+
+  /**
+   * POST /api/live-events/onefc/auto-start
+   * Automatically find and start tracking a live ONE FC event
+   */
+  fastify.post('/onefc/auto-start', async (request, reply) => {
+    try {
+      const currentStatus = getOneFCTrackingStatus();
+      if (currentStatus.isRunning) {
+        return reply.status(400).send({
+          error: 'ONE FC tracker already running',
+          code: 'TRACKER_RUNNING',
+          details: `Currently tracking: ${currentStatus.eventName}`
+        });
+      }
+
+      // Find a currently live ONE FC event based on time
+      const now = new Date();
+
+      const liveEvent = await prisma.event.findFirst({
+        where: {
+          isComplete: false,
+          promotion: 'ONE',
+          OR: [
+            { earlyPrelimStartTime: { lte: now } },
+            { prelimStartTime: { lte: now } },
+            { mainStartTime: { lte: now } }
+          ]
+        },
+        orderBy: {
+          date: 'desc'
+        }
+      });
+
+      if (!liveEvent) {
+        return reply.status(404).send({
+          error: 'No live ONE FC event found',
+          code: 'NO_LIVE_EVENT',
+          details: 'No ONE FC event is currently live based on start times'
+        });
+      }
+
+      // Generate ONE FC event URL from name
+      // e.g., "ONE Friday Fights 139" -> "one-friday-fights-139"
+      const eventSlug = liveEvent.name.toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-');
+      const eventUrl = `https://www.onefc.com/events/${eventSlug}/`;
+
+      await startOneFCLiveTracking({
+        eventId: liveEvent.id,
+        eventUrl,
+        eventName: liveEvent.name,
+        intervalSeconds: 60
+      });
+
+      const status = getOneFCTrackingStatus();
+
+      return reply.status(200).send({
+        data: {
+          message: `🔴 Auto-started ONE FC tracking for ${liveEvent.name}`,
+          eventId: liveEvent.id,
+          eventUrl,
+          status
+        }
+      });
+    } catch (error: any) {
+      fastify.log.error(error);
+      return reply.status(500).send({
+        error: 'Failed to auto-start ONE FC live tracking',
+        code: 'ONEFC_AUTO_START_ERROR',
         details: error.message
       });
     }
