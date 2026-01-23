@@ -86,64 +86,76 @@ const formatTimeUntil = (dateString: string) => {
   const eventDate = new Date(dateString);
   const now = new Date();
 
-  // Get calendar dates (ignoring time)
-  const eventCalendarDate = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
-  const todayCalendarDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Use hours-based calculation for accuracy across timezones
+  // This avoids issues where UTC dates don't match local calendar dates
+  const hoursUntil = (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60);
 
-  // Calculate difference in calendar days
-  const diffTime = eventCalendarDate.getTime() - todayCalendarDate.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-  // If it's today, show hours remaining or "TODAY"
-  if (diffDays === 0) {
-    const hoursUntil = Math.floor((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60));
-    if (hoursUntil <= 0) {
-      return 'TODAY';
-    }
-    if (hoursUntil === 1) {
-      return 'IN 1 HOUR';
-    }
-    return `IN ${hoursUntil} HOURS`;
+  // Less than 0 hours - event started or starting now
+  if (hoursUntil <= 0) {
+    return 'TODAY';
   }
 
-  if (diffDays === 1) {
+  // Less than 1 hour
+  if (hoursUntil < 1) {
+    return 'STARTING SOON';
+  }
+
+  // Less than 12 hours - show hours
+  if (hoursUntil < 12) {
+    const hours = Math.floor(hoursUntil);
+    if (hours === 1) {
+      return 'IN 1 HOUR';
+    }
+    return `IN ${hours} HOURS`;
+  }
+
+  // Less than 24 hours - TODAY
+  if (hoursUntil < 24) {
+    return 'TODAY';
+  }
+
+  // Less than 48 hours - TOMORROW
+  if (hoursUntil < 48) {
     return 'TOMORROW';
   }
 
-  if (diffDays < 7) {
-    return `IN ${diffDays} DAYS`;
+  // Calculate days from hours
+  const daysUntil = Math.floor(hoursUntil / 24);
+
+  if (daysUntil < 7) {
+    return `IN ${daysUntil} DAYS`;
   }
 
-  const diffWeeks = Math.round(diffDays / 7);
-  if (diffWeeks === 1) {
+  const weeksUntil = Math.round(daysUntil / 7);
+  if (weeksUntil === 1) {
     return 'IN 1 WEEK';
   }
 
   // Show weeks for 2-3 weeks, then 5-7 weeks
   // 4 weeks = 1 month, 8 weeks = 2 months
-  if (diffWeeks <= 3) {
-    return `IN ${diffWeeks} WEEKS`;
+  if (weeksUntil <= 3) {
+    return `IN ${weeksUntil} WEEKS`;
   }
 
-  if (diffWeeks >= 5 && diffWeeks <= 7) {
-    return `IN ${diffWeeks} WEEKS`;
+  if (weeksUntil >= 5 && weeksUntil <= 7) {
+    return `IN ${weeksUntil} WEEKS`;
   }
 
-  const diffMonths = Math.round(diffDays / 30);
-  if (diffMonths === 1) {
+  const monthsUntil = Math.round(daysUntil / 30);
+  if (monthsUntil === 1) {
     return 'IN 1 MONTH';
   }
 
-  if (diffMonths < 12) {
-    return `IN ${diffMonths} MONTHS`;
+  if (monthsUntil < 12) {
+    return `IN ${monthsUntil} MONTHS`;
   }
 
-  const diffYears = Math.round(diffDays / 365);
-  if (diffYears === 1) {
+  const yearsUntil = Math.round(daysUntil / 365);
+  if (yearsUntil === 1) {
     return 'IN 1 YEAR';
   }
 
-  return `IN ${diffYears} YEARS`;
+  return `IN ${yearsUntil} YEARS`;
 };
 
 
