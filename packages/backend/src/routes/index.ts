@@ -264,19 +264,25 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
       // Add type filter for upcoming/past events
       // Upcoming includes:
-      //   1. Future events (date >= now, not complete)
+      //   1. Future events (any start time >= now, not complete)
       //   2. Live events (hasStarted = true, not complete) - these show even if date passed
       // Past includes:
       //   - Only events that are actually complete (isComplete = true)
+      // Note: We check mainStartTime, prelimStartTime, earlyPrelimStartTime, and date
+      // because the date field is often midnight while the actual event is later
       if (type === 'upcoming') {
-        // Not complete AND (future date OR currently live)
+        const now = new Date();
+        // Not complete AND (any start time in future OR currently live)
         const upcomingCondition = {
           AND: [
             { isComplete: false },
             {
               OR: [
-                { date: { gte: new Date() } },     // Future events
-                { hasStarted: true }               // Live events (date passed but still in progress)
+                { mainStartTime: { gte: now } },       // Main card hasn't started
+                { prelimStartTime: { gte: now } },    // Prelims haven't started
+                { earlyPrelimStartTime: { gte: now } }, // Early prelims haven't started
+                { date: { gte: now } },               // Event date in future (fallback)
+                { hasStarted: true }                  // Live events (already in progress)
               ]
             }
           ]
