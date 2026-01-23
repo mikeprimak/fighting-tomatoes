@@ -48,21 +48,27 @@ export interface TapologyEventData {
 
 /**
  * Normalize method string to standard format
+ * Handles formats like "Decision, Unanimous" or just "TKO"
  */
 function normalizeMethod(method: string): string {
   const m = method.toLowerCase().trim();
 
-  if (m.includes('unanimous') || m === 'ud') return 'UD';
-  if (m.includes('split') || m === 'sd') return 'SD';
-  if (m.includes('majority') || m === 'md') return 'MD';
+  // Check for specific decision types first (most common in boxing)
+  if (m.includes('unanimous')) return 'UD';
+  if (m.includes('split')) return 'SD';
+  if (m.includes('majority')) return 'MD';
+
+  // Then check other methods
   if (m.includes('technical knockout') || m === 'tko') return 'TKO';
   if (m.includes('knockout') || m === 'ko') return 'KO';
   if (m.includes('submission') || m === 'sub') return 'SUB';
-  if (m.includes('decision') || m === 'dec') return 'DEC';
   if (m.includes('disqualification') || m === 'dq') return 'DQ';
   if (m.includes('no contest') || m === 'nc') return 'NC';
   if (m.includes('draw')) return 'DRAW';
-  if (m.includes('rtd') || m.includes('corner stoppage')) return 'RTD';
+  if (m.includes('rtd') || m.includes('corner stoppage') || m.includes('retirement')) return 'RTD';
+
+  // Generic decision (without type specified)
+  if (m.includes('decision') || m === 'dec') return 'DEC';
 
   // Return original if no match (capitalized)
   return method.trim();
@@ -188,21 +194,48 @@ export class TapologyLiveScraper {
             winner = nameB;
           }
 
-          // Look for method in nearby uppercase span
+          // Look for method - search up the DOM tree
           let method: string | undefined;
           let round: number | undefined;
           let time: string | undefined;
 
-          const methodSpan = $container.find('span.uppercase, span[class*="uppercase"]');
-          methodSpan.each((_, el) => {
-            const text = $(el).text().trim();
-            if (text && (text.includes('Decision') || text.includes('KO') || text.includes('TKO') ||
-                text.includes('Submission') || text.includes('Round'))) {
-              method = normalizeMethod(text.split(',')[0] || text);
-              round = parseRound(text);
-              time = parseTime(text);
+          // Search up to find the fight container with method info
+          let $fightContainer = $fighterA.closest('li, section, [class*="fight"], [class*="bout"]');
+          if ($fightContainer.length === 0) {
+            // Go up multiple levels to find a container
+            $fightContainer = $fighterA.parent().parent().parent().parent();
+          }
+
+          // Look for any text containing method keywords
+          const containerText = $fightContainer.text();
+          const methodPatterns = [
+            /Decision,?\s*(Unanimous|Split|Majority)/i,
+            /(Unanimous|Split|Majority)\s*Decision/i,
+            /\b(TKO|KO)\b/i,
+            /Technical\s*Knockout/i,
+            /Submission/i,
+            /\bNC\b|No\s*Contest/i,
+            /\bDQ\b|Disqualification/i,
+          ];
+
+          for (const pattern of methodPatterns) {
+            const match = containerText.match(pattern);
+            if (match) {
+              method = normalizeMethod(match[0]);
+              break;
             }
-          });
+          }
+
+          // Also try finding method in uppercase span
+          if (!method) {
+            $fightContainer.find('span').each((_, el) => {
+              const text = $(el).text().trim();
+              if (text.includes('Decision') || text.includes('KO') || text.includes('Submission')) {
+                method = normalizeMethod(text);
+                return false; // break
+              }
+            });
+          }
 
           const isComplete = !!winner || !!method;
 
