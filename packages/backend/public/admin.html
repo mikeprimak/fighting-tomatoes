@@ -1431,6 +1431,19 @@
           <input type="text" id="eventMainChannel" class="form-input" placeholder="ESPN+ PPV">
         </div>
 
+        <div class="form-group">
+          <label class="form-label">Tracker Mode</label>
+          <select id="eventTrackerMode" class="form-select">
+            <option value="">(Use Promotion Default)</option>
+            <option value="manual">Manual - No auto updates (for dev/testing)</option>
+            <option value="time-based">Time-Based Fallback</option>
+            <option value="live">Live Tracker</option>
+          </select>
+          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Set to "Manual" during development to prevent automatic status changes
+          </div>
+        </div>
+
         <!-- Banner Image Section -->
         <div class="form-group" id="bannerImageSection" style="display: none;">
           <label class="form-label">Event Banner Image</label>
@@ -1850,6 +1863,7 @@
               <span class="event-fights-count">
                 <span>${event._count?.fights || 0} fights</span>
               </span>
+              ${event.trackerMode === 'manual' ? '<span style="color: var(--accent-orange); font-weight: 600;">⚙️ DEV</span>' : ''}
             </div>
           </div>
         `).join('');
@@ -2018,6 +2032,7 @@
         document.getElementById('eventVenue').value = selectedEvent.venue || '';
         document.getElementById('eventLocation').value = selectedEvent.location || '';
         document.getElementById('eventMainChannel').value = selectedEvent.mainChannel || '';
+        document.getElementById('eventTrackerMode').value = selectedEvent.trackerMode || '';
 
         // Populate time fields
         const extractTime = (dateStr) => dateStr ? dateStr.split('T')[1]?.substring(0, 5) : '';
@@ -2042,6 +2057,7 @@
         document.getElementById('eventTime').value = '22:00';
         document.getElementById('eventPrelimTime').value = '';
         document.getElementById('eventEarlyPrelimTime').value = '';
+        document.getElementById('eventTrackerMode').value = '';
         // Copy promotion from global filter if set
         const globalPromo = document.getElementById('globalPromotion').value;
         if (globalPromo) {
@@ -2065,6 +2081,7 @@
       const prelimTime = document.getElementById('eventPrelimTime').value;
       const earlyPrelimTime = document.getElementById('eventEarlyPrelimTime').value;
 
+      const trackerMode = document.getElementById('eventTrackerMode').value;
       const data = {
         name: document.getElementById('eventName').value,
         promotion: document.getElementById('eventPromotion').value,
@@ -2075,6 +2092,7 @@
         mainStartTime: `${date}T${time}:00`,
         prelimStartTime: prelimTime ? `${date}T${prelimTime}:00` : undefined,
         earlyPrelimStartTime: earlyPrelimTime ? `${date}T${earlyPrelimTime}:00` : undefined,
+        trackerMode: trackerMode || null,  // null = use promotion default
       };
 
       try {

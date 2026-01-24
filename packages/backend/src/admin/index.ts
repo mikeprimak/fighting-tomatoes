@@ -35,8 +35,18 @@ export async function setupAdminPanel(fastify: FastifyInstance) {
         resource: { model: prisma.event, client: prisma },
         options: {
           navigation: { name: 'Content', icon: 'Calendar' },
-          listProperties: ['name', 'promotion', 'date', 'location', 'hasStarted', 'isComplete'],
-          editProperties: ['name', 'promotion', 'date', 'location', 'venue', 'imageUrl', 'hasStarted', 'isComplete'],
+          listProperties: ['name', 'promotion', 'date', 'location', 'trackerMode', 'hasStarted', 'isComplete'],
+          editProperties: ['name', 'promotion', 'date', 'location', 'venue', 'imageUrl', 'trackerMode', 'hasStarted', 'isComplete'],
+          properties: {
+            trackerMode: {
+              availableValues: [
+                { value: '', label: '(Use Promotion Default)' },
+                { value: 'manual', label: 'Manual - No auto updates' },
+                { value: 'time-based', label: 'Time-Based Fallback' },
+                { value: 'live', label: 'Live Tracker' },
+              ],
+            },
+          },
         },
       },
       {

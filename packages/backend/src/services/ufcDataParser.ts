@@ -192,11 +192,20 @@ function extractYearFromEventUrl(eventUrl: string, dateText: string): number {
     // Create date with current year
     const eventDate = new Date(currentYear, eventMonth, day);
 
-    // If date is in the past, check if it should be next year
+    // Handle year boundary cases:
+    // Case 1: Date is in past - check if it should be NEXT year (Dec scraping Jan)
+    // Case 2: Date is in future - check if it should be LAST year (Jan scraping Oct/Nov/Dec)
     if (eventDate < now) {
+      // Date is in the past with current year
       // Only assume next year for early months (Jan-Mar) when we're in late months (Oct-Dec)
       if (currentMonth >= 9 && eventMonth <= 2) {
         return currentYear + 1;
+      }
+    } else {
+      // Date is in the future with current year
+      // If we're in early months (Jan-Mar) and event is late months (Oct-Dec), it's last year
+      if (currentMonth <= 2 && eventMonth >= 9) {
+        return currentYear - 1;
       }
     }
   }

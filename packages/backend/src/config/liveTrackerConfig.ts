@@ -53,6 +53,34 @@ export function getTrackerType(promotion: string | null): LiveTrackerType {
 }
 
 /**
+ * Get tracker type for a specific event.
+ * Checks event-level override first, then falls back to promotion config.
+ *
+ * Use this when you have the full event object.
+ */
+export function getEventTrackerType(event: {
+  trackerMode?: string | null;
+  promotion: string | null;
+}): LiveTrackerType {
+  // Event-level override takes priority
+  if (event.trackerMode) {
+    // Validate and return event-level mode
+    if (event.trackerMode === 'manual') return 'manual';
+    if (event.trackerMode === 'time-based') return 'time-based';
+    if (event.trackerMode === 'ufc') return 'ufc';
+    if (event.trackerMode === 'matchroom') return 'matchroom';
+    if (event.trackerMode === 'oktagon') return 'oktagon';
+    // If trackerMode is set to something like 'live', use promotion's default tracker
+    if (event.trackerMode === 'live') {
+      return getTrackerType(event.promotion);
+    }
+  }
+
+  // Fall back to promotion-level config
+  return getTrackerType(event.promotion);
+}
+
+/**
  * Check if a promotion has a real-time live tracker.
  */
 export function hasRealTimeTracker(promotion: string | null): boolean {

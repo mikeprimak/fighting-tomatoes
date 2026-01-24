@@ -13,7 +13,7 @@ import { PrismaClient } from '@prisma/client';
 import { startLiveTracking, stopLiveTracking, getLiveTrackingStatus } from './liveEventTracker';
 import { startMatchroomLiveTracking, stopMatchroomLiveTracking, getMatchroomTrackingStatus } from './matchroomLiveTracker';
 import { startOktagonLiveTracking, stopOktagonLiveTracking, getOktagonTrackingStatus } from './oktagonLiveTracker';
-import { getTrackerType, LiveTrackerType } from '../config/liveTrackerConfig';
+import { getTrackerType, getEventTrackerType, LiveTrackerType } from '../config/liveTrackerConfig';
 import { scheduleTimeBasedUpdates, cancelAllTimeBasedTimers } from './timeBasedFightStatusUpdater';
 
 const prisma = new PrismaClient();
@@ -80,6 +80,7 @@ export async function scheduleEventTracking(eventId: string): Promise<void> {
         id: true,
         name: true,
         promotion: true,
+        trackerMode: true,
         ufcUrl: true,
         isComplete: true,
         earlyPrelimStartTime: true,
@@ -103,7 +104,7 @@ export async function scheduleEventTracking(eventId: string): Promise<void> {
     const now = new Date();
     const millisecondsUntilStart = trackingStartTime.getTime() - now.getTime();
 
-    const trackerType = getPromotionType(event.promotion);
+    const trackerType = getEventTrackerType(event);
 
     // Manual mode - no automatic updates, admin enters results
     if (trackerType === 'manual') {
@@ -270,6 +271,7 @@ export async function scheduleAllUpcomingEvents(): Promise<number> {
         id: true,
         name: true,
         promotion: true,
+        trackerMode: true,
         date: true,
         earlyPrelimStartTime: true,
         prelimStartTime: true,
@@ -280,9 +282,13 @@ export async function scheduleAllUpcomingEvents(): Promise<number> {
 
     console.log(`[Event Scheduler] Found ${upcomingEvents.length} upcoming events`);
 
-    // Group events by tracker type for logging
-    const liveTrackerEvents = upcomingEvents.filter(e => getTrackerType(e.promotion) !== 'time-based');
-    const timeBasedEvents = upcomingEvents.filter(e => getTrackerType(e.promotion) === 'time-based');
+    // Group events by tracker type for logging (check event-level override)
+    const liveTrackerEvents = upcomingEvents.filter(e => {
+      const type = getEventTrackerType(e);
+      return type !== 'time-based' && type !== 'manual';
+    });
+    const timeBasedEvents = upcomingEvents.filter(e => getEventTrackerType(e) === 'time-based');
+    const manualEvents = upcomingEvents.filter(e => getEventTrackerType(e) === 'manual');
 
     // Log counts by tracker type
     if (liveTrackerEvents.length > 0) {
@@ -304,6 +310,12 @@ export async function scheduleAllUpcomingEvents(): Promise<number> {
       });
       Object.entries(promotionCounts).forEach(([promo, count]) => {
         console.log(`      - ${promo}: ${count}`);
+      });
+    }
+    if (manualEvents.length > 0) {
+      console.log(`   📝 Manual mode events (no auto-updates): ${manualEvents.length}`);
+      manualEvents.forEach(e => {
+        console.log(`      - ${e.name} (${e.promotion})`);
       });
     }
 
