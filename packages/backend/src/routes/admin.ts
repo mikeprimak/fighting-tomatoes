@@ -750,6 +750,43 @@ export async function adminRoutes(fastify: FastifyInstance) {
     return reply.send({ event });
   });
 
+  // Update event status (hasStarted, isComplete)
+  // This is a manual override that sets completionMethod='manual'
+  fastify.put('/admin/events/:id/status', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { hasStarted, isComplete } = request.body as { hasStarted: boolean; isComplete: boolean };
+
+    const event = await prisma.event.update({
+      where: { id },
+      data: {
+        hasStarted,
+        isComplete,
+        completionMethod: 'manual',
+      },
+    });
+
+    // If marking event complete, also mark all incomplete fights as complete
+    if (isComplete) {
+      await prisma.fight.updateMany({
+        where: {
+          eventId: id,
+          isComplete: false,
+        },
+        data: {
+          isComplete: true,
+          completionMethod: 'manual',
+          completedAt: new Date(),
+        },
+      });
+    }
+
+    console.log(`[Admin] Event ${event.name} status updated: hasStarted=${hasStarted}, isComplete=${isComplete}`);
+
+    return reply.send({ event });
+  });
+
   // Delete event (cascades to fights)
   fastify.delete('/admin/events/:id', {
     preValidation: [fastify.authenticate, requireAdmin],

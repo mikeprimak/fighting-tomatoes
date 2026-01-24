@@ -11,6 +11,8 @@
  *
  * IMPORTANT: Uses mainStartTime/prelimStartTime/earlyPrelimStartTime, NOT event.date
  * (event.date is just the calendar date at midnight, not the actual start time)
+ *
+ * IMPORTANT: Skips events with trackerMode='manual' - those require admin action
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -95,12 +97,17 @@ async function completeStuckFights(now: Date, results: FailsafeResults): Promise
   console.log(`\n[Failsafe] Step 1: Looking for stuck fights from events that started 6+ hours ago`);
 
   // Query all fights that have started but aren't complete
+  // Skip fights from events with trackerMode='manual'
   const potentiallyStuckFights = await prisma.fight.findMany({
     where: {
       hasStarted: true,
       isComplete: false,
       event: {
-        hasStarted: true
+        hasStarted: true,
+        OR: [
+          { trackerMode: null },
+          { trackerMode: { not: 'manual' } },
+        ],
       }
     },
     include: {
@@ -159,17 +166,22 @@ async function completeStuckFights(now: Date, results: FailsafeResults): Promise
 async function completeEventsWithAllFightsDone(now: Date, results: FailsafeResults): Promise<void> {
   console.log(`\n[Failsafe] Step 2: Looking for events with all fights complete`);
 
+  // Skip events with trackerMode='manual'
   const incompleteEvents = await prisma.event.findMany({
     where: {
       isComplete: false,
-      hasStarted: true
+      hasStarted: true,
+      OR: [
+        { trackerMode: null },
+        { trackerMode: { not: 'manual' } },
+      ],
     },
     include: {
       fights: { select: { isComplete: true } }
     }
   });
 
-  console.log(`[Failsafe] Checking ${incompleteEvents.length} incomplete events`);
+  console.log(`[Failsafe] Checking ${incompleteEvents.length} incomplete events (excluding manual mode)`);
 
   for (const event of incompleteEvents) {
     // Check if ALL fights are complete (or no fights at all)
@@ -205,10 +217,15 @@ async function forceCompleteOldEvents(now: Date, results: FailsafeResults): Prom
   console.log(`\n[Failsafe] Step 3: Looking for events to force complete (started 8+ hours ago)`);
 
   // Query all incomplete events that have started
+  // Skip events with trackerMode='manual'
   const potentiallyOldEvents = await prisma.event.findMany({
     where: {
       hasStarted: true,
-      isComplete: false
+      isComplete: false,
+      OR: [
+        { trackerMode: null },
+        { trackerMode: { not: 'manual' } },
+      ],
     },
     include: {
       fights: {

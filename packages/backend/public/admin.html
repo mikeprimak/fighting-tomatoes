@@ -1920,12 +1920,35 @@
         !prelimTypes.includes(f.cardType) &&
         !earlyPrelimTypes.includes(f.cardType));
 
+      // Determine event status
+      const eventStatus = selectedEvent.isComplete ? 'complete' : (selectedEvent.hasStarted ? 'live' : 'upcoming');
+      const eventStatusLabel = selectedEvent.isComplete ? 'Complete' : (selectedEvent.hasStarted ? 'Live' : 'Upcoming');
+      const eventStatusColor = selectedEvent.isComplete ? 'var(--text-muted)' : (selectedEvent.hasStarted ? 'var(--accent-green)' : 'var(--accent-blue)');
+      const trackerModeLabel = selectedEvent.trackerMode === 'manual' ? ' (Manual Mode)' : '';
+
       container.innerHTML = `
         <div class="panel-header">
           <div>
             <span class="panel-title">${escapeHtml(selectedEvent.name)}</span>
             <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
               ${formatDate(selectedEvent.date)} • ${selectedEvent.venue || ''} ${selectedEvent.location || ''}
+            </div>
+            <div style="font-size: 0.75rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.75rem;">
+              <span style="color: ${eventStatusColor}; font-weight: 600;">● ${eventStatusLabel}${trackerModeLabel}</span>
+              <span style="color: var(--text-muted);">|</span>
+              <button class="btn btn-sm ${eventStatus === 'upcoming' ? 'btn-primary' : 'btn-secondary'}"
+                      onclick="setEventStatus('upcoming')" ${eventStatus === 'upcoming' ? 'disabled' : ''}>
+                Upcoming
+              </button>
+              <button class="btn btn-sm ${eventStatus === 'live' ? 'btn-success' : 'btn-secondary'}"
+                      onclick="setEventStatus('live')" ${eventStatus === 'live' ? 'disabled' : ''}>
+                Live
+              </button>
+              <button class="btn btn-sm ${eventStatus === 'complete' ? 'btn-secondary' : 'btn-secondary'}"
+                      onclick="setEventStatus('complete')" ${eventStatus === 'complete' ? 'disabled' : ''}
+                      style="${eventStatus === 'complete' ? 'opacity: 0.6;' : ''}">
+                Complete
+              </button>
             </div>
           </div>
           <div style="display: flex; gap: 0.5rem;">
@@ -2133,6 +2156,57 @@
         selectedEvent = null;
         loadEvents();
         renderFights();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    // ============================================
+    // EVENT STATUS CONTROLS
+    // ============================================
+    async function setEventStatus(status) {
+      if (!selectedEvent) return;
+
+      // Map status to hasStarted/isComplete values
+      let hasStarted, isComplete;
+      switch (status) {
+        case 'upcoming':
+          hasStarted = false;
+          isComplete = false;
+          break;
+        case 'live':
+          hasStarted = true;
+          isComplete = false;
+          break;
+        case 'complete':
+          hasStarted = true;
+          isComplete = true;
+          break;
+        default:
+          return;
+      }
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/events/${selectedEvent.id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hasStarted, isComplete }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to update event status');
+        }
+
+        showToast(`Event marked as ${status}`, 'success');
+
+        // Update local state
+        selectedEvent.hasStarted = hasStarted;
+        selectedEvent.isComplete = isComplete;
+
+        // Re-render to update UI
+        renderFights();
+        loadEvents(); // Refresh list in case status affects ordering/display
       } catch (err) {
         showToast(err.message, 'error');
       }
