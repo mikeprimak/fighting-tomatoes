@@ -1,5 +1,6 @@
 // Event Completion Checker
 // Auto-completes events based on multiple signals: all fights done, timeouts, etc.
+// IMPORTANT: Skips events with trackerMode='manual' - those require admin action
 
 import { PrismaClient } from '@prisma/client';
 
@@ -42,10 +43,15 @@ export async function checkEventCompletion(): Promise<CompletionResult[]> {
 
   try {
     // Find all events that started but aren't complete
+    // Skip events with trackerMode='manual' - those require admin action
     const liveEvents = await prisma.event.findMany({
       where: {
         hasStarted: true,
         isComplete: false,
+        OR: [
+          { trackerMode: null },
+          { trackerMode: { not: 'manual' } },
+        ],
       },
       include: {
         fights: {
@@ -59,7 +65,7 @@ export async function checkEventCompletion(): Promise<CompletionResult[]> {
       },
     });
 
-    console.log(`[Event Completion Checker] Found ${liveEvents.length} live events to check`);
+    console.log(`[Event Completion Checker] Found ${liveEvents.length} live events to check (excluding manual mode)`);
 
     for (const event of liveEvents) {
       const now = new Date();
@@ -127,6 +133,7 @@ export async function checkEventCompletion(): Promise<CompletionResult[]> {
     }
 
     // Also check for events that never started but are way past their date
+    // Skip events with trackerMode='manual'
     const staleEvents = await prisma.event.findMany({
       where: {
         hasStarted: false,
@@ -134,6 +141,10 @@ export async function checkEventCompletion(): Promise<CompletionResult[]> {
         date: {
           lt: new Date(Date.now() - 18 * 60 * 60 * 1000), // 18 hours ago
         },
+        OR: [
+          { trackerMode: null },
+          { trackerMode: { not: 'manual' } },
+        ],
       },
     });
 
