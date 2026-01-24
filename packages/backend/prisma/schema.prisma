@@ -260,6 +260,12 @@ model Event {
   isComplete        Boolean   @default(false)
   completionMethod  String?   // "all_fights" | "timeout_12hr" | "timeout_smart" | "manual" | "scraper"
 
+  // Tracker mode override (null = use promotion default from config)
+  // "manual" = no automatic updates (for dev/testing)
+  // "time-based" = use time-based fallback
+  // "live" = use live tracker (if available)
+  trackerMode       String?
+
   // Timestamps
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt

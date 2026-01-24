@@ -229,22 +229,37 @@ async function scrapeEventsList(browser) {
           const month = months[monthStr];
           if (month !== undefined) {
             let year = now.getFullYear();
+            const currentMonth = now.getMonth(); // 0-11
             eventDate = new Date(year, month, day);
             eventDate.setHours(0, 0, 0, 0);
 
-            // If parsed date is in the past, check if it should be next year
-            // Only assume next year for early months (Jan-Mar) when we're in late months (Oct-Dec)
-            // This handles the year rollover case: scraping in Dec for Jan events
+            // Handle year boundary cases when URL doesn't include year:
+            //
+            // Case 1: Scraping in late year (Oct-Dec) for early year events (Jan-Mar)
+            //         "Jan 15" in December → should be Jan 15 NEXT year
+            //
+            // Case 2: Scraping in early year (Jan-Mar) for late year events (Oct-Dec)
+            //         "Oct 25" in January → should be Oct 25 LAST year (already happened)
+            //
+            // The UFC events page typically shows events within a ~3 month window,
+            // so we use that as our threshold.
+
             if (eventDate < now) {
-              const currentMonth = now.getMonth(); // 0-11
-              // Only assume next year if:
-              // 1. We're in the last 3 months of the year (Oct, Nov, Dec)
-              // 2. AND the event month is in the first 3 months (Jan, Feb, Mar)
+              // Date is in the past with current year
+              // Check if it should be NEXT year (Dec scraping Jan events)
               if (currentMonth >= 9 && month <= 2) {
                 eventDate = new Date(year + 1, month, day);
                 eventDate.setHours(0, 0, 0, 0);
               }
-              // Otherwise it's truly a past event (leave eventDate as-is, will be filtered)
+              // Otherwise it's truly a past event (will be filtered below)
+            } else {
+              // Date is in the future with current year
+              // Check if it should be LAST year (Jan scraping for Oct/Nov/Dec events)
+              // If we're in early months and event month is late, it's probably last year
+              if (currentMonth <= 2 && month >= 9) {
+                eventDate = new Date(year - 1, month, day);
+                eventDate.setHours(0, 0, 0, 0);
+              }
             }
           }
         }

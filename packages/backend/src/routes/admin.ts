@@ -40,6 +40,8 @@ const CreateEventSchema = z.object({
   earlyPrelimStartTime: z.string().transform((val) => new Date(val)).optional(),
   prelimStartTime: z.string().transform((val) => new Date(val)).optional(),
   mainStartTime: z.string().transform((val) => new Date(val)).optional(),
+  // Tracker mode override: null = use promotion default, 'manual' = no auto updates, 'time-based', 'live'
+  trackerMode: z.enum(['manual', 'time-based', 'live']).nullable().optional(),
 });
 
 const UpdateEventSchema = CreateEventSchema.partial();
