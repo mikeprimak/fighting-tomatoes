@@ -235,6 +235,9 @@ async function importDirtyFighters(
 /**
  * Import events and fights from scraped data
  */
+// Default banner for Dirty Boxing events (until they have event-specific banners)
+const DIRTY_BOXING_DEFAULT_BANNER = '/images/events/dirty-boxing/dirty-boxing-banner-default.png';
+
 async function importDirtyEvents(
   eventsData: ScrapedDirtyEventsData,
   fighterNameToId: Map<string, string>
@@ -246,6 +249,9 @@ async function importDirtyEvents(
     const location = [eventData.city, eventData.state, eventData.country]
       .filter(Boolean)
       .join(', ') || 'TBA';
+
+    // Use event-specific image if available, otherwise use default banner
+    const bannerImage = eventData.eventImageUrl || DIRTY_BOXING_DEFAULT_BANNER;
 
     // Try to find existing event by name or URL
     let event = await prisma.event.findFirst({
@@ -269,6 +275,7 @@ async function importDirtyEvents(
           location,
           ufcUrl: eventData.eventUrl,
           promotion: 'Dirty Boxing',
+          bannerImage,
           hasStarted: eventData.status === 'Live',
           isComplete: eventData.status === 'Complete',
         }
@@ -283,6 +290,7 @@ async function importDirtyEvents(
           date: eventDate,
           venue: eventData.venue || undefined,
           location,
+          bannerImage,
           ufcUrl: eventData.eventUrl,
           hasStarted: eventData.status === 'Live',
           isComplete: eventData.status === 'Complete',

@@ -51,6 +51,7 @@ interface ScrapedOneFCEvent {
   country: string;
   eventImageUrl: string | null;
   status: string;
+  startTime?: string | null; // ISO 8601 datetime from schema.org or partial time string
   fights?: ScrapedOneFCFight[];
   localImagePath?: string;
 }
@@ -202,6 +203,103 @@ function parseOneFCTimestamp(timestamp: string): Date {
   return new Date(timestampNum * 1000);
 }
 
+/**
+ * Parse start time string into a Date object
+ * Handles:
+ * - ISO 8601 datetime strings (e.g., "2026-01-24T02:00:00+00:00")
+ * - Partial time strings (e.g., "9:00 AM ICT") - combined with event date
+ * - dateText format (e.g., "Jan 23 (Fri) 9:00PM EST") - from events listing
+ *
+ * @param startTimeStr - Time extracted from event page (may be wrong if promo banner picked up)
+ * @param dateText - dateText from events listing (more reliable)
+ * @param eventDate - Event date from timestamp
+ */
+function parseOneFCStartTime(
+  startTimeStr: string | null | undefined,
+  dateText: string | null | undefined,
+  eventDate: Date
+): Date | null {
+  // Try dateText first as it's more reliable (from events listing page)
+  // Format: "Jan 23 (Fri) 9:00PM EST"
+  if (dateText) {
+    const dateTextMatch = dateText.match(/(\d{1,2}):(\d{2})\s*(AM|PM)\s*([A-Z]{2,4})?/i);
+    if (dateTextMatch) {
+      let hours = parseInt(dateTextMatch[1], 10);
+      const minutes = parseInt(dateTextMatch[2], 10);
+      const isPM = dateTextMatch[3].toUpperCase() === 'PM';
+      const tz = dateTextMatch[4] || 'EST';
+
+      // Convert to 24-hour format
+      if (isPM && hours !== 12) {
+        hours += 12;
+      } else if (!isPM && hours === 12) {
+        hours = 0;
+      }
+
+      // Detect timezone offset
+      let tzOffset = -5; // Default to EST
+      if (tz === 'PST' || tz === 'PT') {
+        tzOffset = -8;
+      } else if (tz === 'UTC' || tz === 'GMT') {
+        tzOffset = 0;
+      } else if (tz === 'ICT') {
+        tzOffset = 7;
+      }
+
+      // Create date using event date + parsed time
+      const result = new Date(eventDate);
+      result.setUTCHours(hours - tzOffset, minutes, 0, 0);
+
+      return result;
+    }
+  }
+
+  // Fallback to startTimeStr (from event page)
+  if (!startTimeStr) {
+    return null;
+  }
+
+  // Try parsing as ISO 8601 first
+  const isoDate = new Date(startTimeStr);
+  if (!isNaN(isoDate.getTime())) {
+    return isoDate;
+  }
+
+  // Try parsing as partial time (e.g., "9:00 AM ICT")
+  const timeMatch = startTimeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (timeMatch) {
+    let hours = parseInt(timeMatch[1], 10);
+    const minutes = parseInt(timeMatch[2], 10);
+    const isPM = timeMatch[3].toUpperCase() === 'PM';
+
+    // Convert to 24-hour format
+    if (isPM && hours !== 12) {
+      hours += 12;
+    } else if (!isPM && hours === 12) {
+      hours = 0;
+    }
+
+    // Detect timezone offset from the string
+    // ONE FC events in Bangkok are typically in ICT (UTC+7)
+    let tzOffset = 7; // Default to Bangkok time (ICT)
+    if (startTimeStr.includes('EST')) {
+      tzOffset = -5;
+    } else if (startTimeStr.includes('PST')) {
+      tzOffset = -8;
+    } else if (startTimeStr.includes('UTC') || startTimeStr.includes('GMT')) {
+      tzOffset = 0;
+    }
+
+    // Create date using event date + parsed time
+    const result = new Date(eventDate);
+    result.setUTCHours(hours - tzOffset, minutes, 0, 0);
+
+    return result;
+  }
+
+  return null;
+}
+
 // ============== PARSER FUNCTIONS ==============
 
 /**
@@ -291,7 +389,13 @@ async function importOneFCEvents(
 
   for (const [eventUrl, eventData] of Array.from(uniqueEvents.entries())) {
     // Parse timestamp to date
+    // Note: ONE FC timestamp already includes the event start time, not just the date
     const eventDate = parseOneFCTimestamp(eventData.timestamp);
+
+    // Use the timestamp as the main start time (it already includes time, not just date)
+    // The dateText confirms this: "Jan 23 (Fri) 9:00PM EST" matches timestamp of 2026-01-24T02:00:00Z
+    const mainStartTime = eventDate;
+    console.log(`  📅 Start time: ${mainStartTime.toISOString()} (from timestamp, dateText: ${eventData.dateText})`);
 
     // Parse location
     const location = [eventData.city, eventData.country]
@@ -326,7 +430,7 @@ async function importOneFCEvents(
         data: {
           name: eventData.eventName,
           date: eventDate,
-          // Don't set mainStartTime - ONE FC scraper doesn't capture start times
+          mainStartTime: mainStartTime || undefined,
           venue: eventData.venue || undefined,
           location,
           bannerImage: bannerImageUrl,
@@ -342,7 +446,7 @@ async function importOneFCEvents(
           name: eventData.eventName,
           promotion: 'ONE', // ONE Championship
           date: eventDate,
-          // Don't set mainStartTime - ONE FC scraper doesn't capture start times
+          mainStartTime: mainStartTime || undefined,
           venue: eventData.venue || undefined,
           location,
           bannerImage: bannerImageUrl,

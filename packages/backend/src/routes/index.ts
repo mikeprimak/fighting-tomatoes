@@ -218,8 +218,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
     const userId = (request as any).user?.id;
 
     try {
-      // Base filter: only return events that have at least one fight announced
+      // Base filter: only return visible events that have at least one fight announced
       const whereClause: any = {
+        isVisible: true,
         fights: { some: {} }
       };
 
@@ -588,8 +589,11 @@ export async function registerRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
 
     try {
-      const event = await fastify.prisma.event.findUnique({
-        where: { id },
+      const event = await fastify.prisma.event.findFirst({
+        where: {
+          id,
+          isVisible: true,  // Only return visible events
+        },
         select: {
           id: true,
           name: true,
