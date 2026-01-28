@@ -259,6 +259,7 @@ model Event {
   hasStarted        Boolean   @default(false)
   isComplete        Boolean   @default(false)
   completionMethod  String?   // "all_fights" | "timeout_12hr" | "timeout_smart" | "manual" | "scraper"
+  isVisible         Boolean   @default(true)  // Hide events without deleting (e.g., Matchroom Boxing)
 
   // Tracker mode override (null = use promotion default from config)
   // "manual" = no automatic updates (for dev/testing)

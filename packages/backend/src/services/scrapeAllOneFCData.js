@@ -147,6 +147,39 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
     });
 
     const eventData = await page.evaluate(() => {
+      // Extract event start time from schema.org JSON-LD data
+      let startTime = null;
+      const jsonLdScript = document.querySelector('script[type="application/ld+json"]');
+      if (jsonLdScript) {
+        try {
+          const jsonLd = JSON.parse(jsonLdScript.textContent);
+          // Schema.org Event uses "startDate" field
+          if (jsonLd.startDate) {
+            startTime = jsonLd.startDate;
+          }
+          // Sometimes it's nested in @graph array
+          if (!startTime && jsonLd['@graph']) {
+            const eventSchema = jsonLd['@graph'].find(item => item['@type'] === 'Event');
+            if (eventSchema && eventSchema.startDate) {
+              startTime = eventSchema.startDate;
+            }
+          }
+        } catch (e) {
+          // JSON parse failed, continue without start time
+        }
+      }
+
+      // Fallback: look for time in visible text (e.g., "9:00 AM ICT")
+      if (!startTime) {
+        const pageText = document.body.innerText || '';
+        // Look for patterns like "9:00 AM ICT" or "8:30 PM EST"
+        const timeMatch = pageText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM)\s*(?:[A-Z]{2,4})?)/i);
+        if (timeMatch) {
+          // Store as partial time info - will need to combine with date later
+          startTime = timeMatch[1];
+        }
+      }
+
       // Extract event image (try multiple selectors)
       let eventImageUrl = null;
 
@@ -260,12 +293,13 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
 
       return {
         eventImageUrl,
+        startTime,
         fights: allFights
       };
     });
 
     await page.close();
-    console.log(`   ✅ Scraped ${eventData.fights?.length || 0} fights`);
+    console.log(`   ✅ Scraped ${eventData.fights?.length || 0} fights${eventData.startTime ? `, start: ${eventData.startTime}` : ''}`);
     return eventData;
 
   } catch (error) {
