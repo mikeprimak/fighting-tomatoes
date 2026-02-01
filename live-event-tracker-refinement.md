@@ -7,11 +7,11 @@ Build and refine live event trackers for each promotion so users can watch fight
 
 ---
 
-## Current Status (Jan 17, 2026)
+## Current Status (Feb 1, 2026)
 
 | Promotion | Live Tracker | Status | Cancellation Detection | Notes |
 |-----------|--------------|--------|------------------------|-------|
-| UFC | ✅ Working | Production | ✅ Yes | Uses ufc.com scraping |
+| UFC | ✅ Working | GitHub Actions | ✅ Yes | Moved to GitHub Actions (Render IPs blocked by UFC.com) |
 | OKTAGON | ✅ Working | Production | ✅ Yes | Uses api.oktagonmma.com REST API |
 | Matchroom | ⚠️ Exists | Untested | ❌ Missing | Needs live event testing + ADD cancellation logic |
 | BKFC | ❌ None | Planned | - | |
@@ -181,16 +181,32 @@ curl -X POST "https://fightcrewapp-backend.onrender.com/api/admin/live-tracker/o
 ## UFC Live Tracker
 
 ### Status
-Production - working
+Production - running on GitHub Actions (every 5 minutes)
+
+### Why GitHub Actions?
+UFC.com blocks Render's IP addresses via Cloudflare. GitHub Actions uses different IPs that aren't blocked.
 
 ### Data Source
-- Scrapes ufc.com event pages
-- Uses `ufcLiveParser.ts` + `liveEventTracker.ts`
+- Scrapes ufc.com event pages using Puppeteer
+- Uses `scrapeLiveEvent.js` for scraping
+- Uses `ufcLiveParser.ts` for database updates
 
 ### Key Files
-- `services/ufcLiveParser.ts`
-- `services/liveEventTracker.ts`
-- `config/liveTrackerConfig.ts`
+- `.github/workflows/ufc-live-tracker.yml` - GitHub Actions workflow (every 5 min)
+- `scripts/runUFCLiveTracker.ts` - Standalone script for GitHub Actions
+- `services/scrapeLiveEvent.js` - Puppeteer scraper
+- `services/ufcLiveParser.ts` - Database parser/updater
+- `config/liveTrackerConfig.ts` - Set to `'time-based'` on Render (GitHub Actions handles live)
+
+### Fight Matching
+1. **Primary:** Match by `ufcFightId` (UFC's `data-fmid` attribute)
+2. **Fallback:** Match by full name (firstName + lastName)
+
+### Features
+- Detects fight cancellations (missing from scraped data)
+- Un-cancels fights that reappear
+- Updates/corrects results if UFC.com changes them
+- Auto-completes event when all fights done
 
 ---
 
@@ -263,11 +279,12 @@ To test data sources during a live event, see `packages/backend/README-LIVE-TEST
 
 ### Polling Intervals
 
-| Promotion | Interval | Reason |
-|-----------|----------|--------|
-| UFC | 60s | Balance freshness vs API load |
-| OKTAGON | 60s | API is fast (~300ms) |
-| Default | 60s | Standard for most |
+| Promotion | Interval | Platform | Reason |
+|-----------|----------|----------|--------|
+| UFC | 5 min | GitHub Actions | Minimum GitHub schedule interval; avoids IP blocking |
+| OKTAGON | 60s | Render | API is fast (~300ms) |
+| Matchroom | 60s | Render | Standard polling |
+| Default | 60s | Render | Standard for most |
 
 ### Failsafe System
 
@@ -309,6 +326,83 @@ See `IMPLEMENTATION_COMPLETE.md` for details.
 ---
 
 ## Progress Log
+
+### Feb 1, 2026 - UFC 325 Live Tracking & GitHub Actions Migration
+
+**Event:** UFC 325: Volkanovski vs. Lopes
+**Result:** Multiple fixes deployed during live event
+
+#### Problem: Render IP Block
+
+UFC.com blocks Render's IP addresses via Cloudflare protection, causing the live tracker to fail when running on Render. The daily UFC scraper already ran successfully on GitHub Actions.
+
+#### Solution: Move UFC Live Tracker to GitHub Actions
+
+**Files Created:**
+- `packages/backend/src/scripts/runUFCLiveTracker.ts` - Standalone script for GitHub Actions
+- `.github/workflows/ufc-live-tracker.yml` - Workflow running every 5 minutes
+
+**Files Modified:**
+- `packages/backend/src/config/liveTrackerConfig.ts` - Changed UFC from `'ufc'` to `'time-based'` on Render
+
+#### Bugs Fixed During UFC 325
+
+**1. Class Detection Bug**
+- **Issue:** Scraper used `section.className === 'main-card'` (exact match)
+- **Problem:** If section had multiple classes like `main-card active`, it wouldn't match
+- **Fix:** Changed to `section.classList.contains('main-card')`
+
+**2. Fight Signature Mismatch (Cancellation Detection)**
+- **Issue:** Scraped fights used full names (`"dustin jacoby|jimmy crute"`), DB used last names only (`"crute|jacoby"`)
+- **Result:** Signatures never matched, causing false cancellations
+- **Fix:** Changed both to use full names (firstName + lastName), matching daily scraper approach
+
+**3. Multi-word Last Names**
+- **Issue:** Fighters like "Benoit Saint Denis" - last word extraction gave "denis" but DB had "Saint Denis"
+- **Fix:** Use full name matching instead of last-name-only matching
+
+**4. Result Correction Detection**
+- **Issue:** If UFC.com posted wrong winner then corrected it, our tracker wouldn't update
+- **Cause:** Code only set winner if `!dbFight.winner` (empty)
+- **Fix:** Now updates if scraped value differs from DB value, logs as "CORRECTED"
+
+**5. Added `ufcFightId` for Reliable Matching**
+- **Issue:** Name matching has too many edge cases (nicknames, multi-word names, accents)
+- **Solution:** Store UFC's `data-fmid` attribute in database
+- **Schema change:** Added `ufcFightId String?` to Fight model
+- **Matching:** First try `ufcFightId`, fall back to name matching
+- **Note:** Existing fights won't have ID until daily scraper runs again
+
+#### Debug Logging Added
+
+Added comprehensive logging to diagnose issues:
+- `[SCRAPER] Sections found in fight-card:` - Shows all sections and fight counts
+- `📋 Scraped ufcFightIds:` - Lists all UFC fight IDs found
+- `📋 Scraped fight signatures:` - Lists all name signatures
+- `🔎 DB fight "..." matched by ufcFightId/name:` - Shows matching method used
+- `🔄 ... CORRECTED →` - Shows when a value is being corrected
+
+#### Key Commits
+
+1. `Move UFC live tracker to GitHub Actions`
+2. `Fix live scraper to capture fight finish time`
+3. `Fix scraper class detection and disable auto-cancellation`
+4. `Re-enable cancellation detection for missing fights`
+5. `Fix cancellation detection signature mismatch`
+6. `Fix signature matching for multi-word last names`
+7. `Use full names for fight matching (same as daily scraper)`
+8. `Add ufcFightId for reliable fight matching in live tracker`
+9. `Allow live tracker to update/correct fight results`
+
+#### Lessons Learned
+
+1. **Name matching is fragile** - Use unique IDs whenever possible
+2. **Test cancellation detection carefully** - False positives remove valid fights from display
+3. **UFC.com corrections happen** - Tracker must be able to update, not just insert
+4. **GitHub Actions for blocked sites** - Works around IP-based blocking
+5. **Log everything during development** - Essential for debugging live events
+
+---
 
 ### Jan 17, 2026 - Oktagon 82 Live Test
 
