@@ -519,32 +519,48 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         console.log(`    ⚫ ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: completedRounds → ${fightUpdate.completedRounds}`);
       }
 
-      // Check result changes
-      if (fightUpdate.winner && !dbFight.winner) {
+      // Check result changes - update even if already set (UFC.com may correct results)
+      if (fightUpdate.winner) {
         const winnerId = getWinnerFighterId(fightUpdate.winner, dbFight.fighter1, dbFight.fighter2);
-        if (winnerId) {
+        if (winnerId && dbFight.winner !== winnerId) {
           updateData.winner = winnerId;
           changed = true;
-          console.log(`    🏆 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner → ${fightUpdate.winner}`);
+          if (dbFight.winner) {
+            console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner CORRECTED → ${fightUpdate.winner}`);
+          } else {
+            console.log(`    🏆 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner → ${fightUpdate.winner}`);
+          }
         }
       }
 
-      if (fightUpdate.method && !dbFight.method) {
+      if (fightUpdate.method && dbFight.method !== fightUpdate.method) {
         updateData.method = fightUpdate.method;
         changed = true;
-        console.log(`    📋 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: method → ${fightUpdate.method}`);
+        if (dbFight.method) {
+          console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: method CORRECTED → ${fightUpdate.method}`);
+        } else {
+          console.log(`    📋 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: method → ${fightUpdate.method}`);
+        }
       }
 
-      if (fightUpdate.winningRound !== undefined && !dbFight.round) {
+      if (fightUpdate.winningRound !== undefined && dbFight.round !== fightUpdate.winningRound) {
         updateData.round = fightUpdate.winningRound;
         changed = true;
-        console.log(`    🔢 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: round → ${fightUpdate.winningRound}`);
+        if (dbFight.round) {
+          console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: round CORRECTED → ${fightUpdate.winningRound}`);
+        } else {
+          console.log(`    🔢 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: round → ${fightUpdate.winningRound}`);
+        }
       }
 
-      if (fightUpdate.winningTime && !dbFight.time) {
+      if (fightUpdate.winningTime && dbFight.time !== fightUpdate.winningTime) {
         updateData.time = fightUpdate.winningTime;
         changed = true;
-        console.log(`    ⏱️  ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: time → ${fightUpdate.winningTime}`);
+        if (dbFight.time) {
+          console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: time CORRECTED → ${fightUpdate.winningTime}`);
+        } else {
+          console.log(`    ⏱️  ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: time → ${fightUpdate.winningTime}`);
+        }
       }
 
       // Apply updates
