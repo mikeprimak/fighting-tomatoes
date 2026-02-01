@@ -17,8 +17,10 @@ export type LiveTrackerType = 'ufc' | 'matchroom' | 'oktagon' | 'time-based' | '
  * - manual: No automatic updates - admin manually enters results
  */
 export const PROMOTION_TRACKER_CONFIG: Record<string, LiveTrackerType> = {
-  // Real-time live trackers
-  'UFC': 'ufc',
+  // UFC: Live tracking moved to GitHub Actions (Render IPs are blocked by UFC.com)
+  // The ufc-live-tracker.yml workflow runs every 5 minutes during events
+  // Time-based fallback remains active as backup on Render
+  'UFC': 'time-based',
   'Matchroom': 'matchroom',
   'Matchroom Boxing': 'matchroom',
   'OKTAGON': 'oktagon',

@@ -1,0 +1,71 @@
+name: UFC Live Tracker
+# Runs every 5 minutes during live UFC events
+# Uses GitHub Actions IPs to bypass UFC.com CDN block (same as daily scraper)
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    # Allow manual trigger with optional event ID override
+    inputs:
+      event_id:
+        description: 'Event ID (optional - leave empty for auto-detection)'
+        required: false
+        type: string
+
+jobs:
+  track-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd packages/backend
+          pnpm install
+
+      - name: Generate Prisma client
+        run: |
+          cd packages/backend
+          npx prisma generate
+
+      - name: Build TypeScript
+        run: |
+          cd packages/backend
+          pnpm build
+
+      - name: Install Chromium for Puppeteer
+        run: |
+          cd packages/backend
+          npx puppeteer browsers install chrome
+
+      - name: Run UFC Live Tracker
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EVENT_ID: ${{ github.event.inputs.event_id }}
+          NODE_ENV: production
+        run: |
+          cd packages/backend
+          echo "Starting UFC Live Tracker..."
+          node dist/scripts/runUFCLiveTracker.js
+          echo "Live tracker finished."
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "UFC Live Tracker workflow FAILED at $(date)"
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=live_tracker&org=UFC" || echo "Failed to send alert"
