@@ -1,11 +1,13 @@
 name: UFC Live Tracker
-# Runs every 5 minutes during live UFC events
+# Runs every 10 minutes during live UFC events
 # Uses GitHub Actions IPs to bypass UFC.com CDN block (same as daily scraper)
+# NOTE: GitHub scheduled workflows can be delayed/skipped during high load.
+# Manually trigger the first run when a UFC event starts for reliability.
 
 on:
   schedule:
-    # Run every 5 minutes (GitHub's minimum interval)
-    - cron: '*/5 * * * *'
+    # Run every 10 minutes (GitHub unreliable for 5-min schedules)
+    - cron: '*/10 * * * *'
   push:
     branches:
       - main
