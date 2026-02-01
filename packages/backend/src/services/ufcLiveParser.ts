@@ -582,12 +582,25 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
 
         unCancelledCount++;
       }
-      // Case 2: Fight is NOT cancelled and missing from scraped data
-      // DISABLED: Auto-cancellation is too aggressive and causes false positives
-      // when UFC.com page structure differs from expected or scraper misses sections.
-      // Cancellations should be handled manually by admin.
+      // Case 2: Fight is NOT cancelled and missing from scraped data -> CANCEL it
       else if (!dbFight.isCancelled && !fightIsInScrapedData) {
-        console.log(`  ⚠️  Fight missing from scraped data (NOT auto-cancelling): ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
+        console.log(`  ⚠️  Fight missing from scraped data: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
+
+        // Only mark as cancelled if event has started (to avoid false positives before event begins)
+        if (event.hasStarted) {
+          console.log(`  ❌ Marking fight as CANCELLED: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
+
+          await prisma.fight.update({
+            where: { id: dbFight.id },
+            data: {
+              isCancelled: true,
+            }
+          });
+
+          cancelledCount++;
+        } else {
+          console.log(`  ℹ️  Event hasn't started yet, not marking as cancelled (might be missing from preliminary data)`);
+        }
       }
     }
 
