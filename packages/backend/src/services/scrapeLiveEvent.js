@@ -90,6 +90,17 @@ async function scrapeLiveEvent(eventUrl, outputDir) {
       // Check if event is complete by looking at all fights
       let isComplete = false;
 
+      // Debug: collect all sections found
+      const debugSections = [];
+      Array.from(fightCard.children).forEach(section => {
+        debugSections.push({
+          tagName: section.tagName,
+          className: section.className,
+          id: section.id || null,
+          fightCount: section.querySelectorAll('.c-listing-fight').length
+        });
+      });
+
       // Process each section
       Array.from(fightCard.children).forEach(section => {
         if (section.classList.contains('anchors-bar')) return;
@@ -203,9 +214,17 @@ async function scrapeLiveEvent(eventUrl, outputDir) {
         isComplete,
         status: isComplete ? 'Complete' : hasStarted ? 'Live' : 'Upcoming',
         fights: allFights,
-        scrapedAt: new Date().toISOString()
+        scrapedAt: new Date().toISOString(),
+        debugSections
       };
     });
+
+    // Log debug info about sections found
+    console.log('[SCRAPER] Sections found in fight-card:');
+    for (const section of eventData.debugSections || []) {
+      console.log(`  - ${section.className || '(no class)'}: ${section.fightCount} fights`);
+    }
+    console.log(`[SCRAPER] Total fights scraped: ${eventData.fights?.length || 0}`);
 
     // Now expand live fights to get round/time details
     for (let i = 0; i < eventData.fights.length; i++) {
