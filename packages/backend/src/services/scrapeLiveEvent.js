@@ -154,16 +154,18 @@ async function scrapeLiveEvent(eventUrl, outputDir) {
               winner = blueName;
             }
 
-            // Extract result details (round/method) for informational purposes only
+            // Extract result details (round/method/time)
             const roundResultEl = element.querySelector('.c-listing-fight__result-text.round');
             const methodResultEl = element.querySelector('.c-listing-fight__result-text.method');
+            const timeResultEl = element.querySelector('.c-listing-fight__result-text.time');
             const roundNum = roundResultEl?.textContent?.trim();
             const method = methodResultEl?.textContent?.trim();
+            const time = timeResultEl?.textContent?.trim();
 
             result = {
               winner: winner,
               method: method || null,
-              time: null,
+              time: time || null,
               round: roundNum ? parseInt(roundNum, 10) : null
             };
 
