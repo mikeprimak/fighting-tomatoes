@@ -4,8 +4,8 @@ name: UFC Live Tracker
 
 on:
   schedule:
-    # Run every 3 minutes
-    - cron: '*/3 * * * *'
+    # Run every 5 minutes (GitHub's minimum interval)
+    - cron: '*/5 * * * *'
   workflow_dispatch:
     # Allow manual trigger with optional event ID override
     inputs:
