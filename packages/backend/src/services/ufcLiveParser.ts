@@ -365,9 +365,9 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
       console.log(`  🔎 Looking for fight: ${fightUpdate.fighterAName} vs ${fightUpdate.fighterBName} (hasStarted: ${fightUpdate.hasStarted}, isComplete: ${fightUpdate.isComplete})`);
 
       // Create a signature to track which fights we've seen in the scraped data
-      // Use last names only to match the DB signature format
-      const getLastName = (fullName: string) => fullName.toLowerCase().trim().split(' ').pop() || '';
-      const fightSignature = [getLastName(fightUpdate.fighterAName), getLastName(fightUpdate.fighterBName)]
+      // Use full names (normalized) - same approach as daily scraper
+      const fightSignature = [fightUpdate.fighterAName, fightUpdate.fighterBName]
+        .map(n => n.toLowerCase().trim())
         .sort()
         .join('|');
       scrapedFightSignatures.add(fightSignature);
@@ -563,12 +563,11 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         continue;
       }
 
-      // Create signature for this DB fight (last word of lastName, sorted)
-      // Use last word only to match scraped data format (handles "Saint Denis" → "denis")
-      const dbFightSignature = [dbFight.fighter1.lastName, dbFight.fighter2.lastName]
-        .map(n => n.toLowerCase().trim().split(' ').pop() || '')
-        .sort()
-        .join('|');
+      // Create signature for this DB fight (full names, sorted)
+      // Same approach as daily scraper - construct full name from firstName + lastName
+      const fighter1FullName = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
+      const fighter2FullName = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+      const dbFightSignature = [fighter1FullName, fighter2FullName].sort().join('|');
 
       const fightIsInScrapedData = scrapedFightSignatures.has(dbFightSignature);
       console.log(`  🔎 DB fight "${dbFightSignature}" in scraped data: ${fightIsInScrapedData}`);
