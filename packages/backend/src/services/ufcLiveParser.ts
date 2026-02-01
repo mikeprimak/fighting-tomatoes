@@ -563,9 +563,10 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         continue;
       }
 
-      // Create signature for this DB fight (last names only, sorted)
+      // Create signature for this DB fight (last word of lastName, sorted)
+      // Use last word only to match scraped data format (handles "Saint Denis" → "denis")
       const dbFightSignature = [dbFight.fighter1.lastName, dbFight.fighter2.lastName]
-        .map(n => n.toLowerCase().trim())
+        .map(n => n.toLowerCase().trim().split(' ').pop() || '')
         .sort()
         .join('|');
 
