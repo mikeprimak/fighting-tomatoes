@@ -365,8 +365,9 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
       console.log(`  🔎 Looking for fight: ${fightUpdate.fighterAName} vs ${fightUpdate.fighterBName} (hasStarted: ${fightUpdate.hasStarted}, isComplete: ${fightUpdate.isComplete})`);
 
       // Create a signature to track which fights we've seen in the scraped data
-      const fightSignature = [fightUpdate.fighterAName, fightUpdate.fighterBName]
-        .map(n => n.toLowerCase().trim())
+      // Use last names only to match the DB signature format
+      const getLastName = (fullName: string) => fullName.toLowerCase().trim().split(' ').pop() || '';
+      const fightSignature = [getLastName(fightUpdate.fighterAName), getLastName(fightUpdate.fighterBName)]
         .sort()
         .join('|');
       scrapedFightSignatures.add(fightSignature);
@@ -552,6 +553,7 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
     // Also check for previously cancelled fights that have reappeared (un-cancel them)
 
     console.log(`  🔍 Checking for cancelled/un-cancelled fights...`);
+    console.log(`  📋 Scraped fight signatures: ${Array.from(scrapedFightSignatures).join(', ')}`);
     let cancelledCount = 0;
     let unCancelledCount = 0;
 
@@ -561,13 +563,14 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         continue;
       }
 
-      // Create signature for this DB fight
+      // Create signature for this DB fight (last names only, sorted)
       const dbFightSignature = [dbFight.fighter1.lastName, dbFight.fighter2.lastName]
         .map(n => n.toLowerCase().trim())
         .sort()
         .join('|');
 
       const fightIsInScrapedData = scrapedFightSignatures.has(dbFightSignature);
+      console.log(`  🔎 DB fight "${dbFightSignature}" in scraped data: ${fightIsInScrapedData}`);
 
       // Case 1: Fight was cancelled but has reappeared in scraped data -> UN-CANCEL it
       if (dbFight.isCancelled && fightIsInScrapedData) {
