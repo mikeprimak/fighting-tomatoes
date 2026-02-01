@@ -302,6 +302,7 @@ model Fight {
   orderOnCard     Int       // 1 = main event, higher numbers = earlier fights
   cardType        String?   // "Main Card", "Prelims", "Early Prelims" - from UFC.com scraper
   startTime       String?   // Calculated fight start time (e.g., "10:00 PM")
+  ufcFightId      String?   // UFC's data-fmid attribute for reliable fight matching
 
   // Betting odds
   fighter1Odds    String?   // "-350", "+250", etc.

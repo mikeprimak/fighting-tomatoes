@@ -491,6 +491,7 @@ async function importEvents(
           orderOnCard: fightData.order,
           cardType: fightData.cardType,  // "Main Card", "Prelims", or "Early Prelims" from UFC.com
           startTime: fightData.startTime,
+          ufcFightId: fightData.fightId,  // UFC's data-fmid for reliable live tracking
         },
         create: {
           eventId: event.id,
@@ -502,6 +503,7 @@ async function importEvents(
           scheduledRounds: fightData.isTitle ? 5 : 3,
           orderOnCard: fightData.order,
           cardType: fightData.cardType,  // "Main Card", "Prelims", or "Early Prelims" from UFC.com
+          ufcFightId: fightData.fightId,  // UFC's data-fmid for reliable live tracking
           startTime: fightData.startTime,
           hasStarted: false,
           isComplete: false,
