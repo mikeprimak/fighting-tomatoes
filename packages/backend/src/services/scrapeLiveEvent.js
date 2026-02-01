@@ -92,12 +92,12 @@ async function scrapeLiveEvent(eventUrl, outputDir) {
 
       // Process each section
       Array.from(fightCard.children).forEach(section => {
-        if (section.className === 'anchors-bar') return;
+        if (section.classList.contains('anchors-bar')) return;
 
         let cardType = '';
-        if (section.className === 'main-card') cardType = 'Main Card';
-        else if (section.className === 'fight-card-prelims') cardType = 'Prelims';
-        else if (section.className === 'fight-card-prelims-early') cardType = 'Early Prelims';
+        if (section.classList.contains('main-card')) cardType = 'Main Card';
+        else if (section.classList.contains('fight-card-prelims')) cardType = 'Prelims';
+        else if (section.classList.contains('fight-card-prelims-early')) cardType = 'Early Prelims';
 
         const fightElements = section.querySelectorAll('.c-listing-fight');
 
