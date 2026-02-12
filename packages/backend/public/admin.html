@@ -1650,6 +1650,46 @@
           <input type="text" id="fightTitleName" class="form-input" placeholder="e.g., UFC Heavyweight Championship">
         </div>
 
+        <!-- Fight Results Section (shown when editing existing fight) -->
+        <div id="fightResultsSection" style="display: none; border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">
+          <h3 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--accent-gold);">Fight Result</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Winner</label>
+              <select id="fightWinner" class="form-select">
+                <option value="">No result yet</option>
+                <option value="fighter1" id="winnerFighter1Option">Fighter 1</option>
+                <option value="fighter2" id="winnerFighter2Option">Fighter 2</option>
+                <option value="draw">Draw</option>
+                <option value="nc">No Contest</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Method</label>
+              <select id="fightMethod" class="form-select">
+                <option value="">Select...</option>
+                <option value="KO/TKO">KO/TKO</option>
+                <option value="Submission">Submission</option>
+                <option value="Decision - Unanimous">Decision - Unanimous</option>
+                <option value="Decision - Split">Decision - Split</option>
+                <option value="Decision - Majority">Decision - Majority</option>
+                <option value="DQ">Disqualification</option>
+                <option value="Technical Decision">Technical Decision</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Round</label>
+              <input type="number" id="fightResultRound" class="form-input" min="1" max="12" placeholder="e.g., 3">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Time</label>
+              <input type="text" id="fightResultTime" class="form-input" placeholder="e.g., 4:59">
+            </div>
+          </div>
+        </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeFightModal()">Cancel</button>
           <button type="button" class="btn btn-primary" onclick="saveFightAndContinue()">Save & Add Another</button>
@@ -2014,11 +2054,12 @@
             <span class="fight-order">#${fight.orderOnCard}</span>
             <div>
               <div class="fight-matchup">
-                ${escapeHtml(f1Name)} vs ${escapeHtml(f2Name)}
+                <span style="${fight.winner === fight.fighter1?.id ? 'font-weight: 700; color: var(--accent-green);' : ''}">${escapeHtml(f1Name)}</span> vs <span style="${fight.winner === fight.fighter2?.id ? 'font-weight: 700; color: var(--accent-green);' : ''}">${escapeHtml(f2Name)}</span>
                 ${fight.isTitle ? '<span class="fight-title-badge">TITLE</span>' : ''}
               </div>
               <div class="fight-details">
                 ${fight.weightClass || 'Catchweight'} • ${fight.scheduledRounds} rounds
+                ${fight.method ? `<span style="color: var(--accent-green); margin-left: 0.5rem;">${fight.method}${fight.round ? ' R' + fight.round : ''}${fight.time ? ' ' + fight.time : ''}</span>` : ''}
               </div>
             </div>
           </div>
@@ -2419,10 +2460,45 @@
           document.getElementById('fightIsTitle').checked = fight.isTitle || false;
           document.getElementById('fightTitleName').value = fight.titleName || '';
           toggleTitleName();
+
+          // Show results section and populate
+          document.getElementById('fightResultsSection').style.display = 'block';
+          const f1Label = f1 ? `${f1.firstName} ${f1.lastName}` : 'Fighter 1';
+          const f2Label = f2 ? `${f2.firstName} ${f2.lastName}` : 'Fighter 2';
+          document.getElementById('winnerFighter1Option').textContent = f1Label;
+          document.getElementById('winnerFighter2Option').textContent = f2Label;
+
+          // Set winner dropdown
+          const winnerSelect = document.getElementById('fightWinner');
+          if (fight.winner === fight.fighter1?.id) {
+            winnerSelect.value = 'fighter1';
+          } else if (fight.winner === fight.fighter2?.id) {
+            winnerSelect.value = 'fighter2';
+          } else if (fight.winner === 'draw') {
+            winnerSelect.value = 'draw';
+          } else if (fight.winner === 'nc') {
+            winnerSelect.value = 'nc';
+          } else {
+            winnerSelect.value = '';
+          }
+
+          document.getElementById('fightMethod').value = fight.method || '';
+          // If method isn't in the dropdown options, add it as custom
+          const methodSelect = document.getElementById('fightMethod');
+          if (fight.method && !Array.from(methodSelect.options).some(o => o.value === fight.method)) {
+            const opt = document.createElement('option');
+            opt.value = fight.method;
+            opt.textContent = fight.method;
+            methodSelect.appendChild(opt);
+            methodSelect.value = fight.method;
+          }
+          document.getElementById('fightResultRound').value = fight.round || '';
+          document.getElementById('fightResultTime').value = fight.time || '';
         }
       } else {
         document.getElementById('fightModalTitle').textContent = 'Add Fight';
         document.getElementById('fightId').value = '';
+        document.getElementById('fightResultsSection').style.display = 'none';
         // Auto-set order to next available
         const maxOrder = Math.max(0, ...selectedEvent.fights.map(f => f.orderOnCard || 0));
         document.getElementById('fightOrder').value = maxOrder + 1;
@@ -2466,6 +2542,31 @@
         isTitle: document.getElementById('fightIsTitle').checked,
         titleName: document.getElementById('fightTitleName').value || undefined,
       };
+
+      // Include fight results if editing an existing fight
+      if (fightId) {
+        const winnerValue = document.getElementById('fightWinner').value;
+        if (winnerValue === 'fighter1') {
+          data.winner = fighter1Id;
+        } else if (winnerValue === 'fighter2') {
+          data.winner = fighter2Id;
+        } else if (winnerValue === 'draw' || winnerValue === 'nc') {
+          data.winner = winnerValue;
+        } else {
+          data.winner = null;
+        }
+
+        data.method = document.getElementById('fightMethod').value || null;
+        const resultRound = document.getElementById('fightResultRound').value;
+        data.round = resultRound ? parseInt(resultRound) : null;
+        data.time = document.getElementById('fightResultTime').value || null;
+
+        // Auto-set completion status based on results
+        if (data.winner && data.method) {
+          data.hasStarted = true;
+          data.isComplete = true;
+        }
+      }
 
       try {
         const url = fightId ? `${API_BASE}/admin/fights/${fightId}` : `${API_BASE}/admin/fights`;
