@@ -408,11 +408,16 @@ export default function UpcomingEventsScreen() {
         // Lazy loading - load more events when reaching end
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
-        // Enable clipping for better scroll performance
-        removeClippedSubviews={true}
-        windowSize={5}
+        // Disable virtualization optimizations to prevent scroll jumping
+        // with variable height items (each event section has many fight cards)
+        removeClippedSubviews={false}
+        windowSize={21}
         maxToRenderPerBatch={10}
         initialNumToRender={5}
+        // Helps maintain scroll position when new pages load
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+        }}
       />
       )}
     </SafeAreaView>

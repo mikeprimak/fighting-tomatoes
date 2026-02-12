@@ -582,27 +582,44 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
 
         // Get image - look for nearby img elements
         // BKFC uses bkfc-cdn.gigcasters.com for images, prefer 400x400 versions
+        // IMPORTANT: Search from most specific container outward to avoid
+        // grabbing the same shared fight-card image for both fighters
         let imageUrl = null;
-        const container = link.closest('[class*="matchup"], [class*="fight"], [class*="bout"], [class*="athlete"]') ||
-                         link.parentElement?.parentElement;
 
-        if (container) {
+        // Helper to find best image in a container
+        function findBestImage(container) {
+          if (!container) return null;
+          let fallback = null;
           const imgs = container.querySelectorAll('img');
           for (const img of imgs) {
             const src = img.src || img.getAttribute('data-src') || '';
-            // Skip flags, icons, logos
             if (src && !src.includes('flag') && !src.includes('icon') && !src.includes('logo') && !src.includes('sponsor')) {
-              // Prioritize 400x400 profile images from BKFC CDN
               if (src.includes('bkfc-cdn.gigcasters.com') && src.includes('400x400')) {
-                imageUrl = src;
-                break;
+                return src;
               }
-              // Otherwise take any valid image (but keep looking for 400x400)
-              if (!imageUrl) {
-                imageUrl = src;
-              }
+              if (!fallback) fallback = src;
             }
           }
+          return fallback;
+        }
+
+        // Try 1: Image inside the link itself
+        imageUrl = findBestImage(link);
+
+        // Try 2: Link's direct parent (fighter-specific wrapper)
+        if (!imageUrl) {
+          imageUrl = findBestImage(link.parentElement);
+        }
+
+        // Try 3: Grandparent (still likely fighter-specific)
+        if (!imageUrl) {
+          imageUrl = findBestImage(link.parentElement?.parentElement);
+        }
+
+        // Try 4: Broader fight container (may contain images for BOTH fighters - less reliable)
+        if (!imageUrl) {
+          const container = link.closest('[class*="matchup"], [class*="fight"], [class*="bout"], [class*="athlete"]');
+          imageUrl = findBestImage(container);
         }
 
         // Try to get record from nearby text
