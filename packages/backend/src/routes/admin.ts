@@ -63,6 +63,10 @@ const CreateFightSchema = z.object({
 const UpdateFightSchema = CreateFightSchema.partial().extend({
   hasStarted: z.boolean().optional(),
   isComplete: z.boolean().optional(),
+  winner: z.string().nullable().optional(),
+  method: z.string().nullable().optional(),
+  round: z.number().int().min(1).max(12).nullable().optional(),
+  time: z.string().nullable().optional(),
 });
 
 const CreateFighterSchema = z.object({
