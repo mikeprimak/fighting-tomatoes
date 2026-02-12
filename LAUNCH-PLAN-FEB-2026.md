@@ -65,6 +65,8 @@ node update-user-stats.js
 | 2.3 | **Reset Password flow** | Low | FIXED | vercel.json cleanUrls + rewrites (Jan 20) |
 | 2.4 | **Email deliverability** | Low | FIXED | Switched to Resend, SPF/DKIM/DMARC configured (Jan 20) |
 | 2.5 | **Hidden Matchroom events** | Info | DONE | 6 events hidden via `isVisible` flag |
+| 2.6 | **BKFC duplicate fighter images** | Medium | FIXED | Scraper bug: event page image extraction grabbed same fight-card image for both fighters. Fixed scraper to search from fighter-specific containers outward. Set 13 affected fighters' images to null (placeholder) until next scraper run provides correct individual headshots. |
+| 2.7 | **Jumpy scrolling on fight lists** | Medium | FIXED | Upcoming screen had aggressive virtualization (`removeClippedSubviews={true}`, `windowSize={5}`) causing items to unmount/remount while scrolling. Changed to match completed screen settings (`removeClippedSubviews={false}`, `windowSize={21}`, `maintainVisibleContentPosition`). |
 
 ### Bug Hunt Checklist (Before Reddit Launch)
 
