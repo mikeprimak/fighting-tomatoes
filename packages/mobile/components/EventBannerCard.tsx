@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, Image, StyleSheet, useWindowDimensions } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
@@ -97,7 +97,7 @@ const formatTime = (dateString: string) => {
   return `${hour12}:${minutes.toString().padStart(2, '0')}${ampm}`;
 };
 
-export function EventBannerCard({
+export const EventBannerCard = memo(function EventBannerCard({
   event,
   statusBadge,
   onPress,
@@ -173,7 +173,7 @@ export function EventBannerCard({
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
