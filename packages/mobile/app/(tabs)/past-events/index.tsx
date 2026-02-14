@@ -158,9 +158,9 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
     : fights.filter((f: Fight) => f.orderOnCard > 5);
   const earlyPrelims = hasEarlyPrelims ? fights.filter((f: Fight) => f.orderOnCard > 9) : [];
 
-  const handleFightPress = (fight: Fight) => {
+  const handleFightPress = React.useCallback((fight: Fight) => {
     router.push(`/fight/${fight.id}?mode=completed`);
-  };
+  }, [router]);
 
   const styles = createStyles(colors);
 
@@ -497,16 +497,13 @@ export default function PastEventsScreen() {
         keyboardShouldPersistTaps="handled"
         onEndReached={viewMode === 'recent' ? handleLoadMore : undefined}
         onEndReachedThreshold={0.5}
-        // Disable virtualization optimizations to prevent scroll jumping
-        // with variable height items
-        removeClippedSubviews={false}
-        windowSize={21}
-        maxToRenderPerBatch={10}
-        initialNumToRender={5}
-        // Helps maintain scroll position when content changes
-        maintainVisibleContentPosition={{
-          minIndexForVisible: 0,
-        }}
+        // Virtualization settings - keep render window small so off-screen
+        // items are unmounted as more pages lazy-load in
+        removeClippedSubviews={true}
+        windowSize={5}
+        maxToRenderPerBatch={3}
+        updateCellsBatchingPeriod={100}
+        initialNumToRender={3}
       />
     </SafeAreaView>
   );
