@@ -34,7 +34,7 @@ Three things must happen before promoting the app and recruiting Reddit testers:
 | 1.3 | **Verify recent events are complete** - UFC 324, 325, and any events since Jan 28 must show as completed with results | High | TODO |
 | 1.4 | **Run update-rating-stats.js** after any data changes | High | TODO |
 | 1.5 | **Migrate reviews** (optional) - Use mysqldump to export, then import locally | Low | TODO |
-| 1.6 | **Spot-check 10 recent events** - Open app, verify fights have correct status/results/ratings | High | TODO |
+| 1.6 | **Spot-check 10 recent events** - Open app, verify fights have correct status/results/ratings | High | DONE - Feb 14. All 20 most recent events have correct fights, both fighters, banner images. Some missing fighter headshots (BKFC, PFL Africa) show placeholder — acceptable. |
 | 1.7 | **Update user stats** - Run update-user-stats.js so profiles show correct counts | Medium | TODO |
 
 ### Commands Reference
@@ -60,13 +60,13 @@ node update-user-stats.js
 
 | # | Bug | Severity | Status | Notes |
 |---|-----|----------|--------|-------|
-| 2.1 | **UFC 324 not in completed fights** | High | TODO | `hasStarted: false`, `isComplete: false` - needs to be marked complete with results |
-| 2.2 | **Duplicate fights in some events** | Medium | TODO | UFC 322 has two copies of same fight |
+| 2.1 | **UFC 324 not in completed fights** | High | FIXED | Marked complete with results |
+| 2.2 | **Duplicate fights in some events** | Medium | FIXED | Duplicates cleaned up |
 | 2.3 | **Reset Password flow** | Low | FIXED | vercel.json cleanUrls + rewrites (Jan 20) |
 | 2.4 | **Email deliverability** | Low | FIXED | Switched to Resend, SPF/DKIM/DMARC configured (Jan 20) |
 | 2.5 | **Hidden Matchroom events** | Info | DONE | 6 events hidden via `isVisible` flag |
 | 2.6 | **BKFC duplicate fighter images** | Medium | FIXED | Scraper bug: event page image extraction grabbed same fight-card image for both fighters. Fixed scraper to search from fighter-specific containers outward. Set 13 affected fighters' images to null (placeholder) until next scraper run provides correct individual headshots. |
-| 2.7 | **Jumpy scrolling on fight lists** | Medium | FIXED | Upcoming screen had aggressive virtualization (`removeClippedSubviews={true}`, `windowSize={5}`) causing items to unmount/remount while scrolling. Changed to match completed screen settings (`removeClippedSubviews={false}`, `windowSize={21}`, `maintainVisibleContentPosition`). |
+| 2.7 | **Jumpy scrolling on fight lists** | Medium | FIXED | Two-part fix: (1) Feb 12 - Removed dead code from fight cards (bell feature, toast animations, forceUpdate timer, unused hooks). (2) Feb 14 - Re-enabled FlatList virtualization (`removeClippedSubviews=true`, `windowSize=5`), removed `maintainVisibleContentPosition` (designed for chat-style prepended items, caused jank with appended pagination), memoized `EventBannerCard`, stabilized callbacks. Scrolling now stays smooth after multiple lazy loads. |
 
 ### Bug Hunt Checklist (Before Reddit Launch)
 

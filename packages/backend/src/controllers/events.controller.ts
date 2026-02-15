@@ -30,14 +30,6 @@ export const getEvents = async (req: Request, res: Response) => {
     const events = await prisma.event.findMany({
       where,
       include: {
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            shortName: true,
-            logoUrl: true,
-          }
-        },
         fights: {
           where: {
             isCancelled: false
@@ -88,14 +80,6 @@ export const getEventById = async (req: Request, res: Response) => {
     const event = await prisma.event.findUnique({
       where: { id },
       include: {
-        organization: {
-          select: {
-            id: true,
-            name: true,
-            shortName: true,
-            logoUrl: true,
-          }
-        },
         fights: {
           where: {
             isCancelled: false
