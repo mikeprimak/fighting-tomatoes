@@ -7,6 +7,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { TapologyEventData, TapologyFight } from './tapologyLiveScraper';
+import { stripDiacritics } from '../utils/fighterMatcher';
 
 const prisma = new PrismaClient();
 
@@ -29,12 +30,10 @@ function getLastName(fullName: string): string {
 }
 
 /**
- * Normalize name for matching (remove accents, lowercase)
+ * Normalize name for matching (remove accents including ł/đ/ø/æ/ß, lowercase)
  */
 function normalizeName(name: string): string {
-  return name
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+  return stripDiacritics(name)
     .toLowerCase()
     .trim();
 }

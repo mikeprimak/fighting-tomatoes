@@ -3,6 +3,7 @@ import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
+import { stripDiacritics } from '../utils/fighterMatcher';
 
 const prisma = new PrismaClient();
 
@@ -167,7 +168,7 @@ function parseBKFCFighterName(
 
   if (nameParts.length === 1) {
     // Single-name fighters (e.g., "Tawanchai") - store in lastName for proper sorting
-    return { firstName: '', lastName: nameParts[0], nickname };
+    return { firstName: '', lastName: stripDiacritics(nameParts[0]), nickname };
   }
 
   // Handle suffixes like Jr, Sr, III
@@ -177,10 +178,10 @@ function parseBKFCFighterName(
     suffix = ' ' + nameParts.pop();
   }
 
-  const firstName = nameParts[0];
-  const lastName = nameParts.slice(1).join(' ') + suffix;
+  const firstName = stripDiacritics(nameParts[0]);
+  const lastName = stripDiacritics((nameParts.slice(1).join(' ') + suffix).trim());
 
-  return { firstName, lastName: lastName.trim(), nickname };
+  return { firstName, lastName, nickname };
 }
 
 /**

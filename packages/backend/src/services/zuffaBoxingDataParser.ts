@@ -2,6 +2,7 @@
 import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { stripDiacritics } from '../utils/fighterMatcher';
 
 const prisma = new PrismaClient();
 
@@ -64,13 +65,11 @@ interface ScrapedZuffaAthletesData {
 
 /**
  * Normalize name by removing accents/diacritics for consistent matching
- * "Cárdenas" -> "Cardenas", "José" -> "Jose"
+ * Uses stripDiacritics which also handles ł, đ, ø, æ, ß
+ * "Cárdenas" -> "Cardenas", "José" -> "Jose", "Błachowicz" -> "Blachowicz"
  */
 function normalizeName(name: string): string {
-  return name
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacritical marks
-    .trim();
+  return stripDiacritics(name).trim();
 }
 
 /**

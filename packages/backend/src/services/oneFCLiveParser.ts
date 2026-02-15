@@ -6,6 +6,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { OneFCEventData, OneFCFightData } from './oneFCLiveScraper';
+import { stripDiacritics } from '../utils/fighterMatcher';
 
 const prisma = new PrismaClient();
 
@@ -15,12 +16,10 @@ const prisma = new PrismaClient();
  * Find fight by fighter names (matches by last name, handles single-name fighters)
  */
 function findFightByFighters(dbFights: any[], fighterAName: string, fighterBName: string) {
-  const normalize = (name: string) => name.toLowerCase().trim();
-
   // Extract last names (or full name for single-name fighters)
   const getLastName = (fullName: string) => {
     const parts = fullName.trim().split(/\s+/);
-    return parts[parts.length - 1].toLowerCase();
+    return stripDiacritics(parts[parts.length - 1]).toLowerCase();
   };
 
   const scraperALast = getLastName(fighterAName);
@@ -47,7 +46,7 @@ function getWinnerFighterId(
 ): string | null {
   if (!scrapedFight.result?.winnerSide) return null;
 
-  const scraperALast = scrapedFight.fighterA.lastName.toLowerCase();
+  const scraperALast = stripDiacritics(scrapedFight.fighterA.lastName).toLowerCase();
   const dbF1Last = fighter1.lastName.toLowerCase();
 
   // Check if scraperA matches dbF1
@@ -172,7 +171,7 @@ export async function parseOneFCLiveData(
 
       // Create a signature to track which fights we've seen in the scraped data
       const fightSignature = [fighterALast, fighterBLast]
-        .map(n => n.toLowerCase().trim())
+        .map(n => stripDiacritics(n).toLowerCase().trim())
         .sort()
         .join('|');
       scrapedFightSignatures.add(fightSignature);

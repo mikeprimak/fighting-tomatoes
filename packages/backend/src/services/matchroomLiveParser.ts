@@ -8,6 +8,7 @@
 
 import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import { MatchroomEventData, MatchroomFightData } from './matchroomLiveScraper';
+import { stripDiacritics } from '../utils/fighterMatcher';
 
 const prisma = new PrismaClient();
 
@@ -44,7 +45,7 @@ function parseBoxerName(fullName: string): { firstName: string; lastName: string
   }
 
   if (nameParts.length === 1) {
-    return { firstName: '', lastName: nameParts[0], nickname };
+    return { firstName: '', lastName: stripDiacritics(nameParts[0]), nickname };
   }
 
   // Handle suffixes like Jr, Sr, III
@@ -54,8 +55,8 @@ function parseBoxerName(fullName: string): { firstName: string; lastName: string
     suffix = ' ' + nameParts.pop();
   }
 
-  const firstName = nameParts[0];
-  const lastName = nameParts.slice(1).join(' ') + suffix;
+  const firstName = stripDiacritics(nameParts[0]);
+  const lastName = stripDiacritics((nameParts.slice(1).join(' ') + suffix).trim());
 
   return { firstName, lastName: lastName.trim(), nickname };
 }
@@ -64,7 +65,7 @@ function parseBoxerName(fullName: string): { firstName: string; lastName: string
  * Find fight by fighter names (matches by last name)
  */
 function findFightByFighters(fights: any[], fighter1Name: string, fighter2Name: string) {
-  const normalize = (name: string) => name.toLowerCase().trim();
+  const normalize = (name: string) => stripDiacritics(name).toLowerCase().trim();
 
   return fights.find(fight => {
     const f1LastName = fight.fighter1.lastName.toLowerCase();
@@ -88,7 +89,7 @@ function findFightByFighters(fights: any[], fighter1Name: string, fighter2Name: 
 function getWinnerFighterId(winnerName: string, fighter1: any, fighter2: any): string | null {
   if (!winnerName) return null;
 
-  const normalize = (name: string) => name.toLowerCase().trim();
+  const normalize = (name: string) => stripDiacritics(name).toLowerCase().trim();
   const winnerLast = normalize(winnerName).split(' ').pop() || '';
 
   if (fighter1.lastName.toLowerCase() === winnerLast) {

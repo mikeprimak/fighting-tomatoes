@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
 import { TBA_FIGHTER_ID, TBA_FIGHTER_NAME, isTBAFighter } from '../constants/tba';
+import { stripDiacritics } from '../utils/fighterMatcher';
 
 const prisma = new PrismaClient();
 
@@ -202,8 +203,8 @@ async function importOktagonFighters(
   console.log(`\n📦 Importing ${athletesData.athletes.length} OKTAGON fighters...`);
 
   for (const athlete of athletesData.athletes) {
-    const firstName = athlete.firstName || '';
-    const lastName = athlete.lastName || '';
+    const firstName = stripDiacritics(athlete.firstName || '');
+    const lastName = stripDiacritics(athlete.lastName || '');
     const recordParts = parseRecord(athlete.record);
 
     // Skip if no valid name
@@ -381,8 +382,8 @@ async function importOktagonEvents(
         const fighter1 = await prisma.fighter.findUnique({
           where: {
             firstName_lastName: {
-              firstName: fightData.fighterA.firstName,
-              lastName: fightData.fighterA.lastName,
+              firstName: stripDiacritics(fightData.fighterA.firstName),
+              lastName: stripDiacritics(fightData.fighterA.lastName),
             }
           }
         });
@@ -397,8 +398,8 @@ async function importOktagonEvents(
         const fighter2 = await prisma.fighter.findUnique({
           where: {
             firstName_lastName: {
-              firstName: fightData.fighterB.firstName,
-              lastName: fightData.fighterB.lastName,
+              firstName: stripDiacritics(fightData.fighterB.firstName),
+              lastName: stripDiacritics(fightData.fighterB.lastName),
             }
           }
         });
@@ -413,16 +414,16 @@ async function importOktagonEvents(
       if (!fighter1Id) {
         const recordParts = parseRecord(fightData.fighterA.record);
         const nameParts = fightData.fighterA.name.split(' ').filter((p: string) => p.length > 0);
-        let firstName = fightData.fighterA.firstName || '';
-        let lastName = fightData.fighterA.lastName || '';
+        let firstName = stripDiacritics(fightData.fighterA.firstName || '');
+        let lastName = stripDiacritics(fightData.fighterA.lastName || '');
         if (!firstName && !lastName && nameParts.length > 0) {
           if (nameParts.length === 1) {
             // Single-name fighter - store in lastName
             firstName = '';
-            lastName = nameParts[0];
+            lastName = stripDiacritics(nameParts[0]);
           } else {
-            firstName = nameParts[0];
-            lastName = nameParts.slice(1).join(' ');
+            firstName = stripDiacritics(nameParts[0]);
+            lastName = stripDiacritics(nameParts.slice(1).join(' '));
           }
         }
         const fighter1 = await prisma.fighter.upsert({
@@ -455,16 +456,16 @@ async function importOktagonEvents(
       if (!fighter2Id && !isFighterBTBA) {
         const recordParts = parseRecord(fightData.fighterB.record);
         const nameParts = fightData.fighterB.name.split(' ').filter((p: string) => p.length > 0);
-        let firstName = fightData.fighterB.firstName || '';
-        let lastName = fightData.fighterB.lastName || '';
+        let firstName = stripDiacritics(fightData.fighterB.firstName || '');
+        let lastName = stripDiacritics(fightData.fighterB.lastName || '');
         if (!firstName && !lastName && nameParts.length > 0) {
           if (nameParts.length === 1) {
             // Single-name fighter - store in lastName
             firstName = '';
-            lastName = nameParts[0];
+            lastName = stripDiacritics(nameParts[0]);
           } else {
-            firstName = nameParts[0];
-            lastName = nameParts.slice(1).join(' ');
+            firstName = stripDiacritics(nameParts[0]);
+            lastName = stripDiacritics(nameParts.slice(1).join(' '));
           }
         }
         const fighter2 = await prisma.fighter.upsert({
