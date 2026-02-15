@@ -45,13 +45,39 @@ export function similarityScore(str1: string, str2: string): number {
   return 1 - (distance / maxLen);
 }
 
+/**
+ * Strip diacritics from a name while preserving casing and spaces.
+ * Used when storing names in the DB so they're human-readable but ASCII-safe.
+ * Examples: "Błachowicz" → "Blachowicz", "Farès" → "Fares", "Rakić" → "Rakic"
+ */
+export function stripDiacritics(name: string): string {
+  if (!name) return '';
+  return name
+    // Replace special chars that NFKD doesn't decompose
+    .replace(/[łŁ]/g, m => m === 'ł' ? 'l' : 'L')
+    .replace(/[đĐ]/g, m => m === 'đ' ? 'd' : 'D')
+    .replace(/[øØ]/g, m => m === 'ø' ? 'o' : 'O')
+    .replace(/[æÆ]/g, m => m === 'æ' ? 'ae' : 'Ae')
+    .replace(/[ßẞ]/g, 'ss')
+    // Apply Unicode NFKD decomposition to split diacritics into base + combining mark
+    .normalize('NFKD')
+    // Strip combining marks, leaving ASCII equivalents
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
 // Normalize a name for comparison (remove accents, lowercase, trim)
 export function normalizeName(name: string): string {
   return name
+    // Replace special chars that NFKD doesn't decompose
+    .replace(/[łŁ]/g, 'l')
+    .replace(/[đĐ]/g, 'd')
+    .replace(/[øØ]/g, 'o')
+    .replace(/[æÆ]/g, 'ae')
+    .replace(/[ßẞ]/g, 'ss')
     .toLowerCase()
     .trim()
     // Remove accents/diacritics
-    .normalize('NFD')
+    .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     // Remove common suffixes/prefixes
     .replace(/^(the|el|la|le)\s+/i, '')

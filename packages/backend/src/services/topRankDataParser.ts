@@ -3,6 +3,7 @@ import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
+import { stripDiacritics } from '../utils/fighterMatcher';
 
 const prisma = new PrismaClient();
 
@@ -210,12 +211,12 @@ function parseTopRankFighterName(
       );
 
       if (parts.length >= 2) {
-        const firstName = parts[0].trim();
-        const lastName = parts.slice(1).join(' ').trim();
+        const firstName = stripDiacritics(parts[0].trim());
+        const lastName = stripDiacritics(parts.slice(1).join(' ').trim());
         return { firstName, lastName };
       } else if (parts.length === 1) {
         // Single-name fighters - store in lastName for proper sorting
-        return { firstName: '', lastName: parts[0].trim() };
+        return { firstName: '', lastName: stripDiacritics(parts[0].trim()) };
       }
     }
   }
@@ -224,9 +225,9 @@ function parseTopRankFighterName(
   const nicknameMatch = name.match(/^(.+?)\s+"([^"]+)"\s+(.+)$/);
   if (nicknameMatch) {
     return {
-      firstName: nicknameMatch[1].trim(),
+      firstName: stripDiacritics(nicknameMatch[1].trim()),
       nickname: nicknameMatch[2].trim(),
-      lastName: nicknameMatch[3].trim()
+      lastName: stripDiacritics(nicknameMatch[3].trim())
     };
   }
 
@@ -234,11 +235,11 @@ function parseTopRankFighterName(
   const nameParts = name.trim().split(/\s+/);
   if (nameParts.length === 1) {
     // Single-name fighters - store in lastName for proper sorting
-    return { firstName: '', lastName: nameParts[0].trim() };
+    return { firstName: '', lastName: stripDiacritics(nameParts[0].trim()) };
   }
 
-  const firstName = nameParts[0].trim();
-  const lastName = nameParts.slice(1).join(' ').trim();
+  const firstName = stripDiacritics(nameParts[0].trim());
+  const lastName = stripDiacritics(nameParts.slice(1).join(' ').trim());
   return { firstName, lastName };
 }
 

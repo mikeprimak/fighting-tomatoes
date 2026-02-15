@@ -6,6 +6,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { OktagonEventData, OktagonFightData } from './oktagonLiveScraper';
+import { stripDiacritics } from '../utils/fighterMatcher';
 
 const prisma = new PrismaClient();
 
@@ -15,7 +16,7 @@ const prisma = new PrismaClient();
  * Find fight by fighter names (matches by last name)
  */
 function findFightByFighters(fights: any[], fighter1Name: string, fighter2Name: string) {
-  const normalize = (name: string) => name.toLowerCase().trim();
+  const normalize = (name: string) => stripDiacritics(name).toLowerCase().trim();
 
   return fights.find(fight => {
     const f1LastName = fight.fighter1.lastName.toLowerCase();
@@ -36,7 +37,7 @@ function findFightByFighters(fights: any[], fighter1Name: string, fighter2Name: 
 function getWinnerFighterId(winnerLastName: string, fighter1: any, fighter2: any): string | null {
   if (!winnerLastName) return null;
 
-  const winnerLast = winnerLastName.toLowerCase().trim();
+  const winnerLast = stripDiacritics(winnerLastName).toLowerCase().trim();
 
   if (fighter1.lastName.toLowerCase() === winnerLast) {
     return fighter1.id;
@@ -163,7 +164,7 @@ export async function parseOktagonLiveData(
 
       // Create a signature to track which fights we've seen in the scraped data
       const fightSignature = [fighterALast, fighterBLast]
-        .map(n => n.toLowerCase().trim())
+        .map(n => stripDiacritics(n).toLowerCase().trim())
         .sort()
         .join('|');
       scrapedFightSignatures.add(fightSignature);

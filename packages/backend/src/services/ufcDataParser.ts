@@ -3,6 +3,7 @@ import { PrismaClient, WeightClass, Gender } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
+import { stripDiacritics } from '../utils/fighterMatcher';
 
 const prisma = new PrismaClient();
 
@@ -140,9 +141,9 @@ function parseFighterName(fullName: string): { firstName: string; lastName: stri
   const nicknameMatch = decodedName.match(/^(.+?)\s+"([^"]+)"\s+(.+)$/);
   if (nicknameMatch) {
     return {
-      firstName: nicknameMatch[1].trim(),
+      firstName: stripDiacritics(nicknameMatch[1].trim()),
       nickname: nicknameMatch[2].trim(),
-      lastName: nicknameMatch[3].trim()
+      lastName: stripDiacritics(nicknameMatch[3].trim())
     };
   }
 
@@ -150,11 +151,11 @@ function parseFighterName(fullName: string): { firstName: string; lastName: stri
   const parts = decodedName.trim().split(/\s+/);
   if (parts.length === 1) {
     // Single-name fighters (e.g., "Tawanchai") - store in lastName for proper sorting
-    return { firstName: '', lastName: parts[0] };
+    return { firstName: '', lastName: stripDiacritics(parts[0]) };
   }
 
-  const firstName = parts[0];
-  const lastName = parts.slice(1).join(' ');
+  const firstName = stripDiacritics(parts[0]);
+  const lastName = stripDiacritics(parts.slice(1).join(' '));
 
   return { firstName, lastName };
 }

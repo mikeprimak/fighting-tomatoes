@@ -3,6 +3,7 @@ import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
+import { stripDiacritics } from '../utils/fighterMatcher';
 
 const prisma = new PrismaClient();
 
@@ -150,11 +151,11 @@ function parseGoldenBoyFighterName(
 
   if (nameParts.length === 1) {
     // Single-name fighters - store in lastName for proper sorting
-    return { firstName: '', lastName: nameParts[0] };
+    return { firstName: '', lastName: stripDiacritics(nameParts[0]) };
   }
 
-  const firstName = nameParts[0];
-  const lastName = nameParts.slice(1).join(' ');
+  const firstName = stripDiacritics(nameParts[0]);
+  const lastName = stripDiacritics(nameParts.slice(1).join(' '));
   return { firstName, lastName };
 }
 

@@ -10,6 +10,7 @@
  */
 
 import { PrismaClient, WeightClass, Gender } from '@prisma/client';
+import { stripDiacritics } from '../utils/fighterMatcher';
 
 const prisma = new PrismaClient();
 
@@ -36,9 +37,9 @@ function parseFighterName(fullName: string): { firstName: string; lastName: stri
   const nicknameMatch = decodedName.match(/^(.+?)\s+"([^"]+)"\s+(.+)$/);
   if (nicknameMatch) {
     return {
-      firstName: nicknameMatch[1].trim(),
+      firstName: stripDiacritics(nicknameMatch[1].trim()),
       nickname: nicknameMatch[2].trim(),
-      lastName: nicknameMatch[3].trim()
+      lastName: stripDiacritics(nicknameMatch[3].trim())
     };
   }
 
@@ -46,11 +47,11 @@ function parseFighterName(fullName: string): { firstName: string; lastName: stri
   const parts = decodedName.trim().split(/\s+/);
   if (parts.length === 1) {
     // Single-name fighters (e.g., "Tawanchai") - store in lastName for proper sorting
-    return { firstName: '', lastName: parts[0] };
+    return { firstName: '', lastName: stripDiacritics(parts[0]) };
   }
 
-  const firstName = parts[0];
-  const lastName = parts.slice(1).join(' ');
+  const firstName = stripDiacritics(parts[0]);
+  const lastName = stripDiacritics(parts.slice(1).join(' '));
 
   return { firstName, lastName };
 }
@@ -183,7 +184,7 @@ async function findEventByName(eventName: string) {
  * @returns Matching fight or undefined
  */
 function findFightByFighters(fights: any[], fighter1Name: string, fighter2Name: string) {
-  const normalize = (name: string) => name.toLowerCase().trim();
+  const normalize = (name: string) => stripDiacritics(name).toLowerCase().trim();
 
   return fights.find(fight => {
     const f1LastName = fight.fighter1.lastName.toLowerCase();
@@ -266,7 +267,7 @@ async function findOrCreateFighter(
 function getWinnerFighterId(winnerName: string, fighter1: any, fighter2: any): string | null {
   if (!winnerName) return null;
 
-  const normalize = (name: string) => name.toLowerCase().trim();
+  const normalize = (name: string) => stripDiacritics(name).toLowerCase().trim();
   const winnerLast = normalize(winnerName).split(' ').pop() || '';
 
   if (fighter1.lastName.toLowerCase() === winnerLast) {
