@@ -1,18 +1,13 @@
 import React, { useEffect, useRef, useState, useMemo, memo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, Dimensions, Alert, ViewStyle } from 'react-native';
-import { FontAwesome, FontAwesome6, Entypo } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, ViewStyle } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiService } from '../../services/api';
-import { router } from 'expo-router';
-import { useAuth } from '../../store/AuthContext';
 import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { BaseFightCardProps } from './shared/types';
 import { getFighterImage, getFighterName, getFighterDisplayName, cleanFighterName, formatDate, getLastName, formatEventName } from './shared/utils';
 import { sharedStyles } from './shared/styles';
-import { LinearGradient } from 'expo-linear-gradient';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -109,11 +104,9 @@ function CompletedFightCard({
 }: CompletedFightCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { isAuthenticated } = useAuth();
-  const queryClient = useQueryClient();
   const { pendingRatingAnimationFightId, setPendingRatingAnimation } = usePredictionAnimation();
 
-  // Animation ref for rating animation
+  // Animation ref for rating animation (only allocated once via useRef)
   const ratingScaleAnim = useRef(new Animated.Value(1)).current;
 
   // Local formatMethod function for this component - shows "KO" instead of "KO/TKO"
@@ -130,20 +123,6 @@ function CompletedFightCard({
   // Image error states
   const [fighter1ImageError, setFighter1ImageError] = useState(false);
   const [fighter2ImageError, setFighter2ImageError] = useState(false);
-
-  // Toast notification state
-  const [toastMessage, setToastMessage] = useState<string>('');
-  const toastOpacity = useRef(new Animated.Value(0)).current;
-  const toastTranslateY = useRef(new Animated.Value(50)).current;
-
-  // Prediction button press state
-  const [isPredictionPressed, setIsPredictionPressed] = useState(false);
-
-  // Track when "Up next..." first appeared
-  const upNextStartTimeRef = useRef<number | null>(null);
-
-  // Animation for "Starting soon..." text pulse
-  const startingSoonPulseAnim = useRef(new Animated.Value(1)).current;
 
 
   // Pre-compute fighter full names to avoid repeated string concatenation
@@ -183,87 +162,7 @@ function CompletedFightCard({
     };
   }, [fight.userHypePrediction, (fight as any).userPredictedWinner, fight.fighter1.id, fight.fighter2.id, fighter1FullName, fighter2FullName]);
 
-  // Toast notification animation
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    toastOpacity.setValue(0);
-    toastTranslateY.setValue(50); // Start from below
-
-    Animated.parallel([
-      Animated.timing(toastOpacity, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.timing(toastTranslateY, { toValue: 0, duration: 400, useNativeDriver: true }), // Slide up to center (no offset)
-    ]).start();
-
-    setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
-        Animated.timing(toastTranslateY, { toValue: 0, duration: 0, useNativeDriver: true }),
-      ]).start(() => setToastMessage(''));
-    }, 1400);
-  };
-
-  // Follow/Unfollow mutation
-  const followMutation = useMutation({
-    mutationFn: async (isCurrentlyFollowing: boolean) => {
-      if (isCurrentlyFollowing) {
-        return await apiService.unfollowFight(fight.id);
-      } else {
-        return await apiService.followFight(fight.id);
-      }
-    },
-    onSuccess: async (data) => {
-      if (data.isFollowing) {
-        showToast('You will be notified before this fight.');
-      }
-      await queryClient.invalidateQueries({ queryKey: ['fights'] });
-      await queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
-      await queryClient.invalidateQueries({ queryKey: ['eventFights'] });
-      await queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
-    },
-  });
-
-  const handleBellPress = (e: any) => {
-    e.stopPropagation();
-    if (!isAuthenticated) return;
-    followMutation.mutate(fight.isFollowing || false);
-  };
-
-  // Get status message
-  const getUpcomingStatusMessage = () => {
-    if (!isNextFight || fight.hasStarted || fight.isComplete) {
-      upNextStartTimeRef.current = null;
-      return null;
-    }
-
-    if (hasLiveFight) {
-      upNextStartTimeRef.current = null;
-      return null;
-    }
-
-    if (!upNextStartTimeRef.current && lastCompletedFightTime) {
-      upNextStartTimeRef.current = Date.now();
-    }
-
-    if (upNextStartTimeRef.current) {
-      const secondsSinceStart = (Date.now() - upNextStartTimeRef.current) / 1000;
-      if (secondsSinceStart < 15) {
-        return 'Up next...';
-      } else {
-        return 'Starting soon...';
-      }
-    }
-
-    return null;
-  };
-
-  // Force re-render every second for next fight
-  const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
-  React.useEffect(() => {
-    if (isNextFight && !hasLiveFight && !fight.hasStarted) {
-      const interval = setInterval(forceUpdate, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [isNextFight, hasLiveFight, fight.hasStarted]);
+  // Note: Follow bell (useMutation, toast animations) removed - bell UI is disabled
 
   // Reset image errors
   useEffect(() => {
@@ -313,25 +212,6 @@ function CompletedFightCard({
       return () => clearTimeout(timer);
     }, [enableRatingAnimation, pendingRatingAnimationFightId, fight.id, ratingScaleAnim, setPendingRatingAnimation])
   );
-
-  // Pulsing animation for "Starting soon..."
-  useEffect(() => {
-    const statusMessage = getUpcomingStatusMessage();
-    if (statusMessage === 'Starting soon...') {
-      const pulse = Animated.loop(
-        Animated.sequence([
-          Animated.timing(startingSoonPulseAnim, { toValue: 0.4, duration: 1000, useNativeDriver: true }),
-          Animated.timing(startingSoonPulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
-        ])
-      );
-      pulse.start();
-      return () => {
-        pulse.stop();
-        startingSoonPulseAnim.setValue(1);
-      };
-    }
-  }, [getUpcomingStatusMessage(), startingSoonPulseAnim]);
-
 
 
   // Memoize image sources to avoid recalculation on every render
@@ -588,58 +468,6 @@ function CompletedFightCard({
 
           </View>
 
-        {/* Status message */}
-        {getUpcomingStatusMessage() && (
-          <View style={[sharedStyles.outcomeContainer, { marginTop: 2 }]}>
-            <Animated.Text
-              style={[
-                styles.statusText,
-                {
-                  color: colors.text,
-                  opacity: getUpcomingStatusMessage() === 'Starting soon...' ? startingSoonPulseAnim : 1
-                }
-              ]}
-              numberOfLines={1}
-            >
-              {getUpcomingStatusMessage()}
-            </Animated.Text>
-          </View>
-        )}
-
-        {/* Bell icon - hidden but functionality preserved */}
-        {false && isAuthenticated && (
-          <TouchableOpacity
-            style={styles.bellButton}
-            onPress={handleBellPress}
-            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-          >
-            <FontAwesome
-              name={fight.isFollowing ? "bell" : "bell-o"}
-              size={18}
-              color={fight.isFollowing ? '#F5C518' : colors.textSecondary}
-            />
-          </TouchableOpacity>
-        )}
-
-        {/* Toast Notification */}
-        {toastMessage !== '' && (
-          <Animated.View
-            style={[
-              styles.toastContainer,
-              {
-                backgroundColor: colors.primary,
-                opacity: toastOpacity,
-                transform: [{ translateY: toastTranslateY }],
-              },
-            ]}
-            pointerEvents="none"
-          >
-            <View style={styles.toastContent}>
-              <FontAwesome name="bell" size={18} color="#1a1a1a" />
-              <Text style={styles.toastText}>{toastMessage}</Text>
-            </View>
-          </Animated.View>
-        )}
       </View>
     </TouchableOpacity>
   );
