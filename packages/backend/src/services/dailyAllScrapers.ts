@@ -23,6 +23,7 @@ import { importMatchroomData } from './matchroomDataParser';
 import { importGoldenBoyData } from './goldenBoyDataParser';
 import { importTopRankData } from './topRankDataParser';
 import { importOktagonData } from './oktagonDataParser';
+import { importRizinData } from './rizinDataParser';
 
 const execAsync = promisify(exec);
 
@@ -35,7 +36,7 @@ export interface OrganizationScraperResults {
   error?: string;
 }
 
-type OrganizationType = 'BKFC' | 'PFL' | 'ONEFC' | 'MATCHROOM' | 'GOLDENBOY' | 'TOPRANK' | 'OKTAGON';
+type OrganizationType = 'BKFC' | 'PFL' | 'ONEFC' | 'MATCHROOM' | 'GOLDENBOY' | 'TOPRANK' | 'OKTAGON' | 'RIZIN';
 
 // Config for each organization's scraper
 const SCRAPER_CONFIG: Record<OrganizationType, {
@@ -84,6 +85,12 @@ const SCRAPER_CONFIG: Record<OrganizationType, {
     scraperFile: 'scrapeAllOktagonData.js',
     importFn: importOktagonData,
     displayName: 'OKTAGON MMA',
+    timeout: 1500000, // 25 minutes
+  },
+  RIZIN: {
+    scraperFile: 'scrapeAllRizinData.js',
+    importFn: importRizinData,
+    displayName: 'RIZIN Fighting Federation',
     timeout: 1500000, // 25 minutes
   },
 };
@@ -209,6 +216,10 @@ export async function runDailyOktagonScraper(): Promise<OrganizationScraperResul
   return runOrganizationScraper('OKTAGON');
 }
 
+export async function runDailyRizinScraper(): Promise<OrganizationScraperResults> {
+  return runOrganizationScraper('RIZIN');
+}
+
 /**
  * Run all organization scrapers sequentially
  * Used for manual full refresh
@@ -218,7 +229,7 @@ export async function runAllOrganizationScrapers(): Promise<OrganizationScraperR
   const startTime = Date.now();
 
   const results: OrganizationScraperResults[] = [];
-  const organizations: OrganizationType[] = ['BKFC', 'PFL', 'ONEFC', 'MATCHROOM', 'GOLDENBOY', 'TOPRANK', 'OKTAGON'];
+  const organizations: OrganizationType[] = ['BKFC', 'PFL', 'ONEFC', 'MATCHROOM', 'GOLDENBOY', 'TOPRANK', 'OKTAGON', 'RIZIN'];
 
   for (const org of organizations) {
     const result = await runOrganizationScraper(org);

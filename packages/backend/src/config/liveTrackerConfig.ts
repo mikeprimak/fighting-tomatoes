@@ -12,46 +12,54 @@ export type LiveTrackerType = 'ufc' | 'matchroom' | 'oktagon' | 'time-based' | '
 
 /**
  * Map of promotions to their tracker type.
- * - Real-time trackers (ufc, matchroom, oktagon): Scrape live data during events
+ *
+ * DEFAULT IS MANUAL — all events require admin to manually control fight statuses.
+ * To enable a live tracker for a promotion, change its value here or set
+ * trackerMode on individual events via the admin panel.
+ *
+ * Available modes:
+ * - manual: No automatic updates - admin manually enters results (DEFAULT)
  * - time-based: Auto-mark fights complete at section start times
- * - manual: No automatic updates - admin manually enters results
+ * - ufc/matchroom/oktagon: Promotion-specific live scrapers (auto-publish)
+ * - live: Use the promotion's default live scraper (auto-publish)
  */
 export const PROMOTION_TRACKER_CONFIG: Record<string, LiveTrackerType> = {
-  // UFC: Live tracking moved to GitHub Actions (Render IPs are blocked by UFC.com)
-  // The ufc-live-tracker.yml workflow runs every 5 minutes during events
-  // Time-based fallback remains active as backup on Render
-  'UFC': 'time-based',
-  'Matchroom': 'matchroom',
-  'Matchroom Boxing': 'matchroom',
-  'OKTAGON': 'oktagon',
-  'OKTAGON MMA': 'oktagon',
-
-  // Manual mode - no automatic updates, admin enters results
+  // All promotions default to manual until explicitly enabled.
+  // To enable a tracker, change 'manual' → the tracker type:
+  //   'UFC': 'ufc',           // UFC live scraper (GitHub Actions)
+  //   'Matchroom': 'matchroom', // Matchroom live scraper
+  //   'OKTAGON': 'oktagon',    // OKTAGON live scraper
+  //   'BKFC': 'time-based',    // Auto-complete at section times
+  'UFC': 'manual',
+  'Matchroom': 'manual',
+  'Matchroom Boxing': 'manual',
+  'OKTAGON': 'manual',
+  'OKTAGON MMA': 'manual',
   'Zuffa Boxing': 'manual',
-
-  // All others (BKFC, PFL, ONE, Golden Boy, Top Rank, etc.) will fall through
-  // to 'time-based' by default
+  'BKFC': 'manual',
+  'PFL': 'manual',
+  'ONE': 'manual',
+  'ONE Championship': 'manual',
+  'Golden Boy': 'manual',
+  'Golden Boy Promotions': 'manual',
+  'Top Rank': 'manual',
+  'Top Rank Boxing': 'manual',
 };
 
 /**
  * Get the tracker type for a given promotion.
- * Returns 'time-based' for unknown or null promotions.
+ * Returns 'manual' for unknown or null promotions.
  */
 export function getTrackerType(promotion: string | null): LiveTrackerType {
-  if (!promotion) return 'time-based';
+  if (!promotion) return 'manual';
 
   // Check exact match first
   if (PROMOTION_TRACKER_CONFIG[promotion]) {
     return PROMOTION_TRACKER_CONFIG[promotion];
   }
 
-  // Check partial matches (case-insensitive)
-  const p = promotion.toLowerCase();
-  if (p.includes('matchroom')) return 'matchroom';
-  if (p.includes('oktagon')) return 'oktagon';
-
-  // Default to time-based fallback
-  return 'time-based';
+  // Default to manual — admin controls everything until a tracker is explicitly enabled
+  return 'manual';
 }
 
 /**
