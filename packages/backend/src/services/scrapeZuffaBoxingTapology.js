@@ -117,6 +117,13 @@ async function scrapeEventsList(browser) {
         // Skip if no valid URL or name, or duplicate
         if (!eventUrl || !eventName || eventName.length < 3) return;
         if (seenUrls.has(eventUrl)) return;
+
+        // CRITICAL: Only include events that are actually Zuffa Boxing events.
+        // The Tapology promotion page has a sidebar calendar showing events from
+        // ALL promotions (KSW, Cage Warriors, LFA, etc.). Filter by URL slug
+        // since all Zuffa Boxing event URLs contain "zuffa" in the path.
+        if (!eventUrl.toLowerCase().includes('zuffa')) return;
+
         seenUrls.add(eventUrl);
 
         // Walk up to the parent container to find date and venue info
