@@ -299,3 +299,102 @@ export function getTimeBasedTimersInfo(): Array<{ eventId: string; timerCount: n
     timerCount: timers.length,
   }));
 }
+
+// ============== SCHEDULED START TIME CHECKER ==============
+
+let scheduledStartTimeInterval: NodeJS.Timeout | null = null;
+
+/**
+ * Check for fights whose scheduledStartTime has arrived and auto-flip them to "live".
+ * This runs on an interval and handles the per-fight scheduling approach where
+ * admins manually set expected start times for individual fights.
+ */
+export async function checkScheduledStartTimes(): Promise<number> {
+  try {
+    const now = new Date();
+
+    // Find fights that should be live: scheduledStartTime has passed, but fight hasn't started
+    const fightsToStart = await prisma.fight.findMany({
+      where: {
+        scheduledStartTime: { lte: now },
+        hasStarted: false,
+        isComplete: false,
+        isCancelled: false,
+        event: {
+          trackerMode: 'time-based',
+        },
+      },
+      include: {
+        fighter1: { select: { lastName: true } },
+        fighter2: { select: { lastName: true } },
+        event: { select: { id: true, name: true, hasStarted: true } },
+      },
+    });
+
+    if (fightsToStart.length === 0) return 0;
+
+    let updated = 0;
+
+    for (const fight of fightsToStart) {
+      // Mark fight as live (started but not complete)
+      await prisma.fight.update({
+        where: { id: fight.id },
+        data: {
+          hasStarted: true,
+          completionMethod: 'time-based',
+        },
+      });
+
+      // Also mark the event as started if it isn't already
+      if (!fight.event.hasStarted) {
+        await prisma.event.update({
+          where: { id: fight.event.id },
+          data: { hasStarted: true },
+        });
+      }
+
+      console.log(`[Scheduled] ${fight.event.name}: ${fight.fighter1.lastName} vs ${fight.fighter2.lastName} → LIVE (scheduled time reached)`);
+      updated++;
+    }
+
+    return updated;
+
+  } catch (error: any) {
+    console.error('[Scheduled] Error checking scheduled start times:', error.message);
+    return 0;
+  }
+}
+
+/**
+ * Start the scheduled start time checker interval.
+ * Runs every 60 seconds to check for fights that should go live.
+ */
+export function startScheduledStartTimeChecker(): void {
+  if (scheduledStartTimeInterval) return; // Already running
+
+  // Check immediately on startup
+  checkScheduledStartTimes().then(count => {
+    if (count > 0) console.log(`[Scheduled] Initial check: ${count} fights set to live`);
+  });
+
+  // Then check every 60 seconds
+  scheduledStartTimeInterval = setInterval(async () => {
+    const count = await checkScheduledStartTimes();
+    if (count > 0) {
+      console.log(`[Scheduled] Interval check: ${count} fights set to live`);
+    }
+  }, 60 * 1000);
+
+  console.log('[Scheduled] Start time checker started (60s interval)');
+}
+
+/**
+ * Stop the scheduled start time checker interval.
+ */
+export function stopScheduledStartTimeChecker(): void {
+  if (scheduledStartTimeInterval) {
+    clearInterval(scheduledStartTimeInterval);
+    scheduledStartTimeInterval = null;
+    console.log('[Scheduled] Start time checker stopped');
+  }
+}

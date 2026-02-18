@@ -340,6 +340,20 @@ model Fight {
   currentRound      Int?      // Current round in progress (1-5), null if not started or complete
   completedRounds   Int?      // Last completed round number (0-5), null if not started
 
+  // Scheduled start time (admin enters manually for time-based mode)
+  scheduledStartTime DateTime? // When this fight is expected to start (for time-based auto-flip to "live")
+
+  // Tracker shadow fields (live tracker writes here, admin publishes to main fields)
+  trackerHasStarted      Boolean?
+  trackerIsComplete      Boolean?
+  trackerWinner          String?    // mirrors 'winner'
+  trackerMethod          String?    // mirrors 'method'
+  trackerRound           Int?       // mirrors 'round'
+  trackerTime            String?    // mirrors 'time'
+  trackerCurrentRound    Int?       // mirrors 'currentRound'
+  trackerCompletedRounds Int?       // mirrors 'completedRounds'
+  trackerUpdatedAt       DateTime?
+
   // Media
   highlightUrl    String?
   thumbnailUrl    String?

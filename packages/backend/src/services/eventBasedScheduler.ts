@@ -157,7 +157,7 @@ async function startEventTracking(
   eventId: string,
   eventName: string,
   eventUrl: string,
-  trackerType: 'ufc' | 'matchroom' | 'oktagon'
+  trackerType: 'ufc' | 'matchroom' | 'oktagon' | 'live'
 ): Promise<void> {
   try {
     // Check if already tracking something (check all trackers)
@@ -433,7 +433,7 @@ export async function safetyCheckEvents(): Promise<void> {
     if (eventToTrack) {
       const trackerType = getPromotionType(eventToTrack.promotion);
       // Safety check only applies to live tracker events (time-based events use scheduled timers)
-      if (trackerType !== 'time-based') {
+      if (trackerType !== 'time-based' && trackerType !== 'manual') {
         console.log(`[Event Scheduler] Safety check found event to track: ${eventToTrack.name} (${trackerType})`);
         await startEventTracking(eventToTrack.id, eventToTrack.name, getEventUrl(eventToTrack), trackerType);
       }

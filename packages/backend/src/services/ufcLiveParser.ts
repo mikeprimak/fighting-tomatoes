@@ -11,6 +11,7 @@
 
 import { PrismaClient, WeightClass, Gender } from '@prisma/client';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
 
 const prisma = new PrismaClient();
 
@@ -321,6 +322,10 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
 
     console.log(`  ✓ Found event: ${event.name} (ID: ${event.id})`);
 
+    // Determine tracker mode for this event
+    const trackerMode = getEventTrackerType({ trackerMode: event.trackerMode, promotion: event.promotion });
+    console.log(`  ⚙️  Tracker mode: ${trackerMode}`);
+
     // Track changes
     let eventChanged = false;
     let fightsUpdated = 0;
@@ -564,12 +569,13 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         }
       }
 
-      // Apply updates
+      // Apply updates (route through shadow field helper)
       if (changed) {
-        console.log(`  💾 Updating fight ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} with:`, updateData);
+        const finalUpdateData = buildTrackerUpdateData(updateData, trackerMode);
+        console.log(`  💾 Updating fight ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} with:`, finalUpdateData);
         await prisma.fight.update({
           where: { id: dbFight.id },
-          data: updateData
+          data: finalUpdateData
         });
         fightsUpdated++;
       } else {

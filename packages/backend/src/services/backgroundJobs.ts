@@ -6,6 +6,7 @@ import { checkEventCompletion } from './eventCompletionChecker';
 import { MMANewsScraper } from './mmaNewsScraper';
 import { checkAndStartLiveEvents } from './liveEventScheduler';
 import { scheduleAllUpcomingEvents, safetyCheckEvents, cancelAllScheduledEvents } from './eventBasedScheduler';
+import { startScheduledStartTimeChecker, stopScheduledStartTimeChecker } from './timeBasedFightStatusUpdater';
 import { runFailsafeCleanup, FailsafeResults } from './failsafeCleanup';
 import { runDailyUFCScraper, DailyScraperResults } from './dailyUFCScraper';
 import {
@@ -99,6 +100,9 @@ export function startBackgroundJobs(): void {
     } catch (error) {
       console.error('[Background Jobs] Initial event scheduling failed:', error);
     }
+
+    // Start the per-fight scheduled start time checker (checks every 60s)
+    startScheduledStartTimeChecker();
   }, 5000); // Wait 5 seconds after server starts
 
   // Safety check every 15 minutes for missed events
@@ -210,6 +214,9 @@ export function stopBackgroundJobs(): void {
 
   // Cancel all scheduled event timers
   cancelAllScheduledEvents();
+
+  // Stop the per-fight scheduled start time checker
+  stopScheduledStartTimeChecker();
 
   if (dailyScraperJob) {
     dailyScraperJob.stop();

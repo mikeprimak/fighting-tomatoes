@@ -7,6 +7,7 @@
 import { PrismaClient } from '@prisma/client';
 import { OktagonEventData, OktagonFightData } from './oktagonLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
 
 const prisma = new PrismaClient();
 
@@ -130,6 +131,10 @@ export async function parseOktagonLiveData(
 
     console.log(`  ✓ Found event: ${event.name} (${event.fights.length} fights)`);
 
+    // Determine tracker mode for this event
+    const trackerMode = getEventTrackerType({ trackerMode: event.trackerMode, promotion: event.promotion });
+    console.log(`  ⚙️  Tracker mode: ${trackerMode}`);
+
     // Update event status if changed
     if (liveData.hasStarted && !event.hasStarted) {
       await prisma.event.update({
@@ -238,11 +243,12 @@ export async function parseOktagonLiveData(
         }
       }
 
-      // Apply updates
+      // Apply updates (route through shadow field helper)
       if (changed) {
+        const finalUpdateData = buildTrackerUpdateData(updateData, trackerMode);
         await prisma.fight.update({
           where: { id: dbFight.id },
-          data: updateData
+          data: finalUpdateData
         });
         fightsUpdated++;
         console.log(`    💾 Fight updated`);

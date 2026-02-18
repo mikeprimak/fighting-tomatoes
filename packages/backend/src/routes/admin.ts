@@ -67,6 +67,7 @@ const UpdateFightSchema = CreateFightSchema.partial().extend({
   method: z.string().nullable().optional(),
   round: z.number().int().min(1).max(12).nullable().optional(),
   time: z.string().nullable().optional(),
+  scheduledStartTime: z.string().transform((val) => new Date(val)).nullable().optional(),
 });
 
 const CreateFighterSchema = z.object({
@@ -1030,6 +1031,152 @@ export async function adminRoutes(fastify: FastifyInstance) {
     await prisma.fight.delete({ where: { id } });
 
     return reply.send({ success: true });
+  });
+
+  // ============================================
+  // FIGHT STATUS CONTROL + PUBLISH
+  // ============================================
+
+  // Set fight status (upcoming / live / completed)
+  // Convenience endpoint that sets the right boolean flags
+  fastify.post('/admin/fights/:id/set-status', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { status } = request.body as { status: 'upcoming' | 'live' | 'completed' };
+
+    if (!['upcoming', 'live', 'completed'].includes(status)) {
+      return reply.code(400).send({ error: 'Status must be upcoming, live, or completed' });
+    }
+
+    const data: any = {};
+
+    switch (status) {
+      case 'upcoming':
+        data.hasStarted = false;
+        data.isComplete = false;
+        data.completionMethod = null;
+        data.completedAt = null;
+        break;
+      case 'live':
+        data.hasStarted = true;
+        data.isComplete = false;
+        data.completionMethod = null;
+        data.completedAt = null;
+        break;
+      case 'completed':
+        data.hasStarted = true;
+        data.isComplete = true;
+        data.completionMethod = 'manual';
+        data.completedAt = new Date();
+        break;
+    }
+
+    const fight = await prisma.fight.update({
+      where: { id },
+      data,
+      include: {
+        fighter1: { select: { id: true, firstName: true, lastName: true } },
+        fighter2: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+
+    console.log(`[Admin] Fight ${fight.fighter1.lastName} vs ${fight.fighter2.lastName} set to ${status}`);
+    return reply.send({ fight });
+  });
+
+  // Publish tracker data for a single fight (copy tracker* → published fields)
+  fastify.post('/admin/fights/:id/publish', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const fight = await prisma.fight.findUnique({ where: { id } });
+    if (!fight) {
+      return reply.code(404).send({ error: 'Fight not found' });
+    }
+
+    // Build update from tracker fields (only copy non-null tracker values)
+    const data: any = { completionMethod: 'manual' };
+
+    if (fight.trackerHasStarted !== null) data.hasStarted = fight.trackerHasStarted;
+    if (fight.trackerIsComplete !== null) data.isComplete = fight.trackerIsComplete;
+    if (fight.trackerWinner !== null) data.winner = fight.trackerWinner;
+    if (fight.trackerMethod !== null) data.method = fight.trackerMethod;
+    if (fight.trackerRound !== null) data.round = fight.trackerRound;
+    if (fight.trackerTime !== null) data.time = fight.trackerTime;
+    if (fight.trackerCurrentRound !== null) data.currentRound = fight.trackerCurrentRound;
+    if (fight.trackerCompletedRounds !== null) data.completedRounds = fight.trackerCompletedRounds;
+
+    if (fight.trackerIsComplete) {
+      data.completedAt = new Date();
+    }
+
+    const updated = await prisma.fight.update({
+      where: { id },
+      data,
+      include: {
+        fighter1: { select: { id: true, firstName: true, lastName: true } },
+        fighter2: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+
+    console.log(`[Admin] Published tracker data for ${updated.fighter1.lastName} vs ${updated.fighter2.lastName}`);
+    return reply.send({ fight: updated });
+  });
+
+  // Publish all tracker data for an event (bulk copy tracker* → published fields)
+  fastify.post('/admin/events/:id/publish-all', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const event = await prisma.event.findUnique({
+      where: { id },
+      include: {
+        fights: {
+          include: {
+            fighter1: { select: { lastName: true } },
+            fighter2: { select: { lastName: true } },
+          },
+        },
+      },
+    });
+
+    if (!event) {
+      return reply.code(404).send({ error: 'Event not found' });
+    }
+
+    let publishedCount = 0;
+
+    for (const fight of event.fights) {
+      // Only publish fights that have tracker data
+      if (fight.trackerIsComplete === null && fight.trackerHasStarted === null) {
+        continue;
+      }
+
+      const data: any = { completionMethod: 'manual' };
+
+      if (fight.trackerHasStarted !== null) data.hasStarted = fight.trackerHasStarted;
+      if (fight.trackerIsComplete !== null) data.isComplete = fight.trackerIsComplete;
+      if (fight.trackerWinner !== null) data.winner = fight.trackerWinner;
+      if (fight.trackerMethod !== null) data.method = fight.trackerMethod;
+      if (fight.trackerRound !== null) data.round = fight.trackerRound;
+      if (fight.trackerTime !== null) data.time = fight.trackerTime;
+      if (fight.trackerCurrentRound !== null) data.currentRound = fight.trackerCurrentRound;
+      if (fight.trackerCompletedRounds !== null) data.completedRounds = fight.trackerCompletedRounds;
+
+      if (fight.trackerIsComplete) {
+        data.completedAt = new Date();
+      }
+
+      await prisma.fight.update({ where: { id: fight.id }, data });
+      publishedCount++;
+      console.log(`[Admin] Published: ${fight.fighter1.lastName} vs ${fight.fighter2.lastName}`);
+    }
+
+    console.log(`[Admin] Published tracker data for ${publishedCount}/${event.fights.length} fights in ${event.name}`);
+    return reply.send({ success: true, publishedCount, totalFights: event.fights.length });
   });
 
   // ============================================
