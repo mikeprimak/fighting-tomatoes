@@ -7,6 +7,7 @@
 import { PrismaClient } from '@prisma/client';
 import { OneFCEventData, OneFCFightData } from './oneFCLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
 
 const prisma = new PrismaClient();
 
@@ -135,6 +136,10 @@ export async function parseOneFCLiveData(
 
     console.log(`  ✓ Found event: ${event.name} (${event.fights.length} fights in DB)`);
 
+    // Determine tracker mode for this event
+    const trackerMode = getEventTrackerType({ trackerMode: event.trackerMode, promotion: event.promotion });
+    console.log(`  ⚙️  Tracker mode: ${trackerMode}`);
+
     // Update event status if changed
     if (liveData.hasStarted && !event.hasStarted) {
       await prisma.event.update({
@@ -260,11 +265,12 @@ export async function parseOneFCLiveData(
         }
       }
 
-      // Apply updates
+      // Apply updates (route through shadow field helper)
       if (changed) {
+        const finalUpdateData = buildTrackerUpdateData(updateData, trackerMode);
         await prisma.fight.update({
           where: { id: dbFight.id },
-          data: updateData
+          data: finalUpdateData
         });
         fightsUpdated++;
         console.log(`    💾 Fight updated`);

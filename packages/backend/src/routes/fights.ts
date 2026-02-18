@@ -96,6 +96,18 @@ const CreatePredictionSchema = z.object({
   predictedRound: z.number().int().min(1).max(12).optional(), // up to 12 rounds for boxing
 });
 
+// Strip tracker shadow fields from fight objects for non-admin users
+function stripTrackerFields(fight: any): any {
+  if (!fight) return fight;
+  const {
+    trackerHasStarted, trackerIsComplete, trackerWinner, trackerMethod,
+    trackerRound, trackerTime, trackerCurrentRound, trackerCompletedRounds,
+    trackerUpdatedAt, scheduledStartTime,
+    ...clean
+  } = fight;
+  return clean;
+}
+
 export async function fightRoutes(fastify: FastifyInstance) {
   // GET /api/fights - List fights with filtering and pagination
   fastify.get('/fights', {
@@ -310,7 +322,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Transform fights data to include user-specific data in the expected format
       const transformedFights = await Promise.all(fights.map(async (fight: any) => {
-        const transformed = { ...fight };
+        const transformed = stripTrackerFields({ ...fight });
 
         // Add hasLiveTracking to event for UI to know if fight-specific notifications are available
         if (transformed.event) {
@@ -534,9 +546,12 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Strip tracker shadow fields from public response
+      const cleanFight: any = stripTrackerFields(fight);
+
       // Transform the fight data to include user-specific data in the expected format (like the /fights endpoint)
       const fightWithRelations = fight as any;
-      const transformedFight: any = { ...fight };
+      const transformedFight: any = { ...cleanFight };
 
       // Add hasLiveTracking to event for UI to know if fight-specific notifications are available
       if (transformedFight.event) {

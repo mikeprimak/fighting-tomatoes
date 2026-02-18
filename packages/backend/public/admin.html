@@ -1991,10 +1991,11 @@
               </button>
             </div>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <button class="btn btn-secondary btn-sm" onclick="openEventModal('${selectedEvent.id}')">Edit Event</button>
             <button class="btn btn-danger btn-sm" onclick="deleteEvent('${selectedEvent.id}')">Delete Event</button>
             <button class="btn btn-primary btn-sm" onclick="openFightModal()">+ Add Fight</button>
+            <button class="btn btn-sm" style="background: var(--accent-orange); color: #000;" onclick="publishAllFights()">Publish All</button>
           </div>
         </div>
 
@@ -2048,6 +2049,25 @@
         statusLabel = 'Live';
       }
 
+      // Published result display
+      const publishedResult = fight.method
+        ? `${fight.method}${fight.round ? ' R' + fight.round : ''}${fight.time ? ' ' + fight.time : ''}`
+        : '';
+
+      // Tracker shadow data display
+      const hasTrackerData = fight.trackerHasStarted !== null || fight.trackerIsComplete !== null || fight.trackerMethod;
+      const trackerResult = fight.trackerMethod
+        ? `${fight.trackerMethod}${fight.trackerRound ? ' R' + fight.trackerRound : ''}${fight.trackerTime ? ' ' + fight.trackerTime : ''}`
+        : (fight.trackerIsComplete ? 'Complete (no details)' : (fight.trackerHasStarted ? 'Live' : ''));
+
+      // Scheduled start time
+      const scheduledTime = fight.scheduledStartTime
+        ? new Date(fight.scheduledStartTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+        : '';
+      const scheduledTimeValue = fight.scheduledStartTime
+        ? fight.scheduledStartTime.split('T')[1]?.substring(0, 5) || ''
+        : '';
+
       return `
         <div class="fight-card">
           <div class="fight-info">
@@ -2059,7 +2079,19 @@
               </div>
               <div class="fight-details">
                 ${fight.weightClass || 'Catchweight'} • ${fight.scheduledRounds} rounds
-                ${fight.method ? `<span style="color: var(--accent-green); margin-left: 0.5rem;">${fight.method}${fight.round ? ' R' + fight.round : ''}${fight.time ? ' ' + fight.time : ''}</span>` : ''}
+                ${publishedResult ? `<span style="color: var(--accent-green); margin-left: 0.5rem;">${publishedResult}</span>` : ''}
+              </div>
+              ${hasTrackerData ? `
+                <div class="fight-details" style="margin-top: 0.2rem;">
+                  <span style="color: var(--accent-orange); font-size: 0.7rem;">TRACKER: ${trackerResult || 'pending'}</span>
+                  ${hasTrackerData && trackerResult ? `<button class="btn btn-sm" style="padding: 0.1rem 0.4rem; font-size: 0.65rem; margin-left: 0.5rem; background: var(--accent-orange); color: #000;" onclick="publishFight('${fight.id}')">Publish</button>` : ''}
+                </div>
+              ` : ''}
+              <div class="fight-details" style="margin-top: 0.2rem;">
+                <label style="font-size: 0.7rem; color: var(--text-muted); margin-right: 0.3rem;">Start:</label>
+                <input type="time" value="${scheduledTimeValue}" style="background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.1rem 0.3rem; font-size: 0.7rem; width: 90px;"
+                       onchange="updateScheduledStartTime('${fight.id}', this.value)">
+                ${scheduledTime ? `<span style="font-size: 0.7rem; color: var(--text-muted); margin-left: 0.3rem;">${scheduledTime}</span>` : ''}
               </div>
             </div>
           </div>
@@ -2634,27 +2666,13 @@
     // ============================================
     async function setFightStatus(fightId, status) {
       // status: 'upcoming' | 'live' | 'completed'
-      let data = {};
-
-      switch (status) {
-        case 'upcoming':
-          data = { hasStarted: false, isComplete: false };
-          break;
-        case 'live':
-          data = { hasStarted: true, isComplete: false };
-          break;
-        case 'completed':
-          data = { hasStarted: true, isComplete: true };
-          break;
-        default:
-          return;
-      }
+      if (!['upcoming', 'live', 'completed'].includes(status)) return;
 
       try {
-        const res = await authFetch(`${API_BASE}/admin/fights/${fightId}`, {
-          method: 'PUT',
+        const res = await authFetch(`${API_BASE}/admin/fights/${fightId}/set-status`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+          body: JSON.stringify({ status }),
         });
 
         if (!res.ok) {
@@ -2664,6 +2682,71 @@
 
         showToast(`Fight marked as ${status}`, 'success');
         await selectEvent(selectedEvent.id);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function publishFight(fightId) {
+      try {
+        const res = await authFetch(`${API_BASE}/admin/fights/${fightId}/publish`, {
+          method: 'POST',
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to publish');
+        }
+
+        showToast('Tracker data published', 'success');
+        await selectEvent(selectedEvent.id);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function publishAllFights() {
+      if (!selectedEvent) return;
+      if (!confirm('Publish all tracker data for this event?')) return;
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/events/${selectedEvent.id}/publish-all`, {
+          method: 'POST',
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to publish all');
+        }
+
+        const data = await res.json();
+        showToast(`Published ${data.publishedCount}/${data.totalFights} fights`, 'success');
+        await selectEvent(selectedEvent.id);
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function updateScheduledStartTime(fightId, timeValue) {
+      if (!selectedEvent) return;
+
+      try {
+        // Build full datetime from event date + entered time
+        const eventDate = selectedEvent.date.split('T')[0];
+        const scheduledStartTime = timeValue ? `${eventDate}T${timeValue}:00` : null;
+
+        const res = await authFetch(`${API_BASE}/admin/fights/${fightId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scheduledStartTime }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to update start time');
+        }
+
+        showToast('Scheduled start time updated', 'success');
       } catch (err) {
         showToast(err.message, 'error');
       }

@@ -8,6 +8,7 @@
 import { PrismaClient } from '@prisma/client';
 import { TapologyEventData, TapologyFight } from './tapologyLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
 
 const prisma = new PrismaClient();
 
@@ -66,6 +67,17 @@ export async function parseTapologyData(
   };
 
   try {
+    // Get event to determine tracker mode
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      select: { trackerMode: true, promotion: true },
+    });
+    const trackerMode = getEventTrackerType({
+      trackerMode: event?.trackerMode,
+      promotion: event?.promotion ?? null,
+    });
+    console.log(`[Tapology Parser] Tracker mode: ${trackerMode}`);
+
     // Get all fights for this event from database
     const dbFights = await prisma.fight.findMany({
       where: { eventId },
@@ -129,7 +141,7 @@ export async function parseTapologyData(
       };
 
       if (winnerId) {
-        updateData.winnerId = winnerId;
+        updateData.winner = winnerId;
       }
 
       if (scrapedFight.result?.method) {
@@ -144,10 +156,11 @@ export async function parseTapologyData(
         updateData.time = scrapedFight.result.time;
       }
 
-      // Update the fight
+      // Update the fight (route through shadow field helper)
+      const finalUpdateData = buildTrackerUpdateData(updateData, trackerMode);
       await prisma.fight.update({
         where: { id: dbFight.id },
-        data: updateData,
+        data: finalUpdateData,
       });
 
       const winnerName = winnerId

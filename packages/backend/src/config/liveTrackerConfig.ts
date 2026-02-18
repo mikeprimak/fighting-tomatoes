@@ -8,7 +8,7 @@
  * - Time-based fallback: Mark all fights in a section as complete at section start time
  */
 
-export type LiveTrackerType = 'ufc' | 'matchroom' | 'oktagon' | 'time-based' | 'manual';
+export type LiveTrackerType = 'ufc' | 'matchroom' | 'oktagon' | 'time-based' | 'manual' | 'live';
 
 /**
  * Map of promotions to their tracker type.
@@ -87,6 +87,61 @@ export function getEventTrackerType(event: {
  */
 export function hasRealTimeTracker(promotion: string | null): boolean {
   return getTrackerType(promotion) !== 'time-based';
+}
+
+/**
+ * Determine whether a tracker mode should auto-publish to published fields.
+ * In 'live' mode (or its promotion-specific equivalents), trackers write to both
+ * shadow fields AND published fields. In manual/time-based mode, trackers only
+ * write to shadow fields, and admin must publish manually.
+ */
+export function shouldAutoPublish(trackerMode: LiveTrackerType): boolean {
+  // These modes auto-publish: the tracker is trusted to write directly
+  return ['ufc', 'matchroom', 'oktagon', 'live'].includes(trackerMode);
+}
+
+/**
+ * Build the Prisma update data for a fight, writing to shadow fields always
+ * and optionally to published fields if the tracker mode auto-publishes.
+ *
+ * @param publishedData - The data that would go to published fields (hasStarted, isComplete, winner, method, round, time, currentRound, completedRounds)
+ * @param trackerMode - The effective tracker mode for the event
+ * @returns Prisma update data object
+ */
+export function buildTrackerUpdateData(
+  publishedData: {
+    hasStarted?: boolean;
+    isComplete?: boolean;
+    winner?: string | null;
+    method?: string | null;
+    round?: number | null;
+    time?: string | null;
+    currentRound?: number | null;
+    completedRounds?: number | null;
+    [key: string]: any; // allow extra fields like orderOnCard, completionMethod
+  },
+  trackerMode: LiveTrackerType
+): Record<string, any> {
+  const updateData: Record<string, any> = {};
+
+  // Always write to shadow fields
+  if (publishedData.hasStarted !== undefined) updateData.trackerHasStarted = publishedData.hasStarted;
+  if (publishedData.isComplete !== undefined) updateData.trackerIsComplete = publishedData.isComplete;
+  if (publishedData.winner !== undefined) updateData.trackerWinner = publishedData.winner;
+  if (publishedData.method !== undefined) updateData.trackerMethod = publishedData.method;
+  if (publishedData.round !== undefined) updateData.trackerRound = publishedData.round;
+  if (publishedData.time !== undefined) updateData.trackerTime = publishedData.time;
+  if (publishedData.currentRound !== undefined) updateData.trackerCurrentRound = publishedData.currentRound;
+  if (publishedData.completedRounds !== undefined) updateData.trackerCompletedRounds = publishedData.completedRounds;
+  updateData.trackerUpdatedAt = new Date();
+
+  // In auto-publish modes, also write to published fields
+  if (shouldAutoPublish(trackerMode)) {
+    // Copy all the original data (includes hasStarted, isComplete, winner, etc.)
+    Object.assign(updateData, publishedData);
+  }
+
+  return updateData;
 }
 
 /**
