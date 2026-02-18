@@ -539,9 +539,19 @@ async function main() {
     console.log(`   ✅ ${latestPath}`);
 
     // Scrape images for athletes that don't have one yet
-    console.log('\n🖼️  Fetching fighter images...');
+    // Time-budget: stop after 3 minutes to avoid hitting the overall timeout
+    const IMAGE_FETCH_BUDGET_MS = 3 * 60 * 1000;
+    const imageFetchStart = Date.now();
+    console.log('\n🖼️  Fetching fighter images (3 min budget)...');
     const athletes = Array.from(athleteMap.values());
+    let imagesFetched = 0;
+    let imagesSkipped = 0;
     for (const athlete of athletes) {
+      if (Date.now() - imageFetchStart > IMAGE_FETCH_BUDGET_MS) {
+        imagesSkipped = athletes.filter(a => !a.imageUrl && a.url).length - imagesFetched;
+        console.log(`   ⏱️  Time budget reached, skipping ${imagesSkipped} remaining fighters`);
+        break;
+      }
       if (!athlete.imageUrl && athlete.url) {
         console.log(`   📸 Getting image for ${athlete.name}...`);
         await new Promise(r => setTimeout(r, delays.betweenFighters)); // Rate limit
@@ -551,9 +561,10 @@ async function main() {
         } else {
           console.log(`      ⚠ No image found`);
         }
+        imagesFetched++;
       }
     }
-    console.log(`   ✅ Processed ${athletes.length} fighters`);
+    console.log(`   ✅ Fetched ${imagesFetched} images in ${Math.floor((Date.now() - imageFetchStart) / 1000)}s`);
 
     // Update fights with scraped images
     for (const event of allEvents) {
