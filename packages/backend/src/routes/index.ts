@@ -218,10 +218,21 @@ export async function registerRoutes(fastify: FastifyInstance) {
     const userId = (request as any).user?.id;
 
     try {
-      // Base filter: only return visible events that have at least one fight announced
+      // Base filter: show visible events that either have fights announced
+      // OR are happening within the next 14 days (so upcoming events appear
+      // even before their fight cards are published)
+      const fourteenDaysFromNow = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
       const whereClause: any = {
         isVisible: true,
-        fights: { some: {} }
+        OR: [
+          { fights: { some: {} } },
+          {
+            date: {
+              gte: new Date(),
+              lte: fourteenDaysFromNow,
+            },
+          },
+        ],
       };
 
       // Build promotions filter first (if provided)
