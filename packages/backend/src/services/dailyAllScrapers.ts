@@ -24,6 +24,7 @@ import { importGoldenBoyData } from './goldenBoyDataParser';
 import { importTopRankData } from './topRankDataParser';
 import { importOktagonData } from './oktagonDataParser';
 import { importRizinData } from './rizinDataParser';
+import { importZuffaBoxingData } from './zuffaBoxingDataParser';
 
 const execAsync = promisify(exec);
 
@@ -36,7 +37,7 @@ export interface OrganizationScraperResults {
   error?: string;
 }
 
-type OrganizationType = 'BKFC' | 'PFL' | 'ONEFC' | 'MATCHROOM' | 'GOLDENBOY' | 'TOPRANK' | 'OKTAGON' | 'RIZIN';
+type OrganizationType = 'BKFC' | 'PFL' | 'ONEFC' | 'MATCHROOM' | 'GOLDENBOY' | 'TOPRANK' | 'OKTAGON' | 'RIZIN' | 'ZUFFA_BOXING';
 
 // Config for each organization's scraper
 const SCRAPER_CONFIG: Record<OrganizationType, {
@@ -91,6 +92,12 @@ const SCRAPER_CONFIG: Record<OrganizationType, {
     scraperFile: 'scrapeAllRizinData.js',
     importFn: importRizinData,
     displayName: 'RIZIN Fighting Federation',
+    timeout: 1500000, // 25 minutes
+  },
+  ZUFFA_BOXING: {
+    scraperFile: 'scrapeZuffaBoxingTapology.js',
+    importFn: importZuffaBoxingData,
+    displayName: 'Zuffa Boxing',
     timeout: 1500000, // 25 minutes
   },
 };
@@ -220,6 +227,10 @@ export async function runDailyRizinScraper(): Promise<OrganizationScraperResults
   return runOrganizationScraper('RIZIN');
 }
 
+export async function runDailyZuffaBoxingScraper(): Promise<OrganizationScraperResults> {
+  return runOrganizationScraper('ZUFFA_BOXING');
+}
+
 /**
  * Run all organization scrapers sequentially
  * Used for manual full refresh
@@ -229,7 +240,7 @@ export async function runAllOrganizationScrapers(): Promise<OrganizationScraperR
   const startTime = Date.now();
 
   const results: OrganizationScraperResults[] = [];
-  const organizations: OrganizationType[] = ['BKFC', 'PFL', 'ONEFC', 'MATCHROOM', 'GOLDENBOY', 'TOPRANK', 'OKTAGON', 'RIZIN'];
+  const organizations: OrganizationType[] = ['BKFC', 'PFL', 'ONEFC', 'MATCHROOM', 'GOLDENBOY', 'TOPRANK', 'OKTAGON', 'RIZIN', 'ZUFFA_BOXING'];
 
   for (const org of organizations) {
     const result = await runOrganizationScraper(org);

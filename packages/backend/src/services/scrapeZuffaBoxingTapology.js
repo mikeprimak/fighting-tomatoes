@@ -438,35 +438,75 @@ async function main() {
   });
 
   try {
-    // For now, scrape the specific event URL directly
-    const eventUrl = 'https://www.tapology.com/fightcenter/events/137070-zuffa-boxing';
+    // Discover events from the Zuffa Boxing promotion page
+    const discoveredEvents = await scrapeEventsList(browser);
 
-    const eventData = await scrapeEventPage(browser, eventUrl);
-
-    // Parse the date
-    if (eventData.dateText) {
-      const parsedDate = parseTapologyDate(eventData.dateText);
-      if (parsedDate) {
-        eventData.eventDate = parsedDate.toISOString();
-      }
+    // If no events discovered, there's nothing to scrape
+    if (discoveredEvents.length === 0) {
+      console.log('⚠ No events found on Tapology promotion page. Exiting.');
+      await browser.close();
+      return;
     }
 
-    // Build complete event object
-    const event = {
-      eventName: eventData.eventName || 'Zuffa Boxing 1: Walsh vs. Ocampo',
-      eventType: 'Regular',
-      eventUrl: eventUrl,
-      eventSlug: 'zuffa-boxing-1-walsh-vs-ocampo',
-      venue: eventData.venue || 'UFC APEX',
-      city: eventData.city || 'Las Vegas',
-      state: 'NV',
-      country: eventData.country || 'USA',
-      dateText: eventData.dateText || 'January 23, 2026',
-      eventDate: eventData.eventDate || new Date(2026, 0, 23).toISOString(),
-      eventImageUrl: null,
-      status: 'Upcoming',
-      fights: eventData.fights
-    };
+    const allEvents = [];
+    const athleteMap = new Map();
+
+    for (const discovered of discoveredEvents) {
+      console.log(`\n📄 Processing event: ${discovered.eventName}`);
+      await new Promise(r => setTimeout(r, delays.betweenPages));
+
+      const eventData = await scrapeEventPage(browser, discovered.eventUrl);
+
+      // Parse the date
+      if (eventData.dateText) {
+        const parsedDate = parseTapologyDate(eventData.dateText);
+        if (parsedDate) {
+          eventData.eventDate = parsedDate.toISOString();
+        }
+      }
+
+      // Build event slug from URL
+      const eventSlug = getEventSlug(discovered.eventUrl) || discovered.eventName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+      // Build complete event object
+      const event = {
+        eventName: eventData.eventName || discovered.eventName,
+        eventType: 'Regular',
+        eventUrl: discovered.eventUrl,
+        eventSlug,
+        venue: eventData.venue || '',
+        city: eventData.city || '',
+        state: '',
+        country: eventData.country || 'USA',
+        dateText: eventData.dateText || discovered.dateText || '',
+        eventDate: eventData.eventDate || null,
+        eventImageUrl: null,
+        status: discovered.status || 'Upcoming',
+        fights: eventData.fights
+      };
+
+      allEvents.push(event);
+
+      // Collect unique athletes
+      for (const fight of event.fights) {
+        if (!athleteMap.has(fight.fighterA.name)) {
+          athleteMap.set(fight.fighterA.name, {
+            name: fight.fighterA.name,
+            url: fight.fighterA.athleteUrl,
+            fighterId: fight.fighterA.fighterId,
+            imageUrl: fight.fighterA.imageUrl
+          });
+        }
+        if (!athleteMap.has(fight.fighterB.name)) {
+          athleteMap.set(fight.fighterB.name, {
+            name: fight.fighterB.name,
+            url: fight.fighterB.athleteUrl,
+            fighterId: fight.fighterB.fighterId,
+            imageUrl: fight.fighterB.imageUrl
+          });
+        }
+      }
+    }
 
     // Save scraped data
     const outputDir = path.join(__dirname, '../../scraped-data/zuffa-boxing');
@@ -478,34 +518,13 @@ async function main() {
     const outputPath = path.join(outputDir, `events-${timestamp}.json`);
     const latestPath = path.join(outputDir, 'latest-events.json');
 
-    const outputData = { events: [event] };
+    const outputData = { events: allEvents };
     fs.writeFileSync(outputPath, JSON.stringify(outputData, null, 2));
     fs.writeFileSync(latestPath, JSON.stringify(outputData, null, 2));
 
     console.log('\n💾 Saved data:');
     console.log(`   ✅ ${outputPath}`);
     console.log(`   ✅ ${latestPath}`);
-
-    // Collect unique athletes
-    const athleteMap = new Map();
-    for (const fight of event.fights) {
-      if (!athleteMap.has(fight.fighterA.name)) {
-        athleteMap.set(fight.fighterA.name, {
-          name: fight.fighterA.name,
-          url: fight.fighterA.athleteUrl,
-          fighterId: fight.fighterA.fighterId,
-          imageUrl: fight.fighterA.imageUrl
-        });
-      }
-      if (!athleteMap.has(fight.fighterB.name)) {
-        athleteMap.set(fight.fighterB.name, {
-          name: fight.fighterB.name,
-          url: fight.fighterB.athleteUrl,
-          fighterId: fight.fighterB.fighterId,
-          imageUrl: fight.fighterB.imageUrl
-        });
-      }
-    }
 
     // Scrape images for athletes that don't have one yet
     console.log('\n🖼️  Fetching fighter images...');
@@ -525,19 +544,21 @@ async function main() {
     console.log(`   ✅ Processed ${athletes.length} fighters`);
 
     // Update fights with scraped images
-    for (const fight of event.fights) {
-      const athleteA = athleteMap.get(fight.fighterA.name);
-      const athleteB = athleteMap.get(fight.fighterB.name);
-      if (athleteA && athleteA.imageUrl) {
-        fight.fighterA.imageUrl = athleteA.imageUrl;
-      }
-      if (athleteB && athleteB.imageUrl) {
-        fight.fighterB.imageUrl = athleteB.imageUrl;
+    for (const event of allEvents) {
+      for (const fight of event.fights) {
+        const athleteA = athleteMap.get(fight.fighterA.name);
+        const athleteB = athleteMap.get(fight.fighterB.name);
+        if (athleteA && athleteA.imageUrl) {
+          fight.fighterA.imageUrl = athleteA.imageUrl;
+        }
+        if (athleteB && athleteB.imageUrl) {
+          fight.fighterB.imageUrl = athleteB.imageUrl;
+        }
       }
     }
 
     // Re-save events with updated image URLs
-    const updatedOutputData = { events: [event] };
+    const updatedOutputData = { events: allEvents };
     fs.writeFileSync(outputPath, JSON.stringify(updatedOutputData, null, 2));
     fs.writeFileSync(latestPath, JSON.stringify(updatedOutputData, null, 2));
 
@@ -550,12 +571,14 @@ async function main() {
     console.log(`   ✅ ${athletesPath}`);
 
     // Summary
+    const totalFights = allEvents.reduce((sum, e) => sum + e.fights.length, 0);
     console.log('\n' + '='.repeat(60));
     console.log('\n📈 SUMMARY\n');
-    console.log(`   Event: ${event.eventName}`);
-    console.log(`   Date: ${event.dateText}`);
-    console.log(`   Venue: ${event.venue}, ${event.city}`);
-    console.log(`   Fights: ${event.fights.length}`);
+    console.log(`   Events: ${allEvents.length}`);
+    allEvents.forEach(e => {
+      console.log(`     - ${e.eventName} (${e.dateText}) - ${e.fights.length} fights`);
+    });
+    console.log(`   Total Fights: ${totalFights}`);
     console.log(`   Athletes: ${athletes.length}`);
 
     console.log('\n✅ Scraper completed successfully!\n');

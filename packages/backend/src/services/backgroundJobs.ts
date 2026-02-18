@@ -17,6 +17,7 @@ import {
   runDailyGoldenBoyScraper,
   runDailyTopRankScraper,
   runDailyOktagonScraper,
+  runDailyZuffaBoxingScraper,
   runAllOrganizationScrapers,
   OrganizationScraperResults,
 } from './dailyAllScrapers';
@@ -39,6 +40,7 @@ let matchroomScraperJob: cron.ScheduledTask | null = null;
 let goldenBoyScraperJob: cron.ScheduledTask | null = null;
 let topRankScraperJob: cron.ScheduledTask | null = null;
 let oktagonScraperJob: cron.ScheduledTask | null = null;
+let zuffaBoxingScraperJob: cron.ScheduledTask | null = null;
 
 /**
  * Start all background jobs
@@ -166,6 +168,7 @@ export function startBackgroundJobs(): void {
   //   - POST /api/admin/scrape/goldenboy
   //   - POST /api/admin/scrape/toprank
   //   - POST /api/admin/scrape/oktagon
+  //   - POST /api/admin/scrape/zuffa-boxing
   console.log('[Background Jobs] Organization scrapers DISABLED (memory constraints - run manually via API)');
 
   // DISABLED: Initial startup check (also disabled for memory constraints)
@@ -237,6 +240,7 @@ export function stopBackgroundJobs(): void {
     { job: goldenBoyScraperJob, name: 'Golden Boy' },
     { job: topRankScraperJob, name: 'Top Rank' },
     { job: oktagonScraperJob, name: 'OKTAGON' },
+    { job: zuffaBoxingScraperJob, name: 'Zuffa Boxing' },
   ];
 
   orgScraperJobs.forEach(({ job, name }) => {
@@ -403,6 +407,14 @@ export async function triggerTopRankScraper(): Promise<OrganizationScraperResult
 export async function triggerOktagonScraper(): Promise<OrganizationScraperResults> {
   console.log('[Background Jobs] Manual trigger: OKTAGON scraper');
   return await runDailyOktagonScraper();
+}
+
+/**
+ * Trigger Zuffa Boxing scraper manually (for testing/admin)
+ */
+export async function triggerZuffaBoxingScraper(): Promise<OrganizationScraperResults> {
+  console.log('[Background Jobs] Manual trigger: Zuffa Boxing scraper');
+  return await runDailyZuffaBoxingScraper();
 }
 
 /**
