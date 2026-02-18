@@ -99,35 +99,47 @@ async function scrapeEventsList(browser) {
       timeout: 60000
     });
 
-    // Wait for events table to load
-    await page.waitForSelector('.fcListing', { timeout: 15000 });
+    // Wait for any event link to appear on the page
+    // Tapology removed .fcListing class - now uses plain divs with event links
+    await page.waitForSelector('a[href*="/fightcenter/events/"]', { timeout: 15000 });
 
     const events = await page.evaluate(() => {
       const extractedEvents = [];
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
+      const seenUrls = new Set();
 
-      // Find event rows in the promotion's event listing
-      const eventRows = document.querySelectorAll('.fcListing tr, .eventList li, [class*="event"]');
+      // Find all event links on the promotion page
+      const eventLinks = document.querySelectorAll('a[href*="/fightcenter/events/"]');
 
-      eventRows.forEach(row => {
-        // Look for event links
-        const eventLink = row.querySelector('a[href*="/fightcenter/events/"]');
-        if (!eventLink) return;
+      eventLinks.forEach(link => {
+        const eventUrl = link.href;
+        const eventName = link.textContent.trim();
 
-        const eventUrl = eventLink.href;
-        const eventName = eventLink.textContent.trim();
-
-        // Skip if no valid URL or name
+        // Skip if no valid URL or name, or duplicate
         if (!eventUrl || !eventName || eventName.length < 3) return;
+        if (seenUrls.has(eventUrl)) return;
+        seenUrls.add(eventUrl);
 
-        // Extract date if visible
-        const dateEl = row.querySelector('.eventDate, .date, time, td:nth-child(2)');
-        const dateText = dateEl ? dateEl.textContent.trim() : '';
+        // Walk up to the parent container to find date and venue info
+        const container = link.closest('div, li, section, tr') || link.parentElement;
+        let dateText = '';
+        let venueText = '';
 
-        // Extract venue if visible
-        const venueEl = row.querySelector('.venue, .location, td:nth-child(3)');
-        const venueText = venueEl ? venueEl.textContent.trim() : '';
+        if (container) {
+          // Look for date text in nearby elements
+          const textContent = container.textContent || '';
+
+          // Match date patterns like "Sunday, March 8, 9:00 PM ET" or "Mar 8, 2026"
+          const dateMatch = textContent.match(/((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+)?(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:,?\s+\d{4})?(?:,?\s+\d{1,2}:\d{2}\s*(?:AM|PM)\s*[A-Z]*)?/i);
+          if (dateMatch) {
+            dateText = dateMatch[0].trim();
+          }
+
+          // Look for venue info (text with bullet separator or location patterns)
+          const venueMatch = textContent.match(/(?:•|·|\|)\s*([^•·|\n]+(?:,\s*[A-Z]{2})?)/);
+          if (venueMatch) {
+            venueText = venueMatch[1].trim();
+          }
+        }
 
         extractedEvents.push({
           eventName,

@@ -490,8 +490,14 @@ export async function importZuffaBoxingData(options: {
   console.log(`📁 Athletes file: ${athletesFilePath}\n`);
 
   try {
-    // Read JSON files
-    const eventsJson = await fs.readFile(eventsFilePath, 'utf-8');
+    // Read JSON files - events file may not exist if scraper found nothing
+    let eventsJson: string;
+    try {
+      eventsJson = await fs.readFile(eventsFilePath, 'utf-8');
+    } catch (e) {
+      console.log('⚠ Events file not found - scraper likely found no events. Skipping import.');
+      return;
+    }
     const eventsData: ScrapedZuffaEventsData = JSON.parse(eventsJson);
 
     // Athletes file is optional
