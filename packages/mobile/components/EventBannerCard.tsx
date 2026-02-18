@@ -112,7 +112,11 @@ export const EventBannerCard = memo(function EventBannerCard({
   const BANNER_ASPECT_RATIO = 16 / 9;
   const imageHeight = screenWidth / BANNER_ASPECT_RATIO;
 
-  const imageSource = event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id);
+  const imageSource = event.bannerImage
+    ? { uri: event.bannerImage }
+    : event.promotion?.toUpperCase() === 'RIZIN'
+      ? { uri: 'https://library.sportingnews.com/styles/twitter_card_120x120/s3/2023-02/RIZIN_logo.jpg?itok=qjct2XMb' }
+      : getPlaceholderImage(event.id);
 
   return (
     <View style={styles.container}>

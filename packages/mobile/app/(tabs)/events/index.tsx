@@ -633,8 +633,8 @@ const EventSection = memo(function EventSection({
             </View>
           )}
 
-          {/* More Fights Note - Show when fewer than 7 fights announced */}
-          {fights.length < 7 && fights.length > 0 && (
+          {/* More Fights Note - Show when fewer than 7 fights announced (or no fights at all) */}
+          {fights.length < 7 && (
             <View style={styles.moreFightsNote}>
               <Text style={[styles.moreFightsText, { color: colors.textSecondary, opacity: 0.5 }]}>
                 TBA
