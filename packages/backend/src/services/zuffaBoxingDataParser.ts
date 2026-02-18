@@ -234,6 +234,9 @@ async function importZuffaFighters(
 /**
  * Import events and fights from scraped data
  */
+// Default banner for Zuffa Boxing events (until they have event-specific banners)
+const ZUFFA_BOXING_DEFAULT_BANNER = '/images/events/zuffa-boxing/zuffa-boxing-banner-default.jpg';
+
 async function importZuffaEvents(
   eventsData: ScrapedZuffaEventsData,
   fighterNameToId: Map<string, string>
@@ -246,13 +249,15 @@ async function importZuffaEvents(
       .filter(Boolean)
       .join(', ') || 'TBA';
 
-    // Try to find existing event by name or URL
+    // Use event-specific image if available, otherwise use default banner
+    const bannerImage = eventData.eventImageUrl || ZUFFA_BOXING_DEFAULT_BANNER;
+
+    // Try to find existing event by URL or exact name
     let event = await prisma.event.findFirst({
       where: {
         OR: [
           { ufcUrl: eventData.eventUrl },
-          { name: eventData.eventName },
-          { name: { contains: 'Zuffa Boxing' } }
+          { name: eventData.eventName, promotion: 'Zuffa Boxing' },
         ]
       }
     });
@@ -268,6 +273,7 @@ async function importZuffaEvents(
           location,
           ufcUrl: eventData.eventUrl,
           promotion: 'Zuffa Boxing',
+          bannerImage,
           hasStarted: eventData.status === 'Live',
           isComplete: eventData.status === 'Complete',
         }
@@ -282,6 +288,7 @@ async function importZuffaEvents(
           date: eventDate,
           venue: eventData.venue || undefined,
           location,
+          bannerImage,
           ufcUrl: eventData.eventUrl,
           hasStarted: eventData.status === 'Live',
           isComplete: eventData.status === 'Complete',
