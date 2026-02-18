@@ -191,8 +191,8 @@ async function scrapeEventPage(browser, eventUrl) {
       timeout: 60000
     });
 
-    // Wait for fight card to load
-    await page.waitForSelector('.fightCard, .fightCardBout, [class*="bout"]', { timeout: 15000 });
+    // Wait for fighter links to appear (resilient to Tapology layout changes)
+    await page.waitForSelector('a[href*="/fightcenter/fighters/"]', { timeout: 15000 });
 
     const eventData = await page.evaluate(() => {
       const data = {
@@ -207,169 +207,94 @@ async function scrapeEventPage(browser, eventUrl) {
       };
 
       // Extract event name from header
-      const eventHeader = document.querySelector('h1, .eventName, .eventHeader');
+      const eventHeader = document.querySelector('h1');
       if (eventHeader) {
         data.eventName = eventHeader.textContent.trim();
       }
 
-      // Extract date
-      const dateEl = document.querySelector('.eventDate, [class*="date"], .details li:first-child');
-      if (dateEl) {
-        data.dateText = dateEl.textContent.trim();
+      // Extract date from page text
+      const pageText = document.body.innerText || '';
+      const dateMatch = pageText.match(/((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+)?(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}/i);
+      if (dateMatch) {
+        data.dateText = dateMatch[0].trim();
       }
 
-      // Extract venue/location
-      const locationEl = document.querySelector('.eventVenue, .venue, [class*="location"]');
-      if (locationEl) {
-        const locationText = locationEl.textContent.trim();
-        const parts = locationText.split(',').map(p => p.trim());
+      // Extract venue/location from page text
+      const venueMatch = pageText.match(/(?:Meta APEX|[A-Z][a-zA-Z\s]+(?:Arena|Center|Centre|Garden|Stadium|Hall|Coliseum|Pavilion))\s*[,•·]\s*([^,\n]+)/);
+      if (venueMatch) {
+        const fullMatch = venueMatch[0];
+        const parts = fullMatch.split(/[,•·]/).map(p => p.trim());
         data.venue = parts[0] || '';
         data.city = parts[1] || '';
-        data.country = parts[parts.length - 1] || 'USA';
+        data.country = parts.length > 2 ? parts[parts.length - 1] : 'USA';
       }
 
-      // Tapology uses ul/li structure for fight cards
-      // Try multiple selectors to find bout containers
-      let boutRows = document.querySelectorAll('ul.fightCard > li, .fightCardBout, section li');
-
-      // If no bouts found, try finding by fighter links and grouping
-      if (boutRows.length === 0) {
-        // Alternative approach: find all fighter links and group them into pairs
-        const allFighterLinks = document.querySelectorAll('a[href*="/fightcenter/fighters/"]');
-        const fightersFound = [];
-
-        allFighterLinks.forEach(link => {
-          const name = link.textContent.trim();
-          const url = link.href;
-          // Skip navigation/menu links (they're usually shorter or have certain classes)
-          if (name && name.length > 3 && !name.includes('Tapology') && !link.closest('nav, header, footer')) {
-            // Extract fighter ID from URL
-            const idMatch = url.match(/\/fightcenter\/fighters\/(\d+)-/);
-            const fighterId = idMatch ? idMatch[1] : null;
-
-            // Find associated image (look for img near this link)
-            let imageUrl = null;
-            const container = link.closest('div, li, td, section');
-            if (container) {
-              const img = container.querySelector('img[src*="headshot"], img[src*="tapology"]');
-              if (img) {
-                imageUrl = img.src || img.getAttribute('data-src');
-              }
-            }
-
-            // Avoid duplicates
-            if (!fightersFound.some(f => f.url === url)) {
-              fightersFound.push({ name, url, fighterId, imageUrl });
-            }
-          }
-        });
-
-        // Group fighters into pairs (assuming they appear in bout order)
-        for (let i = 0; i < fightersFound.length - 1; i += 2) {
-          const fighterA = fightersFound[i];
-          const fighterB = fightersFound[i + 1];
-          if (fighterA && fighterB) {
-            data.fights.push({
-              fightId: `zuffa-fight-${data.fights.length + 1}`,
-              order: data.fights.length + 1,
-              cardType: data.fights.length === 0 ? 'Main Event' : 'Main Card',
-              weightClass: '',
-              scheduledRounds: 10,
-              isTitle: false,
-              fighterA: {
-                name: fighterA.name,
-                athleteUrl: fighterA.url || '',
-                fighterId: fighterA.fighterId,
-                imageUrl: fighterA.imageUrl,
-                record: '',
-                country: ''
-              },
-              fighterB: {
-                name: fighterB.name,
-                athleteUrl: fighterB.url || '',
-                fighterId: fighterB.fighterId,
-                imageUrl: fighterB.imageUrl,
-                record: '',
-                country: ''
-              }
-            });
-          }
+      // Build a map of fighter ID -> headshot image URL from all images on the page
+      const headshots = new Map();
+      document.querySelectorAll('img[src*="headshot_images"]').forEach(img => {
+        const src = img.src || img.getAttribute('data-src');
+        if (!src) return;
+        // Extract fighter ID from image URL: headshot_images/222379/preview/...
+        const idMatch = src.match(/headshot_images\/(\d+)\//);
+        if (idMatch) {
+          headshots.set(idMatch[1], src);
         }
+      });
 
-        return data;
-      }
+      // Find all fighter links and collect unique fighters in page order
+      const allFighterLinks = document.querySelectorAll('a[href*="/fightcenter/fighters/"]');
+      const fightersFound = [];
+      const seenUrls = new Set();
 
-      // Original approach if bout containers found
-      let fightOrder = 1;
-      boutRows.forEach(row => {
-        // Find fighter links with both name and URL
-        const fighterLinks = row.querySelectorAll('a[href*="/fightcenter/fighters/"]');
-        const fighters = [];
+      allFighterLinks.forEach(link => {
+        const name = link.textContent.trim();
+        const url = link.href;
+        // Skip nav/menu links and short names
+        if (!name || name.length < 3 || link.closest('nav, header, footer')) return;
+        if (seenUrls.has(url)) return;
+        seenUrls.add(url);
 
-        fighterLinks.forEach(link => {
-          const name = link.textContent.trim();
-          const url = link.href;
-          if (name && name.length > 2 && !fighters.some(f => f.name === name)) {
-            const idMatch = url.match(/\/fightcenter\/fighters\/(\d+)-/);
-            const fighterId = idMatch ? idMatch[1] : null;
-            fighters.push({ name, url, fighterId });
-          }
-        });
+        // Extract fighter ID from URL
+        const idMatch = url.match(/\/fightcenter\/fighters\/(\d+)-/);
+        const fighterId = idMatch ? idMatch[1] : null;
 
-        if (fighters.length < 2) return;
+        // Get headshot from the map we built
+        const imageUrl = fighterId ? (headshots.get(fighterId) || null) : null;
 
-        // Try to find fighter images in the row
-        const images = row.querySelectorAll('img[src*="headshot"]');
-        const imageUrls = [];
-        images.forEach(img => {
-          const src = img.src || img.getAttribute('data-src');
-          if (src) {
-            imageUrls.push(src);
-          }
-        });
+        fightersFound.push({ name, url, fighterId, imageUrl });
+      });
 
-        // Extract weight class and rounds from text
-        const rowText = row.textContent;
-        let weightClass = '';
-        const weightMatch = rowText.match(/(\d{3})\s*lbs?/i);
-        if (weightMatch) {
-          weightClass = `${weightMatch[1]} lbs`;
-        }
-
-        let scheduledRounds = 10;
-        const roundsMatch = rowText.match(/(\d+)\s*x\s*3/i);
-        if (roundsMatch) {
-          scheduledRounds = parseInt(roundsMatch[1], 10);
-        }
-
-        const isTitleFight = rowText.toLowerCase().includes('title') ||
-                            rowText.toLowerCase().includes('championship');
+      // Group fighters into pairs (they appear in bout order: A vs B, A vs B, ...)
+      for (let i = 0; i < fightersFound.length - 1; i += 2) {
+        const fighterA = fightersFound[i];
+        const fighterB = fightersFound[i + 1];
+        if (!fighterA || !fighterB) break;
 
         data.fights.push({
-          fightId: `zuffa-fight-${fightOrder}`,
-          order: fightOrder++,
-          cardType: fightOrder === 1 ? 'Main Event' : 'Main Card',
-          weightClass,
-          scheduledRounds,
-          isTitle: isTitleFight,
+          fightId: `zuffa-fight-${data.fights.length + 1}`,
+          order: data.fights.length + 1,
+          cardType: data.fights.length === 0 ? 'Main Event' : 'Main Card',
+          weightClass: '',
+          scheduledRounds: 10,
+          isTitle: false,
           fighterA: {
-            name: fighters[0].name,
-            athleteUrl: fighters[0].url || '',
-            fighterId: fighters[0].fighterId,
-            imageUrl: imageUrls[0] || null,
+            name: fighterA.name,
+            athleteUrl: fighterA.url || '',
+            fighterId: fighterA.fighterId,
+            imageUrl: fighterA.imageUrl,
             record: '',
             country: ''
           },
           fighterB: {
-            name: fighters[1].name,
-            athleteUrl: fighters[1].url || '',
-            fighterId: fighters[1].fighterId,
-            imageUrl: imageUrls[1] || null,
+            name: fighterB.name,
+            athleteUrl: fighterB.url || '',
+            fighterId: fighterB.fighterId,
+            imageUrl: fighterB.imageUrl,
             record: '',
             country: ''
           }
         });
-      });
+      }
 
       return data;
     });
@@ -383,57 +308,6 @@ async function scrapeEventPage(browser, eventUrl) {
     console.error(`      ❌ Error: ${error.message}`);
     await page.close();
     return { fights: [] };
-  }
-}
-
-/**
- * Scrape fighter image from their Tapology profile page
- */
-async function scrapeFighterImage(browser, fighterUrl) {
-  if (!fighterUrl) return null;
-
-  const page = await browser.newPage();
-  await page.setViewport({ width: 1920, height: 1080 });
-  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-
-  try {
-    await page.goto(fighterUrl, {
-      waitUntil: 'networkidle2',
-      timeout: 30000
-    });
-
-    // Wait for the page to load
-    await page.waitForSelector('img', { timeout: 5000 });
-
-    const imageUrl = await page.evaluate(() => {
-      // Look for the fighter's profile image
-      // Tapology uses letterbox_images for fighter photos on profile pages
-      const allImages = document.querySelectorAll('img[src*="images.tapology.com"]');
-      for (const img of allImages) {
-        const src = img.src;
-        // Prefer letterbox_images (main profile photo) over logo_squares
-        if (src && src.includes('letterbox_images')) {
-          return src;
-        }
-      }
-
-      // Fallback: try headshot_images
-      for (const img of allImages) {
-        const src = img.src;
-        if (src && src.includes('headshot_images')) {
-          return src;
-        }
-      }
-
-      return null;
-    });
-
-    await page.close();
-    return imageUrl;
-  } catch (error) {
-    console.log(`      ⚠ Could not get image for ${fighterUrl}: ${error.message}`);
-    await page.close();
-    return null;
   }
 }
 
@@ -538,59 +412,12 @@ async function main() {
     console.log(`   ✅ ${outputPath}`);
     console.log(`   ✅ ${latestPath}`);
 
-    // Scrape images for athletes that don't have one yet
-    // Time-budget: stop after 3 minutes to avoid hitting the overall timeout
-    const IMAGE_FETCH_BUDGET_MS = 3 * 60 * 1000;
-    const imageFetchStart = Date.now();
-    console.log('\n🖼️  Fetching fighter images (3 min budget)...');
+    // Images are already extracted from event pages (headshot_images),
+    // no need to visit individual fighter profile pages.
     const athletes = Array.from(athleteMap.values());
-    let imagesFetched = 0;
-    let imagesSkipped = 0;
-    for (const athlete of athletes) {
-      if (Date.now() - imageFetchStart > IMAGE_FETCH_BUDGET_MS) {
-        imagesSkipped = athletes.filter(a => !a.imageUrl && a.url).length - imagesFetched;
-        console.log(`   ⏱️  Time budget reached, skipping ${imagesSkipped} remaining fighters`);
-        break;
-      }
-      if (!athlete.imageUrl && athlete.url) {
-        console.log(`   📸 Getting image for ${athlete.name}...`);
-        await new Promise(r => setTimeout(r, delays.betweenFighters)); // Rate limit
-        athlete.imageUrl = await scrapeFighterImage(browser, athlete.url);
-        if (athlete.imageUrl) {
-          console.log(`      ✅ Found image`);
-        } else {
-          console.log(`      ⚠ No image found`);
-        }
-        imagesFetched++;
-      }
-    }
-    console.log(`   ✅ Fetched ${imagesFetched} images in ${Math.floor((Date.now() - imageFetchStart) / 1000)}s`);
-
-    // Update fights with scraped images
-    for (const event of allEvents) {
-      for (const fight of event.fights) {
-        const athleteA = athleteMap.get(fight.fighterA.name);
-        const athleteB = athleteMap.get(fight.fighterB.name);
-        if (athleteA && athleteA.imageUrl) {
-          fight.fighterA.imageUrl = athleteA.imageUrl;
-        }
-        if (athleteB && athleteB.imageUrl) {
-          fight.fighterB.imageUrl = athleteB.imageUrl;
-        }
-      }
-    }
-
-    // Re-save events with updated image URLs
-    const updatedOutputData = { events: allEvents };
-    fs.writeFileSync(outputPath, JSON.stringify(updatedOutputData, null, 2));
-    fs.writeFileSync(latestPath, JSON.stringify(updatedOutputData, null, 2));
-
     const athletesPath = path.join(outputDir, 'latest-athletes.json');
     fs.writeFileSync(athletesPath, JSON.stringify({ athletes }, null, 2));
 
-    console.log('\n💾 Saved updated data with images:');
-    console.log(`   ✅ ${outputPath}`);
-    console.log(`   ✅ ${latestPath}`);
     console.log(`   ✅ ${athletesPath}`);
 
     // Summary
