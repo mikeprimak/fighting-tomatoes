@@ -314,8 +314,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               lte: endDate,
             },
           },
-          hasStarted: false,
-          isComplete: false,
+          fightStatus: 'UPCOMING',
         },
         include: {
           fighter1: true,
@@ -487,7 +486,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
             },
             ...(promotionList && promotionList.length > 0 ? { promotion: { in: promotionList } } : {}),
           },
-          isComplete: true,
+          fightStatus: 'COMPLETED',
           averageRating: {
             gt: 0,
           },
@@ -586,8 +585,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               lte: twentyDaysFromNow,
             },
           },
-          hasStarted: false,
-          isComplete: false,
+          fightStatus: 'UPCOMING',
         },
         include: {
           fighter1: true,
@@ -675,8 +673,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               lte: twentyDaysFromNow,
             },
           },
-          hasStarted: false,
-          isComplete: false,
+          fightStatus: 'UPCOMING',
         },
         include: {
           fighter1: true,
@@ -760,8 +757,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           event: {
             date: { gte: startOfToday },
           },
-          hasStarted: false,
-          isComplete: false,
+          fightStatus: 'UPCOMING',
         },
       };
       let orderByClause: any[] = [];
@@ -898,8 +894,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
                 lte: thirteenDaysFromNow,
               },
             },
-            hasStarted: false,
-            isComplete: false,
+            fightStatus: 'UPCOMING',
           },
         },
         orderBy: [
@@ -1019,7 +1014,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               lte: now,
             },
           },
-          isComplete: true,
+          fightStatus: 'COMPLETED',
         },
         include: {
           fighter1: true,
@@ -1043,8 +1038,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               lte: fourteenDaysFromNow,
             },
           },
-          hasStarted: false,
-          isComplete: false,
+          fightStatus: 'UPCOMING',
         },
         include: {
           fighter1: true,
@@ -1065,7 +1059,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
                   { fighter1Id: fighter.id },
                   { fighter2Id: fighter.id },
                 ],
-                isComplete: true,
+                fightStatus: 'COMPLETED',
                 averageRating: {
                   gt: 0,
                 },
@@ -1112,7 +1106,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
                   { fighter1Id: fighter.id },
                   { fighter2Id: fighter.id },
                 ],
-                isComplete: true,
+                fightStatus: 'COMPLETED',
                 averageRating: {
                   gt: 0,
                 },

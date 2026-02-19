@@ -174,7 +174,7 @@ export default async function liveEventsRoutes(fastify: FastifyInstance) {
       // Look for events that have started (earliest start time <= now) and not completed
       const liveEvent = await prisma.event.findFirst({
         where: {
-          isComplete: false,
+          eventStatus: { not: 'COMPLETED' },
           promotion: 'UFC',
           OR: [
             { earlyPrelimStartTime: { lte: now } },
@@ -426,7 +426,7 @@ export default async function liveEventsRoutes(fastify: FastifyInstance) {
 
       const liveEvent = await prisma.event.findFirst({
         where: {
-          isComplete: false,
+          eventStatus: { not: 'COMPLETED' },
           promotion: 'ONE',
           OR: [
             { earlyPrelimStartTime: { lte: now } },

@@ -275,8 +275,7 @@ async function importDirtyEvents(
           ufcUrl: eventData.eventUrl,
           promotion: 'Dirty Boxing',
           bannerImage,
-          hasStarted: eventData.status === 'Live',
-          isComplete: eventData.status === 'Complete',
+          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
       console.log(`  ✓ Updated event: ${eventData.eventName}`);
@@ -291,8 +290,7 @@ async function importDirtyEvents(
           location,
           bannerImage,
           ufcUrl: eventData.eventUrl,
-          hasStarted: eventData.status === 'Live',
-          isComplete: eventData.status === 'Complete',
+          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
       console.log(`  ✓ Created event: ${eventData.eventName}`);
@@ -394,8 +392,7 @@ async function importDirtyEvents(
             scheduledRounds: fightData.scheduledRounds || 10,
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
-            hasStarted: false,
-            isComplete: false,
+            fightStatus: 'UPCOMING',
           }
         });
         fightsImported++;

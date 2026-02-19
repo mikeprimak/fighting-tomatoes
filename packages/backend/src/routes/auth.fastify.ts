@@ -756,7 +756,7 @@ export async function authRoutes(fastify: FastifyInstance) {
               predictedMethod: true,
               fight: {
                 select: {
-                  isComplete: true,
+                  fightStatus: true,
                   winner: true,
                   method: true,
                   event: {
@@ -829,7 +829,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       const predictionsWithWinner = filteredPredictions.filter(p => p.predictedWinner);
       // Only count fights that are complete and have a decisive winner (not draw/nc)
       const completedPredictions = predictionsWithWinner.filter(p =>
-        p.fight.isComplete &&
+        p.fight.fightStatus === 'COMPLETED' &&
         p.fight.winner &&
         p.fight.winner !== 'draw' &&
         p.fight.winner !== 'nc'
@@ -838,7 +838,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       const predictionsWithMethod = filteredPredictions.filter(p => p.predictedWinner && p.predictedMethod);
       const completedMethodPredictions = predictionsWithMethod.filter(p =>
-        p.fight.isComplete &&
+        p.fight.fightStatus === 'COMPLETED' &&
         p.fight.winner &&
         p.fight.winner !== 'draw' &&
         p.fight.winner !== 'nc' &&

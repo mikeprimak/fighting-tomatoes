@@ -9,7 +9,7 @@
  * - inferGenderFromWeightClass: Determines fighter gender from division
  */
 
-import { PrismaClient, WeightClass, Gender } from '@prisma/client';
+import { PrismaClient, WeightClass, Gender, FightStatus } from '@prisma/client';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
 
@@ -114,8 +114,7 @@ interface LiveFightUpdate {
   status?: 'upcoming' | 'live' | 'complete';
   currentRound?: number | null;
   completedRounds?: number | null;
-  hasStarted?: boolean;
-  isComplete?: boolean;
+  fightStatus?: FightStatus;
   winner?: string | null;
   method?: string | null;
   winningRound?: number | null;
@@ -124,8 +123,7 @@ interface LiveFightUpdate {
 
 interface LiveEventUpdate {
   eventName: string;
-  hasStarted?: boolean;
-  isComplete?: boolean;
+  eventStatus?: string;
   fights: LiveFightUpdate[];
 }
 
@@ -341,22 +339,30 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
     const calculatedHasStarted = earliestStartTime ? now >= earliestStartTime : false;
 
     // Update event status
-    if (calculatedHasStarted !== event.hasStarted) {
-      console.log(`  🔴 Event status change: hasStarted ${event.hasStarted} → ${calculatedHasStarted} (based on time)`);
+    const currentEventIsUpcoming = event.eventStatus === 'UPCOMING';
+    if (calculatedHasStarted && currentEventIsUpcoming) {
+      console.log(`  🔴 Event status change: eventStatus ${event.eventStatus} → LIVE (based on time)`);
       eventChanged = true;
     }
 
-    if (liveData.isComplete !== undefined && event.isComplete !== liveData.isComplete) {
-      console.log(`  ✅ Event status change: isComplete ${event.isComplete} → ${liveData.isComplete}`);
+    const liveDataEventStatus = liveData.eventStatus;
+    if (liveDataEventStatus === 'COMPLETED' && event.eventStatus !== 'COMPLETED') {
+      console.log(`  ✅ Event status change: eventStatus ${event.eventStatus} → COMPLETED`);
       eventChanged = true;
     }
 
     if (eventChanged) {
+      let newEventStatus = event.eventStatus;
+      if (calculatedHasStarted && currentEventIsUpcoming) {
+        newEventStatus = 'LIVE';
+      }
+      if (liveDataEventStatus === 'COMPLETED') {
+        newEventStatus = 'COMPLETED';
+      }
       await prisma.event.update({
         where: { id: event.id },
         data: {
-          hasStarted: calculatedHasStarted,
-          isComplete: liveData.isComplete ?? event.isComplete,
+          eventStatus: newEventStatus,
         }
       });
       console.log(`  💾 Event updated`);
@@ -370,7 +376,7 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
 
     console.log(`  🔍 Processing ${liveData.fights.length} fight updates...`);
     for (const fightUpdate of liveData.fights) {
-      console.log(`  🔎 Looking for fight: ${fightUpdate.fighterAName} vs ${fightUpdate.fighterBName} (ufcFightId: ${fightUpdate.ufcFightId}, hasStarted: ${fightUpdate.hasStarted}, isComplete: ${fightUpdate.isComplete})`);
+      console.log(`  🔎 Looking for fight: ${fightUpdate.fighterAName} vs ${fightUpdate.fighterBName} (ufcFightId: ${fightUpdate.ufcFightId}, fightStatus: ${fightUpdate.fightStatus})`);
 
       // Track by ufcFightId (preferred) and name signature (fallback)
       if (fightUpdate.ufcFightId) {
@@ -428,8 +434,7 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
               isTitle: fightUpdate.isTitle ?? false,
               titleName: fightUpdate.isTitle ? `UFC ${fightUpdate.weightClass} Championship` : undefined,
               scheduledRounds,
-              hasStarted: fightUpdate.hasStarted ?? false,
-              isComplete: fightUpdate.isComplete ?? false,
+              fightStatus: fightUpdate.fightStatus ?? 'UPCOMING',
               currentRound: fightUpdate.currentRound ?? null,
               completedRounds: fightUpdate.completedRounds ?? null,
             }
@@ -452,34 +457,26 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         }
       }
 
-      console.log(`  ✓ Found DB fight: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (DB hasStarted: ${dbFight.hasStarted}, DB isComplete: ${dbFight.isComplete})`);
+      console.log(`  ✓ Found DB fight: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (DB fightStatus: ${dbFight.fightStatus})`);
 
       const updateData: any = {};
       let changed = false;
 
       // Check status changes
-      if (fightUpdate.hasStarted !== undefined && dbFight.hasStarted !== fightUpdate.hasStarted) {
-        updateData.hasStarted = fightUpdate.hasStarted;
+      if (fightUpdate.fightStatus !== undefined && dbFight.fightStatus !== fightUpdate.fightStatus) {
+        updateData.fightStatus = fightUpdate.fightStatus;
         changed = true;
-        console.log(`    🥊 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: hasStarted → ${fightUpdate.hasStarted}`);
-        // Note: Notifications are sent when the PREVIOUS fight completes, not when this fight starts
-      }
-
-      if (fightUpdate.isComplete !== undefined && dbFight.isComplete !== fightUpdate.isComplete) {
-        updateData.isComplete = fightUpdate.isComplete;
-        changed = true;
-        console.log(`    ✅ ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: isComplete → ${fightUpdate.isComplete}`);
+        console.log(`    🥊 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: fightStatus → ${fightUpdate.fightStatus}`);
 
         // When a fight completes, send notifications for the NEXT fight on the card
-        if (fightUpdate.isComplete === true) {
+        if (fightUpdate.fightStatus === 'COMPLETED') {
           // Find the next fight on the card (lower orderOnCard = later in event, closer to main event)
           // We want the fight with the next lower orderOnCard number
           prisma.fight.findFirst({
             where: {
               eventId: dbFight.eventId,
               orderOnCard: { lt: dbFight.orderOnCard },
-              hasStarted: false,
-              isComplete: false,
+              fightStatus: 'UPCOMING',
             },
             orderBy: { orderOnCard: 'desc' },
             include: {
@@ -595,7 +592,7 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
 
     for (const dbFight of event.fights) {
       // Skip fights that are already complete
-      if (dbFight.isComplete) {
+      if (dbFight.fightStatus === 'COMPLETED') {
         continue;
       }
 
@@ -616,30 +613,30 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
       }
 
       // Case 1: Fight was cancelled but has reappeared in scraped data -> UN-CANCEL it
-      if (dbFight.isCancelled && fightIsInScrapedData) {
+      if (dbFight.fightStatus === 'CANCELLED' && fightIsInScrapedData) {
         console.log(`  ✅ Fight reappeared in scraped data, UN-CANCELLING: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
 
         await prisma.fight.update({
           where: { id: dbFight.id },
           data: {
-            isCancelled: false,
+            fightStatus: 'UPCOMING',
           }
         });
 
         unCancelledCount++;
       }
       // Case 2: Fight is NOT cancelled and missing from scraped data -> CANCEL it
-      else if (!dbFight.isCancelled && !fightIsInScrapedData) {
+      else if (dbFight.fightStatus !== 'CANCELLED' && !fightIsInScrapedData) {
         console.log(`  ⚠️  Fight missing from scraped data: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
 
         // Only mark as cancelled if event has started (to avoid false positives before event begins)
-        if (event.hasStarted) {
+        if (event.eventStatus !== 'UPCOMING') {
           console.log(`  ❌ Marking fight as CANCELLED: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
 
           await prisma.fight.update({
             where: { id: dbFight.id },
             data: {
-              isCancelled: true,
+              fightStatus: 'CANCELLED',
             }
           });
 
@@ -673,7 +670,7 @@ export async function checkEventComplete(eventId: string): Promise<boolean> {
     where: { id: eventId },
     include: {
       fights: {
-        select: { isComplete: true }
+        select: { fightStatus: true }
       }
     }
   });
@@ -682,7 +679,7 @@ export async function checkEventComplete(eventId: string): Promise<boolean> {
     return false;
   }
 
-  return event.fights.every(fight => fight.isComplete);
+  return event.fights.every(fight => fight.fightStatus === 'COMPLETED');
 }
 
 /**
@@ -695,7 +692,7 @@ export async function autoCompleteEvent(eventId: string): Promise<boolean> {
     await prisma.event.update({
       where: { id: eventId },
       data: {
-        isComplete: true,
+        eventStatus: 'COMPLETED',
         completionMethod: 'scraper' // Completed via live scraper
       }
     });
@@ -733,15 +730,14 @@ export async function getEventStatus(eventIdentifier: string) {
     return null;
   }
 
-  const liveFights = event.fights.filter(f => f.hasStarted && !f.isComplete);
-  const completeFights = event.fights.filter(f => f.isComplete);
-  const upcomingFights = event.fights.filter(f => !f.hasStarted);
+  const liveFights = event.fights.filter(f => f.fightStatus === 'LIVE');
+  const completeFights = event.fights.filter(f => f.fightStatus === 'COMPLETED');
+  const upcomingFights = event.fights.filter(f => f.fightStatus === 'UPCOMING');
 
   return {
     eventId: event.id,
     eventName: event.name,
-    hasStarted: event.hasStarted,
-    isComplete: event.isComplete,
+    eventStatus: event.eventStatus,
     totalFights: event.fights.length,
     liveFights: liveFights.length,
     completeFights: completeFights.length,

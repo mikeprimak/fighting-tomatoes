@@ -22,22 +22,19 @@ const EVENT_NAME = 'UFC 323: Dvalishvili vs. Yan';
 
     console.log('Current event status:');
     console.log(`Event: ${event.name}`);
-    console.log(`hasStarted: ${event.hasStarted}`);
-    console.log(`isComplete: ${event.isComplete}`);
+    console.log(`eventStatus: ${event.eventStatus}`);
     console.log('');
 
     // Update to revert to upcoming
     const updated = await prisma.event.update({
       where: { id: event.id },
       data: {
-        hasStarted: false,
-        isComplete: false,
+        eventStatus: 'UPCOMING',
       },
     });
 
     console.log('✅ Event reverted to UPCOMING status!');
-    console.log(`hasStarted: ${updated.hasStarted}`);
-    console.log(`isComplete: ${updated.isComplete}`);
+    console.log(`eventStatus: ${updated.eventStatus}`);
   } catch (error) {
     console.error('Error:', error.message);
   } finally {

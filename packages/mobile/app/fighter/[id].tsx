@@ -194,8 +194,8 @@ export default function FighterDetailScreen() {
     if (fights.length === 0) return { upcomingFights: [], completedFights: [], sortedFights: [] };
 
     // Separate into upcoming and completed
-    const upcoming = fights.filter((f: Fight) => !f.isComplete);
-    const completed = fights.filter((f: Fight) => f.isComplete);
+    const upcoming = fights.filter((f: Fight) => f.fightStatus !== 'COMPLETED');
+    const completed = fights.filter((f: Fight) => f.fightStatus === 'COMPLETED');
 
     // Sort each group
     const sortUpcoming = (a: Fight, b: Fight) => {

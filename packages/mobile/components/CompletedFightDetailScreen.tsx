@@ -75,8 +75,7 @@ interface Fight {
   orderOnCard?: number | null;
   isTitle: boolean;
   event: Event;
-  hasStarted: boolean;
-  isComplete: boolean;
+  fightStatus: string;
   winner?: string | null;
   method?: string | null;
   round?: number | null;

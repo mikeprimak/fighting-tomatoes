@@ -79,8 +79,7 @@ interface Fight {
   weightClass?: string | null;
   isTitle: boolean;
   event: Event;
-  hasStarted: boolean;
-  isComplete: boolean;
+  fightStatus: string;
   userPredictedWinner?: string | null;
   userPredictedMethod?: string | null;
   userPredictedRound?: number | null;
@@ -179,7 +178,7 @@ export default function UpcomingFightDetailScreen({
 
   // Check if pre-fight activity is locked (fight has started, is complete, or event is in the past)
   const isPreFightLocked = useMemo(() => {
-    if (fight.hasStarted || fight.isComplete) return true;
+    if (fight.fightStatus !== 'UPCOMING') return true;
     // Also check if event date is in the past (safety fallback)
     if (fight.event?.date) {
       const eventDate = new Date(fight.event.date);
@@ -190,7 +189,7 @@ export default function UpcomingFightDetailScreen({
       }
     }
     return false;
-  }, [fight.hasStarted, fight.isComplete, fight.event?.date]);
+  }, [fight.fightStatus, fight.event?.date]);
 
   // Snapshot the fight data when menu opens to prevent re-renders during toggles
   const [menuFightSnapshot, setMenuFightSnapshot] = useState(fight);

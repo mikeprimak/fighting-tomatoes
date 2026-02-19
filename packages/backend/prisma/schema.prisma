@@ -224,6 +224,19 @@ enum Gender {
   FEMALE
 }
 
+enum FightStatus {
+  UPCOMING
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum EventStatus {
+  UPCOMING
+  LIVE
+  COMPLETED
+}
+
 // ============== EVENTS ==============
 model Event {
   id                String    @id @default(uuid())
@@ -256,8 +269,7 @@ model Event {
   greatFights       Int       @default(0) // fights rated 85+
 
   // Status
-  hasStarted        Boolean   @default(false)
-  isComplete        Boolean   @default(false)
+  eventStatus       EventStatus @default(UPCOMING)
   completionMethod  String?   // "all_fights" | "timeout_12hr" | "timeout_smart" | "manual" | "scraper"
   isVisible         Boolean   @default(true)  // Hide events without deleting (e.g., Matchroom Boxing)
 
@@ -332,9 +344,7 @@ model Fight {
   ratings10       Int       @default(0)
   
   // Status
-  hasStarted        Boolean   @default(false)
-  isComplete        Boolean   @default(false)
-  isCancelled       Boolean   @default(false)  // Fight was cancelled before event
+  fightStatus       FightStatus @default(UPCOMING)
   completionMethod  String?   // "scraper" | "failsafe-timeout" | "failsafe-force-timeout" | "manual"
   completedAt       DateTime? // When fight was marked complete
   currentRound      Int?      // Current round in progress (1-5), null if not started or complete
@@ -344,8 +354,7 @@ model Fight {
   scheduledStartTime DateTime? // When this fight is expected to start (for time-based auto-flip to "live")
 
   // Tracker shadow fields (live tracker writes here, admin publishes to main fields)
-  trackerHasStarted      Boolean?
-  trackerIsComplete      Boolean?
+  trackerFightStatus     FightStatus?
   trackerWinner          String?    // mirrors 'winner'
   trackerMethod          String?    // mirrors 'method'
   trackerRound           Int?       // mirrors 'round'

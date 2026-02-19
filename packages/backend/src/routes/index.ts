@@ -182,8 +182,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   date: { type: 'string' },
                   venue: { type: 'string' },
                   location: { type: 'string' },
-                  hasStarted: { type: 'boolean' },
-                  isComplete: { type: 'boolean' },
+                  eventStatus: { type: 'string' },
                   bannerImage: { type: ['string', 'null'] },
                   earlyPrelimStartTime: { type: ['string', 'null'] },
                   prelimStartTime: { type: ['string', 'null'] },
@@ -277,9 +276,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
       // Add type filter for upcoming/past events
       // Upcoming includes:
       //   1. Future events (any start time >= now, not complete)
-      //   2. Live events (hasStarted = true, not complete) - these show even if date passed
+      //   2. Live events (eventStatus = LIVE) - these show even if date passed
       // Past includes:
-      //   - Only events that are actually complete (isComplete = true)
+      //   - Only events that are actually complete (eventStatus = COMPLETED)
       // Note: We check mainStartTime, prelimStartTime, earlyPrelimStartTime, and date
       // because the date field is often midnight while the actual event is later
       if (type === 'upcoming') {
@@ -287,14 +286,14 @@ export async function registerRoutes(fastify: FastifyInstance) {
         // Not complete AND (any start time in future OR currently live)
         const upcomingCondition = {
           AND: [
-            { isComplete: false },
+            { eventStatus: { not: 'COMPLETED' } },
             {
               OR: [
                 { mainStartTime: { gte: now } },       // Main card hasn't started
                 { prelimStartTime: { gte: now } },    // Prelims haven't started
                 { earlyPrelimStartTime: { gte: now } }, // Early prelims haven't started
                 { date: { gte: now } },               // Event date in future (fallback)
-                { hasStarted: true }                  // Live events (already in progress)
+                { eventStatus: 'LIVE' }               // Live events (already in progress)
               ]
             }
           ]
@@ -308,7 +307,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       } else if (type === 'past') {
         // Past events: only show events that are actually complete
         // Don't show events just because their date passed (they might be live)
-        whereClause.isComplete = true;
+        whereClause.eventStatus = 'COMPLETED';
 
         if (promotionFilter) {
           whereClause.AND = [promotionFilter];
@@ -335,8 +334,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         date: true,
         venue: true,
         location: true,
-        hasStarted: true,
-        isComplete: true,
+        eventStatus: true,
         averageRating: true,
         totalRatings: true,
         greatFights: true,
@@ -349,7 +347,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       // Include fights if requested
       if (includeFights) {
         select.fights = {
-          where: { isCancelled: false },
+          where: { fightStatus: { not: 'CANCELLED' } },
           orderBy: { orderOnCard: 'asc' },
           select: {
             id: true,
@@ -357,8 +355,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
             isTitle: true,
             titleName: true,
             orderOnCard: true,
-            hasStarted: true,
-            isComplete: true,
+            fightStatus: true,
             winner: true,
             method: true,
             round: true,
@@ -567,8 +564,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 date: { type: 'string' },
                 venue: { type: 'string' },
                 location: { type: 'string' },
-                hasStarted: { type: 'boolean' },
-                isComplete: { type: 'boolean' },
+                eventStatus: { type: 'string' },
                 averageRating: { type: 'number' },
                 totalRatings: { type: 'integer' },
                 greatFights: { type: 'integer' },
@@ -612,8 +608,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
           date: true,
           venue: true,
           location: true,
-          hasStarted: true,
-          isComplete: true,
+          eventStatus: true,
           averageRating: true,
           totalRatings: true,
           greatFights: true,
@@ -667,7 +662,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
           id: true,
           name: true,
           fights: {
-            where: { isCancelled: false },
+            where: { fightStatus: { not: 'CANCELLED' } },
             select: {
               id: true,
             },
@@ -814,7 +809,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         select: {
           id: true,
           name: true,
-          hasStarted: true,
+          eventStatus: true,
         },
       });
 
@@ -1007,7 +1002,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       return reply.send({
         eventId,
         eventName: event.name,
-        hasStarted: event.hasStarted,
+        eventStatus: event.eventStatus,
         totalPredictions,
         averageEventHype: Math.round(averageEventHype * 10) / 10,
         mostHypedFights,

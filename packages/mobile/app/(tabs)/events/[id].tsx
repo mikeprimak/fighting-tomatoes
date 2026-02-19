@@ -30,8 +30,7 @@ interface EventDetails {
   venue?: string;
   location?: string;
   promotion: string;
-  hasStarted: boolean;
-  isComplete: boolean;
+  eventStatus: string;
   bannerImage?: string | null;
   earlyPrelimStartTime?: string | null;
   prelimStartTime?: string | null;
@@ -109,10 +108,10 @@ export default function EventDetailScreen() {
 
   // Helper to check if event is currently live
   const isEventLive = (event: EventDetails | undefined) => {
-    if (!event || event.isComplete) return false;
+    if (!event || event.eventStatus === 'COMPLETED') return false;
 
-    // Primary check: if event has explicitly started and isn't complete, it's live
-    if (event.hasStarted && !event.isComplete) return true;
+    // Primary check: if event status is LIVE
+    if (event.eventStatus === 'LIVE') return true;
 
     // Secondary time-based check for scheduled events
     const now = new Date();
@@ -120,7 +119,7 @@ export default function EventDetailScreen() {
     if (!earliestTime) return false;
 
     const startTime = new Date(earliestTime);
-    return now >= startTime && !event.isComplete;
+    return now >= startTime && event.eventStatus !== 'COMPLETED';
   };
 
   const eventIsLive = isEventLive(event);
@@ -226,17 +225,17 @@ export default function EventDetailScreen() {
   }
 
   // Check if any fight is currently live
-  const hasLiveFight = fights.some((f: Fight) => f.hasStarted && !f.isComplete);
+  const hasLiveFight = fights.some((f: Fight) => f.fightStatus === 'LIVE');
 
   // Determine the next fight to start (highest orderOnCard that hasn't started)
   // Fights execute in reverse order: early prelims (high numbers) → prelims → main card (low numbers)
   const nextFight = fights
-    .filter((f: Fight) => !f.hasStarted && !f.isComplete)
+    .filter((f: Fight) => f.fightStatus === 'UPCOMING')
     .sort((a, b) => b.orderOnCard - a.orderOnCard)[0]; // Highest orderOnCard first
 
   // Find the most recently completed fight (for timing "Up next..." messages)
   const lastCompletedFight = fights
-    .filter((f: Fight) => f.isComplete)
+    .filter((f: Fight) => f.fightStatus === 'COMPLETED')
     .sort((a, b) => {
       const aTime = new Date(a.updatedAt || 0).getTime();
       const bTime = new Date(b.updatedAt || 0).getTime();
@@ -302,7 +301,7 @@ export default function EventDetailScreen() {
 
   // Helper function to check if any fight in a card section has started
   const hasCardSectionStarted = (fights: Fight[]) => {
-    return fights.some((f: Fight) => f.hasStarted || f.isComplete);
+    return fights.some((f: Fight) => f.fightStatus !== 'UPCOMING');
   };
 
   // Check if each card section has started
@@ -328,7 +327,7 @@ export default function EventDetailScreen() {
             {event ? normalizeEventName(event.name, event.promotion) : 'Loading...'}
           </Text>
           <View style={styles.eventDateRow}>
-            {event && !event.isComplete && eventIsLive ? (
+            {event && event.eventStatus !== 'COMPLETED' && eventIsLive ? (
               // When live, only show Live indicator (no date)
               <View style={styles.liveIndicator}>
                 <Animated.View style={[
@@ -343,7 +342,7 @@ export default function EventDetailScreen() {
                 <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
                   {event ? formatDate(event.date) : ''}
                 </Text>
-                {event && !event.isComplete && getDisplayTime(event) && (
+                {event && event.eventStatus !== 'COMPLETED' && getDisplayTime(event) && (
                   <Text style={[styles.eventDate, { color: colors.textSecondary }]}> • Main @ {getDisplayTime(event)}</Text>
                 )}
               </>
@@ -372,7 +371,7 @@ export default function EventDetailScreen() {
           <View style={styles.cardSection}>
             {/* Section Header with Column Headers and Title/Time */}
             <View style={styles.sectionHeader}>
-              {event.isComplete ? (
+              {event.eventStatus === 'COMPLETED' ? (
                 <>
                   {/* Left Column Header - ALL / RATINGS */}
                   <View style={styles.columnHeaders}>

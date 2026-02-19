@@ -274,8 +274,7 @@ async function importZuffaEvents(
           ufcUrl: eventData.eventUrl,
           promotion: 'Zuffa Boxing',
           bannerImage,
-          hasStarted: eventData.status === 'Live',
-          isComplete: eventData.status === 'Complete',
+          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
       console.log(`  ✓ Updated event: ${eventData.eventName}`);
@@ -290,8 +289,7 @@ async function importZuffaEvents(
           location,
           bannerImage,
           ufcUrl: eventData.eventUrl,
-          hasStarted: eventData.status === 'Live',
-          isComplete: eventData.status === 'Complete',
+          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
       console.log(`  ✓ Created event: ${eventData.eventName}`);
@@ -402,8 +400,7 @@ async function importZuffaEvents(
             scheduledRounds: fightData.scheduledRounds || 10,
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
-            hasStarted: false,
-            isComplete: false,
+            fightStatus: 'UPCOMING',
           }
         });
         fightsImported++;
@@ -431,7 +428,7 @@ async function importZuffaEvents(
 
     for (const dbFight of dbFights) {
       // Skip fights that are already complete
-      if (dbFight.isComplete) {
+      if (dbFight.fightStatus === 'COMPLETED') {
         continue;
       }
 
@@ -444,23 +441,23 @@ async function importZuffaEvents(
       const fightIsInScrapedData = scrapedFightSignatures.has(dbFightSignature);
 
       // Case 1: Fight was cancelled but has reappeared in scraped data -> UN-CANCEL it
-      if (dbFight.isCancelled && fightIsInScrapedData) {
+      if (dbFight.fightStatus === 'CANCELLED' && fightIsInScrapedData) {
         console.log(`    ✅ Fight reappeared, UN-CANCELLING: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
 
         await prisma.fight.update({
           where: { id: dbFight.id },
-          data: { isCancelled: false }
+          data: { fightStatus: 'UPCOMING' }
         });
 
         unCancelledCount++;
       }
       // Case 2: Fight is NOT cancelled and missing from scraped data -> CANCEL it
-      else if (!dbFight.isCancelled && !fightIsInScrapedData) {
+      else if (dbFight.fightStatus !== 'CANCELLED' && !fightIsInScrapedData) {
         console.log(`    ❌ Fight missing from scraped data, CANCELLING: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
 
         await prisma.fight.update({
           where: { id: dbFight.id },
-          data: { isCancelled: true }
+          data: { fightStatus: 'CANCELLED' }
         });
 
         cancelledCount++;

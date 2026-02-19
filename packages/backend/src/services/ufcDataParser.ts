@@ -389,7 +389,7 @@ async function importEvents(
     // parsed as 2026 when it should be 2025 if scraper runs in early 2026)
     const existingEvent = await prisma.event.findUnique({
       where: { ufcUrl: eventData.eventUrl },
-      select: { id: true, date: true, isComplete: true },
+      select: { id: true, date: true, eventStatus: true },
     });
 
     // Build update data - only include date if event doesn't exist yet
@@ -401,15 +401,14 @@ async function importEvents(
       earlyPrelimStartTime,
       prelimStartTime,
       mainStartTime,
-      hasStarted: eventData.status === 'Live',
-      isComplete: eventData.status === 'Complete',
+      eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
     };
 
     // Only update date if:
     // 1. Event doesn't exist yet, OR
     // 2. Event exists but is not complete (still upcoming, might need date correction)
     // This prevents year parsing bugs from corrupting completed event dates
-    if (!existingEvent || !existingEvent.isComplete) {
+    if (!existingEvent || existingEvent.eventStatus !== 'COMPLETED') {
       updateData.date = eventDate;
     } else {
       console.log(`    ℹ Preserving existing date for completed event: ${existingEvent.date.toISOString()}`);
@@ -432,8 +431,7 @@ async function importEvents(
         earlyPrelimStartTime,
         prelimStartTime,
         mainStartTime,
-        hasStarted: eventData.status === 'Live',
-        isComplete: eventData.status === 'Complete',
+        eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
       }
     });
 
@@ -506,8 +504,7 @@ async function importEvents(
           cardType: fightData.cardType,  // "Main Card", "Prelims", or "Early Prelims" from UFC.com
           ufcFightId: fightData.fightId,  // UFC's data-fmid for reliable live tracking
           startTime: fightData.startTime,
-          hasStarted: false,
-          isComplete: false,
+          fightStatus: 'UPCOMING',
         }
       });
 
@@ -542,8 +539,7 @@ async function importEvents(
       const existingDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: false,
+          fightStatus: { in: ['UPCOMING', 'LIVE'] },
         },
         include: {
           fighter1: true,
@@ -573,7 +569,7 @@ async function importEvents(
 
             await prisma.fight.update({
               where: { id: dbFight.id },
-              data: { isCancelled: true }
+              data: { fightStatus: 'CANCELLED' }
             });
 
             cancelledCount++;
@@ -587,7 +583,7 @@ async function importEvents(
 
               await prisma.fight.update({
                 where: { id: dbFight.id },
-                data: { isCancelled: true }
+                data: { fightStatus: 'CANCELLED' }
               });
 
               cancelledCount++;
@@ -602,8 +598,7 @@ async function importEvents(
       const cancelledDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: true,
+          fightStatus: 'CANCELLED',
         },
         include: {
           fighter1: true,
@@ -622,7 +617,7 @@ async function importEvents(
 
           await prisma.fight.update({
             where: { id: dbFight.id },
-            data: { isCancelled: false }
+            data: { fightStatus: 'UPCOMING' }
           });
 
           unCancelledCount++;
@@ -702,7 +697,7 @@ export async function getImportStats(): Promise<{
     prisma.event.count({
       where: {
         date: { gte: new Date() },
-        isComplete: false
+        eventStatus: { not: 'COMPLETED' }
       }
     })
   ]);

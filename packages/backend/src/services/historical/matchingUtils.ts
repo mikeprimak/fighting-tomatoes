@@ -316,7 +316,7 @@ export async function getFightsNeedingOutcome(
     where: {
       eventId,
       winner: null,
-      isCancelled: false,
+      fightStatus: { not: 'CANCELLED' },
     },
     include: {
       fighter1: { select: { firstName: true, lastName: true } },

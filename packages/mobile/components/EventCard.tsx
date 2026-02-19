@@ -19,8 +19,7 @@ interface Event {
   venue?: string;
   location?: string;
   promotion: string;
-  hasStarted: boolean;
-  isComplete: boolean;
+  eventStatus: string;
   bannerImage?: string | null;
   earlyPrelimStartTime?: string | null;
   prelimStartTime?: string | null;
@@ -95,7 +94,7 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
 
     // Only show countdown if event is within 12 hours and hasn't started
     const twelveHours = 12 * 60 * 60 * 1000;
-    if (diff > 0 && diff <= twelveHours && !event.hasStarted) {
+    if (diff > 0 && diff <= twelveHours && event.eventStatus === 'UPCOMING') {
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
@@ -125,11 +124,11 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [event.earlyPrelimStartTime, event.prelimStartTime, event.mainStartTime, event.date, event.hasStarted]);
+  }, [event.earlyPrelimStartTime, event.prelimStartTime, event.mainStartTime, event.date, event.eventStatus]);
 
   // Start pulsing animation for live events
   useEffect(() => {
-    const isLive = event.hasStarted && !event.isComplete;
+    const isLive = event.eventStatus === 'LIVE';
     if (isLive) {
       const pulse = Animated.loop(
         Animated.sequence([
@@ -148,7 +147,7 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
       pulse.start();
       return () => pulse.stop();
     }
-  }, [event.hasStarted, event.isComplete, pulseAnim]);
+  }, [event.eventStatus, pulseAnim]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -217,9 +216,9 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
             <View style={styles.dateRow}>
               <Text style={[styles.eventDate, { color: colors.textSecondary }]}>
                 {formatDate(event.date)}
-                {showTime && !event.hasStarted && getDisplayTime() && ` • Main @ ${getDisplayTime()}`}
+                {showTime && event.eventStatus === 'UPCOMING' && getDisplayTime() && ` • Main @ ${getDisplayTime()}`}
               </Text>
-              {showTime && event.hasStarted && !event.isComplete && (
+              {showTime && event.eventStatus === 'LIVE' && (
                 <View style={styles.liveContainer}>
                   <Text style={[styles.eventDate, { color: colors.textSecondary }]}> • </Text>
                   <Animated.View style={[

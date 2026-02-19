@@ -23,7 +23,7 @@ const getApiBaseUrl = () => {
   if (Platform.OS === 'web') {
     return 'http://localhost:3008/api';
   } else {
-    return 'http://10.0.0.53:3008/api';  // Your local dev machine
+    return 'http://10.0.0.51:3008/api';  // Your local dev machine
   }
 };
 
@@ -75,8 +75,7 @@ interface Fight {
   averageRating: number;
   totalRatings: number;
   totalReviews: number;
-  hasStarted: boolean;
-  isComplete: boolean;
+  fightStatus: string;
   watchPlatform?: string;
   watchUrl?: string;
   // User-specific data (included when includeUserData=true)
@@ -773,7 +772,7 @@ class ApiService {
   async getEventPredictionStats(eventId: string): Promise<{
     eventId: string;
     eventName: string;
-    hasStarted: boolean;
+    eventStatus: string;
     totalPredictions: number;
     averageEventHype: number;
     mostHypedFights: Array<{
@@ -1358,8 +1357,7 @@ class ApiService {
         titleName?: string;
         weightClass?: string;
         scheduledRounds: number;
-        hasStarted: boolean;
-        isComplete: boolean;
+        fightStatus: string;
         winner?: string;
         method?: string;
         round?: number;
@@ -1400,8 +1398,7 @@ class ApiService {
         venue?: string;
         location?: string;
         bannerImage?: string;
-        hasStarted: boolean;
-        isComplete: boolean;
+        eventStatus: string;
         averageRating: number;
         totalRatings: number;
         greatFights: number;

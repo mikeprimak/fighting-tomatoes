@@ -365,8 +365,7 @@ async function importGoldenBoyEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
-          hasStarted: eventData.status === 'Live',
-          isComplete: eventData.status === 'Complete',
+          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
     } else {
@@ -381,8 +380,7 @@ async function importGoldenBoyEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
-          hasStarted: eventData.status === 'Live',
-          isComplete: eventData.status === 'Complete',
+          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
     }
@@ -504,8 +502,7 @@ async function importGoldenBoyEvents(
       const existingDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: false,
+          fightStatus: { in: ['UPCOMING', 'LIVE'] },
         },
         include: {
           fighter1: true,
@@ -535,7 +532,7 @@ async function importGoldenBoyEvents(
 
             await prisma.fight.update({
               where: { id: dbFight.id },
-              data: { isCancelled: true }
+              data: { fightStatus: 'CANCELLED' }
             });
 
             cancelledCount++;
@@ -549,7 +546,7 @@ async function importGoldenBoyEvents(
 
               await prisma.fight.update({
                 where: { id: dbFight.id },
-                data: { isCancelled: true }
+                data: { fightStatus: 'CANCELLED' }
               });
 
               cancelledCount++;
@@ -564,8 +561,7 @@ async function importGoldenBoyEvents(
       const cancelledDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: true,
+          fightStatus: 'CANCELLED',
         },
         include: {
           fighter1: true,
@@ -584,7 +580,7 @@ async function importGoldenBoyEvents(
 
           await prisma.fight.update({
             where: { id: dbFight.id },
-            data: { isCancelled: false }
+            data: { fightStatus: 'UPCOMING' }
           });
 
           unCancelledCount++;
@@ -668,8 +664,7 @@ async function createGoldenBoyFight(
         scheduledRounds: fightData.scheduledRounds || (fightData.isTitle ? 12 : 10),
         orderOnCard: fightData.order,
         cardType: fightData.cardType,
-        hasStarted: false,
-        isComplete: false,
+        fightStatus: 'UPCOMING',
       }
     });
   } catch (error) {
@@ -739,7 +734,7 @@ export async function getGoldenBoyImportStats(): Promise<{
       where: {
         promotion: 'Golden Boy',
         date: { gte: new Date() },
-        isComplete: false
+        eventStatus: { not: 'COMPLETED' }
       }
     })
   ]);

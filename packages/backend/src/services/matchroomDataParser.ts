@@ -438,8 +438,7 @@ async function importMatchroomEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: primaryEvent.eventUrl,
           mainStartTime: mainStartTime || undefined,
-          hasStarted: primaryEvent.status === 'Live',
-          isComplete: primaryEvent.status === 'Complete',
+          eventStatus: primaryEvent.status === 'Complete' ? 'COMPLETED' : primaryEvent.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
       console.log(`    ✓ Updated event: ${eventName}`);
@@ -455,8 +454,7 @@ async function importMatchroomEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: primaryEvent.eventUrl,
           mainStartTime: mainStartTime || undefined,
-          hasStarted: primaryEvent.status === 'Live',
-          isComplete: primaryEvent.status === 'Complete',
+          eventStatus: primaryEvent.status === 'Complete' ? 'COMPLETED' : primaryEvent.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
       console.log(`    ✓ Created event: ${eventName}`);
@@ -625,8 +623,7 @@ async function importMatchroomEvents(
             scheduledRounds: fightData.isTitle ? 12 : 12,
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
-            hasStarted: false,
-            isComplete: false,
+            fightStatus: 'UPCOMING',
           }
         });
 
@@ -664,8 +661,7 @@ async function importMatchroomEvents(
       const existingDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: false,
+          fightStatus: { in: ['UPCOMING', 'LIVE'] },
         },
         include: {
           fighter1: true,
@@ -695,7 +691,7 @@ async function importMatchroomEvents(
 
             await prisma.fight.update({
               where: { id: dbFight.id },
-              data: { isCancelled: true }
+              data: { fightStatus: 'CANCELLED' }
             });
 
             cancelledCount++;
@@ -709,7 +705,7 @@ async function importMatchroomEvents(
 
               await prisma.fight.update({
                 where: { id: dbFight.id },
-                data: { isCancelled: true }
+                data: { fightStatus: 'CANCELLED' }
               });
 
               cancelledCount++;
@@ -724,8 +720,7 @@ async function importMatchroomEvents(
       const cancelledDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: true,
+          fightStatus: 'CANCELLED',
         },
         include: {
           fighter1: true,
@@ -744,7 +739,7 @@ async function importMatchroomEvents(
 
           await prisma.fight.update({
             where: { id: dbFight.id },
-            data: { isCancelled: false }
+            data: { fightStatus: 'UPCOMING' }
           });
 
           unCancelledCount++;
@@ -827,7 +822,7 @@ export async function getMatchroomImportStats(): Promise<{
       where: {
         promotion: 'Matchroom Boxing',
         date: { gte: new Date() },
-        isComplete: false
+        eventStatus: { not: 'COMPLETED' }
       }
     })
   ]);

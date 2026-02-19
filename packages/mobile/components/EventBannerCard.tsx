@@ -11,8 +11,7 @@ interface EventBannerCardProps {
     name: string;
     date: string;
     bannerImage?: string | null;
-    hasStarted: boolean;
-    isComplete: boolean;
+    eventStatus: string;
     promotion?: string;
     mainStartTime?: string | null;
   };
@@ -73,13 +72,13 @@ const parseEventName = (eventName: string, promotion?: string | null) => {
   };
 };
 
-const formatDate = (dateString: string, isComplete: boolean) => {
+const formatDate = (dateString: string, eventStatus: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
-    ...(isComplete && { year: 'numeric' }), // Only show year for completed events
+    ...(eventStatus === 'COMPLETED' && { year: 'numeric' }), // Only show year for completed events
   });
 };
 
@@ -160,8 +159,8 @@ export const EventBannerCard = memo(function EventBannerCard({
               </View>
             )}
             <Text style={styles.dateText}>
-              {formatDate(event.date, event.isComplete)}
-              {event.mainStartTime && !event.hasStarted && !event.isComplete && (
+              {formatDate(event.date, event.eventStatus)}
+              {event.mainStartTime && event.eventStatus === 'UPCOMING' && (
                 <Text style={styles.timeText}>{`  •  ${formatTime(event.mainStartTime)}`}</Text>
               )}
             </Text>

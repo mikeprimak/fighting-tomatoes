@@ -384,8 +384,7 @@ async function main() {
       averageRating: 88.5,
       totalRatings: 1250,
       greatFights: 4,
-      hasStarted: true,
-      isComplete: true,
+      eventStatus: 'COMPLETED',
     },
     {
       name: 'UFC 301',
@@ -402,8 +401,7 @@ async function main() {
       averageRating: 72.3,
       totalRatings: 890,
       greatFights: 1,
-      hasStarted: true,
-      isComplete: true,
+      eventStatus: 'COMPLETED',
     },
     {
       name: 'Fury vs. Usyk',
@@ -420,8 +418,7 @@ async function main() {
       averageRating: 91.2,
       totalRatings: 2100,
       greatFights: 2,
-      hasStarted: true,
-      isComplete: true,
+      eventStatus: 'COMPLETED',
     },
     {
       name: 'UFC 310',
@@ -438,8 +435,7 @@ async function main() {
       averageRating: 0,
       totalRatings: 0,
       greatFights: 0,
-      hasStarted: false,
-      isComplete: false,
+      eventStatus: 'UPCOMING',
     }
   ]
 
@@ -471,8 +467,7 @@ async function main() {
       totalReviews: 120,
       ratings1: 0, ratings2: 2, ratings3: 1, ratings4: 5, ratings5: 8,
       ratings6: 15, ratings7: 25, ratings8: 50, ratings9: 120, ratings10: 224,
-      hasStarted: true,
-      isComplete: true,
+      fightStatus: 'COMPLETED',
     },
     {
       eventId: events[0].id, // UFC 300
@@ -491,8 +486,7 @@ async function main() {
       totalReviews: 95,
       ratings1: 1, ratings2: 0, ratings3: 3, ratings4: 8, ratings5: 12,
       ratings6: 20, ratings7: 45, ratings8: 85, ratings9: 130, ratings10: 76,
-      hasStarted: true,
-      isComplete: true,
+      fightStatus: 'COMPLETED',
     },
     {
       eventId: events[1].id, // UFC 301
@@ -511,8 +505,7 @@ async function main() {
       totalReviews: 75,
       ratings1: 2, ratings2: 5, ratings3: 8, ratings4: 15, ratings5: 25,
       ratings6: 40, ratings7: 65, ratings8: 80, ratings9: 35, ratings10: 15,
-      hasStarted: true,
-      isComplete: true,
+      fightStatus: 'COMPLETED',
     },
     {
       eventId: events[2].id, // Fury vs. Usyk
@@ -531,8 +524,7 @@ async function main() {
       totalReviews: 180,
       ratings1: 0, ratings2: 1, ratings3: 2, ratings4: 3, ratings5: 5,
       ratings6: 8, ratings7: 15, ratings8: 35, ratings9: 180, ratings10: 271,
-      hasStarted: true,
-      isComplete: true,
+      fightStatus: 'COMPLETED',
     },
     {
       eventId: events[3].id, // UFC 310 (upcoming)
@@ -549,8 +541,7 @@ async function main() {
       averageRating: 0,
       totalRatings: 0,
       totalReviews: 0,
-      hasStarted: false,
-      isComplete: false,
+      fightStatus: 'UPCOMING',
     }
   ]
 

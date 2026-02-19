@@ -355,8 +355,7 @@ async function importPFLEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
-          hasStarted: eventData.status === 'Live',
-          isComplete: eventData.status === 'Complete',
+          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
     } else {
@@ -371,8 +370,7 @@ async function importPFLEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
-          hasStarted: eventData.status === 'Live',
-          isComplete: eventData.status === 'Complete',
+          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
     }
@@ -490,8 +488,7 @@ async function importPFLEvents(
       const existingDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: false,
+          fightStatus: { in: ['UPCOMING', 'LIVE'] },
         },
         include: {
           fighter1: true,
@@ -521,7 +518,7 @@ async function importPFLEvents(
 
             await prisma.fight.update({
               where: { id: dbFight.id },
-              data: { isCancelled: true }
+              data: { fightStatus: 'CANCELLED' }
             });
 
             cancelledCount++;
@@ -535,7 +532,7 @@ async function importPFLEvents(
 
               await prisma.fight.update({
                 where: { id: dbFight.id },
-                data: { isCancelled: true }
+                data: { fightStatus: 'CANCELLED' }
               });
 
               cancelledCount++;
@@ -550,8 +547,7 @@ async function importPFLEvents(
       const cancelledDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: true,
+          fightStatus: 'CANCELLED',
         },
         include: {
           fighter1: true,
@@ -570,7 +566,7 @@ async function importPFLEvents(
 
           await prisma.fight.update({
             where: { id: dbFight.id },
-            data: { isCancelled: false }
+            data: { fightStatus: 'UPCOMING' }
           });
 
           unCancelledCount++;
@@ -652,8 +648,7 @@ async function createFight(
         scheduledRounds: fightData.isTitle ? 5 : 3,
         orderOnCard: fightData.order,
         cardType: fightData.cardType,
-        hasStarted: false,
-        isComplete: false,
+        fightStatus: 'UPCOMING',
       }
     });
   } catch (error) {
@@ -723,7 +718,7 @@ export async function getPFLImportStats(): Promise<{
       where: {
         promotion: 'PFL',
         date: { gte: new Date() },
-        isComplete: false
+        eventStatus: { not: 'COMPLETED' }
       }
     })
   ]);

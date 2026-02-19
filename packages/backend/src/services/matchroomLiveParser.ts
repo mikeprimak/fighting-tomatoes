@@ -155,20 +155,20 @@ export async function parseMatchroomLiveData(
     console.log(`  ⚙️  Tracker mode: ${trackerMode}`);
 
     // Update event status if changed
-    if (liveData.hasStarted && !event.hasStarted) {
+    if (liveData.hasStarted && event.eventStatus === 'UPCOMING') {
       await prisma.event.update({
         where: { id: eventId },
-        data: { hasStarted: true }
+        data: { eventStatus: 'LIVE' }
       });
       console.log(`  🔴 Event marked as STARTED`);
       eventUpdated = true;
     }
 
-    if (liveData.isComplete && !event.isComplete) {
+    if (liveData.isComplete && event.eventStatus !== 'COMPLETED') {
       await prisma.event.update({
         where: { id: eventId },
         data: {
-          isComplete: true,
+          eventStatus: 'COMPLETED',
           completionMethod: 'scraper'
         }
       });
@@ -197,16 +197,16 @@ export async function parseMatchroomLiveData(
       const updateData: any = {};
       let changed = false;
 
-      // Check hasStarted
-      if (fightUpdate.hasStarted && !dbFight.hasStarted) {
-        updateData.hasStarted = true;
+      // Check if fight started (UPCOMING -> LIVE)
+      if (fightUpdate.hasStarted && dbFight.fightStatus === 'UPCOMING') {
+        updateData.fightStatus = 'LIVE';
         changed = true;
         console.log(`    🥊 Fight STARTED`);
       }
 
-      // Check isComplete
-      if (fightUpdate.isComplete && !dbFight.isComplete) {
-        updateData.isComplete = true;
+      // Check if fight complete (-> COMPLETED)
+      if (fightUpdate.isComplete && dbFight.fightStatus !== 'COMPLETED') {
+        updateData.fightStatus = 'COMPLETED';
         changed = true;
         console.log(`    ✅ Fight COMPLETE`);
 
@@ -282,8 +282,7 @@ async function notifyNextFight(eventId: string, completedFightOrder: number): Pr
       where: {
         eventId,
         orderOnCard: { lt: completedFightOrder },
-        hasStarted: false,
-        isComplete: false,
+        fightStatus: 'UPCOMING',
       },
       orderBy: { orderOnCard: 'desc' },
       include: {
@@ -318,8 +317,8 @@ export async function checkMatchroomEventComplete(eventId: string): Promise<bool
     where: { id: eventId },
     include: {
       fights: {
-        where: { isCancelled: false },
-        select: { isComplete: true }
+        where: { fightStatus: { not: 'CANCELLED' } },
+        select: { fightStatus: true }
       }
     }
   });
@@ -328,7 +327,7 @@ export async function checkMatchroomEventComplete(eventId: string): Promise<bool
     return false;
   }
 
-  return event.fights.every(fight => fight.isComplete);
+  return event.fights.every(fight => fight.fightStatus === 'COMPLETED');
 }
 
 /**
@@ -341,7 +340,7 @@ export async function autoCompleteMatchroomEvent(eventId: string): Promise<boole
     await prisma.event.update({
       where: { id: eventId },
       data: {
-        isComplete: true,
+        eventStatus: 'COMPLETED',
         completionMethod: 'scraper'
       }
     });

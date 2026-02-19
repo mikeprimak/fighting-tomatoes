@@ -11,14 +11,13 @@ async function markEventComplete() {
           { name: { contains: 'Allen', mode: 'insensitive' } },
           { name: { contains: 'Riddell', mode: 'insensitive' } },
           { name: { contains: 'Ridder', mode: 'insensitive' } },
-          { hasStarted: true, isComplete: false }
+          { eventStatus: 'LIVE' }
         ]
       },
       select: {
         id: true,
         name: true,
-        hasStarted: true,
-        isComplete: true,
+        eventStatus: true,
         _count: { select: { fights: true } }
       }
     });
@@ -27,17 +26,17 @@ async function markEventComplete() {
     events.forEach(e => {
       console.log(`- ${e.name}`);
       console.log(`  ID: ${e.id}`);
-      console.log(`  Started: ${e.hasStarted} | Complete: ${e.isComplete}`);
+      console.log(`  Status: ${e.eventStatus}`);
       console.log(`  Fights: ${e._count.fights}`);
     });
 
     if (events.length === 0) {
-      console.log('\nNo matching events found. Listing all events with hasStarted=true:');
+      console.log('\nNo matching events found. Listing all LIVE events:');
       const startedEvents = await prisma.event.findMany({
-        where: { hasStarted: true },
-        select: { id: true, name: true, hasStarted: true, isComplete: true }
+        where: { eventStatus: 'LIVE' },
+        select: { id: true, name: true, eventStatus: true }
       });
-      startedEvents.forEach(e => console.log(`- ${e.name} (Complete: ${e.isComplete})`));
+      startedEvents.forEach(e => console.log(`- ${e.name} (Status: ${e.eventStatus})`));
       return;
     }
 
@@ -48,7 +47,7 @@ async function markEventComplete() {
     // Update all fights
     const updateFights = await prisma.fight.updateMany({
       where: { eventId: eventToComplete.id },
-      data: { isComplete: true, hasStarted: true }
+      data: { fightStatus: 'COMPLETED' }
     });
 
     console.log(`Updated ${updateFights.count} fights`);
@@ -56,7 +55,7 @@ async function markEventComplete() {
     // Update event
     const updatedEvent = await prisma.event.update({
       where: { id: eventToComplete.id },
-      data: { isComplete: true, hasStarted: true }
+      data: { eventStatus: 'COMPLETED' }
     });
 
     console.log(`✅ Event marked as complete: ${updatedEvent.name}`);

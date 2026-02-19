@@ -63,8 +63,7 @@ const CreateFightSchema = z.object({
 });
 
 const UpdateFightSchema = CreateFightSchema.partial().extend({
-  hasStarted: z.boolean().optional(),
-  isComplete: z.boolean().optional(),
+  fightStatus: z.enum(['UPCOMING', 'LIVE', 'COMPLETED', 'CANCELLED']).optional(),
   winner: z.string().nullable().optional(),
   method: z.string().nullable().optional(),
   round: z.number().int().min(1).max(12).nullable().optional(),
@@ -262,14 +261,14 @@ export async function adminRoutes(fastify: FastifyInstance) {
     try {
       const event = await prisma.event.findUnique({
         where: { id },
-        select: { name: true, hasStarted: true, isComplete: true }
+        select: { name: true, eventStatus: true }
       });
 
       if (!event) {
         return reply.code(404).send({ error: 'Event not found' });
       }
 
-      if (event.hasStarted) {
+      if (event.eventStatus !== 'UPCOMING') {
         return reply.send({
           success: true,
           message: 'Event was already marked as started',
@@ -279,7 +278,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
       await prisma.event.update({
         where: { id },
-        data: { hasStarted: true }
+        data: { eventStatus: 'LIVE' }
       });
 
       console.log(`[Admin] Marked event as started: ${event.name}`);
@@ -320,7 +319,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
         return reply.code(404).send({ error: 'Fight not found' });
       }
 
-      if (fight.isCancelled) {
+      if (fight.fightStatus === 'CANCELLED') {
         return reply.send({
           success: true,
           message: 'Fight was already cancelled',
@@ -330,7 +329,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
       await prisma.fight.update({
         where: { id },
-        data: { isCancelled: true }
+        data: { fightStatus: 'CANCELLED' }
       });
 
       console.log(`[Admin] Cancelled fight: ${fight.fighter1.lastName} vs ${fight.fighter2.lastName}`);
@@ -366,7 +365,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
         return reply.code(404).send({ error: 'Fight not found' });
       }
 
-      if (!fight.isCancelled) {
+      if (fight.fightStatus !== 'CANCELLED') {
         return reply.send({
           success: true,
           message: 'Fight was not cancelled',
@@ -376,7 +375,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
       await prisma.fight.update({
         where: { id },
-        data: { isCancelled: false }
+        data: { fightStatus: 'UPCOMING' }
       });
 
       console.log(`[Admin] Un-cancelled fight: ${fight.fighter1.lastName} vs ${fight.fighter2.lastName}`);
@@ -463,16 +462,16 @@ export async function adminRoutes(fastify: FastifyInstance) {
     // Also mark event as started in database based on start time
     const event = await prisma.event.findUnique({
       where: { id: finalEventId },
-      select: { id: true, date: true, hasStarted: true }
+      select: { id: true, date: true, eventStatus: true }
     });
 
-    if (event && !event.hasStarted) {
+    if (event && event.eventStatus === 'UPCOMING') {
       const now = new Date();
       const eventDate = new Date(event.date);
       if (now >= eventDate) {
         await prisma.event.update({
           where: { id: finalEventId },
-          data: { hasStarted: true }
+          data: { eventStatus: 'LIVE' }
         });
         console.log(`[Live Tracker] Marked event ${finalEventId} as started (based on start time)`);
       }
@@ -760,39 +759,38 @@ export async function adminRoutes(fastify: FastifyInstance) {
     return reply.send({ event });
   });
 
-  // Update event status (hasStarted, isComplete)
+  // Update event status (eventStatus enum)
   // This is a manual override that sets completionMethod='manual'
   fastify.put('/admin/events/:id/status', {
     preValidation: [fastify.authenticate, requireAdmin],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const { hasStarted, isComplete } = request.body as { hasStarted: boolean; isComplete: boolean };
+    const { eventStatus } = request.body as { eventStatus: 'UPCOMING' | 'LIVE' | 'COMPLETED' };
 
     const event = await prisma.event.update({
       where: { id },
       data: {
-        hasStarted,
-        isComplete,
+        eventStatus,
         completionMethod: 'manual',
       },
     });
 
     // If marking event complete, also mark all incomplete fights as complete
-    if (isComplete) {
+    if (eventStatus === 'COMPLETED') {
       await prisma.fight.updateMany({
         where: {
           eventId: id,
-          isComplete: false,
+          fightStatus: { not: 'COMPLETED' },
         },
         data: {
-          isComplete: true,
+          fightStatus: 'COMPLETED',
           completionMethod: 'manual',
           completedAt: new Date(),
         },
       });
     }
 
-    console.log(`[Admin] Event ${event.name} status updated: hasStarted=${hasStarted}, isComplete=${isComplete}`);
+    console.log(`[Admin] Event ${event.name} status updated: eventStatus=${eventStatus}`);
 
     return reply.send({ event });
   });
@@ -998,10 +996,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
     // Exclude relation IDs and fields that need type casting
     const { eventId, fighter1Id, fighter2Id, weightClass, ...updateData } = parsed;
 
-    // If resetting fight to incomplete, clear completionMethod to prevent
+    // If resetting fight to non-completed status, clear completionMethod to prevent
     // time-based system from re-marking it complete
     const additionalData: any = {};
-    if (updateData.isComplete === false) {
+    if (updateData.fightStatus === 'UPCOMING' || updateData.fightStatus === 'LIVE') {
       additionalData.completionMethod = null;
       additionalData.completedAt = null;
     }
@@ -1058,20 +1056,17 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
     switch (status) {
       case 'upcoming':
-        data.hasStarted = false;
-        data.isComplete = false;
+        data.fightStatus = 'UPCOMING';
         data.completionMethod = null;
         data.completedAt = null;
         break;
       case 'live':
-        data.hasStarted = true;
-        data.isComplete = false;
+        data.fightStatus = 'LIVE';
         data.completionMethod = null;
         data.completedAt = null;
         break;
       case 'completed':
-        data.hasStarted = true;
-        data.isComplete = true;
+        data.fightStatus = 'COMPLETED';
         data.completionMethod = 'manual';
         data.completedAt = new Date();
         break;
@@ -1104,8 +1099,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
     // Build update from tracker fields (only copy non-null tracker values)
     const data: any = { completionMethod: 'manual' };
 
-    if (fight.trackerHasStarted !== null) data.hasStarted = fight.trackerHasStarted;
-    if (fight.trackerIsComplete !== null) data.isComplete = fight.trackerIsComplete;
+    if (fight.trackerFightStatus !== null) data.fightStatus = fight.trackerFightStatus;
     if (fight.trackerWinner !== null) data.winner = fight.trackerWinner;
     if (fight.trackerMethod !== null) data.method = fight.trackerMethod;
     if (fight.trackerRound !== null) data.round = fight.trackerRound;
@@ -1113,7 +1107,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
     if (fight.trackerCurrentRound !== null) data.currentRound = fight.trackerCurrentRound;
     if (fight.trackerCompletedRounds !== null) data.completedRounds = fight.trackerCompletedRounds;
 
-    if (fight.trackerIsComplete) {
+    if (fight.trackerFightStatus === 'COMPLETED') {
       data.completedAt = new Date();
     }
 
@@ -1156,14 +1150,13 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
     for (const fight of event.fights) {
       // Only publish fights that have tracker data
-      if (fight.trackerIsComplete === null && fight.trackerHasStarted === null) {
+      if (fight.trackerFightStatus === null) {
         continue;
       }
 
       const data: any = { completionMethod: 'manual' };
 
-      if (fight.trackerHasStarted !== null) data.hasStarted = fight.trackerHasStarted;
-      if (fight.trackerIsComplete !== null) data.isComplete = fight.trackerIsComplete;
+      if (fight.trackerFightStatus !== null) data.fightStatus = fight.trackerFightStatus;
       if (fight.trackerWinner !== null) data.winner = fight.trackerWinner;
       if (fight.trackerMethod !== null) data.method = fight.trackerMethod;
       if (fight.trackerRound !== null) data.round = fight.trackerRound;
@@ -1171,7 +1164,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
       if (fight.trackerCurrentRound !== null) data.currentRound = fight.trackerCurrentRound;
       if (fight.trackerCompletedRounds !== null) data.completedRounds = fight.trackerCompletedRounds;
 
-      if (fight.trackerIsComplete) {
+      if (fight.trackerFightStatus === 'COMPLETED') {
         data.completedAt = new Date();
       }
 

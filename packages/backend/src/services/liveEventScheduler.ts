@@ -29,10 +29,10 @@ export async function checkAndStartLiveEvents(): Promise<void> {
       if (currentStatus.eventId) {
         const event = await prisma.event.findUnique({
           where: { id: currentStatus.eventId },
-          select: { isComplete: true, name: true }
+          select: { eventStatus: true, name: true }
         });
 
-        if (event?.isComplete) {
+        if (event?.eventStatus === 'COMPLETED') {
           console.log(`[Live Scheduler] Event ${event.name} is complete, stopping tracker`);
           await stopLiveTracking();
         } else {
@@ -55,7 +55,7 @@ export async function checkAndStartLiveEvents(): Promise<void> {
     const upcomingEvent = await prisma.event.findFirst({
       where: {
         promotion: 'UFC',
-        isComplete: false,
+        eventStatus: { not: 'COMPLETED' },
         OR: [
           { mainStartTime: { lte: bufferTime, gte: new Date(now.getTime() - 12 * 60 * 60 * 1000) } },  // Main card within window (not more than 12hrs ago)
           { prelimStartTime: { lte: bufferTime, gte: new Date(now.getTime() - 12 * 60 * 60 * 1000) } }, // Prelims within window

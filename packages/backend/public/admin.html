@@ -1961,9 +1961,9 @@
         !earlyPrelimTypes.includes(f.cardType));
 
       // Determine event status
-      const eventStatus = selectedEvent.isComplete ? 'complete' : (selectedEvent.hasStarted ? 'live' : 'upcoming');
-      const eventStatusLabel = selectedEvent.isComplete ? 'Complete' : (selectedEvent.hasStarted ? 'Live' : 'Upcoming');
-      const eventStatusColor = selectedEvent.isComplete ? 'var(--text-muted)' : (selectedEvent.hasStarted ? 'var(--accent-green)' : 'var(--accent-blue)');
+      const eventStatus = selectedEvent.eventStatus === 'COMPLETED' ? 'complete' : (selectedEvent.eventStatus === 'LIVE' ? 'live' : 'upcoming');
+      const eventStatusLabel = selectedEvent.eventStatus === 'COMPLETED' ? 'Complete' : (selectedEvent.eventStatus === 'LIVE' ? 'Live' : 'Upcoming');
+      const eventStatusColor = selectedEvent.eventStatus === 'COMPLETED' ? 'var(--text-muted)' : (selectedEvent.eventStatus === 'LIVE' ? 'var(--accent-green)' : 'var(--accent-blue)');
       const trackerModeLabel = selectedEvent.trackerMode === 'manual' ? ' (Manual Mode)' : '';
 
       container.innerHTML = `
@@ -2038,13 +2038,13 @@
       // Determine fight status
       let status = 'upcoming';
       let statusLabel = 'Upcoming';
-      if (fight.isCancelled) {
+      if (fight.fightStatus === 'CANCELLED') {
         status = 'cancelled';
         statusLabel = 'Cancelled';
-      } else if (fight.isComplete) {
+      } else if (fight.fightStatus === 'COMPLETED') {
         status = 'completed';
         statusLabel = 'Completed';
-      } else if (fight.hasStarted) {
+      } else if (fight.fightStatus === 'LIVE') {
         status = 'live';
         statusLabel = 'Live';
       }
@@ -2055,10 +2055,10 @@
         : '';
 
       // Tracker shadow data display
-      const hasTrackerData = fight.trackerHasStarted !== null || fight.trackerIsComplete !== null || fight.trackerMethod;
+      const hasTrackerData = fight.trackerFightStatus !== null || fight.trackerMethod;
       const trackerResult = fight.trackerMethod
         ? `${fight.trackerMethod}${fight.trackerRound ? ' R' + fight.trackerRound : ''}${fight.trackerTime ? ' ' + fight.trackerTime : ''}`
-        : (fight.trackerIsComplete ? 'Complete (no details)' : (fight.trackerHasStarted ? 'Live' : ''));
+        : (fight.trackerFightStatus === 'COMPLETED' ? 'Complete (no details)' : (fight.trackerFightStatus === 'LIVE' ? 'Live' : ''));
 
       // Scheduled start time
       const scheduledTime = fight.scheduledStartTime
@@ -2240,20 +2240,17 @@
     async function setEventStatus(status) {
       if (!selectedEvent) return;
 
-      // Map status to hasStarted/isComplete values
-      let hasStarted, isComplete;
+      // Map UI status to eventStatus enum
+      let eventStatusEnum;
       switch (status) {
         case 'upcoming':
-          hasStarted = false;
-          isComplete = false;
+          eventStatusEnum = 'UPCOMING';
           break;
         case 'live':
-          hasStarted = true;
-          isComplete = false;
+          eventStatusEnum = 'LIVE';
           break;
         case 'complete':
-          hasStarted = true;
-          isComplete = true;
+          eventStatusEnum = 'COMPLETED';
           break;
         default:
           return;
@@ -2263,7 +2260,7 @@
         const res = await authFetch(`${API_BASE}/admin/events/${selectedEvent.id}/status`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ hasStarted, isComplete }),
+          body: JSON.stringify({ eventStatus: eventStatusEnum }),
         });
 
         if (!res.ok) {
@@ -2274,8 +2271,7 @@
         showToast(`Event marked as ${status}`, 'success');
 
         // Update local state
-        selectedEvent.hasStarted = hasStarted;
-        selectedEvent.isComplete = isComplete;
+        selectedEvent.eventStatus = eventStatusEnum;
 
         // Re-render to update UI
         renderFights();
@@ -2595,8 +2591,7 @@
 
         // Auto-set completion status based on results
         if (data.winner && data.method) {
-          data.hasStarted = true;
-          data.isComplete = true;
+          data.fightStatus = 'COMPLETED';
         }
       }
 

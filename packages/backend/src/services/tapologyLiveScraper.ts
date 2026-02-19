@@ -31,8 +31,8 @@ export interface TapologyFight {
   fighterB: TapologyFighter;
   weightClass?: string;
   scheduledRounds?: number;
-  isComplete: boolean;
-  isCancelled: boolean;
+  isComplete: boolean;    // Used by parser to detect -> COMPLETED transition
+  isCancelled: boolean;   // Used by parser to detect -> CANCELLED transition
   result?: TapologyFightResult;
 }
 

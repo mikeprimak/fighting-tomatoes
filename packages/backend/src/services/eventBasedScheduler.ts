@@ -82,14 +82,14 @@ export async function scheduleEventTracking(eventId: string): Promise<void> {
         promotion: true,
         trackerMode: true,
         ufcUrl: true,
-        isComplete: true,
+        eventStatus: true,
         earlyPrelimStartTime: true,
         prelimStartTime: true,
         mainStartTime: true
       }
     });
 
-    if (!event || event.isComplete) {
+    if (!event || event.eventStatus === 'COMPLETED') {
       return; // Event doesn't exist or is already complete
     }
 
@@ -181,10 +181,10 @@ async function startEventTracking(
     // Verify event is still not complete
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { isComplete: true }
+      select: { eventStatus: true }
     });
 
-    if (event?.isComplete) {
+    if (event?.eventStatus === 'COMPLETED') {
       console.log(`[Event Scheduler] Event ${eventName} is already complete, not starting tracker`);
       return;
     }
@@ -241,7 +241,7 @@ export async function scheduleAllUpcomingEvents(): Promise<number> {
     // Find ALL incomplete events: future events OR recently started events
     const upcomingEvents = await prisma.event.findMany({
       where: {
-        isComplete: false,
+        eventStatus: { not: 'COMPLETED' },
         OR: [
           // Events with section start times in future
           { mainStartTime: { gte: now, lte: twoWeeksFromNow } },
@@ -352,10 +352,10 @@ export async function safetyCheckEvents(): Promise<void> {
       if (ufcStatus.eventId) {
         const event = await prisma.event.findUnique({
           where: { id: ufcStatus.eventId },
-          select: { isComplete: true, name: true }
+          select: { eventStatus: true, name: true }
         });
 
-        if (event?.isComplete) {
+        if (event?.eventStatus === 'COMPLETED') {
           console.log(`[Event Scheduler] UFC event ${event.name} is complete, stopping tracker`);
           await stopLiveTracking();
         } else {
@@ -371,10 +371,10 @@ export async function safetyCheckEvents(): Promise<void> {
       if (matchroomStatus.eventId) {
         const event = await prisma.event.findUnique({
           where: { id: matchroomStatus.eventId },
-          select: { isComplete: true, name: true }
+          select: { eventStatus: true, name: true }
         });
 
-        if (event?.isComplete) {
+        if (event?.eventStatus === 'COMPLETED') {
           console.log(`[Event Scheduler] Matchroom event ${event.name} is complete, stopping tracker`);
           await stopMatchroomLiveTracking();
         } else {
@@ -391,10 +391,10 @@ export async function safetyCheckEvents(): Promise<void> {
       if (oktagonStatus.eventId) {
         const event = await prisma.event.findUnique({
           where: { id: oktagonStatus.eventId },
-          select: { isComplete: true, name: true }
+          select: { eventStatus: true, name: true }
         });
 
-        if (event?.isComplete) {
+        if (event?.eventStatus === 'COMPLETED') {
           console.log(`[Event Scheduler] OKTAGON event ${event.name} is complete, stopping tracker`);
           await stopOktagonLiveTracking();
         } else {
@@ -416,7 +416,7 @@ export async function safetyCheckEvents(): Promise<void> {
           { promotion: { contains: 'Matchroom', mode: 'insensitive' } },
           { promotion: { contains: 'OKTAGON', mode: 'insensitive' } },
         ],
-        isComplete: false,
+        eventStatus: { not: 'COMPLETED' },
         AND: [
           {
             OR: [

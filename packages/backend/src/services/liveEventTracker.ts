@@ -165,7 +165,7 @@ class LiveEventTracker {
 
         // Check if event should be marked complete
         const eventStatus = await getEventStatus(this.config.eventId);
-        if (eventStatus && !eventStatus.isComplete) {
+        if (eventStatus && eventStatus.eventStatus !== 'COMPLETED') {
           await autoCompleteEvent(eventStatus.eventId);
         }
 

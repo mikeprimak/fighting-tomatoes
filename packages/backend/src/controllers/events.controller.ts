@@ -15,13 +15,13 @@ export const getEvents = async (req: Request, res: Response) => {
     if (past === 'true') {
       // Past events: either completed OR date is in the past
       where.OR = [
-        { isComplete: true },
+        { eventStatus: 'COMPLETED' },
         { date: { lt: new Date() } }
       ];
     } else {
       // Upcoming events: not completed AND date is in the future AND has at least one fight
       where.AND = [
-        { isComplete: false },
+        { eventStatus: { not: 'COMPLETED' } },
         { date: { gte: new Date() } },
         { fights: { some: {} } }  // Only show events that have fights announced
       ];
@@ -32,7 +32,7 @@ export const getEvents = async (req: Request, res: Response) => {
       include: {
         fights: {
           where: {
-            isCancelled: false
+            fightStatus: { not: 'CANCELLED' }
           },
           include: {
             fighterA: {
@@ -82,7 +82,7 @@ export const getEventById = async (req: Request, res: Response) => {
       include: {
         fights: {
           where: {
-            isCancelled: false
+            fightStatus: { not: 'CANCELLED' }
           },
           include: {
             fighterA: {

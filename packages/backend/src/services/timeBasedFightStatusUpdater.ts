@@ -47,11 +47,11 @@ export async function scheduleTimeBasedUpdates(eventId: string): Promise<void> {
         earlyPrelimStartTime: true,
         prelimStartTime: true,
         mainStartTime: true,
-        isComplete: true,
+        eventStatus: true,
       }
     });
 
-    if (!event || event.isComplete) {
+    if (!event || event.eventStatus === 'COMPLETED') {
       return;
     }
 
@@ -156,17 +156,16 @@ export async function markSectionComplete(
   try {
     const now = new Date();
 
-    // Mark the event as started (important for upcoming filter)
+    // Mark the event as live (important for upcoming filter)
     await prisma.event.update({
       where: { id: eventId },
-      data: { hasStarted: true }
+      data: { eventStatus: 'LIVE' }
     });
 
     // Build the where clause
     const whereClause: any = {
       eventId,
-      isComplete: false,
-      isCancelled: false,
+      fightStatus: { in: ['UPCOMING', 'LIVE'] },
     };
 
     // Filter by cardType unless marking all
@@ -203,8 +202,7 @@ export async function markSectionComplete(
     const result = await prisma.fight.updateMany({
       where: whereClause,
       data: {
-        hasStarted: true,
-        isComplete: true,
+        fightStatus: 'COMPLETED',
         completionMethod: 'time-based',
         completedAt: now,
       }
@@ -234,8 +232,7 @@ async function checkEventCompletion(eventId: string): Promise<void> {
     const incompleteFights = await prisma.fight.count({
       where: {
         eventId,
-        isComplete: false,
-        isCancelled: false,
+        fightStatus: { in: ['UPCOMING', 'LIVE'] },
       }
     });
 
@@ -244,8 +241,7 @@ async function checkEventCompletion(eventId: string): Promise<void> {
       await prisma.event.update({
         where: { id: eventId },
         data: {
-          hasStarted: true,
-          isComplete: true,
+          eventStatus: 'COMPLETED',
           completionMethod: 'time-based',
         }
       });
@@ -313,13 +309,11 @@ export async function checkScheduledStartTimes(): Promise<number> {
   try {
     const now = new Date();
 
-    // Find fights that should be live: scheduledStartTime has passed, but fight hasn't started
+    // Find fights that should be live: scheduledStartTime has passed, but fight is still upcoming
     const fightsToStart = await prisma.fight.findMany({
       where: {
         scheduledStartTime: { lte: now },
-        hasStarted: false,
-        isComplete: false,
-        isCancelled: false,
+        fightStatus: 'UPCOMING',
         event: {
           trackerMode: 'time-based',
         },
@@ -327,7 +321,7 @@ export async function checkScheduledStartTimes(): Promise<number> {
       include: {
         fighter1: { select: { lastName: true } },
         fighter2: { select: { lastName: true } },
-        event: { select: { id: true, name: true, hasStarted: true } },
+        event: { select: { id: true, name: true, eventStatus: true } },
       },
     });
 
@@ -336,20 +330,20 @@ export async function checkScheduledStartTimes(): Promise<number> {
     let updated = 0;
 
     for (const fight of fightsToStart) {
-      // Mark fight as live (started but not complete)
+      // Mark fight as live
       await prisma.fight.update({
         where: { id: fight.id },
         data: {
-          hasStarted: true,
+          fightStatus: 'LIVE',
           completionMethod: 'time-based',
         },
       });
 
-      // Also mark the event as started if it isn't already
-      if (!fight.event.hasStarted) {
+      // Also mark the event as live if it's still upcoming
+      if (fight.event.eventStatus === 'UPCOMING') {
         await prisma.event.update({
           where: { id: fight.event.id },
-          data: { hasStarted: true },
+          data: { eventStatus: 'LIVE' },
         });
       }
 

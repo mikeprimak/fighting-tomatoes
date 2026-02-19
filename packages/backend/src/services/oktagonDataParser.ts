@@ -337,8 +337,7 @@ async function importOktagonEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
-          hasStarted: eventData.status === 'Live',
-          isComplete: eventData.status === 'Complete',
+          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
     } else {
@@ -353,8 +352,7 @@ async function importOktagonEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
-          hasStarted: eventData.status === 'Live',
-          isComplete: eventData.status === 'Complete',
+          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
     }
@@ -558,8 +556,7 @@ async function importOktagonEvents(
             scheduledRounds: fightData.isTitle ? 5 : 3,
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
-            hasStarted: false,
-            isComplete: false,
+            fightStatus: 'UPCOMING',
           }
         });
 
@@ -612,8 +609,7 @@ async function importOktagonEvents(
       const existingDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: false,
+          fightStatus: { in: ['UPCOMING', 'LIVE'] },
         },
         include: {
           fighter1: true,
@@ -648,7 +644,7 @@ async function importOktagonEvents(
 
             await prisma.fight.update({
               where: { id: dbFight.id },
-              data: { isCancelled: true }
+              data: { fightStatus: 'CANCELLED' }
             });
 
             cancelledCount++;
@@ -662,7 +658,7 @@ async function importOktagonEvents(
 
               await prisma.fight.update({
                 where: { id: dbFight.id },
-                data: { isCancelled: true }
+                data: { fightStatus: 'CANCELLED' }
               });
 
               cancelledCount++;
@@ -677,8 +673,7 @@ async function importOktagonEvents(
       const cancelledDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: true,
+          fightStatus: 'CANCELLED',
         },
         include: {
           fighter1: true,
@@ -702,7 +697,7 @@ async function importOktagonEvents(
 
           await prisma.fight.update({
             where: { id: dbFight.id },
-            data: { isCancelled: false }
+            data: { fightStatus: 'UPCOMING' }
           });
 
           unCancelledCount++;
@@ -785,7 +780,7 @@ export async function getOktagonImportStats(): Promise<{
       where: {
         promotion: 'OKTAGON',
         date: { gte: new Date() },
-        isComplete: false
+        eventStatus: { not: 'COMPLETED' }
       }
     })
   ]);

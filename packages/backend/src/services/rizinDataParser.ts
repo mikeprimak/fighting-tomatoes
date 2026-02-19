@@ -399,7 +399,7 @@ async function importRizinEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
-          isComplete,
+          eventStatus: isComplete ? 'COMPLETED' : 'UPCOMING',
         }
       });
     } else {
@@ -412,7 +412,7 @@ async function importRizinEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
-          isComplete,
+          eventStatus: isComplete ? 'COMPLETED' : 'UPCOMING',
         }
       });
     }
@@ -625,7 +625,7 @@ async function importRizinEvents(
             cardType: fightData.cardType,
             // Update result fields if event is complete and we have result data
             ...(hasResult ? {
-              isComplete: true,
+              fightStatus: 'COMPLETED',
               method: normalizedMethod,
               round: result.round ? parseInt(result.round, 10) : undefined,
               time: result.time || undefined,
@@ -642,8 +642,7 @@ async function importRizinEvents(
             scheduledRounds: fightData.isTitle ? 5 : 3,
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
-            hasStarted: hasResult ? true : false,
-            isComplete: hasResult ? true : false,
+            fightStatus: hasResult ? 'COMPLETED' : 'UPCOMING',
             method: normalizedMethod,
             round: hasResult && result.round ? parseInt(result.round, 10) : undefined,
             time: hasResult ? result.time || undefined : undefined,
@@ -693,8 +692,7 @@ async function importRizinEvents(
       const existingDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: false,
+          fightStatus: 'UPCOMING',
         },
         include: {
           fighter1: true,
@@ -720,7 +718,7 @@ async function importRizinEvents(
             console.log(`    ❌ Cancelling fight (fighter rebooked): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
             await prisma.fight.update({
               where: { id: dbFight.id },
-              data: { isCancelled: true }
+              data: { fightStatus: 'CANCELLED' }
             });
             cancelledCount++;
           } else {
@@ -729,7 +727,7 @@ async function importRizinEvents(
               console.log(`    ❌ Cancelling fight (not in scraped data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
               await prisma.fight.update({
                 where: { id: dbFight.id },
-                data: { isCancelled: true }
+                data: { fightStatus: 'CANCELLED' }
               });
               cancelledCount++;
             }
@@ -741,8 +739,7 @@ async function importRizinEvents(
       const cancelledDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: true,
+          fightStatus: 'CANCELLED',
         },
         include: {
           fighter1: true,
@@ -761,7 +758,7 @@ async function importRizinEvents(
           console.log(`    ✅ Un-cancelling fight (reappeared): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
           await prisma.fight.update({
             where: { id: dbFight.id },
-            data: { isCancelled: false }
+            data: { fightStatus: 'UPCOMING' }
           });
           unCancelledCount++;
         }

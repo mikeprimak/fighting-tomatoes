@@ -271,8 +271,7 @@ export async function resetEvent(
   await prisma.event.update({
     where: { id: eventId },
     data: {
-      hasStarted: false,
-      isComplete: false,
+      eventStatus: 'UPCOMING',
     },
   });
 
@@ -280,8 +279,7 @@ export async function resetEvent(
   await prisma.fight.updateMany({
     where: { eventId },
     data: {
-      hasStarted: false,
-      isComplete: false,
+      fightStatus: 'UPCOMING',
       currentRound: null,
       completedRounds: null,
       winner: null,
@@ -442,7 +440,7 @@ async function startEvent() {
 
   await prisma.event.update({
     where: { id: activeSimulation.eventId },
-    data: { hasStarted: true },
+    data: { eventStatus: 'LIVE' },
   });
 
   activeSimulation.currentState = 'EVENT_STARTED';
@@ -463,7 +461,7 @@ async function startNextFight() {
 
   await prisma.fight.update({
     where: { id: fight.id },
-    data: { hasStarted: true, completedRounds: 0 },
+    data: { fightStatus: 'LIVE', completedRounds: 0 },
   });
 
   activeSimulation.currentState = 'FIGHT_STARTING';
@@ -546,7 +544,7 @@ async function completeFight(outcome: any) {
   await prisma.fight.update({
     where: { id: fight.id },
     data: {
-      isComplete: true,
+      fightStatus: 'COMPLETED',
       winner: winnerId,
       method: outcome.method,
       round: outcome.round,
@@ -578,7 +576,7 @@ async function completeEvent() {
 
   await prisma.event.update({
     where: { id: activeSimulation.eventId },
-    data: { isComplete: true },
+    data: { eventStatus: 'COMPLETED' },
   });
 
   activeSimulation.currentState = 'EVENT_COMPLETE';

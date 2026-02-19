@@ -43,8 +43,7 @@ interface TopReview {
   isReply: boolean;
   fight: {
     id: string;
-    isComplete?: boolean;
-    hasStarted?: boolean;
+    fightStatus?: string;
     fighter1Name: string;
     fighter2Name: string;
     eventName: string;
@@ -65,8 +64,7 @@ interface TopPreflightComment {
   isReply: boolean;
   fight: {
     id: string;
-    isComplete?: boolean;
-    hasStarted?: boolean;
+    fightStatus?: string;
     fighter1Id: string;
     fighter2Id: string;
     fighter1Name: string;
@@ -853,7 +851,7 @@ export default function ProfileScreen() {
                       fighter2Id={comment.fight?.fighter2Id}
                       fighter1Name={comment.fight?.fighter1Name}
                       fighter2Name={comment.fight?.fighter2Name}
-                      onPress={() => router.push(`/fight/${comment.fight?.id}${comment.fight?.isComplete ? '?mode=completed' : ''}` as any)}
+                      onPress={() => router.push(`/fight/${comment.fight?.id}${comment.fight?.fightStatus === 'COMPLETED' ? '?mode=completed' : ''}` as any)}
                       onUpvote={() => handleUpvotePreflight(comment.fightId, comment.id)}
                       isUpvoting={upvotingPreflightId === comment.id}
                       isAuthenticated={isAuthenticated}

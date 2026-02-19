@@ -51,8 +51,8 @@ interface OktagonFightData {
   scheduledRounds: number;
   fighterA: OktagonFighterInfo;
   fighterB: OktagonFighterInfo;
-  hasStarted: boolean;
-  isComplete: boolean;
+  hasStarted: boolean;    // Used by parser to detect UPCOMING -> LIVE transition
+  isComplete: boolean;    // Used by parser to detect -> COMPLETED transition
   result?: OktagonFightResult;
 }
 
@@ -64,8 +64,8 @@ interface OktagonEventData {
   location?: string;
   eventDate?: string;
   status: 'upcoming' | 'live' | 'complete';
-  hasStarted: boolean;
-  isComplete: boolean;
+  hasStarted: boolean;    // Used by parser to detect event started
+  isComplete: boolean;    // Used by parser to detect event complete
   fights: OktagonFightData[];
   timestamp: string;
   scrapeDuration?: number;

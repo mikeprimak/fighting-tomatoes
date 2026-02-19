@@ -153,7 +153,7 @@ async function detectFightCancellations(): Promise<number> {
   // 1. Load the latest scraped data JSON
   // 2. For each event in DB that's upcoming and not complete
   // 3. Compare DB fights vs scraped fights
-  // 4. Mark fights as isCancelled=true if they're in DB but not in scraped data
+  // 4. Mark fights as fightStatus='CANCELLED' if they're in DB but not in scraped data
 
   // For now, return 0 (no cancellations detected)
   // This can be enhanced later if needed
