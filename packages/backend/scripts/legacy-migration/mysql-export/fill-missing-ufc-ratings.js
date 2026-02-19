@@ -307,7 +307,7 @@ async function run() {
                 userId,
                 content: review.comment || '',
                 upvotes: review.helpful || 0,
-                createdAt: review.date ? new Date(review.date, 0, 1) : new Date(),
+                createdAt: review.date ? new Date(review.date * 1000) : new Date(),
               }
             });
             reviewsCreated++;
