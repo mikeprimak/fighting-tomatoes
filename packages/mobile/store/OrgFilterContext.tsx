@@ -2,22 +2,28 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Available organizations for filtering
-export const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'BOXING'] as const;
+export const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'MATCHROOM', 'TOP RANK', 'GOLDEN BOY', 'ZUFFA BOXING'] as const;
 export type Organization = typeof ORGANIZATIONS[number];
 
 // Organization matching rules
 // - exact: promotion must equal one of these exactly
 // - contains: promotion must contain one of these substrings
-// - excludes: promotion must NOT contain any of these (checked first)
 const ORG_GROUPS: Partial<Record<Organization, { exact?: string[]; contains?: string[]; excludes?: string[] }>> = {
-  'BOXING': {
-    exact: [],
-    // Note: DIRTY BOXING events won't match these anyway, so no excludes needed
-    contains: ['MATCHROOM', 'TOP RANK', 'TOP_RANK', 'GOLDEN BOY', 'GOLDEN_BOY', 'SHOWTIME', 'MOST VALUABLE', 'MVP BOXING', 'PBC', 'PREMIER BOXING', 'DAZN', 'ESPN BOXING', 'ZUFFA BOXING', 'ZUFFA_BOXING', 'ZUFFA'],
-  },
   'DIRTY BOXING': {
-    exact: [],
     contains: ['DIRTY BOXING'],
+  },
+  'MATCHROOM': {
+    contains: ['MATCHROOM'],
+  },
+  'TOP RANK': {
+    contains: ['TOP RANK', 'TOP_RANK'],
+  },
+  'GOLDEN BOY': {
+    contains: ['GOLDEN BOY', 'GOLDEN_BOY'],
+  },
+  'ZUFFA BOXING': {
+    contains: ['ZUFFA BOXING', 'ZUFFA_BOXING', 'ZUFFA'],
+    excludes: ['DIRTY BOXING'],
   },
 };
 
@@ -100,6 +106,8 @@ export function OrgFilterProvider({ children }: { children: ReactNode }) {
     for (const org of Array.from(selectedOrgs)) {
       const group = ORG_GROUPS[org];
       if (group) {
+        // Check excludes first - skip this org if event matches an exclusion
+        if (group.excludes?.some(promo => eventPromotion.includes(promo))) continue;
         // Check exact matches
         if (group.exact?.some(promo => eventPromotion === promo)) return true;
         // Check contains matches
