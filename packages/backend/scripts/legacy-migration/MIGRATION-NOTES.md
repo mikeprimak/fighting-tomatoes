@@ -13,6 +13,8 @@ Complete guide for migrating data from fightingtomatoes.com (MySQL) to the new G
 | ~14,000 fights | ~10,954 fights synced |
 | ~1,966 users | ~1,963 users in new DB |
 | ~54,507 ratings (from per-user tables) | 54,507 ratings imported |
+| ~632 reviews (from per-fight tables) | 483 reviews imported |
+| ~700 upvotes (from review upvoters blobs) | 221 review votes imported |
 
 ---
 
@@ -257,6 +259,7 @@ Located in `packages/backend/scripts/legacy-migration/mysql-export/`:
 | Script | Purpose |
 |--------|---------|
 | `sync-all-from-live.js` | **Main migration script** — syncs fighters, events, fights, users, ratings, tags |
+| `migrate-reviews-standalone.js` | **Reviews + upvotes migration** — standalone script for legacy reviews/upvotes |
 | `audit-and-fix.js` | **Audit & fix** — compares legacy vs app, finds mismatches, can apply fixes |
 | `wipe-all-data.js` | Wipes all app DB data (preserves schema) |
 | `create-test-accounts.js` | Creates test/admin accounts after migration |
@@ -323,6 +326,37 @@ await connection.query('USE fightreviewsdb');
 | Jan 28, 2026 | Fixed 5 bugs in sync script | +1,271 ratings synced |
 | Feb 14, 2026 | **Full wipe + clean re-migration** | See below |
 
+### Feb 18, 2026 — Reviews & Upvotes Migration
+
+**Why:** Reviews and upvotes were skipped in all prior migrations because the legacy `fightreviewsdb` has one table per fight ID (~14,241 tables), making it too slow to query over a remote MySQL connection during a full sync.
+
+**What was done:**
+1. Created standalone migration script: `mysql-export/migrate-reviews-standalone.js`
+2. Optimized by filtering tables first (only querying tables whose name matches a mapped legacy fight ID), skipping DESCRIBE queries, and using batch inserts
+3. Migrated all review fields: content, rating (1-10), articleUrl, articleTitle, upvotes count, createdAt
+4. Migrated upvotes as individual `ReviewVote` records by decoding the legacy `upvoters` BLOB format (`"-46--914-"`)
+5. Updated user stats (totalReviews, upvotesReceived)
+
+**Results:**
+| Data | Count |
+|------|-------|
+| Reviews migrated | 483 |
+| Review votes migrated | 221 |
+| Reviews with rating | 461 |
+| Upvotes skipped (self-votes/dupes) | 479 |
+| Users with no match | 149 reviews skipped |
+| Errors | 0 |
+
+**Script usage:**
+```bash
+cd packages/backend/scripts/legacy-migration/mysql-export
+node migrate-reviews-standalone.js --dry-run    # Preview
+node migrate-reviews-standalone.js              # Run migration
+cd .. && node update-user-stats.js              # Update stats after
+```
+
+---
+
 ### Feb 14, 2026 — Full Wipe & Clean Re-Migration
 
 **Why:** Accumulated data errors from incremental patching. The app had duplicate fights from truncated names (e.g., "Diego Lopes vs Jean Silv" alongside "Diego Lopes vs Jean Silva"), incorrect rating counts, and diacritic mismatches creating duplicate fighters.
@@ -365,6 +399,9 @@ await connection.query('USE fightreviewsdb');
 7. [ ] `cd ../.. && node update-rating-stats.js`
 8. [ ] `cd scripts/legacy-migration && node update-user-stats.js`
 9. [ ] `cd mysql-export && node create-test-accounts.js`
-10. [ ] `node audit-and-fix.js --promotion=UFC` (verify)
-11. [ ] `node audit-and-fix.js` (all promotions)
-12. [ ] Test in app — pull-to-refresh, check known fights
+10. [ ] `node migrate-reviews-standalone.js --dry-run` (preview reviews)
+11. [ ] `node migrate-reviews-standalone.js` (migrate reviews + upvotes)
+12. [ ] `cd .. && node update-user-stats.js` (update user stats again)
+13. [ ] `cd mysql-export && node audit-and-fix.js --promotion=UFC` (verify)
+14. [ ] `node audit-and-fix.js` (all promotions)
+15. [ ] Test in app — pull-to-refresh, check known fights
