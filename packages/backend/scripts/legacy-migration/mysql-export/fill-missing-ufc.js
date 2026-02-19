@@ -351,8 +351,8 @@ async function fillMissingUFC() {
             method: lf.method || null,
             round: lf.round ? parseInt(lf.round) : null,
             time: lf.time || null,
-            hasStarted: !!lf.hasstarted,
-            isComplete: !!lf.winner,
+            hasStarted: !!lf.hasstarted || parsedDate < new Date(),
+            isComplete: !!lf.winner || parsedDate < new Date(),
             averageRating: lf.percentscore ? parseFloat(lf.percentscore) / 10 : 0,
             totalRatings: lf.numvotes || 0,
           }
