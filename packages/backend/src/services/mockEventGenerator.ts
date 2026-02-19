@@ -70,8 +70,7 @@ export async function generateMockEvent(options: MockEventOptions = {}) {
       venue: 'Mock Arena',
       location: 'Las Vegas, NV',
       mainStartTime: eventDate,
-      hasStarted: false,
-      isComplete: false,
+      eventStatus: 'UPCOMING',
     },
   });
 
@@ -154,8 +153,7 @@ export async function generateMockEvent(options: MockEventOptions = {}) {
         titleName: isTitleFight ? `UFC ${weightClass} Championship` : undefined,
         scheduledRounds,
         orderOnCard: i + 1,
-        hasStarted: false,
-        isComplete: false,
+        fightStatus: 'UPCOMING',
       },
       include: {
         fighter1: true,

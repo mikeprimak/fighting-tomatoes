@@ -34,8 +34,7 @@ interface Event {
   venue?: string;
   location?: string;
   promotion: string;
-  hasStarted: boolean;
-  isComplete: boolean;
+  eventStatus: string;
   bannerImage?: string | null;
   earlyPrelimStartTime?: string | null;
   prelimStartTime?: string | null;
@@ -266,14 +265,14 @@ export default function UpcomingEventsScreen() {
   }, [eventsData]);
 
   // Check if any event is live
-  const hasLiveEvent = allEvents.some((event: Event) => event.hasStarted && !event.isComplete);
+  const hasLiveEvent = allEvents.some((event: Event) => event.eventStatus === 'LIVE');
 
   // Sort upcoming events (live events first, then by date)
   // Note: Filtering is now done server-side via promotions param
   const upcomingEvents = React.useMemo(() => {
     return [...allEvents].sort((a: Event, b: Event) => {
-      const aIsLive = a.hasStarted && !a.isComplete;
-      const bIsLive = b.hasStarted && !b.isComplete;
+      const aIsLive = a.eventStatus === 'LIVE';
+      const bIsLive = b.eventStatus === 'LIVE';
       if (aIsLive && !bIsLive) return -1;
       if (!aIsLive && bIsLive) return 1;
       return new Date(a.date).getTime() - new Date(b.date).getTime();
@@ -442,7 +441,7 @@ const EventSection = memo(function EventSection({
   formatTimeUntil: (date: string) => string;
   isFirstEvent: boolean;
 }) {
-  const isLive = event.hasStarted && !event.isComplete;
+  const isLive = event.eventStatus === 'LIVE';
 
   // Use fights from event data (loaded via includeFights parameter)
   // Deduplicate fights by ID in case of data issues
@@ -469,18 +468,18 @@ const EventSection = memo(function EventSection({
 
   // Find next fight and last completed fight
   const nextFight = fights
-    .filter((f: Fight) => !f.hasStarted && !f.isComplete)
+    .filter((f: Fight) => f.fightStatus === 'UPCOMING')
     .sort((a, b) => b.orderOnCard - a.orderOnCard)[0];
 
   const lastCompletedFight = fights
-    .filter((f: Fight) => f.isComplete)
+    .filter((f: Fight) => f.fightStatus === 'COMPLETED')
     .sort((a, b) => {
       const aTime = new Date(a.updatedAt || 0).getTime();
       const bTime = new Date(b.updatedAt || 0).getTime();
       return bTime - aTime;
     })[0];
 
-  const hasLiveFight = fights.some((f: Fight) => f.hasStarted && !f.isComplete);
+  const hasLiveFight = fights.some((f: Fight) => f.fightStatus === 'LIVE');
 
   // DEV OVERRIDE: Force "Costa vs Charriere" to show as "Live Now"
   const DEV_FORCE_LIVE_NOW = false; // Set to false to disable
@@ -490,10 +489,10 @@ const EventSection = memo(function EventSection({
     return (f1.includes('costa') && f2.includes('charriere')) ||
            (f1.includes('charriere') && f2.includes('costa'));
   };
-  // Helper to get dev-modified fight (with hasStarted for Live Now state)
+  // Helper to get dev-modified fight (with fightStatus for Live Now state)
   const getDevFight = (fight: Fight) => {
     if (DEV_FORCE_LIVE_NOW && isCostaVsCharriere(fight)) {
-      return { ...fight, hasStarted: true, isComplete: false };
+      return { ...fight, fightStatus: 'LIVE' };
     }
     return fight;
   };
@@ -513,14 +512,13 @@ const EventSection = memo(function EventSection({
   const earliestTime = getEarliestStartTime();
   const now = new Date();
   const startTime = new Date(earliestTime);
-  const isEventLive = (now >= startTime && !event.isComplete) || isLive;
+  const isEventLive = (now >= startTime && event.eventStatus !== 'COMPLETED') || isLive;
 
   // Debug logging for Bonfim event
   if (event.name.includes('Bonfim')) {
     console.log('=== BONFIM EVENT DEBUG ===');
     console.log('Event name:', event.name);
-    console.log('event.hasStarted:', event.hasStarted);
-    console.log('event.isComplete:', event.isComplete);
+    console.log('event.eventStatus:', event.eventStatus);
     console.log('isLive (from line 275):', isLive);
     console.log('earliestTime:', earliestTime);
     console.log('now:', now.toISOString());

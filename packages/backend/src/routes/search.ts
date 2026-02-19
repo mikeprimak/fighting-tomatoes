@@ -116,7 +116,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
                 { fighter1Id: fighter.id },
                 { fighter2Id: fighter.id },
               ],
-              isComplete: true,
+              fightStatus: 'COMPLETED',
               averageRating: { gt: 0 },
             },
             orderBy: {
@@ -172,8 +172,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
           venue: true,
           location: true,
           bannerImage: true,
-          hasStarted: true,
-          isComplete: true,
+          eventStatus: true,
           averageRating: true,
           totalRatings: true,
           greatFights: true,
@@ -519,8 +518,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
           const upcomingCount = await prisma.event.count({
             where: {
               promotion: p.promotion,
-              hasStarted: false,
-              isComplete: false,
+              eventStatus: 'UPCOMING',
             },
           });
 

@@ -43,8 +43,7 @@ async function main() {
       venue: 'Intuit Dome',
       location: 'Inglewood, California',
       promotion: 'UFC',
-      isComplete: false,
-      hasStarted: false,
+      eventStatus: 'UPCOMING',
     }
   })
 
@@ -56,8 +55,7 @@ async function main() {
       venue: 'Qudos Bank Arena',
       location: 'Sydney, Australia',
       promotion: 'UFC',
-      isComplete: false,
-      hasStarted: false,
+      eventStatus: 'UPCOMING',
     }
   })
 
@@ -162,8 +160,7 @@ async function main() {
       data: {
         eventId: ufc311.id,
         ...fightData,
-        hasStarted: false,
-        isComplete: false,
+        fightStatus: 'UPCOMING',
       }
     })
   }
@@ -262,8 +259,7 @@ async function main() {
       data: {
         eventId: ufc312.id,
         ...fightData,
-        hasStarted: false,
-        isComplete: false,
+        fightStatus: 'UPCOMING',
       }
     })
   }

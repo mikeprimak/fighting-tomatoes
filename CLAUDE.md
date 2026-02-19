@@ -48,16 +48,21 @@ All events default to **manual mode**. The admin controls fight statuses by hand
 
 **Per-promotion** (global): Edit `PROMOTION_TRACKER_CONFIG` in `src/config/liveTrackerConfig.ts` to change the default for all events of that promotion.
 
+### Fight & Event Status
+
+Fights use a single `fightStatus` enum: `UPCOMING`, `LIVE`, `COMPLETED`, `CANCELLED`
+Events use a single `eventStatus` enum: `UPCOMING`, `LIVE`, `COMPLETED`
+
 ### Shadow Fields
 
 All 5 live trackers (UFC, Matchroom, OKTAGON, ONE FC, Tapology) write to shadow `tracker*` fields on every fight:
 
 ```
 tracker*  = draft data (what the scraper found)
-published = what users see (hasStarted, isComplete, winner, method, round, time)
+published = what users see (fightStatus, winner, method, round, time)
 ```
 
-- In `manual`/`time-based` mode: Trackers ONLY write to `tracker*` fields. Users see nothing until admin publishes.
+- In `manual`/`time-based` mode: Trackers ONLY write to `tracker*` fields (e.g. `trackerFightStatus`). Users see nothing until admin publishes.
 - In `live`/`ufc`/`matchroom`/`oktagon` mode: Trackers write to BOTH `tracker*` and published fields (auto-publish).
 
 ### Admin Workflow During Events (Manual Mode)

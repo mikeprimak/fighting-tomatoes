@@ -70,12 +70,12 @@ function LiveFightCard({
   // Determine the current status of the live fight card
   const getLiveStatus = (): LiveFightStatus => {
     // If fight has actually started, show "Live Now"
-    if (fight.hasStarted && !fight.isComplete) {
+    if (fight.fightStatus === 'LIVE') {
       return 'live_now';
     }
 
     // If this is the next fight (waiting to start)
-    if (isNextFight && !fight.hasStarted) {
+    if (isNextFight && fight.fightStatus === 'UPCOMING') {
       if (lastCompletedFightTime) {
         // Use the actual lastCompletedFightTime to calculate minutes elapsed
         const lastCompletedDate = new Date(lastCompletedFightTime).getTime();
@@ -98,11 +98,11 @@ function LiveFightCard({
   // 30 second interval is sufficient since status only changes after ~5 minutes
   const [, forceUpdate] = React.useReducer((x) => x + 1, 0);
   React.useEffect(() => {
-    if (isNextFight && !fight.hasStarted) {
+    if (isNextFight && fight.fightStatus === 'UPCOMING') {
       const interval = setInterval(forceUpdate, 30000); // 30 seconds instead of 1 second
       return () => clearInterval(interval);
     }
-  }, [isNextFight, fight.hasStarted]);
+  }, [isNextFight, fight.fightStatus]);
 
   // Pulsing animation for "Starting soon..."
   useEffect(() => {

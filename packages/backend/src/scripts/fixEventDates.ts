@@ -57,12 +57,12 @@ async function analyzeEvents() {
   oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
 
   // Find events with potentially wrong dates
-  // 1. Events dated far in the future (> 6 months) that aren't isComplete
+  // 1. Events dated far in the future (> 6 months) that aren't COMPLETED
   // 2. Events that should be past but aren't marked complete
 
   const suspiciousEvents = await prisma.event.findMany({
     where: {
-      isComplete: false,
+      eventStatus: { not: 'COMPLETED' },
       date: {
         gt: now,
       },
@@ -71,8 +71,7 @@ async function analyzeEvents() {
       id: true,
       name: true,
       date: true,
-      isComplete: true,
-      hasStarted: true,
+      eventStatus: true,
       promotion: true,
     },
     orderBy: {
@@ -105,7 +104,7 @@ async function analyzeEvents() {
   if (ufcEvents.length > 0) {
     console.log('🥊 UFC 321/322/323 (should be 2025 events, need marking complete):');
     for (const event of ufcEvents) {
-      console.log(`   - ${event.name} (${event.date.toLocaleDateString()}) - isComplete: ${event.isComplete}`);
+      console.log(`   - ${event.name} (${event.date.toLocaleDateString()}) - eventStatus: ${event.eventStatus}`);
     }
     console.log('');
   }
@@ -113,7 +112,7 @@ async function analyzeEvents() {
   if (goldenBoyJan.length > 0) {
     console.log('🥊 Golden Boy January events (check dates):');
     for (const event of goldenBoyJan) {
-      console.log(`   - ${event.name} (${event.date.toLocaleDateString()}) - isComplete: ${event.isComplete}`);
+      console.log(`   - ${event.name} (${event.date.toLocaleDateString()}) - eventStatus: ${event.eventStatus}`);
     }
     console.log('');
   }
@@ -131,7 +130,7 @@ async function fixEvents(dryRun: boolean = true) {
           { name: { contains: fix.pattern, mode: 'insensitive' } },
           { ufcUrl: { contains: fix.pattern, mode: 'insensitive' } },
         ],
-        isComplete: false,
+        eventStatus: { not: 'COMPLETED' },
       },
     });
 
@@ -147,12 +146,12 @@ async function fixEvents(dryRun: boolean = true) {
         if (!dryRun) {
           await prisma.event.update({
             where: { id: event.id },
-            data: { isComplete: true },
+            data: { eventStatus: 'COMPLETED' },
           });
           // Also mark all fights as complete
           await prisma.fight.updateMany({
             where: { eventId: event.id },
-            data: { isComplete: true },
+            data: { fightStatus: 'COMPLETED' },
           });
           console.log(`      ✅ Marked as complete`);
         } else {
@@ -164,13 +163,13 @@ async function fixEvents(dryRun: boolean = true) {
             where: { id: event.id },
             data: {
               date: fix.correctDate,
-              isComplete: true, // If we're fixing a past date, it's likely complete
+              eventStatus: 'COMPLETED', // If we're fixing a past date, it's likely complete
             },
           });
           // Also mark all fights as complete
           await prisma.fight.updateMany({
             where: { eventId: event.id },
-            data: { isComplete: true },
+            data: { fightStatus: 'COMPLETED' },
           });
           console.log(`      ✅ Fixed date to ${fix.correctDate.toLocaleDateString()} and marked complete`);
         } else {

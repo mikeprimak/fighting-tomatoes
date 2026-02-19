@@ -35,8 +35,7 @@ interface Event {
   venue?: string;
   location?: string;
   promotion: string;
-  hasStarted: boolean;
-  isComplete: boolean;
+  eventStatus: string;
 }
 
 /**
@@ -116,7 +115,7 @@ export default function CommunityScreen() {
 
   // Get next upcoming UFC event
   const nextUFCEvent = allEvents
-    .filter((e: Event) => !e.hasStarted && !e.isComplete && e.promotion?.toUpperCase() === 'UFC')
+    .filter((e: Event) => e.eventStatus === 'UPCOMING' && e.promotion?.toUpperCase() === 'UFC')
     .sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
   // Fetch prediction stats for the next UFC event

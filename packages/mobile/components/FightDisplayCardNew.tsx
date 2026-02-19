@@ -34,8 +34,8 @@ function FightDisplayCard({
 }: FightDisplayCardProps) {
   // Determine fight status
   const getStatus = () => {
-    if (fight.isComplete) return 'completed';
-    if (fight.hasStarted) return 'in_progress';
+    if (fight.fightStatus === 'COMPLETED') return 'completed';
+    if (fight.fightStatus === 'LIVE') return 'in_progress';
     return 'upcoming';
   };
 

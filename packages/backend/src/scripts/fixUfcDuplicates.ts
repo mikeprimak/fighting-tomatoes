@@ -75,10 +75,10 @@ async function fixUfcDuplicates() {
           where: { id: fix.id },
           data: {
             date: fix.newDate,
-            isComplete: true  // Also mark as complete since these events are over
+            eventStatus: 'COMPLETED'  // Also mark as complete since these events are over
           }
         });
-        console.log(`    ✓ Updated to ${updated.date?.toISOString()}, isComplete: ${updated.isComplete}`);
+        console.log(`    ✓ Updated to ${updated.date?.toISOString()}, eventStatus: ${updated.eventStatus}`);
       }
     } else {
       console.log(`  - ${fix.name} (${fix.id}) not found`);

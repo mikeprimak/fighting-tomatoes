@@ -17,7 +17,7 @@ interface FightDisplayCardMinimalProps {
     weightClass: string;
     scheduledRounds: number;
     status: 'upcoming' | 'in_progress' | 'completed';
-    isComplete: boolean;
+    fightStatus: string;
     aggregateRating: number | null;
     totalRatings: number;
     aggregateHype?: number | null; // For upcoming fights
@@ -275,7 +275,7 @@ export default function FightDisplayCardMinimal({ fightData, onPress, animateRat
           </View>
         ) : (
           // Aggregate Rating for completed fights
-          fightData.isComplete && fightData.aggregateRating && (
+          fightData.fightStatus === 'COMPLETED' && fightData.aggregateRating && (
             <View style={styles.ratingRow}>
               <View style={styles.partialStarContainer}>
                 {/* Empty star (outline) */}

@@ -46,8 +46,7 @@ export async function checkEventCompletion(): Promise<CompletionResult[]> {
     // Skip events with trackerMode='manual' - those require admin action
     const liveEvents = await prisma.event.findMany({
       where: {
-        hasStarted: true,
-        isComplete: false,
+        eventStatus: 'LIVE',
         OR: [
           { trackerMode: null },
           { trackerMode: { not: 'manual' } },
@@ -57,9 +56,8 @@ export async function checkEventCompletion(): Promise<CompletionResult[]> {
         fights: {
           select: {
             id: true,
-            isComplete: true,
+            fightStatus: true,
             isTitle: true,
-            hasStarted: true,
           },
         },
       },
@@ -74,7 +72,7 @@ export async function checkEventCompletion(): Promise<CompletionResult[]> {
 
       // Method 1: All fights complete
       const totalFights = event.fights.length;
-      const completedFights = event.fights.filter((f) => f.isComplete).length;
+      const completedFights = event.fights.filter((f) => f.fightStatus === 'COMPLETED').length;
       const allFightsComplete = totalFights > 0 && completedFights === totalFights;
 
       if (allFightsComplete) {
@@ -136,8 +134,7 @@ export async function checkEventCompletion(): Promise<CompletionResult[]> {
     // Skip events with trackerMode='manual'
     const staleEvents = await prisma.event.findMany({
       where: {
-        hasStarted: false,
-        isComplete: false,
+        eventStatus: 'UPCOMING',
         date: {
           lt: new Date(Date.now() - 18 * 60 * 60 * 1000), // 18 hours ago
         },
@@ -182,7 +179,7 @@ async function completeEvent(
   await prisma.event.update({
     where: { id: eventId },
     data: {
-      isComplete: true,
+      eventStatus: 'COMPLETED',
       completionMethod: method,
     },
   });
@@ -196,7 +193,7 @@ async function markRemainingFightsComplete(eventId: string): Promise<void> {
   const incompleteFights = await prisma.fight.findMany({
     where: {
       eventId,
-      isComplete: false,
+      fightStatus: { in: ['UPCOMING', 'LIVE'] },
     },
   });
 
@@ -204,10 +201,10 @@ async function markRemainingFightsComplete(eventId: string): Promise<void> {
     await prisma.fight.updateMany({
       where: {
         eventId,
-        isComplete: false,
+        fightStatus: { in: ['UPCOMING', 'LIVE'] },
       },
       data: {
-        isComplete: true,
+        fightStatus: 'COMPLETED',
         // Don't set winner/method - leave as null to indicate no result
       },
     });

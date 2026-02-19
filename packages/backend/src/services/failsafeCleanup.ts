@@ -96,14 +96,13 @@ async function completeStuckFights(now: Date, results: FailsafeResults): Promise
 
   console.log(`\n[Failsafe] Step 1: Looking for stuck fights from events that started 6+ hours ago`);
 
-  // Query all fights that have started but aren't complete
+  // Query all fights that are live (started but not complete)
   // Skip fights from events with trackerMode='manual'
   const potentiallyStuckFights = await prisma.fight.findMany({
     where: {
-      hasStarted: true,
-      isComplete: false,
+      fightStatus: 'LIVE',
       event: {
-        hasStarted: true,
+        eventStatus: 'LIVE',
         OR: [
           { trackerMode: null },
           { trackerMode: { not: 'manual' } },
@@ -143,7 +142,7 @@ async function completeStuckFights(now: Date, results: FailsafeResults): Promise
     await prisma.fight.update({
       where: { id: fight.id },
       data: {
-        isComplete: true,
+        fightStatus: 'COMPLETED',
         completionMethod: 'failsafe-timeout',
         completedAt: now
       }
@@ -169,15 +168,14 @@ async function completeEventsWithAllFightsDone(now: Date, results: FailsafeResul
   // Skip events with trackerMode='manual'
   const incompleteEvents = await prisma.event.findMany({
     where: {
-      isComplete: false,
-      hasStarted: true,
+      eventStatus: 'LIVE',
       OR: [
         { trackerMode: null },
         { trackerMode: { not: 'manual' } },
       ],
     },
     include: {
-      fights: { select: { isComplete: true } }
+      fights: { select: { fightStatus: true } }
     }
   });
 
@@ -185,13 +183,13 @@ async function completeEventsWithAllFightsDone(now: Date, results: FailsafeResul
 
   for (const event of incompleteEvents) {
     // Check if ALL fights are complete (or no fights at all)
-    const allFightsComplete = event.fights.length === 0 || event.fights.every(f => f.isComplete);
+    const allFightsComplete = event.fights.length === 0 || event.fights.every(f => f.fightStatus === 'COMPLETED');
 
     if (allFightsComplete) {
       await prisma.event.update({
         where: { id: event.id },
         data: {
-          isComplete: true,
+          eventStatus: 'COMPLETED',
           completionMethod: 'all-fights-complete'
         }
       });
@@ -216,12 +214,11 @@ async function forceCompleteOldEvents(now: Date, results: FailsafeResults): Prom
 
   console.log(`\n[Failsafe] Step 3: Looking for events to force complete (started 8+ hours ago)`);
 
-  // Query all incomplete events that have started
+  // Query all live events (started but not complete)
   // Skip events with trackerMode='manual'
   const potentiallyOldEvents = await prisma.event.findMany({
     where: {
-      hasStarted: true,
-      isComplete: false,
+      eventStatus: 'LIVE',
       OR: [
         { trackerMode: null },
         { trackerMode: { not: 'manual' } },
@@ -231,7 +228,7 @@ async function forceCompleteOldEvents(now: Date, results: FailsafeResults): Prom
       fights: {
         select: {
           id: true,
-          isComplete: true,
+          fightStatus: true,
           fighter1: { select: { lastName: true } },
           fighter2: { select: { lastName: true } }
         }
@@ -253,7 +250,7 @@ async function forceCompleteOldEvents(now: Date, results: FailsafeResults): Prom
     const hoursSinceStart = Math.round((now.getTime() - eventStartTime.getTime()) / (60 * 60 * 1000));
 
     // Complete any remaining incomplete fights
-    const incompleteFights = event.fights.filter(f => !f.isComplete);
+    const incompleteFights = event.fights.filter(f => f.fightStatus !== 'COMPLETED');
 
     if (incompleteFights.length > 0) {
       console.log(`  ⚠️  Force completing ${incompleteFights.length} remaining fights for ${event.name}`);
@@ -261,10 +258,10 @@ async function forceCompleteOldEvents(now: Date, results: FailsafeResults): Prom
       await prisma.fight.updateMany({
         where: {
           eventId: event.id,
-          isComplete: false
+          fightStatus: { in: ['UPCOMING', 'LIVE'] }
         },
         data: {
-          isComplete: true,
+          fightStatus: 'COMPLETED',
           completionMethod: 'failsafe-force-timeout',
           completedAt: now
         }
@@ -277,7 +274,7 @@ async function forceCompleteOldEvents(now: Date, results: FailsafeResults): Prom
     await prisma.event.update({
       where: { id: event.id },
       data: {
-        isComplete: true,
+        eventStatus: 'COMPLETED',
         completionMethod: 'failsafe-force-timeout'
       }
     });
@@ -305,30 +302,27 @@ export async function getFailsafeStatus(): Promise<{
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
   const [stuckFights, incompleteEvents, oldestFight, oldestEvent] = await Promise.all([
-    // Count stuck fights from past events
+    // Count stuck fights from past events (live but event date is old)
     prisma.fight.count({
       where: {
-        hasStarted: true,
-        isComplete: false,
+        fightStatus: 'LIVE',
         event: {
           date: { lt: oneDayAgo }
         }
       }
     }),
 
-    // Count incomplete events that have started
+    // Count live events (started but not complete)
     prisma.event.count({
       where: {
-        hasStarted: true,
-        isComplete: false
+        eventStatus: 'LIVE'
       }
     }),
 
     // Find oldest stuck fight
     prisma.fight.findFirst({
       where: {
-        hasStarted: true,
-        isComplete: false,
+        fightStatus: 'LIVE',
         event: {
           date: { lt: oneDayAgo }
         }
@@ -337,11 +331,10 @@ export async function getFailsafeStatus(): Promise<{
       orderBy: { event: { date: 'asc' } }
     }),
 
-    // Find oldest incomplete event
+    // Find oldest live event
     prisma.event.findFirst({
       where: {
-        hasStarted: true,
-        isComplete: false
+        eventStatus: 'LIVE'
       },
       select: { date: true },
       orderBy: { date: 'asc' }

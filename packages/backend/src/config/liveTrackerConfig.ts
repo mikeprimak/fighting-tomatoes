@@ -4,8 +4,8 @@
  * Defines which promotions have real-time live event trackers vs
  * which should use time-based fallback for fight status updates.
  *
- * - Real-time trackers: Scrape live data, update fights individually (upcoming → live → complete)
- * - Time-based fallback: Mark all fights in a section as complete at section start time
+ * - Real-time trackers: Scrape live data, update fights individually (UPCOMING → LIVE → COMPLETED)
+ * - Time-based fallback: Mark all fights in a section as COMPLETED at section start time
  */
 
 export type LiveTrackerType = 'ufc' | 'matchroom' | 'oktagon' | 'time-based' | 'manual' | 'live';
@@ -112,14 +112,13 @@ export function shouldAutoPublish(trackerMode: LiveTrackerType): boolean {
  * Build the Prisma update data for a fight, writing to shadow fields always
  * and optionally to published fields if the tracker mode auto-publishes.
  *
- * @param publishedData - The data that would go to published fields (hasStarted, isComplete, winner, method, round, time, currentRound, completedRounds)
+ * @param publishedData - The data that would go to published fields (fightStatus, winner, method, round, time, currentRound, completedRounds)
  * @param trackerMode - The effective tracker mode for the event
  * @returns Prisma update data object
  */
 export function buildTrackerUpdateData(
   publishedData: {
-    hasStarted?: boolean;
-    isComplete?: boolean;
+    fightStatus?: string;
     winner?: string | null;
     method?: string | null;
     round?: number | null;
@@ -133,8 +132,7 @@ export function buildTrackerUpdateData(
   const updateData: Record<string, any> = {};
 
   // Always write to shadow fields
-  if (publishedData.hasStarted !== undefined) updateData.trackerHasStarted = publishedData.hasStarted;
-  if (publishedData.isComplete !== undefined) updateData.trackerIsComplete = publishedData.isComplete;
+  if (publishedData.fightStatus !== undefined) updateData.trackerFightStatus = publishedData.fightStatus;
   if (publishedData.winner !== undefined) updateData.trackerWinner = publishedData.winner;
   if (publishedData.method !== undefined) updateData.trackerMethod = publishedData.method;
   if (publishedData.round !== undefined) updateData.trackerRound = publishedData.round;
@@ -145,7 +143,7 @@ export function buildTrackerUpdateData(
 
   // In auto-publish modes, also write to published fields
   if (shouldAutoPublish(trackerMode)) {
-    // Copy all the original data (includes hasStarted, isComplete, winner, etc.)
+    // Copy all the original data (includes fightStatus, winner, etc.)
     Object.assign(updateData, publishedData);
   }
 

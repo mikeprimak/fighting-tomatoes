@@ -32,8 +32,7 @@ const UpdateFightSchema = z.object({
   method: z.string().optional(),
   round: z.number().int().optional(),
   time: z.string().optional(),
-  hasStarted: z.boolean().optional(),
-  isComplete: z.boolean().optional(),
+  fightStatus: z.enum(['UPCOMING', 'LIVE', 'COMPLETED', 'CANCELLED']).optional(),
   highlightUrl: z.string().url().optional(),
   thumbnailUrl: z.string().url().optional(),
   watchPlatform: z.string().optional(),
@@ -47,8 +46,7 @@ const FightQuerySchema = z.object({
   fighterId: z.string().uuid().optional(),
   weightClass: z.nativeEnum(WeightClass).optional(),
   isTitle: z.string().optional().transform(val => val === 'true' ? true : val === 'false' ? false : undefined),
-  hasStarted: z.string().optional().transform(val => val === 'true' ? true : val === 'false' ? false : undefined),
-  isComplete: z.string().optional().transform(val => val === 'true' ? true : val === 'false' ? false : undefined),
+  fightStatus: z.enum(['UPCOMING', 'LIVE', 'COMPLETED', 'CANCELLED']).optional(),
   minRating: z.string().optional().transform(val => val ? parseFloat(val) : undefined),
   sortBy: z.enum(['event.date', 'averageRating', 'totalRatings', 'createdAt']).default('event.date'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -100,7 +98,7 @@ const CreatePredictionSchema = z.object({
 function stripTrackerFields(fight: any): any {
   if (!fight) return fight;
   const {
-    trackerHasStarted, trackerIsComplete, trackerWinner, trackerMethod,
+    trackerFightStatus, trackerWinner, trackerMethod,
     trackerRound, trackerTime, trackerCurrentRound, trackerCompletedRounds,
     trackerUpdatedAt, scheduledStartTime,
     ...clean
@@ -117,15 +115,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const query = FightQuerySchema.parse(request.query);
 
       const where: any = {
-        isCancelled: false,  // Always exclude cancelled fights
+        fightStatus: { not: 'CANCELLED' },  // Always exclude cancelled fights
       };
 
       // Apply filters
       if (query.eventId) where.eventId = query.eventId;
       if (query.weightClass) where.weightClass = query.weightClass;
       if (query.isTitle !== undefined) where.isTitle = query.isTitle;
-      if (query.hasStarted !== undefined) where.hasStarted = query.hasStarted;
-      if (query.isComplete !== undefined) where.isComplete = query.isComplete;
+      if (query.fightStatus) where.fightStatus = query.fightStatus;
       if (query.minRating) where.averageRating = { gte: query.minRating };
 
       // Fighter filter (either fighter1 or fighter2)
@@ -1586,7 +1583,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Check if fight has already started
-      if (fight.hasStarted) {
+      if (fight.fightStatus !== 'UPCOMING') {
         return reply.code(400).send({
           error: 'Cannot comment on a fight that has already started',
           code: 'FIGHT_STARTED',
@@ -1709,7 +1706,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Check if fight has already started
-      if (fight.hasStarted) {
+      if (fight.fightStatus !== 'UPCOMING') {
         return reply.code(400).send({
           error: 'Cannot comment on a fight that has already started',
           code: 'FIGHT_STARTED',
@@ -1847,7 +1844,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Check if fight has already started
-      if (fight.hasStarted) {
+      if (fight.fightStatus !== 'UPCOMING') {
         return reply.code(400).send({
           error: 'Cannot edit comment on a fight that has already started',
           code: 'FIGHT_STARTED',
@@ -2885,7 +2882,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Check if fight has started or is complete (can't predict after it starts)
-      if (fight.hasStarted || fight.isComplete) {
+      if (fight.fightStatus !== 'UPCOMING') {
         return reply.code(400).send({
           error: 'Cannot make predictions for fights that have started or completed',
           code: 'FIGHT_NOT_UPCOMING',
@@ -3772,14 +3769,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
         // Add comment count
         transformed.commentCount = fight._count?.preFightComments || 0;
 
-        // Calculate fight status based on isComplete and hasStarted flags
-        if (fight.isComplete) {
-          transformed.status = 'completed';
-        } else if (fight.hasStarted) {
-          transformed.status = 'live';
-        } else {
-          transformed.status = 'upcoming';
-        }
+        // Derive lowercase status from fightStatus enum
+        transformed.status = fight.fightStatus === 'COMPLETED' ? 'completed'
+          : fight.fightStatus === 'LIVE' ? 'live'
+          : fight.fightStatus === 'CANCELLED' ? 'cancelled'
+          : 'upcoming';
 
         // Transform user rating
         if (fight.ratings && fight.ratings.length > 0) {
@@ -3970,8 +3964,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           fight: {
             select: {
               id: true,
-              isComplete: true,
-              hasStarted: true,
+              fightStatus: true,
               fighter1: {
                 select: {
                   id: true,
@@ -4011,8 +4004,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         isReply: !!review.parentReviewId,
         fight: {
           id: review.fight.id,
-          isComplete: review.fight.isComplete,
-          hasStarted: review.fight.hasStarted,
+          fightStatus: review.fight.fightStatus,
           fighter1Name: `${review.fight.fighter1.firstName} ${review.fight.fighter1.lastName}`,
           fighter2Name: `${review.fight.fighter2.firstName} ${review.fight.fighter2.lastName}`,
           eventName: review.fight.event.name,
@@ -4172,8 +4164,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           fight: {
             select: {
               id: true,
-              isComplete: true,
-              hasStarted: true,
+              fightStatus: true,
               fighter1: {
                 select: {
                   id: true,
@@ -4225,8 +4216,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           isReply: !!comment.parentCommentId,
           fight: {
             id: comment.fight.id,
-            isComplete: comment.fight.isComplete,
-            hasStarted: comment.fight.hasStarted,
+            fightStatus: comment.fight.fightStatus,
             fighter1Id: comment.fight.fighter1.id,
             fighter2Id: comment.fight.fighter2.id,
             fighter1Name: `${comment.fight.fighter1.firstName} ${comment.fight.fighter1.lastName}`,

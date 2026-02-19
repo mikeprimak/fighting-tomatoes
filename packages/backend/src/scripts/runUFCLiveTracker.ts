@@ -34,8 +34,9 @@ const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
  * (Copied from liveEventTracker.ts for standalone use)
  */
 function convertScrapedToLiveUpdate(eventData: any): any {
-  const hasStarted = eventData.status === 'Live' || eventData.hasStarted;
+  const isLive = eventData.status === 'Live' || eventData.hasStarted;
   const isComplete = eventData.status === 'Complete' || eventData.isComplete;
+  const eventStatus = isComplete ? 'COMPLETED' : (isLive ? 'LIVE' : 'UPCOMING');
 
   const fights = (eventData.fights || []).map((fight: any) => {
     let fightStatus: 'upcoming' | 'live' | 'complete' = 'upcoming';
@@ -60,11 +61,9 @@ function convertScrapedToLiveUpdate(eventData: any): any {
       weightClass: fight.weightClass || null,
       isTitle: fight.isTitle || false,
       status: fightStatus,
+      fightStatus: fightStatus === 'complete' ? 'COMPLETED' : (fightStatus === 'live' ? 'LIVE' : 'UPCOMING'),
       currentRound,
       completedRounds,
-      currentTime: fight.currentTime || null,
-      hasStarted: fightStatus !== 'upcoming',
-      isComplete: fightStatus === 'complete',
       winner: fight.result?.winner || fight.winner || null,
       method: fight.result?.method || fight.method || null,
       winningRound: fight.result?.round || fight.round || null,
@@ -74,8 +73,7 @@ function convertScrapedToLiveUpdate(eventData: any): any {
 
   return {
     eventName: eventData.eventName || eventData.name,
-    hasStarted,
-    isComplete,
+    eventStatus,
     fights
   };
 }
@@ -123,7 +121,7 @@ async function findActiveUFCEvent(overrideEventId?: string) {
   const event = await prisma.event.findFirst({
     where: {
       promotion: 'UFC',
-      isComplete: false,
+      eventStatus: { not: 'COMPLETED' },
       ufcUrl: { not: null },
       trackerMode: { not: 'manual' },
       OR: [
@@ -165,8 +163,7 @@ async function runUFCLiveTracker(): Promise<void> {
     console.log(`[UFC LIVE] Found active event: ${event.name}`);
     console.log(`[UFC LIVE] Event ID: ${event.id}`);
     console.log(`[UFC LIVE] UFC URL: ${event.ufcUrl}`);
-    console.log(`[UFC LIVE] isComplete: ${event.isComplete}`);
-    console.log(`[UFC LIVE] hasStarted: ${event.hasStarted}\n`);
+    console.log(`[UFC LIVE] eventStatus: ${event.eventStatus}\n`);
 
     // Run the live event scraper
     // Script is in src/services/scrapeLiveEvent.js (JavaScript file)
@@ -224,15 +221,14 @@ async function runUFCLiveTracker(): Promise<void> {
       const liveUpdate = convertScrapedToLiveUpdate(eventData);
 
       console.log(`[UFC LIVE] Processing ${liveUpdate.fights.length} fights...`);
-      console.log(`[UFC LIVE] Event hasStarted: ${liveUpdate.hasStarted}`);
-      console.log(`[UFC LIVE] Event isComplete: ${liveUpdate.isComplete}\n`);
+      console.log(`[UFC LIVE] Event status: ${liveUpdate.eventStatus}\n`);
 
       // Parse and update database
       await parseLiveEventData(liveUpdate, event.id);
 
       // Check if event should be marked complete
       const eventStatus = await getEventStatus(event.id);
-      if (eventStatus && !eventStatus.isComplete) {
+      if (eventStatus && eventStatus.eventStatus !== 'COMPLETED') {
         const completed = await autoCompleteEvent(event.id);
         if (completed) {
           console.log('[UFC LIVE] Event auto-completed (all fights done)');

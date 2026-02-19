@@ -730,7 +730,7 @@ export async function crewRoutes(fastify: FastifyInstance) {
         });
       }
 
-      if (fight.hasStarted) {
+      if (fight.fightStatus !== 'UPCOMING') {
         return reply.status(400).send({
           error: 'Cannot make predictions after fight has started',
           code: 'FIGHT_ALREADY_STARTED',

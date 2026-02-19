@@ -3,8 +3,7 @@ import { apiService } from '../services/api';
 
 interface Event {
   id: string;
-  hasStarted: boolean;
-  isComplete: boolean;
+  eventStatus: string;
 }
 
 /**
@@ -20,8 +19,8 @@ export function useHasLiveEvent() {
   });
 
   const allEvents = eventsData?.events || [];
-  // Live event = hasStarted but not isComplete
-  const hasLiveEvent = allEvents.some((event: Event) => event.hasStarted && !event.isComplete);
+  // Live event = eventStatus is 'LIVE'
+  const hasLiveEvent = allEvents.some((event: Event) => event.eventStatus === 'LIVE');
 
   return hasLiveEvent;
 }

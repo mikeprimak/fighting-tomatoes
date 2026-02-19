@@ -234,8 +234,8 @@ export default function SearchResultsScreen() {
         <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
           {/* Fights Section */}
           {data.data.fights.length > 0 && (() => {
-            const upcomingFights = data.data.fights.filter(f => !f.isComplete);
-            const completedFights = data.data.fights.filter(f => f.isComplete);
+            const upcomingFights = data.data.fights.filter(f => f.fightStatus !== 'COMPLETED');
+            const completedFights = data.data.fights.filter(f => f.fightStatus === 'COMPLETED');
 
             return (
               <>

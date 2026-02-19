@@ -35,8 +35,8 @@ export async function setupAdminPanel(fastify: FastifyInstance) {
         resource: { model: prisma.event, client: prisma },
         options: {
           navigation: { name: 'Content', icon: 'Calendar' },
-          listProperties: ['name', 'promotion', 'date', 'location', 'trackerMode', 'hasStarted', 'isComplete'],
-          editProperties: ['name', 'promotion', 'date', 'location', 'venue', 'imageUrl', 'trackerMode', 'hasStarted', 'isComplete'],
+          listProperties: ['name', 'promotion', 'date', 'location', 'trackerMode', 'eventStatus'],
+          editProperties: ['name', 'promotion', 'date', 'location', 'venue', 'imageUrl', 'trackerMode', 'eventStatus'],
           properties: {
             trackerMode: {
               availableValues: [
@@ -53,10 +53,10 @@ export async function setupAdminPanel(fastify: FastifyInstance) {
         resource: { model: prisma.fight, client: prisma },
         options: {
           navigation: { name: 'Content', icon: 'Flag' },
-          listProperties: ['eventId', 'weightClass', 'isMainEvent', 'hasStarted', 'isComplete'],
+          listProperties: ['eventId', 'weightClass', 'isMainEvent', 'fightStatus'],
           editProperties: [
             'eventId', 'fighter1Id', 'fighter2Id', 'weightClass', 'isTitle',
-            'cardSection', 'orderInCard', 'hasStarted', 'isComplete',
+            'cardSection', 'orderInCard', 'fightStatus',
             'currentRound', 'completedRounds', 'winnerId', 'result', 'method', 'endRound', 'endTime',
           ],
         },

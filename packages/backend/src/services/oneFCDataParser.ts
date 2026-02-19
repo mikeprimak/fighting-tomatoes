@@ -436,8 +436,7 @@ async function importOneFCEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl, // Ensure URL is set
-          hasStarted: eventData.status === 'Live',
-          isComplete: eventData.status === 'Complete',
+          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
     } else {
@@ -452,8 +451,7 @@ async function importOneFCEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
-          hasStarted: eventData.status === 'Live',
-          isComplete: eventData.status === 'Complete',
+          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
     }
@@ -530,8 +528,7 @@ async function importOneFCEvents(
             scheduledRounds: fightData.isTitle ? 5 : 3,
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
-            hasStarted: false,
-            isComplete: false,
+            fightStatus: 'UPCOMING',
           }
         });
 
@@ -574,8 +571,7 @@ async function importOneFCEvents(
       const existingDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: false,
+          fightStatus: { in: ['UPCOMING', 'LIVE'] },
         },
         include: {
           fighter1: true,
@@ -605,7 +601,7 @@ async function importOneFCEvents(
 
             await prisma.fight.update({
               where: { id: dbFight.id },
-              data: { isCancelled: true }
+              data: { fightStatus: 'CANCELLED' }
             });
 
             cancelledCount++;
@@ -619,7 +615,7 @@ async function importOneFCEvents(
 
               await prisma.fight.update({
                 where: { id: dbFight.id },
-                data: { isCancelled: true }
+                data: { fightStatus: 'CANCELLED' }
               });
 
               cancelledCount++;
@@ -634,8 +630,7 @@ async function importOneFCEvents(
       const cancelledDbFights = await prisma.fight.findMany({
         where: {
           eventId: event.id,
-          isComplete: false,
-          isCancelled: true,
+          fightStatus: 'CANCELLED',
         },
         include: {
           fighter1: true,
@@ -654,7 +649,7 @@ async function importOneFCEvents(
 
           await prisma.fight.update({
             where: { id: dbFight.id },
-            data: { isCancelled: false }
+            data: { fightStatus: 'UPCOMING' }
           });
 
           unCancelledCount++;
@@ -737,7 +732,7 @@ export async function getOneFCImportStats(): Promise<{
       where: {
         promotion: 'ONE',
         date: { gte: new Date() },
-        isComplete: false
+        eventStatus: { not: 'COMPLETED' }
       }
     })
   ]);

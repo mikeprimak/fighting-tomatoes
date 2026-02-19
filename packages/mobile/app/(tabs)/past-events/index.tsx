@@ -32,8 +32,7 @@ interface Event {
   venue?: string;
   location?: string;
   promotion: string;
-  hasStarted: boolean;
-  isComplete: boolean;
+  eventStatus: string;
   bannerImage?: string | null;
   earlyPrelimStartTime?: string | null;
   fights?: Fight[];
@@ -48,8 +47,7 @@ interface Fight {
   isTitle: boolean;
   cardSection?: string;
   orderOnCard: number;
-  hasStarted: boolean;
-  isComplete: boolean;
+  fightStatus: string;
   winner?: string | null;
   method?: string | null;
   round?: number | null;

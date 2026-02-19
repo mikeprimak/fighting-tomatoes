@@ -38,8 +38,7 @@ const prisma = new PrismaClient();
         console.log('Fighter 1:', fight.fighter1.firstName, fight.fighter1.lastName);
         console.log('Fighter 2:', fight.fighter2.firstName, fight.fighter2.lastName);
         console.log('Event:', fight.event.name);
-        console.log('hasStarted:', fight.hasStarted);
-        console.log('isComplete:', fight.isComplete);
+        console.log('fightStatus:', fight.fightStatus);
         console.log('');
       });
     }

@@ -11,7 +11,7 @@ async function markRidderAllenComplete() {
     // Update all fights
     const updateFights = await prisma.fight.updateMany({
       where: { eventId: eventId },
-      data: { isComplete: true, hasStarted: true }
+      data: { fightStatus: 'COMPLETED' }
     });
 
     console.log(`Updated ${updateFights.count} fights`);
@@ -19,7 +19,7 @@ async function markRidderAllenComplete() {
     // Update event
     const updatedEvent = await prisma.event.update({
       where: { id: eventId },
-      data: { isComplete: true, hasStarted: true }
+      data: { eventStatus: 'COMPLETED' }
     });
 
     console.log(`✅ Event marked as complete: ${updatedEvent.name}`);

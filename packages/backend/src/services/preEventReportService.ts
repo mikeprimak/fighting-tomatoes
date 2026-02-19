@@ -28,7 +28,7 @@ async function generatePreEventReport(
       name: true,
       fights: {
         where: {
-          isCancelled: false,
+          fightStatus: { not: 'CANCELLED' },
         },
         include: {
           fighter1: {
@@ -252,7 +252,7 @@ export async function checkAndSendPreEventReports(): Promise<void> {
   // Also check prelimStartTime and earlyPrelimStartTime as fallbacks
   const upcomingEvents = await prisma.event.findMany({
     where: {
-      isComplete: false,
+      eventStatus: { not: 'COMPLETED' },
       OR: [
         // Primary: use mainStartTime (main card start)
         {

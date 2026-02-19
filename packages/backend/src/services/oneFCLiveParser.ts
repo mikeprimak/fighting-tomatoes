@@ -73,9 +73,7 @@ async function notifyNextFight(eventId: string, completedFightOrder: number): Pr
       where: {
         eventId,
         orderOnCard: { gt: completedFightOrder },
-        hasStarted: false,
-        isComplete: false,
-        isCancelled: false,
+        fightStatus: 'UPCOMING',
       },
       orderBy: { orderOnCard: 'asc' },
       include: {
@@ -141,20 +139,20 @@ export async function parseOneFCLiveData(
     console.log(`  ⚙️  Tracker mode: ${trackerMode}`);
 
     // Update event status if changed
-    if (liveData.hasStarted && !event.hasStarted) {
+    if (liveData.hasStarted && event.eventStatus === 'UPCOMING') {
       await prisma.event.update({
         where: { id: eventId },
-        data: { hasStarted: true }
+        data: { eventStatus: 'LIVE' }
       });
       console.log(`  🔴 Event marked as STARTED`);
       eventUpdated = true;
     }
 
-    if (liveData.isComplete && !event.isComplete) {
+    if (liveData.isComplete && event.eventStatus !== 'COMPLETED') {
       await prisma.event.update({
         where: { id: eventId },
         data: {
-          isComplete: true,
+          eventStatus: 'COMPLETED',
           completionMethod: 'scraper'
         }
       });
@@ -196,8 +194,8 @@ export async function parseOneFCLiveData(
       let changed = false;
 
       // Check if fight is live (currently happening)
-      if (scrapedFight.isLive && !dbFight.hasStarted) {
-        updateData.hasStarted = true;
+      if (scrapedFight.isLive && dbFight.fightStatus === 'UPCOMING') {
+        updateData.fightStatus = 'LIVE';
         changed = true;
         console.log(`    🔴 Fight is LIVE`);
 
@@ -217,15 +215,15 @@ export async function parseOneFCLiveData(
       }
 
       // Check hasStarted (fight has started, either live or complete)
-      if (scrapedFight.hasStarted && !dbFight.hasStarted) {
-        updateData.hasStarted = true;
+      if (scrapedFight.hasStarted && dbFight.fightStatus === 'UPCOMING') {
+        updateData.fightStatus = 'LIVE';
         changed = true;
         console.log(`    🥊 Fight STARTED`);
       }
 
       // Check isComplete
-      if (scrapedFight.isComplete && !dbFight.isComplete) {
-        updateData.isComplete = true;
+      if (scrapedFight.isComplete && dbFight.fightStatus !== 'COMPLETED') {
+        updateData.fightStatus = 'COMPLETED';
         changed = true;
         console.log(`    ✅ Fight COMPLETE`);
 
@@ -287,7 +285,7 @@ export async function parseOneFCLiveData(
 
     for (const dbFight of event.fights) {
       // Skip fights that are already complete
-      if (dbFight.isComplete) {
+      if (dbFight.fightStatus === 'COMPLETED') {
         continue;
       }
 
@@ -300,27 +298,27 @@ export async function parseOneFCLiveData(
       const fightIsInScrapedData = scrapedFightSignatures.has(dbFightSignature);
 
       // Case 1: Fight was cancelled but has reappeared in scraped data -> UN-CANCEL it
-      if (dbFight.isCancelled && fightIsInScrapedData) {
+      if (dbFight.fightStatus === 'CANCELLED' && fightIsInScrapedData) {
         console.log(`  ✅ Fight reappeared, UN-CANCELLING: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
 
         await prisma.fight.update({
           where: { id: dbFight.id },
-          data: { isCancelled: false }
+          data: { fightStatus: 'UPCOMING' }
         });
 
         unCancelledCount++;
       }
       // Case 2: Fight is NOT cancelled and missing from scraped data -> CANCEL it
-      else if (!dbFight.isCancelled && !fightIsInScrapedData) {
+      else if (dbFight.fightStatus !== 'CANCELLED' && !fightIsInScrapedData) {
         console.log(`  ⚠️  Fight missing from scraped data: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
 
         // Only mark as cancelled if event has started (to avoid false positives before event begins)
-        if (event.hasStarted || liveData.hasStarted) {
+        if (event.eventStatus !== 'UPCOMING' || liveData.hasStarted) {
           console.log(`  ❌ Marking fight as CANCELLED`);
 
           await prisma.fight.update({
             where: { id: dbFight.id },
-            data: { isCancelled: true }
+            data: { fightStatus: 'CANCELLED' }
           });
 
           cancelledCount++;
@@ -354,8 +352,8 @@ export async function checkOneFCEventComplete(eventId: string): Promise<{ allCom
     where: { id: eventId },
     include: {
       fights: {
-        where: { isCancelled: false },
-        select: { isComplete: true }
+        where: { fightStatus: { not: 'CANCELLED' } },
+        select: { fightStatus: true }
       }
     }
   });
@@ -364,8 +362,8 @@ export async function checkOneFCEventComplete(eventId: string): Promise<{ allCom
     return { allComplete: false, eventAlreadyComplete: false };
   }
 
-  const allFightsComplete = event.fights.every(fight => fight.isComplete);
-  return { allComplete: allFightsComplete, eventAlreadyComplete: event.isComplete };
+  const allFightsComplete = event.fights.every(fight => fight.fightStatus === 'COMPLETED');
+  return { allComplete: allFightsComplete, eventAlreadyComplete: event.eventStatus === 'COMPLETED' };
 }
 
 /**
@@ -385,7 +383,7 @@ export async function autoCompleteOneFCEvent(eventId: string): Promise<boolean> 
     await prisma.event.update({
       where: { id: eventId },
       data: {
-        isComplete: true,
+        eventStatus: 'COMPLETED',
         completionMethod: 'scraper'
       }
     });

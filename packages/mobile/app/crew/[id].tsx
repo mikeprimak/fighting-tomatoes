@@ -247,7 +247,7 @@ export default function CrewChatScreen() {
       const upcomingEvents = ufcEvents
         .filter((event: any) => {
           const eventDate = new Date(event.date);
-          return eventDate >= now && !event.isComplete;
+          return eventDate >= now && event.eventStatus !== 'COMPLETED';
         })
         .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -297,8 +297,9 @@ export default function CrewChatScreen() {
       cardPosition: fight.orderOnCard,
       weightClass: fight.isTitle ? fight.titleName : (fight.weightClass ? fight.weightClass.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'),
       scheduledRounds: fight.scheduledRounds || (fight.isTitle ? 5 : 3),
-      status: fight.hasStarted ? (fight.isComplete ? 'completed' : 'in_progress') : 'upcoming',
-      isComplete: fight.isComplete || false,
+      fightStatus: fight.fightStatus || 'UPCOMING',
+      status: fight.fightStatus === 'COMPLETED' ? 'completed' : (fight.fightStatus === 'LIVE' ? 'in_progress' : 'upcoming'),
+      isComplete: fight.fightStatus === 'COMPLETED',
       result: fight.winner ?
         (fight.method ?
           `${fight.winner === fight.fighter1.id ? fight.fighter1.firstName + ' ' + fight.fighter1.lastName : fight.fighter2.firstName + ' ' + fight.fighter2.lastName} via ${fight.method}${fight.round ? ` (R${fight.round})` : ''}` :

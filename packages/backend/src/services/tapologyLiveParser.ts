@@ -116,7 +116,7 @@ export async function parseTapologyData(
       result.fightsMatched++;
 
       // Skip if already complete in DB
-      if (dbFight.isComplete) {
+      if (dbFight.fightStatus === 'COMPLETED') {
         console.log(`  ⏭️  ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} - already complete`);
         continue;
       }
@@ -134,8 +134,7 @@ export async function parseTapologyData(
 
       // Build update data
       const updateData: any = {
-        hasStarted: true,
-        isComplete: true,
+        fightStatus: 'COMPLETED',
         completionMethod: 'tapology-scraper',
         completedAt: new Date(),
       };
@@ -175,7 +174,7 @@ export async function parseTapologyData(
     if (result.fightsUpdated > 0) {
       await prisma.event.update({
         where: { id: eventId },
-        data: { hasStarted: true },
+        data: { eventStatus: 'LIVE' },
       });
     }
 

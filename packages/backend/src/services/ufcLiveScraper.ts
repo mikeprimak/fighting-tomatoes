@@ -21,7 +21,7 @@ interface FightData {
   // Live round tracking
   currentRound?: number;      // Current round in progress (1-5)
   completedRounds?: number;   // Last completed round (0-5)
-  isComplete: boolean;
+  fightStatus: string;        // 'UPCOMING', 'LIVE', 'COMPLETED'
   // Result data (when fight completes)
   result?: {
     winner?: string;
@@ -125,7 +125,7 @@ class UFCLiveScraper {
 
       let currentRound: number | undefined;
       let completedRounds: number | undefined;
-      let isComplete = false;
+      let fightStatus = 'UPCOMING';
 
       // Check for live status indicators
       const fightText = $fight.text().toLowerCase();
@@ -133,6 +133,7 @@ class UFCLiveScraper {
 
       if (hasLiveIndicator || fightText.includes('live now') || status === 'live') {
         status = 'live';
+        fightStatus = 'LIVE';
 
         // Try to detect current round: "Round 1", "Round 2", "R1", "R2", etc.
         const roundMatch = fightText.match(/(?:round\s+|r)(\d+)/i);
@@ -153,7 +154,7 @@ class UFCLiveScraper {
       // If we have a result, fight is complete
       if (resultText) {
         status = 'complete';
-        isComplete = true;
+        fightStatus = 'COMPLETED';
         const parsedResult = this.parseResultText(resultText);
         if (parsedResult?.round) {
           completedRounds = parsedResult.round;
@@ -169,7 +170,7 @@ class UFCLiveScraper {
           weightClass,
           currentRound,
           completedRounds,
-          isComplete,
+          fightStatus,
           result: parsedResult,
         });
       } else {
@@ -183,7 +184,7 @@ class UFCLiveScraper {
           weightClass,
           currentRound,
           completedRounds,
-          isComplete,
+          fightStatus,
         });
       }
     });

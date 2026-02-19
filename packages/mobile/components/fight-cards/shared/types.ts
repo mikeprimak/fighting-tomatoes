@@ -34,8 +34,7 @@ export interface FightData {
   averageRating: number;
   totalRatings: number;
   totalReviews: number;
-  hasStarted: boolean;
-  isComplete: boolean;
+  fightStatus: string;
   currentRound?: number | null;
   completedRounds?: number | null;
   watchPlatform?: string;

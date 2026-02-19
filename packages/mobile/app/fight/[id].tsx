@@ -224,7 +224,7 @@ export default function FightDetailScreen() {
   const isEventInPast = fight.event?.date
     ? new Date(fight.event.date).getTime() < Date.now() - 24 * 60 * 60 * 1000
     : false;
-  const isComplete = fight.isComplete || mode === 'completed' || isEventInPast;
+  const isComplete = fight.fightStatus === 'COMPLETED' || mode === 'completed' || isEventInPast;
 
   // Toggle fight notification using mutation
   // Toggle the MANUAL notification on/off (bell visual may stay on if fighter follow exists)

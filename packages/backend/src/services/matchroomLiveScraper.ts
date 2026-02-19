@@ -51,8 +51,8 @@ interface MatchroomFightData {
   boxerB: BoxerInfo;
   // Live tracking
   currentRound?: number;
-  hasStarted: boolean;
-  isComplete: boolean;
+  hasStarted: boolean;    // Used by parser to detect UPCOMING -> LIVE transition
+  isComplete: boolean;    // Used by parser to detect -> COMPLETED transition
   // Result (when complete)
   result?: FightResult;
   // Raw text for debugging
@@ -67,8 +67,8 @@ interface MatchroomEventData {
   location?: string;
   eventDate?: string;
   status: 'upcoming' | 'live' | 'complete';
-  hasStarted: boolean;
-  isComplete: boolean;
+  hasStarted: boolean;    // Used by parser to detect event started
+  isComplete: boolean;    // Used by parser to detect event complete
   fights: MatchroomFightData[];
   timestamp: string;
   scrapeDuration?: number;

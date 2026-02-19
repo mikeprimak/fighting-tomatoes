@@ -53,8 +53,8 @@ interface OneFCFightData {
   isTitle: boolean;
   fighterA: OneFCFighterInfo;
   fighterB: OneFCFighterInfo;
-  hasStarted: boolean;    // True if live or complete
-  isComplete: boolean;    // True if fight has ended
+  hasStarted: boolean;    // True if live or complete (used by parser to detect UPCOMING -> LIVE)
+  isComplete: boolean;    // True if fight has ended (used by parser to detect -> COMPLETED)
   isLive?: boolean;       // True if fight is currently happening
   result?: OneFCFightResult;
 }
@@ -67,8 +67,8 @@ export interface OneFCEventData {
   location?: string;
   eventDate?: string;
   status: 'upcoming' | 'live' | 'complete';
-  hasStarted: boolean;
-  isComplete: boolean;
+  hasStarted: boolean;    // Used by parser to detect event started
+  isComplete: boolean;    // Used by parser to detect event complete
   fights: OneFCFightData[];
   timestamp: string;
   scrapeDuration?: number;

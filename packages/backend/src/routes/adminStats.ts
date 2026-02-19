@@ -67,7 +67,7 @@ const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         prisma.event.count({
           where: {
             date: { gte: now },
-            isComplete: false,
+            eventStatus: { not: 'COMPLETED' },
           },
         }),
       ]);

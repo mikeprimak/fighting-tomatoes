@@ -24,8 +24,7 @@ async function importUFC320() {
         location: 'TBD',
         mainStartTime: new Date('2025-10-04T22:00:00-04:00'), // Main card 10 PM EDT
         prelimStartTime: new Date('2025-10-04T20:00:00-04:00'), // Prelims 8 PM EDT
-        hasStarted: false,
-        isComplete: false,
+        eventStatus: 'UPCOMING',
       },
     });
     console.log(`✅ Event created: ${event.id}\n`);
@@ -124,8 +123,7 @@ async function importUFC320() {
           scheduledRounds: fight.isTitle ? 5 : 3,
           orderOnCard: fight.order,
           startTime: fight.startTime,
-          hasStarted: false,
-          isComplete: false,
+          fightStatus: 'UPCOMING',
         },
       });
 
