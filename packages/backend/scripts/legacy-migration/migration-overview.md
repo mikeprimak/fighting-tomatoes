@@ -764,3 +764,44 @@ Major fights that were previously missing (all event-mismatch):
 - **22 UFC fights** still unmapped (invalid dates or unresolvable names)
 - **~1,745 non-UFC fights** not addressed (Streetbeefs: 775, ONE: 742, BKFC: 116, Strikeforce: 99, etc.)
 - Non-UFC fills can be done later with similar per-promotion scripts if needed
+
+---
+
+## Fix: Past Fights Showing as "Upcoming" or "Live" (Feb 19, 2026)
+
+### Problem
+
+5,430 fights from past events were displaying incorrect status in the app:
+- **55 fights** showing as "upcoming" (`hasStarted=false, isComplete=false`)
+- **5,375 fights** showing as "live" (`hasStarted=true, isComplete=false`)
+
+Affected promotions: UFC (1,648), ONE (705), Bellator (518), Pride (514), WEC (458), BKFC (367), PFL (256), and 15 others. Additionally, 1,277 past events were missing `hasStarted`/`isComplete` flags.
+
+### Root Cause
+
+Migration scripts used `isComplete: !!lf.winner` to set fight completion status. This only returns `true` when the legacy `winner` field is populated. Fights without winner data (draws recorded differently, no-contests, or simply missing results) got `isComplete=false` even though they happened years ago.
+
+```javascript
+// BUG (before fix):
+hasStarted: !!lf.hasstarted,
+isComplete: !!lf.winner,        // false when winner is null/empty
+
+// FIX (after):
+hasStarted: !!lf.hasstarted || parsedDate < new Date(),
+isComplete: !!lf.winner || parsedDate < new Date(),
+```
+
+### Scripts Fixed
+
+| Script | Status |
+|--------|--------|
+| `fill-missing-ufc.js` | Fixed (tracked in git) |
+| `audit-and-fix.js` | Fixed (untracked) |
+| `sync-all-from-live.js` | Fixed (untracked) |
+
+### Data Fix Applied
+
+Ran `fix-past-fight-status.js` against production database:
+- Set `hasStarted=true, isComplete=true, completionMethod='migration-fix'` on all 5,430 affected fights
+- Set `hasStarted=true, isComplete=true` on 1,277 past events
+- Verified 0 remaining broken fights after fix
