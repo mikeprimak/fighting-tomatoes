@@ -1299,6 +1299,24 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // ORGANIZATION SCRAPER TRIGGERS
   // ============================================
 
+  // Manual trigger: UFC Scraper
+  fastify.post('/admin/trigger/scraper/ufc', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    try {
+      console.log('[Admin] Manual trigger: UFC scraper');
+      const results = await triggerDailyUFCScraper();
+      return reply.send({
+        success: true,
+        message: 'UFC scraper completed',
+        data: results
+      });
+    } catch (error: any) {
+      console.error('[Admin] UFC scraper failed:', error);
+      return reply.code(500).send({ error: 'UFC scraper failed', message: error.message });
+    }
+  });
+
   // Manual trigger: BKFC Scraper
   fastify.post('/admin/trigger/scraper/bkfc', {
     preValidation: [fastify.authenticate, requireAdmin],
