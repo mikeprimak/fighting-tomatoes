@@ -18,6 +18,7 @@ import {
   runDailyTopRankScraper,
   runDailyOktagonScraper,
   runDailyZuffaBoxingScraper,
+  runDailyRizinScraper,
   runAllOrganizationScrapers,
   OrganizationScraperResults,
 } from './dailyAllScrapers';
@@ -415,6 +416,14 @@ export async function triggerOktagonScraper(): Promise<OrganizationScraperResult
 export async function triggerZuffaBoxingScraper(): Promise<OrganizationScraperResults> {
   console.log('[Background Jobs] Manual trigger: Zuffa Boxing scraper');
   return await runDailyZuffaBoxingScraper();
+}
+
+/**
+ * Trigger RIZIN scraper manually (for testing/admin)
+ */
+export async function triggerRizinScraper(): Promise<OrganizationScraperResults> {
+  console.log('[Background Jobs] Manual trigger: RIZIN scraper');
+  return await runDailyRizinScraper();
 }
 
 /**

@@ -19,6 +19,7 @@ import {
   triggerTopRankScraper,
   triggerOktagonScraper,
   triggerZuffaBoxingScraper,
+  triggerRizinScraper,
   triggerAllOrganizationScrapers,
 } from '../services/backgroundJobs';
 import { getFailsafeStatus } from '../services/failsafeCleanup';
@@ -104,6 +105,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
     'oktagon': triggerOktagonScraper,
     'zuffa-boxing': triggerZuffaBoxingScraper,
     'zuffa': triggerZuffaBoxingScraper,
+    'rizin': triggerRizinScraper,
   };
 
   fastify.get('/admin/test-scraper/:org', async (request, reply) => {
@@ -156,7 +158,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
     // Get the most recent event updatedAt per organization
     // This serves as a proxy for "when did the scraper last successfully update data"
-    const organizations = ['UFC', 'BKFC', 'PFL', 'ONE', 'Matchroom Boxing', 'Golden Boy', 'Top Rank', 'OKTAGON', 'Zuffa Boxing'];
+    const organizations = ['UFC', 'BKFC', 'PFL', 'ONE', 'Matchroom Boxing', 'Golden Boy', 'Top Rank', 'OKTAGON', 'Zuffa Boxing', 'RIZIN'];
 
     const statusPromises = organizations.map(async (org) => {
       try {
@@ -1441,6 +1443,24 @@ export async function adminRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Manual trigger: RIZIN Scraper
+  fastify.post('/admin/trigger/scraper/rizin', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    try {
+      console.log('[Admin] Manual trigger: RIZIN scraper');
+      const results = await triggerRizinScraper();
+      return reply.send({
+        success: true,
+        message: 'RIZIN scraper completed',
+        data: results
+      });
+    } catch (error: any) {
+      console.error('[Admin] RIZIN scraper failed:', error);
+      return reply.code(500).send({ error: 'RIZIN scraper failed', message: error.message });
+    }
+  });
+
   // Manual trigger: ALL Organization Scrapers (runs sequentially)
   fastify.post('/admin/trigger/scraper/all', {
     preValidation: [fastify.authenticate, requireAdmin],
@@ -1678,7 +1698,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
   fastify.get('/admin/scraper-logs/latest', {
     preValidation: [fastify.authenticate, requireAdmin],
   }, async (request, reply) => {
-    const organizations = ['UFC', 'BKFC', 'PFL', 'ONE', 'Matchroom Boxing', 'Golden Boy', 'Top Rank', 'OKTAGON', 'Zuffa Boxing'];
+    const organizations = ['UFC', 'BKFC', 'PFL', 'ONE', 'Matchroom Boxing', 'Golden Boy', 'Top Rank', 'OKTAGON', 'Zuffa Boxing', 'RIZIN'];
 
     try {
       const latestLogs = await Promise.all(
