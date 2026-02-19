@@ -1299,201 +1299,84 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // ORGANIZATION SCRAPER TRIGGERS
   // ============================================
 
-  // Manual trigger: UFC Scraper
-  fastify.post('/admin/trigger/scraper/ufc', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: UFC scraper');
-      const results = await triggerDailyUFCScraper();
-      return reply.send({
-        success: true,
-        message: 'UFC scraper completed',
-        data: results
-      });
-    } catch (error: any) {
-      console.error('[Admin] UFC scraper failed:', error);
-      return reply.code(500).send({ error: 'UFC scraper failed', message: error.message });
-    }
-  });
+  // GitHub Actions workflow dispatch helper
+  const SCRAPER_WORKFLOWS: Record<string, string> = {
+    'ufc': 'ufc-scraper.yml',
+    'bkfc': 'bkfc-scraper.yml',
+    'pfl': 'pfl-scraper.yml',
+    'onefc': 'onefc-scraper.yml',
+    'matchroom': 'matchroom-scraper.yml',
+    'goldenboy': 'goldenboy-scraper.yml',
+    'toprank': 'toprank-scraper.yml',
+    'oktagon': 'oktagon-scraper.yml',
+    'zuffa-boxing': 'zuffa-boxing-scraper.yml',
+    'rizin': 'rizin-scraper.yml',
+  };
 
-  // Manual trigger: BKFC Scraper
-  fastify.post('/admin/trigger/scraper/bkfc', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: BKFC scraper');
-      const results = await triggerBKFCScraper();
-      return reply.send({
-        success: true,
-        message: 'BKFC scraper completed',
-        data: results
-      });
-    } catch (error: any) {
-      console.error('[Admin] BKFC scraper failed:', error);
-      return reply.code(500).send({ error: 'BKFC scraper failed', message: error.message });
+  async function dispatchGitHubWorkflow(workflow: string): Promise<void> {
+    const githubToken = process.env.GITHUB_TOKEN;
+    if (!githubToken) {
+      throw new Error('GITHUB_TOKEN not configured');
     }
-  });
 
-  // Manual trigger: PFL Scraper
-  fastify.post('/admin/trigger/scraper/pfl', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: PFL scraper');
-      const results = await triggerPFLScraper();
-      return reply.send({
-        success: true,
-        message: 'PFL scraper completed',
-        data: results
-      });
-    } catch (error: any) {
-      console.error('[Admin] PFL scraper failed:', error);
-      return reply.code(500).send({ error: 'PFL scraper failed', message: error.message });
+    const res = await fetch(`https://api.github.com/repos/mikeprimak/fighting-tomatoes/actions/workflows/${workflow}/dispatches`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${githubToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ref: 'main' }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`GitHub dispatch failed (${res.status}): ${errorText}`);
     }
-  });
+  }
 
-  // Manual trigger: ONE FC Scraper
-  fastify.post('/admin/trigger/scraper/onefc', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: ONE FC scraper');
-      const results = await triggerOneFCScraper();
-      return reply.send({
-        success: true,
-        message: 'ONE FC scraper completed',
-        data: results
-      });
-    } catch (error: any) {
-      console.error('[Admin] ONE FC scraper failed:', error);
-      return reply.code(500).send({ error: 'ONE FC scraper failed', message: error.message });
-    }
-  });
+  // Manual trigger: Individual scraper via GitHub Actions
+  for (const [orgKey, workflow] of Object.entries(SCRAPER_WORKFLOWS)) {
+    fastify.post(`/admin/trigger/scraper/${orgKey}`, {
+      preValidation: [fastify.authenticate, requireAdmin],
+    }, async (request, reply) => {
+      try {
+        console.log(`[Admin] Manual trigger: ${orgKey} scraper via GitHub Actions`);
+        await dispatchGitHubWorkflow(workflow);
+        return reply.send({
+          success: true,
+          message: `${orgKey.toUpperCase()} scraper triggered via GitHub Actions (runs in background)`,
+        });
+      } catch (error: any) {
+        console.error(`[Admin] ${orgKey} scraper dispatch failed:`, error);
+        return reply.code(500).send({ error: `${orgKey} scraper failed`, message: error.message });
+      }
+    });
+  }
 
-  // Manual trigger: Matchroom Scraper
-  fastify.post('/admin/trigger/scraper/matchroom', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: Matchroom scraper');
-      const results = await triggerMatchroomScraper();
-      return reply.send({
-        success: true,
-        message: 'Matchroom scraper completed',
-        data: results
-      });
-    } catch (error: any) {
-      console.error('[Admin] Matchroom scraper failed:', error);
-      return reply.code(500).send({ error: 'Matchroom scraper failed', message: error.message });
-    }
-  });
-
-  // Manual trigger: Golden Boy Scraper
-  fastify.post('/admin/trigger/scraper/goldenboy', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: Golden Boy scraper');
-      const results = await triggerGoldenBoyScraper();
-      return reply.send({
-        success: true,
-        message: 'Golden Boy scraper completed',
-        data: results
-      });
-    } catch (error: any) {
-      console.error('[Admin] Golden Boy scraper failed:', error);
-      return reply.code(500).send({ error: 'Golden Boy scraper failed', message: error.message });
-    }
-  });
-
-  // Manual trigger: Top Rank Scraper
-  fastify.post('/admin/trigger/scraper/toprank', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: Top Rank scraper');
-      const results = await triggerTopRankScraper();
-      return reply.send({
-        success: true,
-        message: 'Top Rank scraper completed',
-        data: results
-      });
-    } catch (error: any) {
-      console.error('[Admin] Top Rank scraper failed:', error);
-      return reply.code(500).send({ error: 'Top Rank scraper failed', message: error.message });
-    }
-  });
-
-  // Manual trigger: OKTAGON Scraper
-  fastify.post('/admin/trigger/scraper/oktagon', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: OKTAGON scraper');
-      const results = await triggerOktagonScraper();
-      return reply.send({
-        success: true,
-        message: 'OKTAGON scraper completed',
-        data: results
-      });
-    } catch (error: any) {
-      console.error('[Admin] OKTAGON scraper failed:', error);
-      return reply.code(500).send({ error: 'OKTAGON scraper failed', message: error.message });
-    }
-  });
-
-  // Manual trigger: Zuffa Boxing Scraper
-  fastify.post('/admin/trigger/scraper/zuffa-boxing', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: Zuffa Boxing scraper');
-      const results = await triggerZuffaBoxingScraper();
-      return reply.send({
-        success: true,
-        message: 'Zuffa Boxing scraper completed',
-        data: results
-      });
-    } catch (error: any) {
-      console.error('[Admin] Zuffa Boxing scraper failed:', error);
-      return reply.code(500).send({ error: 'Zuffa Boxing scraper failed', message: error.message });
-    }
-  });
-
-  // Manual trigger: RIZIN Scraper
-  fastify.post('/admin/trigger/scraper/rizin', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: RIZIN scraper');
-      const results = await triggerRizinScraper();
-      return reply.send({
-        success: true,
-        message: 'RIZIN scraper completed',
-        data: results
-      });
-    } catch (error: any) {
-      console.error('[Admin] RIZIN scraper failed:', error);
-      return reply.code(500).send({ error: 'RIZIN scraper failed', message: error.message });
-    }
-  });
-
-  // Manual trigger: ALL Organization Scrapers (runs sequentially)
+  // Manual trigger: ALL Organization Scrapers via GitHub Actions
   fastify.post('/admin/trigger/scraper/all', {
     preValidation: [fastify.authenticate, requireAdmin],
   }, async (request, reply) => {
     try {
-      console.log('[Admin] Manual trigger: ALL organization scrapers');
-      const results = await triggerAllOrganizationScrapers();
+      console.log('[Admin] Manual trigger: ALL organization scrapers via GitHub Actions');
+      const results = [];
+      for (const [orgKey, workflow] of Object.entries(SCRAPER_WORKFLOWS)) {
+        try {
+          await dispatchGitHubWorkflow(workflow);
+          results.push({ org: orgKey, success: true });
+        } catch (error: any) {
+          results.push({ org: orgKey, success: false, error: error.message });
+        }
+      }
       const successCount = results.filter(r => r.success).length;
       return reply.send({
         success: true,
-        message: `Completed ${successCount}/${results.length} organization scrapers`,
+        message: `Triggered ${successCount}/${results.length} scrapers via GitHub Actions`,
         data: results
       });
     } catch (error: any) {
-      console.error('[Admin] All scrapers failed:', error);
+      console.error('[Admin] All scrapers dispatch failed:', error);
       return reply.code(500).send({ error: 'All scrapers failed', message: error.message });
     }
   });
