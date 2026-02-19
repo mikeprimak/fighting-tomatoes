@@ -616,8 +616,8 @@ Recommended: Option 1 (mysqldump). One-time dump, fast local processing.
 
 1. [x] ~~Fix tags sync~~ - DONE: Created `setup-legacy-tags.js` with direct ID mapping
 2. [x] ~~Run stats update scripts~~ - DONE: Both fight and user stats updated
-3. [ ] Investigate fight errors (6,041 - log unmatched fighter names)
-4. [ ] Decide on reviews strategy (mysqldump recommended)
+3. [x] ~~Investigate fight errors (6,041)~~ - DONE: Root cause was event name normalization (see Feb 2026 fill run)
+4. [x] ~~Decide on reviews strategy~~ - DONE: Direct remote MySQL query with fresh connections per phase
 5. [ ] Test on staging with real data verification
 6. [ ] Schedule production migration window
 
@@ -646,9 +646,7 @@ Recommended: Option 1 (mysqldump). One-time dump, fast local processing.
 
 | Component | Reason | Recommendation |
 |-----------|--------|----------------|
-| Reviews (~770) | Too slow over remote MySQL | mysqldump + local import |
-| Review Upvotes (~2,000) | Depends on reviews | Same as above |
-| ~6,000 fights | Fighter name matching | Log & investigate |
+| Non-UFC fights (~1,745) | Streetbeefs, ONE, BKFC, Strikeforce, etc. | Run fill-missing script per-promotion if needed |
 
 ### Files Created This Session
 
@@ -660,7 +658,9 @@ packages/backend/scripts/legacy-migration/
 ├── update-user-stats.js           # Recalculate user statistics
 ├── legacy-tag-mapping.json        # Generated: legacyId → newUUID
 └── mysql-export/
-    └── sync-all-from-live.js      # Updated: uses legacy-tag-mapping.json
+    ├── sync-all-from-live.js      # Updated: uses legacy-tag-mapping.json
+    ├── fill-missing-ufc.js        # Fills missing UFC fights (additive)
+    └── fill-missing-ufc-ratings.js # Syncs ratings/reviews/tags for filled fights
 ```
 
 ### Production Command Sequence
@@ -680,14 +680,87 @@ node scripts/legacy-migration/setup-legacy-tags.js --confirm
 # 4. Sync from live MySQL
 node scripts/legacy-migration/mysql-export/sync-all-from-live.js
 
-# 5. Update statistics
+# 5. Fill missing UFC fights (additive - fixes event name normalization issues)
+node scripts/legacy-migration/mysql-export/fill-missing-ufc.js
+node scripts/legacy-migration/mysql-export/fill-missing-ufc-ratings.js
+
+# 6. Update statistics
 node update-rating-stats.js
 node scripts/legacy-migration/update-user-stats.js
 
-# 6. Verify
+# 7. Verify
 node scripts/legacy-migration/wipe-legacy-data.js --verify
 
-# 7. Run scrapers for upcoming events
+# 8. Run scrapers for upcoming events
 node services/scrapeAllUFCData.js
 node services/scrapeAllOneFCData.js
 ```
+
+---
+
+## Fill Missing UFC Fights Run (Feb 19, 2026)
+
+### Root Cause Analysis
+
+The original `sync-all-from-live.js` had **6,041 fight errors** (~43% of legacy fights). Investigation revealed:
+
+| Failure Category | Count | Cause |
+|-----------------|-------|-------|
+| **Event mismatch** | 2,466 | Event name normalization bug: colon-split logic transformed "TUF 24 Finale: Tournament of Champions" → "UFC: Tournament of Champions", stripping the actual event name. Also, events stored as just numbers (e.g., "210") in legacy fights table weren't always matched. |
+| **Fighter mismatch** | 427 | Single-name fighters (Streetbeefs nicknames, ONE FC Muay Thai names) |
+| **Both missing** | 220 | Fighter + event both unresolvable |
+| **Null date/name** | 976 | Fights with empty event names or 1899 dates |
+
+### Fix: Additive Fill Scripts (UFC only)
+
+Two new scripts were created to fill in missing UFC fights without wiping:
+
+1. **`fill-missing-ufc.js`** - Creates missing fighters, events, and fights on the fly
+   - Uses raw event names from fights table (e.g., "TUF 24 Finale: Tournament of Champions")
+   - Prefixes "UFC" to bare numbers (e.g., "210" → "UFC 210")
+   - Tries +/- 1 day fuzzy date matching for timezone offset issues
+
+2. **`fill-missing-ufc-ratings.js`** - Syncs ratings, reviews, tags, and missing users
+   - Builds fresh legacy→new fight ID mapping from both databases
+   - Uses separate MySQL connections per phase to avoid timeouts
+   - Also creates any missing users
+
+### Results
+
+| Component | Created | Notes |
+|-----------|---------|-------|
+| UFC fights | 1,380 | Previously missing due to event name normalization |
+| Events | 118 | New UFC events (TUF finales, numbered events, Fight Nights) |
+| Fighters | 1 | Almost all fighters already existed |
+| Ratings | 11,646 | Recovered from 573 users |
+| Reviews | 16 | 461 already existed from prior migration |
+| Tags | 29 | |
+| Users | 1 | Brando12634 (brandca126@gmail.com) |
+
+### Updated Totals (Post-Fill)
+
+| Table | Before Fill | After Fill |
+|-------|-------------|------------|
+| Fights | 11,168 | 12,548 |
+| Ratings | 54,507 | 66,153 |
+| Reviews | 483 | 499 |
+| Users | 1,968 | 1,969 |
+| Events | 1,216 | 1,334 |
+| Fighters | 7,578 | 7,579 |
+
+### Key Recovered Fights
+
+Major fights that were previously missing (all event-mismatch):
+- Johnson vs Gaethje @ TUF 25 Finale (139 ratings)
+- Cormier vs Johnson @ UFC 210 (121 ratings)
+- Poirier vs Gaethje @ UFC FN (103 ratings)
+- Lawler vs Condit @ UFC 195 (96 ratings)
+- Gastelum vs Adesanya @ UFC 236 (95 ratings)
+- Khabib vs McGregor @ UFC 229 (65 ratings)
+- Maynard vs Hall @ TUF 24 Finale (20 ratings, 4 reviews)
+
+### Remaining Gaps
+
+- **22 UFC fights** still unmapped (invalid dates or unresolvable names)
+- **~1,745 non-UFC fights** not addressed (Streetbeefs: 775, ONE: 742, BKFC: 116, Strikeforce: 99, etc.)
+- Non-UFC fills can be done later with similar per-promotion scripts if needed
