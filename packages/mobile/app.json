@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.fightcrewapp.mobile",
-      "buildNumber": "14",
+      "buildNumber": "15",
       "backgroundColor": "#181818",
       "googleServicesFile": "./GoogleService-Info.plist",
       "runtimeVersion": {
@@ -53,7 +53,7 @@
         "backgroundColor": "#1a1a1a"
       },
       "package": "com.fightcrewapp.mobile",
-      "versionCode": 30,
+      "versionCode": 31,
       "backgroundColor": "#181818",
       "statusBar": {
         "translucent": true,
