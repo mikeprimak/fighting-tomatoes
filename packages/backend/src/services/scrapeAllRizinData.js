@@ -257,6 +257,25 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
       );
 
       // Helper to extract fighter data from a fight element
+      // Parse fighter name from Sherdog URL slug (e.g. "/fighter/Saori-Oshima-361683")
+      // This is more reliable than textContent which often concatenates without spaces
+      function parseNameFromUrl(url) {
+        const slug = url.split('/').filter(Boolean).pop() || '';
+        // Remove trailing numeric ID: "Saori-Oshima-361683" → "Saori-Oshima"
+        const withoutId = slug.replace(/-\d+$/, '');
+        if (!withoutId) return null;
+        // Split by hyphens and capitalize each part
+        const parts = withoutId.split('-').map(p =>
+          p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+        );
+        if (parts.length === 0) return null;
+        return {
+          fullName: parts.join(' '),
+          firstName: parts.length > 1 ? parts[0] : '',
+          lastName: parts.length > 1 ? parts.slice(1).join(' ') : parts[0],
+        };
+      }
+
       function extractFighterFromElement(el) {
         if (!el) return null;
 
@@ -264,9 +283,14 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
         const nameLink = el.querySelector('a[href*="/fighter/"]');
         if (!nameLink) return null;
 
-        const name = (nameLink.textContent || '').trim();
+        const rawName = (nameLink.textContent || '').trim();
         const athleteUrl = nameLink.getAttribute('href') || '';
         const fullAthleteUrl = athleteUrl.startsWith('http') ? athleteUrl : `https://www.sherdog.com${athleteUrl}`;
+
+        // Sherdog's fight card HTML often concatenates names without spaces
+        // (e.g. "SaoriOshima" instead of "Saori Oshima"), so parse from URL slug
+        const urlParsed = parseNameFromUrl(athleteUrl);
+        const name = (rawName.includes(' ') ? rawName : (urlParsed ? urlParsed.fullName : rawName));
 
         // Extract record (W-L-D format)
         let record = '';
@@ -308,6 +332,10 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
           firstName = nicknameMatch[1].trim();
           nickname = nicknameMatch[2].trim();
           lastName = nicknameMatch[3].trim();
+        } else if (urlParsed && !rawName.includes(' ')) {
+          // textContent had no spaces — use URL-parsed name
+          firstName = urlParsed.firstName;
+          lastName = urlParsed.lastName;
         } else {
           const nameParts = name.split(/\s+/);
           if (nameParts.length === 1) {

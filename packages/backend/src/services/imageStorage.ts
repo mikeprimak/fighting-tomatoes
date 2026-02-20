@@ -253,6 +253,42 @@ export async function uploadNewsImage(
 }
 
 /**
+ * Upload a local file buffer to R2 with a fixed key (no hash).
+ * Used for default/static images like promotion logos.
+ * Returns the public R2 URL, or null if R2 is not configured.
+ */
+export async function uploadLocalFileToR2(
+  fileBuffer: Buffer,
+  key: string,
+  contentType: string = 'image/jpeg'
+): Promise<string | null> {
+  if (!isR2Configured()) {
+    return null;
+  }
+
+  try {
+    const client = getS3Client();
+
+    if (await imageExists(key)) {
+      return getPublicUrl(key);
+    }
+
+    await client.send(new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET!,
+      Key: key,
+      Body: fileBuffer,
+      ContentType: contentType,
+      CacheControl: 'public, max-age=31536000',
+    }));
+
+    return getPublicUrl(key);
+  } catch (error: any) {
+    console.error(`[R2] Local file upload failed for ${key}:`, error.message);
+    return null;
+  }
+}
+
+/**
  * Get R2 configuration status (for health checks and debugging)
  */
 export function getR2Status(): {
