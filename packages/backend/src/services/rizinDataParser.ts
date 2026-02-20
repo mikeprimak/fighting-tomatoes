@@ -2,11 +2,36 @@
 import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { uploadFighterImage, uploadEventImage } from './imageStorage';
+import { uploadFighterImage, uploadEventImage, uploadLocalFileToR2 } from './imageStorage';
 import { TBA_FIGHTER_ID, TBA_FIGHTER_NAME, isTBAFighter } from '../constants/tba';
 import { stripDiacritics } from '../utils/fighterMatcher';
 
 const prisma = new PrismaClient();
+
+// ============== DEFAULT RIZIN BANNER ==============
+// Rizin doesn't provide reliable event banners ahead of events,
+// so we use the RIZIN logo as a default banner for upcoming events.
+const RIZIN_DEFAULT_BANNER_R2_KEY = 'events/rizin-default-banner.jpg';
+const RIZIN_DEFAULT_BANNER_LOCAL = path.join(__dirname, '../../public/images/events/rizin-default-banner.jpg');
+
+let _rizinDefaultBannerUrl: string | null = null;
+
+async function getRizinDefaultBannerUrl(): Promise<string | null> {
+  if (_rizinDefaultBannerUrl) return _rizinDefaultBannerUrl;
+
+  try {
+    const buffer = await fs.readFile(RIZIN_DEFAULT_BANNER_LOCAL);
+    const url = await uploadLocalFileToR2(Buffer.from(buffer), RIZIN_DEFAULT_BANNER_R2_KEY);
+    if (url) {
+      _rizinDefaultBannerUrl = url;
+      console.log(`  ✓ Default RIZIN banner uploaded to R2: ${url}`);
+      return url;
+    }
+  } catch (error) {
+    console.warn('  ⚠ Could not upload default RIZIN banner to R2');
+  }
+  return null;
+}
 
 // ============== TYPE DEFINITIONS ==============
 
@@ -280,11 +305,10 @@ async function importRizinFighters(
       continue;
     }
 
-    // Upload image to R2 or use source URL
+    // Upload image to R2 (always prefer imageUrl over localImagePath,
+    // since localImagePath is a local file path that won't work in production)
     let profileImageUrl: string | null = null;
-    if (athlete.localImagePath) {
-      profileImageUrl = athlete.localImagePath;
-    } else if (athlete.imageUrl) {
+    if (athlete.imageUrl) {
       try {
         profileImageUrl = await uploadFighterImage(athlete.imageUrl, `${firstName} ${lastName}`);
       } catch (error) {
@@ -365,9 +389,18 @@ async function importRizinEvents(
       .filter(Boolean)
       .join(', ') || 'Japan';
 
-    // Upload event banner
+    // Check if event is completed (date in the past)
+    const isComplete = eventDate < new Date();
+
+    // For upcoming events, use the default RIZIN logo banner
+    // (Rizin doesn't provide reliable event banners ahead of time)
     let bannerImageUrl: string | undefined;
-    if (eventData.eventImageUrl) {
+    if (!isComplete) {
+      const defaultBanner = await getRizinDefaultBannerUrl();
+      if (defaultBanner) {
+        bannerImageUrl = defaultBanner;
+      }
+    } else if (eventData.eventImageUrl) {
       try {
         bannerImageUrl = await uploadEventImage(eventData.eventImageUrl, eventData.eventName);
       } catch (error) {
@@ -385,9 +418,6 @@ async function importRizinEvents(
         ]
       }
     });
-
-    // Check if event is completed (date in the past)
-    const isComplete = eventDate < new Date();
 
     if (event) {
       event = await prisma.event.update({
