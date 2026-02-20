@@ -2455,7 +2455,7 @@ node sync-all-from-live.js
 ```
 Host: 216.69.165.113:3306
 User: fotnadmin
-Password: HungryMonkey12
+Password: <REDACTED - rotate credential, was exposed in git history>
 Databases: fightdb, userfightratings, userfightreviews, userfighttags
 ```
 

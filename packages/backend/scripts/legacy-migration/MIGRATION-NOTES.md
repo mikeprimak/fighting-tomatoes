@@ -304,7 +304,7 @@ const MYSQL_CONFIG = {
   host: '216.69.165.113',
   port: 3306,
   user: 'fotnadmin',
-  password: 'HungryMonkey12',
+  password: process.env.LEGACY_MYSQL_PASSWORD, // REDACTED
 };
 ```
 
