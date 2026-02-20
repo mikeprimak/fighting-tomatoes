@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Available organizations for filtering
-export const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'MATCHROOM', 'TOP RANK', 'GOLDEN BOY', 'ZUFFA BOXING'] as const;
+export const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'ZUFFA BOXING', 'MATCHROOM', 'TOP RANK', 'GOLDEN BOY'] as const;
 export type Organization = typeof ORGANIZATIONS[number];
 
 // Organization matching rules
