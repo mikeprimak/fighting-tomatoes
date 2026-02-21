@@ -252,7 +252,7 @@ export default function PastEventsScreen() {
   const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { isSearchVisible } = useSearch();
-  const { selectedOrgs } = useOrgFilter();
+  const { selectedOrgs, filterEventsByOrg } = useOrgFilter();
   const [viewMode, setViewMode] = useState<ViewMode>('recent');
   const [topRatedPeriod, setTopRatedPeriod] = useState<TimePeriod>('week');
   const flatListRef = useRef<FlatList>(null);
@@ -304,12 +304,11 @@ export default function PastEventsScreen() {
   });
 
   // Flatten all pages of events into a single array (already sorted by backend - most recent first)
-  // Deduplicate events by ID in case of pagination overlap
-  // Note: Filtering is now done server-side via promotions param
+  // Deduplicate events by ID, then filter out hidden orgs (e.g. Matchroom)
   const pastEvents = React.useMemo(() => {
     const events = eventsData?.pages.flatMap(page => page.events) || [];
     const seen = new Set<string>();
-    return events.filter((event: Event) => {
+    const deduped = events.filter((event: Event) => {
       if (seen.has(event.id)) {
         console.warn('[PastEvents] Duplicate event filtered:', event.id, event.name);
         return false;
@@ -317,7 +316,8 @@ export default function PastEventsScreen() {
       seen.add(event.id);
       return true;
     });
-  }, [eventsData?.pages]);
+    return filterEventsByOrg(deduped);
+  }, [eventsData?.pages, filterEventsByOrg]);
 
   // Handler for loading more events when reaching end of list
   const handleLoadMore = useCallback(() => {
@@ -364,9 +364,13 @@ export default function PastEventsScreen() {
   // Determine loading state and data based on view mode
   const isLoading = viewMode === 'recent' ? eventsLoading : topRatedLoading;
 
-  // Top rated fights data (filtering is done server-side)
+  // Top rated fights data - also filter out hidden orgs client-side
   const topRatedData = React.useMemo(() => {
-    return topRatedFights?.data || [];
+    const fights = topRatedFights?.data || [];
+    return fights.filter((fight: any) => {
+      const promotion = (fight.event?.promotion || '').toUpperCase();
+      return !promotion.includes('MATCHROOM');
+    });
   }, [topRatedFights?.data]);
 
   // Scroll to top when filter changes

@@ -160,7 +160,7 @@ export default function UpcomingEventsScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { preEventMessage, setPreEventMessage } = useNotification();
-  const { selectedOrgs } = useOrgFilter();
+  const { selectedOrgs, filterEventsByOrg } = useOrgFilter();
   const { isSearchVisible } = useSearch();
 
   // Ref to FlatList for scrolling to top on filter change
@@ -267,17 +267,16 @@ export default function UpcomingEventsScreen() {
   // Check if any event is live
   const hasLiveEvent = allEvents.some((event: Event) => event.eventStatus === 'LIVE');
 
-  // Sort upcoming events (live events first, then by date)
-  // Note: Filtering is now done server-side via promotions param
+  // Filter out hidden orgs (e.g. Matchroom) then sort (live events first, then by date)
   const upcomingEvents = React.useMemo(() => {
-    return [...allEvents].sort((a: Event, b: Event) => {
+    return filterEventsByOrg([...allEvents]).sort((a: Event, b: Event) => {
       const aIsLive = a.eventStatus === 'LIVE';
       const bIsLive = b.eventStatus === 'LIVE';
       if (aIsLive && !bIsLive) return -1;
       if (!aIsLive && bIsLive) return 1;
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
-  }, [allEvents]);
+  }, [allEvents, filterEventsByOrg]);
 
   // Scroll to top when filter changes
   const handleFilterChange = useCallback(() => {
