@@ -25,68 +25,24 @@ See `LAUNCH-DOC.md` for full status and checklists.
 
 ---
 
-## Live Tracker & Event Management (IMPLEMENTED)
+## Live Event Management
 
-All events default to **manual mode**. The admin controls fight statuses by hand. Live trackers can be enabled per-promotion or per-event when you're confident they work.
+See `LIVE-EVENT-MANAGEMENT.md` for full documentation.
 
-### Tracker Modes
+**TL;DR:** One background job (`eventLifecycle.ts`) runs every 5 minutes:
+1. **UPCOMING → LIVE** when start time passes
+2. **Section-based fight completion** (by cardType + section start times)
+3. **LIVE → COMPLETED** after estimated duration (`numFights x 30min + 1hr`, max 8hr)
 
-| Mode | What happens | Who controls |
-|------|-------------|--------------|
-| `manual` | Nothing automatic. Admin sets each fight to upcoming/live/completed. | Admin only |
-| `time-based` | Fights auto-flip to "live" at their `scheduledStartTime`. Section-based auto-complete at section start times. | Timer + admin |
-| `live` | Tracker scrapes + auto-publishes results to what users see. | Tracker |
-| `ufc` / `matchroom` / `oktagon` | Same as `live` but uses promotion-specific scraper. | Tracker |
-
-### Default: Everything is Manual
-
-`liveTrackerConfig.ts` sets every promotion to `manual`. Nothing happens automatically until you change it.
-
-### How to Enable a Tracker
-
-**Per-event** (recommended): In the admin panel, edit the event and set Tracker Mode dropdown to `live`, `time-based`, etc. This overrides the promotion default for that one event.
-
-**Per-promotion** (global): Edit `PROMOTION_TRACKER_CONFIG` in `src/config/liveTrackerConfig.ts` to change the default for all events of that promotion.
-
-### Fight & Event Status
-
-Fights use a single `fightStatus` enum: `UPCOMING`, `LIVE`, `COMPLETED`, `CANCELLED`
-Events use a single `eventStatus` enum: `UPCOMING`, `LIVE`, `COMPLETED`
-
-### Shadow Fields
-
-All 5 live trackers (UFC, Matchroom, OKTAGON, ONE FC, Tapology) write to shadow `tracker*` fields on every fight:
-
-```
-tracker*  = draft data (what the scraper found)
-published = what users see (fightStatus, winner, method, round, time)
-```
-
-- In `manual`/`time-based` mode: Trackers ONLY write to `tracker*` fields (e.g. `trackerFightStatus`). Users see nothing until admin publishes.
-- In `live`/`ufc`/`matchroom`/`oktagon` mode: Trackers write to BOTH `tracker*` and published fields (auto-publish).
-
-### Admin Workflow During Events (Manual Mode)
-
-1. Open admin panel → select event
-2. As fights start, click **Live** button on each fight
-3. When a fight ends, click **Completed** and optionally enter winner/method/round/time
-4. If a live tracker is also running, you'll see "TRACKER: ..." data alongside published data
-5. Click **Publish** on individual fights to copy tracker data → published fields
-6. Click **Publish All** to bulk-publish all tracker results for the event
-
-### Per-Fight Scheduled Start Times
-
-For `time-based` events, you can set a `scheduledStartTime` on individual fights via the admin panel. A background checker (60s interval) auto-flips fights to "live" when their time arrives. You still manually mark them completed.
+Events use `scraperType` field (null = no scraper, or `ufc`/`matchroom`/`oktagon`/`onefc`/`tapology`).
 
 ### Key Files
 
 | File | Purpose |
 |------|---------|
-| `src/config/liveTrackerConfig.ts` | Promotion defaults, `buildTrackerUpdateData()` helper |
-| `src/services/timeBasedFightStatusUpdater.ts` | Section-based + per-fight scheduled time auto-flip |
-| `src/services/eventBasedScheduler.ts` | Starts/stops live trackers for events |
+| `src/services/eventLifecycle.ts` | The 3-step lifecycle job (runs every 5 min) |
+| `src/config/liveTrackerConfig.ts` | `PRODUCTION_SCRAPERS`, `buildTrackerUpdateData()` |
 | `src/routes/admin.ts` | Admin endpoints: set-status, publish, publish-all |
-| `src/routes/fights.ts` | Strips `tracker*` fields from public API responses |
 | `public/admin.html` | Admin panel UI with fight controls + tracker display |
 
 ### Admin Panel Access

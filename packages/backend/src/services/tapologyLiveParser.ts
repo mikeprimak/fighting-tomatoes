@@ -67,16 +67,15 @@ export async function parseTapologyData(
   };
 
   try {
-    // Get event to determine tracker mode
+    // Get event to determine scraper type
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { trackerMode: true, promotion: true },
+      select: { scraperType: true },
     });
-    const trackerMode = getEventTrackerType({
-      trackerMode: event?.trackerMode,
-      promotion: event?.promotion ?? null,
+    const scraperType = getEventTrackerType({
+      scraperType: event?.scraperType,
     });
-    console.log(`[Tapology Parser] Tracker mode: ${trackerMode}`);
+    console.log(`[Tapology Parser] Scraper type: ${scraperType || 'none'}`);
 
     // Get all fights for this event from database
     const dbFights = await prisma.fight.findMany({
@@ -156,7 +155,7 @@ export async function parseTapologyData(
       }
 
       // Update the fight (route through shadow field helper)
-      const finalUpdateData = buildTrackerUpdateData(updateData, trackerMode);
+      const finalUpdateData = buildTrackerUpdateData(updateData, scraperType);
       await prisma.fight.update({
         where: { id: dbFight.id },
         data: finalUpdateData,

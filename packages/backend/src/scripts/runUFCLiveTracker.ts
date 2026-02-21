@@ -103,8 +103,8 @@ async function findActiveUFCEvent(overrideEventId?: string) {
       return null;
     }
 
-    if (event.trackerMode === 'manual') {
-      console.log(`[UFC LIVE] Override event is in MANUAL mode, skipping: ${event.name}`);
+    if (!event.scraperType) {
+      console.log(`[UFC LIVE] Override event has no scraper type set, skipping: ${event.name}`);
       return null;
     }
 
@@ -116,14 +116,14 @@ async function findActiveUFCEvent(overrideEventId?: string) {
   // An event is "active" if:
   // - It's a UFC event (has ufcUrl)
   // - It's not complete
-  // - It's not in manual trackerMode (admin controls only)
+  // - It has a scraperType set (not null — admin must opt in)
   // - One of its start times is within the tracking window (12h ago to 6h from now)
   const event = await prisma.event.findFirst({
     where: {
       promotion: 'UFC',
       eventStatus: { not: 'COMPLETED' },
       ufcUrl: { not: null },
-      trackerMode: { not: 'manual' },
+      scraperType: { not: null },
       OR: [
         { mainStartTime: { gte: twelveHoursAgo, lte: sixHoursFromNow } },
         { prelimStartTime: { gte: twelveHoursAgo, lte: sixHoursFromNow } },
