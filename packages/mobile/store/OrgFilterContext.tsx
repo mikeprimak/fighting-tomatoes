@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, Rea
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Available organizations for filtering
-export const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'ZUFFA BOXING', 'MATCHROOM', 'TOP RANK', 'GOLDEN BOY'] as const;
+export const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'ZUFFA BOXING', 'TOP RANK', 'GOLDEN BOY'] as const;
 export type Organization = typeof ORGANIZATIONS[number];
 
 // Organization matching rules
@@ -11,9 +11,6 @@ export type Organization = typeof ORGANIZATIONS[number];
 const ORG_GROUPS: Partial<Record<Organization, { exact?: string[]; contains?: string[]; excludes?: string[] }>> = {
   'DIRTY BOXING': {
     contains: ['DIRTY BOXING'],
-  },
-  'MATCHROOM': {
-    contains: ['MATCHROOM'],
   },
   'TOP RANK': {
     contains: ['TOP RANK', 'TOP_RANK'],
@@ -26,6 +23,9 @@ const ORG_GROUPS: Partial<Record<Organization, { exact?: string[]; contains?: st
     excludes: ['DIRTY BOXING'],
   },
 };
+
+// Organizations to completely hide from all screens
+const HIDDEN_ORGS = ['MATCHROOM'];
 
 // AsyncStorage key for persisting filter preference
 const ORG_FILTER_STORAGE_KEY = 'events_org_filter';
@@ -99,8 +99,10 @@ export function OrgFilterProvider({ children }: { children: ReactNode }) {
 
   // Helper to check if a promotion matches the filter
   const filterByPromotion = useCallback((promotion: string | undefined): boolean => {
-    if (selectedOrgs.size === 0) return true; // ALL selected
     const eventPromotion = promotion?.toUpperCase() || '';
+    // Always hide events from hidden organizations
+    if (HIDDEN_ORGS.some(org => eventPromotion.includes(org))) return false;
+    if (selectedOrgs.size === 0) return true; // ALL selected
 
     // Check each selected org - return true if ANY org matches
     for (const org of Array.from(selectedOrgs)) {
@@ -123,11 +125,10 @@ export function OrgFilterProvider({ children }: { children: ReactNode }) {
     return false;
   }, [selectedOrgs]);
 
-  // Filter events by selected organizations
+  // Filter events by selected organizations (always excludes hidden orgs)
   const filterEventsByOrg = useCallback(<T extends { promotion?: string }>(events: T[]): T[] => {
-    if (selectedOrgs.size === 0) return events; // ALL selected
     return events.filter(event => filterByPromotion(event.promotion));
-  }, [selectedOrgs, filterByPromotion]);
+  }, [filterByPromotion]);
 
   return (
     <OrgFilterContext.Provider
