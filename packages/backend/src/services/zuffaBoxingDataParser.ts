@@ -263,7 +263,9 @@ async function importZuffaEvents(
     });
 
     if (event) {
-      // Update existing event
+      // Update existing event - do NOT overwrite eventStatus
+      // The lifecycle service manages status transitions (UPCOMING→LIVE→COMPLETED).
+      // Resetting past events to UPCOMING causes them to get stuck as LIVE.
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -274,12 +276,17 @@ async function importZuffaEvents(
           ufcUrl: eventData.eventUrl,
           promotion: 'Zuffa Boxing',
           bannerImage,
-          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
-      console.log(`  ✓ Updated event: ${eventData.eventName}`);
+      console.log(`  ✓ Updated event: ${eventData.eventName} (status unchanged: ${event.eventStatus})`);
     } else {
-      // Create new event
+      // Create new event - set initial status based on date
+      const now = new Date();
+      let initialStatus: 'UPCOMING' | 'COMPLETED' = 'UPCOMING';
+      if (eventData.status === 'Complete' || eventDate < now) {
+        initialStatus = 'COMPLETED';
+      }
+
       event = await prisma.event.create({
         data: {
           name: eventData.eventName,
@@ -289,10 +296,10 @@ async function importZuffaEvents(
           location,
           bannerImage,
           ufcUrl: eventData.eventUrl,
-          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
+          eventStatus: initialStatus,
         }
       });
-      console.log(`  ✓ Created event: ${eventData.eventName}`);
+      console.log(`  ✓ Created event: ${eventData.eventName} (status: ${initialStatus})`);
     }
 
     // Import fights for this event

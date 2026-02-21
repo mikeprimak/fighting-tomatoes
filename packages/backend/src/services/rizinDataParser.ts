@@ -420,6 +420,7 @@ async function importRizinEvents(
     });
 
     if (event) {
+      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it)
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -429,10 +430,11 @@ async function importRizinEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
-          eventStatus: isComplete ? 'COMPLETED' : 'UPCOMING',
         }
       });
     } else {
+      // Create new event - set initial status based on date
+      const initialStatus = isComplete ? 'COMPLETED' : 'UPCOMING';
       event = await prisma.event.create({
         data: {
           name: eventData.eventName,
@@ -442,7 +444,7 @@ async function importRizinEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
-          eventStatus: isComplete ? 'COMPLETED' : 'UPCOMING',
+          eventStatus: initialStatus,
         }
       });
     }

@@ -72,9 +72,13 @@ export async function runEventLifecycleCheck(): Promise<{
   const now = new Date();
   const results = { eventsStarted: 0, fightsCompleted: 0, eventsCompleted: 0 };
 
+  // Each step has its own try/catch so one step failing doesn't block the others.
+  // Previously all 3 steps shared a single try/catch, meaning an error in Step 2
+  // would prevent Step 3 (LIVE→COMPLETED) from ever running.
+
+  // === STEP 1: UPCOMING → LIVE ===
+  // Events whose earliest start time (or date fallback) has passed
   try {
-    // === STEP 1: UPCOMING → LIVE ===
-    // Events whose earliest start time (or date fallback) has passed
     const upcomingEvents = await prisma.event.findMany({
       where: { eventStatus: 'UPCOMING' },
       select: {
@@ -98,9 +102,13 @@ export async function runEventLifecycleCheck(): Promise<{
         console.log(`[Lifecycle] UPCOMING → LIVE: ${event.name}`);
       }
     }
+  } catch (error: any) {
+    console.error('[Lifecycle] Step 1 (UPCOMING→LIVE) error:', error.message);
+  }
 
-    // === STEP 2: Section-based fight completion ===
-    // For each LIVE event not handled by a production scraper
+  // === STEP 2: Section-based fight completion ===
+  // For each LIVE event not handled by a production scraper
+  try {
     const liveEvents = await prisma.event.findMany({
       where: { eventStatus: 'LIVE' },
       select: {
@@ -172,9 +180,13 @@ export async function runEventLifecycleCheck(): Promise<{
         }
       }
     }
+  } catch (error: any) {
+    console.error('[Lifecycle] Step 2 (fight completion) error:', error.message);
+  }
 
-    // === STEP 3: LIVE → COMPLETED (estimated end time OR hard cap) ===
-    // Re-fetch live events (some may have just been started in step 1)
+  // === STEP 3: LIVE → COMPLETED (estimated end time OR hard cap) ===
+  // Re-fetch live events (some may have just been started in step 1)
+  try {
     const liveEventsForCompletion = await prisma.event.findMany({
       where: { eventStatus: 'LIVE' },
       select: {
@@ -228,13 +240,13 @@ export async function runEventLifecycleCheck(): Promise<{
         console.log(`[Lifecycle] LIVE → COMPLETED: ${event.name} (${hours}h after start, ${numFights} fights)`);
       }
     }
-
-    // Log summary if anything happened
-    if (results.eventsStarted > 0 || results.fightsCompleted > 0 || results.eventsCompleted > 0) {
-      console.log(`[Lifecycle] Summary: ${results.eventsStarted} started, ${results.fightsCompleted} fights completed, ${results.eventsCompleted} events completed`);
-    }
   } catch (error: any) {
-    console.error('[Lifecycle] Error during lifecycle check:', error.message);
+    console.error('[Lifecycle] Step 3 (LIVE→COMPLETED) error:', error.message);
+  }
+
+  // Log summary if anything happened
+  if (results.eventsStarted > 0 || results.fightsCompleted > 0 || results.eventsCompleted > 0) {
+    console.log(`[Lifecycle] Summary: ${results.eventsStarted} started, ${results.fightsCompleted} fights completed, ${results.eventsCompleted} events completed`);
   }
 
   return results;
