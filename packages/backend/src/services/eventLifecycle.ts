@@ -14,6 +14,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { isProductionScraper } from '../config/liveTrackerConfig';
+import { startLiveTracking, getLiveTrackingStatus } from './liveEventTracker';
 
 const prisma = new PrismaClient();
 
@@ -88,6 +89,8 @@ export async function runEventLifecycleCheck(): Promise<{
         mainStartTime: true,
         prelimStartTime: true,
         earlyPrelimStartTime: true,
+        scraperType: true,
+        ufcUrl: true,
       },
     });
 
@@ -100,6 +103,27 @@ export async function runEventLifecycleCheck(): Promise<{
         });
         results.eventsStarted++;
         console.log(`[Lifecycle] UPCOMING → LIVE: ${event.name}`);
+
+        // Auto-start live tracker for UFC events
+        if (event.scraperType === 'ufc') {
+          try {
+            const trackerStatus = getLiveTrackingStatus();
+            if (!trackerStatus.isRunning) {
+              const eventUrl = event.ufcUrl || `https://www.ufc.com/event/${event.name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')}`;
+              await startLiveTracking({
+                eventId: event.id,
+                eventUrl,
+                eventName: event.name,
+                intervalSeconds: 30,
+              });
+              console.log(`[Lifecycle] Auto-started UFC live tracker for: ${event.name}`);
+            } else {
+              console.log(`[Lifecycle] UFC live tracker already running (tracking: ${trackerStatus.eventName})`);
+            }
+          } catch (error: any) {
+            console.error(`[Lifecycle] Failed to auto-start UFC live tracker:`, error.message);
+          }
+        }
       }
     }
   } catch (error: any) {
