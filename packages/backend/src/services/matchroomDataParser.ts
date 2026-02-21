@@ -403,7 +403,7 @@ async function importMatchroomEvents(
     });
 
     if (event) {
-      // Update existing event
+      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it)
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -414,12 +414,13 @@ async function importMatchroomEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: primaryEvent.eventUrl,
           mainStartTime: mainStartTime || undefined,
-          eventStatus: primaryEvent.status === 'Complete' ? 'COMPLETED' : primaryEvent.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
       console.log(`    ✓ Updated event: ${eventName}`);
     } else {
-      // Create new event
+      // Create new event - set initial status based on date
+      const now = new Date();
+      const initialStatus = (primaryEvent.status === 'Complete' || eventDate < now) ? 'COMPLETED' : 'UPCOMING';
       event = await prisma.event.create({
         data: {
           name: eventName,
@@ -430,7 +431,7 @@ async function importMatchroomEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: primaryEvent.eventUrl,
           mainStartTime: mainStartTime || undefined,
-          eventStatus: primaryEvent.status === 'Complete' ? 'COMPLETED' : primaryEvent.status === 'Live' ? 'LIVE' : 'UPCOMING',
+          eventStatus: initialStatus,
         }
       });
       console.log(`    ✓ Created event: ${eventName}`);

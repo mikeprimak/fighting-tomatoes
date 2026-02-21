@@ -396,7 +396,7 @@ async function importEvents(
       select: { id: true, date: true, eventStatus: true },
     });
 
-    // Build update data - only include date if event doesn't exist yet
+    // Build update data - do NOT overwrite eventStatus (lifecycle service manages it)
     const updateData: any = {
       name: eventData.eventName,
       venue: eventData.venue,
@@ -405,7 +405,6 @@ async function importEvents(
       earlyPrelimStartTime,
       prelimStartTime,
       mainStartTime,
-      eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
     };
 
     // Only update date if:
@@ -417,6 +416,10 @@ async function importEvents(
     } else {
       console.log(`    ℹ Preserving existing date for completed event: ${existingEvent.date.toISOString()}`);
     }
+
+    // Set initial status for new events based on date
+    const now = new Date();
+    const initialStatus = (eventData.status === 'Complete' || eventDate < now) ? 'COMPLETED' : 'UPCOMING';
 
     // Upsert event using ufcUrl as unique identifier (most reliable for UFC events)
     const event = await prisma.event.upsert({
@@ -435,7 +438,7 @@ async function importEvents(
         earlyPrelimStartTime,
         prelimStartTime,
         mainStartTime,
-        eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
+        eventStatus: initialStatus,
       }
     });
 

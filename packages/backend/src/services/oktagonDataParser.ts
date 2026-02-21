@@ -326,7 +326,7 @@ async function importOktagonEvents(
     });
 
     if (event) {
-      // Update existing event
+      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it)
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -337,11 +337,12 @@ async function importOktagonEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
-          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
         }
       });
     } else {
-      // Create new event
+      // Create new event - set initial status based on date
+      const now = new Date();
+      const initialStatus = (eventData.status === 'Complete' || eventDate < now) ? 'COMPLETED' : 'UPCOMING';
       event = await prisma.event.create({
         data: {
           name: eventData.eventName,
@@ -352,7 +353,7 @@ async function importOktagonEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
-          eventStatus: eventData.status === 'Complete' ? 'COMPLETED' : eventData.status === 'Live' ? 'LIVE' : 'UPCOMING',
+          eventStatus: initialStatus,
         }
       });
     }
