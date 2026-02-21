@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { localTimeToUTC, parseTime12h } from '../utils/timezone';
 
 const prisma = new PrismaClient();
 
@@ -217,6 +218,7 @@ function extractYearFromEventUrl(eventUrl: string, dateText: string): number {
 /**
  * Parse event date text to DateTime
  * Example: "Sat, Oct 4 / 10:00 PM EDT / Main Card"
+ * Returns a UTC Date at midnight for the parsed calendar date.
  */
 function parseEventDate(dateText: string, year: number = new Date().getFullYear()): Date {
   // Extract date part: "Sat, Oct 4"
@@ -227,12 +229,18 @@ function parseEventDate(dateText: string, year: number = new Date().getFullYear(
 
   const [, , month, day] = dateMatch;
   const dateStr = `${month} ${day}, ${year}`;
-  return new Date(dateStr);
+  // Parse to get month/day, then store as UTC midnight
+  const parsed = new Date(dateStr);
+  return new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()));
 }
 
 /**
- * Parse time string to DateTime on specific date
+ * Parse time string to DateTime on specific date.
+ * UFC.com times are always US Eastern (EDT/EST).
+ * Converts to UTC using Intl timezone support (handles DST automatically).
+ *
  * Example: "10:00 PM EDT" on Oct 4, 2025
+ *   → Oct 5, 2025 02:00:00 UTC  (10pm EDT = 2am UTC next day)
  */
 function parseEventTime(dateText: string, timeStr?: string, year: number = new Date().getFullYear()): Date {
   const baseDate = parseEventDate(dateText, year);
@@ -241,23 +249,19 @@ function parseEventTime(dateText: string, timeStr?: string, year: number = new D
     return baseDate;
   }
 
-  // Parse time: "10:00 PM"
-  const timeMatch = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
-  if (!timeMatch) {
+  const parsed = parseTime12h(timeStr);
+  if (!parsed) {
     return baseDate;
   }
 
-  let [, hours, minutes, meridiem] = timeMatch;
-  let hour24 = parseInt(hours, 10);
-
-  if (meridiem.toUpperCase() === 'PM' && hour24 !== 12) {
-    hour24 += 12;
-  } else if (meridiem.toUpperCase() === 'AM' && hour24 === 12) {
-    hour24 = 0;
-  }
-
-  baseDate.setHours(hour24, parseInt(minutes, 10), 0, 0);
-  return baseDate;
+  return localTimeToUTC(
+    baseDate.getUTCFullYear(),
+    baseDate.getUTCMonth(),
+    baseDate.getUTCDate(),
+    parsed.hour24,
+    parsed.minute,
+    'America/New_York'
+  );
 }
 
 // ============== PARSER FUNCTIONS ==============
