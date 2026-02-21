@@ -273,9 +273,9 @@ export async function authRoutes(fastify: FastifyInstance) {
     try {
       const { email, password } = request.body as any;
 
-      if (!email || !password) {
+      if (!email) {
         return reply.code(400).send({
-          error: 'Email and password are required',
+          error: 'Email is required',
           code: 'VALIDATION_ERROR',
         });
       }
@@ -314,6 +314,13 @@ export async function authRoutes(fastify: FastifyInstance) {
           code: 'ACCOUNT_CLAIM_REQUIRED',
           requiresAccountClaim: true,
           email: user.email,
+        });
+      }
+
+      if (!password) {
+        return reply.code(400).send({
+          error: 'Password is required',
+          code: 'VALIDATION_ERROR',
         });
       }
 

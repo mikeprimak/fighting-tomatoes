@@ -55,8 +55,8 @@ export default function LoginScreen() {
   const handleLogin = async () => {
     setStatus('Button clicked!');
 
-    if (!email.trim() || !password.trim()) {
-      setStatus('Please enter both email and password');
+    if (!email.trim()) {
+      setStatus('Please enter your email');
       return;
     }
 
