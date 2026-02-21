@@ -5,6 +5,7 @@ import * as fsSync from 'fs';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { eventTimeToUTC } from '../utils/timezone';
 
 const prisma = new PrismaClient();
 
@@ -190,36 +191,11 @@ function parseMatchroomDate(dateStr: string | null): Date {
 }
 
 /**
- * Parse event start time string (e.g., "7:00 PM") and combine with event date
- * Matchroom events are typically in UK time (GMT/BST)
+ * Parse event start time string (e.g., "7:00 PM") and combine with event date.
+ * Matchroom events are in UK time (handles GMT/BST automatically).
  */
 function parseEventStartTime(eventDate: Date, timeStr: string | null | undefined): Date | null {
-  if (!timeStr) return null;
-
-  // Parse time string like "7:00 PM" or "7:00PM"
-  const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-  if (!timeMatch) return null;
-
-  let hours = parseInt(timeMatch[1], 10);
-  const minutes = parseInt(timeMatch[2], 10);
-  const period = timeMatch[3]?.toUpperCase();
-
-  // Convert to 24-hour format if AM/PM specified
-  if (period === 'PM' && hours !== 12) {
-    hours += 12;
-  } else if (period === 'AM' && hours === 12) {
-    hours = 0;
-  }
-
-  // Get date components
-  const year = eventDate.getUTCFullYear();
-  const month = eventDate.getUTCMonth();
-  const day = eventDate.getUTCDate();
-
-  // Create datetime (assume UK time, UTC+0 for simplicity)
-  const dateTime = new Date(Date.UTC(year, month, day, hours, minutes, 0, 0));
-
-  return dateTime;
+  return eventTimeToUTC(eventDate, timeStr, 'Europe/London');
 }
 
 // ============== PARSER FUNCTIONS ==============

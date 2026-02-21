@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { eventTimeToUTC } from '../utils/timezone';
 
 const prisma = new PrismaClient();
 
@@ -187,40 +188,14 @@ function parseGoldenBoyDate(dateStr: string | null): Date {
 }
 
 /**
- * Parse event start time to Date object
+ * Parse event start time to Date object.
+ * Golden Boy events are in US Pacific (handles PDT/PST automatically).
  */
 function parseGoldenBoyEventStartTime(
   eventDate: Date,
   eventStartTime: string | null | undefined
 ): Date | null {
-  if (!eventStartTime) {
-    return null;
-  }
-
-  const timeMatch = eventStartTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-  if (!timeMatch) {
-    return null;
-  }
-
-  let hours = parseInt(timeMatch[1], 10);
-  const minutes = parseInt(timeMatch[2], 10);
-  const isPM = timeMatch[3].toUpperCase() === 'PM';
-
-  // Convert to 24-hour format
-  if (isPM && hours !== 12) {
-    hours += 12;
-  } else if (!isPM && hours === 12) {
-    hours = 0;
-  }
-
-  // Assume PT (Pacific Time, UTC-8) for Golden Boy events in California
-  // Convert to UTC by adding 8 hours
-  const year = eventDate.getUTCFullYear();
-  const month = eventDate.getUTCMonth();
-  const day = eventDate.getUTCDate();
-  const utcHours = hours + 8;
-
-  return new Date(Date.UTC(year, month, day, utcHours, minutes, 0, 0));
+  return eventTimeToUTC(eventDate, eventStartTime, 'America/Los_Angeles');
 }
 
 // ============== PARSER FUNCTIONS ==============
