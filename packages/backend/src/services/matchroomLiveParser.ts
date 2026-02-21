@@ -150,9 +150,9 @@ export async function parseMatchroomLiveData(
 
     console.log(`  ✓ Found event: ${event.name} (${event.fights.length} fights)`);
 
-    // Determine tracker mode for this event
-    const trackerMode = getEventTrackerType({ trackerMode: event.trackerMode, promotion: event.promotion });
-    console.log(`  ⚙️  Tracker mode: ${trackerMode}`);
+    // Determine scraper type for this event
+    const scraperType = getEventTrackerType({ scraperType: event.scraperType });
+    console.log(`  ⚙️  Scraper type: ${scraperType || 'none'}`);
 
     // Update event status if changed
     if (liveData.hasStarted && event.eventStatus === 'UPCOMING') {
@@ -254,7 +254,7 @@ export async function parseMatchroomLiveData(
 
       // Apply updates (route through shadow field helper)
       if (changed) {
-        const finalUpdateData = buildTrackerUpdateData(updateData, trackerMode);
+        const finalUpdateData = buildTrackerUpdateData(updateData, scraperType);
         await prisma.fight.update({
           where: { id: dbFight.id },
           data: finalUpdateData

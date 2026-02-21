@@ -273,11 +273,8 @@ model Event {
   completionMethod  String?   // "all_fights" | "timeout_12hr" | "timeout_smart" | "manual" | "scraper"
   isVisible         Boolean   @default(true)  // Hide events without deleting (e.g., Matchroom Boxing)
 
-  // Tracker mode override (null = use promotion default from config)
-  // "manual" = no automatic updates (for dev/testing)
-  // "time-based" = use time-based fallback
-  // "live" = use live tracker (if available)
-  trackerMode       String?
+  // Scraper type: null = no scraper, "ufc" / "matchroom" / "oktagon" / "onefc" / "tapology"
+  scraperType       String?
 
   // Timestamps
   createdAt         DateTime  @default(now())

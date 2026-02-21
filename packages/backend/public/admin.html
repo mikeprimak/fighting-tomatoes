@@ -1432,15 +1432,17 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Tracker Mode</label>
-          <select id="eventTrackerMode" class="form-select">
-            <option value="">(Use Promotion Default)</option>
-            <option value="manual">Manual - No auto updates (for dev/testing)</option>
-            <option value="time-based">Time-Based Fallback</option>
-            <option value="live">Live Tracker</option>
+          <label class="form-label">Scraper Type</label>
+          <select id="eventScraperType" class="form-select">
+            <option value="">(None)</option>
+            <option value="ufc">UFC</option>
+            <option value="matchroom">Matchroom</option>
+            <option value="oktagon">OKTAGON</option>
+            <option value="onefc">ONE FC</option>
+            <option value="tapology">Tapology</option>
           </select>
           <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
-            Set to "Manual" during development to prevent automatic status changes
+            Set a scraper to enable live data tracking for this event
           </div>
         </div>
 
@@ -1903,7 +1905,7 @@
               <span class="event-fights-count">
                 <span>${event._count?.fights || 0} fights</span>
               </span>
-              ${event.trackerMode === 'manual' ? '<span style="color: var(--accent-orange); font-weight: 600;">⚙️ DEV</span>' : ''}
+              ${event.scraperType ? `<span style="color: var(--accent-orange); font-weight: 600;">⚙️ ${event.scraperType.toUpperCase()}</span>` : ''}
             </div>
           </div>
         `).join('');
@@ -1964,7 +1966,7 @@
       const eventStatus = selectedEvent.eventStatus === 'COMPLETED' ? 'complete' : (selectedEvent.eventStatus === 'LIVE' ? 'live' : 'upcoming');
       const eventStatusLabel = selectedEvent.eventStatus === 'COMPLETED' ? 'Complete' : (selectedEvent.eventStatus === 'LIVE' ? 'Live' : 'Upcoming');
       const eventStatusColor = selectedEvent.eventStatus === 'COMPLETED' ? 'var(--text-muted)' : (selectedEvent.eventStatus === 'LIVE' ? 'var(--accent-green)' : 'var(--accent-blue)');
-      const trackerModeLabel = selectedEvent.trackerMode === 'manual' ? ' (Manual Mode)' : '';
+      const scraperLabel = selectedEvent.scraperType ? ` (Scraper: ${selectedEvent.scraperType})` : '';
 
       container.innerHTML = `
         <div class="panel-header">
@@ -1974,7 +1976,7 @@
               ${formatDate(selectedEvent.date)} • ${selectedEvent.venue || ''} ${selectedEvent.location || ''}
             </div>
             <div style="font-size: 0.75rem; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.75rem;">
-              <span style="color: ${eventStatusColor}; font-weight: 600;">● ${eventStatusLabel}${trackerModeLabel}</span>
+              <span style="color: ${eventStatusColor}; font-weight: 600;">● ${eventStatusLabel}${scraperLabel}</span>
               <span style="color: var(--text-muted);">|</span>
               <button class="btn btn-sm ${eventStatus === 'upcoming' ? 'btn-primary' : 'btn-secondary'}"
                       onclick="setEventStatus('upcoming')" ${eventStatus === 'upcoming' ? 'disabled' : ''}>
@@ -2128,7 +2130,7 @@
         document.getElementById('eventVenue').value = selectedEvent.venue || '';
         document.getElementById('eventLocation').value = selectedEvent.location || '';
         document.getElementById('eventMainChannel').value = selectedEvent.mainChannel || '';
-        document.getElementById('eventTrackerMode').value = selectedEvent.trackerMode || '';
+        document.getElementById('eventScraperType').value = selectedEvent.scraperType || '';
 
         // Populate time fields
         const extractTime = (dateStr) => dateStr ? dateStr.split('T')[1]?.substring(0, 5) : '';
@@ -2153,7 +2155,7 @@
         document.getElementById('eventTime').value = '22:00';
         document.getElementById('eventPrelimTime').value = '';
         document.getElementById('eventEarlyPrelimTime').value = '';
-        document.getElementById('eventTrackerMode').value = '';
+        document.getElementById('eventScraperType').value = '';
         // Copy promotion from global filter if set
         const globalPromo = document.getElementById('globalPromotion').value;
         if (globalPromo) {
@@ -2177,7 +2179,7 @@
       const prelimTime = document.getElementById('eventPrelimTime').value;
       const earlyPrelimTime = document.getElementById('eventEarlyPrelimTime').value;
 
-      const trackerMode = document.getElementById('eventTrackerMode').value;
+      const scraperType = document.getElementById('eventScraperType').value;
       const data = {
         name: document.getElementById('eventName').value,
         promotion: document.getElementById('eventPromotion').value,
@@ -2188,7 +2190,7 @@
         mainStartTime: `${date}T${time}:00`,
         prelimStartTime: prelimTime ? `${date}T${prelimTime}:00` : undefined,
         earlyPrelimStartTime: earlyPrelimTime ? `${date}T${earlyPrelimTime}:00` : undefined,
-        trackerMode: trackerMode || null,  // null = use promotion default
+        scraperType: scraperType || null,
       };
 
       try {

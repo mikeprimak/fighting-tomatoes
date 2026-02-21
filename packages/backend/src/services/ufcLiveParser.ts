@@ -320,9 +320,9 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
 
     console.log(`  ✓ Found event: ${event.name} (ID: ${event.id})`);
 
-    // Determine tracker mode for this event
-    const trackerMode = getEventTrackerType({ trackerMode: event.trackerMode, promotion: event.promotion });
-    console.log(`  ⚙️  Tracker mode: ${trackerMode}`);
+    // Determine scraper type for this event
+    const scraperType = getEventTrackerType({ scraperType: event.scraperType });
+    console.log(`  ⚙️  Scraper type: ${scraperType || 'none'}`);
 
     // Track changes
     let eventChanged = false;
@@ -568,7 +568,7 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
 
       // Apply updates (route through shadow field helper)
       if (changed) {
-        const finalUpdateData = buildTrackerUpdateData(updateData, trackerMode);
+        const finalUpdateData = buildTrackerUpdateData(updateData, scraperType);
         console.log(`  💾 Updating fight ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} with:`, finalUpdateData);
         await prisma.fight.update({
           where: { id: dbFight.id },

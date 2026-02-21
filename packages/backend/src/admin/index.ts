@@ -35,15 +35,17 @@ export async function setupAdminPanel(fastify: FastifyInstance) {
         resource: { model: prisma.event, client: prisma },
         options: {
           navigation: { name: 'Content', icon: 'Calendar' },
-          listProperties: ['name', 'promotion', 'date', 'location', 'trackerMode', 'eventStatus'],
-          editProperties: ['name', 'promotion', 'date', 'location', 'venue', 'imageUrl', 'trackerMode', 'eventStatus'],
+          listProperties: ['name', 'promotion', 'date', 'location', 'scraperType', 'eventStatus'],
+          editProperties: ['name', 'promotion', 'date', 'location', 'venue', 'imageUrl', 'scraperType', 'eventStatus'],
           properties: {
-            trackerMode: {
+            scraperType: {
               availableValues: [
-                { value: '', label: '(Use Promotion Default)' },
-                { value: 'manual', label: 'Manual - No auto updates' },
-                { value: 'time-based', label: 'Time-Based Fallback' },
-                { value: 'live', label: 'Live Tracker' },
+                { value: '', label: '(None)' },
+                { value: 'ufc', label: 'UFC' },
+                { value: 'matchroom', label: 'Matchroom' },
+                { value: 'oktagon', label: 'OKTAGON' },
+                { value: 'onefc', label: 'ONE FC' },
+                { value: 'tapology', label: 'Tapology' },
               ],
             },
           },

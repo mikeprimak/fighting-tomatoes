@@ -9,8 +9,7 @@ import { z } from 'zod';
 import { requireAdmin } from '../middleware/auth';
 import {
   triggerDailyUFCScraper,
-  triggerFailsafeCleanup,
-  triggerLiveEventScheduler,
+  triggerEventLifecycleCheck,
   triggerBKFCScraper,
   triggerPFLScraper,
   triggerOneFCScraper,
@@ -22,8 +21,6 @@ import {
   triggerRizinScraper,
   triggerAllOrganizationScrapers,
 } from '../services/backgroundJobs';
-import { getFailsafeStatus } from '../services/failsafeCleanup';
-import { scheduleAllUpcomingEvents, safetyCheckEvents } from '../services/eventBasedScheduler';
 import { uploadEventImage, uploadFighterImage } from '../services/imageStorage';
 import oktagonTracker, { startOktagonLiveTracking, stopOktagonLiveTracking, getOktagonTrackingStatus } from '../services/oktagonLiveTracker';
 
@@ -42,8 +39,8 @@ const CreateEventSchema = z.object({
   earlyPrelimStartTime: z.string().transform((val) => new Date(val)).optional(),
   prelimStartTime: z.string().transform((val) => new Date(val)).optional(),
   mainStartTime: z.string().transform((val) => new Date(val)).optional(),
-  // Tracker mode override: null = use promotion default, 'manual' = no auto updates, 'time-based', 'live'
-  trackerMode: z.enum(['manual', 'time-based', 'live']).nullable().optional(),
+  // Scraper type: null = no scraper, or a specific scraper name
+  scraperType: z.enum(['ufc', 'matchroom', 'oktagon', 'onefc', 'tapology']).nullable().optional(),
 });
 
 const UpdateEventSchema = CreateEventSchema.partial();
@@ -1202,87 +1199,22 @@ export async function adminRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Manual trigger: Failsafe Cleanup
-  fastify.post('/admin/trigger/failsafe-cleanup', {
+  // Manual trigger: Event Lifecycle Check
+  fastify.post('/admin/trigger/lifecycle-check', {
     preValidation: [fastify.authenticate, requireAdmin],
   }, async (request, reply) => {
     try {
-      console.log('[Admin] Manual trigger: Failsafe cleanup');
-      const results = await triggerFailsafeCleanup();
+      console.log('[Admin] Manual trigger: Event lifecycle check');
+      await triggerEventLifecycleCheck();
 
       return reply.send({
         success: true,
-        message: 'Failsafe cleanup completed',
-        data: results
+        message: 'Event lifecycle check completed'
       });
     } catch (error: any) {
-      console.error('[Admin] Failsafe cleanup trigger failed:', error);
+      console.error('[Admin] Event lifecycle check failed:', error);
       return reply.code(500).send({
-        error: 'Failsafe cleanup failed',
-        message: error.message
-      });
-    }
-  });
-
-  // Manual trigger: Live Event Scheduler (legacy, still works)
-  fastify.post('/admin/trigger/live-event-scheduler', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: Live event scheduler');
-      await triggerLiveEventScheduler();
-
-      return reply.send({
-        success: true,
-        message: 'Live event scheduler check completed'
-      });
-    } catch (error: any) {
-      console.error('[Admin] Live event scheduler trigger failed:', error);
-      return reply.code(500).send({
-        error: 'Live event scheduler failed',
-        message: error.message
-      });
-    }
-  });
-
-  // Manual trigger: Schedule All Upcoming Events
-  fastify.post('/admin/trigger/schedule-events', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: Schedule all upcoming events');
-      const eventsScheduled = await scheduleAllUpcomingEvents();
-
-      return reply.send({
-        success: true,
-        message: `Scheduled ${eventsScheduled} upcoming events`,
-        data: { eventsScheduled }
-      });
-    } catch (error: any) {
-      console.error('[Admin] Event scheduling failed:', error);
-      return reply.code(500).send({
-        error: 'Event scheduling failed',
-        message: error.message
-      });
-    }
-  });
-
-  // Manual trigger: Event Scheduler Safety Check
-  fastify.post('/admin/trigger/event-safety-check', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
-    try {
-      console.log('[Admin] Manual trigger: Event scheduler safety check');
-      await safetyCheckEvents();
-
-      return reply.send({
-        success: true,
-        message: 'Event safety check completed'
-      });
-    } catch (error: any) {
-      console.error('[Admin] Event safety check failed:', error);
-      return reply.code(500).send({
-        error: 'Event safety check failed',
+        error: 'Event lifecycle check failed',
         message: error.message
       });
     }
@@ -1379,54 +1311,26 @@ export async function adminRoutes(fastify: FastifyInstance) {
     preValidation: [fastify.authenticate, requireAdmin],
   }, async (request, reply) => {
     try {
-      const failsafeStatus = await getFailsafeStatus();
+      // Count live and upcoming events for health check
+      const [liveEvents, upcomingEvents] = await Promise.all([
+        prisma.event.count({ where: { eventStatus: 'LIVE' } }),
+        prisma.event.count({ where: { eventStatus: 'UPCOMING' } }),
+      ]);
 
       return reply.send({
         success: true,
         data: {
-          failsafe: failsafeStatus,
-          crons: {
-            ufcScraper: {
-              schedule: 'Daily at 12:00pm EST (5:00pm UTC)',
-              cronExpression: '0 17 * * *'
+          events: { live: liveEvents, upcoming: upcomingEvents },
+          backgroundJobs: {
+            eventLifecycle: {
+              schedule: 'Every 5 minutes',
+              description: 'UPCOMING→LIVE, section-based fight completion, LIVE→COMPLETED',
             },
-            bkfcScraper: {
-              schedule: 'Daily at 12:30am EST (5:30am UTC)',
-              cronExpression: '30 5 * * *'
+            scrapers: {
+              schedule: 'Via GitHub Actions',
+              description: 'All org scrapers run via GitHub Actions workflows',
             },
-            pflScraper: {
-              schedule: 'Daily at 1:00am EST (6:00am UTC)',
-              cronExpression: '0 6 * * *'
-            },
-            oneFCScraper: {
-              schedule: 'Daily at 1:30am EST (6:30am UTC)',
-              cronExpression: '30 6 * * *'
-            },
-            matchroomScraper: {
-              schedule: 'Daily at 2:00am EST (7:00am UTC)',
-              cronExpression: '0 7 * * *'
-            },
-            goldenBoyScraper: {
-              schedule: 'Daily at 2:30am EST (7:30am UTC)',
-              cronExpression: '30 7 * * *'
-            },
-            topRankScraper: {
-              schedule: 'Daily at 3:00am EST (8:00am UTC)',
-              cronExpression: '0 8 * * *'
-            },
-            oktagonScraper: {
-              schedule: 'Daily at 3:30am EST (8:30am UTC)',
-              cronExpression: '30 8 * * *'
-            },
-            failsafeCleanup: {
-              schedule: 'Every hour',
-              cronExpression: '0 * * * *'
-            },
-            eventScheduler: {
-              schedule: 'Event-based (exact start times) + safety check every 15 minutes',
-              cronExpression: '*/15 * * * *'
-            }
-          }
+          },
         }
       });
     } catch (error: any) {

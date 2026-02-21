@@ -5,7 +5,7 @@ import { authenticateUser, requireEmailVerification, optionalAuth } from '../mid
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 import { calculateQualityThreadScore } from '../utils/commentSorting';
 import { TBA_FIGHTER_ID, isTBAFighter, fightHasTBA } from '../constants/tba';
-import { hasRealTimeTracker } from '../config/liveTrackerConfig';
+import { isProductionScraper } from '../config/liveTrackerConfig';
 
 // Request/Response schemas using Zod for validation
 const CreateFightSchema = z.object({
@@ -325,7 +325,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         if (transformed.event) {
           transformed.event = {
             ...transformed.event,
-            hasLiveTracking: hasRealTimeTracker(transformed.event.promotion),
+            hasLiveTracking: isProductionScraper(transformed.event.scraperType),
           };
         }
 
@@ -554,7 +554,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
       if (transformedFight.event) {
         transformedFight.event = {
           ...transformedFight.event,
-          hasLiveTracking: hasRealTimeTracker(transformedFight.event.promotion),
+          hasLiveTracking: isProductionScraper(transformedFight.event.scraperType),
         };
       }
 
@@ -3755,7 +3755,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         if (transformed.event) {
           transformed.event = {
             ...transformed.event,
-            hasLiveTracking: hasRealTimeTracker(transformed.event.promotion),
+            hasLiveTracking: isProductionScraper(transformed.event.scraperType),
           };
         }
 
