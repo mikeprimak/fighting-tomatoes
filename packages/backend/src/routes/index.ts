@@ -31,7 +31,8 @@ const ORG_FILTER_GROUPS: Record<string, { contains?: string[] }> = {
     contains: ['DIRTY BOXING'],
   },
 };
-// import analyticsRoutes from './analytics'; // TEMPORARILY DISABLED
+
+import { HIDDEN_PROMOTIONS } from '../config/hiddenPromotions';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Health check endpoint
@@ -223,6 +224,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
       const fourteenDaysFromNow = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
       const whereClause: any = {
         isVisible: true,
+        NOT: HIDDEN_PROMOTIONS.map(p => ({
+          promotion: { contains: p, mode: 'insensitive' },
+        })),
         OR: [
           { fights: { some: {} } },
           {
@@ -581,7 +585,10 @@ export async function registerRoutes(fastify: FastifyInstance) {
       const event = await fastify.prisma.event.findFirst({
         where: {
           id,
-          isVisible: true,  // Only return visible events
+          isVisible: true,
+          NOT: HIDDEN_PROMOTIONS.map(p => ({
+            promotion: { contains: p, mode: 'insensitive' },
+          })),
         },
         select: {
           id: true,
