@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
+import { HIDDEN_PROMOTIONS } from '../config/hiddenPromotions';
 
 export default async function communityRoutes(fastify: FastifyInstance) {
   // Get all comments with sorting options
@@ -484,6 +485,9 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               gte: startDate,
               lte: now,
             },
+            NOT: HIDDEN_PROMOTIONS.map(p => ({
+              promotion: { contains: p, mode: 'insensitive' as const },
+            })),
             ...(promotionList && promotionList.length > 0 ? { promotion: { in: promotionList } } : {}),
           },
           fightStatus: 'COMPLETED',

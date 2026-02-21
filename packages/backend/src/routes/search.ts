@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import { optionalAuth } from '../middleware/auth';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
+import { HIDDEN_PROMOTIONS } from '../config/hiddenPromotions';
 
 const prisma = new PrismaClient();
 
@@ -163,7 +164,12 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       };
 
       const allEvents = await prisma.event.findMany({
-        where: buildEventSearchConditions(),
+        where: {
+          ...buildEventSearchConditions(),
+          NOT: HIDDEN_PROMOTIONS.map(p => ({
+            promotion: { contains: p, mode: 'insensitive' as const },
+          })),
+        },
         select: {
           id: true,
           name: true,
@@ -370,7 +376,14 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       }
 
       const rawFights = await prisma.fight.findMany({
-        where: buildFightSearchConditions(),
+        where: {
+          ...buildFightSearchConditions(),
+          event: {
+            NOT: HIDDEN_PROMOTIONS.map(p => ({
+              promotion: { contains: p, mode: 'insensitive' as const },
+            })),
+          },
+        },
         include,
         take: resultLimit,
         orderBy: [
@@ -498,7 +511,12 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       };
 
       const promotions = await prisma.event.findMany({
-        where: buildPromotionSearchConditions(),
+        where: {
+          ...buildPromotionSearchConditions(),
+          NOT: HIDDEN_PROMOTIONS.map(p => ({
+            promotion: { contains: p, mode: 'insensitive' as const },
+          })),
+        },
         select: {
           promotion: true,
         },
