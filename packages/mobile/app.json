@@ -2,7 +2,7 @@
   "expo": {
     "name": "Good Fights",
     "slug": "fightcrewapp",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/homescreen-icon.png",
     "splash": {
