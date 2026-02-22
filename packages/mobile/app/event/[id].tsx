@@ -22,6 +22,7 @@ import { useAuth } from '../../store/AuthContext';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useLiveEventPolling } from '../../hooks/useLiveEventPolling';
 import { normalizeEventName } from '../../components/fight-cards/shared/utils';
+import { formatEventDate, formatEventTime } from '../../utils/dateFormatters';
 
 interface EventDetails {
   id: string;
@@ -72,6 +73,7 @@ export default function EventDetailScreen() {
     queryKey: ['event', id],
     queryFn: () => apiService.getEvent(id as string),
     enabled: !!id,
+    refetchInterval: 30000,
   });
 
   // Fetch fights for the event
@@ -90,6 +92,7 @@ export default function EventDetailScreen() {
       return response;
     },
     enabled: !!id,
+    refetchInterval: 30000,
   });
 
   const event = eventData?.event;
@@ -166,25 +169,8 @@ export default function EventDetailScreen() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const timeString = date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short',
-    });
-    return timeString;
-  };
+  const formatDate = (dateString: string) => formatEventDate(dateString, { year: true });
+  const formatTime = (dateString: string) => formatEventTime(dateString);
 
   const getDisplayTime = (event: EventDetails | undefined) => {
     if (!event) return null;
