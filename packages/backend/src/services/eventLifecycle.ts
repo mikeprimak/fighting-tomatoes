@@ -24,6 +24,62 @@ const MINUTES_PER_FIGHT = 30;
 const BUFFER_HOURS = 1;
 
 let lifecycleTimer: ReturnType<typeof setInterval> | null = null;
+let lastGitHubDispatchAt: number = 0;
+const GITHUB_DISPATCH_COOLDOWN_MS = 4 * 60 * 1000; // Don't trigger more than once per 4 minutes
+
+/**
+ * Trigger the UFC Live Tracker GitHub Actions workflow via API.
+ * This is more reliable than GitHub's cron scheduler.
+ * Requires GITHUB_TOKEN env var with actions:write permission.
+ */
+async function triggerGitHubLiveTracker(eventId?: string): Promise<boolean> {
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) {
+    console.log('[Lifecycle] No GITHUB_TOKEN set, skipping GitHub Actions dispatch');
+    return false;
+  }
+
+  // Cooldown: don't trigger if we recently dispatched
+  const now = Date.now();
+  if (now - lastGitHubDispatchAt < GITHUB_DISPATCH_COOLDOWN_MS) {
+    const secsAgo = Math.round((now - lastGitHubDispatchAt) / 1000);
+    console.log(`[Lifecycle] GitHub dispatch skipped (last dispatch ${secsAgo}s ago)`);
+    return false;
+  }
+
+  try {
+    const body: any = { ref: 'main' };
+    if (eventId) {
+      body.inputs = { event_id: eventId };
+    }
+
+    const response = await fetch(
+      'https://api.github.com/repos/mikeprimak/fighting-tomatoes/actions/workflows/ufc-live-tracker.yml/dispatches',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      }
+    );
+
+    if (response.status === 204) {
+      lastGitHubDispatchAt = now;
+      console.log(`[Lifecycle] Triggered GitHub Actions UFC live tracker`);
+      return true;
+    } else {
+      const text = await response.text();
+      console.error(`[Lifecycle] GitHub dispatch failed (${response.status}): ${text}`);
+      return false;
+    }
+  } catch (error: any) {
+    console.error(`[Lifecycle] GitHub dispatch error: ${error.message}`);
+    return false;
+  }
+}
 
 /**
  * Get the earliest known start time for an event (fallback to event.date).
@@ -104,30 +160,32 @@ export async function runEventLifecycleCheck(): Promise<{
         results.eventsStarted++;
         console.log(`[Lifecycle] UPCOMING → LIVE: ${event.name}`);
 
-        // Auto-start live tracker for UFC events
+        // Trigger GitHub Actions live tracker for UFC events
         if (event.scraperType === 'ufc') {
-          try {
-            const trackerStatus = getLiveTrackingStatus();
-            if (!trackerStatus.isRunning) {
-              const eventUrl = event.ufcUrl || `https://www.ufc.com/event/${event.name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')}`;
-              await startLiveTracking({
-                eventId: event.id,
-                eventUrl,
-                eventName: event.name,
-                intervalSeconds: 30,
-              });
-              console.log(`[Lifecycle] Auto-started UFC live tracker for: ${event.name}`);
-            } else {
-              console.log(`[Lifecycle] UFC live tracker already running (tracking: ${trackerStatus.eventName})`);
-            }
-          } catch (error: any) {
-            console.error(`[Lifecycle] Failed to auto-start UFC live tracker:`, error.message);
-          }
+          await triggerGitHubLiveTracker(event.id);
         }
       }
     }
   } catch (error: any) {
     console.error('[Lifecycle] Step 1 (UPCOMING→LIVE) error:', error.message);
+  }
+
+  // === STEP 1.5: Trigger GitHub Actions for LIVE UFC events ===
+  // Dispatches the UFC live tracker workflow every ~5 minutes (with 4-min cooldown)
+  try {
+    const liveUfcEvent = await prisma.event.findFirst({
+      where: {
+        eventStatus: 'LIVE',
+        scraperType: 'ufc',
+      },
+      select: { id: true, name: true },
+    });
+
+    if (liveUfcEvent) {
+      await triggerGitHubLiveTracker(liveUfcEvent.id);
+    }
+  } catch (error: any) {
+    console.error('[Lifecycle] Step 1.5 (GitHub dispatch) error:', error.message);
   }
 
   // === STEP 2: Section-based fight completion ===
