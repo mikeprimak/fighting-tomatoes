@@ -23,6 +23,7 @@ import { useNotification } from '../../../store/NotificationContext';
 import { useOrgFilter } from '../../../store/OrgFilterContext';
 import { useSearch } from '../../../store/SearchContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { formatEventDate, formatEventTimeCompact, formatTimeUntil } from '../../../utils/dateFormatters';
 
 // Number of events to load initially and per page
 const EVENTS_PER_PAGE = 2;
@@ -57,101 +58,9 @@ const getPlaceholderImage = (eventId: string) => {
   return images[index];
 };
 
-// Pure formatting functions - defined at module level for stable references
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
-const formatTime = (dateString: string) => {
-  const date = new Date(dateString);
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  const ampm = hours >= 12 ? 'pm' : 'am';
-  const hour12 = hours % 12 || 12;
-
-  // Only show minutes if not on the hour
-  if (minutes === 0) {
-    return `${hour12}${ampm}`;
-  }
-  return `${hour12}:${minutes.toString().padStart(2, '0')}${ampm}`;
-};
-
-// For determining days until, use the event DATE (not start time)
-// For granular "hours until" on event day, use the actual start time
-const formatTimeUntil = (eventDateString: string, startTimeString?: string) => {
-  const eventDate = new Date(eventDateString);
-  const now = new Date();
-
-  // Get LOCAL calendar dates for comparison
-  const eventLocalDate = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
-  const todayLocalDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  // Calculate difference in calendar days (using local dates)
-  const diffMs = eventLocalDate.getTime() - todayLocalDate.getTime();
-  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-  // If event is TODAY, use start time for granular output
-  if (diffDays === 0) {
-    const startTime = startTimeString ? new Date(startTimeString) : eventDate;
-    const hoursUntil = (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    if (hoursUntil <= 0) {
-      return 'TODAY';
-    }
-    if (hoursUntil < 1) {
-      return 'STARTING SOON';
-    }
-    const hours = Math.floor(hoursUntil);
-    if (hours === 1) {
-      return 'IN 1 HOUR';
-    }
-    return `IN ${hours} HOURS`;
-  }
-
-  // Future events - use calendar days
-  if (diffDays === 1) {
-    return 'TOMORROW';
-  }
-
-  if (diffDays < 7) {
-    return `IN ${diffDays} DAYS`;
-  }
-
-  const weeksUntil = Math.round(diffDays / 7);
-  if (weeksUntil === 1) {
-    return 'IN 1 WEEK';
-  }
-
-  if (weeksUntil <= 3) {
-    return `IN ${weeksUntil} WEEKS`;
-  }
-
-  if (weeksUntil >= 5 && weeksUntil <= 7) {
-    return `IN ${weeksUntil} WEEKS`;
-  }
-
-  const monthsUntil = Math.round(diffDays / 30);
-  if (monthsUntil === 1) {
-    return 'IN 1 MONTH';
-  }
-
-  if (monthsUntil < 12) {
-    return `IN ${monthsUntil} MONTHS`;
-  }
-
-  const yearsUntil = Math.round(diffDays / 365);
-  if (yearsUntil === 1) {
-    return 'IN 1 YEAR';
-  }
-
-  return `IN ${yearsUntil} YEARS`;
-};
-
+// Aliases for stable references used in JSX
+const formatDate = (dateString: string) => formatEventDate(dateString);
+const formatTime = (dateString: string) => formatEventTimeCompact(dateString);
 
 export default function UpcomingEventsScreen() {
   const colorScheme = useColorScheme();
@@ -234,6 +143,7 @@ export default function UpcomingEventsScreen() {
         return page < totalPages ? page + 1 : undefined;
       },
       staleTime: 30 * 1000, // 30 seconds - refresh frequently for live status
+      refetchInterval: 30000, // Poll every 30s so fight status changes appear automatically
       refetchOnMount: 'always',
       refetchOnWindowFocus: true,
       onError: (err: any) => {
@@ -437,7 +347,7 @@ const EventSection = memo(function EventSection({
   onFightPress: (fight: Fight) => void;
   formatDate: (date: string) => string;
   formatTime: (date: string) => string;
-  formatTimeUntil: (date: string) => string;
+  formatTimeUntil: (date: string, startTime?: string) => string;
   isFirstEvent: boolean;
 }) {
   const isLive = event.eventStatus === 'LIVE';
