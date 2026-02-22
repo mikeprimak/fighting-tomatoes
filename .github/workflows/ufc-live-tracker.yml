@@ -6,8 +6,8 @@ name: UFC Live Tracker
 
 on:
   schedule:
-    # Run every 10 minutes (GitHub unreliable for 5-min schedules)
-    - cron: '*/10 * * * *'
+    # Run every 5 minutes (minimum GitHub allows; actual timing may vary by a few min)
+    - cron: '*/5 * * * *'
   push:
     branches:
       - main
