@@ -1,6 +1,7 @@
 // Shared utility functions for fight cards
 import { Fighter } from './types';
 import { API_BASE_URL } from '../../../services/api';
+import { formatEventDate } from '../../../utils/dateFormatters';
 
 // Get the server base URL (without /api)
 const getServerBaseUrl = () => API_BASE_URL.replace('/api', '');
@@ -126,14 +127,7 @@ export const getFighterPrimaryName = (fighter: Fighter) => {
 };
 
 // Format date string
-export const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
+export const formatDate = (dateString: string) => formatEventDate(dateString, { weekday: false, year: true });
 
 // Format fight method
 export const formatMethod = (method: string | null | undefined) => {

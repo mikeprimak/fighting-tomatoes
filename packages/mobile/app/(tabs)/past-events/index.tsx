@@ -21,6 +21,7 @@ import { useOrgFilter } from '../../../store/OrgFilterContext';
 import CompletedFightCard from '../../../components/fight-cards/CompletedFightCard';
 import OrgFilterTabs from '../../../components/OrgFilterTabs';
 import { EventBannerCard, SearchBar } from '../../../components';
+import { formatEventDate, formatTimeAgo } from '../../../utils/dateFormatters';
 
 // Number of events to load initially and per page
 const EVENTS_PER_PAGE = 2;
@@ -72,59 +73,7 @@ const getPlaceholderImage = (eventId: string) => {
 };
 
 
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
-
-const formatTimeAgo = (dateString: string) => {
-  const eventDate = new Date(dateString);
-  const now = new Date();
-  const diffTime = now.getTime() - eventDate.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) {
-    return 'TODAY';
-  }
-
-  if (diffDays === 1) {
-    return 'YESTERDAY';
-  }
-
-  if (diffDays < 7) {
-    return `${diffDays} DAYS AGO`;
-  }
-
-  const diffWeeks = Math.floor(diffDays / 7);
-  if (diffWeeks === 1) {
-    return '1 WEEK AGO';
-  }
-
-  if (diffWeeks < 4) {
-    return `${diffWeeks} WEEKS AGO`;
-  }
-
-  const diffMonths = Math.floor(diffDays / 30);
-  if (diffMonths === 1) {
-    return '1 MONTH AGO';
-  }
-
-  if (diffMonths < 12) {
-    return `${diffMonths} MONTHS AGO`;
-  }
-
-  const diffYears = Math.floor(diffDays / 365);
-  if (diffYears === 1) {
-    return '1 YEAR AGO';
-  }
-
-  return `${diffYears} YEARS AGO`;
-};
+const formatDate = (dateString: string) => formatEventDate(dateString, { year: true });
 
 // Event Section Component - shows event banner + all fights inline
 // Memoized to prevent re-renders when other events in the list change

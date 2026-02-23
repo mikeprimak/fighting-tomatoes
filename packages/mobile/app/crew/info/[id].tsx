@@ -22,6 +22,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { apiService } from '../../../services/api';
 import { useCustomAlert } from '../../../hooks/useCustomAlert';
 import { CustomAlert } from '../../../components/CustomAlert';
+import { formatEventDate } from '../../../utils/dateFormatters';
 
 export default function CrewInfoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -194,14 +195,7 @@ export default function CrewInfoScreen() {
 
   const crew = crewData?.crew;
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+  const formatDate = (dateString: string) => formatEventDate(dateString, { weekday: false, month: 'long', year: true });
 
   const getTimeSinceCreation = (dateString: string) => {
     const created = new Date(dateString);
