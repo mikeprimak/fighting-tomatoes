@@ -2,7 +2,7 @@
   "expo": {
     "name": "Good Fights",
     "slug": "fightcrewapp",
-    "version": "1.0.2",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/homescreen-icon.png",
     "splash": {
@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.fightcrewapp.mobile",
-      "buildNumber": "16",
+      "buildNumber": "17",
       "backgroundColor": "#181818",
       "googleServicesFile": "./GoogleService-Info.plist",
       "runtimeVersion": {
@@ -53,7 +53,7 @@
         "backgroundColor": "#1a1a1a"
       },
       "package": "com.fightcrewapp.mobile",
-      "versionCode": 32,
+      "versionCode": 33,
       "backgroundColor": "#181818",
       "statusBar": {
         "translucent": true,
