@@ -37,7 +37,7 @@ router.get('/verify-email', generalLimiter, AuthController.verifyEmail)
 router.post('/request-password-reset', authLimiter, AuthController.requestPasswordReset)
 router.post('/reset-password', authLimiter, AuthController.resetPassword)
 router.post('/resend-verification', authLimiter, AuthController.resendVerificationEmail)
-router.post('/refresh-token', generalLimiter, AuthController.refreshToken)
+router.post('/refresh', generalLimiter, AuthController.refreshToken)
 
 // Protected routes
 router.get('/profile', authenticateToken, AuthController.getProfile)
