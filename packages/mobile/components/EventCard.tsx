@@ -11,6 +11,7 @@ import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { PromotionLogo } from './PromotionLogo';
+import { formatEventDate, formatEventTime } from '../utils/dateFormatters';
 
 interface Event {
   id: string;
@@ -54,15 +55,7 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
   // Animated value for pulsing dot
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
+  const formatDate = (dateString: string) => formatEventDate(dateString, { year: true });
 
   const calculateCountdown = (): { time: string; label: string } | null => {
     // Get the earliest start time from card times (prioritize specific times over generic date)
@@ -149,18 +142,7 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
     }
   }, [event.eventStatus, pulseAnim]);
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    const timeString = date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short',
-    });
-
-    // Extract time and timezone acronym
-    // Format: "7:00 PM PST" or "10:00 AM EST"
-    return timeString;
-  };
+  const formatTime = (dateString: string) => formatEventTime(dateString);
 
   const getDisplayTime = () => {
     // Only show time if mainStartTime is available

@@ -4,6 +4,7 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { PromotionLogo } from './PromotionLogo';
 import { normalizeEventName } from './fight-cards/shared/utils';
+import { formatEventDate, formatEventTimeCompact } from '../utils/dateFormatters';
 
 interface EventBannerCardProps {
   event: {
@@ -72,29 +73,10 @@ const parseEventName = (eventName: string, promotion?: string | null) => {
   };
 };
 
-const formatDate = (dateString: string, eventStatus: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    ...(eventStatus === 'COMPLETED' && { year: 'numeric' }), // Only show year for completed events
-  });
-};
+const formatDate = (dateString: string, eventStatus: string) =>
+  formatEventDate(dateString, { year: eventStatus === 'COMPLETED' });
 
-const formatTime = (dateString: string) => {
-  const date = new Date(dateString);
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  const ampm = hours >= 12 ? 'pm' : 'am';
-  const hour12 = hours % 12 || 12;
-
-  // Only show minutes if not on the hour
-  if (minutes === 0) {
-    return `${hour12}${ampm}`;
-  }
-  return `${hour12}:${minutes.toString().padStart(2, '0')}${ampm}`;
-};
+const formatTime = (dateString: string) => formatEventTimeCompact(dateString);
 
 export const EventBannerCard = memo(function EventBannerCard({
   event,
