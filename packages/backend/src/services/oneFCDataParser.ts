@@ -607,22 +607,15 @@ async function importOneFCEvents(
 
             cancelledCount++;
           } else {
-            // Neither fighter appears in scraped data at all - fight may have been fully cancelled
-            // Only mark as cancelled if event is in the near future (within 7 days)
-            const daysUntilEvent = (eventDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+            // Neither fighter appears in scraped data - fight was fully cancelled
+            console.log(`    ❌ Cancelling fight (not in scraped data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
 
-            if (daysUntilEvent <= 7) {
-              console.log(`    ❌ Cancelling fight (not in scraped data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+            await prisma.fight.update({
+              where: { id: dbFight.id },
+              data: { fightStatus: 'CANCELLED' }
+            });
 
-              await prisma.fight.update({
-                where: { id: dbFight.id },
-                data: { fightStatus: 'CANCELLED' }
-              });
-
-              cancelledCount++;
-            } else {
-              console.log(`    ⚠ Fight missing from scraped data (not cancelling, event > 7 days out): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
-            }
+            cancelledCount++;
           }
         }
       }
