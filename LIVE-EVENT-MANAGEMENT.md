@@ -172,9 +172,29 @@ Even with the tracker running, you have full manual override:
 
 ## Start Time Coverage
 
-Only ~3% of events have `mainStartTime`/`prelimStartTime` set (mostly UFC and ONE FC). For section-based completion to work well, scrapers need to populate these fields.
+As of Feb 2026, all organization scrapers populate `mainStartTime` when time data is available:
 
-**Until then:** The `event.date` fallback handles it by completing all fights at once when the event date passes. This is acceptable — it matches how most events work in practice.
+| Org | `mainStartTime` | `prelimStartTime` | `earlyPrelimStartTime` | How |
+|-----|:---:|:---:|:---:|-----|
+| UFC | Yes | Yes | Yes | Scraped from UFC.com |
+| PFL | Yes | Yes | N/A | ISO from scripts + prelim regex |
+| BKFC | Yes | N/A | N/A | Countdown timer |
+| ONE FC | Yes | N/A | N/A | Scraped from onefc.com |
+| Matchroom | Yes | N/A | N/A | Scraped from matchroomboxing.com |
+| Golden Boy | Yes | N/A | N/A | Scraped from goldenboy.com |
+| OKTAGON | Yes | N/A | N/A | ISO datetime from API (midnight guard) |
+| Top Rank | Yes | N/A | N/A | Time+timezone regex from page text |
+| Zuffa Boxing | Yes | N/A | N/A | Time regex from Tapology (ET default) |
+| Dirty Boxing | Yes | N/A | N/A | Time regex from Tapology (ET default) |
+| RIZIN | Yes | N/A | N/A | ISO from Sherdog itemprop (midnight guard) |
+
+**Design rules:**
+1. Never write midnight UTC as a start time — leave undefined if no real time found
+2. All times stored in UTC — use `eventTimeToUTC()` or `new Date(isoString)`
+3. Use `undefined` (not `null`) on updates — Prisma skips undefined fields, preserving admin-set times
+4. OKTAGON and RIZIN use a "midnight guard": if the parsed date has `hours === 0 && minutes === 0` UTC, no `mainStartTime` is set (midnight = no real time data)
+
+**Fallback:** Events without any start time fields still work — `event.date` is used as the fallback for lifecycle transitions.
 
 ## Key Files
 
