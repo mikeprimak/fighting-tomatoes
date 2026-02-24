@@ -31,6 +31,8 @@ import { useVerification } from '../../store/VerificationContext';
 import { RoundVotingSlideup, Fight, FightDisplayCardMinimal } from '../../components';
 import { GifPickerModal } from '../../components/GifPickerModal';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
+import { getDefaultBanner } from '../../utils/defaultBanners';
+import { PromotionLogo } from '../../components/PromotionLogo';
 import { CustomAlert } from '../../components/CustomAlert';
 
 interface Message {
@@ -83,19 +85,6 @@ interface CrewDetails {
   createdAt: string;
 }
 
-// Event image selection logic (same as EventCard component)
-const getEventImage = (eventId: string) => {
-  const images = [
-    require('../../assets/events/event-banner-1.jpg'),
-    require('../../assets/events/event-banner-2.jpg'),
-    require('../../assets/events/event-banner-3.jpg'),
-  ];
-
-  // Use charCodeAt to get a number from the last character (works for letters and numbers)
-  const lastCharCode = eventId.charCodeAt(eventId.length - 1);
-  const index = lastCharCode % images.length;
-  return images[index];
-};
 
 export default function CrewChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -1232,16 +1221,22 @@ export default function CrewChatScreen() {
               >
                 {/* Event Banner Image */}
                 <View style={{ marginHorizontal: 20, marginBottom: 8, marginTop: 16 }}>
-                  <Image
-                    source={
-                      fightCardData?.event?.bannerImage
-                        ? { uri: fightCardData.event.bannerImage }
-                        : getEventImage(fightCardData?.event?.id || 'default')
-                    }
-                    style={[styles.eventBannerImage, { aspectRatio: eventBannerAspectRatio }]}
-                    resizeMode="contain"
-                    onLoad={handleEventBannerLoad}
-                  />
+                  {(fightCardData?.event?.bannerImage || getDefaultBanner(fightCardData?.event?.promotion || '')) ? (
+                    <Image
+                      source={
+                        fightCardData?.event?.bannerImage
+                          ? { uri: fightCardData.event.bannerImage }
+                          : getDefaultBanner(fightCardData?.event?.promotion || '')
+                      }
+                      style={[styles.eventBannerImage, { aspectRatio: eventBannerAspectRatio }]}
+                      resizeMode="contain"
+                      onLoad={handleEventBannerLoad}
+                    />
+                  ) : (
+                    <View style={[styles.eventBannerImage, { aspectRatio: 16 / 9, backgroundColor: '#1a1a2e', justifyContent: 'center', alignItems: 'center', borderRadius: 12 }]}>
+                      <PromotionLogo promotion={fightCardData?.event?.promotion || ''} size={72} />
+                    </View>
+                  )}
                 </View>
 
                 <View style={{ paddingHorizontal: 16 }}>
