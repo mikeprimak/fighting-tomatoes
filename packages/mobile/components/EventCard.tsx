@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { PromotionLogo } from './PromotionLogo';
 import { formatEventDate, formatEventTime } from '../utils/dateFormatters';
+import { getDefaultBanner } from '../utils/defaultBanners';
 
 interface Event {
   id: string;
@@ -33,18 +34,14 @@ interface EventCardProps {
   onPress?: (event: Event) => void;
 }
 
-const getPlaceholderImage = (eventId: string) => {
-  const images = [
-    require('../assets/events/event-banner-1.jpg'),
-    require('../assets/events/event-banner-2.jpg'),
-    require('../assets/events/event-banner-3.jpg'),
-  ];
-
-  // Use charCodeAt to get a number from the last character (works for letters and numbers)
-  const lastCharCode = eventId.charCodeAt(eventId.length - 1);
-  const index = lastCharCode % images.length;
-  return images[index];
-};
+/**
+ * Get banner image source for an event.
+ * Priority: event.bannerImage > promotion default > null (styled fallback)
+ */
+function getBannerSource(event: Event): { uri: string } | any | null {
+  if (event.bannerImage) return { uri: event.bannerImage };
+  return getDefaultBanner(event.promotion);
+}
 
 export default function EventCard({ event, showTime = false, onPress }: EventCardProps) {
   const colorScheme = useColorScheme();
@@ -179,16 +176,24 @@ export default function EventCard({ event, showTime = false, onPress }: EventCar
     >
       {/* Event Image with Logo Overlay */}
       <View style={styles.imageContainer}>
-        <Image
-          source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
-          style={styles.eventImage}
-          resizeMode="cover"
-          onLoad={handleImageLoad}
-        />
+        {getBannerSource(event) ? (
+          <Image
+            source={getBannerSource(event)!}
+            style={styles.eventImage}
+            resizeMode="cover"
+            onLoad={handleImageLoad}
+          />
+        ) : (
+          <View style={[styles.eventImage, styles.placeholderBanner]}>
+            <PromotionLogo promotion={event.promotion} size={48} />
+          </View>
+        )}
         {/* Promotion Logo Overlay */}
-        <View style={styles.logoOverlay}>
-          <PromotionLogo promotion={event.promotion} size={20} />
-        </View>
+        {getBannerSource(event) && (
+          <View style={styles.logoOverlay}>
+            <PromotionLogo promotion={event.promotion} size={20} />
+          </View>
+        )}
       </View>
 
       <View style={styles.eventContent}>
@@ -262,6 +267,12 @@ const createStyles = (colors: any, aspectRatio: number) => StyleSheet.create({
     width: '100%',
     height: undefined,
     aspectRatio: aspectRatio,
+  },
+  placeholderBanner: {
+    backgroundColor: '#1a1a2e',
+    justifyContent: 'center',
+    alignItems: 'center',
+    aspectRatio: 16 / 9,
   },
   logoOverlay: {
     position: 'absolute',

@@ -5,6 +5,7 @@ import { Colors } from '../constants/Colors';
 import { PromotionLogo } from './PromotionLogo';
 import { normalizeEventName } from './fight-cards/shared/utils';
 import { formatEventDate, formatEventTimeCompact } from '../utils/dateFormatters';
+import { getDefaultBanner } from '../utils/defaultBanners';
 
 interface EventBannerCardProps {
   event: {
@@ -24,18 +25,6 @@ interface EventBannerCardProps {
   onPress?: () => void;
 }
 
-// Placeholder image selection logic
-const getPlaceholderImage = (eventId: string) => {
-  const images = [
-    require('../assets/events/event-banner-1.jpg'),
-    require('../assets/events/event-banner-2.jpg'),
-    require('../assets/events/event-banner-3.jpg'),
-  ];
-
-  const lastCharCode = eventId.charCodeAt(eventId.length - 1);
-  const index = lastCharCode % images.length;
-  return images[index];
-};
 
 // Parse event name into formatted display
 // Accepts optional promotion to normalize legacy event names
@@ -95,19 +84,23 @@ export const EventBannerCard = memo(function EventBannerCard({
 
   const imageSource = event.bannerImage
     ? { uri: event.bannerImage }
-    : event.promotion?.toUpperCase() === 'RIZIN'
-      ? { uri: 'https://library.sportingnews.com/styles/twitter_card_120x120/s3/2023-02/RIZIN_logo.jpg?itok=qjct2XMb' }
-      : getPlaceholderImage(event.id);
+    : getDefaultBanner(event.promotion || '');
 
   return (
     <View style={styles.container}>
       {/* Event Banner Image with overlays */}
       <View style={[styles.bannerContainer, { height: imageHeight }]}>
-        <Image
-          source={imageSource}
-          style={[styles.banner, { height: imageHeight }]}
-          resizeMode="cover"
-        />
+        {imageSource ? (
+          <Image
+            source={imageSource}
+            style={[styles.banner, { height: imageHeight }]}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.banner, styles.placeholderBanner, { height: imageHeight }]}>
+            <PromotionLogo promotion={event.promotion || ''} size={72} />
+          </View>
+        )}
 
         {/* Overlays on banner image - Bottom Left */}
         <View style={styles.bannerOverlays}>
@@ -171,6 +164,11 @@ const styles = StyleSheet.create({
   },
   banner: {
     width: '100%',
+  },
+  placeholderBanner: {
+    backgroundColor: '#1a1a2e',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   logoOverlay: {
     backgroundColor: 'rgba(0, 0, 0, 0.85)',

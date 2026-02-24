@@ -23,6 +23,8 @@ import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useLiveEventPolling } from '../../../hooks/useLiveEventPolling';
 import { normalizeEventName } from '../../../components/fight-cards/shared/utils';
 import { formatEventDate, formatEventTime } from '../../../utils/dateFormatters';
+import { getDefaultBanner } from '../../../utils/defaultBanners';
+import { PromotionLogo } from '../../../components/PromotionLogo';
 
 interface EventDetails {
   id: string;
@@ -40,19 +42,14 @@ interface EventDetails {
 
 type Fight = any;
 
-// Placeholder image selection logic - same as EventCard
-const getPlaceholderImage = (eventId: string) => {
-  const images = [
-    require('../../../assets/events/event-banner-1.jpg'),
-    require('../../../assets/events/event-banner-2.jpg'),
-    require('../../../assets/events/event-banner-3.jpg'),
-  ];
-
-  // Use charCodeAt to get a number from the last character (works for letters and numbers)
-  const lastCharCode = eventId.charCodeAt(eventId.length - 1);
-  const index = lastCharCode % images.length;
-  return images[index];
-};
+/**
+ * Get banner image source for an event.
+ * Priority: event.bannerImage > promotion default > null (styled fallback)
+ */
+function getBannerSource(event: EventDetails): { uri: string } | any | null {
+  if (event.bannerImage) return { uri: event.bannerImage };
+  return getDefaultBanner(event.promotion);
+}
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -344,12 +341,18 @@ export default function EventDetailScreen() {
         >
         {/* Event Banner Image */}
         {event?.id && (
-          <Image
-            source={event.bannerImage ? { uri: event.bannerImage } : getPlaceholderImage(event.id)}
-            style={[styles.eventBanner, { aspectRatio: bannerAspectRatio }]}
-            resizeMode="cover"
-            onLoad={handleBannerLoad}
-          />
+          getBannerSource(event) ? (
+            <Image
+              source={getBannerSource(event)!}
+              style={[styles.eventBanner, { aspectRatio: bannerAspectRatio }]}
+              resizeMode="cover"
+              onLoad={handleBannerLoad}
+            />
+          ) : (
+            <View style={[styles.eventBanner, styles.placeholderBanner]}>
+              <PromotionLogo promotion={event.promotion} size={72} />
+            </View>
+          )
         )}
 
         {/* Main Card */}
@@ -551,6 +554,12 @@ const styles = StyleSheet.create({
     width: '100%',
     height: undefined,
     marginBottom: 16,
+  },
+  placeholderBanner: {
+    backgroundColor: '#1a1a2e',
+    justifyContent: 'center',
+    alignItems: 'center',
+    aspectRatio: 16 / 9,
   },
   eventInfo: {
     margin: 16,

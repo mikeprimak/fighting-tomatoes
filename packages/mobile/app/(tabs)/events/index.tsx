@@ -45,18 +45,6 @@ interface Event {
 
 type Fight = any;
 
-// Placeholder image selection logic
-const getPlaceholderImage = (eventId: string) => {
-  const images = [
-    require('../../../assets/events/event-banner-1.jpg'),
-    require('../../../assets/events/event-banner-2.jpg'),
-    require('../../../assets/events/event-banner-3.jpg'),
-  ];
-
-  const lastCharCode = eventId.charCodeAt(eventId.length - 1);
-  const index = lastCharCode % images.length;
-  return images[index];
-};
 
 // Aliases for stable references used in JSX
 const formatDate = (dateString: string) => formatEventDate(dateString);
