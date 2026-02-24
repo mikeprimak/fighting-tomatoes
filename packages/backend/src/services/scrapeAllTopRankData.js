@@ -379,6 +379,26 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
         }
       }
 
+      // Extract event start time
+      let eventStartTime = null;
+      let eventStartTimezone = null;
+
+      // Search page text for time + timezone pattern (e.g., "9:00 PM ET")
+      const pageText = document.body.innerText || '';
+      const timePatterns = [
+        /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(ET|EST|EDT|PT|PST|PDT|CT|CST|CDT|MT|MST|MDT)/i,
+        /(\d{1,2}:\d{2}(?:am|pm))\s*(ET|EST|EDT|PT|PST|PDT|CT|CST|CDT|MT|MST|MDT)/i,
+      ];
+
+      for (const pattern of timePatterns) {
+        const match = pageText.match(pattern);
+        if (match) {
+          eventStartTime = match[1].trim().toUpperCase();
+          eventStartTimezone = match[2].trim().toUpperCase();
+          break;
+        }
+      }
+
       // Extract fight card
       const allFights = [];
       let globalOrder = 1;
@@ -593,6 +613,8 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
         venue,
         city,
         dateText,
+        eventStartTime,
+        eventStartTimezone,
         fights: allFights
       };
     });

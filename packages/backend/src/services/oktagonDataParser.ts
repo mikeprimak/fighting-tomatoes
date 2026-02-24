@@ -291,6 +291,11 @@ async function importOktagonEvents(
       continue;
     }
 
+    // Extract mainStartTime from eventDate if it contains real time data (not midnight UTC)
+    // OKTAGON's API returns full ISO datetimes like "2025-12-28T18:00:00.000Z"
+    const hasRealTime = eventDate.getUTCHours() !== 0 || eventDate.getUTCMinutes() !== 0;
+    const mainStartTime = hasRealTime ? eventDate : undefined;
+
     // Parse venue and city (handle localized objects)
     const venue = getLocalizedText(eventData.venue);
     const city = getLocalizedText(eventData.city);
@@ -332,7 +337,7 @@ async function importOktagonEvents(
         data: {
           name: eventData.eventName,
           date: eventDate,
-          // Don't set mainStartTime - OKTAGON scraper doesn't capture start times
+          mainStartTime,
           venue: venue || undefined,
           location,
           bannerImage: bannerImageUrl,
@@ -348,7 +353,7 @@ async function importOktagonEvents(
           name: eventData.eventName,
           promotion: 'OKTAGON', // OKTAGON MMA
           date: eventDate,
-          // Don't set mainStartTime - OKTAGON scraper doesn't capture start times
+          mainStartTime,
           venue: venue || undefined,
           location,
           bannerImage: bannerImageUrl,

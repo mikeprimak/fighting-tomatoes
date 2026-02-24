@@ -380,6 +380,12 @@ async function importRizinEvents(
       continue;
     }
 
+    // Extract mainStartTime from eventDate if it contains real time data (not midnight UTC)
+    // Sherdog's [itemprop="startDate"] content attribute often includes timezone offset (e.g. +09:00)
+    // which JS Date() converts to UTC automatically
+    const hasRealTime = eventDate.getUTCHours() !== 0 || eventDate.getUTCMinutes() !== 0;
+    const mainStartTime = hasRealTime ? eventDate : undefined;
+
     // Parse location
     const venue = eventData.eventVenue || eventData.venue || '';
     const city = eventData.city || '';
@@ -426,6 +432,7 @@ async function importRizinEvents(
         data: {
           name: eventData.eventName,
           date: eventDate,
+          mainStartTime,
           venue: venue || undefined,
           location,
           bannerImage: bannerImageUrl,
@@ -440,6 +447,7 @@ async function importRizinEvents(
           name: eventData.eventName,
           promotion: 'RIZIN',
           date: eventDate,
+          mainStartTime,
           venue: venue || undefined,
           location,
           bannerImage: bannerImageUrl,

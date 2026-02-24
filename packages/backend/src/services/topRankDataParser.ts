@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { eventTimeToUTC } from '../utils/timezone';
 
 const prisma = new PrismaClient();
 
@@ -50,6 +51,8 @@ interface ScrapedTopRankEvent {
   status: string;
   fights?: ScrapedTopRankFight[];
   localImagePath?: string;
+  eventStartTime?: string | null;
+  eventStartTimezone?: string | null;
 }
 
 interface ScrapedTopRankEventsData {
@@ -305,6 +308,27 @@ function parseTopRankDate(dateText: string): Date {
   return new Date();
 }
 
+/**
+ * Map timezone abbreviation to IANA timezone string
+ */
+function timezoneAbbrevToIANA(abbrev: string): string {
+  const mapping: Record<string, string> = {
+    'ET': 'America/New_York',
+    'EST': 'America/New_York',
+    'EDT': 'America/New_York',
+    'CT': 'America/Chicago',
+    'CST': 'America/Chicago',
+    'CDT': 'America/Chicago',
+    'MT': 'America/Denver',
+    'MST': 'America/Denver',
+    'MDT': 'America/Denver',
+    'PT': 'America/Los_Angeles',
+    'PST': 'America/Los_Angeles',
+    'PDT': 'America/Los_Angeles',
+  };
+  return mapping[abbrev.toUpperCase()] || 'America/New_York';
+}
+
 // ============== PARSER FUNCTIONS ==============
 
 /**
@@ -397,6 +421,12 @@ async function importTopRankEvents(
     // Parse date
     const eventDate = parseTopRankDate(eventData.dateText);
 
+    // Parse event start time
+    const timezone = eventData.eventStartTimezone
+      ? timezoneAbbrevToIANA(eventData.eventStartTimezone)
+      : 'America/New_York';
+    const mainStartTime = eventTimeToUTC(eventDate, eventData.eventStartTime, timezone);
+
     // Parse location
     const location = [eventData.city, eventData.country]
       .filter(Boolean)
@@ -430,7 +460,7 @@ async function importTopRankEvents(
         data: {
           name: eventData.eventName,
           date: eventDate,
-          // Don't set mainStartTime - Top Rank scraper doesn't capture start times
+          mainStartTime: mainStartTime || undefined,
           venue: eventData.venue || undefined,
           location,
           bannerImage: bannerImageUrl,
@@ -446,7 +476,7 @@ async function importTopRankEvents(
           name: eventData.eventName,
           promotion: 'TOP_RANK', // Top Rank Boxing
           date: eventDate,
-          // Don't set mainStartTime - Top Rank scraper doesn't capture start times
+          mainStartTime: mainStartTime || undefined,
           venue: eventData.venue || undefined,
           location,
           bannerImage: bannerImageUrl,

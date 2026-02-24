@@ -190,6 +190,7 @@ async function scrapeEventPage(browser, eventUrl) {
         eventName: '',
         dateText: '',
         eventDate: null,
+        eventStartTime: null,
         venue: '',
         city: '',
         country: '',
@@ -207,6 +208,21 @@ async function scrapeEventPage(browser, eventUrl) {
       const dateEl = document.querySelector('.eventDate, [class*="date"], .details li:first-child');
       if (dateEl) {
         data.dateText = dateEl.textContent.trim();
+      }
+
+      // Extract event start time from page text (Tapology shows times in ET)
+      const pageText = document.body.innerText || '';
+      const timePatterns = [
+        /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT)/i,
+        /(\d{1,2}:\d{2}(?:am|pm))\s*(?:ET|EST|EDT)/i,
+        /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:PT|PST|PDT|CT|CST|CDT)/i,
+      ];
+      for (const pattern of timePatterns) {
+        const timeMatch = pageText.match(pattern);
+        if (timeMatch) {
+          data.eventStartTime = timeMatch[1].trim().toUpperCase();
+          break;
+        }
       }
 
       // Extract venue/location
