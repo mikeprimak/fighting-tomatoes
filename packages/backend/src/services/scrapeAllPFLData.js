@@ -368,6 +368,21 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         }
       }
 
+      // Extract prelim start time
+      let prelimStartTime = null;
+      const prelimPageText = document.body.innerText || '';
+      const prelimPatterns = [
+        /PRELIM(?:S|INARY)?\s*(?:CARD)?\s*[^|\n]*\|\s*(\d{1,2}:\d{2}\s*(?:am|pm))/i,
+        /PRELIM(?:S|INARY)?\s*(?:CARD)?\s*.*?(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT)/i,
+      ];
+      for (const pattern of prelimPatterns) {
+        const match = prelimPageText.match(pattern);
+        if (match) {
+          prelimStartTime = match[1].trim().toUpperCase();
+          break;
+        }
+      }
+
       // Helper function to check if a string is a valid fighter name
       function isValidFighterName(name) {
         if (!name || name.length < 2 || name.length > 50) return false;
@@ -758,6 +773,7 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         eventImageUrl,
         eventStartTime,
         eventStartTimeISO,
+        prelimStartTime,
         fights: allFights
       };
     });

@@ -206,6 +206,7 @@ async function scrapeEventPage(browser, eventUrl) {
         eventName: '',
         dateText: '',
         eventDate: null,
+        eventStartTime: null,
         venue: '',
         city: '',
         country: '',
@@ -224,6 +225,20 @@ async function scrapeEventPage(browser, eventUrl) {
       const dateMatch = pageText.match(/((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+)?(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}/i);
       if (dateMatch) {
         data.dateText = dateMatch[0].trim();
+      }
+
+      // Extract event start time from page text (Tapology shows times in ET)
+      const timePatterns = [
+        /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT)/i,
+        /(\d{1,2}:\d{2}(?:am|pm))\s*(?:ET|EST|EDT)/i,
+        /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:PT|PST|PDT|CT|CST|CDT)/i,
+      ];
+      for (const pattern of timePatterns) {
+        const timeMatch = pageText.match(pattern);
+        if (timeMatch) {
+          data.eventStartTime = timeMatch[1].trim().toUpperCase();
+          break;
+        }
       }
 
       // Extract venue/location from page text

@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { eventTimeToUTC } from '../utils/timezone';
 
 const prisma = new PrismaClient();
 
@@ -56,6 +57,7 @@ interface ScrapedPFLEvent {
   localImagePath?: string;
   eventStartTime?: string;
   eventStartTimeISO?: string; // ISO format datetime from PFL scripts
+  prelimStartTime?: string;
 }
 
 interface ScrapedPFLEventsData {
@@ -333,6 +335,9 @@ async function importPFLEvents(
       eventData.eventStartTime
     );
 
+    // Parse prelim start time (PFL times are ET)
+    const prelimStartTime = eventTimeToUTC(eventDate, eventData.prelimStartTime, 'America/New_York');
+
     // Try to find existing event by URL first, then by name+date
     let event = await prisma.event.findFirst({
       where: {
@@ -355,6 +360,7 @@ async function importPFLEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
+          prelimStartTime: prelimStartTime || undefined,
         }
       });
     } else {
@@ -371,6 +377,7 @@ async function importPFLEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
+          prelimStartTime: prelimStartTime || undefined,
           eventStatus: initialStatus,
         }
       });

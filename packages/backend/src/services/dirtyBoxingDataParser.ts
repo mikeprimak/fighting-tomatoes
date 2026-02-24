@@ -3,6 +3,7 @@ import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { eventTimeToUTC } from '../utils/timezone';
 
 const prisma = new PrismaClient();
 
@@ -49,6 +50,7 @@ interface ScrapedDirtyEvent {
   dateText: string;
   eventDate: string | null;
   eventImageUrl?: string | null;
+  eventStartTime?: string | null;
   status: string;
   fights?: ScrapedDirtyFight[];
 }
@@ -245,6 +247,9 @@ async function importDirtyEvents(
 
   for (const eventData of eventsData.events) {
     const eventDate = parseDirtyDate(eventData.eventDate);
+    // Parse event start time (Tapology defaults to ET)
+    const mainStartTime = eventTimeToUTC(eventDate, eventData.eventStartTime, 'America/New_York');
+
     const location = [eventData.city, eventData.state, eventData.country]
       .filter(Boolean)
       .join(', ') || 'TBA';
@@ -270,6 +275,7 @@ async function importDirtyEvents(
         data: {
           name: eventData.eventName,
           date: eventDate,
+          mainStartTime: mainStartTime || undefined,
           venue: eventData.venue || undefined,
           location,
           ufcUrl: eventData.eventUrl,
@@ -287,6 +293,7 @@ async function importDirtyEvents(
           name: eventData.eventName,
           promotion: 'Dirty Boxing',
           date: eventDate,
+          mainStartTime: mainStartTime || undefined,
           venue: eventData.venue || undefined,
           location,
           bannerImage,
