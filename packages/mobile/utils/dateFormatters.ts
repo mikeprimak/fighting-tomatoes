@@ -1,9 +1,11 @@
 /**
  * Shared date/time formatting utilities.
- * All event dates are stored at noon UTC to avoid timezone date-shift issues.
- * These functions use toLocaleDateString/toLocaleTimeString which correctly
- * convert to the device's local timezone.
+ * All event dates are stored as UTC in the database.
+ * Hermes (React Native's JS engine) defaults to UTC when no timeZone is specified
+ * in toLocaleTimeString/toLocaleDateString, so we must always pass it explicitly.
  */
+
+const deviceTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 interface FormatDateOptions {
   weekday?: 'short' | 'long' | false;
@@ -35,6 +37,7 @@ export const formatEventDate = (
   if (options?.year) {
     localeOptions.year = 'numeric';
   }
+  localeOptions.timeZone = deviceTimeZone;
   return date.toLocaleDateString('en-US', localeOptions);
 };
 
@@ -48,6 +51,7 @@ export const formatEventTime = (dateString: string): string => {
   return date.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
+    timeZone: deviceTimeZone,
     timeZoneName: 'short',
   });
 };
@@ -62,6 +66,7 @@ export const formatEventTimeCompact = (dateString: string): string => {
   const timeStr = date.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
+    timeZone: deviceTimeZone,
   });
   // Convert "8:00 PM" → "8pm", "7:30 PM" → "7:30pm"
   const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
