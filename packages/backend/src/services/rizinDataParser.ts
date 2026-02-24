@@ -762,15 +762,13 @@ async function importRizinEvents(
             });
             cancelledCount++;
           } else {
-            const daysUntilEvent = (eventDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-            if (daysUntilEvent <= 7) {
-              console.log(`    ❌ Cancelling fight (not in scraped data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
-              await prisma.fight.update({
-                where: { id: dbFight.id },
-                data: { fightStatus: 'CANCELLED' }
-              });
-              cancelledCount++;
-            }
+            // Neither fighter appears in scraped data - fight was fully cancelled
+            console.log(`    ❌ Cancelling fight (not in scraped data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+            await prisma.fight.update({
+              where: { id: dbFight.id },
+              data: { fightStatus: 'CANCELLED' }
+            });
+            cancelledCount++;
           }
         }
       }
