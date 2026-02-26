@@ -421,26 +421,50 @@ async function importEvents(
     const now = new Date();
     const initialStatus = (eventData.status === 'Complete' || eventDate < now) ? 'COMPLETED' : 'UPCOMING';
 
-    // Upsert event using ufcUrl as unique identifier (most reliable for UFC events)
-    const event = await prisma.event.upsert({
-      where: {
-        ufcUrl: eventData.eventUrl,
-      },
-      update: updateData,
-      create: {
-        name: eventData.eventName,
-        promotion: 'UFC',
-        date: eventDate,
-        venue: eventData.venue,
-        location: `${eventData.city}, ${eventData.state || eventData.country}`,
-        bannerImage: bannerImageUrl,
-        ufcUrl: eventData.eventUrl,
-        earlyPrelimStartTime,
-        prelimStartTime,
-        mainStartTime,
-        eventStatus: initialStatus,
+    // Upsert event using ufcUrl as unique identifier (most reliable for UFC events).
+    // Falls back to name+date lookup if ufcUrl misses but an event already exists
+    // (e.g., date shifted after timezone fix, or event created by another scraper).
+    let event;
+    try {
+      event = await prisma.event.upsert({
+        where: {
+          ufcUrl: eventData.eventUrl,
+        },
+        update: updateData,
+        create: {
+          name: eventData.eventName,
+          promotion: 'UFC',
+          date: eventDate,
+          venue: eventData.venue,
+          location: `${eventData.city}, ${eventData.state || eventData.country}`,
+          bannerImage: bannerImageUrl,
+          ufcUrl: eventData.eventUrl,
+          earlyPrelimStartTime,
+          prelimStartTime,
+          mainStartTime,
+          eventStatus: initialStatus,
+        }
+      });
+    } catch (err: any) {
+      if (err.code === 'P2002') {
+        // Unique constraint on (name,date) — event exists under a different ufcUrl or date.
+        // Find by name (promotion-scoped) and update it, setting the correct ufcUrl.
+        const existing = await prisma.event.findFirst({
+          where: { name: eventData.eventName, promotion: 'UFC' },
+        });
+        if (existing) {
+          event = await prisma.event.update({
+            where: { id: existing.id },
+            data: { ...updateData, ufcUrl: eventData.eventUrl },
+          });
+          console.log(`    ℹ Linked existing event by name: ${eventData.eventName}`);
+        } else {
+          throw err;
+        }
+      } else {
+        throw err;
       }
-    });
+    }
 
     console.log(`  ✓ Event: ${eventData.eventName}`);
 
