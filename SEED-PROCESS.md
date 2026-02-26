@@ -45,6 +45,8 @@ These accounts have no password (can't log in), no activity points, and no email
 | BKFC | BKFC | 2-5 | 4.0-6.5 | 30% |
 | Default | everything else | 2-5 | 4.0-6.5 | 30% |
 
+**Note:** The skip % only applies to fights with `orderOnCard > 2`. Main events (order 1) and co-mains (order 2) are never skipped, regardless of promotion.
+
 ## Gradual Ramp Algorithm
 
 14-day seeding window with exponential ramp (`fraction = (dayIndex / 13) ^ 1.5`):
