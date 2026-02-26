@@ -138,3 +138,13 @@ DELETE FROM users WHERE email LIKE 'seed-user-%@goodfights.app';
 - **No activity points**: Seed predictions don't create `UserActivity` records
 - **Only UPCOMING fights**: Never touches live or completed fights
 - **Only visible events**: Respects `isVisible: true` filter
+
+## Troubleshooting
+
+- **Fights not getting seeded for an event**: Check that the fights have `fightStatus: 'UPCOMING'`. Some scrapers (e.g., Rizin) may incorrectly mark future fights as `COMPLETED`. Fix with:
+  ```sql
+  UPDATE fights SET "fightStatus" = 'UPCOMING', "completedAt" = NULL, "completionMethod" = NULL
+  WHERE "eventId" = '<event-uuid>' AND "fightStatus" = 'COMPLETED';
+  ```
+- **Event not appearing at all**: Check `isVisible: true` and `eventStatus: 'UPCOMING'` on the event.
+- **Hype not showing in app**: The seeder writes to `fight_predictions` with `hasRevealedHype: true`. The community page (`/community/top-upcoming-fights`) aggregates these into `averageHype`. Pull-to-refresh or check the API directly to confirm data is there.
