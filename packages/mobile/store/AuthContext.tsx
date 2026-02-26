@@ -116,9 +116,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
-      // Handle 401 - token expired and API service couldn't refresh
+      // Handle 401 - access token expired, try refresh before logging out
       if (response.status === 401) {
-        console.log('[Auth] Got 401 on profile fetch, clearing auth state');
+        console.log('[Auth] Got 401 on profile fetch, attempting token refresh...');
+        const refreshTokenStored = await secureStorage.getItem('refreshToken');
+
+        if (refreshTokenStored) {
+          const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: refreshTokenStored }),
+          });
+
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            const newAccessToken = refreshData.tokens?.accessToken || refreshData.accessToken;
+            const newRefreshToken = refreshData.tokens?.refreshToken || refreshData.refreshToken;
+
+            if (newAccessToken && newRefreshToken) {
+              console.log('[Auth] Token refresh successful, retrying profile fetch');
+              await secureStorage.setItem('accessToken', newAccessToken);
+              await secureStorage.setItem('refreshToken', newRefreshToken);
+              setAccessToken(newAccessToken);
+
+              // Retry the profile fetch with new token
+              const retryResponse = await fetch(url, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${newAccessToken}` },
+              });
+
+              if (retryResponse.ok) {
+                const retryData = await retryResponse.json();
+                if (retryData.user) {
+                  setUser(retryData.user);
+                  if (!orgs || orgs.length === 0) {
+                    await AsyncStorage.setItem('userData', JSON.stringify(retryData.user));
+                  }
+                }
+              }
+              return;
+            }
+          }
+        }
+
+        // Refresh failed - only now clear auth state
+        console.log('[Auth] Token refresh failed, clearing auth state');
         await secureStorage.removeItem('accessToken');
         await secureStorage.removeItem('refreshToken');
         await AsyncStorage.removeItem('userData');
@@ -548,9 +590,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
 
-      // Handle 401 - token expired
+      // Handle 401 - access token expired, try refresh before logging out
       if (response.status === 401) {
-        console.log('[Auth] Got 401 on refreshUserData, clearing auth state');
+        console.log('[Auth] Got 401 on refreshUserData, attempting token refresh...');
+        const refreshTokenStored = await secureStorage.getItem('refreshToken');
+
+        if (refreshTokenStored) {
+          const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken: refreshTokenStored }),
+          });
+
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            const newAccessToken = refreshData.tokens?.accessToken || refreshData.accessToken;
+            const newRefreshToken = refreshData.tokens?.refreshToken || refreshData.refreshToken;
+
+            if (newAccessToken && newRefreshToken) {
+              console.log('[Auth] Token refresh successful, retrying profile fetch');
+              await secureStorage.setItem('accessToken', newAccessToken);
+              await secureStorage.setItem('refreshToken', newRefreshToken);
+              setAccessToken(newAccessToken);
+
+              // Retry the profile fetch with new token
+              const retryResponse = await fetch(url, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${newAccessToken}` },
+              });
+
+              if (retryResponse.ok) {
+                const retryData = await retryResponse.json();
+                if (retryData.user) {
+                  setUser(retryData.user);
+                  if (!orgs || orgs.length === 0) {
+                    await AsyncStorage.setItem('userData', JSON.stringify(retryData.user));
+                  }
+                }
+              }
+              return;
+            }
+          }
+        }
+
+        // Refresh failed - only now clear auth state
+        console.log('[Auth] Token refresh failed, clearing auth state');
         await secureStorage.removeItem('accessToken');
         await secureStorage.removeItem('refreshToken');
         await AsyncStorage.removeItem('userData');
