@@ -1,0 +1,4 @@
+{
+  "_comment": "Manual overrides for hype seeding. Matches by fighter last names (order-independent, case-insensitive) or fight UUID. Set targetCount to 0 to skip a fight.",
+  "overrides": []
+}

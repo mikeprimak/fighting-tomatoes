@@ -1,0 +1,82 @@
+name: Seed Hype Predictions
+
+on:
+  schedule:
+    # Run daily at 2pm UTC (9am EST) — before peak usage
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (no DB writes)'
+        required: false
+        type: boolean
+        default: false
+      cleanup_all:
+        description: 'Remove ALL seed predictions (cleanup mode)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  seed-hype:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd packages/backend
+          pnpm install
+
+      - name: Generate Prisma client
+        run: |
+          cd packages/backend
+          npx prisma generate
+
+      - name: Build TypeScript
+        run: |
+          cd packages/backend
+          pnpm build
+
+      - name: Run cleanup (if requested)
+        if: ${{ inputs.cleanup_all == true }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          cd packages/backend
+          echo "Running cleanup of all seed predictions..."
+          node dist/scripts/seedHype.js --cleanup --all
+          echo "Cleanup complete."
+
+      - name: Seed hype predictions
+        if: ${{ inputs.cleanup_all != true }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: |
+          cd packages/backend
+          FLAGS=""
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            FLAGS="--dry-run"
+          fi
+          echo "Running hype seeder... $FLAGS"
+          node dist/scripts/seedHype.js $FLAGS
+          echo "Done."
+
+      - name: Report failure
+        if: failure()
+        run: |
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=scraper&org=HypeSeeder" || true
