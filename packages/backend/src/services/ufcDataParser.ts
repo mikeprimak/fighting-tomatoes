@@ -422,8 +422,8 @@ async function importEvents(
     const initialStatus = (eventData.status === 'Complete' || eventDate < now) ? 'COMPLETED' : 'UPCOMING';
 
     // Upsert event using ufcUrl as unique identifier (most reliable for UFC events).
-    // Falls back to name+date lookup if ufcUrl misses but an event already exists
-    // (e.g., date shifted after timezone fix, or event created by another scraper).
+    // Falls back to name lookup if unique constraints conflict (e.g., duplicate events,
+    // date shifts from timezone fix, or events created by another scraper).
     let event;
     try {
       event = await prisma.event.upsert({
@@ -447,19 +447,25 @@ async function importEvents(
       });
     } catch (err: any) {
       if (err.code === 'P2002') {
-        // Unique constraint on (name,date) — event exists under a different ufcUrl or date.
-        // Find by name (promotion-scoped) and update it, setting the correct ufcUrl.
+        // Unique constraint conflict — try to find and update the existing event by name.
+        // Don't set ufcUrl in fallback to avoid secondary unique conflicts from duplicates.
         const existing = await prisma.event.findFirst({
           where: { name: eventData.eventName, promotion: 'UFC' },
         });
         if (existing) {
-          event = await prisma.event.update({
-            where: { id: existing.id },
-            data: { ...updateData, ufcUrl: eventData.eventUrl },
-          });
-          console.log(`    ℹ Linked existing event by name: ${eventData.eventName}`);
+          try {
+            event = await prisma.event.update({
+              where: { id: existing.id },
+              data: updateData,
+            });
+            console.log(`    ℹ Updated existing event by name: ${eventData.eventName}`);
+          } catch (updateErr: any) {
+            console.warn(`    ⚠ Could not update event ${eventData.eventName}: ${updateErr.message}`);
+            continue;
+          }
         } else {
-          throw err;
+          console.warn(`    ⚠ Skipping event ${eventData.eventName}: unique constraint conflict, no match by name`);
+          continue;
         }
       } else {
         throw err;
