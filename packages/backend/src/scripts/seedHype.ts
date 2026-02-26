@@ -707,8 +707,8 @@ async function main(): Promise<void> {
       // Build deterministic RNG from fight UUID
       const rng = createRng(fight.id);
 
-      // Deterministic skip chance (non-UFC promotions)
-      if (tier.skipChance > 0 && !override) {
+      // Deterministic skip chance (non-UFC promotions, never skip main/co-main)
+      if (tier.skipChance > 0 && !override && fight.orderOnCard > 2) {
         if (rng() < tier.skipChance) {
           console.log(`  SKIP  ${fightLabel.padEnd(35)} (${tier.name}, ${Math.round(tier.skipChance * 100)}% skip)`);
           totalSkipped++;
