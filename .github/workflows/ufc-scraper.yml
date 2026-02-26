@@ -57,6 +57,7 @@ jobs:
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
           SCRAPER_MODE: automated
           SCRAPER_TIMEOUT: '1200000'
+          TZ: America/New_York
         run: |
           cd packages/backend
           echo "Starting UFC scraper..."

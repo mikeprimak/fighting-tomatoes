@@ -1,11 +1,42 @@
 /**
  * Shared date/time formatting utilities.
  * All event dates are stored as UTC in the database.
- * Hermes (React Native's JS engine) defaults to UTC when no timeZone is specified
- * in toLocaleTimeString/toLocaleDateString, so we must always pass it explicitly.
+ *
+ * Hermes (React Native's JS engine) has unreliable Intl/toLocaleTimeString —
+ * it often defaults to UTC regardless of timeZone option. We use manual
+ * getHours()/getMinutes() for time formatting, which correctly returns local
+ * time on modern Hermes. A sanity check with getTimezoneOffset() catches
+ * older Hermes builds where getHours() also returns UTC.
  */
 
-const deviceTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+/**
+ * Get local hours and minutes from a Date, with fallback for broken Hermes.
+ * On modern Hermes, getHours()/getMinutes() return local time.
+ * On older Hermes where they return UTC, we detect this via getTimezoneOffset()
+ * and manually adjust.
+ */
+const getLocalTime = (date: Date): { hours24: number; minutes: number } => {
+  const hours = date.getHours();
+  const mins = date.getMinutes();
+  const offset = date.getTimezoneOffset(); // positive = west of UTC (e.g. 300 for EST)
+
+  // If getHours() equals getUTCHours() but we're not in UTC, Hermes is broken.
+  // For any non-zero offset, local hours NEVER equal UTC hours (mathematically).
+  if (hours === date.getUTCHours() && mins === date.getUTCMinutes() && offset !== 0) {
+    const totalMins = date.getUTCHours() * 60 + date.getUTCMinutes() - offset;
+    const adjusted = ((totalMins % 1440) + 1440) % 1440;
+    return { hours24: Math.floor(adjusted / 60), minutes: adjusted % 60 };
+  }
+
+  return { hours24: hours, minutes: mins };
+};
+
+/** Format 24h time as 12h with am/pm suffix. */
+const to12Hour = (hours24: number, minutes: number) => {
+  const ampm = hours24 >= 12 ? 'PM' : 'AM';
+  const hours12 = hours24 % 12 || 12;
+  return { hours12, minutes, ampm };
+};
 
 interface FormatDateOptions {
   weekday?: 'short' | 'long' | false;
@@ -37,47 +68,34 @@ export const formatEventDate = (
   if (options?.year) {
     localeOptions.year = 'numeric';
   }
-  localeOptions.timeZone = deviceTimeZone;
   return date.toLocaleDateString('en-US', localeOptions);
 };
 
 /**
  * Format an event time for display using the device's local timezone.
- * Returns e.g. "8:00 PM EST" or "7:00 PM CST".
- * Uses toLocaleTimeString which properly converts UTC to local time.
+ * Returns e.g. "8:00 PM" or "7:30 PM".
+ * Uses manual getHours()/getMinutes() to avoid Hermes Intl issues.
  */
 export const formatEventTime = (dateString: string): string => {
   const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: deviceTimeZone,
-    timeZoneName: 'short',
-  });
+  const { hours24, minutes } = getLocalTime(date);
+  const { hours12, ampm } = to12Hour(hours24, minutes);
+  return `${hours12}:${minutes.toString().padStart(2, '0')} ${ampm}`;
 };
 
 /**
  * Format a compact time display (no timezone, no minutes on the hour).
  * Returns e.g. "8pm" or "7:30pm".
- * Uses toLocaleTimeString for reliable local timezone conversion on React Native/Hermes.
+ * Uses manual getHours()/getMinutes() to avoid Hermes Intl issues.
  */
 export const formatEventTimeCompact = (dateString: string): string => {
   const date = new Date(dateString);
-  const timeStr = date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: deviceTimeZone,
-  });
-  // Convert "8:00 PM" → "8pm", "7:30 PM" → "7:30pm"
-  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
-  if (match) {
-    const [, hour, minutes, ampm] = match;
-    if (minutes === '00') {
-      return `${hour}${ampm.toLowerCase()}`;
-    }
-    return `${hour}:${minutes}${ampm.toLowerCase()}`;
+  const { hours24, minutes } = getLocalTime(date);
+  const { hours12, ampm } = to12Hour(hours24, minutes);
+  if (minutes === 0) {
+    return `${hours12}${ampm.toLowerCase()}`;
   }
-  return timeStr.toLowerCase();
+  return `${hours12}:${minutes.toString().padStart(2, '0')}${ampm.toLowerCase()}`;
 };
 
 /**

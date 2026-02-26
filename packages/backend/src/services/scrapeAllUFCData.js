@@ -50,6 +50,9 @@ async function scrapeEventsList(browser) {
   const page = await browser.newPage();
   await page.setViewport({ width: 1920, height: 1080 });
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+  // UFC.com displays times in the viewer's timezone via JavaScript.
+  // Force Eastern so scraped times match the parser's America/New_York assumption.
+  await page.emulateTimezone('America/New_York');
 
   // Set headers that real browsers send - Varnish CDN may require these
   await page.setExtraHTTPHeaders({
@@ -303,6 +306,9 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
   const page = await browser.newPage();
   await page.setViewport({ width: 1920, height: 1080 });
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+  // UFC.com displays times in the viewer's timezone via JavaScript.
+  // Force Eastern so scraped times match the parser's America/New_York assumption.
+  await page.emulateTimezone('America/New_York');
 
   try {
     await page.goto(eventUrl, {
