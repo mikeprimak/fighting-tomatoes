@@ -209,11 +209,19 @@ As of Feb 2026, all organization scrapers populate `mainStartTime` when time dat
 | `src/scripts/runUFCLiveTracker.ts` | Standalone script run by GitHub Actions |
 | `public/admin.html` | Admin panel UI |
 
-## Known Issue: Event Times Display as UTC in Mobile App
+## Resolved: UFC Event Times Were Wrong (Double Timezone Conversion)
 
-The mobile app shows event times in UTC instead of the user's local timezone. For example, an 8 PM EST main card shows as "1 AM" (which is the UTC hour). This is because `formatTime` in several components uses `getHours()` which returns UTC hours on React Native/Hermes.
+**Symptoms:** UFC events showed wrong start times (e.g., 1 AM instead of 8 PM for Moreno vs. Kavanagh). Initially misdiagnosed as a mobile app Hermes timezone display bug.
 
-**Root cause:** `getHours()` returns UTC hours on Hermes engine. Fix is to use `toLocaleTimeString()` instead — a shared utility (`utils/dateFormatters.ts`) was created with the fix, but the app needs to be rebuilt for users to see the corrected times.
+**Actual root cause:** The UFC scraper runs on GitHub Actions (UTC timezone). UFC.com displays times in the viewer's timezone via JavaScript, so the scraper was extracting **UTC times**. The parser (`ufcDataParser.ts`) then assumed those times were Eastern and converted again via `localTimeToUTC('America/New_York')` — adding an extra 5 hours.
+
+**Fix (Feb 26, 2026):**
+1. Set `TZ=America/New_York` in `.github/workflows/ufc-scraper.yml`
+2. Added `page.emulateTimezone('America/New_York')` in Puppeteer pages in `scrapeAllUFCData.js`
+3. Made `ufcDataParser.ts` event import resilient to unique constraint conflicts (P2002 fallback)
+4. Hardened mobile `dateFormatters.ts` to use `getHours()`/`getMinutes()` instead of Intl (belt-and-suspenders)
+
+**Lesson:** When scraping websites that adapt times to the viewer's timezone, always force the expected timezone in both the environment (`TZ` env var) and the browser (`page.emulateTimezone()`).
 
 **Note on event dates:** `event.date` is stored at midnight UTC, typically one day ahead of the US local date (e.g., a Saturday night EST event stores as Sunday midnight UTC). `toLocaleDateString` in US timezones shifts this back to the correct day. Do NOT change dates to noon UTC — that breaks the display.
 
