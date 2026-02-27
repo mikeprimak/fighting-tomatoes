@@ -138,15 +138,16 @@ When switching WiFi networks, update the dev IP in **2 files**:
 | UFC Scraper | `services/scrapeAllUFCData.js` (requires `TZ=America/New_York` — UFC.com adapts times to viewer timezone) |
 | ONE FC Scraper | `services/scrapeAllOneFCData.js` |
 
-## Current Store Versions (as of Feb 23, 2026)
+## Current Store Versions (as of Feb 27, 2026)
 
 | Platform | Version | Build # | Status |
 |----------|---------|---------|--------|
-| **Android (Play Store)** | 2.0.0 | versionCode 33 | Live |
-| **iOS (App Store)** | 2.0.1 | buildNumber 18 | Submitted for review |
+| **Android (Play Store)** | 2.0.2 | versionCode 34 | Built, needs manual upload to Play Console |
+| **iOS (App Store)** | 2.0.1 | buildNumber 18 + OTA update | Live (OTA pushed Feb 27) |
 
-- **app.json**: version `2.0.1`, iOS buildNumber `18`, Android versionCode `33`
-- **build.gradle**: versionCode `33`, versionName `2.0.0`
+- **app.json**: version `2.0.2`, iOS buildNumber `19`, Android versionCode `34`
+- **build.gradle**: versionCode `34`, versionName `2.0.2`
+- **iOS OTA update ID**: `562f0e34-83ef-4bdd-869e-39d6684ddfd1` (runtime 2.0.1)
 - **Note**: Android `eas submit` fails due to Google service account permissions — upload `.aab` manually via Play Console
 - **Note**: iOS App Store Connect UI won't let you swap builds on an existing version — create a new version instead
 
