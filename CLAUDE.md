@@ -135,10 +135,23 @@ When switching WiFi networks, update the dev IP in **2 files**:
 |--------|-----------|
 | Live Event Tracker | `services/liveEventTracker.ts`, `services/ufcLiveParser.ts` |
 | Image Storage (R2) | `services/imageStorage.ts` |
-| UFC Scraper | `services/scrapeAllUFCData.js` |
+| UFC Scraper | `services/scrapeAllUFCData.js` (requires `TZ=America/New_York` — UFC.com adapts times to viewer timezone) |
 | ONE FC Scraper | `services/scrapeAllOneFCData.js` |
+
+## Current Store Versions (as of Feb 23, 2026)
+
+| Platform | Version | Build # | Status |
+|----------|---------|---------|--------|
+| **Android (Play Store)** | 2.0.0 | versionCode 33 | Live |
+| **iOS (App Store)** | 2.0.1 | buildNumber 18 | Submitted for review |
+
+- **app.json**: version `2.0.1`, iOS buildNumber `18`, Android versionCode `33`
+- **build.gradle**: versionCode `33`, versionName `2.0.0`
+- **Note**: Android `eas submit` fails due to Google service account permissions — upload `.aab` manually via Play Console
+- **Note**: iOS App Store Connect UI won't let you swap builds on an existing version — create a new version instead
 
 ## Test Accounts
 
 - `avocadomike@hotmail.com` (1234 ratings, 72 reviews)
 - `michaelsprimak@gmail.com`
+- `applereview@goodfights.app` / `AppleTest2026!` (Apple Review test account)

@@ -597,3 +597,71 @@ Create `.github/workflows/neworg-scraper.yml` if the scraper fails on Render due
 **5. Update health check (optional)**
 
 Add cron schedule info to `/admin/health` endpoint crons object.
+
+---
+
+## Fight Cancellation Detection Fix (Feb 23, 2026)
+
+### Problem
+Cancelled fights were not being detected by scrapers. Specifically, the Moicano vs Ortega fight was cancelled from the March 7 UFC event, but subsequent scraper runs did not mark it as cancelled in the database.
+
+### Root Cause
+All 9 data parsers had a **7-day threshold** on full cancellation detection. The logic compared scraped fights against DB fights and would only cancel missing fights if the event was within 7 days:
+
+```typescript
+const daysUntilEvent = (eventDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+if (daysUntilEvent <= 7) {
+  // cancel fight
+} else {
+  console.log(`    ⚠ Fight missing from scraped data (not cancelling, event > 7 days out)...`);
+}
+```
+
+The March 7 event was ~12 days out, so the threshold prevented cancellation.
+
+### Solution
+Removed the date threshold entirely from all 9 data parsers. Existing safety guards already prevent false positives:
+- **`fights.length > 0` check** — scraper must have successfully parsed at least one fight before cancellations are processed
+- **Un-cancellation logic** — if a previously cancelled fight reappears in a subsequent scrape, it gets restored
+
+### Files Changed
+All 9 data parsers in `packages/backend/src/services/`:
+- `ufcDataParser.ts`
+- `matchroomDataParser.ts`
+- `oneFCDataParser.ts`
+- `oktagonDataParser.ts`
+- `bkfcDataParser.ts`
+- `pflDataParser.ts`
+- `topRankDataParser.ts`
+- `goldenBoyDataParser.ts`
+- `rizinDataParser.ts`
+
+### Status
+✅ Deployed (commit `07834a8`)
+
+---
+
+## Promotion-Aware Default Banner Images (Feb 23, 2026)
+
+### Problem
+Events without a `bannerImage` from the scraper were showing misleading placeholder images in the mobile app. The old placeholder system used 3 hardcoded event-specific posters (Walker vs Zhang, OKTAGON 74, Noche UFC) selected by event ID hash — completely unrelated to the actual event being displayed.
+
+### Solution
+Replaced the old placeholder system with a promotion-aware default banner system:
+
+1. **New utility** `packages/mobile/utils/defaultBanners.ts` — maps each promotion to a default banner image (currently all commented out, ready for images to be added)
+2. **Styled fallback** — when no banner or default exists, shows a dark background (`#1a1a2e`) with the promotion's SVG logo centered
+3. **Updated 7 mobile files** to use the new system:
+   - `components/EventCard.tsx`
+   - `components/EventBannerCard.tsx`
+   - `app/event/[id].tsx`
+   - `app/(tabs)/events/[id].tsx`
+   - `app/(tabs)/events/index.tsx`
+   - `app/(tabs)/past-events/index.tsx`
+   - `app/crew/[id].tsx`
+
+### Note
+This is a **mobile-only change** — no backend/scraper changes needed. Requires a new app build to take effect.
+
+### Status
+✅ Deployed (commit `69c7f38`)
