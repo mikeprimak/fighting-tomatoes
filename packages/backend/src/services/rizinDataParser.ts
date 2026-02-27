@@ -663,8 +663,8 @@ async function importRizinEvents(
             scheduledRounds: fightData.isTitle ? 5 : 3,
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
-            // Update result fields if event is complete and we have result data
-            ...(hasResult ? {
+            // Update result fields only if event is actually complete AND we have result data
+            ...(hasResult && isComplete ? {
               fightStatus: 'COMPLETED',
               method: normalizedMethod,
               round: result.round ? parseInt(result.round, 10) : undefined,
@@ -682,7 +682,7 @@ async function importRizinEvents(
             scheduledRounds: fightData.isTitle ? 5 : 3,
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
-            fightStatus: hasResult ? 'COMPLETED' : 'UPCOMING',
+            fightStatus: (hasResult && isComplete) ? 'COMPLETED' : 'UPCOMING',
             method: normalizedMethod,
             round: hasResult && result.round ? parseInt(result.round, 10) : undefined,
             time: hasResult ? result.time || undefined : undefined,
