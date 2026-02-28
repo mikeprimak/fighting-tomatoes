@@ -48,6 +48,11 @@ interface FormatDateOptions {
  * Format an event date for display.
  * Default: "Sat, Feb 21" — pass options to customize.
  * Pass weekday: false to omit weekday (e.g. "Feb 21, 2026").
+ *
+ * Uses timeZone: 'UTC' because event dates are stored as UTC calendar dates
+ * (e.g. 2026-02-28T12:00:00Z for a Feb 28 event). Without forcing UTC,
+ * toLocaleDateString() converts to local time and can shift the day back
+ * (e.g. showing Feb 27 instead of Feb 28 in US timezones).
  */
 export const formatEventDate = (
   dateString: string,
@@ -57,6 +62,7 @@ export const formatEventDate = (
   const localeOptions: Intl.DateTimeFormatOptions = {
     month: options?.month ?? 'short',
     day: 'numeric',
+    timeZone: 'UTC',
   };
   if (options?.weekday === false) {
     // Don't include weekday
@@ -109,11 +115,12 @@ export const formatTimeUntil = (
   const eventDate = new Date(eventDateString);
   const now = new Date();
 
-  // Get LOCAL calendar dates for comparison
+  // Get UTC calendar date for the event (dates are stored as UTC calendar dates)
+  // and LOCAL calendar date for today, so we compare calendar days correctly.
   const eventLocalDate = new Date(
-    eventDate.getFullYear(),
-    eventDate.getMonth(),
-    eventDate.getDate(),
+    eventDate.getUTCFullYear(),
+    eventDate.getUTCMonth(),
+    eventDate.getUTCDate(),
   );
   const todayLocalDate = new Date(
     now.getFullYear(),

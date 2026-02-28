@@ -218,7 +218,10 @@ function extractYearFromEventUrl(eventUrl: string, dateText: string): number {
 /**
  * Parse event date text to DateTime
  * Example: "Sat, Oct 4 / 10:00 PM EDT / Main Card"
- * Returns a UTC Date at midnight for the parsed calendar date.
+ * Returns a UTC Date at noon (12:00) for the parsed calendar date.
+ * We use noon UTC instead of midnight so that timezone conversion on the
+ * mobile client (which displays the date in local time as a fallback) never
+ * shifts the calendar day backwards. UTC-12 to UTC+12 all stay on the same day.
  */
 function parseEventDate(dateText: string, year: number = new Date().getFullYear()): Date {
   // Extract date part: "Sat, Oct 4"
@@ -229,9 +232,9 @@ function parseEventDate(dateText: string, year: number = new Date().getFullYear(
 
   const [, , month, day] = dateMatch;
   const dateStr = `${month} ${day}, ${year}`;
-  // Parse to get month/day, then store as UTC midnight
+  // Parse to get month/day, then store as UTC noon
   const parsed = new Date(dateStr);
-  return new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()));
+  return new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 12, 0, 0));
 }
 
 /**
