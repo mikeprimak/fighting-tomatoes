@@ -220,11 +220,7 @@ export default function FightDetailScreen() {
 
   const { fight } = fightData;
   // Show completed screen if fight is complete OR if mode=completed (for live fights)
-  // Also check if event date is in the past (safety fallback)
-  const isEventInPast = fight.event?.date
-    ? new Date(fight.event.date).getTime() < Date.now() - 24 * 60 * 60 * 1000
-    : false;
-  const isComplete = fight.fightStatus === 'COMPLETED' || mode === 'completed' || isEventInPast;
+  const isComplete = fight.fightStatus === 'COMPLETED' || mode === 'completed';
 
   // Toggle fight notification using mutation
   // Toggle the MANUAL notification on/off (bell visual may stay on if fighter follow exists)

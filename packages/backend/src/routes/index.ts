@@ -341,6 +341,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
             isTitle: true,
             titleName: true,
             orderOnCard: true,
+            cardType: true,
             fightStatus: true,
             winner: true,
             method: true,

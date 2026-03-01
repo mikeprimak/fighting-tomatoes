@@ -282,7 +282,9 @@ export default function CrewChatScreen() {
       fighter1Object: fight.fighter1, // Store full fighter1 object
       fighter2Object: fight.fighter2, // Store full fighter2 object
       isMainEvent: fight.orderOnCard === 1,
-      isMainCard: fight.orderOnCard <= 5,
+      isMainCard: fight.cardType
+        ? (!fight.cardType.toLowerCase().includes('prelim') && fight.cardType.toLowerCase() !== 'undercard')
+        : fight.orderOnCard <= 5,
       cardPosition: fight.orderOnCard,
       weightClass: fight.isTitle ? fight.titleName : (fight.weightClass ? fight.weightClass.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown'),
       scheduledRounds: fight.scheduledRounds || (fight.isTitle ? 5 : 3),

@@ -355,13 +355,31 @@ const EventSection = memo(function EventSection({
     });
   }, [event.fights]);
 
-  // Group fights by card section
+  // Group fights by card section using cardType from scrapers
   const hasEarlyPrelims = !!event.earlyPrelimStartTime;
-  const mainCard = fights.filter((f: Fight) => f.orderOnCard <= 5);
-  const prelimCard = hasEarlyPrelims
-    ? fights.filter((f: Fight) => f.orderOnCard > 5 && f.orderOnCard <= 9)
-    : fights.filter((f: Fight) => f.orderOnCard > 5);
-  const earlyPrelims = hasEarlyPrelims ? fights.filter((f: Fight) => f.orderOnCard > 9) : [];
+  const hasCardTypes = fights.some((f: Fight) => f.cardType);
+
+  const isPrelims = (cardType: string) => {
+    const lower = cardType.toLowerCase().trim();
+    return (lower.includes('prelim') && !lower.includes('early')) ||
+           lower === 'undercard' || lower === 'under card';
+  };
+  const isEarlyPrelims = (cardType: string) => {
+    const lower = cardType.toLowerCase().trim();
+    return lower.includes('early prelim') || lower.includes('early-prelim');
+  };
+
+  const mainCard = hasCardTypes
+    ? fights.filter((f: Fight) => !f.cardType || (!isPrelims(f.cardType) && !isEarlyPrelims(f.cardType)))
+    : fights.filter((f: Fight) => f.orderOnCard <= 5);
+  const prelimCard = hasCardTypes
+    ? fights.filter((f: Fight) => f.cardType && isPrelims(f.cardType))
+    : hasEarlyPrelims
+      ? fights.filter((f: Fight) => f.orderOnCard > 5 && f.orderOnCard <= 9)
+      : fights.filter((f: Fight) => f.orderOnCard > 5);
+  const earlyPrelims = hasCardTypes
+    ? fights.filter((f: Fight) => f.cardType && isEarlyPrelims(f.cardType))
+    : hasEarlyPrelims ? fights.filter((f: Fight) => f.orderOnCard > 9) : [];
 
   // Find next fight and last completed fight
   const nextFight = fights
