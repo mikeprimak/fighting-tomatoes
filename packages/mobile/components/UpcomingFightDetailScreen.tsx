@@ -176,20 +176,8 @@ export default function UpcomingFightDetailScreen({
            isTBAFighterName(fight.fighter2.firstName);
   }, [fight.hasTBAFighter, fight.fighter1.firstName, fight.fighter2.firstName]);
 
-  // Check if pre-fight activity is locked (fight has started, is complete, or event is in the past)
-  const isPreFightLocked = useMemo(() => {
-    if (fight.fightStatus !== 'UPCOMING') return true;
-    // Also check if event date is in the past (safety fallback)
-    if (fight.event?.date) {
-      const eventDate = new Date(fight.event.date);
-      const now = new Date();
-      // Lock if event date was more than 1 day ago (buffer for timezone issues)
-      if (eventDate.getTime() < now.getTime() - 24 * 60 * 60 * 1000) {
-        return true;
-      }
-    }
-    return false;
-  }, [fight.fightStatus, fight.event?.date]);
+  // Check if pre-fight activity is locked (fight has started or is complete)
+  const isPreFightLocked = fight.fightStatus !== 'UPCOMING';
 
   // Snapshot the fight data when menu opens to prevent re-renders during toggles
   const [menuFightSnapshot, setMenuFightSnapshot] = useState(fight);
