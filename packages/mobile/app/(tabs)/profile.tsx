@@ -490,8 +490,8 @@ export default function ProfileScreen() {
       <OrgFilterTabs />
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Predictions Section */}
-        <SectionContainer
+        {/* Predictions Section - TEMPORARILY REMOVED */}
+        {false && <SectionContainer
           title="My Winner Picks"
           icon="trophy"
           iconColor="#fff"
@@ -606,7 +606,7 @@ export default function ProfileScreen() {
               )}
             </>
           )}
-        </SectionContainer>
+        </SectionContainer>}
 
         {/* Average Rating */}
         <SectionContainer

@@ -77,7 +77,7 @@ const getApiBaseUrl = () => {
   if (Platform.OS === 'web') {
     return 'http://localhost:3008/api';
   } else {
-    return 'http://10.0.0.53:3008/api';  // Your local dev machine
+    return 'http://10.0.0.51:3008/api';  // Your local dev machine
   }
 };
 
