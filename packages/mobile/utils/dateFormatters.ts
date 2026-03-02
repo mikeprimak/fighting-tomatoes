@@ -157,7 +157,8 @@ export const formatTimeUntil = (
   }
 
   if (diffDays < 7) {
-    return `IN ${diffDays} DAYS`;
+    const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    return dayNames[eventLocalDate.getDay()];
   }
 
   const weeksUntil = Math.round(diffDays / 7);

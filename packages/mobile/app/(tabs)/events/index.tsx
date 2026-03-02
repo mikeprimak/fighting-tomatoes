@@ -463,6 +463,36 @@ const EventSection = memo(function EventSection({
           {/* Main Card */}
           {mainCard.length > 0 && (
             <View style={styles.cardSection}>
+              <View style={styles.sectionHeader}>
+                {/* Left Column Header - HYPE */}
+                <View style={styles.columnHeaders}>
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    HYPE
+                  </Text>
+                </View>
+
+                {/* Center - Title and Time */}
+                <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
+                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                    MAIN CARD
+                  </Text>
+                  {event.mainStartTime && (
+                    <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
+                      {formatTime(event.mainStartTime)}
+                    </Text>
+                  )}
+                </View>
+
+                {/* Right Column Header - MY HYPE */}
+                <View style={styles.columnHeadersRight}>
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    MY
+                  </Text>
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    HYPE
+                  </Text>
+                </View>
+              </View>
               {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                 <FightDisplayCard
                   key={fight.id}
@@ -678,7 +708,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginHorizontal: 16,
-    marginBottom: 4,
+    paddingVertical: 8,
+    marginBottom: 2,
     position: 'relative',
   },
   sectionHeaderPrelims: {
@@ -715,7 +746,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 0,
-    marginLeft: -16,
+    marginLeft: -21,
     width: 60,
     justifyContent: 'center',
   },
@@ -723,7 +754,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 0,
-    marginRight: -18,
+    marginRight: -21,
     width: 60,
     justifyContent: 'center',
   },

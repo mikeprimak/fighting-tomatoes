@@ -134,6 +134,31 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
             {/* Main Card */}
             {mainCard.length > 0 && (
               <View style={styles.cardSection}>
+                <View style={styles.sectionHeader}>
+                  {/* Left Column Header - RATING */}
+                  <View style={styles.columnHeaders}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      RATING
+                    </Text>
+                  </View>
+
+                  {/* Center - Title */}
+                  <View style={styles.sectionHeaderCenter}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                      MAIN CARD
+                    </Text>
+                  </View>
+
+                  {/* Right Column Header - MY RATING */}
+                  <View style={styles.columnHeadersRight}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      MY
+                    </Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      RATING
+                    </Text>
+                  </View>
+                </View>
                 {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                   <CompletedFightCard
                     key={fight.id}
@@ -558,7 +583,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginHorizontal: 16,
-    marginBottom: 12,
+    paddingVertical: 8,
+    marginBottom: 2,
     position: 'relative',
   },
   sectionHeaderPrelims: {
