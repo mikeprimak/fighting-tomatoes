@@ -580,7 +580,7 @@ const EventSection = memo(function EventSection({
           {fights.length < 7 && (
             <View style={styles.moreFightsNote}>
               <Text style={[styles.moreFightsText, { color: colors.textSecondary, opacity: 0.5 }]}>
-                TBA
+                {fights.length === 0 ? 'Fights TBA' : 'TBA'}
               </Text>
             </View>
           )}

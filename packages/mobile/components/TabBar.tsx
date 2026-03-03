@@ -200,10 +200,10 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
                 textAlign: 'center',
               }}
             >
-              {hasLiveEvent ? 'Live Fights' : 'Upcoming Fights'}
+              {hasLiveEvent ? 'Live Fights' : 'Upcoming Events'}
             </Text>
           ),
-          headerTitle: () => <HeaderLogo title={hasLiveEvent ? 'Live Fights' : 'Upcoming Fights'} />,
+          headerTitle: () => <HeaderLogo title={hasLiveEvent ? 'Live Fights' : 'Upcoming Events'} />,
           headerRight: () => (
             <TouchableOpacity
               onPress={toggleSearch}
@@ -221,14 +221,39 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
       <Tabs.Screen
         name="past-events"
         options={{
-          title: 'Completed Fights',
+          title: 'Past Events',
           tabBarLabel: ({ color }) => (
             <Text style={{ fontSize: 10, color, textAlign: 'center' }}>
-              Completed Fights
+              Past Events
             </Text>
           ),
           tabBarIcon: ({ color }) => <FontAwesome name="star" size={24} style={{ marginBottom: -3 }} color={color} />,
-          headerTitle: () => <HeaderLogo title="Completed Fights" />,
+          headerTitle: () => <HeaderLogo title="Past Events" />,
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={toggleSearch}
+              style={{ marginRight: 16, padding: 8, marginTop: -16 }}
+            >
+              <FontAwesome
+                name="search"
+                size={20}
+                color={isSearchVisible ? colors.tint : colors.text}
+              />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="top-fights"
+        options={{
+          title: 'Top Fights',
+          tabBarLabel: ({ color }) => (
+            <Text style={{ fontSize: 10, color, textAlign: 'center' }}>
+              Top Fights
+            </Text>
+          ),
+          tabBarIcon: ({ color }) => <FontAwesome name="trophy" size={24} style={{ marginBottom: -3 }} color={color} />,
+          headerTitle: () => <HeaderLogo title="Top Fights" />,
           headerRight: () => (
             <TouchableOpacity
               onPress={toggleSearch}

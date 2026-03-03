@@ -176,6 +176,9 @@ async function scrapeEventsList(browser) {
       // Skip if not an event detail page (skip /events or /events#)
       if (href === '/events' || href === '/events/' || href.includes('#')) return;
 
+      // Skip external links (e.g. ticket sites like axs.com that also have /events/ in their URL)
+      if (href.startsWith('http') && !href.includes('bkfc.com')) return;
+
       // Build full URL
       const eventUrl = href.startsWith('http') ? href : `https://www.bkfc.com${href}`;
 

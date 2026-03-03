@@ -511,7 +511,7 @@ export default function ProfileScreen() {
                       style={{ color: colors.primary, fontWeight: '600' }}
                       onPress={() => router.push('/(tabs)')}
                     >
-                      Upcoming Fights
+                      Upcoming Events
                     </Text>
                     .
                   </>
@@ -639,7 +639,7 @@ export default function ProfileScreen() {
                       style={{ color: colors.primary, fontWeight: '600' }}
                       onPress={() => router.push('/(tabs)/past-events')}
                     >
-                      Completed Fights
+                      Past Events
                     </Text>
                     .
                   </>
@@ -760,7 +760,7 @@ export default function ProfileScreen() {
                       style={{ color: colors.primary, fontWeight: '600' }}
                       onPress={() => router.push('/(tabs)')}
                     >
-                      Upcoming Fights
+                      Upcoming Events
                     </Text>
                     .
                   </>

@@ -78,6 +78,9 @@ async function scrapeEventsList(browser) {
       // Skip if not a valid event detail page
       if (!href.includes('/the-event/') || href === '/the-event/') return;
 
+      // Skip external links (e.g. ticket sites that also have /the-event/ in their URL)
+      if (href.startsWith('http') && !href.includes('goldenboy.com')) return;
+
       // Build full URL
       const eventUrl = href.startsWith('http') ? href : `https://www.goldenboy.com${href}`;
 
