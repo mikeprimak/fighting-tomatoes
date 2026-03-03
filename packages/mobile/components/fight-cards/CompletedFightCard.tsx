@@ -295,12 +295,7 @@ function CompletedFightCard({
       }]}>
           {/* Event info inside card (when showEvent=true) - above fighter names */}
           {showEvent && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, marginBottom: 2 }}>
-              {showRank && index !== undefined && (
-                <Text style={{ color: colors.textSecondary, fontWeight: '600', fontSize: 11, position: 'absolute', left: -59, top: -6 }}>
-                  #{index + 1}
-                </Text>
-              )}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: showRank ? 1 : 6, marginBottom: 4 }}>
               <Text
                 style={{
                   color: colors.textSecondary,
@@ -319,8 +314,8 @@ function CompletedFightCard({
           <View style={[
             styles.ratingSquare,
             {
-              top: (showEvent ? 20 : 6) + 5,
-              left: 5,
+              top: (showEvent ? 20 : 6) + (showRank ? 4 : 0) + 5,
+              left: 3 + 5,
               zIndex: 0,
               backgroundColor: (fight.averageHype !== undefined && fight.averageHype > 0)
                 ? hypeColor
@@ -337,7 +332,7 @@ function CompletedFightCard({
           <View style={[
             styles.ratingSquare,
             {
-              top: showEvent ? 20 : 6, // Move down when event info is shown
+              top: (showEvent ? 20 : 6) + (showRank ? 4 : 0), // Move down when event info is shown
               zIndex: 1,
               backgroundColor: (fight.averageRating !== undefined && fight.averageRating > 0)
                 ? ratingBorderColor
@@ -866,7 +861,7 @@ const styles = StyleSheet.create({
   ratingSquare: {
     position: 'absolute',
     top: 6,
-    left: 0,
+    left: 3,
     width: 48,
     height: 50,
     justifyContent: 'center',
