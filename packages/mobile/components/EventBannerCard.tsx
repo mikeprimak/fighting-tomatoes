@@ -135,9 +135,7 @@ export const EventBannerCard = memo(function EventBannerCard({
             )}
             <Text style={styles.dateText}>
               {formatDate(event.date, event.eventStatus)}
-              {event.mainStartTime && event.eventStatus === 'UPCOMING' && (
-                <Text style={styles.timeText}>{`  •  ${formatTime(event.mainStartTime)}`}</Text>
-              )}
+{/* Main card start time removed - now shown in section header */}
             </Text>
           </View>
         </View>

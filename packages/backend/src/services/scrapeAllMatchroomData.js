@@ -118,6 +118,9 @@ async function scrapeEventsList(browser) {
       // Skip if not an event detail page
       if (href === '/events/' || href === '/events' || !href.includes('/events/')) return;
 
+      // Skip external links (e.g. ticket sites that also have /events/ in their URL)
+      if (href.startsWith('http') && !href.includes('matchroomboxing.com')) return;
+
       // Build full URL
       const eventUrl = href.startsWith('http') ? href : `https://www.matchroomboxing.com${href}`;
 

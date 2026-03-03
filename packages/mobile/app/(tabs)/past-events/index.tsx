@@ -1,27 +1,24 @@
-import React, { useCallback, memo, useState, useRef } from 'react';
+import React, { useCallback, memo, useRef } from 'react';
 import {
   View,
   Text,
   FlatList,
   ActivityIndicator,
   StyleSheet,
-  Image,
   StatusBar,
-  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
-import { useAuth } from '../../../store/AuthContext';
 import { useSearch } from '../../../store/SearchContext';
 import { useOrgFilter } from '../../../store/OrgFilterContext';
 import CompletedFightCard from '../../../components/fight-cards/CompletedFightCard';
 import OrgFilterTabs from '../../../components/OrgFilterTabs';
 import { EventBannerCard, SearchBar } from '../../../components';
-import { formatEventDate, formatTimeAgo } from '../../../utils/dateFormatters';
+import { formatEventDate } from '../../../utils/dateFormatters';
 
 // Number of events to load initially and per page
 const EVENTS_PER_PAGE = 2;
@@ -134,6 +131,31 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
             {/* Main Card */}
             {mainCard.length > 0 && (
               <View style={styles.cardSection}>
+                <View style={styles.sectionHeader}>
+                  {/* Left Column Header - RATING */}
+                  <View style={styles.columnHeaders}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      RATING
+                    </Text>
+                  </View>
+
+                  {/* Center - Title */}
+                  <View style={styles.sectionHeaderCenter}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                      MAIN CARD
+                    </Text>
+                  </View>
+
+                  {/* Right Column Header - MY RATING */}
+                  <View style={styles.columnHeadersRight}>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      MY
+                    </Text>
+                    <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                      RATING
+                    </Text>
+                  </View>
+                </View>
                 {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                   <CompletedFightCard
                     key={fight.id}
@@ -198,18 +220,11 @@ const EventSection = memo(function EventSection({ event }: { event: Event }) {
   );
 });
 
-type ViewMode = 'recent' | 'top-rated';
-type TimePeriod = 'week' | 'month' | '3months' | 'year' | 'all';
-
 export default function PastEventsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const router = useRouter();
-  const { isAuthenticated } = useAuth();
   const { isSearchVisible } = useSearch();
   const { selectedOrgs, filterEventsByOrg } = useOrgFilter();
-  const [viewMode, setViewMode] = useState<ViewMode>('recent');
-  const [topRatedPeriod, setTopRatedPeriod] = useState<TimePeriod>('week');
   const flatListRef = useRef<FlatList>(null);
 
   // Convert selected orgs to comma-separated string for API
@@ -244,19 +259,8 @@ export default function PastEventsScreen() {
       staleTime: 5 * 60 * 1000, // 5 minutes
       refetchOnMount: 'always',
       refetchOnWindowFocus: true,
-      enabled: viewMode === 'recent',
     }
   );
-
-  // Fetch top rated fights (with server-side promotion filtering)
-  const { data: topRatedFights, isLoading: topRatedLoading } = useQuery({
-    queryKey: ['topRecentFights', isAuthenticated, topRatedPeriod, promotionsFilter],
-    queryFn: () => apiService.getTopRecentFights(topRatedPeriod, promotionsFilter),
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-    enabled: viewMode === 'top-rated',
-  });
 
   // Flatten all pages of events into a single array (already sorted by backend - most recent first)
   // Deduplicate events by ID, then filter out hidden orgs (e.g. Matchroom)
@@ -288,18 +292,6 @@ export default function PastEventsScreen() {
     <EventSection event={item} />
   ), []);
 
-  // Render function for top rated fights
-  const renderTopRatedFight = useCallback(({ item, index }: { item: any; index: number }) => (
-    <CompletedFightCard
-      key={item.id}
-      fight={item}
-      onPress={() => router.push(`/fight/${item.id}?mode=completed` as any)}
-      showEvent={true}
-      index={index}
-      showRank={true}
-    />
-  ), [router]);
-
   // Footer component for loading more indicator
   const ListFooterComponent = useCallback(() => {
     if (!isFetchingNextPage) return null;
@@ -313,20 +305,7 @@ export default function PastEventsScreen() {
 
   // Stable key extractor
   const keyExtractor = useCallback((item: Event) => item.id, []);
-  const fightKeyExtractor = useCallback((item: any) => item.id, []);
 
-
-  // Determine loading state and data based on view mode
-  const isLoading = viewMode === 'recent' ? eventsLoading : topRatedLoading;
-
-  // Top rated fights data - also filter out hidden orgs client-side
-  const topRatedData = React.useMemo(() => {
-    const fights = topRatedFights?.data || [];
-    return fights.filter((fight: any) => {
-      const promotion = (fight.event?.promotion || '').toUpperCase();
-      return !promotion.includes('MATCHROOM');
-    });
-  }, [topRatedFights?.data]);
 
   // Scroll to top when filter changes
   const handleFilterChange = useCallback(() => {
@@ -337,12 +316,12 @@ export default function PastEventsScreen() {
 
   // Empty component that shows loading or empty state
   const ListEmptyComponent = useCallback(() => {
-    if (isLoading) {
+    if (eventsLoading) {
       return (
         <View style={styles.inlineLoadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>
-            {viewMode === 'recent' ? 'Loading events...' : 'Loading top fights...'}
+            Loading events...
           </Text>
         </View>
       );
@@ -353,18 +332,11 @@ export default function PastEventsScreen() {
     return (
       <View style={styles.emptyContainer}>
         <Text style={[styles.noEventsText, { color: colors.textSecondary }]}>
-          {viewMode === 'recent'
-            ? `No past events${orgMessage}`
-            : `No top rated fights found${orgMessage} for this period`}
+          No past events{orgMessage}
         </Text>
       </View>
     );
-  }, [isLoading, viewMode, colors, styles, selectedOrgs.size]);
-
-  // Use appropriate data and render function based on view mode
-  const listData = viewMode === 'recent' ? pastEvents : topRatedData;
-  const renderItem = viewMode === 'recent' ? renderEventSection : renderTopRatedFight;
-  const listKeyExtractor = viewMode === 'recent' ? keyExtractor : fightKeyExtractor;
+  }, [eventsLoading, colors, styles, selectedOrgs.size]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
@@ -373,86 +345,20 @@ export default function PastEventsScreen() {
       {/* Organization Filter Tabs - Hidden when search is visible */}
       {!isSearchVisible && <OrgFilterTabs onFilterChange={handleFilterChange} />}
 
-      {/* View Mode Tabs - Sticky below org filter, hidden when search is visible */}
-      {!isSearchVisible && <View style={styles.viewModeTabs}>
-        <TouchableOpacity
-          style={[styles.viewModeTab, viewMode === 'recent' && styles.viewModeTabActive]}
-          onPress={() => setViewMode('recent')}
-        >
-          <Text style={[styles.viewModeTabText, viewMode === 'recent' && styles.viewModeTabTextActive]}>
-            Recent Events
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.viewModeTab, viewMode === 'top-rated' && styles.viewModeTabActive]}
-          onPress={() => setViewMode('top-rated')}
-        >
-          <Text style={[styles.viewModeTabText, viewMode === 'top-rated' && styles.viewModeTabTextActive]}>
-            Top Rated Fights
-          </Text>
-        </TouchableOpacity>
-      </View>}
-
       {/* Search Bar - Shown when search is visible */}
       <SearchBar />
 
-      {/* Time Period Filter - Sticky below view mode tabs (only for Top Rated), hidden when search is visible */}
-      {!isSearchVisible && viewMode === 'top-rated' && (
-        <View style={styles.timePeriodTabs}>
-          <TouchableOpacity
-            style={[styles.timePeriodTab, topRatedPeriod === 'week' && styles.timePeriodTabActive]}
-            onPress={() => setTopRatedPeriod('week')}
-          >
-            <Text style={[styles.timePeriodTabText, topRatedPeriod === 'week' && styles.timePeriodTabTextActive]}>
-              Past Week
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.timePeriodTab, topRatedPeriod === 'month' && styles.timePeriodTabActive]}
-            onPress={() => setTopRatedPeriod('month')}
-          >
-            <Text style={[styles.timePeriodTabText, topRatedPeriod === 'month' && styles.timePeriodTabTextActive]}>
-              Month
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.timePeriodTab, topRatedPeriod === '3months' && styles.timePeriodTabActive]}
-            onPress={() => setTopRatedPeriod('3months')}
-          >
-            <Text style={[styles.timePeriodTabText, topRatedPeriod === '3months' && styles.timePeriodTabTextActive]}>
-              3 Mo.
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.timePeriodTab, topRatedPeriod === 'year' && styles.timePeriodTabActive]}
-            onPress={() => setTopRatedPeriod('year')}
-          >
-            <Text style={[styles.timePeriodTabText, topRatedPeriod === 'year' && styles.timePeriodTabTextActive]}>
-              Year
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.timePeriodTab, topRatedPeriod === 'all' && styles.timePeriodTabActive]}
-            onPress={() => setTopRatedPeriod('all')}
-          >
-            <Text style={[styles.timePeriodTabText, topRatedPeriod === 'all' && styles.timePeriodTabTextActive]}>
-              All Time
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       <FlatList
         ref={flatListRef}
-        data={listData}
-        renderItem={renderItem}
-        keyExtractor={listKeyExtractor}
-        ListFooterComponent={viewMode === 'recent' ? ListFooterComponent : null}
+        data={pastEvents}
+        renderItem={renderEventSection}
+        keyExtractor={keyExtractor}
+        ListFooterComponent={ListFooterComponent}
         ListEmptyComponent={ListEmptyComponent}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        onEndReached={viewMode === 'recent' ? handleLoadMore : undefined}
+        onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         // Virtualization settings - keep render window small so off-screen
         // items are unmounted as more pages lazy-load in
@@ -558,7 +464,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginHorizontal: 16,
-    marginBottom: 12,
+    paddingVertical: 8,
+    marginBottom: 2,
     position: 'relative',
   },
   sectionHeaderPrelims: {
@@ -609,71 +516,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     letterSpacing: 0.5,
     flexWrap: 'nowrap',
     textAlign: 'center',
-  },
-  viewModeTabs: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  viewModeTab: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  viewModeTabActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  viewModeTabText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  viewModeTabTextActive: {
-    color: '#000000',
-  },
-  timePeriodTabs: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  timePeriodTab: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  timePeriodTabActive: {
-    backgroundColor: colors.tint,
-    borderColor: colors.tint,
-  },
-  timePeriodTabText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  timePeriodTabTextActive: {
-    color: '#000000',
-  },
-  topRatedColumnHeaders: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: colors.background,
   },
   emptyContainer: {
     paddingVertical: 40,

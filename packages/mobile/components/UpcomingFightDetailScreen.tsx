@@ -1362,8 +1362,8 @@ export default function UpcomingFightDetailScreen({
       </View>
       </SectionContainer>
 
-      {/* Predictions Section */}
-      <SectionContainer
+      {/* Predictions Section - TEMPORARILY REMOVED */}
+      {false && <SectionContainer
         title="Predictions"
         icon="user"
         iconColor="#000"
@@ -1569,7 +1569,7 @@ export default function UpcomingFightDetailScreen({
             />
           )}
         </View>
-      </SectionContainer>
+      </SectionContainer>}
 
       {/* Comments Section */}
       <SectionContainer

@@ -490,8 +490,8 @@ export default function ProfileScreen() {
       <OrgFilterTabs />
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Predictions Section */}
-        <SectionContainer
+        {/* Predictions Section - TEMPORARILY REMOVED */}
+        {false && <SectionContainer
           title="My Winner Picks"
           icon="trophy"
           iconColor="#fff"
@@ -511,7 +511,7 @@ export default function ProfileScreen() {
                       style={{ color: colors.primary, fontWeight: '600' }}
                       onPress={() => router.push('/(tabs)')}
                     >
-                      Upcoming Fights
+                      Upcoming Events
                     </Text>
                     .
                   </>
@@ -606,7 +606,7 @@ export default function ProfileScreen() {
               )}
             </>
           )}
-        </SectionContainer>
+        </SectionContainer>}
 
         {/* Average Rating */}
         <SectionContainer
@@ -639,7 +639,7 @@ export default function ProfileScreen() {
                       style={{ color: colors.primary, fontWeight: '600' }}
                       onPress={() => router.push('/(tabs)/past-events')}
                     >
-                      Completed Fights
+                      Past Events
                     </Text>
                     .
                   </>
@@ -760,7 +760,7 @@ export default function ProfileScreen() {
                       style={{ color: colors.primary, fontWeight: '600' }}
                       onPress={() => router.push('/(tabs)')}
                     >
-                      Upcoming Fights
+                      Upcoming Events
                     </Text>
                     .
                   </>
