@@ -315,7 +315,7 @@ function CompletedFightCard({
             </View>
           )}
 
-          {/* Hype square - behind rating square, offset 15px down and right */}
+          {/* Hype square - behind rating square, offset 5px down and right */}
           <View style={[
             styles.ratingSquare,
             {
@@ -331,6 +331,7 @@ function CompletedFightCard({
               borderColor: colors.textSecondary,
             }
           ]} />
+
 
           {/* Full-height community rating square on the left */}
           <View style={[
@@ -349,21 +350,24 @@ function CompletedFightCard({
           ]}>
             {(fight.averageRating !== undefined && fight.averageRating > 0) ? (
               <>
-                <FontAwesome
-                  name="star"
-                  size={14}
-                  color="rgba(0,0,0,0.45)"
-                />
                 <Text style={styles.ratingSquareNumber}>
                   {fight.averageRating === 10 ? '10' : fight.averageRating.toFixed(1)}
                 </Text>
+                {fight.totalRatings > 0 && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                    <FontAwesome name="users" size={7} color="rgba(0,0,0,0.5)" />
+                    <Text style={{ color: 'rgba(0,0,0,0.5)', fontSize: 8, fontWeight: '600' }}>
+                      {fight.totalRatings}
+                    </Text>
+                  </View>
+                )}
               </>
             ) : (
               <FontAwesome
                 name="star"
-                size={16}
+                size={24}
                 color={colors.textSecondary}
-                style={{ opacity: 0.5 }}
+                style={{ opacity: 0.3 }}
               />
             )}
           </View>
@@ -918,6 +922,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+    marginTop: 4,
   },
   ratingSquareCount: {
     position: 'absolute',
