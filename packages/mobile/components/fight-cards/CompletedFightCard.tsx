@@ -286,8 +286,8 @@ function CompletedFightCard({
         position: 'relative',
         overflow: 'visible',
         paddingLeft: 64, // 48px square + 16px padding
-        paddingTop: 0,
-        paddingBottom: 5, // Extra space for hype square offset
+        paddingTop: 8,
+        paddingBottom: 15, // Extra space for hype square offset + method text
         paddingRight: 64, // 48px square + 16px padding
         minHeight: 67, // 62 + 5px for hype square offset
         justifyContent: 'center',
@@ -369,7 +369,7 @@ function CompletedFightCard({
           </View>
 
           {/* User rating star icon on the right */}
-          <View style={[styles.userRatingStarContainer, { top: showEvent ? 20 : 6 }]}>
+          <View style={[styles.userRatingStarContainer, { top: showEvent ? 24 : 10 }]}>
             {(fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0) ? (
               <Animated.View style={[styles.userRatingStarWrapper, { transform: [{ scale: ratingScaleAnim }] }]}>
                 <FontAwesome
@@ -397,11 +397,11 @@ function CompletedFightCard({
               {/* Fighter 1 - Left half */}
               <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
                 <View style={[
-                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-end' }
+                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'center' }
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterName, { textAlign: 'center', fontWeight: '400', color: colors.textSecondary, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -410,19 +410,25 @@ function CompletedFightCard({
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'right', color: colors.text, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterLastName, { textAlign: 'center', color: colors.text, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
                   >
                     {fight.fighter1.lastName}
                   </Text>
+                  {/* Method of victory */}
+                  {fight.winner === fight.fighter1.id && fight.method && (
+                    <Text style={{ position: 'absolute', bottom: -14, left: 0, right: 0, color: '#4CAF50', fontSize: 9, fontWeight: '600', textAlign: 'center' }} numberOfLines={1}>
+                      {formatMethod(fight.method)}{fight.round && !fight.method?.includes('Decision') ? ` R${fight.round}` : ''}
+                    </Text>
+                  )}
                 </View>
                 {/* Fighter 1 headshot - right of name */}
                 <View style={[styles.fighterImageWrapper, { marginLeft: 6, marginRight: -3 }]}>
                   <Image
                     source={fighter1ImageSource}
-                    style={styles.fighterHeadshot}
+                    style={[styles.fighterHeadshot, fight.winner === fight.fighter1.id && { borderWidth: 2, borderColor: '#166534' }]}
                     onError={handleFighter1ImageError}
                   />
                   {/* User prediction indicator - green checkmark if correct, red X if incorrect (bottom-left for fighter 1) */}
@@ -447,7 +453,7 @@ function CompletedFightCard({
                 <View style={[styles.fighterImageWrapper, { marginRight: 6, marginLeft: -3 }]}>
                   <Image
                     source={fighter2ImageSource}
-                    style={styles.fighterHeadshot}
+                    style={[styles.fighterHeadshot, fight.winner === fight.fighter2.id && { borderWidth: 2, borderColor: '#166534' }]}
                     onError={handleFighter2ImageError}
                   />
                   {/* User prediction indicator - green checkmark if correct, red X if incorrect (bottom-right for fighter 2) */}
@@ -465,11 +471,11 @@ function CompletedFightCard({
                   )}
                 </View>
                 <View style={[
-                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-start' }
+                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'center' }
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterName, { textAlign: 'center', fontWeight: '400', color: colors.textSecondary, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -478,18 +484,25 @@ function CompletedFightCard({
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'left', color: colors.text, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterLastName, { textAlign: 'center', color: colors.text, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
                   >
                     {fight.fighter2.lastName}
                   </Text>
+                  {/* Method of victory */}
+                  {fight.winner === fight.fighter2.id && fight.method && (
+                    <Text style={{ position: 'absolute', bottom: -14, left: 0, right: 0, color: '#4CAF50', fontSize: 9, fontWeight: '600', textAlign: 'center' }} numberOfLines={1}>
+                      {formatMethod(fight.method)}{fight.round && !fight.method?.includes('Decision') ? ` R${fight.round}` : ''}
+                    </Text>
+                  )}
                 </View>
               </View>
             </View>
 
           </View>
+
 
       </View>
     </TouchableOpacity>
@@ -869,7 +882,7 @@ const styles = StyleSheet.create({
   userRatingStarContainer: {
     position: 'absolute',
     top: 6,
-    right: 0,
+    right: 3,
     width: 48,
     height: 50,
     justifyContent: 'center',
