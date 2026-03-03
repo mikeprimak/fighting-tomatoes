@@ -265,6 +265,10 @@ function CompletedFightCard({
     () => getHypeHeatmapColor(fight.averageRating || 0),
     [fight.averageRating]
   );
+  const hypeColor = useMemo(
+    () => getHypeHeatmapColor(fight.averageHype || 0),
+    [fight.averageHype]
+  );
   const grayColor = colors.border || '#888888';
 
   const userRatingColor = useMemo(
@@ -280,11 +284,12 @@ function CompletedFightCard({
     <TouchableOpacity onPress={handleCardPress} activeOpacity={0.7}>
       <View style={[sharedStyles.container, {
         position: 'relative',
-        overflow: 'hidden',
+        overflow: 'visible',
         paddingLeft: 64, // 48px square + 16px padding
-        paddingVertical: 0, // No vertical padding
+        paddingTop: 0,
+        paddingBottom: 5, // Extra space for hype square offset
         paddingRight: 64, // 48px square + 16px padding
-        minHeight: 62, // Reduced height to match UpcomingFightCard
+        minHeight: 67, // 62 + 5px for hype square offset
         justifyContent: 'center',
         backgroundColor: cardBgColor,
       }]}>
@@ -310,14 +315,32 @@ function CompletedFightCard({
             </View>
           )}
 
+          {/* Hype square - behind rating square, offset 15px down and right */}
+          <View style={[
+            styles.ratingSquare,
+            {
+              top: (showEvent ? 20 : 6) + 5,
+              left: 5,
+              zIndex: 0,
+              backgroundColor: (fight.averageHype !== undefined && fight.averageHype > 0)
+                ? hypeColor
+                : 'transparent',
+              borderWidth: (fight.averageHype !== undefined && fight.averageHype > 0)
+                ? 0
+                : 1,
+              borderColor: colors.textSecondary,
+            }
+          ]} />
+
           {/* Full-height community rating square on the left */}
           <View style={[
             styles.ratingSquare,
             {
               top: showEvent ? 20 : 6, // Move down when event info is shown
+              zIndex: 1,
               backgroundColor: (fight.averageRating !== undefined && fight.averageRating > 0)
                 ? ratingBorderColor
-                : 'transparent',
+                : cardBgColor,
               borderWidth: (fight.averageRating !== undefined && fight.averageRating > 0)
                 ? 0
                 : 1,
