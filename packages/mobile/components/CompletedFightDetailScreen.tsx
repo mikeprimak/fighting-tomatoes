@@ -1736,8 +1736,8 @@ export default function CompletedFightDetailScreen({
             })()}
         </SectionContainer>
 
-        {/* ALL REACTIONS Section */}
-        <SectionContainer
+        {/* PREDICTIONS Section - TEMPORARILY REMOVED */}
+        {false && <SectionContainer
           title="PREDICTIONS"
           icon="users"
           iconColor="#fff"
@@ -1850,7 +1850,7 @@ export default function CompletedFightDetailScreen({
               No data
             </Text>
           )}
-        </SectionContainer>
+        </SectionContainer>}
 
         {/* HYPE Section */}
         <SectionContainer

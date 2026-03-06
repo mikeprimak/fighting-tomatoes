@@ -75,6 +75,9 @@ async function scrapeEventsList(browser) {
     eventLinks.forEach(link => {
       const eventUrl = link.href;
 
+      // Skip external links (e.g. ticket sites like ticketmaster that also have /event/ in their URL)
+      if (eventUrl && !eventUrl.includes('pflmma.com')) return;
+
       // Skip duplicates
       if (processedUrls.has(eventUrl)) return;
       processedUrls.add(eventUrl);
