@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { eventTimeToUTC } from '../utils/timezone';
+import { uploadEventImage, uploadLocalFileToR2 } from './imageStorage';
 
 const prisma = new PrismaClient();
 
@@ -236,14 +237,34 @@ async function importZuffaFighters(
 /**
  * Import events and fights from scraped data
  */
-// Default banner for Zuffa Boxing events (until they have event-specific banners)
-const ZUFFA_BOXING_DEFAULT_BANNER = '/images/events/zuffa-boxing/zuffa-boxing-banner-default.jpg';
+// Local default banner path (uploaded to R2 on first use)
+const ZUFFA_BOXING_DEFAULT_BANNER_PATH = path.join(__dirname, '..', '..', 'public', 'images', 'events', 'zuffa-boxing', 'zuffa-boxing-banner-default.jpg');
+let zuffaDefaultBannerUrl: string | null = null;
+
+async function getZuffaDefaultBannerUrl(): Promise<string | null> {
+  if (zuffaDefaultBannerUrl) return zuffaDefaultBannerUrl;
+  try {
+    const fileBuffer = await fs.readFile(ZUFFA_BOXING_DEFAULT_BANNER_PATH);
+    const url = await uploadLocalFileToR2(fileBuffer, 'events/zuffa-boxing-default.jpg', 'image/jpeg');
+    if (url) {
+      zuffaDefaultBannerUrl = url;
+      console.log(`  ✓ Uploaded Zuffa Boxing default banner to R2: ${url}`);
+    }
+    return url;
+  } catch (error: any) {
+    console.warn(`  ⚠ Could not upload Zuffa default banner: ${error.message}`);
+    return null;
+  }
+}
 
 async function importZuffaEvents(
   eventsData: ScrapedZuffaEventsData,
   fighterNameToId: Map<string, string>
 ): Promise<void> {
   console.log(`\n📦 Importing ${eventsData.events.length} Zuffa Boxing events...`);
+
+  // Upload default banner to R2 once
+  const defaultBannerUrl = await getZuffaDefaultBannerUrl();
 
   for (const eventData of eventsData.events) {
     const eventDate = parseZuffaDate(eventData.eventDate);
@@ -254,8 +275,18 @@ async function importZuffaEvents(
       .filter(Boolean)
       .join(', ') || 'TBA';
 
-    // Use event-specific image if available, otherwise use default banner
-    const bannerImage = eventData.eventImageUrl || ZUFFA_BOXING_DEFAULT_BANNER;
+    // Use event-specific image if available, otherwise use default banner from R2
+    let bannerImage: string | undefined;
+    if (eventData.eventImageUrl) {
+      try {
+        bannerImage = await uploadEventImage(eventData.eventImageUrl, eventData.eventName);
+      } catch (error) {
+        console.warn(`  ⚠ Banner upload failed for ${eventData.eventName}, using source URL`);
+        bannerImage = eventData.eventImageUrl;
+      }
+    } else {
+      bannerImage = defaultBannerUrl || undefined;
+    }
 
     // Try to find existing event by URL or exact name
     let event = await prisma.event.findFirst({
