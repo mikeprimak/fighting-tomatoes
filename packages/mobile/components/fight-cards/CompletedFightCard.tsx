@@ -295,12 +295,7 @@ function CompletedFightCard({
       }]}>
           {/* Event info inside card (when showEvent=true) - above fighter names */}
           {showEvent && (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, marginBottom: 2 }}>
-              {showRank && index !== undefined && (
-                <Text style={{ color: colors.textSecondary, fontWeight: '600', fontSize: 11, position: 'absolute', left: -59, top: -6 }}>
-                  #{index + 1}
-                </Text>
-              )}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: showRank ? 1 : 6, marginBottom: 4 }}>
               <Text
                 style={{
                   color: colors.textSecondary,
@@ -315,12 +310,12 @@ function CompletedFightCard({
             </View>
           )}
 
-          {/* Hype square - behind rating square, offset 15px down and right */}
+          {/* Hype square - behind rating square, offset 5px down and right */}
           <View style={[
             styles.ratingSquare,
             {
-              top: (showEvent ? 20 : 6) + 5,
-              left: 5,
+              top: (showEvent ? 20 : 6) + (showRank ? 4 : 0) + 5,
+              left: 3 + 5,
               zIndex: 0,
               backgroundColor: (fight.averageHype !== undefined && fight.averageHype > 0)
                 ? hypeColor
@@ -332,11 +327,12 @@ function CompletedFightCard({
             }
           ]} />
 
+
           {/* Full-height community rating square on the left */}
           <View style={[
             styles.ratingSquare,
             {
-              top: showEvent ? 20 : 6, // Move down when event info is shown
+              top: (showEvent ? 20 : 6) + (showRank ? 4 : 0), // Move down when event info is shown
               zIndex: 1,
               backgroundColor: (fight.averageRating !== undefined && fight.averageRating > 0)
                 ? ratingBorderColor
@@ -349,21 +345,24 @@ function CompletedFightCard({
           ]}>
             {(fight.averageRating !== undefined && fight.averageRating > 0) ? (
               <>
-                <FontAwesome
-                  name="star"
-                  size={14}
-                  color="rgba(0,0,0,0.45)"
-                />
                 <Text style={styles.ratingSquareNumber}>
                   {fight.averageRating === 10 ? '10' : fight.averageRating.toFixed(1)}
                 </Text>
+                {fight.totalRatings > 0 && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                    <FontAwesome name="users" size={7} color="rgba(0,0,0,0.5)" />
+                    <Text style={{ color: 'rgba(0,0,0,0.5)', fontSize: 8, fontWeight: '600' }}>
+                      {fight.totalRatings}
+                    </Text>
+                  </View>
+                )}
               </>
             ) : (
               <FontAwesome
                 name="star"
-                size={16}
+                size={24}
                 color={colors.textSecondary}
-                style={{ opacity: 0.5 }}
+                style={{ opacity: 0.3 }}
               />
             )}
           </View>
@@ -862,7 +861,7 @@ const styles = StyleSheet.create({
   ratingSquare: {
     position: 'absolute',
     top: 6,
-    left: 0,
+    left: 3,
     width: 48,
     height: 50,
     justifyContent: 'center',
@@ -918,6 +917,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+    marginTop: 4,
   },
   ratingSquareCount: {
     position: 'absolute',

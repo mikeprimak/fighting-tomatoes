@@ -156,3 +156,4 @@ When switching WiFi networks, update the dev IP in **2 files**:
 - `avocadomike@hotmail.com` (1234 ratings, 72 reviews)
 - `michaelsprimak@gmail.com`
 - `applereview@goodfights.app` / `AppleTest2026!` (Apple Review test account)
+- `testdev2@goodfights.app` (dev testing account)
