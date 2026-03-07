@@ -187,6 +187,13 @@ export async function parseOktagonLiveData(
       const updateData: any = {};
       let changed = false;
 
+      // Reset fights that lifecycle incorrectly completed (COMPLETED with no winner, but API says not complete)
+      if (!fightUpdate.isComplete && !fightUpdate.hasStarted && dbFight.fightStatus === 'COMPLETED' && !dbFight.winner) {
+        updateData.fightStatus = 'UPCOMING';
+        changed = true;
+        console.log(`    ⏪ Fight reset to UPCOMING (lifecycle completed prematurely)`);
+      }
+
       // Check if fight started (UPCOMING -> LIVE)
       if (fightUpdate.hasStarted && dbFight.fightStatus === 'UPCOMING') {
         updateData.fightStatus = 'LIVE';
