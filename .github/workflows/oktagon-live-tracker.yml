@@ -1,0 +1,67 @@
+name: Oktagon Live Tracker
+
+on:
+  # No cron schedule - triggered manually or via curl dispatch every 5 min during live events.
+  # Cron would waste Actions minutes 24/7 on install/build even with no active events.
+  workflow_dispatch:
+    inputs:
+      event_id:
+        description: 'Event ID (optional - leave empty for auto-detection)'
+        required: false
+        type: string
+      oktagon_slug:
+        description: 'Oktagon event slug (e.g. oktagon-85-hamburg)'
+        required: false
+        type: string
+
+jobs:
+  track-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd packages/backend
+          pnpm install
+
+      - name: Generate Prisma client
+        run: |
+          cd packages/backend
+          npx prisma generate
+
+      - name: Build TypeScript
+        run: |
+          cd packages/backend
+          pnpm build
+
+      - name: Run Oktagon Live Tracker
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          EVENT_ID: ${{ github.event.inputs.event_id }}
+          OKTAGON_SLUG: ${{ github.event.inputs.oktagon_slug }}
+          NODE_ENV: production
+        run: |
+          cd packages/backend
+          echo "Starting Oktagon Live Tracker..."
+          node dist/scripts/runOktagonLiveTracker.js
+          echo "Live tracker finished."
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "Oktagon Live Tracker workflow FAILED at $(date)"
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=live_tracker&org=OKTAGON" || echo "Failed to send alert"
