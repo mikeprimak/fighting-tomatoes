@@ -10,12 +10,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { useAuth } from '../store/AuthContext';
+import { useSpoilerFree } from '../store/SpoilerFreeContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from '../components/CustomAlert';
 import { api } from '../services/api';
@@ -23,6 +25,7 @@ import { FontAwesome } from '@expo/vector-icons';
 
 export default function EditProfileScreen() {
   const { user, refreshUserData, logout } = useAuth();
+  const { spoilerFreeMode, setSpoilerFreeMode } = useSpoilerFree();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { alertState, showSuccess, showError, showInfo, hideAlert } = useCustomAlert();
@@ -316,6 +319,26 @@ export default function EditProfileScreen() {
           )}
         </View>
 
+        {/* Preferences */}
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Preferences</Text>
+
+          <View style={styles.toggleRow}>
+            <View style={{ flex: 1, marginRight: 12 }}>
+              <Text style={[styles.toggleLabel, { color: colors.text }]}>Spoiler-Free Mode</Text>
+              <Text style={[styles.helperText, { color: colors.textSecondary, marginTop: 2 }]}>
+                Hide fight outcomes until you rate the fight
+              </Text>
+            </View>
+            <Switch
+              value={spoilerFreeMode}
+              onValueChange={setSpoilerFreeMode}
+              trackColor={{ false: '#767577', true: '#4CAF50' }}
+              thumbColor={spoilerFreeMode ? '#FFFFFF' : '#f4f3f4'}
+            />
+          </View>
+        </View>
+
         {/* Danger Zone */}
         <View style={[styles.section, styles.dangerSection]}>
           <Text style={[styles.sectionTitle, { color: '#DC2626' }]}>Danger Zone</Text>
@@ -476,6 +499,16 @@ const createStyles = (colors: any) => StyleSheet.create({
   availabilityText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  toggleRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingVertical: 4,
+  },
+  toggleLabel: {
+    fontSize: 16,
+    fontWeight: '600' as const,
   },
   // Danger Zone styles
   dangerSection: {
