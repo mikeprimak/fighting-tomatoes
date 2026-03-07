@@ -55,7 +55,7 @@ The `scraperType` field on events determines which scraper (if any) handles live
 | `null` | No scraper — lifecycle service handles everything | Default |
 | `ufc` | UFC live parser | **Production** |
 | `matchroom` | Matchroom live parser | Development |
-| `oktagon` | OKTAGON live parser | Development |
+| `oktagon` | OKTAGON live parser | **Production** |
 | `onefc` | ONE FC live parser | Development |
 | `tapology` | Tapology live parser | Development |
 
@@ -63,7 +63,7 @@ The `scraperType` field on events determines which scraper (if any) handles live
 
 The `PRODUCTION_SCRAPERS` array in `liveTrackerConfig.ts` controls which scrapers are trusted to auto-publish results.
 
-**Current production scrapers: `['ufc']`**
+**Current production scrapers: `['ufc', 'oktagon']`**
 
 When a scraper is in this list:
 1. Lifecycle Step 2 **skips** that event (no timer-based fight completion)
@@ -170,6 +170,52 @@ Even with the tracker running, you have full manual override:
 
 **To manually trigger the GitHub Actions tracker:** Go to GitHub → Actions → "UFC Live Tracker" → "Run workflow". Or dispatch via API/CLI: `gh workflow run ufc-live-tracker.yml`
 
+## Oktagon Live Tracker
+
+The Oktagon live tracker polls the Oktagon REST API during live events and updates fight results in real time. Unlike UFC (which needs Puppeteer), Oktagon uses a direct REST API — no browser required, faster and more reliable.
+
+### Architecture: Same as UFC (Render Triggers GitHub Actions)
+
+1. **Render lifecycle service** detects LIVE Oktagon event → dispatches `oktagon-live-tracker.yml` every 5 min
+2. **GitHub Actions** installs deps, builds, runs `runOktagonLiveTracker.ts`
+3. **Scraper** (`oktagonLiveScraper.ts`) fetches `api.oktagonmma.com/v1/events/{id}/fightcard` (~300ms)
+4. **Parser** (`oktagonLiveParser.ts`) matches fights by last name, updates DB
+5. **Auto-publish** since oktagon is in `PRODUCTION_SCRAPERS`
+6. **Auto-complete** when all fights are done
+
+### Fully Automatic
+
+Unlike UFC, Oktagon events require **no manual setup**. The daily scraper (`scrapeAllOktagonData.js`) imports events with `scraperType: 'oktagon'` and the event URL (stored in `ufcUrl` field). When the event goes LIVE, the lifecycle auto-dispatches the tracker.
+
+### What the Scraper Detects
+
+- Fight results: winner (FIGHTER_1_WIN / FIGHTER_2_WIN), method, round, time
+- Fight status: upcoming / live / complete
+- Cancellations: fights missing from API → marked CANCELLED
+- Un-cancellations: cancelled fights reappearing → restored to UPCOMING
+- Lifecycle damage: fights prematurely completed by lifecycle (COMPLETED with no winner) → reset to UPCOMING
+
+### API Endpoints Used
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /v1/events/{slug}` | Event details (ID, date, venue) |
+| `GET /v1/events/{id}/fightcard` | Full fight card with live results |
+
+### GitHub Actions Usage
+
+Each run takes ~2 min (no Chromium needed). During an Oktagon event (~5 hours at 5-min intervals) = ~60 runs = **120 minutes**. Free tier allows 2,000 minutes/month.
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `.github/workflows/oktagon-live-tracker.yml` | GitHub Actions workflow (dispatch trigger only) |
+| `src/scripts/runOktagonLiveTracker.ts` | Entry point — finds event, extracts slug from `ufcUrl`, runs scraper+parser |
+| `src/services/oktagonLiveScraper.ts` | REST API scraper — fetches fight card, detects changes |
+| `src/services/oktagonLiveParser.ts` | Parser — matches fights, updates DB, handles cancellations |
+| `src/services/oktagonDataParser.ts` | Daily importer — sets `scraperType: 'oktagon'` on all events |
+
 ## Start Time Coverage
 
 As of Feb 2026, all organization scrapers populate `mainStartTime` when time data is available:
@@ -206,7 +252,9 @@ As of Feb 2026, all organization scrapers populate `mainStartTime` when time dat
 | `src/routes/admin.ts` | Admin endpoints (set-status, publish, publish-all) |
 | `src/routes/liveEvents.ts` | Live tracker API (start/stop/status/auto-start) |
 | `.github/workflows/ufc-live-tracker.yml` | GitHub Actions workflow for UFC live scraping |
-| `src/scripts/runUFCLiveTracker.ts` | Standalone script run by GitHub Actions |
+| `.github/workflows/oktagon-live-tracker.yml` | GitHub Actions workflow for Oktagon live scraping |
+| `src/scripts/runUFCLiveTracker.ts` | Standalone script run by GitHub Actions (UFC) |
+| `src/scripts/runOktagonLiveTracker.ts` | Standalone script run by GitHub Actions (Oktagon) |
 | `public/admin.html` | Admin panel UI |
 
 ## Resolved: UFC Event Times Were Wrong (Double Timezone Conversion)
@@ -238,9 +286,8 @@ The 30s interval ensures the app picks up fight status changes (UPCOMING → LIV
 ## Admin Workflow During Events
 
 ### Before an event — required setup:
-1. Set `scraperType` to `ufc` on the event in the admin panel (daily scraper creates events with `scraperType: null` by default)
-2. Verify `ufcUrl` is set (usually populated by the daily scraper)
-3. That's it — the rest is automatic
+- **UFC:** Set `scraperType` to `ufc` on the event in the admin panel (daily scraper creates events with `scraperType: null`). Verify `ufcUrl` is set. That's it — the rest is automatic.
+- **Oktagon:** Nothing. The daily scraper auto-sets `scraperType: 'oktagon'` and stores the event URL. Fully automatic.
 
 ### With UFC live tracker (automatic):
 1. Ensure event has `scraperType: 'ufc'` set in admin panel
