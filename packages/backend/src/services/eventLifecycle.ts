@@ -32,7 +32,10 @@ const GITHUB_DISPATCH_COOLDOWN_MS = 4 * 60 * 1000; // Don't trigger more than on
  * This is more reliable than GitHub's cron scheduler.
  * Requires GITHUB_TOKEN env var with actions:write permission.
  */
-async function triggerGitHubLiveTracker(eventId?: string): Promise<boolean> {
+async function triggerGitHubLiveTracker(
+  workflow: string,
+  inputs?: Record<string, string>,
+): Promise<boolean> {
   const token = process.env.GITHUB_TOKEN;
   if (!token) {
     console.log('[Lifecycle] No GITHUB_TOKEN set, skipping GitHub Actions dispatch');
@@ -49,12 +52,12 @@ async function triggerGitHubLiveTracker(eventId?: string): Promise<boolean> {
 
   try {
     const body: any = { ref: 'main' };
-    if (eventId) {
-      body.inputs = { event_id: eventId };
+    if (inputs) {
+      body.inputs = inputs;
     }
 
     const response = await fetch(
-      'https://api.github.com/repos/mikeprimak/fighting-tomatoes/actions/workflows/ufc-live-tracker.yml/dispatches',
+      `https://api.github.com/repos/mikeprimak/fighting-tomatoes/actions/workflows/${workflow}/dispatches`,
       {
         method: 'POST',
         headers: {
@@ -68,7 +71,7 @@ async function triggerGitHubLiveTracker(eventId?: string): Promise<boolean> {
 
     if (response.status === 204) {
       lastGitHubDispatchAt = now;
-      console.log(`[Lifecycle] Triggered GitHub Actions UFC live tracker`);
+      console.log(`[Lifecycle] Triggered GitHub Actions workflow: ${workflow}`);
       return true;
     } else {
       const text = await response.text();
@@ -160,9 +163,11 @@ export async function runEventLifecycleCheck(): Promise<{
         results.eventsStarted++;
         console.log(`[Lifecycle] UPCOMING → LIVE: ${event.name}`);
 
-        // Trigger GitHub Actions live tracker for UFC events
+        // Trigger GitHub Actions live tracker for events with scrapers
         if (event.scraperType === 'ufc') {
-          await triggerGitHubLiveTracker(event.id);
+          await triggerGitHubLiveTracker('ufc-live-tracker.yml', { event_id: event.id });
+        } else if (event.scraperType === 'oktagon') {
+          await triggerGitHubLiveTracker('oktagon-live-tracker.yml', { event_id: event.id });
         }
       }
     }
@@ -170,19 +175,23 @@ export async function runEventLifecycleCheck(): Promise<{
     console.error('[Lifecycle] Step 1 (UPCOMING→LIVE) error:', error.message);
   }
 
-  // === STEP 1.5: Trigger GitHub Actions for LIVE UFC events ===
-  // Dispatches the UFC live tracker workflow every ~5 minutes (with 4-min cooldown)
+  // === STEP 1.5: Trigger GitHub Actions for LIVE events with scrapers ===
+  // Dispatches live tracker workflows every ~5 minutes (with 4-min cooldown)
   try {
-    const liveUfcEvent = await prisma.event.findFirst({
+    const liveScraperEvent = await prisma.event.findFirst({
       where: {
         eventStatus: 'LIVE',
-        scraperType: 'ufc',
+        scraperType: { in: ['ufc', 'oktagon'] },
       },
-      select: { id: true, name: true },
+      select: { id: true, name: true, scraperType: true },
     });
 
-    if (liveUfcEvent) {
-      await triggerGitHubLiveTracker(liveUfcEvent.id);
+    if (liveScraperEvent) {
+      const workflow = liveScraperEvent.scraperType === 'ufc'
+        ? 'ufc-live-tracker.yml'
+        : 'oktagon-live-tracker.yml';
+      const inputs: Record<string, string> = { event_id: liveScraperEvent.id };
+      await triggerGitHubLiveTracker(workflow, inputs);
     }
   } catch (error: any) {
     console.error('[Lifecycle] Step 1.5 (GitHub dispatch) error:', error.message);
