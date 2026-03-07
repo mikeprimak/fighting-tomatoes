@@ -342,6 +342,7 @@ async function importOktagonEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
+          scraperType: event.scraperType || 'oktagon',
         }
       });
     } else {
@@ -359,6 +360,7 @@ async function importOktagonEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           eventStatus: initialStatus,
+          scraperType: 'oktagon',
         }
       });
     }

@@ -66,24 +66,11 @@ async function findActiveOktagonEvent(overrideEventId?: string) {
  * Falls back to checking the event's oktagonUrl field or known patterns.
  */
 function getOktagonSlug(event: any): string | null {
-  // Check if event has an oktagonUrl stored
-  if (event.oktagonUrl) {
-    const match = event.oktagonUrl.match(/events\/([^/?]+)/);
+  // Extract slug from ufcUrl (stores the Oktagon event URL)
+  // e.g. "https://oktagonmma.com/en/events/oktagon-85-hamburg/?eventDetail=true" -> "oktagon-85-hamburg"
+  if (event.ufcUrl) {
+    const match = event.ufcUrl.match(/events\/([^/?]+)/);
     if (match) return match[1];
-  }
-
-  // Try to build slug from event name
-  // "OKTAGON 85: SEVERINO VS. KAKHOROV" -> extract number
-  const nameMatch = event.name?.match(/OKTAGON\s+(\d+)/i);
-  if (nameMatch) {
-    // We need the city suffix - check location field or fall back
-    const num = nameMatch[1];
-    if (event.location) {
-      const city = event.location.toLowerCase().replace(/[^a-z0-9]/g, '');
-      return `oktagon-${num}-${city}`;
-    }
-    // Without city, try just the number (won't work for API but worth trying)
-    return `oktagon-${num}`;
   }
 
   return null;
