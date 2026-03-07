@@ -4,6 +4,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
+import { useSpoilerFree } from '../../store/SpoilerFreeContext';
 import { useFocusEffect } from '@react-navigation/native';
 import { BaseFightCardProps } from './shared/types';
 import { getFighterImage, getFighterName, getFighterDisplayName, cleanFighterName, formatDate, getLastName, formatEventName } from './shared/utils';
@@ -105,6 +106,10 @@ function CompletedFightCard({
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { pendingRatingAnimationFightId, setPendingRatingAnimation } = usePredictionAnimation();
+  const { spoilerFreeMode } = useSpoilerFree();
+
+  // In spoiler-free mode, hide outcomes unless the user has rated the fight
+  const hideSpoilers = spoilerFreeMode && !fight.userRating;
 
   // Animation ref for rating animation (only allocated once via useRef)
   const ratingScaleAnim = useRef(new Animated.Value(1)).current;
@@ -417,7 +422,7 @@ function CompletedFightCard({
                     {fight.fighter1.lastName}
                   </Text>
                   {/* Method of victory */}
-                  {fight.winner === fight.fighter1.id && fight.method && (
+                  {!hideSpoilers && fight.winner === fight.fighter1.id && fight.method && (
                     <Text style={{ position: 'absolute', bottom: -14, left: 0, right: 0, color: '#4CAF50', fontSize: 9, fontWeight: '600', textAlign: 'center' }} numberOfLines={1}>
                       {formatMethod(fight.method)}{fight.round && !fight.method?.includes('Decision') ? ` R${fight.round}` : ''}
                     </Text>
@@ -427,11 +432,11 @@ function CompletedFightCard({
                 <View style={[styles.fighterImageWrapper, { marginLeft: 6, marginRight: -3 }]}>
                   <Image
                     source={fighter1ImageSource}
-                    style={[styles.fighterHeadshot, fight.winner === fight.fighter1.id && { borderWidth: 2, borderColor: '#166534' }]}
+                    style={[styles.fighterHeadshot, !hideSpoilers && fight.winner === fight.fighter1.id && { borderWidth: 2, borderColor: '#166534' }]}
                     onError={handleFighter1ImageError}
                   />
                   {/* User prediction indicator - green checkmark if correct, red X if incorrect (bottom-left for fighter 1) */}
-                  {aggregateStats?.userPrediction?.winner === fighter1FullName && (
+                  {!hideSpoilers && aggregateStats?.userPrediction?.winner === fighter1FullName && (
                     <View style={[
                       styles.userPredictionIndicatorLeft,
                       { backgroundColor: fight.winner === fight.fighter1.id ? '#166534' : '#991B1B' }
@@ -452,11 +457,11 @@ function CompletedFightCard({
                 <View style={[styles.fighterImageWrapper, { marginRight: 6, marginLeft: -3 }]}>
                   <Image
                     source={fighter2ImageSource}
-                    style={[styles.fighterHeadshot, fight.winner === fight.fighter2.id && { borderWidth: 2, borderColor: '#166534' }]}
+                    style={[styles.fighterHeadshot, !hideSpoilers && fight.winner === fight.fighter2.id && { borderWidth: 2, borderColor: '#166534' }]}
                     onError={handleFighter2ImageError}
                   />
                   {/* User prediction indicator - green checkmark if correct, red X if incorrect (bottom-right for fighter 2) */}
-                  {aggregateStats?.userPrediction?.winner === fighter2FullName && (
+                  {!hideSpoilers && aggregateStats?.userPrediction?.winner === fighter2FullName && (
                     <View style={[
                       styles.userPredictionIndicatorRight,
                       { backgroundColor: fight.winner === fight.fighter2.id ? '#166534' : '#991B1B' }
@@ -491,7 +496,7 @@ function CompletedFightCard({
                     {fight.fighter2.lastName}
                   </Text>
                   {/* Method of victory */}
-                  {fight.winner === fight.fighter2.id && fight.method && (
+                  {!hideSpoilers && fight.winner === fight.fighter2.id && fight.method && (
                     <Text style={{ position: 'absolute', bottom: -14, left: 0, right: 0, color: '#4CAF50', fontSize: 9, fontWeight: '600', textAlign: 'center' }} numberOfLines={1}>
                       {formatMethod(fight.method)}{fight.round && !fight.method?.includes('Decision') ? ` R${fight.round}` : ''}
                     </Text>

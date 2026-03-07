@@ -30,6 +30,7 @@ import HypeDistributionChart from './HypeDistributionChart';
 import { PreFightCommentCard } from './PreFightCommentCard';
 import { useAuth } from '../store/AuthContext';
 import { usePredictionAnimation } from '../store/PredictionAnimationContext';
+import { useSpoilerFree } from '../store/SpoilerFreeContext';
 import { useVerification } from '../store/VerificationContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
@@ -289,6 +290,7 @@ export default function CompletedFightDetailScreen({
   const queryClient = useQueryClient();
   const { user, isAuthenticated, refreshUserData } = useAuth();
   const { setPendingRatingAnimation } = usePredictionAnimation();
+  const { spoilerFreeMode } = useSpoilerFree();
   const { requireVerification } = useVerification();
   const { alertState, showSuccess, showError, showConfirm, hideAlert } = useCustomAlert();
 
@@ -1069,8 +1071,8 @@ export default function CompletedFightDetailScreen({
     revealOutcomeMutation.mutate();
   };
 
-  // Winner data is always visible
-  const isOutcomeRevealed = true;
+  // In spoiler-free mode, hide outcome until user has rated the fight
+  const isOutcomeRevealed = !spoilerFreeMode || rating > 0 || hasLocallyRevealed;
 
   // Pre-flight comment upvote mutation (handles both top-level comments and replies)
   const upvotePreFightCommentMutation = useMutation({
@@ -1382,8 +1384,8 @@ export default function CompletedFightDetailScreen({
   const getFighterRings = (fighterId: string, fighterName: string, isFighter2: boolean) => {
     const rings = [];
 
-    // Green ring - actual winner (always show)
-    if (fight.winner === fighterId) {
+    // Green ring - actual winner (hidden in spoiler-free mode until rated)
+    if (isOutcomeRevealed && fight.winner === fighterId) {
       rings.push('winner');
     }
 
@@ -1427,28 +1429,51 @@ export default function CompletedFightDetailScreen({
           containerBgColorDark="rgba(34, 197, 94, 0.05)"
           containerBgColorLight="rgba(34, 197, 94, 0.08)"
         >
-          {/* Reveal Button */}
+          {/* Spoiler-free prompt or Reveal Button */}
           {fight.winner && !isOutcomeRevealed && (
-            <View style={{ alignItems: 'flex-end', marginBottom: 8 }}>
-              <TouchableOpacity
-                onPress={handleRevealOutcome}
-                style={[
-                  styles.inlineTagButton,
-                  {
-                    backgroundColor: 'transparent',
-                    borderColor: colors.border,
-                  }
-                ]}
-              >
-                <Text style={[
-                  styles.inlineTagText,
-                  {
-                    color: colors.text
-                  }
-                ]}>
-                  Reveal Winner
-                </Text>
-              </TouchableOpacity>
+            <View style={{ alignItems: 'center', marginBottom: 8 }}>
+              {spoilerFreeMode && rating === 0 ? (
+                <>
+                  <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', marginBottom: 8 }}>
+                    Rate this fight to reveal the outcome
+                  </Text>
+                  <TouchableOpacity
+                    onPress={handleRevealOutcome}
+                    style={[
+                      styles.inlineTagButton,
+                      {
+                        backgroundColor: 'transparent',
+                        borderColor: colors.border,
+                      }
+                    ]}
+                  >
+                    <Text style={[
+                      styles.inlineTagText,
+                      { color: colors.textSecondary, fontSize: 11 }
+                    ]}>
+                      Reveal anyway
+                    </Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleRevealOutcome}
+                  style={[
+                    styles.inlineTagButton,
+                    {
+                      backgroundColor: 'transparent',
+                      borderColor: colors.border,
+                    }
+                  ]}
+                >
+                  <Text style={[
+                    styles.inlineTagText,
+                    { color: colors.text }
+                  ]}>
+                    Reveal Winner
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -1841,8 +1866,8 @@ export default function CompletedFightDetailScreen({
                 winnerPredictions={predictionStats.winnerPredictions}
                 showColors={true}
                 showLabels={true}
-                actualWinner={fight.winner}
-                actualMethod={normalized}
+                actualWinner={isOutcomeRevealed ? fight.winner : null}
+                actualMethod={isOutcomeRevealed ? normalized : null}
               />
             );
           })() : (
