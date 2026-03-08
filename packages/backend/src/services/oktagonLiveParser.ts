@@ -270,14 +270,15 @@ export async function parseOktagonLiveData(
     let unCancelledCount = 0;
 
     for (const dbFight of event.fights) {
-      // Skip fights that are already complete
-      if (dbFight.fightStatus === 'COMPLETED') {
+      // Skip fights that were completed WITH a real result (winner set by scraper)
+      // But still check lifecycle-completed fights (no winner) — they may need cancellation
+      if (dbFight.fightStatus === 'COMPLETED' && dbFight.winner) {
         continue;
       }
 
-      // Create signature for this DB fight
+      // Create signature for this DB fight (must use stripDiacritics to match scraped signatures)
       const dbFightSignature = [dbFight.fighter1.lastName, dbFight.fighter2.lastName]
-        .map(n => n.toLowerCase().trim())
+        .map(n => stripDiacritics(n).toLowerCase().trim())
         .sort()
         .join('|');
 
@@ -297,8 +298,9 @@ export async function parseOktagonLiveData(
         unCancelledCount++;
       }
       // Case 2: Fight is NOT cancelled and missing from scraped data -> CANCEL it
+      // This also catches lifecycle-completed fights (COMPLETED with no winner) that were cancelled
       else if (dbFight.fightStatus !== 'CANCELLED' && !fightIsInScrapedData) {
-        console.log(`  ⚠️  Fight missing from scraped data: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
+        console.log(`  ⚠️  Fight missing from scraped data: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (status: ${dbFight.fightStatus})`);
 
         // Only mark as cancelled if event has started (to avoid false positives before event begins)
         if (event.eventStatus !== 'UPCOMING' || liveData.hasStarted) {

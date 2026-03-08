@@ -273,6 +273,9 @@ class OktagonLiveScraper {
             fighterB.isWinner = true;
             winnerName = fighterB.lastName;
             winnerId = fighterB.id;
+          } else if (resultStr === 'DRAW' || resultStr === 'NO_CONTEST' || resultStr === 'NC') {
+            // Draw or no contest — fight is complete but no winner
+            console.log(`    ℹ️  Result is ${resultStr}: ${fighterA.lastName} vs ${fighterB.lastName}`);
           } else if (typeof fight.result === 'object' && fight.result?.winner?.id) {
             // Legacy format: result is an object with winner.id
             const legacyWinnerId = fight.result.winner.id;
@@ -284,6 +287,25 @@ class OktagonLiveScraper {
               fighterB.isWinner = true;
               winnerName = fighterB.lastName;
               winnerId = legacyWinnerId;
+            }
+          } else {
+            // Unknown result format — log for debugging
+            console.warn(`    ⚠️  Unknown result format for ${fighterA.lastName} vs ${fighterB.lastName}: ${JSON.stringify(fight.result)}`);
+          }
+
+          // Fallback: check fight-level winner fields (some API versions)
+          if (!winnerName && fight.winner) {
+            const winnerObj = fight.winner;
+            if (winnerObj.id === fighterA.id || winnerObj === 'fighter1') {
+              fighterA.isWinner = true;
+              winnerName = fighterA.lastName;
+              winnerId = fighterA.id;
+              console.log(`    ✓ Winner from fallback field: ${winnerName}`);
+            } else if (winnerObj.id === fighterB.id || winnerObj === 'fighter2') {
+              fighterB.isWinner = true;
+              winnerName = fighterB.lastName;
+              winnerId = fighterB.id;
+              console.log(`    ✓ Winner from fallback field: ${winnerName}`);
             }
           }
 
@@ -300,6 +322,25 @@ class OktagonLiveScraper {
             round: fight.numRounds || (typeof fight.result === 'object' ? fight.result?.round : undefined),
             time: fight.time || (typeof fight.result === 'object' ? fight.result?.time : undefined),
           };
+        }
+
+        // Fallback: check fighter-level isWinner flags from API (in case result field is delayed)
+        if (!result && (fight.fighter1?.isWinner || fight.fighter2?.isWinner)) {
+          isComplete = true;
+          hasStarted = true;
+          if (fight.fighter1?.isWinner) {
+            fighterA.isWinner = true;
+            result = { winner: fighterA.lastName, winnerId: fighterA.id };
+            console.log(`    ✓ Winner from fighter isWinner flag: ${fighterA.lastName}`);
+          } else {
+            fighterB.isWinner = true;
+            result = { winner: fighterB.lastName, winnerId: fighterB.id };
+            console.log(`    ✓ Winner from fighter isWinner flag: ${fighterB.lastName}`);
+          }
+          // Check for method/time at fight level
+          if (fight.resultType) result.method = parseMethod(fight.resultType);
+          if (fight.numRounds) result.round = fight.numRounds;
+          if (fight.time) result.time = fight.time;
         }
 
         // Check for live status

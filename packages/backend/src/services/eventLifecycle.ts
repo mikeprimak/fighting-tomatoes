@@ -24,8 +24,8 @@ const MINUTES_PER_FIGHT = 30;
 const BUFFER_HOURS = 1;
 
 let lifecycleTimer: ReturnType<typeof setInterval> | null = null;
-let lastGitHubDispatchAt: number = 0;
-const GITHUB_DISPATCH_COOLDOWN_MS = 4 * 60 * 1000; // Don't trigger more than once per 4 minutes
+const lastGitHubDispatchByWorkflow: Record<string, number> = {};
+const GITHUB_DISPATCH_COOLDOWN_MS = 4 * 60 * 1000; // Don't trigger more than once per 4 minutes per workflow
 
 /**
  * Trigger the UFC Live Tracker GitHub Actions workflow via API.
@@ -42,11 +42,12 @@ async function triggerGitHubLiveTracker(
     return false;
   }
 
-  // Cooldown: don't trigger if we recently dispatched
+  // Per-workflow cooldown: don't trigger if we recently dispatched this specific workflow
   const now = Date.now();
-  if (now - lastGitHubDispatchAt < GITHUB_DISPATCH_COOLDOWN_MS) {
-    const secsAgo = Math.round((now - lastGitHubDispatchAt) / 1000);
-    console.log(`[Lifecycle] GitHub dispatch skipped (last dispatch ${secsAgo}s ago)`);
+  const lastDispatch = lastGitHubDispatchByWorkflow[workflow] || 0;
+  if (now - lastDispatch < GITHUB_DISPATCH_COOLDOWN_MS) {
+    const secsAgo = Math.round((now - lastDispatch) / 1000);
+    console.log(`[Lifecycle] GitHub dispatch skipped for ${workflow} (last dispatch ${secsAgo}s ago)`);
     return false;
   }
 
@@ -70,7 +71,7 @@ async function triggerGitHubLiveTracker(
     );
 
     if (response.status === 204) {
-      lastGitHubDispatchAt = now;
+      lastGitHubDispatchByWorkflow[workflow] = now;
       console.log(`[Lifecycle] Triggered GitHub Actions workflow: ${workflow}`);
       return true;
     } else {
@@ -176,9 +177,9 @@ export async function runEventLifecycleCheck(): Promise<{
   }
 
   // === STEP 1.5: Trigger GitHub Actions for LIVE events with scrapers ===
-  // Dispatches live tracker workflows every ~5 minutes (with 4-min cooldown)
+  // Dispatches live tracker workflows every ~5 minutes (per-workflow cooldown)
   try {
-    const liveScraperEvent = await prisma.event.findFirst({
+    const liveScraperEvents = await prisma.event.findMany({
       where: {
         eventStatus: 'LIVE',
         scraperType: { in: ['ufc', 'oktagon'] },
@@ -186,7 +187,7 @@ export async function runEventLifecycleCheck(): Promise<{
       select: { id: true, name: true, scraperType: true },
     });
 
-    if (liveScraperEvent) {
+    for (const liveScraperEvent of liveScraperEvents) {
       const workflow = liveScraperEvent.scraperType === 'ufc'
         ? 'ufc-live-tracker.yml'
         : 'oktagon-live-tracker.yml';

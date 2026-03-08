@@ -95,7 +95,7 @@ UFC.com requires a full headless browser and blocks Render IPs. GitHub Actions c
 3. **The script** updates the database directly via `DATABASE_URL` (no Render involvement)
 4. **GitHub cron** (`*/5`) still runs as a backup, but Render-triggered dispatches are the primary mechanism
 
-The dispatch has a **4-minute cooldown** to avoid duplicate runs. The lifecycle triggers it both on UPCOMING→LIVE transition and on every subsequent cycle while a UFC event is LIVE.
+The dispatch has a **per-workflow 4-minute cooldown** to avoid duplicate runs. The lifecycle triggers it both on UPCOMING→LIVE transition and on every subsequent cycle while a scraper event is LIVE. Multiple scrapers (e.g., UFC + Oktagon) can run simultaneously — each workflow has its own independent cooldown.
 
 **Requirements:**
 - `GITHUB_TOKEN` env var on Render with `actions:write` permission on the repo
@@ -272,6 +272,33 @@ As of Feb 2026, all organization scrapers populate `mainStartTime` when time dat
 **Lesson:** When scraping websites that adapt times to the viewer's timezone, always force the expected timezone in both the environment (`TZ` env var) and the browser (`page.emulateTimezone()`).
 
 **Note on event dates:** `event.date` is stored at midnight UTC, typically one day ahead of the US local date (e.g., a Saturday night EST event stores as Sunday midnight UTC). `toLocaleDateString` in US timezones shifts this back to the correct day. Do NOT change dates to noon UTC — that breaks the display.
+
+## Resolved: Oktagon Tracker Stopped When UFC Went Live (Mar 2026)
+
+**Symptoms:** During a simultaneous Oktagon + UFC event, the Oktagon live tracker stopped receiving GitHub Actions dispatches after the UFC event went LIVE. Cancelled fights (e.g., Wagner vs Kalejaiye) were never detected.
+
+**Root causes (two bugs):**
+
+1. **`findFirst` in Step 1.5** — The lifecycle only dispatched one workflow at a time. When both UFC and Oktagon events were LIVE, only the first event found (typically UFC) got dispatched. Oktagon was silently dropped.
+
+2. **Single global cooldown** — The 4-minute dispatch cooldown was shared across all workflows. After dispatching the UFC workflow, the Oktagon dispatch was blocked by the cooldown.
+
+**Fix:**
+1. Changed `findFirst` → `findMany` in Step 1.5, looping through all LIVE scraper events
+2. Changed cooldown from a single `lastGitHubDispatchAt` timestamp to a per-workflow `lastGitHubDispatchByWorkflow` map
+
+## Resolved: Oktagon Cancellation Detection Diacritics Mismatch (Mar 2026)
+
+**Symptoms:** Cancelled fights (missing from Oktagon API) were not detected. Additionally, fights with diacritical characters (common in Czech/Slovak names like Kříž, Ďuriš) could be falsely cancelled.
+
+**Root cause:** The cancellation detection compared fight signatures using `stripDiacritics()` for scraped data but **not** for DB data. Scraped signature `"kriz"` ≠ DB signature `"kříž"`, so:
+- Fights with diacritics were falsely flagged as missing → incorrectly CANCELLED
+- `autoCompleteOktagonEvent` could see all non-cancelled fights as complete → stopped the tracker early
+- Genuinely cancelled fights (no diacritics) never got processed because the tracker had already stopped
+
+**Fix:** Added `stripDiacritics()` to DB fight signature creation in `oktagonLiveParser.ts` (line ~279).
+
+**Lesson:** When comparing fighter names across data sources (API vs DB), always normalize diacritics on BOTH sides of the comparison.
 
 ## Mobile App Live Refresh
 
