@@ -186,10 +186,16 @@ async function scrapeEventsList(browser) {
       if (processedUrls.has(eventUrl)) return;
       processedUrls.add(eventUrl);
 
-      // Extract event slug from URL
+      // Extract event slug from URL, stripping query params and numeric ID prefixes
       const urlParts = eventUrl.split('/events/');
       if (urlParts.length < 2) return;
-      const eventSlug = urlParts[1].replace(/\/$/, '');
+      let eventSlug = urlParts[1].replace(/\/$/, '').split('?')[0];
+      // URL may be /events/1308036/bkfc-fight-night-newcastle-tickets — take last path segment
+      if (eventSlug.includes('/')) {
+        eventSlug = eventSlug.split('/').pop();
+      }
+      // Strip trailing "-tickets" suffix
+      eventSlug = eventSlug.replace(/-tickets$/, '');
 
       // Skip if no slug
       if (!eventSlug) return;
@@ -620,8 +626,8 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         }
 
         // Try 4: Broader fight container (may contain images for BOTH fighters - less reliable)
+        const container = link.closest('[class*="matchup"], [class*="fight"], [class*="bout"], [class*="athlete"]');
         if (!imageUrl) {
-          const container = link.closest('[class*="matchup"], [class*="fight"], [class*="bout"], [class*="athlete"]');
           imageUrl = findBestImage(container);
         }
 
