@@ -122,8 +122,23 @@ export class TapologyLiveScraper {
       const html = await response.text();
       const $ = cheerio.load(html);
 
-      // Get event name
-      const eventName = $('h1').first().text().trim() || 'Unknown Event';
+      // Get event name - skip cookie consent banners that may have h1 tags
+      let eventName = $('.eventPageHeaderTitles h1, .header h1, #main h1, .content h1').first().text().trim();
+      if (!eventName || /consent|cookie|privacy/i.test(eventName)) {
+        // Fall back to first h1 that doesn't look like a consent banner
+        $('h1').each((_, el) => {
+          const text = $(el).text().trim();
+          if (text && !/consent|cookie|privacy/i.test(text)) {
+            eventName = text;
+            return false; // break
+          }
+        });
+      }
+      if (!eventName || /consent|cookie|privacy/i.test(eventName)) {
+        // Last resort: extract from page title
+        const titleMatch = $('title').text().match(/^(.+?)(?:\s*[-|])/);
+        eventName = titleMatch ? titleMatch[1].trim() : 'Unknown Event';
+      }
 
       // Determine event status
       let status: 'upcoming' | 'live' | 'complete' = 'upcoming';

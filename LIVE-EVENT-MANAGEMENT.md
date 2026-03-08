@@ -331,3 +331,23 @@ The 30s interval ensures the app picks up fight status changes (UPCOMING → LIV
 4. If a live scraper is running, you'll see tracker data alongside published data
 5. Click **Publish** on individual fights to copy tracker data → published fields
 6. Click **Publish All** to bulk-publish all tracker results for the event
+
+---
+
+## Known Issues & Fixes
+
+### Tapology Cookie Consent Banner (Fixed Mar 2026)
+
+**Problem:** Tapology shows a cookie consent dialog with an `<h1>` tag. The Zuffa Boxing scraper (`scrapeZuffaBoxingTapology.js`) and Tapology live scraper (`tapologyLiveScraper.ts`) both used `querySelector('h1')` / `$('h1').first()` to get the event name, which grabbed the consent banner heading (e.g. "Consent Required to Continue") instead of the actual event title.
+
+**Fix:** Both scrapers now:
+- Try specific selectors first (`.eventPageHeaderTitles h1`, `#main h1`, etc.)
+- Reject names containing "consent", "cookie", or "privacy"
+- Fall back to the `<title>` tag as last resort
+- The Puppeteer scraper also attempts to dismiss the consent banner before extracting data
+
+### BKFC Duplicate Events from Ticket Links (Fixed Mar 2026)
+
+**Problem:** BKFC.com has ticket links with URLs like `/events/1308036/bkfc-fight-night-newcastle-tickets?skin=newcastle`. The scraper treated these as separate events, creating duplicates alongside the correctly scraped event. The slug extraction didn't strip query params, numeric ID prefixes, or `-tickets` suffixes, producing garbled names like "1308036/bkfc Fight Night Newcastle Tickets?skin=newcastle".
+
+**Fix:** `scrapeAllBKFCData.js` slug extraction now strips query parameters, takes the last path segment (ignoring numeric IDs), and removes `-tickets` suffixes before generating event names.

@@ -201,6 +201,17 @@ async function scrapeEventPage(browser, eventUrl) {
     // Wait for fighter links to appear (resilient to Tapology layout changes)
     await page.waitForSelector('a[href*="/fightcenter/fighters/"]', { timeout: 15000 });
 
+    // Dismiss cookie consent banner if present (prevents scraping banner text as event name)
+    try {
+      const consentBtn = await page.$('button[aria-label="Consent"], .fc-cta-consent, button.accept-cookies, [data-testid="consent-accept"]');
+      if (consentBtn) {
+        await consentBtn.click();
+        await new Promise(r => setTimeout(r, 500));
+      }
+    } catch (e) {
+      // Consent banner not present or already dismissed
+    }
+
     const eventData = await page.evaluate(() => {
       const data = {
         eventName: '',
@@ -214,10 +225,23 @@ async function scrapeEventPage(browser, eventUrl) {
         fights: []
       };
 
-      // Extract event name from header
-      const eventHeader = document.querySelector('h1');
+      // Extract event name from header - skip cookie consent banners
+      // Look for the event-specific header first, fall back to first h1 outside consent dialogs
+      const eventHeader = document.querySelector('.eventPageHeaderTitles h1, .header h1, #main h1, .content h1')
+        || document.querySelector('h1:not([class*="consent"]):not([class*="cookie"]):not([class*="modal"])');
       if (eventHeader) {
-        data.eventName = eventHeader.textContent.trim();
+        const name = eventHeader.textContent.trim();
+        // Reject names that look like cookie consent text
+        if (name && !name.toLowerCase().includes('consent') && !name.toLowerCase().includes('cookie') && !name.toLowerCase().includes('privacy')) {
+          data.eventName = name;
+        }
+      }
+      // If we still don't have a name, try the page title
+      if (!data.eventName) {
+        const titleMatch = document.title.match(/^(.+?)(?:\s*[-|]|\s*\|)/);
+        if (titleMatch) {
+          data.eventName = titleMatch[1].trim();
+        }
       }
 
       // Extract date from page text
