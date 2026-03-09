@@ -169,6 +169,8 @@ export async function runEventLifecycleCheck(): Promise<{
           await triggerGitHubLiveTracker('ufc-live-tracker.yml', { event_id: event.id });
         } else if (event.scraperType === 'oktagon') {
           await triggerGitHubLiveTracker('oktagon-live-tracker.yml', { event_id: event.id });
+        } else if (event.scraperType === 'tapology') {
+          await triggerGitHubLiveTracker('tapology-live-tracker.yml', { event_id: event.id });
         }
       }
     }
@@ -182,15 +184,20 @@ export async function runEventLifecycleCheck(): Promise<{
     const liveScraperEvents = await prisma.event.findMany({
       where: {
         eventStatus: 'LIVE',
-        scraperType: { in: ['ufc', 'oktagon'] },
+        scraperType: { in: ['ufc', 'oktagon', 'tapology'] },
       },
       select: { id: true, name: true, scraperType: true },
     });
 
     for (const liveScraperEvent of liveScraperEvents) {
-      const workflow = liveScraperEvent.scraperType === 'ufc'
-        ? 'ufc-live-tracker.yml'
-        : 'oktagon-live-tracker.yml';
+      let workflow: string;
+      if (liveScraperEvent.scraperType === 'ufc') {
+        workflow = 'ufc-live-tracker.yml';
+      } else if (liveScraperEvent.scraperType === 'oktagon') {
+        workflow = 'oktagon-live-tracker.yml';
+      } else {
+        workflow = 'tapology-live-tracker.yml';
+      }
       const inputs: Record<string, string> = { event_id: liveScraperEvent.id };
       await triggerGitHubLiveTracker(workflow, inputs);
     }
