@@ -11,7 +11,7 @@ interface Event {
  * Returns true if any event has started but not completed
  */
 export function useHasLiveEvent() {
-  const { data: eventsData } = useQuery({
+  const { data: eventsData, isLoading } = useQuery({
     queryKey: ['upcomingEvents', 'liveCheck'],
     queryFn: () => apiService.getEvents({ type: 'upcoming', limit: 20 }),
     staleTime: 30 * 1000, // 30 seconds
@@ -23,4 +23,22 @@ export function useHasLiveEvent() {
   const hasLiveEvent = allEvents.some((event: Event) => event.eventStatus === 'LIVE');
 
   return hasLiveEvent;
+}
+
+/**
+ * Same as useHasLiveEvent but also returns loading state,
+ * so callers can wait before acting on the result.
+ */
+export function useHasLiveEventWithLoading() {
+  const { data: eventsData, isLoading } = useQuery({
+    queryKey: ['upcomingEvents', 'liveCheck'],
+    queryFn: () => apiService.getEvents({ type: 'upcoming', limit: 20 }),
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
+  });
+
+  const allEvents = eventsData?.events || [];
+  const hasLiveEvent = allEvents.some((event: Event) => event.eventStatus === 'LIVE');
+
+  return { hasLiveEvent, isLoading };
 }

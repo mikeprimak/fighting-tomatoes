@@ -167,43 +167,57 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
         }}
       />
       <Tabs.Screen
+        name="live-events"
+        options={{
+          href: hasLiveEvent ? '/(tabs)/live-events' : null, // Only show tab when live events exist
+          title: 'Live Events',
+          tabBarIcon: ({ color, focused }) => (
+            <FontAwesome
+              name="podcast"
+              size={24}
+              style={{ marginBottom: -3 }}
+              color={focused ? '#FF0000' : color}
+            />
+          ),
+          tabBarLabel: ({ focused }) => (
+            <Text style={{ fontSize: 10, color: focused ? '#FF0000' : colors.tabIconDefault, textAlign: 'center' }}>
+              Live Events
+            </Text>
+          ),
+          tabBarActiveTintColor: '#FF0000',
+          headerTitle: () => <HeaderLogo title="Live Events" />,
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={toggleSearch}
+              style={{ marginRight: 16, padding: 8, marginTop: -16 }}
+            >
+              <FontAwesome
+                name="search"
+                size={20}
+                color={isSearchVisible ? colors.tint : colors.text}
+              />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="events"
         options={{
           title: 'Upcoming Events',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{ position: 'relative', justifyContent: 'center', alignItems: 'center' }}>
-              {hasLiveEvent ? (
-                <View
-                  style={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: 6,
-                    backgroundColor: '#FF0000',
-                    marginBottom: -3,
-                  }}
-                />
-              ) : (
-                <FontAwesome6
-                  name="fire-flame-curved"
-                  size={24}
-                  style={{ marginBottom: -3 }}
-                  color={color}
-                />
-              )}
-            </View>
+          tabBarIcon: ({ color }) => (
+            <FontAwesome6
+              name="fire-flame-curved"
+              size={24}
+              style={{ marginBottom: -3 }}
+              color={color}
+            />
           ),
           tabBarLabel: ({ color }) => (
-            <Text
-              style={{
-                fontSize: 10,
-                color,
-                textAlign: 'center',
-              }}
-            >
-              {hasLiveEvent ? 'Live Fights' : 'Upcoming Events'}
+            <Text style={{ fontSize: 10, color, textAlign: 'center' }}>
+              {hasLiveEvent ? 'Upcoming' : 'Upcoming Events'}
             </Text>
           ),
-          headerTitle: () => <HeaderLogo title={hasLiveEvent ? 'Live Fights' : 'Upcoming Events'} />,
+          headerTitle: () => <HeaderLogo title="Upcoming Events" />,
           headerRight: () => (
             <TouchableOpacity
               onPress={toggleSearch}

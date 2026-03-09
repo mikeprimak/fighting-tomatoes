@@ -18,6 +18,7 @@ import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { FightDisplayCard, EventBannerCard, SearchBar } from '../../../components';
 import OrgFilterTabs from '../../../components/OrgFilterTabs';
+import UpcomingFightModal from '../../../components/UpcomingFightModal';
 import { useAuth } from '../../../store/AuthContext';
 import { useNotification } from '../../../store/NotificationContext';
 import { useOrgFilter } from '../../../store/OrgFilterContext';
@@ -62,6 +63,9 @@ export default function UpcomingEventsScreen() {
 
   // Ref to FlatList for scrolling to top on filter change
   const flatListRef = useRef<FlatList>(null);
+
+  // Modal state for upcoming fight quick-view
+  const [modalFight, setModalFight] = useState<Fight | null>(null);
 
   // Convert selected orgs to comma-separated string for API
   const promotionsFilter = selectedOrgs.size > 0
@@ -162,18 +166,13 @@ export default function UpcomingEventsScreen() {
     });
   }, [eventsData]);
 
-  // Check if any event is live
-  const hasLiveEvent = allEvents.some((event: Event) => event.eventStatus === 'LIVE');
-
-  // Filter out hidden orgs (e.g. Matchroom) then sort (live events first, then by date)
+  // Filter out hidden orgs and LIVE events (shown in Live Events tab), sort by date
   const upcomingEvents = React.useMemo(() => {
-    return filterEventsByOrg([...allEvents]).sort((a: Event, b: Event) => {
-      const aIsLive = a.eventStatus === 'LIVE';
-      const bIsLive = b.eventStatus === 'LIVE';
-      if (aIsLive && !bIsLive) return -1;
-      if (!aIsLive && bIsLive) return 1;
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    });
+    return filterEventsByOrg([...allEvents])
+      .filter((event: Event) => event.eventStatus !== 'LIVE')
+      .sort((a: Event, b: Event) => {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      });
   }, [allEvents, filterEventsByOrg]);
 
   // Scroll to top when filter changes
@@ -191,7 +190,12 @@ export default function UpcomingEventsScreen() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleFightPress = useCallback((fight: Fight) => {
-    router.push(`/fight/${fight.id}`);
+    // Upcoming fights open in a modal; live/completed navigate to detail screen
+    if (!fight.fightStatus || fight.fightStatus === 'UPCOMING') {
+      setModalFight(fight);
+    } else {
+      router.push(`/fight/${fight.id}`);
+    }
   }, [router]);
 
   const styles = createStyles(colors);
@@ -313,6 +317,13 @@ export default function UpcomingEventsScreen() {
         initialNumToRender={3}
       />
       )}
+
+      {/* Upcoming fight quick-view modal */}
+      <UpcomingFightModal
+        visible={!!modalFight}
+        fight={modalFight}
+        onClose={() => setModalFight(null)}
+      />
     </SafeAreaView>
   );
 }

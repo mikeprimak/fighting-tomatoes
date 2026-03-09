@@ -40,7 +40,7 @@ export default function OrgFilterTabs({ onFilterChange }: OrgFilterTabsProps) {
 
         {/* Organization Tabs */}
         {ORGANIZATIONS.map(org => {
-          const isSelected = isAllSelected || selectedOrgs.has(org);
+          const isSelected = selectedOrgs.has(org);
           return (
             <TouchableOpacity
               key={org}
