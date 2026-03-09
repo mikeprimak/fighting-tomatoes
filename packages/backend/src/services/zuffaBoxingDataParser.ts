@@ -312,6 +312,7 @@ async function importZuffaEvents(
           location,
           ufcUrl: eventData.eventUrl,
           promotion: 'Zuffa Boxing',
+          scraperType: 'tapology',
           bannerImage,
         }
       });
@@ -334,6 +335,7 @@ async function importZuffaEvents(
           location,
           bannerImage,
           ufcUrl: eventData.eventUrl,
+          scraperType: 'tapology',
           eventStatus: initialStatus,
         }
       });
