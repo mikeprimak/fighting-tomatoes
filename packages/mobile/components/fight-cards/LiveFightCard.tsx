@@ -503,11 +503,11 @@ function LiveFightCard({
               {/* Fighter 1 - Left half */}
               <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
                 <View style={[
-                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-end' }
+                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'center' }
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'right', fontWeight: '400', color: colors.textSecondary, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterName, { textAlign: 'center', fontWeight: '400', color: colors.textSecondary, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -516,7 +516,7 @@ function LiveFightCard({
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'right', color: colors.text, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterLastName, { textAlign: 'center', color: colors.text, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -557,11 +557,11 @@ function LiveFightCard({
                   )}
                 </View>
                 <View style={[
-                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'flex-start' }
+                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'center' }
                 ]}>
                   {/* First name */}
                   <Text
-                    style={[styles.fighterName, { textAlign: 'left', fontWeight: '400', color: colors.textSecondary, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterName, { textAlign: 'center', fontWeight: '400', color: colors.textSecondary, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
@@ -570,7 +570,7 @@ function LiveFightCard({
                   </Text>
                   {/* Last name */}
                   <Text
-                    style={[styles.fighterLastName, { textAlign: 'left', color: colors.text, paddingHorizontal: 4, flexShrink: 0 }]}
+                    style={[styles.fighterLastName, { textAlign: 'center', color: colors.text, paddingHorizontal: 4, flexShrink: 0 }]}
                     numberOfLines={1}
                     adjustsFontSizeToFit
                     minimumFontScale={0.7}
