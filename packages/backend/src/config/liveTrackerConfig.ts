@@ -5,7 +5,7 @@
  * The lifecycle service handles all time-based status transitions.
  */
 
-export type ScraperType = 'ufc' | 'matchroom' | 'oktagon' | 'onefc' | 'tapology';
+export type ScraperType = 'ufc' | 'matchroom' | 'oktagon' | 'onefc' | 'tapology' | 'bkfc';
 
 /**
  * Scrapers that are production-ready and trusted to auto-publish results.
@@ -14,7 +14,7 @@ export type ScraperType = 'ufc' | 'matchroom' | 'oktagon' | 'onefc' | 'tapology'
  *
  * Add a scraper here only after thorough testing.
  */
-export const PRODUCTION_SCRAPERS: ScraperType[] = ['ufc', 'oktagon', 'tapology'];
+export const PRODUCTION_SCRAPERS: ScraperType[] = ['ufc', 'oktagon', 'tapology', 'bkfc'];
 
 /**
  * Check if a scraper type is production-ready (trusted to auto-publish).
