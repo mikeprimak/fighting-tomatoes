@@ -8,6 +8,7 @@ const isExpoGo = Constants.appOwnership === 'expo';
 // Lazy load Notifications to prevent initialization on import
 let Notifications: any = null;
 let isInitialized = false;
+let tokenRegistered = false;
 
 function initializeNotifications() {
   if (isInitialized) return;
@@ -54,6 +55,9 @@ export async function requestNotificationPermissions(): Promise<boolean> {
  * Get Expo Push Token and register with backend
  */
 export async function registerPushToken(): Promise<string | null> {
+  // Only register once per app session to avoid repeated permission/token calls
+  if (tokenRegistered) return null;
+
   try {
     // Request permissions first
     const hasPermission = await requestNotificationPermissions();
@@ -74,6 +78,7 @@ export async function registerPushToken(): Promise<string | null> {
       // Register with backend
       await apiService.registerPushToken(token.data);
       console.log('Push token registered:', token.data);
+      tokenRegistered = true;
       return token.data;
     }
 
