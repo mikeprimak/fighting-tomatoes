@@ -67,7 +67,7 @@ export default function UpcomingEventsScreen() {
 
   // Modal state for upcoming fight quick-view
   const [modalFight, setModalFight] = useState<Fight | null>(null);
-  const [modalHasLiveTracking, setModalHasLiveTracking] = useState(false);
+  const [modalShowBell, setModalShowBell] = useState(false);
 
   // Convert selected orgs to comma-separated string for API
   const promotionsFilter = selectedOrgs.size > 0
@@ -191,11 +191,17 @@ export default function UpcomingEventsScreen() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const handleFightPress = useCallback((fight: Fight, hasLiveTracking?: boolean) => {
+  // Only UFC has reliable real-time fight-start detection for "Notify Me" notifications
+  const NOTIFY_PROMOTIONS = ['UFC'];
+
+  const handleFightPress = useCallback((fight: Fight, event?: Event) => {
     // Upcoming fights open in a modal; live/completed navigate to detail screen
     if (!fight.fightStatus || fight.fightStatus === 'UPCOMING') {
       setModalFight(fight);
-      setModalHasLiveTracking(hasLiveTracking === true);
+      setModalShowBell(
+        event?.hasLiveTracking === true &&
+        NOTIFY_PROMOTIONS.includes(event?.promotion || '')
+      );
     } else {
       router.push(`/fight/${fight.id}`);
     }
@@ -326,7 +332,7 @@ export default function UpcomingEventsScreen() {
         visible={!!modalFight}
         fight={modalFight}
         onClose={() => setModalFight(null)}
-        showNotificationBell={modalHasLiveTracking}
+        showNotificationBell={modalShowBell}
       />
     </SafeAreaView>
   );
@@ -347,7 +353,7 @@ const EventSection = memo(function EventSection({
   event: Event;
   colors: any;
   isAuthenticated: boolean;
-  onFightPress: (fight: Fight, hasLiveTracking?: boolean) => void;
+  onFightPress: (fight: Fight, event?: Event) => void;
   formatDate: (date: string) => string;
   formatTime: (date: string) => string;
   formatTimeUntil: (date: string, startTime?: string) => string;
@@ -512,7 +518,7 @@ const EventSection = memo(function EventSection({
                 <FightDisplayCard
                   key={fight.id}
                   fight={getDevFight(fight)}
-                  onPress={() => onFightPress(fight, event.hasLiveTracking)}
+                  onPress={() => onFightPress(fight, event)}
                   showEvent={false}
                   isNextFight={nextFight?.id === fight.id}
                   hasLiveFight={DEV_FORCE_LIVE_NOW && isCostaVsCharriere(fight) ? true : hasLiveFight}
@@ -545,7 +551,7 @@ const EventSection = memo(function EventSection({
                 <FightDisplayCard
                   key={fight.id}
                   fight={getDevFight(fight)}
-                  onPress={() => onFightPress(fight, event.hasLiveTracking)}
+                  onPress={() => onFightPress(fight, event)}
                   showEvent={false}
                   isNextFight={nextFight?.id === fight.id}
                   hasLiveFight={DEV_FORCE_LIVE_NOW && isCostaVsCharriere(fight) ? true : hasLiveFight}
@@ -578,7 +584,7 @@ const EventSection = memo(function EventSection({
                 <FightDisplayCard
                   key={fight.id}
                   fight={getDevFight(fight)}
-                  onPress={() => onFightPress(fight, event.hasLiveTracking)}
+                  onPress={() => onFightPress(fight, event)}
                   showEvent={false}
                   isNextFight={nextFight?.id === fight.id}
                   hasLiveFight={DEV_FORCE_LIVE_NOW && isCostaVsCharriere(fight) ? true : hasLiveFight}
