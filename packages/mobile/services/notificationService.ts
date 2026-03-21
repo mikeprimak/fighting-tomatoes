@@ -15,14 +15,19 @@ function initializeNotifications() {
   Notifications = require('expo-notifications');
 
   // Configure how notifications are displayed when app is in foreground
+  // Only show notifications that have actual content (title or body)
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
+    handleNotification: async (notification: any) => {
+      const { title, body } = notification.request.content;
+      const hasContent = !!(title || body);
+      return {
+        shouldShowAlert: hasContent,
+        shouldPlaySound: hasContent,
+        shouldSetBadge: hasContent,
+        shouldShowBanner: hasContent,
+        shouldShowList: hasContent,
+      };
+    },
   });
 
   isInitialized = true;
