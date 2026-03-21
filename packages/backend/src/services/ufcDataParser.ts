@@ -408,6 +408,7 @@ async function importEvents(
       earlyPrelimStartTime,
       prelimStartTime,
       mainStartTime,
+      scraperType: 'ufc',
     };
 
     // Only update date if:
@@ -446,6 +447,7 @@ async function importEvents(
           prelimStartTime,
           mainStartTime,
           eventStatus: initialStatus,
+          scraperType: 'ufc',
         }
       });
     } catch (err: any) {

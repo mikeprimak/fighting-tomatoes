@@ -19,6 +19,7 @@ import { authenticateUser, requireEmailVerification } from '../middleware/auth';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
+import { isProductionScraper } from '../config/liveTrackerConfig';
 
 // Organization filter groups - maps filter buttons to actual promotions
 // BOXING is an aggregate that includes multiple boxing promoters
@@ -328,6 +329,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         earlyPrelimStartTime: true,
         prelimStartTime: true,
         mainStartTime: true,
+        scraperType: true,
       };
 
       // Include fights if requested
@@ -481,6 +483,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
           // Transform events to add averageHype, commentCount, and user data to fights
           transformedEvents = events.map((event: any) => ({
             ...event,
+            hasLiveTracking: isProductionScraper(event.scraperType),
             fights: event.fights?.map((fight: any) => {
               const hypeData = hypeByFight.get(fight.id);
               const userRating = userRatingsByFight.get(fight.id);
@@ -506,10 +509,16 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
 
+      // Ensure hasLiveTracking is set on all events (even without fights)
+      const finalEvents = transformedEvents.map((event: any) => ({
+        ...event,
+        hasLiveTracking: event.hasLiveTracking ?? isProductionScraper(event.scraperType),
+      }));
+
       const totalPages = Math.ceil(total / limit);
 
       return reply.code(200).send({
-        events: transformedEvents,
+        events: finalEvents,
         pagination: {
           page,
           limit,

@@ -1,4 +1,4 @@
-import React, { useCallback, memo } from 'react';
+import React, { useCallback, useState, memo } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
 import { FightDisplayCard, EventBannerCard } from '../../components';
+import UpcomingFightModal from '../../components/UpcomingFightModal';
 import OrgFilterTabs from '../../components/OrgFilterTabs';
 import { useAuth } from '../../store/AuthContext';
 import { useOrgFilter } from '../../store/OrgFilterContext';
@@ -35,6 +36,7 @@ interface Event {
   earlyPrelimStartTime?: string | null;
   prelimStartTime?: string | null;
   mainStartTime?: string | null;
+  hasLiveTracking?: boolean;
   fights?: Fight[];
 }
 
@@ -50,6 +52,8 @@ export default function LiveEventsScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const { selectedOrgs, filterEventsByOrg } = useOrgFilter();
+  const [modalFight, setModalFight] = useState<Fight | null>(null);
+  const [modalHasLiveTracking, setModalHasLiveTracking] = useState(false);
 
   const promotionsFilter = selectedOrgs.size > 0
     ? Array.from(selectedOrgs).join(',')
@@ -104,8 +108,13 @@ export default function LiveEventsScreen() {
     return filterEventsByOrg(live);
   }, [eventsData, filterEventsByOrg]);
 
-  const handleFightPress = useCallback((fight: Fight) => {
-    router.push(`/fight/${fight.id}`);
+  const handleFightPress = useCallback((fight: Fight, hasLiveTracking?: boolean) => {
+    if (!fight.fightStatus || fight.fightStatus === 'UPCOMING') {
+      setModalFight(fight);
+      setModalHasLiveTracking(hasLiveTracking === true);
+    } else {
+      router.push(`/fight/${fight.id}`);
+    }
   }, [router]);
 
   const styles = createStyles(colors);
@@ -174,6 +183,13 @@ export default function LiveEventsScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      <UpcomingFightModal
+        visible={!!modalFight}
+        fight={modalFight}
+        onClose={() => setModalFight(null)}
+        showNotificationBell={modalHasLiveTracking}
+      />
     </SafeAreaView>
   );
 }
@@ -189,7 +205,7 @@ const LiveEventSection = memo(function LiveEventSection({
   event: Event;
   colors: any;
   isAuthenticated: boolean;
-  onFightPress: (fight: Fight) => void;
+  onFightPress: (fight: Fight, hasLiveTracking?: boolean) => void;
   formatDate: (date: string) => string;
   formatTime: (date: string) => string;
 }) {
@@ -287,7 +303,7 @@ const LiveEventSection = memo(function LiveEventSection({
               <FightDisplayCard
                 key={fight.id}
                 fight={fight}
-                onPress={() => onFightPress(fight)}
+                onPress={() => onFightPress(fight, event.hasLiveTracking)}
                 showEvent={false}
                 isNextFight={nextFight?.id === fight.id}
                 hasLiveFight={hasLiveFight}
@@ -318,7 +334,7 @@ const LiveEventSection = memo(function LiveEventSection({
               <FightDisplayCard
                 key={fight.id}
                 fight={fight}
-                onPress={() => onFightPress(fight)}
+                onPress={() => onFightPress(fight, event.hasLiveTracking)}
                 showEvent={false}
                 isNextFight={nextFight?.id === fight.id}
                 hasLiveFight={hasLiveFight}
@@ -349,7 +365,7 @@ const LiveEventSection = memo(function LiveEventSection({
               <FightDisplayCard
                 key={fight.id}
                 fight={fight}
-                onPress={() => onFightPress(fight)}
+                onPress={() => onFightPress(fight, event.hasLiveTracking)}
                 showEvent={false}
                 isNextFight={nextFight?.id === fight.id}
                 hasLiveFight={hasLiveFight}
