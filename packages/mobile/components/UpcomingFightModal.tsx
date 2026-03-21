@@ -172,8 +172,14 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     mutationFn: (enabled: boolean) => {
       return apiService.toggleFightNotification(fight!.id, enabled);
     },
-    onMutate: async () => {
+    onMutate: async (enabled) => {
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
+      // Optimistically update notificationReasons so card bell shows immediately
+      updateEventsCache({
+        notificationReasons: enabled
+          ? { willBeNotified: true, reasons: [{ type: 'manual', source: 'Manual follow', isActive: true }] }
+          : { willBeNotified: false, reasons: [] },
+      });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
