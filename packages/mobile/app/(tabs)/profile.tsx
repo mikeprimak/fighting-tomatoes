@@ -866,8 +866,6 @@ export default function ProfileScreen() {
 
         {/* Actions */}
         <View style={styles.actionsContainer}>
-          {/* Hidden for launch - notifications not ready */}
-          {false && (
           <TouchableOpacity
             style={[styles.actionButtonFull, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
             onPress={() => router.push('/settings')}
@@ -877,7 +875,6 @@ export default function ProfileScreen() {
               <Text style={[styles.actionButtonText, { color: colors.text }]}>Notification Settings</Text>
             </View>
           </TouchableOpacity>
-          )}
 
           <TouchableOpacity
             style={[styles.actionButtonFull, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}

@@ -35,7 +35,6 @@ export default function SettingsScreen() {
   const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     notificationsEnabled: true,
@@ -46,8 +45,7 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     loadPreferences();
-    // DISABLED: Notifications removed from app scope
-    // checkPermissions();
+    checkPermissions();
   }, []);
 
   const checkPermissions = async () => {
@@ -109,21 +107,6 @@ export default function SettingsScreen() {
       Linking.openURL('app-settings:');
     } else {
       Linking.openSettings();
-    }
-  };
-
-  const sendTestNotification = async () => {
-    setSaving(true);
-    try {
-      // Use upcoming UFC Fight Night event ID
-      const eventId = '6c137e3d-c5b5-4d5b-bf07-91c01db27097';
-      await apiService.sendTestPreEventReport(eventId);
-      showSuccess('Test pre-event report sent! Check your device.');
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to send test notification';
-      showError(errorMessage);
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -237,10 +220,10 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        {/* General Notifications Toggle */}
+        {/* Master Notifications Toggle */}
         <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Notifications</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Allow Notifications</Text>
             <Switch
               value={preferences.notificationsEnabled}
               onValueChange={(value) => updatePreference('notificationsEnabled', value)}
@@ -251,77 +234,14 @@ export default function SettingsScreen() {
           </View>
 
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-            Turn on to receive app notifications
+            Get notified when fights you follow are about to start. Tap the bell icon on any upcoming fight to follow it.
           </Text>
 
           {!preferences.notificationsEnabled && (
             <Text style={[styles.warningText, { color: colors.danger }]}>
-              Notifications are toggled off - none of the below notifications will occur.
+              All notifications are turned off.
             </Text>
           )}
-        </View>
-
-        {/* Fighter Notifications - Hidden until live tracking is available for all orgs
-            To re-enable: remove the `false &&` condition below */}
-        {false && (
-        <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card, paddingTop: 12 }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Fighter Notifications</Text>
-          </View>
-
-          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-            You will receive notifications 15 minutes before these fighters fight.
-          </Text>
-
-          <TouchableOpacity
-            style={[styles.viewFollowedButton, { backgroundColor: colors.background, borderColor: colors.border }]}
-            onPress={() => router.push('/followed-fighters')}
-          >
-            <Text style={[styles.viewFollowedButtonText, { color: colors.text }]}>
-              See the fighters I follow
-            </Text>
-            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-        )}
-
-        {/* Hyped Fights - Hidden until live tracking is available for all orgs
-            To re-enable: remove the `false &&` condition below */}
-        {false && (
-        <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Hyped Fights</Text>
-            <Switch
-              value={preferences.notifyHypedFights}
-              onValueChange={(value) => updatePreference('notifyHypedFights', value)}
-              trackColor={{ false: colors.textSecondary, true: colors.tint }}
-              thumbColor="#B0B5BA"
-              style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
-            />
-          </View>
-
-          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-            Get notified 15 minutes before fights with 8.5+ hype
-          </Text>
-        </View>
-        )}
-
-        {/* Hype Fights Report */}
-        <View style={[styles.section, styles.sectionWithPadding, { backgroundColor: colors.card }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Hype Fights Report</Text>
-            <Switch
-              value={preferences.notifyPreEventReport}
-              onValueChange={(value) => updatePreference('notifyPreEventReport', value)}
-              trackColor={{ false: colors.textSecondary, true: colors.tint }}
-              thumbColor="#B0B5BA"
-              style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
-            />
-          </View>
-
-          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-            Get notified a few hours before hyped fights.
-          </Text>
         </View>
 
       </ScrollView>
