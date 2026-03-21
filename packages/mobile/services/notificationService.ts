@@ -19,7 +19,9 @@ function initializeNotifications() {
   // Only show notifications that have actual content (title or body)
   Notifications.setNotificationHandler({
     handleNotification: async (notification: any) => {
-      const { title, body } = notification.request.content;
+      const { title, body, data } = notification.request.content;
+      const trigger = notification.request.trigger;
+      console.log('[Notification] Received:', JSON.stringify({ title, body, data, triggerType: trigger?.type }));
       const hasContent = !!(title || body);
       return {
         shouldShowAlert: hasContent,
@@ -30,6 +32,9 @@ function initializeNotifications() {
       };
     },
   });
+
+  // Dismiss any stale/empty notifications on startup
+  Notifications.dismissAllNotificationsAsync().catch(() => {});
 
   isInitialized = true;
 }
