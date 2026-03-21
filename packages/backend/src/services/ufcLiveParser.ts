@@ -470,35 +470,32 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
 
         // When a fight completes, send notifications for the NEXT fight on the card
         if (fightUpdate.fightStatus === 'COMPLETED') {
-          // Find the next fight on the card (lower orderOnCard = later in event, closer to main event)
-          // We want the fight with the next lower orderOnCard number
-          prisma.fight.findFirst({
-            where: {
-              eventId: dbFight.eventId,
-              orderOnCard: { lt: dbFight.orderOnCard },
-              fightStatus: 'UPCOMING',
-            },
-            orderBy: { orderOnCard: 'desc' },
-            include: {
-              fighter1: { select: { firstName: true, lastName: true } },
-              fighter2: { select: { firstName: true, lastName: true } },
-            },
-          }).then(nextFight => {
+          try {
+            const nextFight = await prisma.fight.findFirst({
+              where: {
+                eventId: dbFight.eventId,
+                orderOnCard: { lt: dbFight.orderOnCard },
+                fightStatus: 'UPCOMING',
+              },
+              orderBy: { orderOnCard: 'desc' },
+              include: {
+                fighter1: { select: { firstName: true, lastName: true } },
+                fighter2: { select: { firstName: true, lastName: true } },
+              },
+            });
+
             if (nextFight) {
               const fighter1Name = `${nextFight.fighter1.firstName} ${nextFight.fighter1.lastName}`;
               const fighter2Name = `${nextFight.fighter2.firstName} ${nextFight.fighter2.lastName}`;
 
               console.log(`    🔔 Previous fight complete, notifying for next fight: ${fighter1Name} vs ${fighter2Name}`);
 
-              import('../services/notificationService').then(({ notifyFightStartViaRules }) => {
-                notifyFightStartViaRules(nextFight.id, fighter1Name, fighter2Name).catch(err => {
-                  console.error(`    ❌ Failed to send next fight notifications:`, err);
-                });
-              });
+              const { notifyFightStartViaRules } = await import('../services/notificationService');
+              await notifyFightStartViaRules(nextFight.id, fighter1Name, fighter2Name);
             }
-          }).catch(err => {
-            console.error(`    ❌ Error finding next fight:`, err);
-          });
+          } catch (err) {
+            console.error(`    ❌ Error sending next fight notifications:`, err);
+          }
         }
       }
 
