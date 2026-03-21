@@ -276,6 +276,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(data.user);
           // Update cached user data with fresh data
           await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+          // Register push token on app startup (not just login)
+          notificationService.registerPushToken();
         } else {
           // Some other error, clear auth state to be safe
           console.log('[Auth] Profile fetch failed with status:', response.status);
