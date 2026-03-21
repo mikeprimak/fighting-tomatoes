@@ -38,6 +38,8 @@ interface Fight {
   fighter1Id?: string;
   fighter2Id?: string;
   weightClass?: string | null;
+  fighter1Odds?: string | null;
+  fighter2Odds?: string | null;
   userHypePrediction?: number | null;
   userPredictedWinner?: string | null;
   userPredictedMethod?: string | null;
@@ -49,13 +51,14 @@ interface UpcomingFightModalProps {
   visible: boolean;
   fight: Fight | null;
   onClose: () => void;
+  showNotificationBell?: boolean;
 }
 
 // Wheel constants (same as UpcomingFightDetailScreen)
 const FLAME_SLOT_HEIGHT = 115;
 const BLANK_POSITION = 1150; // 10 slots * 115
 
-export default function UpcomingFightModal({ visible, fight, onClose }: UpcomingFightModalProps) {
+export default function UpcomingFightModal({ visible, fight, onClose, showNotificationBell = false }: UpcomingFightModalProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
@@ -65,7 +68,9 @@ export default function UpcomingFightModal({ visible, fight, onClose }: Upcoming
   const [fighter1ImgError, setFighter1ImgError] = useState(false);
   const [fighter2ImgError, setFighter2ImgError] = useState(false);
   const [localNotified, setLocalNotified] = useState(false);
+  const [notifyMessage, setNotifyMessage] = useState<string | null>(null);
   const notifyScaleAnim = useRef(new Animated.Value(1)).current;
+  const notifyMsgOpacity = useRef(new Animated.Value(0)).current;
 
   // Wheel animation
   const wheelAnimation = useRef(new Animated.Value(BLANK_POSITION)).current;
@@ -106,6 +111,37 @@ export default function UpcomingFightModal({ visible, fight, onClose }: Upcoming
     }
   }, [fight?.id, visible]);
 
+  // Helper to optimistically update events cache
+  const updateEventsCache = useCallback((updates: Record<string, any>) => {
+    if (!fight) return;
+    queryClient.setQueriesData({ queryKey: ['upcomingEvents'] }, (old: any) => {
+      if (!old?.pages) return old;
+      return {
+        ...old,
+        pages: old.pages.map((page: any) => ({
+          ...page,
+          events: page.events.map((event: any) => ({
+            ...event,
+            fights: event.fights?.map((f: any) =>
+              f.id === fight.id ? { ...f, ...updates } : f
+            ) || [],
+          })),
+        })),
+      };
+    });
+    if (fight.event?.id) {
+      queryClient.setQueryData(['eventFights', fight.event.id], (old: any) => {
+        if (!old?.fights) return old;
+        return {
+          ...old,
+          fights: old.fights.map((f: any) =>
+            f.id === fight.id ? { ...f, ...updates } : f
+          ),
+        };
+      });
+    }
+  }, [fight, queryClient]);
+
   // Save hype prediction
   const hypeMutation = useMutation({
     mutationFn: (hypeLevel: number | null) => {
@@ -115,8 +151,18 @@ export default function UpcomingFightModal({ visible, fight, onClose }: Upcoming
         predictedMethod: (fight!.userPredictedMethod as any) || undefined,
       });
     },
-    onSuccess: () => {
+    onMutate: async (hypeLevel) => {
+      await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
+      updateEventsCache({ userHypePrediction: hypeLevel });
+    },
+    onError: () => {
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+    },
+    onSuccess: (data) => {
+      // Update cache with server-calculated aggregate hype
+      if (data?.averageHype !== undefined) {
+        updateEventsCache({ averageHype: data.averageHype });
+      }
       queryClient.invalidateQueries({ queryKey: ['fight', fight?.id] });
     },
   });
@@ -125,6 +171,12 @@ export default function UpcomingFightModal({ visible, fight, onClose }: Upcoming
   const notifyMutation = useMutation({
     mutationFn: (enabled: boolean) => {
       return apiService.toggleFightNotification(fight!.id, enabled);
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
@@ -149,6 +201,20 @@ export default function UpcomingFightModal({ visible, fight, onClose }: Upcoming
     setLocalNotified(newValue);
     notifyMutation.mutate(newValue);
 
+    // Show toast message
+    if (newValue) {
+      setNotifyMessage("You'll be notified when this fight is up next.");
+    } else {
+      setNotifyMessage('Notification removed.');
+    }
+    notifyMsgOpacity.setValue(1);
+    Animated.timing(notifyMsgOpacity, {
+      toValue: 0,
+      duration: 500,
+      delay: 2000,
+      useNativeDriver: true,
+    }).start(() => setNotifyMessage(null));
+
     // Bounce animation
     Animated.sequence([
       Animated.timing(notifyScaleAnim, {
@@ -162,7 +228,7 @@ export default function UpcomingFightModal({ visible, fight, onClose }: Upcoming
         useNativeDriver: true,
       }),
     ]).start();
-  }, [isAuthenticated, fight, localNotified, notifyMutation, notifyScaleAnim]);
+  }, [isAuthenticated, fight, localNotified, notifyMutation, notifyScaleAnim, notifyMsgOpacity]);
 
   if (!fight) return null;
 
@@ -178,165 +244,149 @@ export default function UpcomingFightModal({ visible, fight, onClose }: Upcoming
     >
       <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
         <TouchableOpacity style={[styles.modalContainer, { backgroundColor: colors.background }]} activeOpacity={1} onPress={() => {}}>
-          {/* Close button */}
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <FontAwesome name="times" size={22} color={colors.textSecondary} />
-          </TouchableOpacity>
+          {/* Title */}
+          <Text style={[styles.mainTitle, { color: colors.text }]}>
+            How Hyped Are You?
+          </Text>
 
-          {/* Fighter images and names */}
+          {/* Compact fighter row */}
           <View style={styles.fightersRow}>
-            {/* Fighter 1 */}
-            <View style={styles.fighterColumn}>
-              <Image
-                source={fighter1Img}
-                style={styles.fighterImage}
-                onError={() => setFighter1ImgError(true)}
-              />
-              <Text style={[styles.fighterFirstName, { color: colors.textSecondary }]} numberOfLines={1}>
-                {fight.fighter1.firstName}
-              </Text>
-              <Text style={[styles.fighterLastName, { color: colors.text }]} numberOfLines={1}>
+            <Image
+              source={fighter1Img}
+              style={styles.fighterImage}
+              onError={() => setFighter1ImgError(true)}
+            />
+            <View style={styles.fighterNamesBlock}>
+              <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
                 {fight.fighter1.lastName}
               </Text>
-            </View>
-
-            <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
-
-            {/* Fighter 2 */}
-            <View style={styles.fighterColumn}>
-              <Image
-                source={fighter2Img}
-                style={styles.fighterImage}
-                onError={() => setFighter2ImgError(true)}
-              />
-              <Text style={[styles.fighterFirstName, { color: colors.textSecondary }]} numberOfLines={1}>
-                {fight.fighter2.firstName}
-              </Text>
-              <Text style={[styles.fighterLastName, { color: colors.text }]} numberOfLines={1}>
+              <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
+              <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
                 {fight.fighter2.lastName}
               </Text>
             </View>
+            <Image
+              source={fighter2Img}
+              style={styles.fighterImage}
+              onError={() => setFighter2ImgError(true)}
+            />
           </View>
 
-          {/* Weight class */}
-          {fight.weightClass && (
-            <Text style={[styles.weightClass, { color: colors.textSecondary }]}>
-              {fight.weightClass}
-            </Text>
-          )}
-
-          {/* Hype section - matches UpcomingFightDetailScreen */}
-          <View style={styles.hypeSection}>
-            <Text style={[styles.hypeTitle, { color: colors.textSecondary }]}>
-              How hyped are you?
-            </Text>
-
-            {/* Large flame wheel display */}
-            <View style={styles.flameWheelContainer}>
-              <View style={styles.flameWheelWindow}>
-                <Animated.View style={[
-                  styles.flameWheelStrip,
-                  {
-                    transform: [{
-                      translateY: wheelAnimation.interpolate({
-                        inputRange: [0, BLANK_POSITION],
-                        outputRange: [479, -671],
-                      })
-                    }]
-                  }
-                ]}>
-                  {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
-                    const hypeColor = getHypeHeatmapColor(number);
-                    return (
-                      <View key={number} style={styles.flameWheelSlot}>
-                        <View style={styles.flameWheelFlame}>
-                          <View style={[styles.flameGlowCircle, { backgroundColor: hypeColor }]} />
-                          <FontAwesome6
-                            name="fire-flame-curved"
-                            size={90}
-                            color={hypeColor}
-                          />
-                          <Text style={styles.flameWheelNumber}>{number}</Text>
-                        </View>
-                      </View>
-                    );
-                  })}
-                  {/* Grey placeholder flame - when no hype selected */}
-                  <View style={styles.flameWheelSlot}>
-                    <View style={styles.flameWheelFlame}>
-                      <Image
-                        source={FLAME_HOLLOW_GREY}
-                        style={{ width: 90, height: 90, tintColor: '#666666' }}
-                        resizeMode="contain"
-                      />
-                    </View>
-                  </View>
-                </Animated.View>
-              </View>
-            </View>
-
-            {/* Row of selectable flames (1-10) */}
-            <View style={styles.flameRow}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
-                const isSelected = level <= (selectedHype || 0);
-                const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
-
-                return (
-                  <TouchableOpacity
-                    key={level}
-                    onPress={() => handleHypeSelection(level)}
-                    style={styles.flameButton}
-                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                  >
-                    <View style={{ width: 28, alignItems: 'center' }}>
-                      {isSelected ? (
+          {/* Large flame wheel display */}
+          <View style={styles.flameWheelContainer}>
+            <View style={styles.flameWheelWindow}>
+              <Animated.View style={[
+                styles.flameWheelStrip,
+                {
+                  transform: [{
+                    translateY: wheelAnimation.interpolate({
+                      inputRange: [0, BLANK_POSITION],
+                      outputRange: [479, -671],
+                    })
+                  }]
+                }
+              ]}>
+                {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
+                  const hypeColor = getHypeHeatmapColor(number);
+                  return (
+                    <View key={number} style={styles.flameWheelSlot}>
+                      <View style={styles.flameWheelFlame}>
+                        <View style={[styles.flameGlowCircle, { backgroundColor: hypeColor }]} />
                         <FontAwesome6
                           name="fire-flame-curved"
-                          size={28}
-                          color={flameColor}
+                          size={90}
+                          color={hypeColor}
                         />
-                      ) : (
-                        <Image
-                          source={FLAME_HOLLOW}
-                          style={{ width: 28, height: 28 }}
-                          resizeMode="contain"
-                        />
-                      )}
+                        <Text style={styles.flameWheelNumber}>{number}</Text>
+                      </View>
                     </View>
-                  </TouchableOpacity>
-                );
-              })}
+                  );
+                })}
+                {/* Grey placeholder flame - when no hype selected */}
+                <View style={styles.flameWheelSlot}>
+                  <View style={styles.flameWheelFlame}>
+                    <Image
+                      source={FLAME_HOLLOW_GREY}
+                      style={{ width: 90, height: 90, tintColor: '#666666' }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                </View>
+              </Animated.View>
             </View>
           </View>
 
-          {/* Notify me button */}
-          <Animated.View style={{ transform: [{ scale: notifyScaleAnim }] }}>
+          {/* Row of selectable flames (1-10) */}
+          <View style={styles.flameRow}>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
+              const isSelected = level <= (selectedHype || 0);
+              const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
+
+              return (
+                <TouchableOpacity
+                  key={level}
+                  onPress={() => handleHypeSelection(level)}
+                  style={styles.flameButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
+                >
+                  <View style={{ width: 28, alignItems: 'center' }}>
+                    {isSelected ? (
+                      <FontAwesome6
+                        name="fire-flame-curved"
+                        size={28}
+                        color={flameColor}
+                      />
+                    ) : (
+                      <Image
+                        source={FLAME_HOLLOW}
+                        style={{ width: 28, height: 28 }}
+                        resizeMode="contain"
+                      />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Bottom row: notify bell (if live tracking available) + done button */}
+          <View style={styles.bottomRow}>
+            {showNotificationBell && (
+              <Animated.View style={{ transform: [{ scale: notifyScaleAnim }] }}>
+                <TouchableOpacity
+                  style={[
+                    styles.notifyIcon,
+                    {
+                      backgroundColor: localNotified ? colors.primary : 'transparent',
+                      borderColor: localNotified ? colors.primary : colors.border,
+                    },
+                  ]}
+                  onPress={handleNotifyPress}
+                  disabled={notifyMutation.isLoading}
+                >
+                  <FontAwesome
+                    name={localNotified ? 'bell' : 'bell-o'}
+                    size={18}
+                    color={localNotified ? '#000' : colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </Animated.View>
+            )}
+
             <TouchableOpacity
-              style={[
-                styles.notifyButton,
-                {
-                  backgroundColor: localNotified ? colors.primary : 'transparent',
-                  borderColor: colors.primary,
-                },
-              ]}
-              onPress={handleNotifyPress}
-              disabled={notifyMutation.isLoading}
+              style={[styles.doneButton, { backgroundColor: colors.primary }]}
+              onPress={onClose}
             >
-              <FontAwesome
-                name={localNotified ? 'bell' : 'bell-o'}
-                size={16}
-                color={localNotified ? '#000' : colors.primary}
-              />
-              <Text
-                style={[
-                  styles.notifyButtonText,
-                  { color: localNotified ? '#000' : colors.primary },
-                ]}
-              >
-                {localNotified ? 'Notified' : 'Notify Me'}
-              </Text>
+              <Text style={styles.doneButtonText}>Done</Text>
             </TouchableOpacity>
-          </Animated.View>
+          </View>
+
+          {/* Notify toast message */}
+          {notifyMessage && (
+            <Animated.Text style={[styles.notifyToast, { color: colors.textSecondary, opacity: notifyMsgOpacity }]}>
+              {notifyMessage}
+            </Animated.Text>
+          )}
         </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
@@ -351,68 +401,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContainer: {
-    width: '90%',
-    borderRadius: 16,
-    padding: 24,
+    width: '88%',
+    borderRadius: 20,
+    padding: 20,
+    paddingTop: 28,
+    paddingBottom: 24,
     alignItems: 'center',
   },
-  closeButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    padding: 8,
-    zIndex: 10,
+  mainTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    opacity: 0.7,
+    marginBottom: 16,
   },
   fightersRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 20,
-    marginTop: 8,
-    marginBottom: 16,
+    gap: 14,
+    marginBottom: 12,
   },
-  fighterColumn: {
+  fighterNamesBlock: {
     alignItems: 'center',
-    flex: 1,
+    gap: 2,
   },
   fighterImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 8,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
   },
-  fighterFirstName: {
-    fontSize: 13,
-    fontWeight: '400',
-  },
-  fighterLastName: {
-    fontSize: 17,
+  fighterName: {
+    fontSize: 16,
     fontWeight: '700',
   },
   vsText: {
-    fontSize: 14,
-    fontWeight: '400',
-    marginBottom: 30,
+    fontSize: 11,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-  weightClass: {
-    fontSize: 12,
-    marginBottom: 16,
-  },
-  hypeSection: {
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  hypeTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  // Large flame wheel (matches UpcomingFightDetailScreen)
   flameWheelContainer: {
     alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: 20,
+    marginBottom: 4,
   },
   flameWheelWindow: {
     alignItems: 'center',
@@ -454,31 +487,49 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
-  // Selectable flame row (matches UpcomingFightDetailScreen)
+  // Selectable flame row
   flameRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    marginTop: -5,
-    height: 38,
+    justifyContent: 'center',
+    gap: 2,
+    marginTop: 0,
+    height: 40,
     alignItems: 'center',
-    width: '100%',
   },
   flameButton: {
-    paddingVertical: 2,
-    paddingHorizontal: 1,
+    paddingVertical: 4,
   },
-  notifyButton: {
+  bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    borderWidth: 1,
+    gap: 10,
+    marginTop: 24,
+    paddingHorizontal: 8,
+    width: '100%',
   },
-  notifyButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
+  notifyIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  doneButton: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  doneButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#000',
+  },
+  notifyToast: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginTop: 12,
+    textAlign: 'center',
   },
 });

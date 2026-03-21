@@ -436,6 +436,7 @@ async function importOneFCEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl, // Ensure URL is set
+          scraperType: 'onefc',
         }
       });
     } else {
@@ -453,6 +454,7 @@ async function importOneFCEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           eventStatus: initialStatus,
+          scraperType: 'onefc',
         }
       });
     }
