@@ -391,13 +391,44 @@ async function importEvents(
 
     console.log(`  Banner image for ${eventData.eventName}: ${bannerImageUrl || 'none'}`);
 
-    // Check if event already exists - we want to preserve existing dates to prevent
-    // year parsing bugs from overwriting correct dates (e.g., "Sat, Oct 25" could be
-    // parsed as 2026 when it should be 2025 if scraper runs in early 2026)
-    const existingEvent = await prisma.event.findUnique({
+    // Check if event already exists by ufcUrl.
+    // Also handle the case where the UFC changes the event URL (e.g., when fighter names
+    // are added to a Fight Night slug). In that case, find the existing event by date
+    // and update its ufcUrl so the upsert below correctly matches it instead of
+    // creating a duplicate.
+    let existingEvent = await prisma.event.findUnique({
       where: { ufcUrl: eventData.eventUrl },
-      select: { id: true, date: true, eventStatus: true },
+      select: { id: true, date: true, eventStatus: true, ufcUrl: true },
     });
+
+    if (!existingEvent) {
+      // No match by URL — look for an existing UFC event on the same calendar date.
+      // UFC stores dates as UTC noon (e.g. 2026-04-11T12:00:00Z), so search within
+      // a ±12h window around the parsed date to be safe.
+      const dateStart = new Date(eventDate);
+      dateStart.setUTCHours(0, 0, 0, 0);
+      const dateEnd = new Date(eventDate);
+      dateEnd.setUTCHours(23, 59, 59, 999);
+
+      const existingByDate = await prisma.event.findFirst({
+        where: {
+          promotion: 'UFC',
+          date: { gte: dateStart, lte: dateEnd },
+        },
+        select: { id: true, date: true, eventStatus: true, ufcUrl: true },
+      });
+
+      if (existingByDate) {
+        // Same event, different URL — UFC renamed/updated the event slug.
+        // Update the ufcUrl so the upsert below finds and updates it correctly.
+        console.log(`    ℹ Event URL changed for ${eventData.eventName}: ${existingByDate.ufcUrl} → ${eventData.eventUrl}`);
+        await prisma.event.update({
+          where: { id: existingByDate.id },
+          data: { ufcUrl: eventData.eventUrl },
+        });
+        existingEvent = { ...existingByDate, ufcUrl: eventData.eventUrl };
+      }
+    }
 
     // Build update data - do NOT overwrite eventStatus (lifecycle service manages it)
     const updateData: any = {
@@ -452,10 +483,22 @@ async function importEvents(
       });
     } catch (err: any) {
       if (err.code === 'P2002') {
-        // Unique constraint conflict — try to find and update the existing event by name.
+        // Unique constraint conflict — try to find and update the existing event.
         // Don't set ufcUrl in fallback to avoid secondary unique conflicts from duplicates.
+        // Try by name first, then fall back to date match.
+        const dateStart = new Date(eventDate);
+        dateStart.setUTCHours(0, 0, 0, 0);
+        const dateEnd = new Date(eventDate);
+        dateEnd.setUTCHours(23, 59, 59, 999);
+
         const existing = await prisma.event.findFirst({
-          where: { name: eventData.eventName, promotion: 'UFC' },
+          where: {
+            promotion: 'UFC',
+            OR: [
+              { name: eventData.eventName },
+              { date: { gte: dateStart, lte: dateEnd } },
+            ],
+          },
         });
         if (existing) {
           try {
@@ -463,13 +506,13 @@ async function importEvents(
               where: { id: existing.id },
               data: updateData,
             });
-            console.log(`    ℹ Updated existing event by name: ${eventData.eventName}`);
+            console.log(`    ℹ Updated existing event by name/date: ${eventData.eventName}`);
           } catch (updateErr: any) {
             console.warn(`    ⚠ Could not update event ${eventData.eventName}: ${updateErr.message}`);
             continue;
           }
         } else {
-          console.warn(`    ⚠ Skipping event ${eventData.eventName}: unique constraint conflict, no match by name`);
+          console.warn(`    ⚠ Skipping event ${eventData.eventName}: unique constraint conflict, no match by name or date`);
           continue;
         }
       } else {
@@ -560,19 +603,25 @@ async function importEvents(
     if (fights.length > 0) {
       console.log(`    ✓ Imported ${fightsImported}/${fights.length} fights`);
 
+      // Normalize a fighter name for comparison: lowercase, strip accents, trim.
+      // UFC.com uses accented characters (e.g. "Jiří Procházka") but the DB stores
+      // the normalized form ("Jiri Prochazka"), so both sides must be normalized
+      // before comparing to avoid false cancellations.
+      const normalizeName = (name: string) => stripDiacritics(name.toLowerCase().trim());
+
       // Build a set of all fighter names in the current scraped data for this event
       const scrapedFighterNames = new Set<string>();
       for (const fightData of fights) {
-        scrapedFighterNames.add(fightData.fighterA.name.toLowerCase().trim());
-        scrapedFighterNames.add(fightData.fighterB.name.toLowerCase().trim());
+        scrapedFighterNames.add(normalizeName(fightData.fighterA.name));
+        scrapedFighterNames.add(normalizeName(fightData.fighterB.name));
       }
 
       // Build a map of scraped fight pairs (to check if a specific matchup exists)
       const scrapedFightPairs = new Set<string>();
       for (const fightData of fights) {
         const pairKey = [
-          fightData.fighterA.name.toLowerCase().trim(),
-          fightData.fighterB.name.toLowerCase().trim()
+          normalizeName(fightData.fighterA.name),
+          normalizeName(fightData.fighterB.name),
         ].sort().join('|');
         scrapedFightPairs.add(pairKey);
       }
@@ -593,8 +642,8 @@ async function importEvents(
       let unCancelledCount = 0;
 
       for (const dbFight of existingDbFights) {
-        const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
-        const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+        const fighter1Name = normalizeName(`${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`);
+        const fighter2Name = normalizeName(`${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
 
         // Create the pair key for this DB fight
         const dbFightPairKey = [fighter1Name, fighter2Name].sort().join('|');
@@ -642,8 +691,8 @@ async function importEvents(
       });
 
       for (const dbFight of cancelledDbFights) {
-        const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
-        const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+        const fighter1Name = normalizeName(`${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`);
+        const fighter2Name = normalizeName(`${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
         const dbFightPairKey = [fighter1Name, fighter2Name].sort().join('|');
 
         if (scrapedFightPairs.has(dbFightPairKey)) {
