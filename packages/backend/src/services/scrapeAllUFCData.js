@@ -682,8 +682,10 @@ async function scrapeAthletePage(browser, athleteUrl) {
             const urlUpper = imgUrl.toUpperCase();
             const firstNameUpper = firstName.toUpperCase();
             // Remove apostrophes and special chars from last name for URL matching
-            // e.g., "O'Malley" -> "OMALLEY" to match UFC.com URL format
-            const lastNameUpper = lastName.toUpperCase().replace(/[^A-Z]/g, '');
+            // e.g., "O'Malley" -> "OMALLEY", "Procházka" -> "PROCHAZKA"
+            // Normalize NFD first to decompose accented chars (á→a+combining accent)
+            // then strip combining accents, then strip any remaining non-ASCII.
+            const lastNameUpper = lastName.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z]/g, '');
 
             // Only match headshot images (not full body images)
             // Headshots are in path: event_results_athlete_headshot

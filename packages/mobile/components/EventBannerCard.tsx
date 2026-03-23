@@ -4,7 +4,7 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { PromotionLogo } from './PromotionLogo';
 import { normalizeEventName } from './fight-cards/shared/utils';
-import { formatEventDate, formatEventTimeCompact } from '../utils/dateFormatters';
+import { formatEventDate, formatEventDateLong, formatEventTimeCompact } from '../utils/dateFormatters';
 import { getDefaultBanner } from '../utils/defaultBanners';
 
 interface EventBannerCardProps {
@@ -62,8 +62,14 @@ const parseEventName = (eventName: string, promotion?: string | null) => {
   };
 };
 
-const formatDate = (dateString: string, eventStatus: string) =>
-  formatEventDate(dateString, { year: eventStatus === 'COMPLETED' });
+const DAY_OF_WEEK_BADGES = new Set(['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY']);
+
+const formatDate = (dateString: string, eventStatus: string, statusBadgeText?: string) => {
+  if (statusBadgeText && DAY_OF_WEEK_BADGES.has(statusBadgeText)) {
+    return formatEventDateLong(dateString);
+  }
+  return formatEventDate(dateString, { year: eventStatus === 'COMPLETED' });
+};
 
 const formatTime = (dateString: string) => formatEventTimeCompact(dateString);
 
@@ -134,7 +140,7 @@ export const EventBannerCard = memo(function EventBannerCard({
               </View>
             )}
             <Text style={styles.dateText}>
-              {formatDate(event.date, event.eventStatus)}
+              {formatDate(event.date, event.eventStatus, statusBadge?.text)}
 {/* Main card start time removed - now shown in section header */}
             </Text>
           </View>

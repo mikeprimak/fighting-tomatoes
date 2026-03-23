@@ -44,6 +44,27 @@ interface FormatDateOptions {
   year?: boolean;
 }
 
+const ordinalSuffix = (day: number): string => {
+  if (day >= 11 && day <= 13) return 'th';
+  switch (day % 10) {
+    case 1: return 'st';
+    case 2: return 'nd';
+    case 3: return 'rd';
+    default: return 'th';
+  }
+};
+
+/**
+ * Format an event date as "March 28th" (full month, ordinal day, no weekday).
+ * Used when the day-of-week is already shown in a status badge.
+ */
+export const formatEventDateLong = (dateString: string): string => {
+  const date = new Date(dateString);
+  const month = date.toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' });
+  const day = date.getUTCDate();
+  return `${month} ${day}${ordinalSuffix(day)}`;
+};
+
 /**
  * Format an event date for display.
  * Default: "Sat, Feb 21" — pass options to customize.
