@@ -496,6 +496,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 averageHype: hypeData && hypeData.count > 0
                   ? Math.round((hypeData.total / hypeData.count) * 10) / 10
                   : 0,
+                hypeCount: hypeData?.count || 0,
                 commentCount: fight._count?.preFightComments || 0,
                 // User-specific data (null if not authenticated or no data)
                 userRating: userRating ?? null,
