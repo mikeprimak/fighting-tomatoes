@@ -321,11 +321,17 @@ function UpcomingFightCard({
           ]}>
             {(predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0) ? (
               <>
-                <FontAwesome6
-                  name="fire-flame-curved"
-                  size={14}
-                  color="rgba(0,0,0,0.45)"
-                />
+                {(fight as any).hypeCount > 0 ? (
+                  <Text style={styles.hypeSquareCount}>
+                    ({(fight as any).hypeCount})
+                  </Text>
+                ) : (
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={14}
+                    color="rgba(0,0,0,0.45)"
+                  />
+                )}
                 <Text style={styles.hypeSquareNumber}>
                   {predictionStats.averageHype === 10 ? '10' : predictionStats.averageHype.toFixed(1)}
                 </Text>
@@ -887,10 +893,8 @@ const styles = StyleSheet.create({
     textShadowRadius: 3,
   },
   hypeSquareCount: {
-    position: 'absolute',
-    bottom: 9,
-    color: 'rgba(0,0,0,0.5)',
-    fontSize: 10,
+    color: 'rgba(0,0,0,0.6)',
+    fontSize: 9,
     fontWeight: '600',
     textAlign: 'center',
   },
