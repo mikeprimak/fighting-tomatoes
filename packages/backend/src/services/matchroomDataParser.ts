@@ -414,6 +414,7 @@ async function importMatchroomEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: primaryEvent.eventUrl,
           mainStartTime: mainStartTime || undefined,
+          scraperType: 'tapology',
         }
       });
       console.log(`    ✓ Updated event: ${eventName}`);
@@ -431,6 +432,7 @@ async function importMatchroomEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: primaryEvent.eventUrl,
           mainStartTime: mainStartTime || undefined,
+          scraperType: 'tapology',
           eventStatus: initialStatus,
         }
       });

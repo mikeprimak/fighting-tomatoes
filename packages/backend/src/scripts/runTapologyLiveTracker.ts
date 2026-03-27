@@ -57,6 +57,18 @@ const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[
     url: 'https://www.tapology.com/fightcenter/promotions/3637-karate-combat-kc',
     slugFilter: ['karate-combat', 'kc-'],
   },
+  'TOP_RANK': {
+    url: 'https://www.tapology.com/fightcenter/promotions/2487-top-rank-tr',
+    slugFilter: ['top-rank'],
+  },
+  'Golden Boy': {
+    url: 'https://www.tapology.com/fightcenter/promotions/1979-golden-boy-promotions-gbp',
+    slugFilter: ['golden-boy'],
+  },
+  'Matchroom Boxing': {
+    url: 'https://www.tapology.com/fightcenter/promotions/2484-matchroom-boxing-mb',
+    slugFilter: ['matchroom'],
+  },
 };
 
 /**

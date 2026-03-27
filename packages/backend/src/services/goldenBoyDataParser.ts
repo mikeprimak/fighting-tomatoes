@@ -340,6 +340,7 @@ async function importGoldenBoyEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
+          scraperType: 'tapology',
         }
       });
     } else {
@@ -356,6 +357,7 @@ async function importGoldenBoyEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
+          scraperType: 'tapology',
           eventStatus: initialStatus,
         }
       });
