@@ -1,22 +1,23 @@
-// Dirty Boxing Data Parser - Imports scraped Tapology data into database
+// Karate Combat Data Parser - Imports scraped Tapology data into database
 import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { eventTimeToUTC } from '../utils/timezone';
+import { uploadEventImage, uploadLocalFileToR2 } from './imageStorage';
 
 const prisma = new PrismaClient();
 
 // ============== TYPE DEFINITIONS ==============
 
-interface ScrapedDirtyFighter {
+interface ScrapedKarateCombatFighter {
   name: string;
   url?: string;
   imageUrl?: string | null;
   record?: string | null;
 }
 
-interface ScrapedDirtyFight {
+interface ScrapedKarateCombatFight {
   fightId: string;
   order: number;
   cardType: string;
@@ -39,7 +40,7 @@ interface ScrapedDirtyFight {
   };
 }
 
-interface ScrapedDirtyEvent {
+interface ScrapedKarateCombatEvent {
   eventName: string;
   eventUrl: string;
   eventSlug: string;
@@ -52,90 +53,60 @@ interface ScrapedDirtyEvent {
   eventImageUrl?: string | null;
   eventStartTime?: string | null;
   status: string;
-  fights?: ScrapedDirtyFight[];
+  fights?: ScrapedKarateCombatFight[];
 }
 
-interface ScrapedDirtyEventsData {
-  events: ScrapedDirtyEvent[];
+interface ScrapedKarateCombatEventsData {
+  events: ScrapedKarateCombatEvent[];
 }
 
-interface ScrapedDirtyAthletesData {
-  athletes: ScrapedDirtyFighter[];
+interface ScrapedKarateCombatAthletesData {
+  athletes: ScrapedKarateCombatFighter[];
 }
 
 // ============== UTILITY FUNCTIONS ==============
 
 /**
  * Normalize name by removing accents/diacritics for consistent matching
- * Uses stripDiacritics which also handles ł, đ, ø, æ, ß
- * "Cárdenas" -> "Cardenas", "José" -> "Jose", "Błachowicz" -> "Blachowicz"
  */
 function normalizeName(name: string): string {
   return stripDiacritics(name).trim();
 }
 
 /**
- * Parse boxing weight class string to WeightClass enum
+ * Parse weight class string to WeightClass enum
+ * Karate Combat uses MMA-style weight classes
  */
-function parseBoxingWeightClass(weightClassStr: string): WeightClass | null {
+function parseKarateCombatWeightClass(weightClassStr: string): WeightClass | null {
   const normalized = weightClassStr.toLowerCase().trim();
 
-  // Boxing weight class mappings using pound values
-  if (normalized.includes('200') || normalized.includes('heavyweight')) {
-    return WeightClass.HEAVYWEIGHT;
-  }
-  if (normalized.includes('175') || normalized.includes('light heavy')) {
-    return WeightClass.LIGHT_HEAVYWEIGHT;
-  }
-  if (normalized.includes('168') || normalized.includes('super middle')) {
-    return WeightClass.MIDDLEWEIGHT;
-  }
-  if (normalized.includes('160') || normalized.includes('middleweight')) {
-    return WeightClass.MIDDLEWEIGHT;
-  }
-  if (normalized.includes('154') || normalized.includes('super welter')) {
-    return WeightClass.WELTERWEIGHT;
-  }
-  if (normalized.includes('147') || normalized.includes('welterweight')) {
-    return WeightClass.WELTERWEIGHT;
-  }
-  if (normalized.includes('140') || normalized.includes('super light')) {
-    return WeightClass.LIGHTWEIGHT;
-  }
-  if (normalized.includes('135') || normalized.includes('lightweight')) {
-    return WeightClass.LIGHTWEIGHT;
-  }
-  if (normalized.includes('130') || normalized.includes('super feather')) {
-    return WeightClass.FEATHERWEIGHT;
-  }
-  if (normalized.includes('126') || normalized.includes('featherweight')) {
-    return WeightClass.FEATHERWEIGHT;
-  }
-  if (normalized.includes('122') || normalized.includes('super bantam')) {
-    return WeightClass.BANTAMWEIGHT;
-  }
-  if (normalized.includes('118') || normalized.includes('bantamweight')) {
-    return WeightClass.BANTAMWEIGHT;
-  }
-  if (normalized.includes('115') || normalized.includes('super fly')) {
-    return WeightClass.FLYWEIGHT;
-  }
-  if (normalized.includes('112') || normalized.includes('flyweight')) {
-    return WeightClass.FLYWEIGHT;
-  }
-  if (normalized.includes('105') || normalized.includes('strawweight') || normalized.includes('minimum')) {
-    return WeightClass.STRAWWEIGHT;
-  }
+  if (normalized.includes('heavyweight')) return WeightClass.HEAVYWEIGHT;
+  if (normalized.includes('light heavy')) return WeightClass.LIGHT_HEAVYWEIGHT;
+  if (normalized.includes('middleweight')) return WeightClass.MIDDLEWEIGHT;
+  if (normalized.includes('welterweight')) return WeightClass.WELTERWEIGHT;
+  if (normalized.includes('lightweight')) return WeightClass.LIGHTWEIGHT;
+  if (normalized.includes('featherweight')) return WeightClass.FEATHERWEIGHT;
+  if (normalized.includes('bantamweight')) return WeightClass.BANTAMWEIGHT;
+  if (normalized.includes('flyweight')) return WeightClass.FLYWEIGHT;
+  if (normalized.includes('strawweight')) return WeightClass.STRAWWEIGHT;
+
+  // Try pound-based matching
+  if (normalized.includes('265') || normalized.includes('250')) return WeightClass.HEAVYWEIGHT;
+  if (normalized.includes('205')) return WeightClass.LIGHT_HEAVYWEIGHT;
+  if (normalized.includes('185')) return WeightClass.MIDDLEWEIGHT;
+  if (normalized.includes('170')) return WeightClass.WELTERWEIGHT;
+  if (normalized.includes('155')) return WeightClass.LIGHTWEIGHT;
+  if (normalized.includes('145')) return WeightClass.FEATHERWEIGHT;
+  if (normalized.includes('135')) return WeightClass.BANTAMWEIGHT;
+  if (normalized.includes('125')) return WeightClass.FLYWEIGHT;
 
   return null;
 }
 
 /**
  * Parse fighter name into first and last name
- * Names are normalized (accents removed) for consistent database matching
  */
-function parseDirtyFighterName(name: string): { firstName: string; lastName: string } {
-  // Normalize to remove accents for consistent matching
+function parseKarateCombatFighterName(name: string): { firstName: string; lastName: string } {
   const cleanName = normalizeName(name);
   const nameParts = cleanName.split(/\s+/);
 
@@ -166,7 +137,7 @@ function parseRecord(record: string | null | undefined): { wins: number; losses:
 /**
  * Parse ISO date string to Date object
  */
-function parseDirtyDate(dateStr: string | null): Date {
+function parseKarateCombatDate(dateStr: string | null): Date {
   if (!dateStr) {
     return new Date('2099-01-01');
   }
@@ -178,15 +149,15 @@ function parseDirtyDate(dateStr: string | null): Date {
 /**
  * Import fighters from scraped data
  */
-async function importDirtyFighters(
-  athletesData: ScrapedDirtyAthletesData
+async function importKarateCombatFighters(
+  athletesData: ScrapedKarateCombatAthletesData
 ): Promise<Map<string, string>> {
   const fighterNameToId = new Map<string, string>();
 
-  console.log(`\n📦 Importing ${athletesData.athletes.length} Dirty Boxing fighters...`);
+  console.log(`\n📦 Importing ${athletesData.athletes.length} Karate Combat fighters...`);
 
   for (const athlete of athletesData.athletes) {
-    const { firstName, lastName } = parseDirtyFighterName(athlete.name);
+    const { firstName, lastName } = parseKarateCombatFighterName(athlete.name);
 
     if (!firstName && !lastName) {
       console.warn(`  ⚠ Skipping athlete with no valid name: ${athlete.name}`);
@@ -214,7 +185,7 @@ async function importDirtyFighters(
           lastName,
           profileImage: athlete.imageUrl || undefined,
           gender: Gender.MALE,
-          sport: Sport.BOXING,
+          sport: Sport.MMA,
           isActive: true,
           wins: recordParts.wins,
           losses: recordParts.losses,
@@ -229,24 +200,21 @@ async function importDirtyFighters(
     }
   }
 
-  console.log(`✅ Imported ${fighterNameToId.size} Dirty Boxing fighters\n`);
+  console.log(`✅ Imported ${fighterNameToId.size} Karate Combat fighters\n`);
   return fighterNameToId;
 }
 
 /**
  * Import events and fights from scraped data
  */
-// Default banner for Dirty Boxing events (until they have event-specific banners)
-const DIRTY_BOXING_DEFAULT_BANNER = '/images/events/dirty-boxing/dirty-boxing-banner-default.png';
-
-async function importDirtyEvents(
-  eventsData: ScrapedDirtyEventsData,
+async function importKarateCombatEvents(
+  eventsData: ScrapedKarateCombatEventsData,
   fighterNameToId: Map<string, string>
 ): Promise<void> {
-  console.log(`\n📦 Importing ${eventsData.events.length} Dirty Boxing events...`);
+  console.log(`\n📦 Importing ${eventsData.events.length} Karate Combat events...`);
 
   for (const eventData of eventsData.events) {
-    const eventDate = parseDirtyDate(eventData.eventDate);
+    const eventDate = parseKarateCombatDate(eventData.eventDate);
     // Parse event start time (Tapology defaults to ET)
     const mainStartTime = eventTimeToUTC(eventDate, eventData.eventStartTime, 'America/New_York');
 
@@ -254,22 +222,29 @@ async function importDirtyEvents(
       .filter(Boolean)
       .join(', ') || 'TBA';
 
-    // Use event-specific image if available, otherwise use default banner
-    const bannerImage = eventData.eventImageUrl || DIRTY_BOXING_DEFAULT_BANNER;
+    // Use event-specific image if available
+    let bannerImage: string | undefined;
+    if (eventData.eventImageUrl) {
+      try {
+        bannerImage = await uploadEventImage(eventData.eventImageUrl, eventData.eventName);
+      } catch (error) {
+        console.warn(`  ⚠ Banner upload failed for ${eventData.eventName}, using source URL`);
+        bannerImage = eventData.eventImageUrl;
+      }
+    }
 
-    // Try to find existing event by name or URL
+    // Try to find existing event by URL or exact name
     let event = await prisma.event.findFirst({
       where: {
         OR: [
           { ufcUrl: eventData.eventUrl },
-          { name: eventData.eventName },
-          { name: { contains: 'Dirty Boxing' } }
+          { name: eventData.eventName, promotion: 'Karate Combat' },
         ]
       }
     });
 
     if (event) {
-      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it)
+      // Update existing event - do NOT overwrite eventStatus
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -279,31 +254,35 @@ async function importDirtyEvents(
           venue: eventData.venue || undefined,
           location,
           ufcUrl: eventData.eventUrl,
-          promotion: 'Dirty Boxing',
+          promotion: 'Karate Combat',
           scraperType: 'tapology',
-          bannerImage,
+          bannerImage: bannerImage || undefined,
         }
       });
       console.log(`  ✓ Updated event: ${eventData.eventName} (status unchanged: ${event.eventStatus})`);
     } else {
       // Create new event - set initial status based on date
       const now = new Date();
-      const initialStatus = (eventData.status === 'Complete' || eventDate < now) ? 'COMPLETED' : 'UPCOMING';
+      let initialStatus: 'UPCOMING' | 'COMPLETED' = 'UPCOMING';
+      if (eventData.status === 'Complete' || eventDate < now) {
+        initialStatus = 'COMPLETED';
+      }
+
       event = await prisma.event.create({
         data: {
           name: eventData.eventName,
-          promotion: 'Dirty Boxing',
+          promotion: 'Karate Combat',
           date: eventDate,
           mainStartTime: mainStartTime || undefined,
           venue: eventData.venue || undefined,
           location,
-          bannerImage,
+          bannerImage: bannerImage || undefined,
           ufcUrl: eventData.eventUrl,
           scraperType: 'tapology',
           eventStatus: initialStatus,
         }
       });
-      console.log(`  ✓ Created event: ${eventData.eventName}`);
+      console.log(`  ✓ Created event: ${eventData.eventName} (status: ${initialStatus})`);
     }
 
     // Import fights for this event
@@ -320,12 +299,13 @@ async function importDirtyEvents(
         normalizeName(fightData.fighterB.name).split(/\s+/).pop()?.toLowerCase() || ''
       ].sort().join('|');
       scrapedFightSignatures.add(scrapedSignature);
+
       // Find or create fighters
       let fighter1Id = fighterNameToId.get(normalizeName(fightData.fighterA.name).toLowerCase());
       let fighter2Id = fighterNameToId.get(normalizeName(fightData.fighterB.name).toLowerCase());
 
       if (!fighter1Id) {
-        const { firstName, lastName } = parseDirtyFighterName(fightData.fighterA.name);
+        const { firstName, lastName } = parseKarateCombatFighterName(fightData.fighterA.name);
         const recordParts = parseRecord(fightData.fighterA.record);
         try {
           const fighter = await prisma.fighter.upsert({
@@ -335,7 +315,7 @@ async function importDirtyEvents(
               firstName,
               lastName,
               gender: Gender.MALE,
-              sport: Sport.BOXING,
+              sport: Sport.MMA,
               isActive: true,
               wins: recordParts.wins,
               losses: recordParts.losses,
@@ -351,7 +331,7 @@ async function importDirtyEvents(
       }
 
       if (!fighter2Id) {
-        const { firstName, lastName } = parseDirtyFighterName(fightData.fighterB.name);
+        const { firstName, lastName } = parseKarateCombatFighterName(fightData.fighterB.name);
         const recordParts = parseRecord(fightData.fighterB.record);
         try {
           const fighter = await prisma.fighter.upsert({
@@ -361,7 +341,7 @@ async function importDirtyEvents(
               firstName,
               lastName,
               gender: Gender.MALE,
-              sport: Sport.BOXING,
+              sport: Sport.MMA,
               isActive: true,
               wins: recordParts.wins,
               losses: recordParts.losses,
@@ -381,8 +361,7 @@ async function importDirtyEvents(
         continue;
       }
 
-      const weightClass = parseBoxingWeightClass(fightData.weightClass);
-      const titleName = fightData.isTitle ? `${fightData.weightClass} Championship` : undefined;
+      const weightClass = parseKarateCombatWeightClass(fightData.weightClass);
 
       try {
         await prisma.fight.upsert({
@@ -396,8 +375,7 @@ async function importDirtyEvents(
           update: {
             weightClass,
             isTitle: fightData.isTitle,
-            titleName,
-            scheduledRounds: fightData.scheduledRounds || 10,
+            scheduledRounds: fightData.scheduledRounds || 3,
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
           },
@@ -407,8 +385,7 @@ async function importDirtyEvents(
             fighter2Id,
             weightClass,
             isTitle: fightData.isTitle,
-            titleName,
-            scheduledRounds: fightData.scheduledRounds || 10,
+            scheduledRounds: fightData.scheduledRounds || 3,
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
             fightStatus: 'UPCOMING',
@@ -469,34 +446,35 @@ async function importDirtyEvents(
     }
   }
 
-  console.log(`✅ Imported all Dirty Boxing events\n`);
+  console.log(`✅ Imported all Karate Combat events\n`);
 }
 
 // ============== MAIN IMPORT FUNCTION ==============
 
-/**
- * Main import function
- */
-export async function importDirtyBoxingData(options: {
+export async function importKarateCombatData(options: {
   eventsFilePath?: string;
   athletesFilePath?: string;
 } = {}): Promise<void> {
   const {
-    eventsFilePath = path.join(__dirname, '../../scraped-data/dirty-boxing/latest-events.json'),
-    athletesFilePath = path.join(__dirname, '../../scraped-data/dirty-boxing/latest-athletes.json'),
+    eventsFilePath = path.join(__dirname, '../../scraped-data/karate-combat/latest-events.json'),
+    athletesFilePath = path.join(__dirname, '../../scraped-data/karate-combat/latest-athletes.json'),
   } = options;
 
-  console.log('\n🚀 Starting Dirty Boxing data import...');
+  console.log('\n🚀 Starting Karate Combat data import...');
   console.log(`📁 Events file: ${eventsFilePath}`);
   console.log(`📁 Athletes file: ${athletesFilePath}\n`);
 
   try {
-    // Read JSON files
-    const eventsJson = await fs.readFile(eventsFilePath, 'utf-8');
-    const eventsData: ScrapedDirtyEventsData = JSON.parse(eventsJson);
+    let eventsJson: string;
+    try {
+      eventsJson = await fs.readFile(eventsFilePath, 'utf-8');
+    } catch (e) {
+      console.log('⚠ Events file not found - scraper likely found no events. Skipping import.');
+      return;
+    }
+    const eventsData: ScrapedKarateCombatEventsData = JSON.parse(eventsJson);
 
-    // Athletes file is optional
-    let athletesData: ScrapedDirtyAthletesData = { athletes: [] };
+    let athletesData: ScrapedKarateCombatAthletesData = { athletes: [] };
     try {
       const athletesJson = await fs.readFile(athletesFilePath, 'utf-8');
       athletesData = JSON.parse(athletesJson);
@@ -504,15 +482,12 @@ export async function importDirtyBoxingData(options: {
       console.log('  Athletes file not found, will create fighters from event data');
     }
 
-    // Step 1: Import fighters
-    const fighterNameToId = await importDirtyFighters(athletesData);
+    const fighterNameToId = await importKarateCombatFighters(athletesData);
+    await importKarateCombatEvents(eventsData, fighterNameToId);
 
-    // Step 2: Import events and fights
-    await importDirtyEvents(eventsData, fighterNameToId);
-
-    console.log('✅ Dirty Boxing data import completed successfully!\n');
+    console.log('✅ Karate Combat data import completed successfully!\n');
   } catch (error) {
-    console.error('❌ Error during Dirty Boxing import:', error);
+    console.error('❌ Error during Karate Combat import:', error);
     throw error;
   } finally {
     await prisma.$disconnect();
@@ -521,7 +496,7 @@ export async function importDirtyBoxingData(options: {
 
 // Run if called directly
 if (require.main === module) {
-  importDirtyBoxingData()
+  importKarateCombatData()
     .then(() => process.exit(0))
     .catch(() => process.exit(1));
 }

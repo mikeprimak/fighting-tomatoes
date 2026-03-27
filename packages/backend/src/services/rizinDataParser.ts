@@ -437,6 +437,7 @@ async function importRizinEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
+          scraperType: 'tapology',
         }
       });
     } else {
@@ -452,6 +453,7 @@ async function importRizinEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
+          scraperType: 'tapology',
           eventStatus: initialStatus,
         }
       });
