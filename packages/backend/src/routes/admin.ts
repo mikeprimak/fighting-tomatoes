@@ -40,7 +40,7 @@ const CreateEventSchema = z.object({
   prelimStartTime: z.string().transform((val) => new Date(val)).optional(),
   mainStartTime: z.string().transform((val) => new Date(val)).optional(),
   // Scraper type: null = no scraper, or a specific scraper name
-  scraperType: z.enum(['ufc', 'matchroom', 'oktagon', 'onefc', 'tapology']).nullable().optional(),
+  scraperType: z.enum(['ufc', 'matchroom', 'oktagon', 'onefc', 'tapology', 'bkfc']).nullable().optional(),
 });
 
 const UpdateEventSchema = CreateEventSchema.partial();
@@ -1236,6 +1236,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
     'oktagon': 'oktagon-scraper.yml',
     'zuffa-boxing': 'zuffa-boxing-scraper.yml',
     'rizin': 'rizin-scraper.yml',
+    'dirty-boxing': 'dirty-boxing-scraper.yml',
+    'karate-combat': 'karate-combat-scraper.yml',
+    'mvp': 'mvp-scraper.yml',
   };
 
   async function dispatchGitHubWorkflow(workflow: string): Promise<void> {
