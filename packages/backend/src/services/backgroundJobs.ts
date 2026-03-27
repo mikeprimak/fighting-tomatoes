@@ -15,6 +15,9 @@ import {
   runDailyOktagonScraper,
   runDailyZuffaBoxingScraper,
   runDailyRizinScraper,
+  runDailyDirtyBoxingScraper,
+  runDailyKarateCombatScraper,
+  runDailyMVPScraper,
   runAllOrganizationScrapers,
   OrganizationScraperResults,
 } from './dailyAllScrapers';

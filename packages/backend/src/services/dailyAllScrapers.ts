@@ -25,6 +25,9 @@ import { importTopRankData } from './topRankDataParser';
 import { importOktagonData } from './oktagonDataParser';
 import { importRizinData } from './rizinDataParser';
 import { importZuffaBoxingData } from './zuffaBoxingDataParser';
+import { importDirtyBoxingData } from './dirtyBoxingDataParser';
+import { importKarateCombatData } from './karateCombatDataParser';
+import { importMVPData } from './mvpDataParser';
 
 const execAsync = promisify(exec);
 
@@ -37,7 +40,7 @@ export interface OrganizationScraperResults {
   error?: string;
 }
 
-type OrganizationType = 'BKFC' | 'PFL' | 'ONEFC' | 'MATCHROOM' | 'GOLDENBOY' | 'TOPRANK' | 'OKTAGON' | 'RIZIN' | 'ZUFFA_BOXING';
+type OrganizationType = 'BKFC' | 'PFL' | 'ONEFC' | 'MATCHROOM' | 'GOLDENBOY' | 'TOPRANK' | 'OKTAGON' | 'RIZIN' | 'ZUFFA_BOXING' | 'DIRTY_BOXING' | 'KARATE_COMBAT' | 'MVP';
 
 // Config for each organization's scraper
 const SCRAPER_CONFIG: Record<OrganizationType, {
@@ -98,6 +101,24 @@ const SCRAPER_CONFIG: Record<OrganizationType, {
     scraperFile: 'scrapeZuffaBoxingTapology.js',
     importFn: importZuffaBoxingData,
     displayName: 'Zuffa Boxing',
+    timeout: 1500000, // 25 minutes
+  },
+  DIRTY_BOXING: {
+    scraperFile: 'scrapeDirtyBoxingTapology.js',
+    importFn: importDirtyBoxingData,
+    displayName: 'Dirty Boxing Championship',
+    timeout: 1500000, // 25 minutes
+  },
+  KARATE_COMBAT: {
+    scraperFile: 'scrapeKarateCombatTapology.js',
+    importFn: importKarateCombatData,
+    displayName: 'Karate Combat',
+    timeout: 1500000, // 25 minutes
+  },
+  MVP: {
+    scraperFile: 'scrapeMVPTapology.js',
+    importFn: importMVPData,
+    displayName: 'Most Valuable Promotions',
     timeout: 1500000, // 25 minutes
   },
 };
@@ -231,6 +252,18 @@ export async function runDailyZuffaBoxingScraper(): Promise<OrganizationScraperR
   return runOrganizationScraper('ZUFFA_BOXING');
 }
 
+export async function runDailyDirtyBoxingScraper(): Promise<OrganizationScraperResults> {
+  return runOrganizationScraper('DIRTY_BOXING');
+}
+
+export async function runDailyKarateCombatScraper(): Promise<OrganizationScraperResults> {
+  return runOrganizationScraper('KARATE_COMBAT');
+}
+
+export async function runDailyMVPScraper(): Promise<OrganizationScraperResults> {
+  return runOrganizationScraper('MVP');
+}
+
 /**
  * Run all organization scrapers sequentially
  * Used for manual full refresh
@@ -240,7 +273,7 @@ export async function runAllOrganizationScrapers(): Promise<OrganizationScraperR
   const startTime = Date.now();
 
   const results: OrganizationScraperResults[] = [];
-  const organizations: OrganizationType[] = ['BKFC', 'PFL', 'ONEFC', 'MATCHROOM', 'GOLDENBOY', 'TOPRANK', 'OKTAGON', 'RIZIN', 'ZUFFA_BOXING'];
+  const organizations: OrganizationType[] = ['BKFC', 'PFL', 'ONEFC', 'MATCHROOM', 'GOLDENBOY', 'TOPRANK', 'OKTAGON', 'RIZIN', 'ZUFFA_BOXING', 'DIRTY_BOXING', 'KARATE_COMBAT', 'MVP'];
 
   for (const org of organizations) {
     const result = await runOrganizationScraper(org);
