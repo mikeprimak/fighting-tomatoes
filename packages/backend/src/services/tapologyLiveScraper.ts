@@ -59,6 +59,7 @@ function normalizeMethod(method: string): string {
   if (m.includes('majority')) return 'MD';
 
   // Then check other methods
+  if (m.includes('ko/tko')) return 'TKO';  // Tapology uses "KO/TKO" format
   if (m.includes('technical knockout') || m === 'tko') return 'TKO';
   if (m.includes('knockout') || m === 'ko') return 'KO';
   if (m.includes('submission') || m === 'sub') return 'SUB';
@@ -164,105 +165,103 @@ export class TapologyLiveScraper {
         }
       });
 
-      // Alternative: find all fighter link pairs
+      // Alternative: iterate fight <li> elements directly
+      // Tapology renders fights inside <li class="border-b border-dotted"> within a <ul>.
+      // Each <li> contains fighter links AND a result row with method/round/time.
+      // Fighter links appear multiple times on the page (mobile/desktop duplicates),
+      // so we iterate the <li> containers rather than pairing links by index.
       if (fights.length === 0) {
-        const fighterLinks = $('a[href*="/fightcenter/fighters/"]');
         const processedPairs = new Set<string>();
 
-        for (let i = 0; i < fighterLinks.length - 1; i += 2) {
-          const $fighterA = $(fighterLinks[i]);
-          const $fighterB = $(fighterLinks[i + 1]);
+        // Find fight list items — Tapology uses <li> with border-b styling for fights
+        $('li.border-b, li[class*="border-b"]').each((_, element) => {
+          const $li = $(element);
 
-          const nameA = $fighterA.text().trim();
-          const nameB = $fighterB.text().trim();
-          const urlA = $fighterA.attr('href') || '';
-          const urlB = $fighterB.attr('href') || '';
+          // Find unique fighter links within this <li>
+          const fighterLinksInLi: { name: string; url: string }[] = [];
+          const seenUrls = new Set<string>();
+          $li.find('a[href*="/fightcenter/fighters/"]').each((_, el) => {
+            const name = $(el).text().trim();
+            const url = $(el).attr('href') || '';
+            if (!name || name.length < 3 || seenUrls.has(url)) return;
+            seenUrls.add(url);
+            fighterLinksInLi.push({ name, url });
+          });
 
-          if (!nameA || !nameB) continue;
-          // Skip if same fighter (profile links)
-          if (urlA === urlB) continue;
+          // Need exactly 2 unique fighters per fight
+          if (fighterLinksInLi.length < 2) return;
 
-          // Use URLs for deduplication (more reliable than names)
+          const nameA = fighterLinksInLi[0].name;
+          const nameB = fighterLinksInLi[1].name;
+          const urlA = fighterLinksInLi[0].url;
+          const urlB = fighterLinksInLi[1].url;
+
+          // Deduplicate fights
           const pairKey = [urlA, urlB].sort().join('|');
-          if (processedPairs.has(pairKey)) continue;
+          if (processedPairs.has(pairKey)) return;
           processedPairs.add(pairKey);
 
           order++;
 
-          // Find the parent container for this fight
-          const $container = $fighterA.closest('li, div[class*="fight"], section');
-
-          // Check for winner (green W badge)
+          // Check for winner — look for green W badge or green background gradient
           let winner: string | undefined;
-          const $winBadgeA = $fighterA.closest('div, li').find('.bg-green-500, [class*="bg-green"]');
-          const $winBadgeB = $fighterB.closest('div, li').find('.bg-green-500, [class*="bg-green"]');
+          const liText = $li.text();
 
-          // Check which fighter has the W badge near them
-          const fighterASection = $fighterA.parent().parent();
-          const fighterBSection = $fighterB.parent().parent();
+          // Tapology uses bg-gradient-to-r with green colors for the winner's section
+          // and red/pink for the loser. Also has a green "W" badge.
+          const $allFighterLinks = $li.find('a[href*="/fightcenter/fighters/"]');
+          const $firstLink = $($allFighterLinks[0]);
+          const $secondLink = $li.find(`a[href="${urlB}"]`).first();
 
-          if (fighterASection.find('.bg-green-500').length > 0 ||
-              fighterASection.find('[class*="bg-green"]').text().includes('W')) {
+          // Check which fighter's parent container has the green background or W badge
+          const fighterAParent = $firstLink.parent().parent().parent();
+          const fighterBParent = $secondLink.length > 0 ? $secondLink.parent().parent().parent() : null;
+
+          if (fighterAParent.attr('class')?.includes('from-[#d1f7d2]') ||
+              fighterAParent.find('.bg-green-500').length > 0) {
             winner = nameA;
-          } else if (fighterBSection.find('.bg-green-500').length > 0 ||
-                     fighterBSection.find('[class*="bg-green"]').text().includes('W')) {
+          } else if (fighterBParent && (
+            fighterBParent.attr('class')?.includes('from-[#d1f7d2]') ||
+            fighterBParent.find('.bg-green-500').length > 0)) {
             winner = nameB;
           }
 
-          // Look for method - search up the DOM tree
+          // Extract method from the uppercase span in the result row
           let method: string | undefined;
           let round: number | undefined;
           let time: string | undefined;
 
-          // Search up to find the fight container with method info
-          let $fightContainer = $fighterA.closest('li, section, [class*="fight"], [class*="bout"]');
-          if ($fightContainer.length === 0) {
-            // Go up multiple levels to find a container
-            $fightContainer = $fighterA.parent().parent().parent().parent();
-          }
-
-          // Look for any text containing method keywords
-          const containerText = $fightContainer.text();
-          const methodPatterns = [
-            /Decision,?\s*(Unanimous|Split|Majority)/i,
-            /(Unanimous|Split|Majority)\s*Decision/i,
-            /\b(TKO|KO)\b/i,
-            /Technical\s*Knockout/i,
-            /Submission/i,
-            /\bNC\b|No\s*Contest/i,
-            /\bDQ\b|Disqualification/i,
-          ];
-
-          for (const pattern of methodPatterns) {
-            const match = containerText.match(pattern);
-            if (match) {
-              method = normalizeMethod(match[0]);
-              break;
+          $li.find('span.uppercase, span[class*="uppercase"]').each((_, el) => {
+            const text = $(el).text().trim();
+            if (text && (text.includes('Decision') || text.includes('KO') || text.includes('TKO') ||
+                        text.includes('Submission') || text.includes('DQ') || text.includes('No Contest') ||
+                        text.includes('Draw'))) {
+              method = normalizeMethod(text);
+              return false; // break
             }
+          });
+
+          // Extract round and time from the full <li> text
+          if (method) {
+            round = parseRound(liText);
+            time = parseTime(liText);
           }
 
-          // Also try finding method in uppercase span
-          if (!method) {
-            $fightContainer.find('span').each((_, el) => {
-              const text = $(el).text().trim();
-              if (text.includes('Decision') || text.includes('KO') || text.includes('Submission')) {
-                method = normalizeMethod(text);
-                return false; // break
-              }
-            });
-          }
+          // Check for cancellation
+          const isCancelled = liText.toLowerCase().includes('cancelled') ||
+                             liText.toLowerCase().includes('canceled');
 
-          const isComplete = !!winner || !!method;
+          const isComplete = !isCancelled && (!!winner || !!method);
 
           fights.push({
             order,
-            fighterA: { name: nameA, url: $fighterA.attr('href') },
-            fighterB: { name: nameB, url: $fighterB.attr('href') },
+            fighterA: { name: nameA, url: urlA },
+            fighterB: { name: nameB, url: urlB },
             isComplete,
-            isCancelled: false,
+            isCancelled,
             result: isComplete ? { winner, method, round, time } : undefined,
           });
-        }
+        });
       }
 
       const duration = Date.now() - startTime;
