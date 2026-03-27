@@ -82,10 +82,19 @@ async function scrapeEventsList(browser) {
       if (processedUrls.has(eventUrl)) return;
       processedUrls.add(eventUrl);
 
-      // Get the event slug from URL
+      // Get the event slug from URL, stripping query params and numeric ID prefixes
       const urlParts = eventUrl.split('/event/');
       if (urlParts.length < 2) return;
-      const eventSlug = urlParts[1].replace(/\/$/, '');
+      let eventSlug = urlParts[1].replace(/\/$/, '').split('?')[0];
+      // URL may be /event/1308036/pfl-africa-pretoria-tickets — take last path segment
+      if (eventSlug.includes('/')) {
+        eventSlug = eventSlug.split('/').pop();
+      }
+      // Strip trailing "-tickets" suffix
+      eventSlug = eventSlug.replace(/-tickets$/, '');
+
+      // Skip ticket pages and non-event URLs
+      if (!eventSlug || /tickets/i.test(eventSlug)) return;
 
       // Try to get the event container
       const container = link.closest('[class*="event"]') ||
