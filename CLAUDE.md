@@ -34,7 +34,9 @@ See `LIVE-EVENT-MANAGEMENT.md` for full documentation.
 2. **Section-based fight completion** (by cardType + section start times)
 3. **LIVE → COMPLETED** after estimated duration (`numFights x 30min + 1hr`, max 8hr)
 
-Events use `scraperType` field (null = no scraper, or `ufc`/`matchroom`/`oktagon`/`onefc`/`tapology`).
+Events use `scraperType` field (null = no scraper, or `ufc`/`matchroom`/`oktagon`/`onefc`/`tapology`/`bkfc`).
+
+**All production scrapers are fully automatic** — daily scrapers set `scraperType` and the lifecycle dispatches live trackers. The Tapology live tracker is generic and covers Zuffa Boxing, Karate Combat, Dirty Boxing, PFL, and RIZIN.
 
 ### Key Files
 
@@ -133,10 +135,14 @@ When switching WiFi networks, update the dev IP in **2 files**:
 
 | System | Key Files |
 |--------|-----------|
+| Event Lifecycle | `services/eventLifecycle.ts` (3-step lifecycle, dispatches all live trackers) |
 | Live Event Tracker | `services/liveEventTracker.ts`, `services/ufcLiveParser.ts` |
+| Tapology Live Tracker | `scripts/runTapologyLiveTracker.ts` (generic — Zuffa, KC, DBX, PFL, RIZIN) |
 | Image Storage (R2) | `services/imageStorage.ts` |
 | UFC Scraper | `services/scrapeAllUFCData.js` (requires `TZ=America/New_York` — UFC.com adapts times to viewer timezone) |
 | ONE FC Scraper | `services/scrapeAllOneFCData.js` |
+| Karate Combat Scraper | `services/scrapeKarateCombatTapology.js` + `services/karateCombatDataParser.ts` |
+| Dirty Boxing Scraper | `services/scrapeDirtyBoxingTapology.js` + `services/dirtyBoxingDataParser.ts` |
 
 ## Current Store Versions (as of Feb 27, 2026)
 
@@ -157,3 +163,4 @@ When switching WiFi networks, update the dev IP in **2 files**:
 - `michaelsprimak@gmail.com`
 - `applereview@goodfights.app` / `AppleTest2026!` (Apple Review test account)
 - `testdev2@goodfights.app` (dev testing account)
+- `test@goodfights.app` / `Testpass1!` (dev testing account)

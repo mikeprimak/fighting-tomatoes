@@ -50,20 +50,21 @@ Fights go COMPLETED at section start times so users can rate them immediately. B
 
 The `scraperType` field on events determines which scraper (if any) handles live tracking:
 
-| Value | Description | Status |
-|-------|-------------|--------|
-| `null` | No scraper — lifecycle service handles everything | Default |
-| `ufc` | UFC live parser | **Production** |
-| `matchroom` | Matchroom live parser | Development |
-| `oktagon` | OKTAGON live parser | **Production** |
-| `onefc` | ONE FC live parser | Development |
-| `tapology` | Tapology live parser | Development |
+| Value | Description | Status | Auto-setup? |
+|-------|-------------|--------|-------------|
+| `null` | No scraper — lifecycle service handles everything | Default | N/A |
+| `ufc` | UFC live parser | **Production** | Yes — daily scraper sets it |
+| `bkfc` | BKFC live parser (Puppeteer) | **Production** | Yes — daily scraper sets it |
+| `matchroom` | Matchroom live parser | Development | No — not yet promoted |
+| `oktagon` | OKTAGON live parser | **Production** | Yes — daily scraper sets it |
+| `onefc` | ONE FC live parser (Puppeteer) | **Production** | Yes — daily scraper sets it |
+| `tapology` | Tapology live parser (generic) | **Production** | Yes — daily scrapers set it |
 
 ### Production Scrapers
 
 The `PRODUCTION_SCRAPERS` array in `liveTrackerConfig.ts` controls which scrapers are trusted to auto-publish results.
 
-**Current production scrapers: `['ufc', 'oktagon']`**
+**Current production scrapers: `['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc']`**
 
 When a scraper is in this list:
 1. Lifecycle Step 2 **skips** that event (no timer-based fight completion)
@@ -216,9 +217,158 @@ Each run takes ~2 min (no Chromium needed). During an Oktagon event (~5 hours at
 | `src/services/oktagonLiveParser.ts` | Parser — matches fights, updates DB, handles cancellations |
 | `src/services/oktagonDataParser.ts` | Daily importer — sets `scraperType: 'oktagon'` on all events |
 
+## BKFC Live Tracker
+
+The BKFC live tracker scrapes bkfc.com event pages during live events using Puppeteer and updates fight results in real time. Like UFC, it requires a headless browser because BKFC uses JavaScript to populate fight data on the page.
+
+### Architecture: Same as UFC (Render Triggers GitHub Actions)
+
+1. **Render lifecycle service** detects LIVE BKFC event → dispatches `bkfc-live-tracker.yml` every 5 min
+2. **GitHub Actions** installs deps, builds, installs Chromium, runs `runBKFCLiveTracker.ts`
+3. **Scraper** (`scrapeBKFCLiveEvent.js`) loads the BKFC event page with Puppeteer, waits for JS to populate fight data, extracts results from the DOM
+4. **Parser** (`bkfcLiveParser.ts`) matches fights by last name, updates DB
+5. **Auto-publish** since bkfc is in `PRODUCTION_SCRAPERS`
+6. **Auto-complete** when all fights are done
+
+### How It Works
+
+The BKFC event page loads fight data from an external stats API (`xapi.mmareg.com`) via JavaScript, which populates `[data-render]` elements in the DOM. The scraper:
+
+1. Loads the event page and waits 5 seconds for JS to execute
+2. Finds fight containers by pairing `a[href*="/fighters/"]` links
+3. Reads results from `[data-render="RedResult"]`, `[data-render="BlueResult"]`, `[data-render="Method"]`, `[data-render="Round"]`, `[data-render="Time"]` elements
+4. Covers both "Main Card" and "Free Fights" tabs (all fights visible in DOM)
+
+### Event Setup
+
+For the tracker to pick up a BKFC event:
+1. `scraperType` set to `bkfc` (set via admin panel)
+2. `ufcUrl` set to the BKFC event page URL (e.g., `https://www.bkfc.com/events/bkfc-fight-night-newcastle-2`) — populated by the daily BKFC scraper
+3. `eventStatus` not `COMPLETED`
+4. `mainStartTime` or `date` within tracking window (12 hours ago to 6 hours from now)
+
+**Note:** Unlike Oktagon, BKFC events require manual `scraperType` setup — the daily scraper does not auto-set `scraperType: 'bkfc'`.
+
+### What the Scraper Detects
+
+- Fight status: upcoming / live / complete (via `html[live-event]` attribute and result fields)
+- Winner (by checking which corner has `RedResult="W"` or `BlueResult="W"`)
+- Method, round, time (from `[data-render]` elements)
+- Cancellations (fights missing from scraped data → marked CANCELLED)
+- Un-cancellations (fights reappearing → restored to UPCOMING)
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `.github/workflows/bkfc-live-tracker.yml` | GitHub Actions workflow (dispatch trigger) |
+| `src/scripts/runBKFCLiveTracker.ts` | Entry point — finds event, spawns scraper, runs parser |
+| `src/services/scrapeBKFCLiveEvent.js` | Puppeteer scraper — loads bkfc.com, extracts fight data from DOM |
+| `src/services/bkfcLiveParser.ts` | Parser — matches fights, updates DB, handles cancellations |
+| `src/services/bkfcLiveScraper.ts` | Type definitions for scraped data |
+
+## ONE FC Live Tracker
+
+The ONE FC live tracker scrapes onefc.com event pages during live events using Puppeteer and updates fight results in real time. ONE FC uses JavaScript to render fight data, so a headless browser is required.
+
+### Architecture: Same as UFC (Render Triggers GitHub Actions)
+
+1. **Render lifecycle service** detects LIVE ONE FC event → dispatches `onefc-live-tracker.yml` every 5 min
+2. **GitHub Actions** installs deps, builds, installs Chromium, runs `runOneFCLiveTracker.ts`
+3. **Scraper** (`oneFCLiveScraper.ts`) loads the ONE FC event page with Puppeteer, extracts fight data from the DOM (~1-3 second scrape times)
+4. **Parser** (`oneFCLiveParser.ts`) matches fights by last name (handles single-name fighters), updates DB
+5. **Auto-publish** since onefc is in `PRODUCTION_SCRAPERS`
+6. **Auto-complete** when all fights are done
+
+### Fully Automatic
+
+Like Oktagon, ONE FC events require **no manual setup**. The daily scraper (`scrapeAllOneFCData.js`) imports events with `scraperType: 'onefc'` and the event URL (stored in `ufcUrl` field). When the event goes LIVE, the lifecycle auto-dispatches the tracker.
+
+### What the Scraper Detects
+
+- Fight status: upcoming / live / complete (via `.is-live` class and `.sticker.is-win` elements)
+- Winner (by checking which fighter's container has the win sticker)
+- Method, round, time (parsed from sticker text like "TKO (R2)")
+- Sport type: MMA, Muay Thai, Kickboxing, Submission Grappling (from weight class text)
+- Cancellations (fights missing from scraped data → marked CANCELLED)
+- Un-cancellations (fights reappearing → restored to UPCOMING)
+- Single-name fighters (e.g., "Superbon") — stored in lastName with empty firstName
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `.github/workflows/onefc-live-tracker.yml` | GitHub Actions workflow (dispatch trigger) |
+| `src/scripts/runOneFCLiveTracker.ts` | Entry point — finds event, runs scraper directly (same process), parses |
+| `src/services/oneFCLiveScraper.ts` | Puppeteer scraper — loads onefc.com, extracts fight data from DOM |
+| `src/services/oneFCLiveParser.ts` | Parser — matches fights, updates DB, handles cancellations |
+| `src/services/oneFCLiveTracker.ts` | Render-based orchestrator (kept for manual/API use) |
+| `src/routes/liveEvents.ts` | API endpoints for manual ONE FC tracker control |
+
+## Tapology-Based Live Tracking (Multi-Org)
+
+The Tapology live tracker is **generic and promotion-agnostic** — it works for any organization whose events appear on Tapology. As of Mar 2026, these orgs use Tapology for live tracking:
+
+| Org | Daily Scraper | Sets `scraperType`? | Sets `ufcUrl`? | Fully Automatic? |
+|-----|---------------|:---:|:---:|:---:|
+| **Zuffa Boxing** | `scrapeZuffaBoxingTapology.js` | Yes (`tapology`) | Yes (Tapology URL) | Yes |
+| **Karate Combat** | `scrapeKarateCombatTapology.js` | Yes (`tapology`) | Yes (Tapology URL) | Yes |
+| **Dirty Boxing** | `scrapeDirtyBoxingTapology.js` | Yes (`tapology`) | Yes (Tapology URL) | Yes |
+| **PFL** | `scrapeAllPFLData.js` | Yes (`tapology`) | Yes (pflmma.com URL) | Yes* |
+| **RIZIN** | `scrapeAllRizinData.js` | Yes (`tapology`) | Yes (Sherdog URL) | Yes* |
+
+*PFL and RIZIN store non-Tapology URLs in `ufcUrl`. The live tracker's auto-discovery finds the correct Tapology event URL via the promotion hub page mapping in `runTapologyLiveTracker.ts`.
+
+### How It Works
+
+1. Daily scraper creates events with `scraperType: 'tapology'`
+2. Event goes LIVE → lifecycle dispatches `tapology-live-tracker.yml` every 5 min
+3. `runTapologyLiveTracker.ts` finds the event, discovers its Tapology URL
+4. `TapologyLiveScraper` scrapes fight results from the Tapology event page
+5. `tapologyLiveParser.ts` matches fights by last name, updates DB
+6. Auto-publishes (tapology is in `PRODUCTION_SCRAPERS`) and auto-completes when all fights are done
+
+### URL Discovery Priority
+
+1. `TAPOLOGY_URL` env var (manual override)
+2. Event's `ufcUrl` field (if it contains `tapology.com`)
+3. Auto-discover from the promotion's Tapology hub page using `TAPOLOGY_PROMOTION_HUBS` mapping:
+
+```
+Zuffa Boxing   → tapology.com/fightcenter/promotions/6299-zuffa-boxing-zb
+Karate Combat  → tapology.com/fightcenter/promotions/3637-karate-combat-kc
+Dirty Boxing   → tapology.com/fightcenter/promotions/5649-dirty-boxing-championship-dbc
+PFL            → tapology.com/fightcenter/promotions/1969-professional-fighters-league-pfl
+RIZIN          → tapology.com/fightcenter/promotions/1561-rizin-fighting-federation-rff
+```
+
+### Adding a New Tapology-Based Org
+
+To add live tracking for any org on Tapology:
+
+1. Create a daily scraper (`scrape{Org}Tapology.js`) — copy from `scrapeZuffaBoxingTapology.js`, change hub URL and URL filter
+2. Create a data parser (`{org}DataParser.ts`) — set `scraperType: 'tapology'` and store Tapology URL in `ufcUrl`
+3. Create a GitHub Actions workflow (`{org}-scraper.yml`)
+4. Add the promotion to `TAPOLOGY_PROMOTION_HUBS` in `runTapologyLiveTracker.ts`
+5. No other changes needed — the lifecycle, live tracker workflow, scraper, and parser are all generic
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `.github/workflows/tapology-live-tracker.yml` | GitHub Actions workflow (dispatch trigger) |
+| `src/scripts/runTapologyLiveTracker.ts` | Entry point — finds event, discovers URL, runs scraper+parser |
+| `src/services/tapologyLiveScraper.ts` | Cheerio scraper — fetches Tapology page, extracts fight data |
+| `src/services/tapologyLiveParser.ts` | Parser — matches fights, updates DB |
+| `src/services/scrapeZuffaBoxingTapology.js` | Template daily scraper (Zuffa Boxing) |
+| `src/services/scrapeKarateCombatTapology.js` | Daily scraper (Karate Combat) |
+| `src/services/scrapeDirtyBoxingTapology.js` | Daily scraper (Dirty Boxing) |
+| `.github/workflows/karate-combat-scraper.yml` | Daily workflow (Karate Combat) |
+| `.github/workflows/dirty-boxing-scraper.yml` | Daily workflow (Dirty Boxing) |
+
 ## Start Time Coverage
 
-As of Feb 2026, all organization scrapers populate `mainStartTime` when time data is available:
+As of Mar 2026, all organization scrapers populate `mainStartTime` when time data is available:
 
 | Org | `mainStartTime` | `prelimStartTime` | `earlyPrelimStartTime` | How |
 |-----|:---:|:---:|:---:|-----|
@@ -232,6 +382,7 @@ As of Feb 2026, all organization scrapers populate `mainStartTime` when time dat
 | Top Rank | Yes | N/A | N/A | Time+timezone regex from page text |
 | Zuffa Boxing | Yes | N/A | N/A | Time regex from Tapology (ET default) |
 | Dirty Boxing | Yes | N/A | N/A | Time regex from Tapology (ET default) |
+| Karate Combat | Yes | N/A | N/A | Time regex from Tapology (ET default) |
 | RIZIN | Yes | N/A | N/A | ISO from Sherdog itemprop (midnight guard) |
 
 **Design rules:**
@@ -253,8 +404,14 @@ As of Feb 2026, all organization scrapers populate `mainStartTime` when time dat
 | `src/routes/liveEvents.ts` | Live tracker API (start/stop/status/auto-start) |
 | `.github/workflows/ufc-live-tracker.yml` | GitHub Actions workflow for UFC live scraping |
 | `.github/workflows/oktagon-live-tracker.yml` | GitHub Actions workflow for Oktagon live scraping |
+| `.github/workflows/bkfc-live-tracker.yml` | GitHub Actions workflow for BKFC live scraping |
+| `.github/workflows/onefc-live-tracker.yml` | GitHub Actions workflow for ONE FC live scraping |
+| `.github/workflows/tapology-live-tracker.yml` | GitHub Actions workflow for Tapology live scraping (all Tapology orgs) |
 | `src/scripts/runUFCLiveTracker.ts` | Standalone script run by GitHub Actions (UFC) |
 | `src/scripts/runOktagonLiveTracker.ts` | Standalone script run by GitHub Actions (Oktagon) |
+| `src/scripts/runBKFCLiveTracker.ts` | Standalone script run by GitHub Actions (BKFC) |
+| `src/scripts/runOneFCLiveTracker.ts` | Standalone script run by GitHub Actions (ONE FC) |
+| `src/scripts/runTapologyLiveTracker.ts` | Standalone script run by GitHub Actions (Tapology — multi-org) |
 | `public/admin.html` | Admin panel UI |
 
 ## Resolved: UFC Event Times Were Wrong (Double Timezone Conversion)
@@ -313,11 +470,14 @@ The 30s interval ensures the app picks up fight status changes (UPCOMING → LIV
 ## Admin Workflow During Events
 
 ### Before an event — required setup:
-- **UFC:** Set `scraperType` to `ufc` on the event in the admin panel (daily scraper creates events with `scraperType: null`). Verify `ufcUrl` is set. That's it — the rest is automatic.
+- **UFC:** Nothing. The daily scraper auto-sets `scraperType: 'ufc'` and stores the event URL. Fully automatic.
 - **Oktagon:** Nothing. The daily scraper auto-sets `scraperType: 'oktagon'` and stores the event URL. Fully automatic.
+- **ONE FC:** Nothing. The daily scraper auto-sets `scraperType: 'onefc'` and stores the event URL. Fully automatic.
+- **BKFC:** Nothing. The daily scraper auto-sets `scraperType: 'bkfc'` and stores the event URL. Fully automatic.
+- **Tapology orgs (Zuffa Boxing, Karate Combat, Dirty Boxing, PFL, RIZIN):** Nothing. Daily scrapers set `scraperType: 'tapology'` and store the Tapology URL. Fully automatic.
 
-### With UFC live tracker (automatic):
-1. Ensure event has `scraperType: 'ufc'` set in admin panel
+### With any production scraper (automatic):
+1. Verify event has correct `scraperType` set (daily scrapers do this automatically for all production orgs)
 2. Event goes LIVE → Render lifecycle triggers GitHub Actions workflow every ~5 min
 3. Monitor via Render logs (`[Lifecycle] Triggered GitHub Actions UFC live tracker`) and GitHub Actions tab
 4. Results auto-publish to the app in real time — users see updates within 30 seconds
@@ -345,6 +505,35 @@ The 30s interval ensures the app picks up fight status changes (UPCOMING → LIV
 - Reject names containing "consent", "cookie", or "privacy"
 - Fall back to the `<title>` tag as last resort
 - The Puppeteer scraper also attempts to dismiss the consent banner before extracting data
+
+### RIZIN Scraper Missing Main Event & Wrong Fights (Fixed Mar 2026)
+
+**Problem:** The RIZIN scraper (`scrapeAllRizinData.js`) scraped from Sherdog, which displays the main event in a separate `div.fight_card` section (using `div.fighter.left_side` / `div.fighter.right_side`) rather than in the fight table. The scraper only parsed table rows (`<tr>` elements), so the main event was always missing. Additionally, Sherdog wraps fighter names in `<span itemprop="name">First<br>Last</span>` — `textContent` strips the `<br>`, producing concatenated names like "LuizGustavo".
+
+**Reported as:** Rizin 52 listing included fights not on the card (Kolesnik vs Aimoto, Dautbek vs Fukuta) and the main event was missing (Kyoma Akimoto vs Patchy Mix).
+
+**Fix:**
+1. **Main event extraction (Strategy 0):** New parsing step before table rows — extracts fighters from `div.fight_card` with `.fighter.left_side`/`.right_side`, reads names from `h3 > a > span[itemprop="name"]`, weight class from `.versus .weight_class`, and winner from `.final_result`
+2. **Fighter name spacing:** Replaces `<br>` tags with spaces in `innerHTML` before extracting text from `span[itemprop="name"]`
+3. **Duplicate prevention:** Collects main event fighter URLs and skips matching table rows to avoid duplicates (Sherdog includes the main event in both the div and the table for upcoming events)
+4. **Fight ordering:** Uses Sherdog's card position numbers (from first `<td>`) sorted descending, so orderOnCard 1 = main event (top of card in the app) and highest = opener. Main event from div gets order 9999 before sort, ensuring it becomes #1.
+
+**Wrong fights cause:** The stale scraped data was from when Sherdog had a preliminary card listing. Re-scraping after the event was finalized returned the correct fights.
+
+### BKFC Fighter Images Showing Opponent's Photo (Fixed Mar 2026)
+
+**Problem:** Many BKFC fighters showed their opponent's profile image instead of their own. For example, on a Selmani vs Curtin fight, both fighters displayed Selmani's photo.
+
+**Root causes (two bugs):**
+
+1. **Fighter profile page scraper** (main cause): `scrapeFighterPage()` scanned all images on a fighter's profile page and picked the first BKFC CDN 400x400 image. BKFC profile pages show the opponent's image in a "next fight" section, and it often appeared first in the DOM. Fighters without their own profile image (Ghost McFarlane, Danny Wall, etc.) got their opponent's headshot.
+
+2. **Event page image extraction**: `findBestImage()` searched parent/grandparent/fight containers using `querySelectorAll('img')` and returned the first match. In shared fight containers holding both fighters, fighter2 always got fighter1's image.
+
+**Fix:**
+1. **Profile page**: Now extracts the fighter's name from their URL slug and only accepts CDN images whose filename contains the fighter's name parts. Fighters without a matching image get `null` instead of an opponent's face.
+2. **Event page**: Replaced `findBestImage()` with `findClosestImage()` for broader containers — uses `getBoundingClientRect()` to pick the image physically closest to each fighter's link element.
+3. **Parser**: Added `avatar-template` to the image skip list in `bkfcDataParser.ts` so BKFC generic placeholder images don't get saved as profile pictures.
 
 ### BKFC Duplicate Events from Ticket Links (Fixed Mar 2026)
 
