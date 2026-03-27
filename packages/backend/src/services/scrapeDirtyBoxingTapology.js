@@ -216,12 +216,19 @@ async function scrapeEventPage(browser, eventUrl) {
         dateText: '',
         eventDate: null,
         eventStartTime: null,
+        eventImageUrl: null,
         venue: '',
         city: '',
         country: '',
         broadcast: '',
         fights: []
       };
+
+      // Extract event poster image from Tapology (e.g., images.tapology.com/poster_images/...)
+      const posterImg = document.querySelector('img[src*="poster_images"]');
+      if (posterImg && posterImg.src) {
+        data.eventImageUrl = posterImg.src;
+      }
 
       // Extract event name from header - skip cookie consent banners
       const eventHeader = document.querySelector('.eventPageHeaderTitles h1, .header h1, #main h1, .content h1')
@@ -407,7 +414,7 @@ async function main() {
         country: eventData.country || '',
         dateText: eventData.dateText || discovered.dateText || '',
         eventDate: eventData.eventDate || null,
-        eventImageUrl: null,
+        eventImageUrl: eventData.eventImageUrl || null,
         status: discovered.status || 'Upcoming',
         fights: eventData.fights
       };

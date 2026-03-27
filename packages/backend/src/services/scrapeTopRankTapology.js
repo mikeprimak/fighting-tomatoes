@@ -119,7 +119,13 @@ async function scrapeEventPage(browser, eventUrl) {
     } catch (e) {}
 
     const eventData = await page.evaluate(() => {
-      const data = { eventName: '', dateText: '', eventDate: null, eventStartTime: null, venue: '', city: '', country: '', fights: [] };
+      const data = { eventName: '', dateText: '', eventDate: null, eventStartTime: null, venue: '', city: '', country: '', eventImageUrl: null, fights: [] };
+
+      // Extract event poster image from Tapology
+      const posterImg = document.querySelector('img[src*="poster_images"]');
+      if (posterImg && posterImg.src) {
+        data.eventImageUrl = posterImg.src;
+      }
 
       const eventHeader = document.querySelector('.eventPageHeaderTitles h1, .header h1, #main h1, .content h1')
         || document.querySelector('h1:not([class*="consent"]):not([class*="cookie"])');
@@ -219,7 +225,7 @@ async function main() {
         eventUrl: discovered.eventUrl, eventSlug, venue: eventData.venue || '',
         city: eventData.city || '', state: '', country: eventData.country || '',
         dateText: eventData.dateText || discovered.dateText || '',
-        eventDate: eventData.eventDate || null, eventImageUrl: null,
+        eventDate: eventData.eventDate || null, eventImageUrl: eventData.eventImageUrl || null,
         status: discovered.status || 'Upcoming', fights: eventData.fights
       };
       allEvents.push(event);
