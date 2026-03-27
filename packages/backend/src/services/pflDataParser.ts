@@ -361,6 +361,7 @@ async function importPFLEvents(
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
           prelimStartTime: prelimStartTime || undefined,
+          scraperType: 'tapology',
         }
       });
     } else {
@@ -378,6 +379,7 @@ async function importPFLEvents(
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
           prelimStartTime: prelimStartTime || undefined,
+          scraperType: 'tapology',
           eventStatus: initialStatus,
         }
       });

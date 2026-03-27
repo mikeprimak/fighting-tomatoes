@@ -1,12 +1,12 @@
 /**
- * Dirty Boxing Scraper - Scrapes event data from Tapology
+ * Karate Combat Scraper - Scrapes event data from Tapology
  *
- * Tapology is used because Dirty Boxing Championship doesn't have detailed event pages.
- * This scraper extracts fight cards from Tapology event pages.
+ * Karate Combat events are listed on Tapology. This scraper extracts
+ * fight cards from Tapology event pages.
  *
  * Usage:
- * - Manual: node src/services/scrapeDirtyBoxingTapology.js
- * - Automated: SCRAPER_MODE=automated node src/services/scrapeDirtyBoxingTapology.js
+ * - Manual: node src/services/scrapeKarateCombatTapology.js
+ * - Automated: SCRAPER_MODE=automated node src/services/scrapeKarateCombatTapology.js
  */
 
 const puppeteer = require('puppeteer');
@@ -17,8 +17,8 @@ const path = require('path');
 const SCRAPER_MODE = process.env.SCRAPER_MODE || 'manual';
 const OVERALL_TIMEOUT = parseInt(process.env.SCRAPER_TIMEOUT || '600000', 10);
 
-// Tapology URLs for Dirty Boxing Championship
-const TAPOLOGY_PROMOTION_URL = 'https://www.tapology.com/fightcenter/promotions/5649-dirty-boxing-championship-dbc';
+// Tapology URLs for Karate Combat
+const TAPOLOGY_PROMOTION_URL = 'https://www.tapology.com/fightcenter/promotions/3637-karate-combat-kc';
 const TAPOLOGY_BASE_URL = 'https://www.tapology.com';
 
 // Delays in milliseconds
@@ -87,7 +87,7 @@ function getEventSlug(url) {
  * Scrape upcoming events list from Tapology promotion page
  */
 async function scrapeEventsList(browser) {
-  console.log('\n📋 Scraping Dirty Boxing events from Tapology...\n');
+  console.log('\n📋 Scraping Karate Combat events from Tapology...\n');
 
   const page = await browser.newPage();
   await page.setViewport({ width: 1920, height: 1080 });
@@ -117,11 +117,12 @@ async function scrapeEventsList(browser) {
         if (!eventUrl || !eventName || eventName.length < 3) return;
         if (seenUrls.has(eventUrl)) return;
 
-        // CRITICAL: Only include events that are actually Dirty Boxing events.
+        // CRITICAL: Only include events that are actually Karate Combat events.
         // The Tapology promotion page has a sidebar calendar showing events from
-        // ALL promotions. Filter by URL slug.
+        // ALL promotions. Filter by URL slug since Karate Combat event URLs
+        // typically contain "karate-combat" or "kc-" in the path.
         const urlLower = eventUrl.toLowerCase();
-        if (!urlLower.includes('dirty-boxing') && !urlLower.includes('dbx-') && !urlLower.includes('dbc-')) return;
+        if (!urlLower.includes('karate-combat') && !urlLower.includes('kc-')) return;
 
         seenUrls.add(eventUrl);
 
@@ -131,15 +132,16 @@ async function scrapeEventsList(browser) {
         let venueText = '';
 
         if (container) {
+          // Look for date text in nearby elements
           const textContent = container.textContent || '';
 
-          // Match date patterns like "Sunday, March 8, 9:00 PM ET"
+          // Match date patterns like "Sunday, March 8, 9:00 PM ET" or "Mar 8, 2026"
           const dateMatch = textContent.match(/((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+)?(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:,?\s+\d{4})?(?:,?\s+\d{1,2}:\d{2}\s*(?:AM|PM)\s*[A-Z]*)?/i);
           if (dateMatch) {
             dateText = dateMatch[0].trim();
           }
 
-          // Look for venue info
+          // Look for venue info (text with bullet separator or location patterns)
           const venueMatch = textContent.match(/(?:•|·|\|)\s*([^•·|\n]+(?:,\s*[A-Z]{2})?)/);
           if (venueMatch) {
             venueText = venueMatch[1].trim();
@@ -170,7 +172,7 @@ async function scrapeEventsList(browser) {
       }
     }
 
-    console.log(`✅ Found ${uniqueEvents.length} Dirty Boxing events\n`);
+    console.log(`✅ Found ${uniqueEvents.length} Karate Combat events\n`);
     return uniqueEvents;
 
   } catch (error) {
@@ -312,11 +314,11 @@ async function scrapeEventPage(browser, eventUrl) {
         if (!fighterA || !fighterB) break;
 
         data.fights.push({
-          fightId: `dirty-boxing-fight-${data.fights.length + 1}`,
+          fightId: `karate-combat-fight-${data.fights.length + 1}`,
           order: data.fights.length + 1,
           cardType: data.fights.length === 0 ? 'Main Event' : 'Main Card',
           weightClass: '',
-          scheduledRounds: 10,
+          scheduledRounds: 3,
           isTitle: false,
           fighterA: {
             name: fighterA.name,
@@ -356,7 +358,7 @@ async function scrapeEventPage(browser, eventUrl) {
  * Main scraper function
  */
 async function main() {
-  console.log('\n🚀 Starting Dirty Boxing Tapology Scraper\n');
+  console.log('\n🚀 Starting Karate Combat Tapology Scraper\n');
   console.log('='.repeat(60));
 
   const browser = await puppeteer.launch({
@@ -365,7 +367,7 @@ async function main() {
   });
 
   try {
-    // Discover events from the Dirty Boxing promotion page
+    // Discover events from the Karate Combat promotion page
     const discoveredEvents = await scrapeEventsList(browser);
 
     // If no events discovered, there's nothing to scrape
@@ -436,7 +438,7 @@ async function main() {
     }
 
     // Save scraped data
-    const outputDir = path.join(__dirname, '../../scraped-data/dirty-boxing');
+    const outputDir = path.join(__dirname, '../../scraped-data/karate-combat');
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
@@ -494,7 +496,7 @@ async function runWithTimeout() {
 // Run if called directly
 if (require.main === module) {
   const startTime = Date.now();
-  console.log(`🚀 Starting Dirty Boxing scraper in ${SCRAPER_MODE} mode...`);
+  console.log(`🚀 Starting Karate Combat scraper in ${SCRAPER_MODE} mode...`);
 
   runWithTimeout()
     .then(() => {

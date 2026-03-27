@@ -33,8 +33,31 @@ const prisma = new PrismaClient();
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
-const TAPOLOGY_PROMOTION_URL = 'https://www.tapology.com/fightcenter/promotions/6299-zuffa-boxing-zb';
 const TAPOLOGY_BASE_URL = 'https://www.tapology.com';
+
+// Promotion-to-Tapology-hub mapping for auto-discovery
+const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[] }> = {
+  'Zuffa Boxing': {
+    url: 'https://www.tapology.com/fightcenter/promotions/6299-zuffa-boxing-zb',
+    slugFilter: ['zuffa'],
+  },
+  'PFL': {
+    url: 'https://www.tapology.com/fightcenter/promotions/1969-professional-fighters-league-pfl',
+    slugFilter: ['pfl'],
+  },
+  'RIZIN': {
+    url: 'https://www.tapology.com/fightcenter/promotions/1561-rizin-fighting-federation-rff',
+    slugFilter: ['rizin'],
+  },
+  'Dirty Boxing': {
+    url: 'https://www.tapology.com/fightcenter/promotions/5649-dirty-boxing-championship-dbc',
+    slugFilter: ['dirty-boxing', 'dbx-', 'dbc-'],
+  },
+  'Karate Combat': {
+    url: 'https://www.tapology.com/fightcenter/promotions/3637-karate-combat-kc',
+    slugFilter: ['karate-combat', 'kc-'],
+  },
+};
 
 /**
  * Find an active Tapology event that should be tracked.
@@ -94,18 +117,27 @@ async function getTapologyUrl(event: any): Promise<string | null> {
     return event.ufcUrl;
   }
 
-  // 3. Auto-discover from promotions hub
-  console.log(`[TAPOLOGY LIVE] No URL stored, discovering from promotions hub...`);
-  return discoverTapologyUrl(event);
+  // 3. Auto-discover from promotions hub (using event's promotion field)
+  const promotion = event.promotion || 'Zuffa Boxing';
+  console.log(`[TAPOLOGY LIVE] No Tapology URL stored, discovering from ${promotion} hub...`);
+  return discoverTapologyUrl(event, promotion);
 }
 
 /**
- * Discover the Tapology event URL by scraping the Zuffa Boxing promotions page
+ * Discover the Tapology event URL by scraping the promotion's Tapology hub page
  * and matching against the event name/date.
+ * Supports multiple promotions via TAPOLOGY_PROMOTION_HUBS mapping.
  */
-async function discoverTapologyUrl(event: any): Promise<string | null> {
+async function discoverTapologyUrl(event: any, promotion: string): Promise<string | null> {
   try {
-    const response = await fetch(TAPOLOGY_PROMOTION_URL, {
+    const hubConfig = TAPOLOGY_PROMOTION_HUBS[promotion];
+    if (!hubConfig) {
+      console.error(`[TAPOLOGY LIVE] No Tapology hub configured for promotion: ${promotion}`);
+      console.error(`[TAPOLOGY LIVE] Known promotions: ${Object.keys(TAPOLOGY_PROMOTION_HUBS).join(', ')}`);
+      return null;
+    }
+
+    const response = await fetch(hubConfig.url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml',
@@ -123,20 +155,23 @@ async function discoverTapologyUrl(event: any): Promise<string | null> {
     const cheerio = await import('cheerio');
     const $ = cheerio.load(html);
 
-    // Find all event links
+    // Find all event links, filtering by the promotion's slug patterns
     const eventLinks: { name: string; url: string }[] = [];
     $('a[href*="/fightcenter/events/"]').each((_, el) => {
       const href = $(el).attr('href');
       const name = $(el).text().trim();
       if (!href || !name || name.length < 3) return;
-      // Only Zuffa Boxing events
-      if (!href.toLowerCase().includes('zuffa')) return;
+
+      // Filter to only this promotion's events (sidebar shows events from all orgs)
+      const hrefLower = href.toLowerCase();
+      const matchesPromotion = hubConfig.slugFilter.some(slug => hrefLower.includes(slug));
+      if (!matchesPromotion) return;
 
       const fullUrl = href.startsWith('http') ? href : `${TAPOLOGY_BASE_URL}${href}`;
       eventLinks.push({ name, url: fullUrl });
     });
 
-    console.log(`[TAPOLOGY LIVE] Found ${eventLinks.length} Zuffa Boxing events on hub page`);
+    console.log(`[TAPOLOGY LIVE] Found ${eventLinks.length} ${promotion} events on hub page`);
 
     if (eventLinks.length === 0) return null;
 
