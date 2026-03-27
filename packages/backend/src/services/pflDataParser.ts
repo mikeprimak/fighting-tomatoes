@@ -587,6 +587,41 @@ async function importPFLEvents(
     }
   }
 
+  // ============== EVENT-LEVEL CANCELLATION DETECTION ==============
+  // Mark UPCOMING PFL events in the DB as cancelled if they no longer appear in scraped data.
+  // This handles events that were removed from the PFL website (e.g., ticket pages, cancelled shows).
+
+  const scrapedEventUrls = new Set(Array.from(uniqueEvents.keys()));
+
+  const upcomingDbEvents = await prisma.event.findMany({
+    where: {
+      promotion: 'PFL',
+      eventStatus: { in: ['UPCOMING', 'LIVE'] },
+      ufcUrl: { not: null },
+    }
+  });
+
+  let cancelledEventCount = 0;
+  for (const dbEvent of upcomingDbEvents) {
+    if (dbEvent.ufcUrl && !scrapedEventUrls.has(dbEvent.ufcUrl)) {
+      console.log(`  ❌ Cancelling event (no longer in scraped data): ${dbEvent.name} (${dbEvent.date.toLocaleDateString()})`);
+      await prisma.event.update({
+        where: { id: dbEvent.id },
+        data: { eventStatus: 'COMPLETED' }
+      });
+      // Also cancel all upcoming fights for this event
+      await prisma.fight.updateMany({
+        where: { eventId: dbEvent.id, fightStatus: { in: ['UPCOMING', 'LIVE'] } },
+        data: { fightStatus: 'CANCELLED' }
+      });
+      cancelledEventCount++;
+    }
+  }
+
+  if (cancelledEventCount > 0) {
+    console.log(`  ⚠ Cancelled ${cancelledEventCount} events that are no longer on the PFL website`);
+  }
+
   console.log(`✅ Imported all PFL events\n`);
 }
 
