@@ -27,9 +27,49 @@ let lifecycleTimer: ReturnType<typeof setInterval> | null = null;
 const lastGitHubDispatchByWorkflow: Record<string, number> = {};
 const GITHUB_DISPATCH_COOLDOWN_MS = 4 * 60 * 1000; // Don't trigger more than once per 4 minutes per workflow
 
+// VPS Scraper Service URL (if set, dispatches go to VPS instead of GitHub Actions)
+const VPS_SCRAPER_URL = process.env.VPS_SCRAPER_URL || ''; // e.g. http://178.156.231.241:3009
+const VPS_SCRAPER_API_KEY = process.env.VPS_SCRAPER_API_KEY || '';
+
+/**
+ * Trigger the VPS scraper service to start tracking an event.
+ * The VPS runs scrapers every 30 seconds (vs 5 min via GitHub Actions).
+ */
+async function triggerVPSLiveTracker(
+  eventId: string,
+  scraperType: string,
+  eventName: string,
+): Promise<boolean> {
+  if (!VPS_SCRAPER_URL) return false;
+
+  try {
+    const response = await fetch(`${VPS_SCRAPER_URL}/track/start`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${VPS_SCRAPER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ eventId, scraperType, eventName }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`[Lifecycle] VPS tracker started for ${eventName}: ${JSON.stringify(data)}`);
+      return true;
+    } else {
+      const text = await response.text();
+      console.error(`[Lifecycle] VPS dispatch failed (${response.status}): ${text}`);
+      return false;
+    }
+  } catch (error: any) {
+    console.error(`[Lifecycle] VPS dispatch error: ${error.message}`);
+    return false;
+  }
+}
+
 /**
  * Trigger the UFC Live Tracker GitHub Actions workflow via API.
- * This is more reliable than GitHub's cron scheduler.
+ * Fallback when VPS is not configured.
  * Requires GITHUB_TOKEN env var with actions:write permission.
  */
 async function triggerGitHubLiveTracker(
@@ -164,17 +204,21 @@ export async function runEventLifecycleCheck(): Promise<{
         results.eventsStarted++;
         console.log(`[Lifecycle] UPCOMING → LIVE: ${event.name}`);
 
-        // Trigger GitHub Actions live tracker for events with scrapers
-        if (event.scraperType === 'ufc') {
-          await triggerGitHubLiveTracker('ufc-live-tracker.yml', { event_id: event.id });
-        } else if (event.scraperType === 'oktagon') {
-          await triggerGitHubLiveTracker('oktagon-live-tracker.yml', { event_id: event.id });
-        } else if (event.scraperType === 'tapology') {
-          await triggerGitHubLiveTracker('tapology-live-tracker.yml', { event_id: event.id });
-        } else if (event.scraperType === 'bkfc') {
-          await triggerGitHubLiveTracker('bkfc-live-tracker.yml', { event_id: event.id });
-        } else if (event.scraperType === 'onefc') {
-          await triggerGitHubLiveTracker('onefc-live-tracker.yml', { event_id: event.id });
+        // Trigger live tracker: try VPS first, fall back to GitHub Actions
+        if (event.scraperType && ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc'].includes(event.scraperType)) {
+          const vpsOk = await triggerVPSLiveTracker(event.id, event.scraperType, event.name);
+          if (!vpsOk) {
+            // Fallback to GitHub Actions
+            const workflowMap: Record<string, string> = {
+              ufc: 'ufc-live-tracker.yml',
+              oktagon: 'oktagon-live-tracker.yml',
+              tapology: 'tapology-live-tracker.yml',
+              bkfc: 'bkfc-live-tracker.yml',
+              onefc: 'onefc-live-tracker.yml',
+            };
+            const workflow = workflowMap[event.scraperType];
+            if (workflow) await triggerGitHubLiveTracker(workflow, { event_id: event.id });
+          }
         }
       }
     }
@@ -193,21 +237,45 @@ export async function runEventLifecycleCheck(): Promise<{
       select: { id: true, name: true, scraperType: true },
     });
 
-    for (const liveScraperEvent of liveScraperEvents) {
-      let workflow: string;
-      if (liveScraperEvent.scraperType === 'ufc') {
-        workflow = 'ufc-live-tracker.yml';
-      } else if (liveScraperEvent.scraperType === 'oktagon') {
-        workflow = 'oktagon-live-tracker.yml';
-      } else if (liveScraperEvent.scraperType === 'bkfc') {
-        workflow = 'bkfc-live-tracker.yml';
-      } else if (liveScraperEvent.scraperType === 'onefc') {
-        workflow = 'onefc-live-tracker.yml';
-      } else {
-        workflow = 'tapology-live-tracker.yml';
+    // If VPS is configured, just tell it to check for active events (single call)
+    if (VPS_SCRAPER_URL) {
+      try {
+        const response = await fetch(`${VPS_SCRAPER_URL}/track/check`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${VPS_SCRAPER_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          const data = await response.json() as { started?: string[]; stopped?: string[] };
+          if (data.started && data.started.length > 0) console.log(`[Lifecycle] VPS auto-started: ${data.started.join(', ')}`);
+          if (data.stopped && data.stopped.length > 0) console.log(`[Lifecycle] VPS auto-stopped: ${data.stopped.join(', ')}`);
+        }
+      } catch (error: any) {
+        console.error(`[Lifecycle] VPS check failed: ${error.message}, falling back to GitHub Actions`);
+        // Fall through to GitHub Actions below
+        for (const liveScraperEvent of liveScraperEvents) {
+          const workflowMap: Record<string, string> = {
+            ufc: 'ufc-live-tracker.yml', oktagon: 'oktagon-live-tracker.yml',
+            tapology: 'tapology-live-tracker.yml', bkfc: 'bkfc-live-tracker.yml',
+            onefc: 'onefc-live-tracker.yml',
+          };
+          const workflow = workflowMap[liveScraperEvent.scraperType || ''] || 'tapology-live-tracker.yml';
+          await triggerGitHubLiveTracker(workflow, { event_id: liveScraperEvent.id });
+        }
       }
-      const inputs: Record<string, string> = { event_id: liveScraperEvent.id };
-      await triggerGitHubLiveTracker(workflow, inputs);
+    } else {
+      // No VPS configured — use GitHub Actions (original behavior)
+      for (const liveScraperEvent of liveScraperEvents) {
+        const workflowMap: Record<string, string> = {
+          ufc: 'ufc-live-tracker.yml', oktagon: 'oktagon-live-tracker.yml',
+          tapology: 'tapology-live-tracker.yml', bkfc: 'bkfc-live-tracker.yml',
+          onefc: 'onefc-live-tracker.yml',
+        };
+        const workflow = workflowMap[liveScraperEvent.scraperType || ''] || 'tapology-live-tracker.yml';
+        await triggerGitHubLiveTracker(workflow, { event_id: liveScraperEvent.id });
+      }
     }
   } catch (error: any) {
     console.error('[Lifecycle] Step 1.5 (GitHub dispatch) error:', error.message);
