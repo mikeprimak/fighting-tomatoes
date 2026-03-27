@@ -465,6 +465,7 @@ async function importTopRankEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
+          scraperType: 'tapology',
         }
       });
     } else {
@@ -481,6 +482,7 @@ async function importTopRankEvents(
           location,
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
+          scraperType: 'tapology',
           eventStatus: initialStatus,
         }
       });
