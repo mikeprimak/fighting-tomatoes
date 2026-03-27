@@ -321,6 +321,9 @@ function UpcomingFightCard({
           ]}>
             {(predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0) ? (
               <>
+                <Text style={styles.hypeSquareNumber}>
+                  {predictionStats.averageHype === 10 ? '10' : predictionStats.averageHype.toFixed(1)}
+                </Text>
                 {(fight as any).hypeCount > 0 ? (
                   <Text style={styles.hypeSquareCount}>
                     ({(fight as any).hypeCount})
@@ -332,9 +335,6 @@ function UpcomingFightCard({
                     color="rgba(0,0,0,0.45)"
                   />
                 )}
-                <Text style={styles.hypeSquareNumber}>
-                  {predictionStats.averageHype === 10 ? '10' : predictionStats.averageHype.toFixed(1)}
-                </Text>
               </>
             ) : (
               <FontAwesome6

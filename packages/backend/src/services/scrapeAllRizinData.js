@@ -237,25 +237,6 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
       // - table.fight_results or similar for fight rows
       // - Individual fight sections with fighter info
 
-      // Strategy: find all fight-related sections/rows
-      const fightSections = document.querySelectorAll(
-        '.fight_card .content tr, ' +
-        'section.fight_card tr, ' +
-        '.module.fight_card tr, ' +
-        'table tr[itemprop="subEvent"], ' +
-        '.fightcard tr, ' +
-        '.event-fights tr'
-      );
-
-      // Also try to find the main event separately
-      // Sherdog often has the main event in a special section
-      const mainEventSection = document.querySelector(
-        '.fight_card .header, ' +
-        '.module.event_match, ' +
-        '.fight_card .main_event, ' +
-        '.module.fight_card'
-      );
-
       // Helper to extract fighter data from a fight element
       // Parse fighter name from Sherdog URL slug (e.g. "/fighter/Saori-Oshima-361683")
       // This is more reliable than textContent which often concatenates without spaces
@@ -283,7 +264,17 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
         const nameLink = el.querySelector('a[href*="/fighter/"]');
         if (!nameLink) return null;
 
-        const rawName = (nameLink.textContent || '').trim();
+        // Sherdog wraps names in <span itemprop="name">First<br>Last</span>
+        // textContent strips <br> tags, so we need to handle this
+        let rawName = '';
+        const nameSpan = nameLink.querySelector('span[itemprop="name"]');
+        if (nameSpan) {
+          // Replace <br> with space before getting text
+          rawName = nameSpan.innerHTML.replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').trim();
+        }
+        if (!rawName) {
+          rawName = (nameLink.textContent || '').trim();
+        }
         const athleteUrl = nameLink.getAttribute('href') || '';
         const fullAthleteUrl = athleteUrl.startsWith('http') ? athleteUrl : `https://www.sherdog.com${athleteUrl}`;
 
@@ -363,6 +354,105 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
       // Try multiple parsing strategies
       // ==========================================
 
+      // Strategy 0: Parse main event from div.fight_card (separate from table)
+      // Sherdog displays the main event in a special section with div.fighter.left_side / right_side
+      const mainEventCard = document.querySelector('div.fight_card');
+      if (mainEventCard) {
+        const leftFighter = mainEventCard.querySelector('.fighter.left_side');
+        const rightFighter = mainEventCard.querySelector('.fighter.right_side');
+
+        if (leftFighter && rightFighter) {
+          // Extract fighter data from the main event section
+          function extractMainEventFighter(el) {
+            // Name is in h3 > a > span[itemprop="name"] or h3 > a
+            const nameEl = el.querySelector('h3 a span[itemprop="name"]') || el.querySelector('h3 a');
+            const nameLink = el.querySelector('a[href*="/fighter/"]');
+            if (!nameLink) return null;
+
+            const athleteUrl = nameLink.getAttribute('href') || '';
+            const fullAthleteUrl = athleteUrl.startsWith('http') ? athleteUrl : `https://www.sherdog.com${athleteUrl}`;
+
+            let name = nameEl ? (nameEl.textContent || '').trim() : '';
+            // Fallback: parse name from URL slug
+            const urlParsed = parseNameFromUrl(athleteUrl);
+            if (!name || !name.includes(' ')) {
+              name = urlParsed ? urlParsed.fullName : name;
+            }
+
+            // Record from span.record
+            let record = '';
+            const recordEl = el.querySelector('.record, span.record');
+            if (recordEl) {
+              const recordText = (recordEl.textContent || '').trim();
+              const recordMatch = recordText.match(/(\d{1,3})-(\d{1,3})-(\d{1,3})/);
+              if (recordMatch) record = recordMatch[0];
+            }
+
+            // Image from img[itemprop="image"] or first img with /fighter/ in src
+            let imageUrl = null;
+            const img = el.querySelector('img[itemprop="image"], img[src*="/fighter/"], img[src*="image_crop"]');
+            if (img) {
+              imageUrl = img.getAttribute('src') || null;
+              if (imageUrl && !imageUrl.startsWith('http')) {
+                imageUrl = `https://www.sherdog.com${imageUrl}`;
+              }
+            }
+
+            // Parse name parts
+            let firstName = '', lastName = '';
+            if (urlParsed && (!name.includes(' '))) {
+              firstName = urlParsed.firstName;
+              lastName = urlParsed.lastName;
+            } else {
+              const nameParts = name.split(/\s+/);
+              firstName = nameParts[0] || '';
+              lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : nameParts[0] || '';
+            }
+
+            return {
+              name, firstName, lastName, nickname: '', record,
+              country: '', imageUrl, athleteUrl: fullAthleteUrl, rank: '', odds: ''
+            };
+          }
+
+          const fighterA = extractMainEventFighter(leftFighter);
+          const fighterB = extractMainEventFighter(rightFighter);
+
+          if (fighterA && fighterB) {
+            // Weight class from .versus .weight_class
+            let weightClass = '';
+            const versusEl = mainEventCard.querySelector('.versus .weight_class');
+            if (versusEl) {
+              weightClass = (versusEl.textContent || '').trim();
+            }
+
+            // Check for title fight
+            const cardText = (mainEventCard.textContent || '').toLowerCase();
+            const isTitle = cardText.includes('title') || cardText.includes('championship') || cardText.includes('grand prix');
+
+            // Check for winner
+            let winner = '';
+            const leftResult = leftFighter.querySelector('.final_result');
+            const rightResult = rightFighter.querySelector('.final_result');
+            if (leftResult && leftResult.textContent.trim().toLowerCase() === 'win') {
+              winner = fighterA.name;
+            } else if (rightResult && rightResult.textContent.trim().toLowerCase() === 'win') {
+              winner = fighterB.name;
+            }
+
+            allFights.push({
+              fightId: `rizin-fight-main`,
+              order: 9999, // Will be reordered to last (highest = main event)
+              cardType: 'Main Card',
+              weightClass,
+              isTitle,
+              fighterA, fighterB,
+              result: { method: '', round: '', time: '', winner }
+            });
+          }
+        }
+      }
+
       // Strategy 1: Look for structured fight sections with left/right fighters
       const fightElements = document.querySelectorAll(
         '.module.fight_card, ' +
@@ -370,6 +460,13 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
         '.fightcard .fight, ' +
         '.event-fights .fight'
       );
+
+      // Collect main event fighter URLs to avoid duplicates in Strategy 2
+      const mainEventFighterUrls = new Set();
+      allFights.forEach(f => {
+        if (f.fighterA?.athleteUrl) mainEventFighterUrls.add(f.fighterA.athleteUrl);
+        if (f.fighterB?.athleteUrl) mainEventFighterUrls.add(f.fighterB.athleteUrl);
+      });
 
       // Strategy 2: Parse table rows (most common Sherdog pattern)
       const fightRows = document.querySelectorAll(
@@ -412,6 +509,22 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
         if (!fighterA || !fighterB) continue;
         if (fighterA.athleteUrl === fighterB.athleteUrl) continue;
 
+        // Skip if this fight was already extracted as the main event (Strategy 0)
+        if (mainEventFighterUrls.has(fighterA.athleteUrl) && mainEventFighterUrls.has(fighterB.athleteUrl)) {
+          continue;
+        }
+
+        // Extract the fight number from the first td (Sherdog shows "11", "10", etc.)
+        // This represents the actual position on the card
+        let cardPosition = 0;
+        if (cols.length > 0) {
+          const posText = (cols[0].textContent || '').trim();
+          const posMatch = posText.match(/^(\d+)$/);
+          if (posMatch) {
+            cardPosition = parseInt(posMatch[1], 10);
+          }
+        }
+
         // Extract weight class
         let weightClass = '';
         const wcEl = row.querySelector('.weight_class, .division, .weight-class');
@@ -437,12 +550,18 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
         let time = '';
         let winner = '';
 
-        const methodEl = row.querySelector('.method, .win_type, td:nth-child(4), .result_method');
-        if (methodEl) {
-          method = (methodEl.textContent || '').trim();
+        // Use .winby td for method (more reliable than positional selector)
+        const winbyEl = row.querySelector('td.winby');
+        if (winbyEl) {
+          method = (winbyEl.textContent || '').trim();
+        } else {
+          const methodEl = row.querySelector('.method, .win_type, .result_method');
+          if (methodEl) {
+            method = (methodEl.textContent || '').trim();
+          }
         }
 
-        const roundEl = row.querySelector('.round, td:nth-child(5), .result_round');
+        const roundEl = row.querySelector('.round, td:nth-child(6), .result_round');
         if (roundEl) {
           const roundText = (roundEl.textContent || '').trim();
           const roundMatch = roundText.match(/(\d+)/);
@@ -451,27 +570,23 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
           }
         }
 
-        const timeEl = row.querySelector('.time, td:nth-child(6), .result_time');
+        const timeEl = row.querySelector('.time, td:nth-child(7), .result_time');
         if (timeEl) {
           time = (timeEl.textContent || '').trim();
         }
 
-        // Check for winner indication (bold, win class, etc.)
-        const winIndicators = row.querySelectorAll('.win, .winner, .final_result');
-        if (winIndicators.length > 0) {
-          const winEl = winIndicators[0];
-          const closestFighter = winEl.closest('td');
-          if (closestFighter) {
-            const winnerLink = closestFighter.querySelector('a[href*="/fighter/"]');
-            if (winnerLink) {
-              winner = (winnerLink.textContent || '').trim();
-            }
-          }
+        // Check for winner indication
+        const leftResult = row.querySelector('td.text_right .final_result, .fighter_list.left .final_result');
+        const rightResult = row.querySelector('td.text_left .final_result, .fighter_list.right .final_result');
+        if (leftResult && leftResult.textContent.trim().toLowerCase() === 'win') {
+          winner = fighterA.name;
+        } else if (rightResult && rightResult.textContent.trim().toLowerCase() === 'win') {
+          winner = fighterB.name;
         }
 
         allFights.push({
           fightId: `rizin-fight-${globalOrder}`,
-          order: globalOrder++,
+          order: cardPosition || globalOrder, // Use Sherdog's card position if available
           cardType: 'Main Card',
           weightClass,
           isTitle,
@@ -506,6 +621,7 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
             winner
           }
         });
+        globalOrder++;
       }
 
       // Strategy 3: If table rows didn't work, try div-based fight cards
@@ -597,6 +713,17 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
           });
         }
       }
+
+      // Reorder fights: main event = order 1 (top), opener = highest order (bottom)
+      // Sherdog's card position numbers go high (top of card) to low (opener),
+      // so we sort DESCENDING to get main event first.
+      // Main event from Strategy 0 has order 9999, ensuring it sorts to position 1.
+      allFights.sort((a, b) => b.order - a.order);
+      // Reassign sequential order numbers (1 = main event at top)
+      allFights.forEach((fight, idx) => {
+        fight.order = idx + 1;
+        fight.fightId = `rizin-fight-${idx + 1}`;
+      });
 
       return {
         eventImageUrl,

@@ -14,7 +14,7 @@ export type ScraperType = 'ufc' | 'matchroom' | 'oktagon' | 'onefc' | 'tapology'
  *
  * Add a scraper here only after thorough testing.
  */
-export const PRODUCTION_SCRAPERS: ScraperType[] = ['ufc', 'oktagon', 'tapology', 'bkfc'];
+export const PRODUCTION_SCRAPERS: ScraperType[] = ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc'];
 
 /**
  * Check if a scraper type is production-ready (trusted to auto-publish).

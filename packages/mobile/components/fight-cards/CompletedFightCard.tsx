@@ -354,12 +354,9 @@ function CompletedFightCard({
                   {fight.averageRating === 10 ? '10' : fight.averageRating.toFixed(1)}
                 </Text>
                 {fight.totalRatings > 0 && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-                    <FontAwesome name="users" size={7} color="rgba(0,0,0,0.5)" />
-                    <Text style={{ color: 'rgba(0,0,0,0.5)', fontSize: 8, fontWeight: '600' }}>
-                      {fight.totalRatings}
-                    </Text>
-                  </View>
+                  <Text style={{ color: 'rgba(0,0,0,0.6)', fontSize: 9, fontWeight: '600', textAlign: 'center' }}>
+                    ({fight.totalRatings})
+                  </Text>
                 )}
               </>
             ) : (
