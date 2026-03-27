@@ -55,7 +55,7 @@ The `scraperType` field on events determines which scraper (if any) handles live
 | `null` | No scraper — lifecycle service handles everything | Default | N/A |
 | `ufc` | UFC live parser | **Production** | Yes — daily scraper sets it |
 | `bkfc` | BKFC live parser (Puppeteer) | **Production** | Yes — daily scraper sets it |
-| `matchroom` | Matchroom live parser | Development | No — not yet promoted |
+| `matchroom` | Matchroom live parser (legacy) | Deprecated | Switched to `tapology` |
 | `oktagon` | OKTAGON live parser | **Production** | Yes — daily scraper sets it |
 | `onefc` | ONE FC live parser (Puppeteer) | **Production** | Yes — daily scraper sets it |
 | `tapology` | Tapology live parser (generic) | **Production** | Yes — daily scrapers set it |
@@ -314,10 +314,14 @@ The Tapology live tracker is **generic and promotion-agnostic** — it works for
 | **Zuffa Boxing** | `scrapeZuffaBoxingTapology.js` | Yes (`tapology`) | Yes (Tapology URL) | Yes |
 | **Karate Combat** | `scrapeKarateCombatTapology.js` | Yes (`tapology`) | Yes (Tapology URL) | Yes |
 | **Dirty Boxing** | `scrapeDirtyBoxingTapology.js` | Yes (`tapology`) | Yes (Tapology URL) | Yes |
+| **Top Rank** | `scrapeTopRankTapology.js` | Yes (`tapology`) | Yes (toprank.com URL) | Yes* |
+| **Golden Boy** | `scrapeGoldenBoyTapology.js` | Yes (`tapology`) | Yes (goldenboy.com URL) | Yes* |
+| **Matchroom** | `scrapeAllMatchroomData.js` | Yes (`tapology`) | Yes (matchroomboxing.com URL) | Yes* |
 | **PFL** | `scrapeAllPFLData.js` | Yes (`tapology`) | Yes (pflmma.com URL) | Yes* |
 | **RIZIN** | `scrapeAllRizinData.js` | Yes (`tapology`) | Yes (Sherdog URL) | Yes* |
+| **MVP** | `scrapeMVPTapology.js` | Yes (`tapology`) | Yes (Tapology URL) | Yes |
 
-*PFL and RIZIN store non-Tapology URLs in `ufcUrl`. The live tracker's auto-discovery finds the correct Tapology event URL via the promotion hub page mapping in `runTapologyLiveTracker.ts`.
+*Orgs marked with * store non-Tapology URLs in `ufcUrl`. The live tracker's auto-discovery finds the correct Tapology event URL via the promotion hub page mapping in `runTapologyLiveTracker.ts`.
 
 ### How It Works
 
@@ -335,11 +339,15 @@ The Tapology live tracker is **generic and promotion-agnostic** — it works for
 3. Auto-discover from the promotion's Tapology hub page using `TAPOLOGY_PROMOTION_HUBS` mapping:
 
 ```
-Zuffa Boxing   → tapology.com/fightcenter/promotions/6299-zuffa-boxing-zb
-Karate Combat  → tapology.com/fightcenter/promotions/3637-karate-combat-kc
-Dirty Boxing   → tapology.com/fightcenter/promotions/5649-dirty-boxing-championship-dbc
-PFL            → tapology.com/fightcenter/promotions/1969-professional-fighters-league-pfl
-RIZIN          → tapology.com/fightcenter/promotions/1561-rizin-fighting-federation-rff
+Zuffa Boxing      → tapology.com/fightcenter/promotions/6299-zuffa-boxing-zb
+Karate Combat     → tapology.com/fightcenter/promotions/3637-karate-combat-kc
+Dirty Boxing      → tapology.com/fightcenter/promotions/5649-dirty-boxing-championship-dbc
+PFL               → tapology.com/fightcenter/promotions/1969-professional-fighters-league-pfl
+RIZIN             → tapology.com/fightcenter/promotions/1561-rizin-fighting-federation-rff
+TOP_RANK          → tapology.com/fightcenter/promotions/2487-top-rank-tr
+Golden Boy        → tapology.com/fightcenter/promotions/1979-golden-boy-promotions-gbp
+Matchroom Boxing  → tapology.com/fightcenter/promotions/2484-matchroom-boxing-mb
+MVP               → tapology.com/fightcenter/promotions/4040-most-valuable-promotions-mvp
 ```
 
 ### Adding a New Tapology-Based Org
@@ -363,8 +371,12 @@ To add live tracking for any org on Tapology:
 | `src/services/scrapeZuffaBoxingTapology.js` | Template daily scraper (Zuffa Boxing) |
 | `src/services/scrapeKarateCombatTapology.js` | Daily scraper (Karate Combat) |
 | `src/services/scrapeDirtyBoxingTapology.js` | Daily scraper (Dirty Boxing) |
+| `src/services/scrapeTopRankTapology.js` | Daily scraper (Top Rank) |
+| `src/services/scrapeGoldenBoyTapology.js` | Daily scraper (Golden Boy) |
 | `.github/workflows/karate-combat-scraper.yml` | Daily workflow (Karate Combat) |
 | `.github/workflows/dirty-boxing-scraper.yml` | Daily workflow (Dirty Boxing) |
+| `.github/workflows/toprank-tapology-scraper.yml` | Daily workflow (Top Rank) |
+| `.github/workflows/goldenboy-tapology-scraper.yml` | Daily workflow (Golden Boy) |
 
 ## Start Time Coverage
 
@@ -474,7 +486,7 @@ The 30s interval ensures the app picks up fight status changes (UPCOMING → LIV
 - **Oktagon:** Nothing. The daily scraper auto-sets `scraperType: 'oktagon'` and stores the event URL. Fully automatic.
 - **ONE FC:** Nothing. The daily scraper auto-sets `scraperType: 'onefc'` and stores the event URL. Fully automatic.
 - **BKFC:** Nothing. The daily scraper auto-sets `scraperType: 'bkfc'` and stores the event URL. Fully automatic.
-- **Tapology orgs (Zuffa Boxing, Karate Combat, Dirty Boxing, PFL, RIZIN):** Nothing. Daily scrapers set `scraperType: 'tapology'` and store the Tapology URL. Fully automatic.
+- **Tapology orgs (Zuffa Boxing, Karate Combat, Dirty Boxing, PFL, RIZIN, MVP):** Nothing. Daily scrapers set `scraperType: 'tapology'` and store the Tapology URL. Fully automatic.
 
 ### With any production scraper (automatic):
 1. Verify event has correct `scraperType` set (daily scrapers do this automatically for all production orgs)
@@ -540,3 +552,19 @@ The 30s interval ensures the app picks up fight status changes (UPCOMING → LIV
 **Problem:** BKFC.com has ticket links with URLs like `/events/1308036/bkfc-fight-night-newcastle-tickets?skin=newcastle`. The scraper treated these as separate events, creating duplicates alongside the correctly scraped event. The slug extraction didn't strip query params, numeric ID prefixes, or `-tickets` suffixes, producing garbled names like "1308036/bkfc Fight Night Newcastle Tickets?skin=newcastle".
 
 **Fix:** `scrapeAllBKFCData.js` slug extraction now strips query parameters, takes the last path segment (ignoring numeric IDs), and removes `-tickets` suffixes before generating event names.
+
+### Tapology Live Scraper Missing Methods (Fixed Mar 2026)
+
+**Problem:** The Tapology live scraper found winners but missed the fight method (KO, TKO, UD, etc.) for most fights. Only fights where "Decision, Unanimous" appeared in nearby text were captured.
+
+**Root cause:** Tapology renders fighter links ~156 times on the page (mobile + desktop duplicates). The scraper paired links by index (`i += 2`), but URL deduplication caused the first 80 links (inside fight `<li>` containers with method text) to be skipped as duplicates. The scraper consumed links from indices 80+ which were in a separate section with no `<li>` wrapper and no method text.
+
+**Fix:** Replaced the fighter-link-pairing approach with direct iteration of `<li class="border-b">` fight containers. Each `<li>` contains both fighters and a result row with method/round/time in a `<span class="uppercase">`. Winner is detected via green background gradient (`from-[#d1f7d2]`) or `.bg-green-500` W badge.
+
+### Matchroom Switched to Tapology (Mar 2026)
+
+Matchroom had a custom live scraper (`matchroomLiveScraper.ts`) using axios/cheerio, but it was never promoted to production. Switched to the generic Tapology live tracker (`scraperType: 'tapology'`). The custom scraper files are kept but no longer used.
+
+### Live Tracking Expansion to All Orgs (Mar 2026)
+
+Expanded live event tracking from 5 orgs (UFC, Oktagon, BKFC, ONE FC, Zuffa Boxing) to all 12+ orgs. New Tapology-based daily scrapers for Karate Combat, Top Rank, and Golden Boy. Existing parsers for PFL, RIZIN, Dirty Boxing, and Matchroom updated to set `scraperType: 'tapology'`. The Tapology live tracker's URL auto-discovery enhanced with `TAPOLOGY_PROMOTION_HUBS` mapping for all orgs. All orgs now have fully automatic live tracking — no manual setup required.
