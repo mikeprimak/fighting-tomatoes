@@ -173,6 +173,8 @@ export async function runEventLifecycleCheck(): Promise<{
           await triggerGitHubLiveTracker('tapology-live-tracker.yml', { event_id: event.id });
         } else if (event.scraperType === 'bkfc') {
           await triggerGitHubLiveTracker('bkfc-live-tracker.yml', { event_id: event.id });
+        } else if (event.scraperType === 'onefc') {
+          await triggerGitHubLiveTracker('onefc-live-tracker.yml', { event_id: event.id });
         }
       }
     }
@@ -186,7 +188,7 @@ export async function runEventLifecycleCheck(): Promise<{
     const liveScraperEvents = await prisma.event.findMany({
       where: {
         eventStatus: 'LIVE',
-        scraperType: { in: ['ufc', 'oktagon', 'tapology', 'bkfc'] },
+        scraperType: { in: ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc'] },
       },
       select: { id: true, name: true, scraperType: true },
     });
@@ -199,6 +201,8 @@ export async function runEventLifecycleCheck(): Promise<{
         workflow = 'oktagon-live-tracker.yml';
       } else if (liveScraperEvent.scraperType === 'bkfc') {
         workflow = 'bkfc-live-tracker.yml';
+      } else if (liveScraperEvent.scraperType === 'onefc') {
+        workflow = 'onefc-live-tracker.yml';
       } else {
         workflow = 'tapology-live-tracker.yml';
       }

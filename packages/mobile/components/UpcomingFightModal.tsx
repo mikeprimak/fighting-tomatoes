@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { useAuth } from '../store/AuthContext';
@@ -255,8 +256,12 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             How Hyped Are You?
           </Text>
 
-          {/* Compact fighter row */}
-          <View style={styles.fightersRow}>
+          {/* Compact fighter row — tappable to go to fight details */}
+          <TouchableOpacity
+            style={styles.fightersRow}
+            activeOpacity={0.7}
+            onPress={() => { onClose(); router.push(`/fight/${fight.id}` as any); }}
+          >
             <Image
               source={fighter1Img}
               style={styles.fighterImage}
@@ -276,7 +281,8 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               style={styles.fighterImage}
               onError={() => setFighter2ImgError(true)}
             />
-          </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} style={styles.fighterRowChevron} />
+          </TouchableOpacity>
 
           {/* Large flame wheel display */}
           <View style={styles.flameWheelContainer}>
@@ -393,6 +399,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               {notifyMessage}
             </Animated.Text>
           )}
+
         </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
@@ -520,6 +527,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  fighterRowChevron: {
+    position: 'absolute',
+    right: -4,
   },
   doneButton: {
     flex: 1,

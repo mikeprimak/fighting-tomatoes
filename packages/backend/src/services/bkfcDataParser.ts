@@ -229,7 +229,7 @@ async function importBKFCFighters(
     // Upload image to R2 storage
     let profileImageUrl: string | null = null;
     const imageUrl = athlete.headshotUrl || athlete.imageUrl;
-    if (imageUrl && !imageUrl.includes('generic_') && !imageUrl.includes('placeholder')) {
+    if (imageUrl && !imageUrl.includes('generic_') && !imageUrl.includes('placeholder') && !imageUrl.includes('avatar-template')) {
       try {
         profileImageUrl = await uploadFighterImage(imageUrl, `${firstName} ${lastName}`);
       } catch (error) {
@@ -338,6 +338,7 @@ async function importBKFCEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
+          scraperType: 'bkfc',
         }
       });
     } else {
@@ -354,6 +355,7 @@ async function importBKFCEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
+          scraperType: 'bkfc',
           eventStatus: initialStatus,
         }
       });

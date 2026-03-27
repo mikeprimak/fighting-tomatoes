@@ -591,18 +591,22 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
 
         // Get image - look for nearby img elements
         // BKFC uses bkfc-cdn.gigcasters.com for images, prefer 400x400 versions
-        // IMPORTANT: Search from most specific container outward to avoid
-        // grabbing the same shared fight-card image for both fighters
+        // Use position-based matching to avoid grabbing the same image for both fighters
         let imageUrl = null;
 
-        // Helper to find best image in a container
+        // Helper to check if an image src is a valid fighter image
+        function isValidFighterImage(src) {
+          return src && !src.includes('flag') && !src.includes('icon') && !src.includes('logo') && !src.includes('sponsor');
+        }
+
+        // Helper to find best image in a container (for small, fighter-specific containers)
         function findBestImage(container) {
           if (!container) return null;
           let fallback = null;
           const imgs = container.querySelectorAll('img');
           for (const img of imgs) {
             const src = img.src || img.getAttribute('data-src') || '';
-            if (src && !src.includes('flag') && !src.includes('icon') && !src.includes('logo') && !src.includes('sponsor')) {
+            if (isValidFighterImage(src)) {
               if (src.includes('bkfc-cdn.gigcasters.com') && src.includes('400x400')) {
                 return src;
               }
@@ -612,23 +616,58 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
           return fallback;
         }
 
+        // Helper to find the closest image to a reference element by position
+        // This prevents grabbing fighter1's image for fighter2 in shared containers
+        function findClosestImage(container, referenceEl) {
+          if (!container) return null;
+          const imgs = container.querySelectorAll('img');
+          const refRect = referenceEl.getBoundingClientRect();
+          let bestSrc = null;
+          let bestCdnSrc = null;
+          let bestDist = Infinity;
+          let bestCdnDist = Infinity;
+
+          for (const img of imgs) {
+            const src = img.src || img.getAttribute('data-src') || '';
+            if (!isValidFighterImage(src)) continue;
+
+            const imgRect = img.getBoundingClientRect();
+            const dist = Math.abs(refRect.left - imgRect.left) + Math.abs(refRect.top - imgRect.top);
+
+            // Track best BKFC CDN 400x400 image (highest priority)
+            if (src.includes('bkfc-cdn.gigcasters.com') && src.includes('400x400')) {
+              if (dist < bestCdnDist) {
+                bestCdnDist = dist;
+                bestCdnSrc = src;
+              }
+            }
+            // Track best general image as fallback
+            if (dist < bestDist) {
+              bestDist = dist;
+              bestSrc = src;
+            }
+          }
+          return bestCdnSrc || bestSrc;
+        }
+
         // Try 1: Image inside the link itself
         imageUrl = findBestImage(link);
 
         // Try 2: Link's direct parent (fighter-specific wrapper)
         if (!imageUrl) {
-          imageUrl = findBestImage(link.parentElement);
+          imageUrl = findClosestImage(link.parentElement, link);
         }
 
         // Try 3: Grandparent (still likely fighter-specific)
         if (!imageUrl) {
-          imageUrl = findBestImage(link.parentElement?.parentElement);
+          imageUrl = findClosestImage(link.parentElement?.parentElement, link);
         }
 
-        // Try 4: Broader fight container (may contain images for BOTH fighters - less reliable)
+        // Try 4: Broader fight container - use position-based matching
+        // to pick the image closest to THIS fighter's link, not just the first image
         const container = link.closest('[class*="matchup"], [class*="fight"], [class*="bout"], [class*="athlete"]');
         if (!imageUrl) {
-          imageUrl = findBestImage(container);
+          imageUrl = findClosestImage(container, link);
         }
 
         // Try to get record from nearby text
@@ -781,6 +820,12 @@ async function scrapeFighterPage(browser, fighterUrl) {
   await page.setViewport({ width: 1920, height: 1080 });
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
 
+  // Extract fighter name slug from URL (e.g., "ghost-mcfarlane" from "/fighters/ghost-mcfarlane")
+  const urlSlug = fighterUrl.split('/fighters/').pop()?.split('?')[0]?.split('#')[0] || '';
+  // Convert slug to name parts for matching against CDN image URLs
+  // e.g., "ghost-mcfarlane" -> ["ghost", "mcfarlane"]
+  const fighterNameParts = urlSlug.toLowerCase().split('-').filter(p => p.length > 0);
+
   try {
     await page.goto(fighterUrl, {
       waitUntil: 'networkidle2',
@@ -789,7 +834,7 @@ async function scrapeFighterPage(browser, fighterUrl) {
 
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    const fighterData = await page.evaluate(() => {
+    const fighterData = await page.evaluate((nameParts) => {
       let record = null;
       let headshotUrl = null;
       let weightClass = null;
@@ -802,29 +847,49 @@ async function scrapeFighterPage(browser, fighterUrl) {
         record = `${recordMatch[1]}-${recordMatch[2]}-${recordMatch[3]}`;
       }
 
+      // Helper: check if a CDN image URL matches this fighter's name
+      // BKFC CDN URLs contain fighter names like MICK_TERRILL_400x400.png
+      function imageMatchesFighter(src) {
+        if (!src || nameParts.length === 0) return false;
+        const srcUpper = src.toUpperCase();
+        // Check if ALL name parts appear in the URL
+        return nameParts.every(part => srcUpper.includes(part.toUpperCase()));
+      }
+
       // Look for headshot image - BKFC uses bkfc-cdn.gigcasters.com for images
-      // Example: https://bkfc-cdn.gigcasters.com/.../JULIAN_LANE_400x400.png
+      // IMPORTANT: Only accept images that match this fighter's name to avoid
+      // grabbing opponent images from "next fight" sections on the profile page
       const allImages = document.querySelectorAll('img');
+
+      let fallbackCdnUrl = null; // Any CDN image (may not match fighter name)
 
       for (const img of allImages) {
         const src = img.src || img.getAttribute('data-src') || '';
 
-        // Priority 1: BKFC CDN images with 400x400 (profile images)
-        if (src.includes('bkfc-cdn.gigcasters.com') && src.includes('400x400')) {
+        if (!src.includes('bkfc-cdn.gigcasters.com')) continue;
+        if (src.includes('flag') || src.includes('icon') || src.includes('logo') || src.includes('sponsor')) continue;
+
+        // Priority 1: BKFC CDN 400x400 that matches this fighter's name
+        if (src.includes('400x400') && imageMatchesFighter(src)) {
           headshotUrl = src;
           break;
         }
 
-        // Priority 2: Any BKFC CDN image that's not a flag/icon/logo
-        if (src.includes('bkfc-cdn.gigcasters.com') &&
-            !src.includes('flag') &&
-            !src.includes('icon') &&
-            !src.includes('logo') &&
-            !src.includes('sponsor')) {
+        // Priority 2: Any BKFC CDN image that matches this fighter's name
+        if (!headshotUrl && imageMatchesFighter(src)) {
           headshotUrl = src;
           // Don't break - keep looking for 400x400 version
         }
+
+        // Track first CDN image as last resort (but don't use opponent images)
+        if (!fallbackCdnUrl && src.includes('400x400')) {
+          fallbackCdnUrl = src;
+        }
       }
+
+      // Only use fallback if no name-matched image was found
+      // NOTE: We intentionally do NOT use fallbackCdnUrl here because
+      // it's likely an opponent's image. Better to have no image than a wrong one.
 
       // Fallback to other selectors if no BKFC CDN image found
       if (!headshotUrl) {
@@ -862,7 +927,7 @@ async function scrapeFighterPage(browser, fighterUrl) {
         weightClass,
         nickname
       };
-    });
+    }, fighterNameParts);
 
     await page.close();
     return fighterData;

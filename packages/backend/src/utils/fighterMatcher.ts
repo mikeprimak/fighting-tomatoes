@@ -128,7 +128,6 @@ const NAME_VARIATIONS: Record<string, string[]> = {
   'sergei': ['sergey', 'serge'],
   'aleksei': ['alexei', 'alexey', 'alex'],
   'paulo': ['paul', 'paolo'],
-  'paulo': ['paul'],
   'junior': ['jr'],
 };
 
