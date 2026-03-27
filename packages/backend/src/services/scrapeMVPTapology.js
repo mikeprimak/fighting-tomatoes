@@ -217,12 +217,19 @@ async function scrapeEventPage(browser, eventUrl) {
         dateText: '',
         eventDate: null,
         eventStartTime: null,
+        eventImageUrl: null,
         venue: '',
         city: '',
         country: '',
         broadcast: '',
         fights: []
       };
+
+      // Extract event poster image from Tapology (fallback if MVP website doesn't have one)
+      const posterImg = document.querySelector('img[src*="poster_images"]');
+      if (posterImg && posterImg.src) {
+        data.eventImageUrl = posterImg.src;
+      }
 
       // Extract event name from header - skip cookie consent banners
       const eventHeader = document.querySelector('.eventPageHeaderTitles h1, .header h1, #main h1, .content h1')
@@ -354,6 +361,134 @@ async function scrapeEventPage(browser, eventUrl) {
 }
 
 /**
+ * Scrape event poster images from the official MVP website.
+ * Returns a map of normalized keywords → image URL for matching against Tapology events.
+ */
+async function scrapeMVPWebsiteImages(browser) {
+  console.log('\n🖼️  Scraping event images from mostvaluablepromotions.com...\n');
+
+  const page = await browser.newPage();
+  await page.setViewport({ width: 1920, height: 1080 });
+  await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+
+  try {
+    await page.goto('https://www.mostvaluablepromotions.com/events/', {
+      waitUntil: 'networkidle2',
+      timeout: 60000
+    });
+
+    const eventImages = await page.evaluate(() => {
+      const results = [];
+      // Each event card is an <a> containing an <img alt="Event Poster"> and text with fighter names
+      document.querySelectorAll('a[href*="/event/"]').forEach(link => {
+        const img = link.querySelector('img[alt="Event Poster"]');
+        if (!img || !img.src) return;
+
+        const href = link.href;
+        const text = link.textContent.trim();
+        const imageUrl = img.src;
+
+        // Extract slug from URL: /event/dubois-vs-harper-scotney-vs-flores/ → dubois-vs-harper-scotney-vs-flores
+        const slugMatch = href.match(/\/event\/([^/]+)\/?$/);
+        const slug = slugMatch ? slugMatch[1] : '';
+
+        results.push({ imageUrl, text, slug, href });
+      });
+      return results;
+    });
+
+    await page.close();
+
+    console.log(`   Found ${eventImages.length} event images from MVP website`);
+    eventImages.forEach(e => {
+      console.log(`     ${e.slug} → ${e.imageUrl.substring(0, 80)}...`);
+    });
+
+    return eventImages;
+
+  } catch (error) {
+    console.error(`   ❌ Error scraping MVP website: ${error.message}`);
+    try { await page.close(); } catch (e) {}
+    return [];
+  }
+}
+
+/**
+ * Match MVP website images to Tapology events.
+ * Uses multiple strategies: slug-based "vs" matching, text matching, and
+ * "prospects" number matching for the MVP Prospects series.
+ */
+function matchEventImages(tapologyEvents, mvpWebsiteImages) {
+  let matched = 0;
+
+  for (const event of tapologyEvents) {
+    if (event.eventImageUrl) continue; // Already has an image
+
+    const eventNameLower = event.eventName.toLowerCase();
+
+    for (const mvpImg of mvpWebsiteImages) {
+      const slugLower = mvpImg.slug.toLowerCase();
+
+      // Strategy 1: Extract "vs" pairs from slug and match against event name
+      const vsMatch = slugLower.match(/([a-z]+)-vs-([a-z]+)/);
+      if (vsMatch) {
+        const name1 = vsMatch[1];
+        const name2 = vsMatch[2];
+        if (eventNameLower.includes(name1) && eventNameLower.includes(name2)) {
+          event.eventImageUrl = mvpImg.imageUrl;
+          matched++;
+          console.log(`   ✅ Matched: "${event.eventName}" → ${mvpImg.imageUrl.split('/').pop()}`);
+          break;
+        }
+      }
+
+      // Strategy 2: Match MVP website text content against Tapology event name
+      const mvpTextLower = mvpImg.text.toLowerCase().replace(/\s+/g, ' ');
+      const tapologyVsMatch = eventNameLower.match(/(\w+)\s+vs\.?\s+(\w+)/);
+      if (tapologyVsMatch) {
+        const tName1 = tapologyVsMatch[1];
+        const tName2 = tapologyVsMatch[2];
+        if (mvpTextLower.includes(tName1) && mvpTextLower.includes(tName2)) {
+          event.eventImageUrl = mvpImg.imageUrl;
+          matched++;
+          console.log(`   ✅ Matched: "${event.eventName}" → ${mvpImg.imageUrl.split('/').pop()}`);
+          break;
+        }
+      }
+
+      // Strategy 3: Match "Prospects" series by number
+      // Tapology: "MVP Prospects 16" or "Most Valuable Prospects VII"
+      // MVP site: "prospects-16-championship-edition" or "most-valuable-prospects-iv"
+      const romanNumerals = { 'i': 1, 'ii': 2, 'iii': 3, 'iv': 4, 'v': 5, 'vi': 6, 'vii': 7, 'viii': 8, 'ix': 9, 'x': 10, 'xi': 11, 'xii': 12, 'xiii': 13, 'xiv': 14, 'xv': 15, 'xvi': 16 };
+      const eventProspectsMatch = eventNameLower.match(/prospects?\s+(\d+|[ivxl]+)/i);
+      if (eventProspectsMatch && slugLower.includes('prospects')) {
+        let eventNum = parseInt(eventProspectsMatch[1], 10);
+        if (isNaN(eventNum)) {
+          eventNum = romanNumerals[eventProspectsMatch[1].toLowerCase()] || 0;
+        }
+
+        // Check slug for number
+        const slugNumMatch = slugLower.match(/prospects?-(\d+|[ivxl]+)/i);
+        if (slugNumMatch && eventNum > 0) {
+          let slugNum = parseInt(slugNumMatch[1], 10);
+          if (isNaN(slugNum)) {
+            slugNum = romanNumerals[slugNumMatch[1].toLowerCase()] || 0;
+          }
+          if (eventNum === slugNum) {
+            event.eventImageUrl = mvpImg.imageUrl;
+            matched++;
+            console.log(`   ✅ Matched: "${event.eventName}" → ${mvpImg.imageUrl.split('/').pop()}`);
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  console.log(`   Matched ${matched}/${tapologyEvents.length} events with images\n`);
+}
+
+/**
  * Main scraper function
  */
 async function main() {
@@ -408,7 +543,7 @@ async function main() {
         country: eventData.country || '',
         dateText: eventData.dateText || discovered.dateText || '',
         eventDate: eventData.eventDate || null,
-        eventImageUrl: null,
+        eventImageUrl: eventData.eventImageUrl || null,
         eventStartTime: eventData.eventStartTime || null,
         status: discovered.status || 'Upcoming',
         fights: eventData.fights
@@ -435,6 +570,12 @@ async function main() {
           });
         }
       }
+    }
+
+    // Scrape event images from MVP website and match to Tapology events
+    const mvpWebsiteImages = await scrapeMVPWebsiteImages(browser);
+    if (mvpWebsiteImages.length > 0) {
+      matchEventImages(allEvents, mvpWebsiteImages);
     }
 
     // Save scraped data
