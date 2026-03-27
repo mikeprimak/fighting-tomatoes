@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { View, Text, Image, StyleSheet, useWindowDimensions } from 'react-native';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
@@ -92,6 +92,19 @@ export const EventBannerCard = memo(function EventBannerCard({
     ? { uri: event.bannerImage }
     : getDefaultBanner(event.promotion || '');
 
+  // Track image aspect ratio to use top-aligned cropping for portrait/poster images
+  const [imageAspect, setImageAspect] = useState<number | null>(null);
+  const handleImageLoad = (e: any) => {
+    const { width: imgW, height: imgH } = e.nativeEvent.source;
+    if (imgW > 0 && imgH > 0) {
+      setImageAspect(imgW / imgH);
+    }
+  };
+
+  // Portrait image: height scaled to fill container width, pinned to top
+  const isPortrait = imageAspect !== null && imageAspect < 0.9;
+  const portraitHeight = isPortrait ? screenWidth / imageAspect : imageHeight;
+
   return (
     <View style={styles.container}>
       {/* Event Banner Image with overlays */}
@@ -99,8 +112,12 @@ export const EventBannerCard = memo(function EventBannerCard({
         {imageSource ? (
           <Image
             source={imageSource}
-            style={[styles.banner, { height: imageHeight }]}
-            resizeMode="cover"
+            style={isPortrait
+              ? { position: 'absolute', top: 0, left: 0, width: screenWidth, height: portraitHeight }
+              : [styles.banner, { height: imageHeight }]
+            }
+            resizeMode={isPortrait ? undefined : 'cover'}
+            onLoad={handleImageLoad}
           />
         ) : (
           <View style={[styles.banner, styles.placeholderBanner, { height: imageHeight }]}>
