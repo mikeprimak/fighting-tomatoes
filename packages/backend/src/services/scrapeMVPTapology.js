@@ -422,8 +422,8 @@ function matchEventImages(tapologyEvents, mvpWebsiteImages) {
   let matched = 0;
 
   for (const event of tapologyEvents) {
-    if (event.eventImageUrl) continue; // Already has an image
-
+    // MVP website images take priority over Tapology poster_images
+    const hadTapologyFallback = !!event.eventImageUrl;
     const eventNameLower = event.eventName.toLowerCase();
 
     for (const mvpImg of mvpWebsiteImages) {
