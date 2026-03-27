@@ -106,8 +106,15 @@ async function scrapeEventsList(browser) {
       const extractedEvents = [];
       const seenUrls = new Set();
 
-      // Find all event links on the promotion page
-      const eventLinks = document.querySelectorAll('a[href*="/fightcenter/events/"]');
+      // Find event links ONLY inside #content (the promotion's event list).
+      // The sidebar calendar shows events from ALL promotions, but #content
+      // and #mainUpcoming only contain events for this specific promotion.
+      const contentEl = document.querySelector('#content');
+      const upcomingEl = document.querySelector('#mainUpcoming');
+      const eventLinks = [
+        ...(contentEl ? contentEl.querySelectorAll('a[href*="/fightcenter/events/"]') : []),
+        ...(upcomingEl ? upcomingEl.querySelectorAll('a[href*="/fightcenter/events/"]') : []),
+      ];
 
       eventLinks.forEach(link => {
         const eventUrl = link.href;
@@ -116,12 +123,6 @@ async function scrapeEventsList(browser) {
         // Skip if no valid URL or name, or duplicate
         if (!eventUrl || !eventName || eventName.length < 3) return;
         if (seenUrls.has(eventUrl)) return;
-
-        // CRITICAL: Only include events that are actually MVP events.
-        // The Tapology promotion page has a sidebar calendar showing events from
-        // ALL promotions. Filter by URL slug.
-        const urlLower = eventUrl.toLowerCase();
-        if (!urlLower.includes('mvp') && !urlLower.includes('most-valuable')) return;
 
         seenUrls.add(eventUrl);
 
