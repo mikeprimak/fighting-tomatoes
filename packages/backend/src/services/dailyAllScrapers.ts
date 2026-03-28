@@ -28,6 +28,7 @@ import { importZuffaBoxingData } from './zuffaBoxingDataParser';
 import { importDirtyBoxingData } from './dirtyBoxingDataParser';
 import { importKarateCombatData } from './karateCombatDataParser';
 import { importMVPData } from './mvpDataParser';
+import { importRAFData } from './rafDataParser';
 
 const execAsync = promisify(exec);
 
@@ -40,7 +41,7 @@ export interface OrganizationScraperResults {
   error?: string;
 }
 
-type OrganizationType = 'BKFC' | 'PFL' | 'ONEFC' | 'MATCHROOM' | 'GOLDENBOY' | 'TOPRANK' | 'OKTAGON' | 'RIZIN' | 'ZUFFA_BOXING' | 'DIRTY_BOXING' | 'KARATE_COMBAT' | 'MVP';
+type OrganizationType = 'BKFC' | 'PFL' | 'ONEFC' | 'MATCHROOM' | 'GOLDENBOY' | 'TOPRANK' | 'OKTAGON' | 'RIZIN' | 'ZUFFA_BOXING' | 'DIRTY_BOXING' | 'KARATE_COMBAT' | 'MVP' | 'RAF';
 
 // Config for each organization's scraper
 const SCRAPER_CONFIG: Record<OrganizationType, {
@@ -120,6 +121,12 @@ const SCRAPER_CONFIG: Record<OrganizationType, {
     importFn: importMVPData,
     displayName: 'Most Valuable Promotions',
     timeout: 1500000, // 25 minutes
+  },
+  RAF: {
+    scraperFile: 'scrapeAllRAFData.js',
+    importFn: importRAFData,
+    displayName: 'Real American Freestyle',
+    timeout: 600000, // 10 minutes (cheerio-based, no browser)
   },
 };
 
@@ -264,6 +271,10 @@ export async function runDailyMVPScraper(): Promise<OrganizationScraperResults> 
   return runOrganizationScraper('MVP');
 }
 
+export async function runDailyRAFScraper(): Promise<OrganizationScraperResults> {
+  return runOrganizationScraper('RAF');
+}
+
 /**
  * Run all organization scrapers sequentially
  * Used for manual full refresh
@@ -273,7 +284,7 @@ export async function runAllOrganizationScrapers(): Promise<OrganizationScraperR
   const startTime = Date.now();
 
   const results: OrganizationScraperResults[] = [];
-  const organizations: OrganizationType[] = ['BKFC', 'PFL', 'ONEFC', 'MATCHROOM', 'GOLDENBOY', 'TOPRANK', 'OKTAGON', 'RIZIN', 'ZUFFA_BOXING', 'DIRTY_BOXING', 'KARATE_COMBAT', 'MVP'];
+  const organizations: OrganizationType[] = ['BKFC', 'PFL', 'ONEFC', 'MATCHROOM', 'GOLDENBOY', 'TOPRANK', 'OKTAGON', 'RIZIN', 'ZUFFA_BOXING', 'DIRTY_BOXING', 'KARATE_COMBAT', 'MVP', 'RAF'];
 
   for (const org of organizations) {
     const result = await runOrganizationScraper(org);

@@ -59,12 +59,13 @@ The `scraperType` field on events determines which scraper (if any) handles live
 | `oktagon` | OKTAGON live parser | **Production** | Yes — daily scraper sets it |
 | `onefc` | ONE FC live parser (Puppeteer) | **Production** | Yes — daily scraper sets it |
 | `tapology` | Tapology live parser (generic) | **Production** | Yes — daily scrapers set it |
+| `raf` | RAF live parser (cheerio) | **Production** | Yes — daily scraper sets it |
 
 ### Production Scrapers
 
 The `PRODUCTION_SCRAPERS` array in `liveTrackerConfig.ts` controls which scrapers are trusted to auto-publish results.
 
-**Current production scrapers: `['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc']`**
+**Current production scrapers: `['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc', 'raf']`**
 
 When a scraper is in this list:
 1. Lifecycle Step 2 **skips** that event (no timer-based fight completion)
@@ -305,6 +306,64 @@ Like Oktagon, ONE FC events require **no manual setup**. The daily scraper (`scr
 | `src/services/oneFCLiveTracker.ts` | Render-based orchestrator (kept for manual/API use) |
 | `src/routes/liveEvents.ts` | API endpoints for manual ONE FC tracker control |
 
+## RAF Live Tracker
+
+The RAF (Real American Freestyle) live tracker scrapes realamericanfreestyle.com event pages during live events using **cheerio** (no Puppeteer needed — the Webflow site is fully server-rendered). RAF is a freestyle wrestling promotion, not MMA — results are win/loss with round-by-round scores and takedown counts, no KO/submission methods.
+
+### Architecture: Same as UFC (Render Triggers GitHub Actions)
+
+1. **Render lifecycle service** detects LIVE RAF event → dispatches `raf-live-tracker.yml` every 5 min
+2. **GitHub Actions** installs deps, builds, runs `runRAFLiveTracker.ts`
+3. **Scraper** (`scrapeRAFLiveEvent.js`) fetches the RAF event page with cheerio, extracts fight data from server-rendered HTML (~1-2 second scrape times, no browser needed)
+4. **Parser** (`rafLiveParser.ts`) matches fights by last name, updates DB
+5. **Auto-publish** since raf is in `PRODUCTION_SCRAPERS`
+6. **Auto-complete** when all fights are done
+
+### Fully Automatic
+
+Like Oktagon, RAF events require **no manual setup**. The daily scraper (`scrapeAllRAFData.js`) imports events with `scraperType: 'raf'` and the event URL (stored in `ufcUrl` field). When the event goes LIVE, the lifecycle auto-dispatches the tracker.
+
+### How the Scraper Works
+
+The RAF website is built on Webflow CMS. All fight data is server-rendered — no JavaScript execution needed. The scraper:
+
+1. Fetches the event page HTML via HTTP
+2. Parses fight cards from `div.matchups-list .w-dyn-item` elements
+3. Detects winners via the `w-condition-invisible` CSS class on `.win-tag` / `.loss-tag` elements:
+   - Winner: `.win-tag` visible (no `w-condition-invisible`)
+   - Loser: `.loss-tag` visible (no `w-condition-invisible`)
+   - No result: both tags have `w-condition-invisible`
+4. Extracts scores from the "Score" section (total + per-round) and takedowns from the "Takedowns" section
+5. Detects event completion via the `div.past-event-tag` visibility
+
+### Wrestling-Specific Details
+
+- **Sport type:** `WRESTLING` (new Prisma enum value)
+- **Method format:** `Decision (score1-score2)` from the scores section (no KO/TKO/submission in wrestling)
+- **Weight classes:** Featherweight, Lightweight, Welterweight, Middleweight, Cruiserweight, Light Heavyweight, Heavyweight, Unlimited
+- **Weight class mapping:** Cruiserweight → `HEAVYWEIGHT`, Unlimited → `SUPER_HEAVYWEIGHT` (no MMA cruiserweight enum)
+- **Scheduled rounds:** 3 (all RAF matches)
+- **No card sections:** RAF has no main card / prelims — all fights listed in order
+
+### What the Scraper Detects
+
+- Fight results: winner (via win/loss tags), scores (total + per-round), takedowns
+- Event status: upcoming / live / complete (via `past-event-tag` visibility and fight completion count)
+- Cancellations (fights missing from scraped data → marked CANCELLED)
+- Un-cancellations (fights reappearing → restored to UPCOMING)
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `.github/workflows/raf-live-tracker.yml` | GitHub Actions workflow (dispatch trigger) |
+| `.github/workflows/raf-scraper.yml` | Daily scraper workflow (4pm UTC / 12pm EST) |
+| `src/scripts/runRAFLiveTracker.ts` | Entry point — finds event, spawns scraper, runs parser |
+| `src/services/scrapeRAFLiveEvent.js` | Cheerio scraper — fetches realamericanfreestyle.com, extracts fight data |
+| `src/services/scrapeAllRAFData.js` | Daily scraper — scrapes events gallery + individual event pages |
+| `src/services/rafDataParser.ts` | Daily parser — imports events/fighters into DB |
+| `src/services/rafLiveParser.ts` | Live parser — matches fights, updates DB, handles cancellations |
+
 ## Tapology-Based Live Tracking (Multi-Org)
 
 The Tapology live tracker is **generic and promotion-agnostic** — it works for any organization whose events appear on Tapology. As of Mar 2026, these orgs use Tapology for live tracking:
@@ -396,6 +455,7 @@ As of Mar 2026, all organization scrapers populate `mainStartTime` when time dat
 | Dirty Boxing | Yes | N/A | N/A | Time regex from Tapology (ET default) |
 | Karate Combat | Yes | N/A | N/A | Time regex from Tapology (ET default) |
 | RIZIN | Yes | N/A | N/A | ISO from Sherdog itemprop (midnight guard) |
+| RAF | Yes | N/A | N/A | Parsed from event page date+time text (EST assumed) |
 
 **Design rules:**
 1. Never write midnight UTC as a start time — leave undefined if no real time found
@@ -419,11 +479,14 @@ As of Mar 2026, all organization scrapers populate `mainStartTime` when time dat
 | `.github/workflows/bkfc-live-tracker.yml` | GitHub Actions workflow for BKFC live scraping |
 | `.github/workflows/onefc-live-tracker.yml` | GitHub Actions workflow for ONE FC live scraping |
 | `.github/workflows/tapology-live-tracker.yml` | GitHub Actions workflow for Tapology live scraping (all Tapology orgs) |
+| `.github/workflows/raf-live-tracker.yml` | GitHub Actions workflow for RAF live scraping |
+| `.github/workflows/raf-scraper.yml` | Daily RAF scraper workflow |
 | `src/scripts/runUFCLiveTracker.ts` | Standalone script run by GitHub Actions (UFC) |
 | `src/scripts/runOktagonLiveTracker.ts` | Standalone script run by GitHub Actions (Oktagon) |
 | `src/scripts/runBKFCLiveTracker.ts` | Standalone script run by GitHub Actions (BKFC) |
 | `src/scripts/runOneFCLiveTracker.ts` | Standalone script run by GitHub Actions (ONE FC) |
 | `src/scripts/runTapologyLiveTracker.ts` | Standalone script run by GitHub Actions (Tapology — multi-org) |
+| `src/scripts/runRAFLiveTracker.ts` | Standalone script run by GitHub Actions (RAF) |
 | `public/admin.html` | Admin panel UI |
 
 ## Resolved: UFC Event Times Were Wrong (Double Timezone Conversion)
@@ -487,6 +550,7 @@ The 30s interval ensures the app picks up fight status changes (UPCOMING → LIV
 - **ONE FC:** Nothing. The daily scraper auto-sets `scraperType: 'onefc'` and stores the event URL. Fully automatic.
 - **BKFC:** Nothing. The daily scraper auto-sets `scraperType: 'bkfc'` and stores the event URL. Fully automatic.
 - **Tapology orgs (Zuffa Boxing, Karate Combat, Dirty Boxing, PFL, RIZIN, MVP):** Nothing. Daily scrapers set `scraperType: 'tapology'` and store the Tapology URL. Fully automatic.
+- **RAF:** Nothing. The daily scraper auto-sets `scraperType: 'raf'` and stores the event URL. Fully automatic.
 
 ### With any production scraper (automatic):
 1. Verify event has correct `scraperType` set (daily scrapers do this automatically for all production orgs)

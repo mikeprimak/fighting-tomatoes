@@ -41,7 +41,7 @@ import SectionContainer from './SectionContainer';
 import { isTBAFighterName } from '../constants/tba';
 import { getFighterImage, getFighterImageUrl } from './fight-cards/shared/utils';
 
-type Sport = 'MMA' | 'BOXING' | 'BARE_KNUCKLE_BOXING' | 'MUAY_THAI' | 'KICKBOXING';
+type Sport = 'MMA' | 'BOXING' | 'BARE_KNUCKLE_BOXING' | 'MUAY_THAI' | 'KICKBOXING' | 'WRESTLING';
 
 interface Fighter {
   id: string;
