@@ -222,31 +222,87 @@ async function scrapeBKFCLiveEvent(eventUrl, outputDir) {
         }
 
         // Extract result data from [data-render] elements within the container
-        // These elements get populated by JavaScript from the stats API
+        // These elements get populated by JavaScript from the stats API.
+        // BKFC uses two naming conventions:
+        //   Old: RedResult/BlueResult/Method/Round/Time
+        //   New: WinMethod/RoundEnded/RoundEndedTime (results in stats container)
+        //        W/L/D indicators in <p> inside .fight-card_list-title
         let redResult = '';
         let blueResult = '';
         let method = '';
         let round = '';
         let time = '';
 
-        // Look for data-render elements
+        // Look for data-render elements (both old and new field names)
         const renderEls = container.querySelectorAll('[data-render]');
         renderEls.forEach(el => {
           const field = (el.getAttribute('data-render') || '').trim();
           const value = (el.textContent || '').trim();
-          if (value === 'TBU' || value === 'TBD' || value === '') return;
+          if (value === 'TBU' || value === 'TBD' || value === '' || value === '0') return;
 
           if (field === 'RedResult') redResult = value;
           else if (field === 'BlueResult') blueResult = value;
-          else if (field === 'MethoD' || field === 'Method') method = value;
-          else if (field === 'Round') round = value;
-          else if (field === 'Time') time = value;
+          else if (field === 'MethoD' || field === 'Method' || field === 'WinMethod') method = value;
+          else if (field === 'RoundEnded') round = value;
+          else if (field === 'RoundEndedTime') time = value;
+          // Skip generic 'Round' — those are per-round stats headers (1,2,3,4,5), not fight result
+          // Skip 'Time' — that's the old field name, RoundEndedTime is used now
         });
 
         // Also check for data-render-stats container attributes
         const statsContainer = container.querySelector('[data-render-stats]') || container;
         const redUUID = statsContainer.getAttribute('data-AthleteRedUUID') || '';
         const blueUUID = statsContainer.getAttribute('data-AthleteBlueUUID') || '';
+
+        // Check W/L/D indicators in fight-card_list-title elements
+        // BKFC shows W/L/D as <p> inside .fight-card_list-title for each corner
+        // The first fighter link's section has the red corner indicator,
+        // the second fighter link's section has the blue corner indicator.
+        if (!redResult && !blueResult) {
+          const titleEls = container.querySelectorAll('.fight-card_list-title');
+          if (titleEls.length >= 2) {
+            // Each title element contains W, L, D paragraphs — check which is visible/highlighted
+            // For completed fights, the W/L text gets a distinct style
+            // We check which corner's W element has content or is styled
+            titleEls.forEach((titleEl, idx) => {
+              const ps = titleEl.querySelectorAll('p');
+              ps.forEach(p => {
+                const t = p.textContent?.trim().toUpperCase();
+                // Check if this W/L indicator is "active" — BKFC uses opacity or display
+                // to show the result. Check computed style or class.
+                const style = window.getComputedStyle(p);
+                const isVisible = style.opacity !== '0' && style.display !== 'none';
+                if (!isVisible) return;
+                // The W/L/D are always present but only the winning indicator is highlighted
+                // Check for a highlight class or color
+                const color = style.color;
+                const isHighlighted = color && (
+                  color.includes('255') || // bright color (gold/white/green)
+                  color === 'rgb(255, 255, 255)' || // white
+                  color === 'rgb(212, 175, 55)' // gold
+                );
+                if (t === 'W' && isHighlighted) {
+                  if (idx === 0) redResult = 'W';
+                  else blueResult = 'W';
+                }
+              });
+            });
+          }
+        }
+
+        // Strategy 2: If we have WinMethod but no W/L, check stats for winner
+        // When method is set, the fight is complete — determine winner from strike stats
+        // The winner is typically the red corner (fighter1) unless stats show otherwise
+        // For now, if we have method but no explicit W/L, look at fight-card elements
+        if (method && !redResult && !blueResult) {
+          // Check for winner-indicator class or similar on fighter elements
+          const winIndicators = container.querySelectorAll('[class*="winner"], [class*="win-"], .is-winner');
+          winIndicators.forEach(el => {
+            const elText = el.textContent?.trim() || '';
+            if (elText.includes(fighterAName.split(' ').pop())) redResult = 'W';
+            else if (elText.includes(fighterBName.split(' ').pop())) blueResult = 'W';
+          });
+        }
 
         // Determine fight status
         let fightStatus = 'upcoming';
@@ -260,7 +316,31 @@ async function scrapeBKFCLiveEvent(eventUrl, outputDir) {
           fightStatus = 'live';
         }
 
-        // Check results
+        // If we have a method (WinMethod), the fight is complete even without explicit W/L
+        if (method && !redResult && !blueResult) {
+          fightStatus = 'complete';
+          isComplete = true;
+          hasStarted = true;
+
+          // Without explicit W/L, we can still record the method/round/time
+          // Winner will need to be determined from other indicators
+          const methodUpper = method.toUpperCase();
+          if (methodUpper.includes('DRAW')) {
+            result = { winner: null, method: 'DRAW', round: round ? parseInt(round, 10) : null, time: time || null };
+          } else if (methodUpper === 'NC' || methodUpper.includes('NO CONTEST')) {
+            result = { winner: null, method: 'NC', round: round ? parseInt(round, 10) : null, time: time || null };
+          } else {
+            // We have a method but no winner — still mark as complete with partial data
+            result = {
+              winner: null,
+              method: method || null,
+              round: round ? parseInt(round, 10) : null,
+              time: time || null,
+            };
+          }
+        }
+
+        // Check results from RedResult/BlueResult indicators
         const redUpper = redResult.toUpperCase();
         const blueUpper = blueResult.toUpperCase();
 
@@ -284,12 +364,12 @@ async function scrapeBKFCLiveEvent(eventUrl, outputDir) {
           fightStatus = 'complete';
           isComplete = true;
           hasStarted = true;
-          result = { winner: null, method: 'DRAW', round: null, time: null };
+          result = { winner: null, method: 'DRAW', round: round ? parseInt(round, 10) : null, time: time || null };
         } else if (redUpper === 'NC' || blueUpper === 'NC') {
           fightStatus = 'complete';
           isComplete = true;
           hasStarted = true;
-          result = { winner: null, method: 'NC', round: null, time: null };
+          result = { winner: null, method: 'NC', round: round ? parseInt(round, 10) : null, time: time || null };
         } else if (redUpper === 'L' || blueUpper === 'L') {
           // One fighter has a loss but the other doesn't show 'W' yet
           // The loser side means the other side won
