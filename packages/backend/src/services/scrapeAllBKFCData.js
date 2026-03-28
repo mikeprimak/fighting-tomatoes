@@ -406,25 +406,55 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         }
       }
 
-      // Extract event time from countdown date element
-      // BKFC uses [data-countdown-date] with format "December 20, 2025 7:00 PM"
+      // Extract event start time from the event page.
+      // BKFC shows the event start (prelims) time in visible elements like
+      // div.text-color-gold ("March 28, 2026 6:00 PM EDT") and also in a
+      // countdown element [data-countdown-date] which may show the MAIN CARD
+      // time instead. We prioritize the visible page time since it reflects
+      // the earliest start (prelims/free fights).
       let eventStartTime = null;
 
-      // Try 1: Get data-countdown-date attribute value (the attribute itself contains the date string)
-      const countdownDateEl = document.querySelector('[data-countdown-date]');
-      if (countdownDateEl) {
-        // Check attribute value first (more reliable)
-        const attrValue = countdownDateEl.getAttribute('data-countdown-date') || '';
-        const textValue = countdownDateEl.textContent?.trim() || '';
-        const dateText = attrValue || textValue;
-
-        const timeMatch = dateText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
-        if (timeMatch) {
-          eventStartTime = timeMatch[1].trim().toUpperCase();
+      // Try 1: Get time from visible date display elements (most reliable — shows event start/prelims)
+      // BKFC uses div.text-color-gold and <p> elements with "Month DD, YYYY H:MM PM TZ"
+      const dateDisplaySelectors = [
+        'div.text-color-gold',
+        'p',
+        '.event-date',
+        '.header_date',
+      ];
+      for (const selector of dateDisplaySelectors) {
+        if (eventStartTime) break;
+        const els = document.querySelectorAll(selector);
+        for (const el of els) {
+          // Skip hidden elements
+          if (el.classList.contains('hidden')) continue;
+          const text = el.textContent?.trim() || '';
+          // Match full date+time pattern like "March 28, 2026 6:00 PM EDT"
+          const fullMatch = text.match(/[A-Z][a-z]+\s+\d{1,2},\s*\d{4}\s+(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:EDT|EST|ET|CDT|CST|CT|PDT|PST|PT)?/i);
+          if (fullMatch) {
+            eventStartTime = fullMatch[1].trim().toUpperCase();
+            break;
+          }
         }
       }
 
-      // Try 2: Look for data-event-date-est attribute
+      // Try 2: Get data-countdown-date attribute value
+      // Note: countdown often shows main card time, not prelims — only use if Try 1 failed
+      if (!eventStartTime) {
+        const countdownDateEl = document.querySelector('[data-countdown-date]');
+        if (countdownDateEl) {
+          const attrValue = countdownDateEl.getAttribute('data-countdown-date') || '';
+          const textValue = countdownDateEl.textContent?.trim() || '';
+          const dateText = attrValue || textValue;
+
+          const timeMatch = dateText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
+          if (timeMatch) {
+            eventStartTime = timeMatch[1].trim().toUpperCase();
+          }
+        }
+      }
+
+      // Try 3: Look for data-event-date-est attribute
       if (!eventStartTime) {
         const estDateEl = document.querySelector('[data-event-date-est]');
         if (estDateEl) {
@@ -436,13 +466,12 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         }
       }
 
-      // Try 3: Search page text for time pattern near date
+      // Try 4: Search page text for time pattern near date
       if (!eventStartTime) {
         const pageText = document.body.innerText || '';
-        // Look for patterns like "December 20, 2025 7:00 PM" or "7:00 PM EST"
         const timePatterns = [
-          /\d{4}\s+(\d{1,2}:\d{2}\s*(?:AM|PM))/gi,  // After year: "2025 7:00 PM"
-          /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:EST|ET|EDT)/gi,  // Time with timezone
+          /\d{4}\s+(\d{1,2}:\d{2}\s*(?:AM|PM))/gi,
+          /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:EST|ET|EDT)/gi,
         ];
         for (const pattern of timePatterns) {
           const match = pageText.match(pattern);
@@ -456,7 +485,7 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         }
       }
 
-      // Try 4: Fallback to time-related selectors
+      // Try 5: Fallback to time-related selectors
       if (!eventStartTime) {
         const timeEl = document.querySelector('[class*="time"]');
         if (timeEl) {
@@ -530,6 +559,7 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       // Strategy 1: Look for fighter profile links and pair them
       const fighterLinks = document.querySelectorAll('a[href*="/fighters/"]');
       const fighterMap = new Map();
+      const usedImageUrls = new Set(); // Track assigned images to prevent duplicates
 
       fighterLinks.forEach(link => {
         const href = link.href || link.getAttribute('href') || '';
@@ -668,6 +698,15 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         const container = link.closest('[class*="matchup"], [class*="fight"], [class*="bout"], [class*="athlete"]');
         if (!imageUrl) {
           imageUrl = findClosestImage(container, link);
+        }
+
+        // Prevent duplicate images: if this image was already assigned to another fighter,
+        // don't reuse it (better to have no image than a wrong one)
+        if (imageUrl && usedImageUrls.has(imageUrl)) {
+          imageUrl = null;
+        }
+        if (imageUrl) {
+          usedImageUrls.add(imageUrl);
         }
 
         // Try to get record from nearby text
@@ -892,19 +931,23 @@ async function scrapeFighterPage(browser, fighterUrl) {
       // it's likely an opponent's image. Better to have no image than a wrong one.
 
       // Fallback to other selectors if no BKFC CDN image found
+      // IMPORTANT: Only use selectors that target the main profile image area,
+      // NOT generic selectors that could match opponent images in "next fight" sections
       if (!headshotUrl) {
         const imgSelectors = [
-          'img[src*="fighter"]',
-          'img[src*="athlete"]',
-          'img[src*="headshot"]',
           '.fighter-image img',
           '.athlete-image img',
-          '.profile-image img'
+          '.profile-image img',
+          'img[src*="headshot"]'
         ];
 
         for (const selector of imgSelectors) {
           const img = document.querySelector(selector);
           if (img && img.src && !img.src.includes('flag') && !img.src.includes('icon')) {
+            // Extra check: if it's a CDN image, verify it matches this fighter's name
+            if (img.src.includes('bkfc-cdn.gigcasters.com') && !imageMatchesFighter(img.src)) {
+              continue; // Skip - likely an opponent's image
+            }
             headshotUrl = img.src;
             break;
           }
@@ -1030,6 +1073,15 @@ async function main() {
       // Collect unique athletes
       if (eventData.fights) {
         eventData.fights.forEach(fight => {
+          // Safety check: if both fighters have the same image URL, null them out
+          // (better to rely on fighter page images than use a duplicate)
+          const sameImage = fight.fighterA.imageUrl && fight.fighterA.imageUrl === fight.fighterB.imageUrl;
+          if (sameImage) {
+            console.log(`   ⚠️  Duplicate image detected: ${fight.fighterA.name} vs ${fight.fighterB.name} - clearing event page images`);
+            fight.fighterA.imageUrl = null;
+            fight.fighterB.imageUrl = null;
+          }
+
           if (fight.fighterA.name && !uniqueAthletes.has(fight.fighterA.name)) {
             uniqueAthletes.set(fight.fighterA.name, {
               name: fight.fighterA.name,
