@@ -205,7 +205,7 @@ export async function runEventLifecycleCheck(): Promise<{
         console.log(`[Lifecycle] UPCOMING → LIVE: ${event.name}`);
 
         // Trigger live tracker: try VPS first, fall back to GitHub Actions
-        if (event.scraperType && ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc'].includes(event.scraperType)) {
+        if (event.scraperType && ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc', 'raf'].includes(event.scraperType)) {
           const vpsOk = await triggerVPSLiveTracker(event.id, event.scraperType, event.name);
           if (!vpsOk) {
             // Fallback to GitHub Actions
@@ -215,6 +215,7 @@ export async function runEventLifecycleCheck(): Promise<{
               tapology: 'tapology-live-tracker.yml',
               bkfc: 'bkfc-live-tracker.yml',
               onefc: 'onefc-live-tracker.yml',
+              raf: 'raf-live-tracker.yml',
             };
             const workflow = workflowMap[event.scraperType];
             if (workflow) await triggerGitHubLiveTracker(workflow, { event_id: event.id });
@@ -232,7 +233,7 @@ export async function runEventLifecycleCheck(): Promise<{
     const liveScraperEvents = await prisma.event.findMany({
       where: {
         eventStatus: 'LIVE',
-        scraperType: { in: ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc'] },
+        scraperType: { in: ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc', 'raf'] },
       },
       select: { id: true, name: true, scraperType: true },
     });
@@ -259,7 +260,7 @@ export async function runEventLifecycleCheck(): Promise<{
           const workflowMap: Record<string, string> = {
             ufc: 'ufc-live-tracker.yml', oktagon: 'oktagon-live-tracker.yml',
             tapology: 'tapology-live-tracker.yml', bkfc: 'bkfc-live-tracker.yml',
-            onefc: 'onefc-live-tracker.yml',
+            onefc: 'onefc-live-tracker.yml', raf: 'raf-live-tracker.yml',
           };
           const workflow = workflowMap[liveScraperEvent.scraperType || ''] || 'tapology-live-tracker.yml';
           await triggerGitHubLiveTracker(workflow, { event_id: liveScraperEvent.id });

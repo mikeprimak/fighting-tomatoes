@@ -217,6 +217,7 @@ enum Sport {
   BARE_KNUCKLE_BOXING
   MUAY_THAI
   KICKBOXING
+  WRESTLING
 }
 
 enum Gender {
