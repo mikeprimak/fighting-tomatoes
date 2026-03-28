@@ -204,11 +204,21 @@ async function scrapeBKFCLiveEvent(eventUrl, outputDir) {
         // Check bout type
         const isTitle = /championship/i.test(containerText) || /title\s*bout/i.test(containerText);
         let cardType = 'Main Card';
-        // Check if this fight is in a "Free Fights" tab section
-        const tabParent = container.closest('[data-custom-tab-items] > div');
-        if (tabParent) {
-          const tabIndex = Array.from(tabParent.parentElement.children).indexOf(tabParent);
-          if (tabIndex > 0) cardType = 'Prelims'; // Second tab = Free Fights / Prelims
+        // Check if this fight is in the "Free Fights" / "Prelims" Webflow tab pane
+        // BKFC uses Webflow tabs: div[data-w-tab="Main Card"] and div[data-w-tab="Prelims"]
+        const tabPane = container.closest('[data-w-tab]');
+        if (tabPane) {
+          const tabValue = tabPane.getAttribute('data-w-tab') || '';
+          if (tabValue === 'Prelims' || tabValue.toLowerCase().includes('prelim') || tabValue.toLowerCase().includes('free')) {
+            cardType = 'Prelims';
+          }
+        }
+        // Fallback: check for "Undercard" heading within container's section
+        if (cardType === 'Main Card') {
+          const heading = container.closest('.fight-card_section, .w-dyn-list')?.querySelector('.fight-card_heading');
+          if (heading && /undercard|free\s*fights/i.test(heading.textContent || '')) {
+            cardType = 'Prelims';
+          }
         }
 
         // Extract result data from [data-render] elements within the container
