@@ -568,3 +568,101 @@ Matchroom had a custom live scraper (`matchroomLiveScraper.ts`) using axios/chee
 ### Live Tracking Expansion to All Orgs (Mar 2026)
 
 Expanded live event tracking from 5 orgs (UFC, Oktagon, BKFC, ONE FC, Zuffa Boxing) to all 12+ orgs. New Tapology-based daily scrapers for Karate Combat, Top Rank, and Golden Boy. Existing parsers for PFL, RIZIN, Dirty Boxing, and Matchroom updated to set `scraperType: 'tapology'`. The Tapology live tracker's URL auto-discovery enhanced with `TAPOLOGY_PROMOTION_HUBS` mapping for all orgs. All orgs now have fully automatic live tracking — no manual setup required.
+
+## VPS Scraper Service (Mar 2026)
+
+Moved live event scrapers from GitHub Actions (5-min intervals) to a dedicated Hetzner VPS (30-second intervals) for near-real-time fight updates and notifications.
+
+### Why
+
+- GitHub Actions has ~2-3 min cold start per run, limiting scrape frequency to ~5 min
+- VPS is always on — no cold starts, can reuse browser instances
+- 30-second scrapes enable near-real-time push notifications
+
+### Architecture
+
+```
+Render lifecycle (every 5 min) → POST /track/start → VPS (every 30s loop) → scrape → DB
+                                                      ↑ also self-discovers active LIVE events
+```
+
+- **VPS:** Hetzner CPX11 (2 vCPU, 2GB RAM, $4.99/mo), IP `178.156.231.241`, Ubuntu 24.04
+- **Service:** `scraperService.ts` — HTTP server on port 3009, runs as systemd `scraper-service`
+- **Auth:** `SCRAPER_API_KEY` shared between Render and VPS
+- **Render env vars:** `VPS_SCRAPER_URL=http://178.156.231.241:3009`, `VPS_SCRAPER_API_KEY=gf-scraper-2026-secret`
+
+### How It Works
+
+1. Render lifecycle detects event → LIVE, calls `POST /track/start` on VPS
+2. VPS starts a 30-second interval loop for that event's scraper type
+3. Each iteration runs the appropriate scraper + parser, updates DB directly
+4. VPS auto-discovers active LIVE events every 5 min as a safety net
+5. Tracker auto-stops when event completes or after 10 consecutive errors
+6. If VPS is unreachable, Render falls back to GitHub Actions dispatch
+
+### VPS Management
+
+```bash
+ssh root@178.156.231.241
+systemctl status scraper-service
+journalctl -u scraper-service -f          # live logs
+bash /opt/scraper-service/packages/backend/vps-update.sh   # deploy latest code
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/scraperService.ts` | VPS HTTP service — starts/stops 30s scrape loops |
+| `src/services/eventLifecycle.ts` | Render lifecycle — tries VPS first, falls back to GitHub Actions |
+| `vps-setup.sh` | One-command VPS provisioning script |
+| `vps-update.sh` | Quick deploy script (pull, build, restart) |
+
+### Admin Workflow Update
+
+With the VPS, the admin workflow (section above) is unchanged — all the same automation applies. The only difference is scrape frequency: 30 seconds instead of 5 minutes. To check VPS status:
+
+```bash
+curl -H "Authorization: Bearer gf-scraper-2026-secret" http://178.156.231.241:3009/status
+curl -X POST -H "Authorization: Bearer gf-scraper-2026-secret" http://178.156.231.241:3009/track/check  # force re-discover
+```
+
+## Resolved: Tapology Parser Name Matching Failures (Mar 28, 2026)
+
+**Symptoms:** During PFL Pittsburgh live tracking, 2 of 12 fights failed to match between Tapology scraped data and the database.
+
+**Root cause:** The parser's `getLastName()` function extracted only the last word of a name. This failed for:
+- Multi-word last names: "Ariane Lipski da Silva" → extracted "Silva", DB had "Lipskidasilva"
+- Hyphenated names: "J. Al-Silawi" → extracted "Al-Silawi", DB had "Alsalawi"
+
+**Fix:** Replaced single-strategy exact matching with 5-strategy progressive matching:
+1. Exact last name match
+2. Compact match (remove hyphens/spaces: "Al-Silawi" → "alsilawi" ≈ "alsalawi")
+3. Full name compact vs DB lastName (handles "Lipski da Silva" → "lipskidasilva")
+4. Partial/contains match
+5. Similarity score fallback (Levenshtein, threshold ≥ 0.8)
+
+Also added cancellation/un-cancellation detection and next-fight notifications to the Tapology parser, bringing it to parity with the BKFC parser.
+
+## Resolved: BKFC Tab Detection Not Working (Mar 28, 2026)
+
+**Symptoms:** All BKFC fights scraped as "Main Card" even though some are "Free Fights" (Prelims).
+
+**Root cause:** The live scraper looked for `[data-custom-tab-items]` to detect tabs, but those are per-fight stats tabs (punch summaries by round). The actual card sections use Webflow tabs: `div[data-w-tab="Main Card"]` and `div[data-w-tab="Prelims"]`.
+
+**Fix:** Changed tab detection to use `container.closest('[data-w-tab]')` and check the attribute value. Added fallback for `h3.fight-card_heading` with "Undercard" text.
+
+## Resolved: BKFC Start Time Showed Main Card Instead of Prelims (Mar 28, 2026)
+
+**Symptoms:** BKFC event "Mohegan Sun Porter vs Watson" had `mainStartTime` set to 10:00 PM ET (main card) instead of 6:00 PM ET (prelims/free fights). The lifecycle didn't transition the event to LIVE until 4 hours after the event actually started.
+
+**Root cause:** The daily scraper's time extraction prioritized `[data-countdown-date]`, which shows the **main card** countdown time. The actual event start (prelims) is displayed in visible `div.text-color-gold` elements as "March 28, 2026 6:00 PM EDT".
+
+**Fix:** Reordered time extraction strategies in `scrapeAllBKFCData.js`:
+1. **(New, first)** Look for full date+time in visible page elements (`div.text-color-gold`, `<p>`) — shows prelim/event start
+2. `[data-countdown-date]` — only if visible elements didn't have a time (countdown may show main card time)
+3. `[data-event-date-est]` attribute
+4. Page text search for time patterns
+5. `[class*="time"]` fallback
+
+**Lesson:** BKFC countdown timers count down to the main card, not the event start. The visible date text on the event page reflects the actual (earliest) start time.
