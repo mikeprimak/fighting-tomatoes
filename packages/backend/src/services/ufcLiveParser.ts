@@ -531,6 +531,15 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
             console.log(`    🏆 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner → ${fightUpdate.winner}`);
           }
         }
+      } else if (fightUpdate.fightStatus === 'COMPLETED' && fightUpdate.method && !fightUpdate.winner) {
+        // Draw or No Contest — fight is complete but no winner
+        // Clear winner if previously set (correction)
+        if (dbFight.winner) {
+          updateData.winner = null;
+          changed = true;
+          console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner CLEARED (draw/NC)`);
+        }
+        console.log(`    🤝 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: ${fightUpdate.method} (no winner)`);
       }
 
       if (fightUpdate.method && dbFight.method !== fightUpdate.method) {

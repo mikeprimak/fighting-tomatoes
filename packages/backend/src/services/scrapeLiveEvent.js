@@ -150,20 +150,27 @@ async function scrapeLiveEvent(eventUrl, outputDir) {
           let completedRounds = null;
           let result = null;
 
-          // Check if fight is complete (ONLY based on winIndicator)
-          if (winIndicator) {
+          // Check if fight is complete
+          // winIndicator = a corner won; drawIndicator = draw/no contest (no winner)
+          // Also check for any outcome element as a fallback (covers draw, NC, etc.)
+          const drawIndicator = element.querySelector('.c-listing-fight__outcome--draw, .c-listing-fight__outcome--no-contest')
+            || (!winIndicator && element.querySelector('.c-listing-fight__outcome'));
+          if (winIndicator || drawIndicator) {
             fightStatus = 'complete';
 
             // Determine winner by checking which corner has the win indicator
             let winner = null;
-            const redCorner = element.querySelector('.c-listing-fight__corner--red');
-            const blueCorner = element.querySelector('.c-listing-fight__corner--blue');
+            if (winIndicator) {
+              const redCorner = element.querySelector('.c-listing-fight__corner--red');
+              const blueCorner = element.querySelector('.c-listing-fight__corner--blue');
 
-            if (redCorner?.contains(winIndicator)) {
-              winner = redName;
-            } else if (blueCorner?.contains(winIndicator)) {
-              winner = blueName;
+              if (redCorner?.contains(winIndicator)) {
+                winner = redName;
+              } else if (blueCorner?.contains(winIndicator)) {
+                winner = blueName;
+              }
             }
+            // Draw/NC: winner stays null
 
             // Extract result details (round/method/time)
             const roundResultEl = element.querySelector('.c-listing-fight__result-text.round');
@@ -175,7 +182,7 @@ async function scrapeLiveEvent(eventUrl, outputDir) {
 
             result = {
               winner: winner,
-              method: method || null,
+              method: method || (drawIndicator && !winIndicator ? 'Draw' : null),
               time: time || null,
               round: roundNum ? parseInt(roundNum, 10) : null
             };
