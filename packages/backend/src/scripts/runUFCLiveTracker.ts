@@ -43,7 +43,7 @@ function convertScrapedToLiveUpdate(eventData: any): any {
     let currentRound: number | null = null;
     let completedRounds: number | null = null;
 
-    if (fight.status === 'complete' || fight.isComplete || fight.winner || fight.result?.winner) {
+    if (fight.status === 'complete' || fight.isComplete || fight.winner || fight.result?.winner || fight.result?.method) {
       fightStatus = 'complete';
       completedRounds = fight.completedRounds || fight.result?.round || fight.round || null;
     } else if (fight.status === 'live' || fight.isLive || fight.hasStarted) {
