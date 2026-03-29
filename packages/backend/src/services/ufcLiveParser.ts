@@ -462,8 +462,11 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
       const updateData: any = {};
       let changed = false;
 
-      // Check status changes
+      // Check status changes — never downgrade from COMPLETED (protects manual fixes & draws)
       if (fightUpdate.fightStatus !== undefined && dbFight.fightStatus !== fightUpdate.fightStatus) {
+        if (dbFight.fightStatus === 'COMPLETED' && fightUpdate.fightStatus !== 'COMPLETED') {
+          console.log(`    ⏭️  Skipping status downgrade for ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: DB is COMPLETED, scraper says ${fightUpdate.fightStatus}`);
+        } else {
         updateData.fightStatus = fightUpdate.fightStatus;
         changed = true;
         console.log(`    🥊 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: fightStatus → ${fightUpdate.fightStatus}`);
@@ -497,6 +500,7 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
             console.error(`    ❌ Error sending next fight notifications:`, err);
           }
         }
+        } // end else (not a downgrade)
       }
 
       // Check order changes (UFC sometimes reorders fights)
