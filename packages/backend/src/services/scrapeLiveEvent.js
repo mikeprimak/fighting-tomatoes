@@ -154,17 +154,18 @@ async function scrapeLiveEvent(eventUrl, outputDir) {
           // winIndicator = a corner won; drawIndicator = draw/no contest (no winner)
           const drawIndicator = element.querySelector('.c-listing-fight__outcome--draw, .c-listing-fight__outcome--no-contest');
 
-          // Also check for result text (method/round/time) — if present, fight is done
-          // This catches draws where UFC.com shows no win/draw indicator but does show results
+          // Also check for method result text — if a method string is present (e.g. "Decision",
+          // "KO", "Draw"), the fight is done. Only use method (not round/time alone, as those
+          // can appear on live fights as round indicators).
           const methodResultEl = element.querySelector('.c-listing-fight__result-text.method');
           const roundResultEl = element.querySelector('.c-listing-fight__result-text.round');
           const timeResultEl = element.querySelector('.c-listing-fight__result-text.time');
           const method = methodResultEl?.textContent?.trim();
           const roundNum = roundResultEl?.textContent?.trim();
           const time = timeResultEl?.textContent?.trim();
-          const hasResultText = !!(method || roundNum || time);
+          const hasMethodText = !!(method && method.length > 1);
 
-          if (winIndicator || drawIndicator || hasResultText) {
+          if (winIndicator || drawIndicator || hasMethodText) {
             fightStatus = 'complete';
 
             // Determine winner by checking which corner has the win indicator
