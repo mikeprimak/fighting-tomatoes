@@ -177,6 +177,8 @@ export async function parseBKFCLiveData(
 
     // Process each scraped fight
     const scrapedFightSignatures = new Set<string>();
+    // Track which DB fight IDs the scraper says are currently LIVE
+    const scrapedLiveFightIds = new Set<string>();
 
     for (const fightUpdate of liveData.fights) {
       const f1Name = fightUpdate.fighter1Name;
@@ -204,12 +206,24 @@ export async function parseBKFCLiveData(
       const updateData: any = {};
       let changed = false;
 
+      // Track fights the scraper says are currently live (started but not complete)
+      if (fightUpdate.hasStarted && !fightUpdate.isComplete) {
+        scrapedLiveFightIds.add(dbFight.id);
+      }
+
       // Reset lifecycle-completed fights (COMPLETED with no winner)
       if (!fightUpdate.isComplete && !fightUpdate.hasStarted &&
           dbFight.fightStatus === 'COMPLETED' && !dbFight.winner) {
         updateData.fightStatus = 'UPCOMING';
         changed = true;
         console.log(`    Reset to UPCOMING (lifecycle premature)`);
+      }
+
+      // LIVE -> UPCOMING (scraper says fight not started, but DB shows LIVE)
+      if (!fightUpdate.hasStarted && !fightUpdate.isComplete && dbFight.fightStatus === 'LIVE') {
+        updateData.fightStatus = 'UPCOMING';
+        changed = true;
+        console.log(`    Reset LIVE -> UPCOMING (not current bout)`);
       }
 
       // UPCOMING -> LIVE
@@ -265,6 +279,18 @@ export async function parseBKFCLiveData(
         await prisma.fight.update({ where: { id: dbFight.id }, data: finalData });
         fightsUpdated++;
         console.log(`    Updated in DB`);
+      }
+    }
+
+    // Reset stale LIVE fights: any DB fight that is LIVE but the scraper didn't
+    // identify as currently live should be reset to UPCOMING.
+    // This prevents multiple fights from being stuck in LIVE status simultaneously.
+    for (const dbFight of event.fights) {
+      if (dbFight.fightStatus === 'LIVE' && !scrapedLiveFightIds.has(dbFight.id)) {
+        const resetData = buildTrackerUpdateData({ fightStatus: 'UPCOMING' }, scraperType);
+        await prisma.fight.update({ where: { id: dbFight.id }, data: resetData });
+        fightsUpdated++;
+        console.log(`  Reset stale LIVE: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} -> UPCOMING`);
       }
     }
 

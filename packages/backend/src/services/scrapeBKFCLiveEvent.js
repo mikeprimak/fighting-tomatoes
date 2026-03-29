@@ -88,8 +88,9 @@ async function scrapeBKFCLiveEvent(eventUrl, outputDir) {
 
     // Wait for the page's JavaScript to load and populate fight data
     // The page fetches from xapi.mmareg.com and fires 'fightDataLoaded' event
+    // 8 seconds to ensure current-bout attribute and result data are fully populated
     console.log('[BKFC SCRAPER] Waiting for fight data to load...');
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise(resolve => setTimeout(resolve, 8000));
 
     // Extract fight data from the DOM
     const eventData = await page.evaluate(() => {
