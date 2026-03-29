@@ -152,9 +152,7 @@ async function scrapeLiveEvent(eventUrl, outputDir) {
 
           // Check if fight is complete
           // winIndicator = a corner won; drawIndicator = draw/no contest (no winner)
-          // Also check for any outcome element as a fallback (covers draw, NC, etc.)
-          const drawIndicator = element.querySelector('.c-listing-fight__outcome--draw, .c-listing-fight__outcome--no-contest')
-            || (!winIndicator && element.querySelector('.c-listing-fight__outcome'));
+          const drawIndicator = element.querySelector('.c-listing-fight__outcome--draw, .c-listing-fight__outcome--no-contest');
           if (winIndicator || drawIndicator) {
             fightStatus = 'complete';
 
