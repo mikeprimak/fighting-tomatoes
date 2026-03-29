@@ -72,6 +72,8 @@ export default function LiveEventsScreen() {
     isFetching,
     error: eventsError,
     isError,
+    fetchNextPage,
+    hasNextPage,
   } = useInfiniteQuery(
     ['upcomingEvents', isAuthenticated, promotionsFilter],
     async ({ pageParam = 1 }) => {
@@ -95,6 +97,17 @@ export default function LiveEventsScreen() {
     }
   );
 
+  // Auto-fetch pages 2-4 so we find all live events (they may not all be on page 1).
+  // Live events are near the front by date but non-live events can be interleaved.
+  React.useEffect(() => {
+    if (!eventsData || !hasNextPage || isFetching) return;
+    const loadedPages = eventsData.pages.length;
+    // Always load up to 4 pages (8 events) to ensure all live events are captured
+    if (loadedPages < 4) {
+      fetchNextPage();
+    }
+  }, [eventsData, hasNextPage, isFetching, fetchNextPage]);
+
   // Filter to only LIVE events from all loaded pages
   const liveEvents = React.useMemo(() => {
     const allEvents = eventsData?.pages.flatMap(page => page.events) || [];
@@ -105,7 +118,13 @@ export default function LiveEventsScreen() {
       return true;
     });
     const live = deduped.filter((event: Event) => event.eventStatus === 'LIVE');
-    return filterEventsByOrg(live);
+    // Sort UFC events to the top
+    const sorted = [...live].sort((a, b) => {
+      const aIsUFC = a.promotion?.toUpperCase() === 'UFC' ? 0 : 1;
+      const bIsUFC = b.promotion?.toUpperCase() === 'UFC' ? 0 : 1;
+      return aIsUFC - bIsUFC;
+    });
+    return filterEventsByOrg(sorted);
   }, [eventsData, filterEventsByOrg]);
 
   // Only UFC has reliable real-time fight-start detection for "Notify Me" notifications
@@ -266,6 +285,159 @@ const LiveEventSection = memo(function LiveEventSection({
 
   const styles = createStyles(colors);
 
+  const isUpNext = (fight: Fight) =>
+    fight.fightStatus === 'UPCOMING' && fight.id === nextFight?.id && !hasLiveFight && !!lastCompletedFight;
+
+  const renderCardSection = (
+    sectionFights: Fight[],
+    title: string,
+    startTime: string | null | undefined,
+    isPrelimSection: boolean,
+    indexOffset: number,
+  ) => {
+    const sorted = [...sectionFights].sort((a, b) => a.orderOnCard - b.orderOnCard);
+    const upcoming = sorted.filter((f: Fight) => f.fightStatus === 'UPCOMING' && !isUpNext(f));
+    const live = sorted.filter((f: Fight) => f.fightStatus === 'LIVE' || isUpNext(f));
+    const completed = sorted.filter((f: Fight) => f.fightStatus === 'COMPLETED');
+
+    const sectionTitleElement = (
+      <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
+        <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+          {title}
+        </Text>
+        {startTime && (
+          <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
+            {formatTime(startTime)}
+          </Text>
+        )}
+      </View>
+    );
+
+    return (
+      <View style={styles.cardSection}>
+        {/* Upcoming fights with HYPE / MY HYPE headers (main card only) or vertical gap (prelims) */}
+        {upcoming.length > 0 && (
+          <>
+            {isPrelimSection ? (
+              <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
+                {sectionTitleElement}
+              </View>
+            ) : (
+              <View style={styles.sectionHeader}>
+                <View style={styles.columnHeaders}>
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    HYPE
+                  </Text>
+                </View>
+                <View style={styles.sectionHeaderCenter}>
+                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                    UPCOMING BOUTS
+                  </Text>
+                </View>
+                <View style={styles.columnHeadersRight}>
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    MY
+                  </Text>
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    HYPE
+                  </Text>
+                </View>
+              </View>
+            )}
+            {upcoming.map((fight: Fight, index: number) => (
+              <FightDisplayCard
+                key={fight.id}
+                fight={fight}
+                onPress={() => onFightPress(fight, event)}
+                showEvent={false}
+                isNextFight={nextFight?.id === fight.id}
+                hasLiveFight={hasLiveFight}
+                lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                enableHypeAnimation={true}
+                enableRatingAnimation={true}
+                index={indexOffset + index}
+              />
+            ))}
+          </>
+        )}
+
+        {/* Standalone card section title when no upcoming fights */}
+        {upcoming.length === 0 && (
+          isPrelimSection ? (
+            <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
+              {sectionTitleElement}
+            </View>
+          ) : (
+            <View style={[styles.sectionHeader]}>
+              {sectionTitleElement}
+            </View>
+          )
+        )}
+
+        {/* Live / Up Next fights */}
+        {live.length > 0 && (
+          <>
+            <View style={{ height: 12 }} />
+            {live.map((fight: Fight, index: number) => (
+              <FightDisplayCard
+                key={fight.id}
+                fight={fight}
+                onPress={() => onFightPress(fight, event)}
+                showEvent={false}
+                isNextFight={nextFight?.id === fight.id}
+                hasLiveFight={hasLiveFight}
+                lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                enableHypeAnimation={true}
+                enableRatingAnimation={true}
+                index={indexOffset + upcoming.length + index}
+              />
+            ))}
+          </>
+        )}
+
+        {/* Completed fights with RATING / MY RATING headers */}
+        {completed.length > 0 && (
+          <>
+            <View style={styles.statusHeader}>
+              <View style={[styles.columnHeaders, { marginLeft: -16 }]}>
+                <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                  RATING
+                </Text>
+              </View>
+              <View style={styles.sectionHeaderCenter}>
+                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                  COMPLETED BOUTS
+                </Text>
+              </View>
+              <View style={[styles.columnHeadersRight, { marginRight: -18 }]}>
+                <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                  MY
+                </Text>
+                <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                  RATING
+                </Text>
+              </View>
+            </View>
+            {completed.map((fight: Fight, index: number) => (
+              <FightDisplayCard
+                key={fight.id}
+                fight={fight}
+                onPress={() => onFightPress(fight, event)}
+                showEvent={false}
+                isNextFight={false}
+                hasLiveFight={hasLiveFight}
+                lastCompletedFightTime={lastCompletedFight?.updatedAt}
+                enableHypeAnimation={false}
+                enableRatingAnimation={true}
+                index={indexOffset + upcoming.length + live.length + index}
+              />
+            ))}
+          </>
+        )}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.eventSection}>
       <EventBannerCard
@@ -278,110 +450,14 @@ const LiveEventSection = memo(function LiveEventSection({
       />
 
       <View style={styles.fightsContainer}>
-        {mainCard.length > 0 && (
-          <View style={styles.cardSection}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.columnHeaders}>
-                <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                  HYPE
-                </Text>
-              </View>
-              <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
-                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                  MAIN CARD
-                </Text>
-                {event.mainStartTime && (
-                  <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
-                    {formatTime(event.mainStartTime)}
-                  </Text>
-                )}
-              </View>
-              <View style={styles.columnHeadersRight}>
-                <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                  MY
-                </Text>
-                <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                  HYPE
-                </Text>
-              </View>
-            </View>
-            {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
-              <FightDisplayCard
-                key={fight.id}
-                fight={fight}
-                onPress={() => onFightPress(fight, event)}
-                showEvent={false}
-                isNextFight={nextFight?.id === fight.id}
-                hasLiveFight={hasLiveFight}
-                lastCompletedFightTime={lastCompletedFight?.updatedAt}
-                enableHypeAnimation={true}
-                enableRatingAnimation={true}
-                index={index}
-              />
-            ))}
-          </View>
+        {mainCard.length > 0 && renderCardSection(
+          mainCard, 'MAIN CARD', event.mainStartTime, false, 0
         )}
-
-        {prelimCard.length > 0 && (
-          <View style={styles.cardSection}>
-            <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
-              <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
-                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                  PRELIMS
-                </Text>
-                {event.prelimStartTime && (
-                  <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
-                    {formatTime(event.prelimStartTime)}
-                  </Text>
-                )}
-              </View>
-            </View>
-            {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
-              <FightDisplayCard
-                key={fight.id}
-                fight={fight}
-                onPress={() => onFightPress(fight, event)}
-                showEvent={false}
-                isNextFight={nextFight?.id === fight.id}
-                hasLiveFight={hasLiveFight}
-                lastCompletedFightTime={lastCompletedFight?.updatedAt}
-                enableHypeAnimation={true}
-                enableRatingAnimation={true}
-                index={mainCard.length + index}
-              />
-            ))}
-          </View>
+        {prelimCard.length > 0 && renderCardSection(
+          prelimCard, 'PRELIMS', event.prelimStartTime, true, mainCard.length
         )}
-
-        {earlyPrelims.length > 0 && (
-          <View style={styles.cardSection}>
-            <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
-              <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
-                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                  EARLY PRELIMS
-                </Text>
-                {event.earlyPrelimStartTime && (
-                  <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
-                    {formatTime(event.earlyPrelimStartTime)}
-                  </Text>
-                )}
-              </View>
-            </View>
-            {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
-              <FightDisplayCard
-                key={fight.id}
-                fight={fight}
-                onPress={() => onFightPress(fight, event)}
-                showEvent={false}
-                isNextFight={nextFight?.id === fight.id}
-                hasLiveFight={hasLiveFight}
-                lastCompletedFightTime={lastCompletedFight?.updatedAt}
-                enableHypeAnimation={true}
-                enableRatingAnimation={true}
-                index={mainCard.length + prelimCard.length + index}
-              />
-            ))}
-          </View>
+        {earlyPrelims.length > 0 && renderCardSection(
+          earlyPrelims, 'EARLY PRELIMS', event.earlyPrelimStartTime, true, mainCard.length + prelimCard.length
         )}
       </View>
     </View>
@@ -475,5 +551,26 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.5,
+  },
+  statusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    paddingVertical: 6,
+    marginBottom: 2,
+    marginTop: 8,
+  },
+  liveNowHeader: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  liveNowText: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 });
