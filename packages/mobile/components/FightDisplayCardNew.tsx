@@ -44,7 +44,7 @@ function FightDisplayCard({
   // Route to appropriate card component
   // Special case: If this is the next fight after a completed fight (during a live event),
   // show it as a LiveFightCard with "Up Next" / "Starting Soon" status
-  if (status === 'upcoming' && isNextFight && !hasLiveFight && lastCompletedFightTime) {
+  if (status === 'upcoming' && isNextFight && !hasLiveFight) {
     return (
       <LiveFightCard
         fight={fight}

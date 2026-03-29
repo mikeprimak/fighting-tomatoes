@@ -169,22 +169,22 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
       <Tabs.Screen
         name="live-events"
         options={{
-          href: hasLiveEvent ? '/(tabs)/live-events' : null, // Only show tab when live events exist
+          href: '/(tabs)/live-events', // Always show live events tab
           title: 'Live Events',
           tabBarIcon: ({ color, focused }) => (
             <FontAwesome
               name="podcast"
               size={24}
               style={{ marginBottom: -3 }}
-              color={focused ? '#FF0000' : color}
+              color={focused ? colors.primary : color}
             />
           ),
           tabBarLabel: ({ focused }) => (
-            <Text style={{ fontSize: 10, color: focused ? '#FF0000' : colors.tabIconDefault, textAlign: 'center' }}>
+            <Text style={{ fontSize: 10, color: focused ? colors.primary : colors.tabIconDefault, textAlign: 'center' }}>
               Live Events
             </Text>
           ),
-          tabBarActiveTintColor: '#FF0000',
+          tabBarActiveTintColor: colors.primary,
           headerTitle: () => <HeaderLogo title="Live Events" />,
           headerRight: () => (
             <TouchableOpacity
@@ -260,14 +260,20 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
       <Tabs.Screen
         name="top-fights"
         options={{
-          title: 'Top Fights',
+          title: 'Good Fights',
           tabBarLabel: ({ color }) => (
             <Text style={{ fontSize: 10, color, textAlign: 'center' }}>
-              Top Fights
+              Good Fights
             </Text>
           ),
-          tabBarIcon: ({ color }) => <FontAwesome name="trophy" size={24} style={{ marginBottom: -3 }} color={color} />,
-          headerTitle: () => <HeaderLogo title="Top Fights" />,
+          tabBarIcon: ({ color }) => (
+            <Image
+              source={require('../assets/tab-icon-hand.png')}
+              style={{ width: 24, height: 24, marginBottom: -3, tintColor: color }}
+              resizeMode="contain"
+            />
+          ),
+          headerTitle: () => <HeaderLogo title="Good Fights" />,
           headerRight: () => (
             <TouchableOpacity
               onPress={toggleSearch}
@@ -298,7 +304,14 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
         name="profile"
         options={{
           title: user?.displayName || 'Me',
-          tabBarIcon: ({ color }) => <TabBarIcon name="user" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <FontAwesome6
+              name="user-ninja"
+              size={24}
+              style={{ marginBottom: -3 }}
+              color={color}
+            />
+          ),
           headerTitle: () => <HeaderLogo title={user?.displayName || 'Me'} />,
         }}
       />
