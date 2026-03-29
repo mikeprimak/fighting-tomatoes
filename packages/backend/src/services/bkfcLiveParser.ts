@@ -211,30 +211,24 @@ export async function parseBKFCLiveData(
         scrapedLiveFightIds.add(dbFight.id);
       }
 
-      // Reset lifecycle-completed fights (COMPLETED with no winner)
-      if (!fightUpdate.isComplete && !fightUpdate.hasStarted &&
-          dbFight.fightStatus === 'COMPLETED' && !dbFight.winner) {
-        updateData.fightStatus = 'UPCOMING';
-        changed = true;
-        console.log(`    Reset to UPCOMING (lifecycle premature)`);
-      }
-
-      // LIVE -> UPCOMING (scraper says fight not started, but DB shows LIVE)
-      if (!fightUpdate.hasStarted && !fightUpdate.isComplete && dbFight.fightStatus === 'LIVE') {
+      // Never downgrade from COMPLETED — protects manual fixes, draws, and scraper inconsistency
+      if (dbFight.fightStatus === 'COMPLETED') {
+        if (!fightUpdate.isComplete) {
+          console.log(`    Skipping downgrade: DB is COMPLETED, scraper says ${fightUpdate.isComplete ? 'complete' : fightUpdate.hasStarted ? 'live' : 'upcoming'}`);
+        }
+        // Allow result updates (winner/method) even for already-completed fights
+      } else if (dbFight.fightStatus === 'LIVE' && !fightUpdate.hasStarted && !fightUpdate.isComplete) {
+        // LIVE -> UPCOMING (scraper says fight not started, but DB shows LIVE)
         updateData.fightStatus = 'UPCOMING';
         changed = true;
         console.log(`    Reset LIVE -> UPCOMING (not current bout)`);
-      }
-
-      // UPCOMING -> LIVE
-      if (fightUpdate.hasStarted && dbFight.fightStatus === 'UPCOMING') {
+      } else if (fightUpdate.hasStarted && !fightUpdate.isComplete && dbFight.fightStatus === 'UPCOMING') {
+        // UPCOMING -> LIVE
         updateData.fightStatus = 'LIVE';
         changed = true;
         console.log(`    -> LIVE`);
-      }
-
-      // -> COMPLETED
-      if (fightUpdate.isComplete && dbFight.fightStatus !== 'COMPLETED') {
+      } else if (fightUpdate.isComplete && dbFight.fightStatus !== 'COMPLETED') {
+        // -> COMPLETED
         updateData.fightStatus = 'COMPLETED';
         changed = true;
         console.log(`    -> COMPLETED`);
@@ -299,7 +293,7 @@ export async function parseBKFCLiveData(
     let unCancelledCount = 0;
 
     for (const dbFight of event.fights) {
-      if (dbFight.fightStatus === 'COMPLETED' && dbFight.winner) continue;
+      if (dbFight.fightStatus === 'COMPLETED') continue;
 
       const dbSig = [dbFight.fighter1.lastName, dbFight.fighter2.lastName]
         .map(n => stripDiacritics(n).toLowerCase().trim())
