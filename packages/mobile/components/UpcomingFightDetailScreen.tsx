@@ -40,6 +40,7 @@ import Button from './Button';
 import SectionContainer from './SectionContainer';
 import { isTBAFighterName } from '../constants/tba';
 import { getFighterImage, getFighterImageUrl } from './fight-cards/shared/utils';
+import { formatEventDate } from '../utils/dateFormatters';
 
 type Sport = 'MMA' | 'BOXING' | 'BARE_KNUCKLE_BOXING' | 'MUAY_THAI' | 'KICKBOXING' | 'WRESTLING';
 
@@ -80,6 +81,8 @@ interface Fight {
   isTitle: boolean;
   event: Event;
   fightStatus: string;
+  cardType?: string | null;
+  orderOnCard?: number | null;
   userPredictedWinner?: string | null;
   userPredictedMethod?: string | null;
   userPredictedRound?: number | null;
@@ -1143,157 +1146,80 @@ export default function UpcomingFightDetailScreen({
       }}
     >
 
-
-      {/* Hype Section */}
-      <SectionContainer
-        title="HYPE"
-        icon="fire-flame-curved"
-        iconFamily="fontawesome6"
-        iconColor="#fff"
-        headerBgColor="#F97316"
-        containerBgColorDark="rgba(249, 115, 22, 0.08)"
-        containerBgColorLight="rgba(249, 115, 22, 0.06)"
-      >
-        {/* How Hyped Are You Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 8, marginBottom: 0 }]}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 4 }} />
-            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              How hyped are you?
-            </Text>
-            <View style={{ width: 4 }} />
-          </View>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-        </View>
-
-        {/* Large Flame Display */}
-        <View style={{ alignItems: 'center', marginTop: 23, marginBottom: 8 }}>
-          <View style={{ alignItems: 'center', justifyContent: 'center', overflow: 'hidden', height: 115 }}>
-            <Animated.View style={[
-              {
-                alignItems: 'center',
-                paddingTop: 188,
-                transform: [{
-                  translateY: wheelAnimation.interpolate({
-                    inputRange: [0, 1150],
-                    outputRange: [479, -671],
-                  })
-                }]
+      {/* Fighter Images */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16, marginBottom: 12, gap: 0 }}>
+        <View style={{ alignItems: 'center' }}>
+          <View style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 8, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+            <Image
+              source={
+                getFighterImageUrl(fight.fighter1.profileImage)
+                  ? { uri: getFighterImageUrl(fight.fighter1.profileImage)! }
+                  : require('../assets/fighters/fighter-default-alpha.png')
               }
-            ]}>
-              {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
-                const hypeColor = getHypeHeatmapColor(number);
-                return (
-                  <View key={number} style={{ height: 115, justifyContent: 'center', alignItems: 'center' }}>
-                    <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
-                      {/* Background circle for better text contrast */}
-                      <View style={{
-                        position: 'absolute',
-                        width: 56,
-                        height: 56,
-                        borderRadius: 28,
-                        backgroundColor: hypeColor,
-                        opacity: 0.4,
-                        top: 30,
-                      }} />
-                      <FontAwesome6
-                        name="fire-flame-curved"
-                        size={90}
-                        color={hypeColor}
-                      />
-                      <Text style={{
-                        position: 'absolute',
-                        marginTop: 6,
-                        fontSize: 34,
-                        fontWeight: 'bold',
-                        color: '#FFFFFF',
-                        textShadowColor: 'rgba(0,0,0,0.8)',
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 4,
-                      }}>{number}</Text>
-                    </View>
-                  </View>
-                );
-              })}
-              {/* Grey placeholder flame - shown when no hype selected */}
-              <View style={{ height: 115, justifyContent: 'center', alignItems: 'center' }}>
-                <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
-                  <Image
-                    source={require('../assets/flame-hollow-alpha-colored.png')}
-                    style={{ width: 90, height: 90, tintColor: '#666666' }}
-                    resizeMode="contain"
-                  />
-                </View>
-              </View>
-            </Animated.View>
+              style={{ width: 114, height: 114 }}
+            />
           </View>
+          <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', textAlign: 'center', color: colors.text }}>
+            {getFighterDisplayName(fight.fighter1)}
+          </Text>
         </View>
-
-        {/* Row of selectable flames (1-10) */}
-        <View style={[styles.flameContainer, { flex: 1, gap: 0, marginLeft: 0, marginTop: -5, marginBottom: 10, height: 42, justifyContent: 'center', opacity: isPreFightLocked ? 0.5 : 1 }]}>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
-            const isSelected = level <= (selectedHype || 0);
-            const flameColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
-
-            return (
-              <TouchableOpacity
-                key={level}
-                onPress={() => handleHypeSelection(level)}
-                style={styles.flameButton}
-                hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                disabled={isPreFightLocked}
-              >
-                <View style={{ width: 32, alignItems: 'center' }}>
-                  {isSelected ? (
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={32}
-                      color={flameColor}
-                    />
-                  ) : (
-                    <Image
-                      source={require('../assets/flame-hollow-alpha-thicker-truealpha.png')}
-                      style={{ width: 32, height: 32 }}
-                      resizeMode="contain"
-                    />
-                  )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Community Hype Section Divider */}
-        <View style={[styles.sectionDivider, { marginTop: 12, marginBottom: 0 }]}>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          <View style={{ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ width: 4 }} />
-            <Text style={[styles.dividerLabel, { color: colors.textSecondary }]}>
-              Crowd Hype ({aggregateStats?.totalPredictions || 0})
-            </Text>
-            <View style={{ width: 4 }} />
+        <Text style={{ fontSize: 16, fontWeight: '600', color: colors.textSecondary, marginHorizontal: 24, marginBottom: 24 }}>
+          vs
+        </Text>
+        <View style={{ alignItems: 'center' }}>
+          <View style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 8, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
+            <Image
+              source={
+                getFighterImageUrl(fight.fighter2.profileImage)
+                  ? { uri: getFighterImageUrl(fight.fighter2.profileImage)! }
+                  : require('../assets/fighters/fighter-default-alpha.png')
+              }
+              style={{ width: 114, height: 114 }}
+            />
           </View>
-          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', textAlign: 'center', color: colors.text }}>
+            {getFighterDisplayName(fight.fighter2)}
+          </Text>
         </View>
+      </View>
 
-      {/* Community Hype Data */}
-      <View style={{ marginTop: 14, marginBottom: 10 }}>
+      {/* Event Info */}
+      <View style={{ alignItems: 'center', marginBottom: 16, paddingHorizontal: 16 }}>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text, textAlign: 'center' }}>
+          {fight.event.name}
+        </Text>
+        <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
+          {formatEventDate(fight.event.date, { weekday: 'long', month: 'long' })}
+        </Text>
+        <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 2 }}>
+          {[
+            fight.orderOnCard === 1 ? 'Main Event' : fight.isTitle ? 'Co-Main Event' : fight.cardType || null,
+            fight.weightClass
+              ? (fight.weightClass.includes('WOMENS_') ? "Women's " : '')
+                + fight.weightClass.replace(/WOMENS_/g, '').split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+              : null,
+          ].filter(Boolean).join(' · ')}
+        </Text>
+      </View>
+
+      {/* Crowd Hype */}
+      <View style={{ paddingHorizontal: 16, marginTop: 5, marginBottom: 8 }}>
+        <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 16 }}>
+          Crowd Hype ({aggregateStats?.totalPredictions || 0})
+        </Text>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
-          {/* Large Hype Box (like UpcomingFightCard) */}
           {(() => {
             const hypeColor = aggregateStats?.communityAverageHype
               ? getHypeHeatmapColor(aggregateStats.communityAverageHype)
               : colors.border;
 
             return (
-              <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
-                {/* Grey placeholder box - shown until revealed */}
+              <View style={{ position: 'relative', width: 70, height: 80, justifyContent: 'center', alignItems: 'center' }}>
                 {!hasRevealedHype && (
                   <View style={{
-                    width: 80,
-                    height: 90,
-                    borderRadius: 12,
+                    width: 60,
+                    height: 68,
+                    borderRadius: 10,
                     borderWidth: 1,
                     borderColor: colors.textSecondary,
                     backgroundColor: 'transparent',
@@ -1302,20 +1228,19 @@ export default function UpcomingFightDetailScreen({
                   }}>
                     <FontAwesome6
                       name="fire-flame-curved"
-                      size={28}
+                      size={22}
                       color={colors.textSecondary}
                       style={{ opacity: 0.5 }}
                     />
                   </View>
                 )}
 
-                {/* Colored hype box - fades in when revealed */}
                 {hasRevealedHype && (
                   <Animated.View style={{ opacity: aggregateHypeFadeAnim }}>
                     <View style={{
-                      width: 80,
-                      height: 90,
-                      borderRadius: 12,
+                      width: 60,
+                      height: 68,
+                      borderRadius: 10,
                       backgroundColor: aggregateStats?.communityAverageHype > 0 ? hypeColor : 'transparent',
                       borderWidth: aggregateStats?.communityAverageHype > 0 ? 0 : 1,
                       borderColor: colors.textSecondary,
@@ -1324,13 +1249,13 @@ export default function UpcomingFightDetailScreen({
                     }}>
                       <FontAwesome6
                         name="fire-flame-curved"
-                        size={28}
+                        size={20}
                         color={aggregateStats?.communityAverageHype > 0 ? 'rgba(0,0,0,0.45)' : colors.textSecondary}
                         style={aggregateStats?.communityAverageHype > 0 ? {} : { opacity: 0.5 }}
                       />
                       {aggregateStats?.communityAverageHype > 0 && (
                         <Text style={{
-                          fontSize: 28,
+                          fontSize: 22,
                           fontWeight: 'bold',
                           color: '#FFFFFF',
                           textShadowColor: 'rgba(0,0,0,0.7)',
@@ -1347,20 +1272,18 @@ export default function UpcomingFightDetailScreen({
             );
           })()}
 
-          {/* Hype Distribution Chart */}
-            {aggregateStats?.hypeDistribution && (
-              <View style={{ flex: 1, marginLeft: -10 }}>
-                <HypeDistributionChart
-                  distribution={aggregateStats.hypeDistribution}
-                  totalPredictions={aggregateStats.totalPredictions || 0}
-                  hasRevealedHype={hasRevealedHype}
-                  fadeAnim={aggregateHypeFadeAnim}
-                />
-              </View>
-            )}
+          {aggregateStats?.hypeDistribution && (
+            <View style={{ flex: 1, marginLeft: -10 }}>
+              <HypeDistributionChart
+                distribution={aggregateStats.hypeDistribution}
+                totalPredictions={aggregateStats.totalPredictions || 0}
+                hasRevealedHype={hasRevealedHype}
+                fadeAnim={aggregateHypeFadeAnim}
+              />
+            </View>
+          )}
         </View>
       </View>
-      </SectionContainer>
 
       {/* Predictions Section - TEMPORARILY REMOVED */}
       {false && <SectionContainer
@@ -1572,39 +1495,11 @@ export default function UpcomingFightDetailScreen({
       </SectionContainer>}
 
       {/* Comments Section */}
-      <SectionContainer
-        title="Comments"
-        icon="comment"
-        iconColor="#fff"
-        headerBgColor="#4a4a4a"
-        containerBgColorDark="rgba(74, 74, 74, 0.15)"
-        containerBgColorLight="rgba(74, 74, 74, 0.08)"
-        headerRight={
-          <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
-            ({preFightCommentsData?.comments?.reduce((acc: number, c: any) => acc + 1 + (c.replies?.length || 0), 0) || 0})
+      <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+          <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+            Comments ({preFightCommentsData?.comments?.reduce((acc: number, c: any) => acc + 1 + (c.replies?.length || 0), 0) || 0})
           </Text>
-        }
-      >
-        {/* Locked banner when fight has started */}
-        {isPreFightLocked && (
-          <View style={{
-            backgroundColor: colorScheme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)',
-            borderRadius: 8,
-            padding: 12,
-            marginBottom: 12,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
-          }}>
-            <FontAwesome name="lock" size={14} color={colors.textSecondary} />
-            <Text style={{ color: colors.textSecondary, fontSize: 13, flex: 1 }}>
-              Pre-fight activity is closed. This fight has started.
-            </Text>
-          </View>
-        )}
-
-        {/* Title row with Add Comment / Cancel button */}
-        <View style={[styles.commentHeaderRow, { justifyContent: 'center' }]}>
           {!isPreFightLocked && !preFightCommentsData?.userComment && !isEditingComment && !showCommentForm && (
             <Button
               onPress={() => {
@@ -1617,9 +1512,13 @@ export default function UpcomingFightDetailScreen({
                 borderWidth: 1,
                 borderColor: colors.border,
                 backgroundColor: colors.card,
+                marginLeft: 10,
+                paddingVertical: 2,
+                paddingHorizontal: 8,
               }}
               textStyle={{
                 color: colors.text,
+                fontSize: 12,
               }}
             >
               + Add Comment
@@ -1634,9 +1533,13 @@ export default function UpcomingFightDetailScreen({
                 borderWidth: 1,
                 borderColor: colors.border,
                 backgroundColor: colors.card,
+                marginLeft: 10,
+                paddingVertical: 2,
+                paddingHorizontal: 8,
               }}
               textStyle={{
                 color: colors.text,
+                fontSize: 12,
               }}
             >
               Cancel
@@ -1654,15 +1557,36 @@ export default function UpcomingFightDetailScreen({
                 borderWidth: 1,
                 borderColor: colors.border,
                 backgroundColor: colors.card,
+                marginLeft: 10,
+                paddingVertical: 2,
+                paddingHorizontal: 8,
               }}
               textStyle={{
                 color: colors.text,
+                fontSize: 12,
               }}
             >
               Cancel
             </Button>
           )}
         </View>
+        {/* Locked banner when fight has started */}
+        {isPreFightLocked && (
+          <View style={{
+            backgroundColor: colorScheme === 'dark' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)',
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 12,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 8,
+          }}>
+            <FontAwesome name="lock" size={14} color={colors.textSecondary} />
+            <Text style={{ color: colors.textSecondary, fontSize: 13, flex: 1 }}>
+              Pre-fight activity is closed. This fight has started.
+            </Text>
+          </View>
+        )}
 
         {/* Show comment input when showCommentForm is true (for new comments) OR when editing - only if not locked */}
         {!isPreFightLocked && ((showCommentForm && !preFightCommentsData?.userComment) || isEditingComment) && (
@@ -2129,7 +2053,7 @@ export default function UpcomingFightDetailScreen({
           })}
           </View>
         )}
-      </SectionContainer>
+      </View>
 
       {/* Flag Comment Modal */}
       <FlagReviewModal
