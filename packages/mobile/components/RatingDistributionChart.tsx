@@ -19,7 +19,7 @@ export default function RatingDistributionChart({
 }: RatingDistributionChartProps) {
   // Chart dimensions - horizontal layout
   const chartWidth = 281; // Width for 10 bars - narrower to fit screen
-  const chartHeight = 72; // Height for bars area
+  const chartHeight = 50; // Height for bars area
   const barWidth = 24; // Wider bars that almost touch
   const barGap = 1;
 
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     paddingHorizontal: 10,
-    height: 72,
+    height: 50,
   },
   legendArea: {
     flexDirection: 'row',

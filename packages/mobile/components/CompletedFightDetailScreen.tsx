@@ -40,6 +40,7 @@ import FightDetailsSection from './FightDetailsSection';
 import { useFightStats } from '../hooks/useFightStats';
 import FightDetailsMenu from './FightDetailsMenu';
 import SectionContainer from './SectionContainer';
+import { formatEventDate } from '../utils/dateFormatters';
 
 interface Fighter {
   id: string;
@@ -1420,42 +1421,75 @@ export default function CompletedFightDetailScreen({
         }}
       >
 
-        {/* Winner Section */}
-        <SectionContainer
-          title="Winner"
-          icon="trophy"
-          iconColor="#fff"
-          headerBgColor="#166534"
-          containerBgColorDark="rgba(34, 197, 94, 0.05)"
-          containerBgColorLight="rgba(34, 197, 94, 0.08)"
-        >
-          {/* Spoiler-free prompt or Reveal Button */}
-          {fight.winner && !isOutcomeRevealed && (
-            <View style={{ alignItems: 'center', marginBottom: 8 }}>
-              {spoilerFreeMode && rating === 0 ? (
-                <>
-                  <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', marginBottom: 8 }}>
-                    Rate this fight to reveal the outcome
-                  </Text>
-                  <TouchableOpacity
-                    onPress={handleRevealOutcome}
-                    style={[
-                      styles.inlineTagButton,
-                      {
-                        backgroundColor: 'transparent',
-                        borderColor: colors.border,
-                      }
-                    ]}
-                  >
-                    <Text style={[
-                      styles.inlineTagText,
-                      { color: colors.textSecondary, fontSize: 11 }
-                    ]}>
-                      Reveal anyway
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
+        {/* Fighter Images */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16, marginBottom: 12, gap: 0 }}>
+          <View style={{ alignItems: 'center' }}>
+            <View style={[
+              { width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 8, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
+              isOutcomeRevealed && fight.winner === fight.fighter1.id ? { borderWidth: 3, borderColor: '#166534' } : {}
+            ]}>
+              <Image
+                source={
+                  getFighterImageUrl(fight.fighter1.profileImage)
+                    ? { uri: getFighterImageUrl(fight.fighter1.profileImage)! }
+                    : FIGHTER_PLACEHOLDER
+                }
+                style={{ width: 114, height: 114 }}
+              />
+            </View>
+            <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', textAlign: 'center', color: colors.text }}>
+              {getFighterDisplayName(fight.fighter1)}
+            </Text>
+            <View style={{ minHeight: 20, marginTop: 2, justifyContent: 'center' }}>
+              {isOutcomeRevealed && fight.winner === fight.fighter1.id && (
+                <Text style={{ color: '#4CAF50', fontSize: 12, textAlign: 'center', fontWeight: '600' }}>
+                  by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
+                  {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
+                  {fight.time && ` ${fight.time}`}
+                </Text>
+              )}
+            </View>
+          </View>
+          <Text style={{ fontSize: 16, fontWeight: '600', color: colors.textSecondary, marginHorizontal: 24, marginBottom: 40 }}>
+            vs
+          </Text>
+          <View style={{ alignItems: 'center' }}>
+            <View style={[
+              { width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 8, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
+              isOutcomeRevealed && fight.winner === fight.fighter2.id ? { borderWidth: 3, borderColor: '#166534' } : {}
+            ]}>
+              <Image
+                source={
+                  getFighterImageUrl(fight.fighter2.profileImage)
+                    ? { uri: getFighterImageUrl(fight.fighter2.profileImage)! }
+                    : FIGHTER_PLACEHOLDER
+                }
+                style={{ width: 114, height: 114 }}
+              />
+            </View>
+            <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', textAlign: 'center', color: colors.text }}>
+              {getFighterDisplayName(fight.fighter2)}
+            </Text>
+            <View style={{ minHeight: 20, marginTop: 2, justifyContent: 'center' }}>
+              {isOutcomeRevealed && fight.winner === fight.fighter2.id && (
+                <Text style={{ color: '#4CAF50', fontSize: 12, textAlign: 'center', fontWeight: '600' }}>
+                  by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
+                  {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
+                  {fight.time && ` ${fight.time}`}
+                </Text>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Spoiler-free prompt or Reveal Button */}
+        {fight.winner && !isOutcomeRevealed && (
+          <View style={{ alignItems: 'center', marginBottom: 8 }}>
+            {spoilerFreeMode && rating === 0 ? (
+              <>
+                <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', marginBottom: 8 }}>
+                  Rate this fight to reveal the outcome
+                </Text>
                 <TouchableOpacity
                   onPress={handleRevealOutcome}
                   style={[
@@ -1468,173 +1502,65 @@ export default function CompletedFightDetailScreen({
                 >
                   <Text style={[
                     styles.inlineTagText,
-                    { color: colors.text }
+                    { color: colors.textSecondary, fontSize: 11 }
                   ]}>
-                    Reveal Winner
+                    Reveal anyway
                   </Text>
                 </TouchableOpacity>
-              )}
-            </View>
-          )}
-
-          {/* Winner Content */}
-          <View style={[styles.whatHappenedContainer, { marginTop: 8, alignItems: 'flex-start', marginBottom: 0 }]}>
-            {/* Fighter 1 */}
-            <View style={styles.whatHappenedFighter}>
-              <View style={[
-                styles.whatHappenedImageContainer,
-                { borderWidth: 3, borderColor: isOutcomeRevealed && fight.winner === fight.fighter1.id ? '#166534' : 'transparent' }
-              ]}>
-                <Image
-                  key={`fighter1-winner-${fight.fighter1.id}`}
-                  source={
-                    getFighterImageUrl(fight.fighter1.profileImage)
-                      ? { uri: getFighterImageUrl(fight.fighter1.profileImage)! }
-                      : FIGHTER_PLACEHOLDER
+              </>
+            ) : (
+              <TouchableOpacity
+                onPress={handleRevealOutcome}
+                style={[
+                  styles.inlineTagButton,
+                  {
+                    backgroundColor: 'transparent',
+                    borderColor: colors.border,
                   }
-                  style={styles.whatHappenedImage}
-                />
-              </View>
-              <Text style={[styles.whatHappenedName, { color: colors.text }]}>
-                {getFighterDisplayName(fight.fighter1)}
-              </Text>
-              <View style={{ minHeight: 24, marginTop: 4, justifyContent: 'center' }}>
-                {isOutcomeRevealed && fight.winner === fight.fighter1.id && (
-                  <Text style={{ color: '#4CAF50', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
-                    by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
-                    {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
-                    {fight.time && ` ${fight.time}`}
-                  </Text>
-                )}
-              </View>
-            </View>
-
-            {/* Fighter 2 */}
-            <View style={styles.whatHappenedFighter}>
-              <View style={[
-                styles.whatHappenedImageContainer,
-                { borderWidth: 3, borderColor: isOutcomeRevealed && fight.winner === fight.fighter2.id ? '#166534' : 'transparent' }
-              ]}>
-                <Image
-                  key={`fighter2-winner-${fight.fighter2.id}`}
-                  source={
-                    getFighterImageUrl(fight.fighter2.profileImage)
-                      ? { uri: getFighterImageUrl(fight.fighter2.profileImage)! }
-                      : FIGHTER_PLACEHOLDER
-                  }
-                  style={styles.whatHappenedImage}
-                />
-              </View>
-              <Text style={[styles.whatHappenedName, { color: colors.text }]}>
-                {getFighterDisplayName(fight.fighter2)}
-              </Text>
-              <View style={{ minHeight: 24, marginTop: 4, justifyContent: 'center' }}>
-                {isOutcomeRevealed && fight.winner === fight.fighter2.id && (
-                  <Text style={{ color: '#4CAF50', fontSize: 13, textAlign: 'center', fontWeight: '600' }}>
-                    by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
-                    {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
-                    {fight.time && ` ${fight.time}`}
-                  </Text>
-                )}
-              </View>
-            </View>
+                ]}
+              >
+                <Text style={[
+                  styles.inlineTagText,
+                  { color: colors.text }
+                ]}>
+                  Reveal Winner
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
+        )}
 
-          {/* Outcome not available message - shown below fighter images */}
-          {!fight.winner && (
-            <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center', marginTop: 0, marginBottom: 10 }]}>
-              Outcome data not yet available.
-            </Text>
-          )}
+        {/* Outcome not available message */}
+        {!fight.winner && (
+          <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center', marginTop: 0, marginBottom: 10 }]}>
+            Outcome data not yet available.
+          </Text>
+        )}
 
-          </SectionContainer>
+        {/* Event Info */}
+        <View style={{ alignItems: 'center', marginBottom: 16, paddingHorizontal: 16 }}>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text, textAlign: 'center' }}>
+            {fight.event.name}
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
+            {formatEventDate(fight.event.date, { weekday: 'long', month: 'long' })}
+          </Text>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 2 }}>
+            {[
+              fight.orderOnCard === 1 ? 'Main Event' : fight.isTitle ? 'Co-Main Event' : fight.cardType || null,
+              fight.weightClass
+                ? (fight.weightClass.includes('WOMENS_') ? "Women's " : '')
+                  + fight.weightClass.replace(/WOMENS_/g, '').split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
+                : null,
+            ].filter(Boolean).join(' · ')}
+          </Text>
+        </View>
 
         {/* Reactions Section */}
-        <SectionContainer
-          title="REACTIONS"
-          icon="star"
-        >
-          {/* Section Divider - How Good Was This Fight */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 12 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>HOW GOOD WAS THIS FIGHT?</Text>
-            </View>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          </View>
-
-          {/* Inline Rating Section */}
-          <View style={[styles.section, { backgroundColor: 'transparent', borderWidth: 0, marginTop: -8 }]}>
-            {/* Centered Star Display */}
-            <View style={{ alignItems: 'center', marginBottom: 40 }}>
-              <View style={styles.animatedFlameContainer}>
-                <View style={styles.wheelContainer} pointerEvents="none">
-                  <Animated.View style={[
-                    styles.wheelNumbers,
-                    {
-                      transform: [{
-                        translateY: wheelAnimation.interpolate({
-                          inputRange: [0, 1150],
-                          outputRange: [487, -663],
-                        })
-                      }]
-                    }
-                  ]}>
-                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => {
-                      const ratingColor = getHypeHeatmapColor(number);
-
-                      return (
-                        <View key={number} style={styles.ratingWheelBoxContainer}>
-                          <View style={styles.ratingStarContainer}>
-                            <FontAwesome
-                              name="star"
-                              size={90}
-                              color={ratingColor}
-                            />
-                            <Text style={styles.ratingStarText}>{number}</Text>
-                          </View>
-                        </View>
-                      );
-                    })}
-                    {/* Grey placeholder star - shown when no rating selected */}
-                    <View style={styles.ratingWheelBoxContainer}>
-                      <View style={styles.ratingStarContainer}>
-                        <FontAwesome
-                          name="star-o"
-                          size={90}
-                          color="#666666"
-                        />
-                      </View>
-                    </View>
-                  </Animated.View>
-                </View>
-              </View>
-            </View>
-
-            {/* Row of selectable stars (1-10) */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: -5, width: '100%' }}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => {
-                const isSelected = level <= rating;
-                const starColor = isSelected ? getHypeHeatmapColor(level) : '#808080';
-
-                return (
-                  <TouchableOpacity
-                    key={level}
-                    onPress={() => handleSetRating(level)}
-                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                    style={{ paddingHorizontal: 2.5 }}
-                  >
-                    <FontAwesome
-                      name={isSelected ? "star" : "star-o"}
-                      size={31}
-                      color={starColor}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-
+        <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 8 }}>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 8 }}>
+            Reactions
+          </Text>
           {/* Section Divider - Fight Ratings */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 24, marginBottom: 12 }}>
             <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
@@ -1646,7 +1572,7 @@ export default function CompletedFightDetailScreen({
 
           {/* Community Rating Layout: Horizontal */}
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
-            {/* Community Rating Box (like CompletedFightCard) */}
+            {/* Community Rating Box */}
             {(() => {
               const avgRating = aggregateStats?.averageRating ?? fight.averageRating ?? 0;
               const ratingColor = avgRating > 0
@@ -1654,11 +1580,11 @@ export default function CompletedFightDetailScreen({
                 : colors.border;
 
               return (
-                <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{ position: 'relative', width: 70, height: 80, justifyContent: 'center', alignItems: 'center' }}>
                   <View style={{
-                    width: 80,
-                    height: 90,
-                    borderRadius: 12,
+                    width: 60,
+                    height: 68,
+                    borderRadius: 10,
                     backgroundColor: avgRating > 0 ? ratingColor : 'transparent',
                     borderWidth: avgRating > 0 ? 0 : 1,
                     borderColor: colors.textSecondary,
@@ -1667,13 +1593,13 @@ export default function CompletedFightDetailScreen({
                   }}>
                     <FontAwesome
                       name="star"
-                      size={28}
+                      size={20}
                       color={avgRating > 0 ? 'rgba(0,0,0,0.45)' : colors.textSecondary}
                       style={avgRating > 0 ? {} : { opacity: 0.5 }}
                     />
                     {avgRating > 0 && (
                       <Text style={{
-                        fontSize: 28,
+                        fontSize: 22,
                         fontWeight: 'bold',
                         color: '#FFFFFF',
                         textShadowColor: 'rgba(0,0,0,0.7)',
@@ -1701,65 +1627,7 @@ export default function CompletedFightDetailScreen({
             )}
           </View>
 
-          {/* Section Divider - Tags */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 30 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            <View style={{ paddingHorizontal: 12 }}>
-              <FontAwesome name="hashtag" size={20} color={colors.textSecondary} />
-            </View>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          </View>
-
-          {/* Tags Content */}
-          {/* Tags stay in their current order - only reorder when rating tier changes */}
-          {displayTags.length > 0 && (() => {
-              return (
-                <View style={styles.inlineTagsSection}>
-                  <View style={styles.inlineTagsContainer}>
-                    {displayTags.map((tag) => {
-                      const isSelected = selectedTags.includes(tag.id);
-                      return (
-                        <View key={tag.id} style={styles.tagWithBadge}>
-                            <TouchableOpacity
-                              onPress={() => handleToggleTag(tag.id)}
-                              style={[
-                                styles.inlineTagButton,
-                                {
-                                  backgroundColor: isSelected ? colors.primary : 'transparent',
-                                  borderColor: colors.border,
-                                }
-                              ]}
-                            >
-                              <Text style={[
-                                styles.inlineTagText,
-                                {
-                                  color: isSelected ? colors.textOnAccent : colors.textSecondary
-                                }
-                              ]}>
-                                {tag.name}
-                              </Text>
-                            </TouchableOpacity>
-                            {tag.count > 0 && (
-                              <View style={[
-                                styles.tagCountBadge,
-                                {
-                                  backgroundColor: isSelected ? colors.primary : colors.card,
-                                  borderColor: isSelected ? colors.primary : colors.border
-                                }
-                              ]}>
-                                <Text style={[styles.tagCountBadgeText, { color: isSelected ? colors.textOnAccent : colors.textSecondary }]}>
-                                  {tag.count}
-                                </Text>
-                              </View>
-                            )}
-                        </View>
-                      );
-                    })}
-                  </View>
-                </View>
-              );
-            })()}
-        </SectionContainer>
+        </View>
 
         {/* PREDICTIONS Section - TEMPORARILY REMOVED */}
         {false && <SectionContainer
@@ -1783,7 +1651,7 @@ export default function CompletedFightDetailScreen({
 
           {/* Community Rating Layout: Horizontal */}
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
-            {/* Community Rating Box (like CompletedFightCard) */}
+            {/* Community Rating Box */}
             {(() => {
               const avgRating = aggregateStats?.averageRating ?? fight.averageRating ?? 0;
               const ratingColor = avgRating > 0
@@ -1791,11 +1659,11 @@ export default function CompletedFightDetailScreen({
                 : colors.border;
 
               return (
-                <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{ position: 'relative', width: 70, height: 80, justifyContent: 'center', alignItems: 'center' }}>
                   <View style={{
-                    width: 80,
-                    height: 90,
-                    borderRadius: 12,
+                    width: 60,
+                    height: 68,
+                    borderRadius: 10,
                     backgroundColor: avgRating > 0 ? ratingColor : 'transparent',
                     borderWidth: avgRating > 0 ? 0 : 1,
                     borderColor: colors.textSecondary,
@@ -1804,13 +1672,13 @@ export default function CompletedFightDetailScreen({
                   }}>
                     <FontAwesome
                       name="star"
-                      size={28}
+                      size={20}
                       color={avgRating > 0 ? 'rgba(0,0,0,0.45)' : colors.textSecondary}
                       style={avgRating > 0 ? {} : { opacity: 0.5 }}
                     />
                     {avgRating > 0 && (
                       <Text style={{
-                        fontSize: 28,
+                        fontSize: 22,
                         fontWeight: 'bold',
                         color: '#FFFFFF',
                         textShadowColor: 'rgba(0,0,0,0.7)',
@@ -1878,15 +1746,10 @@ export default function CompletedFightDetailScreen({
         </SectionContainer>}
 
         {/* HYPE Section */}
-        <SectionContainer
-          title="HYPE"
-          icon="fire-flame-curved"
-          iconFamily="fontawesome6"
-          iconColor="#fff"
-          headerBgColor="#F97316"
-          containerBgColorDark="rgba(249, 115, 22, 0.08)"
-          containerBgColorLight="rgba(249, 115, 22, 0.06)"
-        >
+        <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 8 }}>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 8 }}>
+            Hype
+          </Text>
           {/* Check if this is a legacy fight with no hype data */}
           {(fight.userHypePrediction === null || fight.userHypePrediction === undefined) &&
            (!predictionStats?.totalPredictions || predictionStats.totalPredictions === 0) ? (
@@ -1952,22 +1815,22 @@ export default function CompletedFightDetailScreen({
               {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
                 <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
                   {/* Community Hype Box */}
-                  <View style={{ position: 'relative', width: 90, height: 105, justifyContent: 'center', alignItems: 'center' }}>
+                  <View style={{ position: 'relative', width: 70, height: 80, justifyContent: 'center', alignItems: 'center' }}>
                     <View style={{
-                      width: 80,
-                      height: 90,
-                      borderRadius: 12,
+                      width: 60,
+                      height: 68,
+                      borderRadius: 10,
                       backgroundColor: getHypeHeatmapColor(predictionStats.averageHype),
                       justifyContent: 'center',
                       alignItems: 'center',
                     }}>
                       <FontAwesome6
                         name="fire-flame-curved"
-                        size={28}
+                        size={20}
                         color="rgba(0,0,0,0.45)"
                       />
                       <Text style={{
-                        fontSize: 28,
+                        fontSize: 22,
                         fontWeight: 'bold',
                         color: '#FFFFFF',
                         textShadowColor: 'rgba(0,0,0,0.7)',
@@ -1998,22 +1861,13 @@ export default function CompletedFightDetailScreen({
               )}
             </>
           )}
-        </SectionContainer>
+        </View>
 
         {/* COMMENTS Section */}
-        <SectionContainer
-          title="COMMENTS"
-          icon="comment"
-          iconColor="#fff"
-          headerBgColor="#4a4a4a"
-          containerBgColorDark="rgba(74, 74, 74, 0.15)"
-          containerBgColorLight="rgba(74, 74, 74, 0.08)"
-          headerRight={
-            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 6 }}>
-              ({(fight.userReview ? 1 : 0) + (reviewsData?.pages?.flatMap(p => p.reviews)?.filter((r: any) => r.userId !== user?.id)?.reduce((acc: number, r: any) => acc + 1 + (r.replies?.length || 0), 0) || 0)})
-            </Text>
-          }
-        >
+        <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 8 }}>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 8 }}>
+            Comments ({(fight.userReview ? 1 : 0) + (reviewsData?.pages?.flatMap(p => p.reviews)?.filter((r: any) => r.userId !== user?.id)?.reduce((acc: number, r: any) => acc + 1 + (r.replies?.length || 0), 0) || 0)})
+          </Text>
           {/* Comments Tab Toggle */}
           <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity
@@ -2703,7 +2557,7 @@ export default function CompletedFightDetailScreen({
             )}
           </View>
         )}
-        </SectionContainer>
+        </View>
 
         {/* Split Score Row - HIDDEN */}
         {false && <View style={styles.splitScoreRow}>
