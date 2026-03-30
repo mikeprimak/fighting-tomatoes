@@ -203,6 +203,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   prelimStartTime: { type: ['string', 'null'] },
                   mainStartTime: { type: ['string', 'null'] },
                   hasLiveTracking: { type: 'boolean' },
+                  notificationsAllowed: { type: 'boolean' },
                   fights: { type: 'array' },
                 },
               },
