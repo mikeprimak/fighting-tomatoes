@@ -550,38 +550,42 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
         let time = '';
         let winner = '';
 
-        // Use .winby td for method (more reliable than positional selector)
-        const winbyEl = row.querySelector('td.winby');
-        if (winbyEl) {
-          method = (winbyEl.textContent || '').trim();
-        } else {
-          const methodEl = row.querySelector('.method, .win_type, .result_method');
-          if (methodEl) {
-            method = (methodEl.textContent || '').trim();
-          }
-        }
-
-        const roundEl = row.querySelector('.round, td:nth-child(6), .result_round');
-        if (roundEl) {
-          const roundText = (roundEl.textContent || '').trim();
-          const roundMatch = roundText.match(/(\d+)/);
-          if (roundMatch) {
-            round = roundMatch[1];
-          }
-        }
-
-        const timeEl = row.querySelector('.time, td:nth-child(7), .result_time');
-        if (timeEl) {
-          time = (timeEl.textContent || '').trim();
-        }
-
-        // Check for winner indication
+        // Check for winner indication FIRST — only extract method/round/time if a winner exists
         const leftResult = row.querySelector('td.text_right .final_result, .fighter_list.left .final_result');
         const rightResult = row.querySelector('td.text_left .final_result, .fighter_list.right .final_result');
         if (leftResult && leftResult.textContent.trim().toLowerCase() === 'win') {
           winner = fighterA.name;
         } else if (rightResult && rightResult.textContent.trim().toLowerCase() === 'win') {
           winner = fighterB.name;
+        }
+
+        // Only extract method/round/time for completed fights (winner found)
+        // Sherdog upcoming fight rows don't have method columns, and the selectors
+        // can incorrectly match fighter B's name+record column
+        if (winner) {
+          const winbyEl = row.querySelector('td.winby');
+          if (winbyEl) {
+            method = (winbyEl.textContent || '').trim();
+          } else {
+            const methodEl = row.querySelector('.method, .win_type, .result_method');
+            if (methodEl) {
+              method = (methodEl.textContent || '').trim();
+            }
+          }
+
+          const roundEl = row.querySelector('.round, td:nth-child(6), .result_round');
+          if (roundEl) {
+            const roundText = (roundEl.textContent || '').trim();
+            const roundMatch = roundText.match(/(\d+)/);
+            if (roundMatch) {
+              round = roundMatch[1];
+            }
+          }
+
+          const timeEl = row.querySelector('.time, td:nth-child(7), .result_time');
+          if (timeEl) {
+            time = (timeEl.textContent || '').trim();
+          }
         }
 
         allFights.push({

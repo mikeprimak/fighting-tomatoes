@@ -1810,25 +1810,27 @@ export default function CompletedFightDetailScreen({
                 Cancel
               </Button>
             )}
-            <Button
-              onPress={() => setCommentsTab(commentsTab === 'preflight' ? 'postfight' : 'preflight')}
-              variant="outline"
-              size="small"
-              style={{
-                borderWidth: 1,
-                borderColor: commentsTab === 'preflight' ? '#F5C518' : colors.border,
-                backgroundColor: commentsTab === 'preflight' ? '#F5C518' : colors.card,
-                marginLeft: 'auto',
-                paddingVertical: 2,
-                paddingHorizontal: 8,
-              }}
-              textStyle={{
-                color: commentsTab === 'preflight' ? '#000' : colors.text,
-                fontSize: 12,
-              }}
-            >
-              {commentsTab === 'preflight' ? 'Hide Pre-Fight Comments' : 'Pre-Fight Comments'}
-            </Button>
+            {(preFightCommentsData?.comments?.length || 0) > 0 && (
+              <Button
+                onPress={() => setCommentsTab(commentsTab === 'preflight' ? 'postfight' : 'preflight')}
+                variant="outline"
+                size="small"
+                style={{
+                  borderWidth: 1,
+                  borderColor: commentsTab === 'preflight' ? '#F5C518' : colors.border,
+                  backgroundColor: commentsTab === 'preflight' ? '#F5C518' : colors.card,
+                  marginLeft: 'auto',
+                  paddingVertical: 2,
+                  paddingHorizontal: 8,
+                }}
+                textStyle={{
+                  color: commentsTab === 'preflight' ? '#000' : colors.text,
+                  fontSize: 12,
+                }}
+              >
+                {commentsTab === 'preflight' ? 'Hide Pre-Fight Comments' : `${preFightCommentsData.comments.length} Pre-Fight Comment${preFightCommentsData.comments.length === 1 ? '' : 's'}`}
+              </Button>
+            )}
           </View>
 
         {/* Post-Fight Comments Section */}

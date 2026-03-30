@@ -76,6 +76,13 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
 
   // Comment state
   const [preFightComment, setPreFightComment] = useState<string>('');
+  const preFightCommentRef = useRef<string>('');
+
+  // Keep ref in sync with state
+  const handleCommentChange = useCallback((text: string) => {
+    setPreFightComment(text);
+    preFightCommentRef.current = text;
+  }, []);
 
   // Fetch existing comment
   const { data: preFightCommentsData } = useQuery({
@@ -123,27 +130,34 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     }
   }, [fight?.id, visible]);
 
-  // Populate comment from existing user comment
-  useEffect(() => {
-    if (preFightCommentsData?.userComment?.content) {
-      setPreFightComment(preFightCommentsData.userComment.content);
-    }
-  }, [preFightCommentsData?.userComment?.content]);
-
-  // Reset comment when modal opens with new fight
+  // Populate comment from existing user comment, or reset when modal opens
+  const prevFightIdRef = useRef<string | null>(null);
+  const initialCommentRef = useRef<string>('');
   useEffect(() => {
     if (fight && visible) {
-      setPreFightComment('');
+      // Reset when opening for a new fight
+      if (prevFightIdRef.current !== fight.id) {
+        prevFightIdRef.current = fight.id;
+        setPreFightComment('');
+        preFightCommentRef.current = '';
+        initialCommentRef.current = '';
+      }
+      // Populate with existing user comment once loaded
+      if (preFightCommentsData?.userComment?.content) {
+        setPreFightComment(preFightCommentsData.userComment.content);
+        preFightCommentRef.current = preFightCommentsData.userComment.content;
+        initialCommentRef.current = preFightCommentsData.userComment.content;
+      }
     }
-  }, [fight?.id, visible]);
+  }, [fight?.id, visible, preFightCommentsData?.userComment?.content]);
 
   // Save pre-fight comment
   const saveCommentMutation = useMutation({
-    mutationFn: (content: string) => {
-      return apiService.createPreFightComment(fight!.id, content);
+    mutationFn: ({ fightId, content }: { fightId: string; content: string }) => {
+      return apiService.createPreFightComment(fightId, content);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['preFightComments', fight?.id] });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['preFightComments', variables.fightId] });
     },
   });
 
@@ -230,16 +244,16 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
   });
 
   const handleDone = useCallback(() => {
-    // Save comment if it changed
+    // Save comment if it changed (use refs to avoid stale closure)
     if (isAuthenticated && fight) {
-      const trimmed = preFightComment.trim();
-      const existing = preFightCommentsData?.userComment?.content || '';
-      if (trimmed !== existing) {
-        saveCommentMutation.mutate(trimmed);
+      const fightId = fight.id;
+      const trimmed = preFightCommentRef.current.trim();
+      if (trimmed !== initialCommentRef.current) {
+        saveCommentMutation.mutate({ fightId, content: trimmed });
       }
     }
     onClose();
-  }, [isAuthenticated, fight, preFightComment, preFightCommentsData, saveCommentMutation, onClose]);
+  }, [isAuthenticated, fight, saveCommentMutation, onClose]);
 
   const handleHypeSelection = useCallback((level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -431,12 +445,12 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
                   numberOfLines={3}
                   maxLength={500}
                   value={preFightComment}
-                  onChangeText={setPreFightComment}
+                  onChangeText={handleCommentChange}
                 />
               </View>
               <TouchableOpacity
                 style={styles.seeCommentsLink}
-                onPress={() => { onClose(); router.push(`/fight/${fight.id}` as any); }}
+                onPress={() => { const fightId = fight.id; handleDone(); router.push(`/fight/${fightId}` as any); }}
               >
                 <Text style={[styles.seeCommentsText, { color: colors.textSecondary }]}>
                   {(() => {

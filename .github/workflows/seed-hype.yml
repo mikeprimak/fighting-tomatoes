@@ -1,9 +1,9 @@
 name: Seed Hype Predictions
 
 on:
-  schedule:
-    # Run daily at 2pm UTC (9am EST) — before peak usage
-    - cron: '0 14 * * *'
+  # DISABLED — hype seeding system ceased 2026-03-30
+  # schedule:
+  #   - cron: '0 14 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
