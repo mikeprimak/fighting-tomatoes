@@ -330,7 +330,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           transformed.event = {
             ...transformed.event,
             hasLiveTracking,
-            notificationsAllowed: hasLiveTracking && notifyPromotions.includes(transformed.event.promotion),
+            notificationsAllowed: hasLiveTracking && notifyPromotions.map((p: string) => p.toUpperCase()).includes((transformed.event.promotion || '').toUpperCase()),
           };
         }
 
@@ -562,7 +562,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         transformedFight.event = {
           ...transformedFight.event,
           hasLiveTracking,
-          notificationsAllowed: hasLiveTracking && notifyPromos.includes(transformedFight.event.promotion),
+          notificationsAllowed: hasLiveTracking && notifyPromos.map((p: string) => p.toUpperCase()).includes((transformedFight.event.promotion || '').toUpperCase()),
         };
       }
 
@@ -3766,7 +3766,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           transformed.event = {
             ...transformed.event,
             hasLiveTracking,
-            notificationsAllowed: hasLiveTracking && notifyPromos.includes(transformed.event.promotion),
+            notificationsAllowed: hasLiveTracking && notifyPromos.map((p: string) => p.toUpperCase()).includes((transformed.event.promotion || '').toUpperCase()),
           };
         }
 

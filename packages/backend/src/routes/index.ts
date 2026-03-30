@@ -527,12 +527,13 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
       // Load notify-allowed promotions and add notificationsAllowed to events
       const notifyPromotions = await getNotifyPromotions(fastify.prisma);
+      const notifyPromotionsUpper = notifyPromotions.map(p => p.toUpperCase());
       const finalEvents = transformedEvents.map((event: any) => {
         const hasLiveTracking = event.hasLiveTracking ?? isProductionScraper(event.scraperType);
         return {
           ...event,
           hasLiveTracking,
-          notificationsAllowed: hasLiveTracking && notifyPromotions.includes(event.promotion),
+          notificationsAllowed: hasLiveTracking && notifyPromotionsUpper.includes((event.promotion || '').toUpperCase()),
         };
       });
 
