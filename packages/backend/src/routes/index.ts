@@ -19,7 +19,7 @@ import { authenticateUser, requireEmailVerification } from '../middleware/auth';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
-import { isProductionScraper } from '../config/liveTrackerConfig';
+import { isProductionScraper, getNotifyPromotions } from '../config/liveTrackerConfig';
 
 // Organization filter groups - maps filter buttons to actual promotions
 // BOXING is an aggregate that includes multiple boxing promoters
@@ -81,6 +81,19 @@ export async function registerRoutes(fastify: FastifyInstance) {
         database: 'disconnected',
         error: 'Database connection failed',
       });
+    }
+  });
+
+  // Public endpoint: which promotions allow per-fight notifications
+  fastify.get('/api/config/notify-promotions', async (_request, reply) => {
+    try {
+      const config = await fastify.prisma.systemConfig.findUnique({
+        where: { key: 'notify_promotions' },
+      });
+      return reply.send({ promotions: (config?.value as string[]) || [] });
+    } catch (error: any) {
+      console.error('Failed to get notify promotions config:', error);
+      return reply.send({ promotions: [] });
     }
   });
 
@@ -511,11 +524,16 @@ export async function registerRoutes(fastify: FastifyInstance) {
         }
       }
 
-      // Ensure hasLiveTracking is set on all events (even without fights)
-      const finalEvents = transformedEvents.map((event: any) => ({
-        ...event,
-        hasLiveTracking: event.hasLiveTracking ?? isProductionScraper(event.scraperType),
-      }));
+      // Load notify-allowed promotions and add notificationsAllowed to events
+      const notifyPromotions = await getNotifyPromotions(fastify.prisma);
+      const finalEvents = transformedEvents.map((event: any) => {
+        const hasLiveTracking = event.hasLiveTracking ?? isProductionScraper(event.scraperType);
+        return {
+          ...event,
+          hasLiveTracking,
+          notificationsAllowed: hasLiveTracking && notifyPromotions.includes(event.promotion),
+        };
+      });
 
       const totalPages = Math.ceil(total / limit);
 

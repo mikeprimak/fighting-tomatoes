@@ -44,6 +44,34 @@ export function shouldAutoPublish(scraperType: string | null | undefined): boole
 }
 
 /**
+ * Cache for notify-allowed promotions (loaded from DB).
+ * Refreshed every 60 seconds to avoid hitting DB on every request.
+ */
+let _notifyPromotionsCache: string[] | null = null;
+let _notifyPromotionsCacheTime = 0;
+const CACHE_TTL_MS = 60_000;
+
+export async function getNotifyPromotions(prisma: any): Promise<string[]> {
+  const now = Date.now();
+  if (_notifyPromotionsCache && (now - _notifyPromotionsCacheTime) < CACHE_TTL_MS) {
+    return _notifyPromotionsCache;
+  }
+  try {
+    const config = await prisma.systemConfig.findUnique({ where: { key: 'notify_promotions' } });
+    _notifyPromotionsCache = (config?.value as string[]) || [];
+    _notifyPromotionsCacheTime = now;
+    return _notifyPromotionsCache;
+  } catch {
+    return _notifyPromotionsCache || [];
+  }
+}
+
+export function invalidateNotifyPromotionsCache() {
+  _notifyPromotionsCache = null;
+  _notifyPromotionsCacheTime = 0;
+}
+
+/**
  * Build the Prisma update data for a fight, writing to shadow fields always
  * and optionally to published fields if the scraper auto-publishes.
  *

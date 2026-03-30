@@ -7,6 +7,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requireAdmin } from '../middleware/auth';
+import { invalidateNotifyPromotionsCache } from '../config/liveTrackerConfig';
 import {
   triggerDailyUFCScraper,
   triggerEventLifecycleCheck,
@@ -1649,6 +1650,46 @@ export async function adminRoutes(fastify: FastifyInstance) {
       }
       console.error('[Admin] Failed to delete feedback:', error);
       return reply.code(500).send({ error: 'Failed to delete feedback', message: error.message });
+    }
+  });
+
+  // ── Notification Settings (notify-allowed promotions) ──
+
+  // GET /admin/config/notify-promotions
+  fastify.get('/admin/config/notify-promotions', {
+    preHandler: [fastify.authenticate, requireAdmin],
+  }, async (_request, reply) => {
+    try {
+      const config = await prisma.systemConfig.findUnique({
+        where: { key: 'notify_promotions' },
+      });
+      return reply.send({ promotions: (config?.value as string[]) || [] });
+    } catch (error: any) {
+      console.error('[Admin] Failed to get notify promotions:', error);
+      return reply.code(500).send({ error: 'Failed to get config' });
+    }
+  });
+
+  // PUT /admin/config/notify-promotions
+  fastify.put('/admin/config/notify-promotions', {
+    preHandler: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    try {
+      const { promotions } = request.body as { promotions: string[] };
+      if (!Array.isArray(promotions) || !promotions.every(p => typeof p === 'string')) {
+        return reply.code(400).send({ error: 'promotions must be an array of strings' });
+      }
+      const config = await prisma.systemConfig.upsert({
+        where: { key: 'notify_promotions' },
+        create: { key: 'notify_promotions', value: promotions },
+        update: { value: promotions },
+      });
+      invalidateNotifyPromotionsCache();
+      console.log(`[Admin] Updated notify promotions: ${JSON.stringify(promotions)}`);
+      return reply.send({ promotions: config.value as string[] });
+    } catch (error: any) {
+      console.error('[Admin] Failed to update notify promotions:', error);
+      return reply.code(500).send({ error: 'Failed to update config' });
     }
   });
 }

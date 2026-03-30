@@ -42,6 +42,7 @@ interface Event {
   prelimStartTime?: string | null;
   mainStartTime?: string | null;
   hasLiveTracking?: boolean;
+  notificationsAllowed?: boolean;
   fights?: Fight[];
 }
 
@@ -191,17 +192,11 @@ export default function UpcomingEventsScreen() {
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  // Only UFC has reliable real-time fight-start detection for "Notify Me" notifications
-  const NOTIFY_PROMOTIONS = ['UFC'];
-
   const handleFightPress = useCallback((fight: Fight, event?: Event) => {
     // Upcoming fights open in a modal; live/completed navigate to detail screen
     if (!fight.fightStatus || fight.fightStatus === 'UPCOMING') {
       setModalFight(fight);
-      setModalShowBell(
-        event?.hasLiveTracking === true &&
-        NOTIFY_PROMOTIONS.includes(event?.promotion || '')
-      );
+      setModalShowBell(event?.notificationsAllowed === true);
     } else {
       router.push(`/fight/${fight.id}`);
     }
@@ -403,9 +398,13 @@ const EventSection = memo(function EventSection({
     : hasEarlyPrelims ? fights.filter((f: Fight) => f.orderOnCard > 9) : [];
 
   // Find next fight and last completed fight
-  const nextFight = fights
-    .filter((f: Fight) => f.fightStatus === 'UPCOMING')
-    .sort((a, b) => b.orderOnCard - a.orderOnCard)[0];
+  // Only show "Up Next" for events that are actually live (have started)
+  const eventHasStarted = isLive || fights.some((f: Fight) => f.fightStatus === 'COMPLETED' || f.fightStatus === 'LIVE');
+  const nextFight = eventHasStarted
+    ? fights
+        .filter((f: Fight) => f.fightStatus === 'UPCOMING')
+        .sort((a, b) => b.orderOnCard - a.orderOnCard)[0]
+    : undefined;
 
   const lastCompletedFight = fights
     .filter((f: Fight) => f.fightStatus === 'COMPLETED')

@@ -1295,3 +1295,11 @@ model ScraperLog {
   @@index([status, createdAt])
   @@map("scraper_logs")
 }
+
+model SystemConfig {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
+}
