@@ -212,9 +212,13 @@ export default function EventDetailScreen() {
 
   // Determine the next fight to start (highest orderOnCard that hasn't started)
   // Fights execute in reverse order: early prelims (high numbers) → prelims → main card (low numbers)
-  const nextFight = fights
-    .filter((f: Fight) => f.fightStatus === 'UPCOMING')
-    .sort((a, b) => b.orderOnCard - a.orderOnCard)[0]; // Highest orderOnCard first
+  // Only show "Up Next" for events that have actually started
+  const eventHasStarted = eventIsLive || fights.some((f: Fight) => f.fightStatus === 'COMPLETED' || f.fightStatus === 'LIVE');
+  const nextFight = eventHasStarted
+    ? fights
+        .filter((f: Fight) => f.fightStatus === 'UPCOMING')
+        .sort((a, b) => b.orderOnCard - a.orderOnCard)[0]
+    : undefined;
 
   // Find the most recently completed fight (for timing "Up next..." messages)
   const lastCompletedFight = fights
