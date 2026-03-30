@@ -3051,19 +3051,20 @@
     }
 
     // All promotions that could potentially allow notifications
+    // Values must match the exact promotion strings in the DB
     const ALL_PROMOTIONS_FOR_NOTIFY = [
       { value: 'UFC', label: 'UFC', scraper: 'ufc' },
       { value: 'BKFC', label: 'BKFC', scraper: 'bkfc' },
       { value: 'ONE', label: 'ONE Championship', scraper: 'onefc' },
       { value: 'PFL', label: 'PFL', scraper: 'tapology' },
-      { value: 'Oktagon', label: 'Oktagon MMA', scraper: 'oktagon' },
+      { value: 'OKTAGON', label: 'Oktagon MMA', scraper: 'oktagon' },
       { value: 'Rizin', label: 'RIZIN', scraper: 'tapology' },
       { value: 'Karate Combat', label: 'Karate Combat', scraper: 'tapology' },
       { value: 'Dirty Boxing', label: 'Dirty Boxing', scraper: 'tapology' },
       { value: 'Zuffa Boxing', label: 'Zuffa Boxing', scraper: 'tapology' },
-      { value: 'Matchroom', label: 'Matchroom Boxing', scraper: 'matchroom' },
+      { value: 'Matchroom Boxing', label: 'Matchroom Boxing', scraper: 'matchroom' },
       { value: 'Golden Boy', label: 'Golden Boy', scraper: 'tapology' },
-      { value: 'Top Rank', label: 'Top Rank', scraper: 'tapology' },
+      { value: 'RAF', label: 'RAF Wrestling', scraper: 'raf' },
     ];
 
     let currentNotifyPromotions = [];
@@ -3083,7 +3084,7 @@
     function renderNotifyGrid() {
       const grid = document.getElementById('notifyPromotionsGrid');
       grid.innerHTML = ALL_PROMOTIONS_FOR_NOTIFY.map(promo => {
-        const enabled = currentNotifyPromotions.includes(promo.value);
+        const enabled = currentNotifyPromotions.some(p => p.toUpperCase() === promo.value.toUpperCase());
         return `
           <div class="notify-card">
             <div>
