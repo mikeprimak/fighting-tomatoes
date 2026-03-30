@@ -11,6 +11,7 @@ import { getFighterImage, getFighterName, getFighterDisplayName, cleanFighterNam
 import { sharedStyles } from './shared/styles';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import Svg, { Circle } from 'react-native-svg';
+import CompletedFightModal from '../CompletedFightModal';
 
 // Hoisted outside component to avoid recreation on every render
 const DEFAULT_FIGHTER_IMAGE = require('../../assets/fighters/fighter-default-alpha.png');
@@ -107,6 +108,9 @@ function CompletedFightCard({
   const colors = Colors[colorScheme ?? 'light'];
   const { pendingRatingAnimationFightId, setPendingRatingAnimation } = usePredictionAnimation();
   const { spoilerFreeMode } = useSpoilerFree();
+
+  // Modal state
+  const [modalVisible, setModalVisible] = useState(false);
 
   // In spoiler-free mode, hide outcomes unless the user has rated the fight
   const hideSpoilers = spoilerFreeMode && !fight.userRating;
@@ -232,7 +236,7 @@ function CompletedFightCard({
   // Memoized callbacks to prevent new function references on every render
   const handleFighter1ImageError = useCallback(() => setFighter1ImageError(true), []);
   const handleFighter2ImageError = useCallback(() => setFighter2ImageError(true), []);
-  const handleCardPress = useCallback(() => onPress(fight), [onPress, fight]);
+  const handleCardPress = useCallback(() => setModalVisible(true), []);
 
   // Helper function to find top methods with their percentages
   const getTopMethods = (methods: { DECISION: number; KO_TKO: number; SUBMISSION: number }) => {
@@ -506,6 +510,12 @@ function CompletedFightCard({
 
 
       </View>
+
+      <CompletedFightModal
+        visible={modalVisible}
+        fight={fight}
+        onClose={() => setModalVisible(false)}
+      />
     </TouchableOpacity>
   );
 }

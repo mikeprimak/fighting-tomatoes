@@ -3,6 +3,7 @@ import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { eventTimeToUTC } from '../utils/timezone';
 import { uploadEventImage } from './imageStorage';
 
 const prisma = new PrismaClient();
@@ -116,29 +117,11 @@ function parseFighterName(name: string): { firstName: string; lastName: string }
 }
 
 /**
- * Convert RAF date to a Date object. Assumes EST if timezone says "est".
+ * Parse event date string to a Date object (date only, no time).
  */
-function parseRAFDate(dateStr: string | null, startTime?: string | null, timezone?: string): Date {
+function parseRAFEventDate(dateStr: string | null): Date {
   if (!dateStr) return new Date('2099-01-01');
-
-  const date = new Date(dateStr);
-
-  // If we have a start time, combine with date
-  if (startTime) {
-    const [hours, minutes] = startTime.split(':').map(Number);
-    date.setHours(hours, minutes, 0, 0);
-
-    // Convert from EST to UTC (add 4 or 5 hours depending on DST)
-    const tz = (timezone || 'est').toLowerCase();
-    if (tz.includes('est') || tz.includes('et') || tz.includes('eastern')) {
-      // Rough DST check: March-November = EDT (-4), else EST (-5)
-      const month = date.getMonth();
-      const offset = (month >= 2 && month <= 10) ? 4 : 5;
-      date.setHours(date.getHours() + offset);
-    }
-  }
-
-  return date;
+  return new Date(dateStr);
 }
 
 // ============== IMPORT FUNCTIONS ==============
@@ -196,10 +179,9 @@ async function importRAFEvents(
   console.log(`\n📦 Importing ${eventsData.events.length} RAF events...`);
 
   for (const eventData of eventsData.events) {
-    const eventDate = parseRAFDate(eventData.eventDate);
-    const mainStartTime = eventData.startTime
-      ? parseRAFDate(eventData.eventDate, eventData.startTime, eventData.timezone)
-      : null;
+    const eventDate = parseRAFEventDate(eventData.eventDate);
+    // Use eventTimeToUTC (same utility as other scrapers) — startTime is "8:00 PM" format
+    const mainStartTime = eventTimeToUTC(eventDate, eventData.startTime, 'America/New_York');
 
     const location = eventData.location || eventData.venue || 'TBA';
     const venue = eventData.venue || '';

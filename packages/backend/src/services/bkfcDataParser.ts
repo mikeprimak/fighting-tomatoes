@@ -229,7 +229,7 @@ async function importBKFCFighters(
     // Upload image to R2 storage
     let profileImageUrl: string | null = null;
     const imageUrl = athlete.headshotUrl || athlete.imageUrl;
-    if (imageUrl && !imageUrl.includes('generic_') && !imageUrl.includes('placeholder') && !imageUrl.includes('avatar-template')) {
+    if (imageUrl && !imageUrl.includes('generic_') && !imageUrl.includes('placeholder') && !imageUrl.includes('avatar-template') && !imageUrl.includes('TBA_FIGHTER')) {
       try {
         profileImageUrl = await uploadFighterImage(imageUrl, `${firstName} ${lastName}`);
       } catch (error) {

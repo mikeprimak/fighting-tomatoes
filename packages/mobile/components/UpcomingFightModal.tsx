@@ -6,13 +6,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  TextInput,
   useColorScheme,
   Animated,
   Easing,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
@@ -73,6 +74,16 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
   const notifyScaleAnim = useRef(new Animated.Value(1)).current;
   const notifyMsgOpacity = useRef(new Animated.Value(0)).current;
 
+  // Comment state
+  const [preFightComment, setPreFightComment] = useState<string>('');
+
+  // Fetch existing comment
+  const { data: preFightCommentsData } = useQuery({
+    queryKey: ['preFightComments', fight?.id],
+    queryFn: () => apiService.getFightPreFightComments(fight!.id),
+    enabled: !!fight?.id && isAuthenticated && visible,
+  });
+
   // Wheel animation
   const wheelAnimation = useRef(new Animated.Value(BLANK_POSITION)).current;
   const animationTargetRef = useRef<number | null>(null);
@@ -111,6 +122,30 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
       wheelAnimation.setValue(pos);
     }
   }, [fight?.id, visible]);
+
+  // Populate comment from existing user comment
+  useEffect(() => {
+    if (preFightCommentsData?.userComment?.content) {
+      setPreFightComment(preFightCommentsData.userComment.content);
+    }
+  }, [preFightCommentsData?.userComment?.content]);
+
+  // Reset comment when modal opens with new fight
+  useEffect(() => {
+    if (fight && visible) {
+      setPreFightComment('');
+    }
+  }, [fight?.id, visible]);
+
+  // Save pre-fight comment
+  const saveCommentMutation = useMutation({
+    mutationFn: (content: string) => {
+      return apiService.createPreFightComment(fight!.id, content);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['preFightComments', fight?.id] });
+    },
+  });
 
   // Helper to optimistically update events cache
   const updateEventsCache = useCallback((updates: Record<string, any>) => {
@@ -160,9 +195,12 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
     },
     onSuccess: (data) => {
-      // Update cache with server-calculated aggregate hype
+      // Update cache with server-calculated aggregate hype and count
       if (data?.averageHype !== undefined) {
-        updateEventsCache({ averageHype: data.averageHype });
+        updateEventsCache({
+          averageHype: data.averageHype,
+          hypeCount: data.totalHypePredictions,
+        });
       }
       queryClient.invalidateQueries({ queryKey: ['fight', fight?.id] });
     },
@@ -190,6 +228,18 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
       queryClient.invalidateQueries({ queryKey: ['fight', fight?.id] });
     },
   });
+
+  const handleDone = useCallback(() => {
+    // Save comment if it changed
+    if (isAuthenticated && fight) {
+      const trimmed = preFightComment.trim();
+      const existing = preFightCommentsData?.userComment?.content || '';
+      if (trimmed !== existing) {
+        saveCommentMutation.mutate(trimmed);
+      }
+    }
+    onClose();
+  }, [isAuthenticated, fight, preFightComment, preFightCommentsData, saveCommentMutation, onClose]);
 
   const handleHypeSelection = useCallback((level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -256,12 +306,8 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             How Hyped Are You?
           </Text>
 
-          {/* Compact fighter row — tappable to go to fight details */}
-          <TouchableOpacity
-            style={styles.fightersRow}
-            activeOpacity={0.7}
-            onPress={() => { onClose(); router.push(`/fight/${fight.id}` as any); }}
-          >
+          {/* Compact fighter row */}
+          <View style={styles.fightersRow}>
             <Image
               source={fighter1Img}
               style={styles.fighterImage}
@@ -281,8 +327,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               style={styles.fighterImage}
               onError={() => setFighter2ImgError(true)}
             />
-            <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} style={styles.fighterRowChevron} />
-          </TouchableOpacity>
+          </View>
 
           {/* Large flame wheel display */}
           <View style={styles.flameWheelContainer}>
@@ -361,6 +406,52 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             })}
           </View>
 
+          {/* Comment input */}
+          {isAuthenticated && (
+            <View style={styles.commentSection}>
+              <View style={[
+                styles.commentInputContainer,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                }
+              ]}>
+                <TextInput
+                  style={[
+                    styles.commentInput,
+                    { color: colors.text }
+                  ]}
+                  placeholder={
+                    selectedHype && selectedHype > 0
+                      ? `Why are you ${selectedHype}/10 hyped?`
+                      : "Why are you hyped?"
+                  }
+                  placeholderTextColor={colors.textSecondary}
+                  multiline
+                  numberOfLines={3}
+                  maxLength={500}
+                  value={preFightComment}
+                  onChangeText={setPreFightComment}
+                />
+              </View>
+              <TouchableOpacity
+                style={styles.seeCommentsLink}
+                onPress={() => { onClose(); router.push(`/fight/${fight.id}` as any); }}
+              >
+                <Text style={[styles.seeCommentsText, { color: colors.textSecondary }]}>
+                  {(() => {
+                    const totalComments = (preFightCommentsData?.comments?.reduce(
+                      (acc: number, c: any) => acc + 1 + (c.replies?.length || 0), 0
+                    ) || 0);
+                    return totalComments > 0
+                      ? `See ${totalComments} ${totalComments === 1 ? 'Comment' : 'Comments'} >`
+                      : 'See Comments >';
+                  })()}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Bottom row: notify bell (if live tracking available) + done button */}
           <View style={styles.bottomRow}>
             {showNotificationBell && (
@@ -387,7 +478,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
 
             <TouchableOpacity
               style={[styles.doneButton, { backgroundColor: colors.primary }]}
-              onPress={onClose}
+              onPress={handleDone}
             >
               <Text style={styles.doneButtonText}>Done</Text>
             </TouchableOpacity>
@@ -528,10 +619,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  fighterRowChevron: {
-    position: 'absolute',
-    right: -4,
-  },
   doneButton: {
     flex: 1,
     paddingVertical: 13,
@@ -548,5 +635,28 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 12,
     textAlign: 'center',
+  },
+  commentSection: {
+    width: '100%',
+    marginTop: 16,
+  },
+  commentInputContainer: {
+    borderRadius: 12,
+    borderWidth: 2,
+    padding: 10,
+  },
+  commentInput: {
+    fontSize: 15,
+    minHeight: 70,
+    textAlignVertical: 'top',
+    paddingTop: 8,
+  },
+  seeCommentsLink: {
+    marginTop: 18,
+    alignItems: 'center' as const,
+  },
+  seeCommentsText: {
+    fontSize: 12,
+    fontWeight: '500' as const,
   },
 });
