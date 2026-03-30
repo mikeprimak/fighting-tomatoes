@@ -271,7 +271,7 @@ export default function FightDetailScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
       <DetailScreenHeader
-        title={fight ? (isComplete ? `${fight.fighter1.lastName} vs ${fight.fighter2.lastName}` : 'Upcoming Fight') : 'Fight Details'}
+        title={fight ? (isComplete ? 'Fight Results' : 'Upcoming Fight') : 'Fight Details'}
         rightIcon={renderMenuButton()}
       />
 
