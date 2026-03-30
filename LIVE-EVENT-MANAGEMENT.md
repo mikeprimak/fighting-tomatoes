@@ -97,11 +97,20 @@ notificationsAllowed = hasLiveTracking AND promotion is in notify_promotions
 
 No code changes or app rebuilds needed — the mobile app reads `notificationsAllowed` from the API response.
 
-**Current status (as of Mar 2026):** UFC, BKFC, ONE enabled. Tapology-based orgs (PFL, RIZIN, Karate Combat, etc.) have working scrapers but Tapology live results are not reliable enough yet.
+**Current status (as of Mar 2026):** UFC, BKFC, ONE enabled. Tapology-based orgs (PFL, RIZIN, Karate Combat, etc.) have working scrapers but Tapology live results are not reliable enough yet (e.g. RAF event on 2026-03-22 did not show live results on Tapology).
+
+**Implementation notes / gotchas:**
+- Fastify response schemas act as serialization filters — any new field (like `notificationsAllowed`) must be added to the schema definition in the route or it gets silently stripped from the response
+- Promotion string comparison is **case-insensitive** — DB has mixed casing (`'OKTAGON'` vs `'Rizin'`), admin panel values may differ, so all comparisons use `.toUpperCase()`
+- The `getNotifyPromotions()` loader has a **60-second cache** to avoid hitting DB on every request. Cache is invalidated when admin updates the config. Users may need to pull-to-refresh in the app after a toggle change
+- The admin panel toggle values should match the exact promotion strings in the DB (e.g. `'OKTAGON'` not `'Oktagon'`, `'Matchroom Boxing'` not `'Matchroom'`)
 
 **Key files:**
-- `src/config/liveTrackerConfig.ts` — `PRODUCTION_SCRAPERS` list + `getNotifyPromotions()` cached loader
+- `src/config/liveTrackerConfig.ts` — `PRODUCTION_SCRAPERS` list + `getNotifyPromotions()` cached loader (60s TTL)
 - `system_config` DB table — `notify_promotions` key stores the allowed promotions array
+- `src/routes/index.ts` — events endpoint adds `notificationsAllowed` to response (must be in response schema)
+- `src/routes/fights.ts` — fights endpoints add `notificationsAllowed` to event object (3 places)
+- `src/routes/admin.ts` — GET/PUT `/admin/config/notify-promotions` endpoints
 - Admin panel UI — Operations tab, "Fight Notification Settings" section
 - Mobile — `events/index.tsx` and `live-events.tsx` check `event.notificationsAllowed`
 
