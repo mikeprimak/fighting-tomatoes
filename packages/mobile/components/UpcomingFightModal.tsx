@@ -311,6 +311,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
       visible={visible}
       transparent
       animationType="slide"
+      statusBarTranslucent
       onRequestClose={onClose}
     >
       <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
