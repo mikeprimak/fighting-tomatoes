@@ -730,3 +730,36 @@ Also added cancellation/un-cancellation detection and next-fight notifications t
 5. `[class*="time"]` fallback
 
 **Lesson:** BKFC countdown timers count down to the main card, not the event start. The visible date text on the event page reflects the actual (earliest) start time.
+
+## Resolved: UFC & BKFC Parsers Can't Handle Draws (Mar 28, 2026)
+
+**Symptoms:** UFC Fight Night — Ricky Simon vs Adrian Yanez ended in a draw, but the app showed the fight as "Up Next" (still UPCOMING). Additionally, BKFC fights were oscillating between UPCOMING and COMPLETED between scraper runs, causing "Up Next" to jump between fights.
+
+**Root causes (three bugs):**
+
+### 1. UFC scraper didn't detect draws (`scrapeLiveEvent.js`)
+
+The scraper only checked for `.c-listing-fight__outcome--win` to detect completed fights. Draws have no win indicator on UFC.com — there's no visible `--draw` or `--no-contest` CSS class, and the method/round/time result text is the only signal.
+
+**Fix:** Added detection for `.c-listing-fight__outcome--draw` and `--no-contest` CSS classes. Also added a fallback: if a method result text string exists (e.g., "Decision", "Draw") with `length > 1` and no win indicator, the fight is treated as complete with no winner. Round/time text alone is NOT sufficient — those appear on live fights as round indicators.
+
+### 2. UFC & BKFC parsers allowed status downgrades
+
+Both `ufcLiveParser.ts` and `bkfcLiveParser.ts` would overwrite COMPLETED fights back to UPCOMING if the scraper reported them as not complete. This happened because:
+- **UFC:** The scraper couldn't detect the draw, so it reported the fight as "upcoming" every cycle, and the parser dutifully reset it
+- **BKFC:** The scraper inconsistently detected fight completion between 30-second runs (DOM timing / JS load race conditions), causing oscillation
+
+**Fix:** Added a one-way guard in both parsers: **COMPLETED status is never downgraded**. Once a fight is COMPLETED (whether set by scraper or manually via admin), it stays COMPLETED. This protects:
+- Manual fixes via admin panel
+- Draws that the scraper can't detect
+- Inconsistent scraper results from DOM race conditions
+
+### 3. BKFC cancellation detection affected draws
+
+`bkfcLiveParser.ts` skipped cancellation detection only for `COMPLETED && winner` fights. Draws (COMPLETED with no winner) could be falsely cancelled.
+
+**Fix:** Changed to skip all `COMPLETED` fights in cancellation detection, regardless of whether they have a winner.
+
+### Key principle established
+
+**Fight status transitions should be one-way for COMPLETED.** Scrapers are unreliable for certain edge cases (draws, DOM timing), and the cost of a false downgrade (fight jumping back to "Up Next") is much higher than the cost of a fight staying COMPLETED when it shouldn't be. Admin panel provides manual override for any corrections.

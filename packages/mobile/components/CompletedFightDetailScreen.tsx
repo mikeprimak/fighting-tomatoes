@@ -1532,8 +1532,8 @@ export default function CompletedFightDetailScreen({
 
         {/* Outcome not available message */}
         {!fight.winner && (
-          <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center', marginTop: 0, marginBottom: 10 }]}>
-            Outcome data not yet available.
+          <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center', marginTop: -12, marginBottom: 10 }]}>
+            Outcome unavailable
           </Text>
         )}
 
@@ -1558,17 +1558,9 @@ export default function CompletedFightDetailScreen({
 
         {/* Reactions Section */}
         <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 8 }}>
-          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 8 }}>
-            Reactions
+          <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 16, marginBottom: 12 }}>
+            Crowd Ratings ({totalRatings || 0})
           </Text>
-          {/* Section Divider - Fight Ratings */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 24, marginBottom: 12 }}>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            <View style={{ paddingHorizontal: 12 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>CROWD RATINGS ({totalRatings || 0})</Text>
-            </View>
-            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-          </View>
 
           {/* Community Rating Layout: Horizontal */}
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
@@ -1745,235 +1737,103 @@ export default function CompletedFightDetailScreen({
           )}
         </SectionContainer>}
 
-        {/* HYPE Section */}
-        <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 8 }}>
-          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 8 }}>
-            Hype
-          </Text>
-          {/* Check if this is a legacy fight with no hype data */}
-          {(fight.userHypePrediction === null || fight.userHypePrediction === undefined) &&
-           (!predictionStats?.totalPredictions || predictionStats.totalPredictions === 0) ? (
-            <Text style={{ color: colors.textSecondary, fontStyle: 'italic', textAlign: 'center', paddingVertical: 20 }}>
-              No data
-            </Text>
-          ) : (
-            <>
-              {/* User's Hype */}
-              {fight.userHypePrediction !== null && fight.userHypePrediction !== undefined && (
-                <View style={{ marginBottom: 16 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                    <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-                    <View style={{ paddingHorizontal: 12 }}>
-                      <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>MY HYPE</Text>
-                    </View>
-                    <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-                  </View>
-                  <View style={{ alignItems: 'center' }}>
-                    <View style={{ justifyContent: 'center', alignItems: 'center', position: 'relative', width: 90, height: 105 }}>
-                      {/* Background circle for better text contrast */}
-                      <View style={{
-                        position: 'absolute',
-                        width: 56,
-                        height: 56,
-                        borderRadius: 28,
-                        backgroundColor: getHypeHeatmapColor(fight.userHypePrediction),
-                        opacity: 0.4,
-                        top: 30,
-                      }} />
-                      <FontAwesome6
-                        name="fire-flame-curved"
-                        size={90}
-                        color={getHypeHeatmapColor(fight.userHypePrediction)}
-                      />
-                      <Text style={{
-                        position: 'absolute',
-                        marginTop: 6,
-                        fontSize: 34,
-                        fontWeight: 'bold',
-                        color: '#FFFFFF',
-                        textShadowColor: 'rgba(0,0,0,0.8)',
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 4,
-                      }}>
-                        {fight.userHypePrediction === 10 ? '10' : Math.round(fight.userHypePrediction)}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              )}
-
-              {/* Community Hype Section Divider */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-                <View style={{ paddingHorizontal: 12 }}>
-                  <Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>CROWD HYPE ({predictionStats?.totalPredictions || 0})</Text>
-                </View>
-                <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-              </View>
-
-              {/* Community Hype Content */}
-              {predictionStats?.averageHype !== null && predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0 ? (
-                <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 0 }}>
-                  {/* Community Hype Box */}
-                  <View style={{ position: 'relative', width: 70, height: 80, justifyContent: 'center', alignItems: 'center' }}>
-                    <View style={{
-                      width: 60,
-                      height: 68,
-                      borderRadius: 10,
-                      backgroundColor: getHypeHeatmapColor(predictionStats.averageHype),
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}>
-                      <FontAwesome6
-                        name="fire-flame-curved"
-                        size={20}
-                        color="rgba(0,0,0,0.45)"
-                      />
-                      <Text style={{
-                        fontSize: 22,
-                        fontWeight: 'bold',
-                        color: '#FFFFFF',
-                        textShadowColor: 'rgba(0,0,0,0.7)',
-                        textShadowOffset: { width: 0, height: 1 },
-                        textShadowRadius: 3,
-                      }}>
-                        {predictionStats.averageHype === 10 ? '10' : predictionStats.averageHype.toFixed(1)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Hype Distribution Chart */}
-                  {predictionStats?.distribution && (
-                    <View style={{ flex: 1, marginLeft: -10 }}>
-                      <HypeDistributionChart
-                        distribution={predictionStats.distribution}
-                        totalPredictions={predictionStats.totalPredictions || 0}
-                        hasRevealedHype={true}
-                        fadeAnim={new Animated.Value(1)}
-                      />
-                    </View>
-                  )}
-                </View>
-              ) : (
-                <Text style={[styles.predictionText, { color: colors.textSecondary, fontStyle: 'italic' }]}>
-                  No community hype data
-                </Text>
-              )}
-            </>
-          )}
-        </View>
 
         {/* COMMENTS Section */}
         <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 8 }}>
-          <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 8 }}>
-            Comments ({(fight.userReview ? 1 : 0) + (reviewsData?.pages?.flatMap(p => p.reviews)?.filter((r: any) => r.userId !== user?.id)?.reduce((acc: number, r: any) => acc + 1 + (r.replies?.length || 0), 0) || 0)})
-          </Text>
-          {/* Comments Tab Toggle */}
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TouchableOpacity
-            onPress={() => setCommentsTab('postfight')}
-            style={{
-              flex: 1,
-              paddingVertical: 8,
-              borderRadius: 6,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: commentsTab === 'postfight' ? colors.primary : 'transparent',
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{
-              fontSize: 12,
-              fontWeight: '500',
-              color: commentsTab === 'postfight' ? colors.textOnAccent : colors.textSecondary,
-            }}>
-              Post-Fight
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ fontSize: 13, color: colors.textSecondary }}>
+              Comments ({(fight.userReview ? 1 : 0) + (reviewsData?.pages?.flatMap(p => p.reviews)?.filter((r: any) => r.userId !== user?.id)?.reduce((acc: number, r: any) => acc + 1 + (r.replies?.length || 0), 0) || 0)})
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setCommentsTab('preflight')}
-            style={{
-              flex: 1,
-              paddingVertical: 8,
-              borderRadius: 6,
-              borderWidth: 1,
-              borderColor: colors.border,
-              backgroundColor: commentsTab === 'preflight' ? colors.primary : 'transparent',
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{
-              fontSize: 12,
-              fontWeight: '500',
-              color: commentsTab === 'preflight' ? colors.textOnAccent : colors.textSecondary,
-            }}>
-              Pre-Fight
-            </Text>
-          </TouchableOpacity>
-        </View>
+            {commentsTab === 'postfight' && !fight.userReview && !isEditingComment && !showCommentForm && (
+              <Button
+                onPress={handleToggleCommentForm}
+                variant="outline"
+                size="small"
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.card,
+                  marginLeft: 10,
+                  paddingVertical: 2,
+                  paddingHorizontal: 8,
+                }}
+                textStyle={{
+                  color: colors.text,
+                  fontSize: 12,
+                }}
+              >
+                + Add Comment
+              </Button>
+            )}
+            {commentsTab === 'postfight' && !fight.userReview && !isEditingComment && showCommentForm && (
+              <Button
+                onPress={handleToggleCommentForm}
+                variant="outline"
+                size="small"
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.card,
+                  marginLeft: 10,
+                  paddingVertical: 2,
+                  paddingHorizontal: 8,
+                }}
+                textStyle={{
+                  color: colors.text,
+                  fontSize: 12,
+                }}
+              >
+                Cancel
+              </Button>
+            )}
+            {commentsTab === 'postfight' && isEditingComment && (
+              <Button
+                onPress={() => {
+                  setIsEditingComment(false);
+                  setComment(fight.userReview?.content || '');
+                }}
+                variant="outline"
+                size="small"
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  backgroundColor: colors.card,
+                  marginLeft: 10,
+                  paddingVertical: 2,
+                  paddingHorizontal: 8,
+                }}
+                textStyle={{
+                  color: colors.text,
+                  fontSize: 12,
+                }}
+              >
+                Cancel
+              </Button>
+            )}
+            <Button
+              onPress={() => setCommentsTab(commentsTab === 'preflight' ? 'postfight' : 'preflight')}
+              variant="outline"
+              size="small"
+              style={{
+                borderWidth: 1,
+                borderColor: commentsTab === 'preflight' ? '#F5C518' : colors.border,
+                backgroundColor: commentsTab === 'preflight' ? '#F5C518' : colors.card,
+                marginLeft: 'auto',
+                paddingVertical: 2,
+                paddingHorizontal: 8,
+              }}
+              textStyle={{
+                color: commentsTab === 'preflight' ? '#000' : colors.text,
+                fontSize: 12,
+              }}
+            >
+              {commentsTab === 'preflight' ? 'Hide Pre-Fight Comments' : 'Pre-Fight Comments'}
+            </Button>
+          </View>
 
         {/* Post-Fight Comments Section */}
         {commentsTab === 'postfight' && (
         <View style={[styles.sectionNoBorder, { marginTop: 10, marginHorizontal: 0, padding: 0 }]}>
-            {/* Only show header row when a button is visible */}
-            {(!fight.userReview || isEditingComment) && (
-            <View style={[styles.commentHeaderRow, { justifyContent: 'center' }]}>
-              {!fight.userReview && !isEditingComment && !showCommentForm && (
-                <Button
-                  onPress={handleToggleCommentForm}
-                  variant="outline"
-                  size="small"
-                  style={{
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    backgroundColor: colors.card,
-                  }}
-                  textStyle={{
-                    color: colors.text,
-                  }}
-                >
-                  + Add Comment
-                </Button>
-              )}
-              {!fight.userReview && !isEditingComment && showCommentForm && (
-                <Button
-                  onPress={handleToggleCommentForm}
-                  variant="outline"
-                  size="small"
-                  style={{
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    backgroundColor: colors.card,
-                  }}
-                  textStyle={{
-                    color: colors.text,
-                  }}
-                >
-                  Cancel
-                </Button>
-              )}
-              {isEditingComment && (
-                <Button
-                  onPress={() => {
-                    setIsEditingComment(false);
-                    setComment(fight.userReview?.content || '');
-                  }}
-                  variant="outline"
-                  size="small"
-                  style={{
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    backgroundColor: colors.card,
-                  }}
-                  textStyle={{
-                    color: colors.text,
-                  }}
-                >
-                  Cancel
-                </Button>
-              )}
-            </View>
-            )}
 
             {/* Post-Flight Reviews Content */}
             {/* Show comment input when showCommentForm is true (for new comments) OR when editing */}
@@ -2462,7 +2322,7 @@ export default function CompletedFightDetailScreen({
               </View>
             ) : !fight.userReview ? (
               <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
-                No reviews yet. Be the first to review this fight!
+                No comments yet.
               </Text>
             ) : null}
         </View>

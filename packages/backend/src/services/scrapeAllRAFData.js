@@ -52,20 +52,14 @@ function parseRAFDate(dateStr) {
   const month = MONTHS[monthName];
   if (month === undefined) return null;
 
-  let hours = match[4] ? parseInt(match[4], 10) : null;
-  const minutes = match[5] ? parseInt(match[5], 10) : 0;
-  const amPm = match[6] ? match[6].toUpperCase() : null;
-
-  if (hours !== null && amPm) {
-    if (amPm === 'PM' && hours !== 12) hours += 12;
-    if (amPm === 'AM' && hours === 12) hours = 0;
-  }
-
   const date = new Date(year, month, day);
+
+  // Keep raw 12h time string (e.g. "8:00 PM") for eventTimeToUTC in the parser
+  const rawTime = match[4] ? `${match[4]}:${match[5]} ${match[6]}` : null;
 
   return {
     date: date.toISOString(),
-    startTime: hours !== null ? `${hours}:${String(minutes).padStart(2, '0')}` : null,
+    startTime: rawTime,
   };
 }
 

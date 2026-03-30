@@ -99,6 +99,8 @@ export default function LiveEventsScreen() {
 
   // Auto-fetch pages 2-4 so we find all live events (they may not all be on page 1).
   // Live events are near the front by date but non-live events can be interleaved.
+  const needsMorePages = !!eventsData && hasNextPage && (eventsData.pages.length < 4);
+
   React.useEffect(() => {
     if (!eventsData || !hasNextPage || isFetching) return;
     const loadedPages = eventsData.pages.length;
@@ -181,7 +183,7 @@ export default function LiveEventsScreen() {
 
       <OrgFilterTabs onFilterChange={() => {}} />
 
-      {isLoading ? (
+      {isLoading || needsMorePages ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>Loading live events...</Text>
@@ -361,8 +363,9 @@ const LiveEventSection = memo(function LiveEventSection({
           </>
         )}
 
-        {/* Standalone card section title when no upcoming fights */}
-        {upcoming.length === 0 && (
+        {/* Standalone card section title when no upcoming fights but live/up-next exist.
+            Skip entirely if section is all completed — the COMPLETED BOUTS header suffices. */}
+        {upcoming.length === 0 && (live.length > 0 || completed.length === 0) && (
           isPrelimSection ? (
             <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
               {sectionTitleElement}
@@ -395,29 +398,33 @@ const LiveEventSection = memo(function LiveEventSection({
           </>
         )}
 
-        {/* Completed fights with RATING / MY RATING headers */}
+        {/* Completed fights with RATING / MY RATING headers (prelim sections just get a spacer) */}
         {completed.length > 0 && (
           <>
-            <View style={styles.statusHeader}>
-              <View style={[styles.columnHeaders, { marginLeft: -16 }]}>
-                <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                  RATING
-                </Text>
+            {isPrelimSection ? (
+              <View style={{ height: 16 }} />
+            ) : (
+              <View style={styles.statusHeader}>
+                <View style={[styles.columnHeaders, { marginLeft: -16 }]}>
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    RATING
+                  </Text>
+                </View>
+                <View style={styles.sectionHeaderCenter}>
+                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                    COMPLETED BOUTS
+                  </Text>
+                </View>
+                <View style={[styles.columnHeadersRight, { marginRight: -18 }]}>
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    MY
+                  </Text>
+                  <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
+                    RATING
+                  </Text>
+                </View>
               </View>
-              <View style={styles.sectionHeaderCenter}>
-                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                  COMPLETED BOUTS
-                </Text>
-              </View>
-              <View style={[styles.columnHeadersRight, { marginRight: -18 }]}>
-                <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                  MY
-                </Text>
-                <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
-                  RATING
-                </Text>
-              </View>
-            </View>
+            )}
             {completed.map((fight: Fight, index: number) => (
               <FightDisplayCard
                 key={fight.id}

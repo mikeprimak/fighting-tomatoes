@@ -14,6 +14,7 @@ import { getFighterImage, getFighterName, getFighterDisplayName, cleanFighterNam
 import { sharedStyles } from './shared/styles';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
+import CompletedFightModal from '../CompletedFightModal';
 
 interface LiveFightCardProps extends BaseFightCardProps {
   animateRating?: boolean;
@@ -53,6 +54,9 @@ function LiveFightCard({
     return method;
   };
 
+
+  // Modal state
+  const [modalVisible, setModalVisible] = useState(false);
 
   // Image error states
   const [fighter1ImageError, setFighter1ImageError] = useState(false);
@@ -179,12 +183,12 @@ function LiveFightCard({
   const getStripConfig = () => {
     switch (liveStatus) {
       case 'up_next':
-        return { text: 'Up Next', bgColor: '#166534', textColor: '#FFFFFF' };
+        return { text: 'Up Next', bgColor: '#F5C518', textColor: '#1a1a1a' };
       case 'starting_soon':
-        return { text: 'Starting Soon', bgColor: '#166534', textColor: '#FFFFFF' };
+        return { text: 'Starting Soon', bgColor: '#F5C518', textColor: '#1a1a1a' };
       case 'live_now':
       default:
-        return { text: 'Live Now', bgColor: '#166534', textColor: '#FFFFFF' };
+        return { text: 'Live Now', bgColor: '#F5C518', textColor: '#1a1a1a' };
     }
   };
 
@@ -408,7 +412,7 @@ function LiveFightCard({
   });
 
   return (
-    <TouchableOpacity onPress={() => router.push(`/fight/${fight.id}?mode=completed`)} activeOpacity={0.7}>
+    <TouchableOpacity onPress={() => setModalVisible(true)} activeOpacity={0.7}>
       <Animated.View style={[sharedStyles.container, {
         position: 'relative',
         overflow: 'hidden',
@@ -422,9 +426,14 @@ function LiveFightCard({
             { backgroundColor: stripConfig.bgColor },
             liveStatus === 'starting_soon' && { opacity: startingSoonPulseAnim }
           ]}>
-            <Text style={[styles.liveNowStripText, { color: stripConfig.textColor }]}>
-              {stripConfig.text}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              {liveStatus === 'live_now' && (
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF0000' }} />
+              )}
+              <Text style={[styles.liveNowStripText, { color: stripConfig.textColor }]}>
+                {stripConfig.text}
+              </Text>
+            </View>
           </Animated.View>
 
           {/* Content area below the strip - matches UpcomingFightCard layout */}
@@ -437,8 +446,8 @@ function LiveFightCard({
             minHeight: 62,
             justifyContent: 'center',
             backgroundColor: colorScheme === 'dark'
-              ? 'rgba(22, 101, 52, 0.25)' // 25% #166534 green on dark background
-              : 'rgba(22, 101, 52, 0.15)', // 15% #166534 green on light background
+              ? 'rgba(245, 197, 24, 0.12)' // subtle gold wash on dark background
+              : 'rgba(245, 197, 24, 0.10)', // subtle gold wash on light background
           }}>
             {/* Full-height community hype square on the left */}
             <View style={[
@@ -497,41 +506,16 @@ function LiveFightCard({
               )}
             </View>
 
-            <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: 0 }]}>
-            {/* Fighter names with headshots */}
-            <View style={styles.fighterNamesContainer}>
-              {/* Fighter 1 - Left half */}
-              <View style={[styles.fighter1Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
-                <View style={[
-                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'center' }
-                ]}>
-                  {/* First name */}
-                  <Text
-                    style={[styles.fighterName, { textAlign: 'center', fontWeight: '400', color: colors.textSecondary, paddingHorizontal: 4, flexShrink: 0 }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.7}
-                  >
-                    {fight.fighter1.firstName}
-                  </Text>
-                  {/* Last name */}
-                  <Text
-                    style={[styles.fighterLastName, { textAlign: 'center', color: colors.text, paddingHorizontal: 4, flexShrink: 0 }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.7}
-                  >
-                    {fight.fighter1.lastName}
-                  </Text>
-                </View>
-                {/* Fighter 1 headshot - right of name */}
-                <View style={[styles.fighterImageWrapper, { marginLeft: 6, marginRight: -3 }]}>
+            {/* Large fighter images row */}
+            <View style={styles.liveFighterImagesRow}>
+              {/* Fighter 1 image */}
+              <View style={styles.liveFighterImageContainer}>
+                <View style={styles.liveFighterImageWrapper}>
                   <Image
                     source={getFighter1ImageSource()}
-                    style={styles.fighterHeadshot}
+                    style={styles.liveFighterHeadshot}
                     onError={() => setFighter1ImageError(true)}
                   />
-                  {/* User prediction indicator - yellow circle with user icon (bottom-left for fighter 1) */}
                   {aggregateStats?.userPrediction?.winner === getFighterDisplayName(fight.fighter1) && (
                     <View style={styles.userPredictionIndicatorLeft}>
                       <FontAwesome name="user" size={11} color="#000000" />
@@ -540,47 +524,64 @@ function LiveFightCard({
                 </View>
               </View>
 
-              {/* Fighter 2 - Right half */}
-              <View style={[styles.fighter2Container, { flexDirection: 'row', alignItems: 'center', overflow: 'visible' }]}>
-                {/* Fighter 2 headshot - left of name */}
-                <View style={[styles.fighterImageWrapper, { marginRight: 6, marginLeft: -3 }]}>
+              <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
+
+              {/* Fighter 2 image */}
+              <View style={styles.liveFighterImageContainer}>
+                <View style={styles.liveFighterImageWrapper}>
                   <Image
                     source={getFighter2ImageSource()}
-                    style={styles.fighterHeadshot}
+                    style={styles.liveFighterHeadshot}
                     onError={() => setFighter2ImageError(true)}
                   />
-                  {/* User prediction indicator - yellow circle with user icon (bottom-right for fighter 2) */}
                   {aggregateStats?.userPrediction?.winner === getFighterDisplayName(fight.fighter2) && (
                     <View style={styles.userPredictionIndicatorRight}>
                       <FontAwesome name="user" size={11} color="#000000" />
                     </View>
                   )}
                 </View>
-                <View style={[
-                  { alignSelf: 'center', position: 'relative', flex: 1, zIndex: 2, alignItems: 'center' }
-                ]}>
-                  {/* First name */}
-                  <Text
-                    style={[styles.fighterName, { textAlign: 'center', fontWeight: '400', color: colors.textSecondary, paddingHorizontal: 4, flexShrink: 0 }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.7}
-                  >
-                    {fight.fighter2.firstName}
-                  </Text>
-                  {/* Last name */}
-                  <Text
-                    style={[styles.fighterLastName, { textAlign: 'center', color: colors.text, paddingHorizontal: 4, flexShrink: 0 }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.7}
-                  >
-                    {fight.fighter2.lastName}
-                  </Text>
-                </View>
               </View>
             </View>
-          </View>
+
+            {/* Fighter names below images */}
+            <View style={styles.liveFighterNamesRow}>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text
+                  style={[styles.fighterName, { textAlign: 'center', fontWeight: '400', color: colors.textSecondary }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
+                  {fight.fighter1.firstName}
+                </Text>
+                <Text
+                  style={[styles.fighterLastName, { textAlign: 'center', color: colors.text }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
+                  {fight.fighter1.lastName}
+                </Text>
+              </View>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text
+                  style={[styles.fighterName, { textAlign: 'center', fontWeight: '400', color: colors.textSecondary }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
+                  {fight.fighter2.firstName}
+                </Text>
+                <Text
+                  style={[styles.fighterLastName, { textAlign: 'center', color: colors.text }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
+                  {fight.fighter2.lastName}
+                </Text>
+              </View>
+            </View>
 
             {/* Event info inside card (when showEvent=true) */}
             {showEvent && (
@@ -644,6 +645,12 @@ function LiveFightCard({
           </Animated.View>
         )}
       </Animated.View>
+
+      <CompletedFightModal
+        visible={modalVisible}
+        fight={fight}
+        onClose={() => setModalVisible(false)}
+      />
     </TouchableOpacity>
   );
 }
@@ -992,10 +999,11 @@ const styles = StyleSheet.create({
   },
   hypeSquare: {
     position: 'absolute',
-    top: 6,
-    left: 0,
+    top: '50%',
+    left: 2,
     width: 48,
     height: 50,
+    marginTop: -25,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
@@ -1012,10 +1020,11 @@ const styles = StyleSheet.create({
   },
   userHypeFlameContainer: {
     position: 'absolute',
-    top: 6,
+    top: '50%',
     right: 0,
     width: 48,
     height: 50,
+    marginTop: -25,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -1058,6 +1067,34 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: 50,
     height: 50,
+  },
+  liveFighterImagesRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  liveFighterImageContainer: {
+    alignItems: 'center',
+  },
+  liveFighterImageWrapper: {
+    position: 'relative',
+    width: 90,
+    height: 90,
+  },
+  liveFighterHeadshot: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+  },
+  liveFighterNamesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+    paddingHorizontal: 8,
   },
   userPredictionIndicatorLeft: {
     position: 'absolute',
