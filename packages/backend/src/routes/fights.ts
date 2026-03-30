@@ -5,7 +5,7 @@ import { authenticateUser, requireEmailVerification, optionalAuth } from '../mid
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 import { calculateQualityThreadScore } from '../utils/commentSorting';
 import { TBA_FIGHTER_ID, isTBAFighter, fightHasTBA } from '../constants/tba';
-import { isProductionScraper } from '../config/liveTrackerConfig';
+import { isProductionScraper, getNotifyPromotions } from '../config/liveTrackerConfig';
 
 // Request/Response schemas using Zod for validation
 const CreateFightSchema = z.object({
@@ -317,15 +317,20 @@ export async function fightRoutes(fastify: FastifyInstance) {
         hypeByFight.set(pred.fightId, existing);
       }
 
+      // Load notify-allowed promotions for notificationsAllowed field
+      const notifyPromotions = await getNotifyPromotions(fastify.prisma);
+
       // Transform fights data to include user-specific data in the expected format
       const transformedFights = await Promise.all(fights.map(async (fight: any) => {
         const transformed = stripTrackerFields({ ...fight });
 
-        // Add hasLiveTracking to event for UI to know if fight-specific notifications are available
+        // Add hasLiveTracking + notificationsAllowed to event
         if (transformed.event) {
+          const hasLiveTracking = isProductionScraper(transformed.event.scraperType);
           transformed.event = {
             ...transformed.event,
-            hasLiveTracking: isProductionScraper(transformed.event.scraperType),
+            hasLiveTracking,
+            notificationsAllowed: hasLiveTracking && notifyPromotions.includes(transformed.event.promotion),
           };
         }
 
@@ -550,11 +555,14 @@ export async function fightRoutes(fastify: FastifyInstance) {
       const fightWithRelations = fight as any;
       const transformedFight: any = { ...cleanFight };
 
-      // Add hasLiveTracking to event for UI to know if fight-specific notifications are available
+      // Add hasLiveTracking + notificationsAllowed to event
       if (transformedFight.event) {
+        const hasLiveTracking = isProductionScraper(transformedFight.event.scraperType);
+        const notifyPromos = await getNotifyPromotions(fastify.prisma);
         transformedFight.event = {
           ...transformedFight.event,
-          hasLiveTracking: isProductionScraper(transformedFight.event.scraperType),
+          hasLiveTracking,
+          notificationsAllowed: hasLiveTracking && notifyPromos.includes(transformedFight.event.promotion),
         };
       }
 
@@ -3747,15 +3755,18 @@ export async function fightRoutes(fastify: FastifyInstance) {
       }
 
       // Transform fights data
+      const notifyPromos = await getNotifyPromotions(fastify.prisma);
       const transformedFights = fights.map((fight: any) => {
         const transformed = { ...fight };
         const hypeStats = hypeMap.get(fight.id);
 
-        // Add hasLiveTracking to event for UI to know if fight-specific notifications are available
+        // Add hasLiveTracking + notificationsAllowed to event
         if (transformed.event) {
+          const hasLiveTracking = isProductionScraper(transformed.event.scraperType);
           transformed.event = {
             ...transformed.event,
-            hasLiveTracking: isProductionScraper(transformed.event.scraperType),
+            hasLiveTracking,
+            notificationsAllowed: hasLiveTracking && notifyPromos.includes(transformed.event.promotion),
           };
         }
 

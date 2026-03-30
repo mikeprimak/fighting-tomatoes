@@ -77,6 +77,34 @@ When a scraper is in this list:
 2. Add the scraper type to `PRODUCTION_SCRAPERS` in `src/config/liveTrackerConfig.ts`
 3. The lifecycle service will skip events with that scraper type (the scraper handles everything)
 
+### Per-Fight Notification Settings (Notify Me Bell)
+
+Users can tap a bell icon on upcoming fights to get a push notification when that fight goes live. Two conditions must BOTH be true for the bell to appear:
+
+**Condition 1 — `hasLiveTracking`:** The event's `scraperType` must be in the `PRODUCTION_SCRAPERS` list (code-level, in `liveTrackerConfig.ts`). This is already true for all scraped events.
+
+**Condition 2 — `notificationsAllowed`:** The event's `promotion` string (e.g. `'UFC'`, `'BKFC'`, `'ONE'`) must be in the `notify_promotions` config stored in the `system_config` DB table. This is managed via the **admin panel → Operations tab → Fight Notification Settings** toggles.
+
+```
+notificationsAllowed = hasLiveTracking AND promotion is in notify_promotions
+```
+
+**To enable notifications for a new org (e.g. PFL):**
+1. Ensure events have a `scraperType` that's in `PRODUCTION_SCRAPERS` (PFL already uses `tapology` — already in the list)
+2. Go to admin panel → Operations tab → flip the toggle for that org
+
+**To disable notifications for an org:** Just flip the toggle off in admin panel.
+
+No code changes or app rebuilds needed — the mobile app reads `notificationsAllowed` from the API response.
+
+**Current status (as of Mar 2026):** UFC, BKFC, ONE enabled. Tapology-based orgs (PFL, RIZIN, Karate Combat, etc.) have working scrapers but Tapology live results are not reliable enough yet.
+
+**Key files:**
+- `src/config/liveTrackerConfig.ts` — `PRODUCTION_SCRAPERS` list + `getNotifyPromotions()` cached loader
+- `system_config` DB table — `notify_promotions` key stores the allowed promotions array
+- Admin panel UI — Operations tab, "Fight Notification Settings" section
+- Mobile — `events/index.tsx` and `live-events.tsx` check `event.notificationsAllowed`
+
 ### Shadow Fields
 
 All 5 live parsers write to shadow `tracker*` fields on every fight:

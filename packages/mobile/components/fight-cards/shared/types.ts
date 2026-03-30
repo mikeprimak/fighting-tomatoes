@@ -20,6 +20,7 @@ export interface Event {
   date: string;
   promotion: string;
   hasLiveTracking?: boolean;
+  notificationsAllowed?: boolean;
 }
 
 export interface FightData {

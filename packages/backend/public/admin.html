@@ -869,6 +869,61 @@
       display: block;
     }
 
+    /* Notification toggle styles */
+    .notify-card {
+      background: var(--bg-input);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .notify-card-label {
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    .notify-card-sub {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #555;
+      border-radius: 24px;
+      transition: 0.2s;
+    }
+    .toggle-slider:before {
+      content: "";
+      position: absolute;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--primary);
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+
     /* Operations Tab Styles */
     .ops-container {
       padding: 1.5rem;
@@ -1274,6 +1329,23 @@
   <!-- Operations Tab -->
   <div id="operationsTab" class="tab-content">
     <div class="ops-container">
+      <!-- Notification Settings Section -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Fight Notification Settings</span>
+          <span id="notifySettingsStatus" style="font-size: 0.75rem; color: var(--text-secondary);"></span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 0.75rem 0;">
+          Toggle which promotions allow users to set per-fight "Notify Me" alerts. Only enable for orgs with reliable live trackers.
+        </p>
+        <div id="notifyPromotionsGrid" class="scraper-grid">
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <div class="empty-state-text" style="margin-top: 0.5rem;">Loading notification settings...</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Daily Scrapers Section -->
       <div class="ops-section">
         <div class="ops-section-header">
@@ -2970,11 +3042,90 @@
 
     async function loadOperationsData() {
       await Promise.all([
+        loadNotifyPromotions(),
         loadScraperStatus(),
         loadTrackerStatus(),
         loadBackupStatus(),
         loadRecentActivity(),
       ]);
+    }
+
+    // All promotions that could potentially allow notifications
+    const ALL_PROMOTIONS_FOR_NOTIFY = [
+      { value: 'UFC', label: 'UFC', scraper: 'ufc' },
+      { value: 'BKFC', label: 'BKFC', scraper: 'bkfc' },
+      { value: 'ONE', label: 'ONE Championship', scraper: 'onefc' },
+      { value: 'PFL', label: 'PFL', scraper: 'tapology' },
+      { value: 'Oktagon', label: 'Oktagon MMA', scraper: 'oktagon' },
+      { value: 'Rizin', label: 'RIZIN', scraper: 'tapology' },
+      { value: 'Karate Combat', label: 'Karate Combat', scraper: 'tapology' },
+      { value: 'Dirty Boxing', label: 'Dirty Boxing', scraper: 'tapology' },
+      { value: 'Zuffa Boxing', label: 'Zuffa Boxing', scraper: 'tapology' },
+      { value: 'Matchroom', label: 'Matchroom Boxing', scraper: 'matchroom' },
+      { value: 'Golden Boy', label: 'Golden Boy', scraper: 'tapology' },
+      { value: 'Top Rank', label: 'Top Rank', scraper: 'tapology' },
+    ];
+
+    let currentNotifyPromotions = [];
+
+    async function loadNotifyPromotions() {
+      const grid = document.getElementById('notifyPromotionsGrid');
+      try {
+        const res = await authFetch(`${API_BASE}/admin/config/notify-promotions`);
+        const data = await res.json();
+        currentNotifyPromotions = data.promotions || [];
+        renderNotifyGrid();
+      } catch (err) {
+        grid.innerHTML = '<div class="empty-state"><div class="empty-state-text">Failed to load notification settings</div></div>';
+      }
+    }
+
+    function renderNotifyGrid() {
+      const grid = document.getElementById('notifyPromotionsGrid');
+      grid.innerHTML = ALL_PROMOTIONS_FOR_NOTIFY.map(promo => {
+        const enabled = currentNotifyPromotions.includes(promo.value);
+        return `
+          <div class="notify-card">
+            <div>
+              <div class="notify-card-label">${promo.label}</div>
+              <div class="notify-card-sub">Scraper: ${promo.scraper}</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleNotifyPromotion('${promo.value}', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function toggleNotifyPromotion(promotion, enabled) {
+      const statusEl = document.getElementById('notifySettingsStatus');
+      statusEl.textContent = 'Saving...';
+
+      if (enabled && !currentNotifyPromotions.includes(promotion)) {
+        currentNotifyPromotions.push(promotion);
+      } else if (!enabled) {
+        currentNotifyPromotions = currentNotifyPromotions.filter(p => p !== promotion);
+      }
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/config/notify-promotions`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ promotions: currentNotifyPromotions }),
+        });
+        if (!res.ok) throw new Error('Save failed');
+        const data = await res.json();
+        currentNotifyPromotions = data.promotions;
+        statusEl.textContent = 'Saved';
+        setTimeout(() => { statusEl.textContent = ''; }, 2000);
+      } catch (err) {
+        statusEl.textContent = 'Error saving!';
+        // Revert toggle visually
+        renderNotifyGrid();
+        setTimeout(() => { statusEl.textContent = ''; }, 3000);
+      }
     }
 
     async function loadBackupStatus() {

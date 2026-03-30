@@ -37,6 +37,7 @@ interface Event {
   prelimStartTime?: string | null;
   mainStartTime?: string | null;
   hasLiveTracking?: boolean;
+  notificationsAllowed?: boolean;
   fights?: Fight[];
 }
 
@@ -129,16 +130,10 @@ export default function LiveEventsScreen() {
     return filterEventsByOrg(sorted);
   }, [eventsData, filterEventsByOrg]);
 
-  // Only UFC has reliable real-time fight-start detection for "Notify Me" notifications
-  const NOTIFY_PROMOTIONS = ['UFC'];
-
   const handleFightPress = useCallback((fight: Fight, event?: Event) => {
     if (!fight.fightStatus || fight.fightStatus === 'UPCOMING') {
       setModalFight(fight);
-      setModalShowBell(
-        event?.hasLiveTracking === true &&
-        NOTIFY_PROMOTIONS.includes(event?.promotion || '')
-      );
+      setModalShowBell(event?.notificationsAllowed === true);
     } else {
       router.push(`/fight/${fight.id}`);
     }
