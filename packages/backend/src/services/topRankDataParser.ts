@@ -738,6 +738,29 @@ async function importTopRankEvents(
     }
   }
 
+  // ============== EVENT-LEVEL CANCELLATION DETECTION ==============
+  const scrapedEventUrls = new Set(Array.from(uniqueEvents.keys()));
+
+  const existingUpcomingEvents = await prisma.event.findMany({
+    where: { promotion: 'TOP_RANK', eventStatus: 'UPCOMING', scraperType: 'tapology' },
+    select: { id: true, name: true, ufcUrl: true },
+  });
+
+  let eventsCancelled = 0;
+  for (const dbEvent of existingUpcomingEvents) {
+    if (dbEvent.ufcUrl && !scrapedEventUrls.has(dbEvent.ufcUrl)) {
+      await prisma.event.update({ where: { id: dbEvent.id }, data: { eventStatus: 'CANCELLED' } });
+      console.log(`  ❌ Cancelling event (no longer on Tapology): ${dbEvent.name}`);
+      const cancelledFights = await prisma.fight.updateMany({
+        where: { eventId: dbEvent.id, fightStatus: 'UPCOMING' },
+        data: { fightStatus: 'CANCELLED' },
+      });
+      if (cancelledFights.count > 0) console.log(`    ❌ Cancelled ${cancelledFights.count} fights`);
+      eventsCancelled++;
+    }
+  }
+  if (eventsCancelled > 0) console.log(`  ⚠ Cancelled ${eventsCancelled} Top Rank events no longer on Tapology`);
+
   console.log(`✅ Imported all Top Rank events\n`);
 }
 

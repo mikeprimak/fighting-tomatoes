@@ -417,6 +417,29 @@ async function importRAFEvents(
     if (unCancelledCount > 0) console.log(`    ✅ Un-cancelled ${unCancelledCount} fights`);
   }
 
+  // ============== EVENT-LEVEL CANCELLATION DETECTION ==============
+  const scrapedEventUrls = new Set(eventsData.events.map(e => e.eventUrl));
+
+  const existingUpcomingEvents = await prisma.event.findMany({
+    where: { promotion: 'RAF', eventStatus: 'UPCOMING', scraperType: 'raf' },
+    select: { id: true, name: true, ufcUrl: true },
+  });
+
+  let eventsCancelled = 0;
+  for (const dbEvent of existingUpcomingEvents) {
+    if (dbEvent.ufcUrl && !scrapedEventUrls.has(dbEvent.ufcUrl)) {
+      await prisma.event.update({ where: { id: dbEvent.id }, data: { eventStatus: 'CANCELLED' } });
+      console.log(`  ❌ Cancelling event (no longer on RAF site): ${dbEvent.name}`);
+      const cancelledFights = await prisma.fight.updateMany({
+        where: { eventId: dbEvent.id, fightStatus: 'UPCOMING' },
+        data: { fightStatus: 'CANCELLED' },
+      });
+      if (cancelledFights.count > 0) console.log(`    ❌ Cancelled ${cancelledFights.count} fights`);
+      eventsCancelled++;
+    }
+  }
+  if (eventsCancelled > 0) console.log(`  ⚠ Cancelled ${eventsCancelled} events no longer on RAF website`);
+
   console.log(`✅ Imported all RAF events\n`);
 }
 

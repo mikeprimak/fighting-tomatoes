@@ -663,6 +663,44 @@ async function importOneFCEvents(
     }
   }
 
+  // ============== EVENT-LEVEL CANCELLATION DETECTION ==============
+  // If an UPCOMING ONE FC event is no longer on the website, mark it CANCELLED
+  const scrapedEventUrls = new Set(Array.from(uniqueEvents.keys()));
+
+  const existingUpcomingEvents = await prisma.event.findMany({
+    where: {
+      promotion: 'ONE',
+      eventStatus: 'UPCOMING',
+      scraperType: 'onefc',
+    },
+    select: { id: true, name: true, ufcUrl: true },
+  });
+
+  let eventsCancelled = 0;
+  for (const dbEvent of existingUpcomingEvents) {
+    if (dbEvent.ufcUrl && !scrapedEventUrls.has(dbEvent.ufcUrl)) {
+      await prisma.event.update({
+        where: { id: dbEvent.id },
+        data: { eventStatus: 'CANCELLED' },
+      });
+      console.log(`  ❌ Cancelling event (no longer on ONE FC site): ${dbEvent.name}`);
+
+      // Also cancel all UPCOMING fights for this event
+      const cancelledFights = await prisma.fight.updateMany({
+        where: { eventId: dbEvent.id, fightStatus: 'UPCOMING' },
+        data: { fightStatus: 'CANCELLED' },
+      });
+      if (cancelledFights.count > 0) {
+        console.log(`    ❌ Cancelled ${cancelledFights.count} fights`);
+      }
+      eventsCancelled++;
+    }
+  }
+
+  if (eventsCancelled > 0) {
+    console.log(`  ⚠ Cancelled ${eventsCancelled} events no longer on ONE FC website`);
+  }
+
   console.log(`✅ Imported all ONE FC events\n`);
 }
 

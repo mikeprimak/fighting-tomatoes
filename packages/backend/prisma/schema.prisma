@@ -236,6 +236,7 @@ enum EventStatus {
   UPCOMING
   LIVE
   COMPLETED
+  CANCELLED
 }
 
 // ============== EVENTS ==============
