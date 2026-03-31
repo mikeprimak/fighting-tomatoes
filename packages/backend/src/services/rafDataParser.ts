@@ -419,15 +419,20 @@ async function importRAFEvents(
 
   // ============== EVENT-LEVEL CANCELLATION DETECTION ==============
   const scrapedEventUrls = new Set(eventsData.events.map(e => e.eventUrl));
+  const scrapedEventNames = new Set(eventsData.events.map(e => e.eventName.toLowerCase().trim()));
 
   const existingUpcomingEvents = await prisma.event.findMany({
-    where: { promotion: 'RAF', eventStatus: 'UPCOMING', scraperType: 'raf' },
+    where: { promotion: 'RAF', eventStatus: 'UPCOMING' },
     select: { id: true, name: true, ufcUrl: true },
   });
 
   let eventsCancelled = 0;
   for (const dbEvent of existingUpcomingEvents) {
-    if (dbEvent.ufcUrl && !scrapedEventUrls.has(dbEvent.ufcUrl)) {
+    const isStillOnSite = dbEvent.ufcUrl
+      ? scrapedEventUrls.has(dbEvent.ufcUrl)
+      : scrapedEventNames.has(dbEvent.name.toLowerCase().trim());
+
+    if (!isStillOnSite) {
       await prisma.event.update({ where: { id: dbEvent.id }, data: { eventStatus: 'CANCELLED' } });
       console.log(`  ❌ Cancelling event (no longer on RAF site): ${dbEvent.name}`);
       const cancelledFights = await prisma.fight.updateMany({
