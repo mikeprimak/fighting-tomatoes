@@ -666,26 +666,34 @@ async function importOneFCEvents(
   // ============== EVENT-LEVEL CANCELLATION DETECTION ==============
   // If an UPCOMING ONE FC event is no longer on the website, mark it CANCELLED
   const scrapedEventUrls = new Set(Array.from(uniqueEvents.keys()));
+  const scrapedEventNames = new Set(Array.from(uniqueEvents.values()).map(e => e.eventName.toLowerCase().trim()));
 
   const existingUpcomingEvents = await prisma.event.findMany({
     where: {
       promotion: 'ONE',
       eventStatus: 'UPCOMING',
-      scraperType: 'onefc',
     },
-    select: { id: true, name: true, ufcUrl: true },
+    select: { id: true, name: true, ufcUrl: true, scraperType: true },
   });
 
   let eventsCancelled = 0;
   for (const dbEvent of existingUpcomingEvents) {
-    if (dbEvent.ufcUrl && !scrapedEventUrls.has(dbEvent.ufcUrl)) {
+    let isStillOnSite = false;
+
+    if (dbEvent.ufcUrl) {
+      isStillOnSite = scrapedEventUrls.has(dbEvent.ufcUrl);
+    } else {
+      // No URL stored — fall back to name matching
+      isStillOnSite = scrapedEventNames.has(dbEvent.name.toLowerCase().trim());
+    }
+
+    if (!isStillOnSite) {
       await prisma.event.update({
         where: { id: dbEvent.id },
         data: { eventStatus: 'CANCELLED' },
       });
       console.log(`  ❌ Cancelling event (no longer on ONE FC site): ${dbEvent.name}`);
 
-      // Also cancel all UPCOMING fights for this event
       const cancelledFights = await prisma.fight.updateMany({
         where: { eventId: dbEvent.id, fightStatus: 'UPCOMING' },
         data: { fightStatus: 'CANCELLED' },

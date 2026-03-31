@@ -718,15 +718,20 @@ async function importOktagonEvents(
 
   // ============== EVENT-LEVEL CANCELLATION DETECTION ==============
   const scrapedEventUrls = new Set(Array.from(uniqueEvents.keys()));
+  const scrapedEventNames = new Set(Array.from(uniqueEvents.values()).map(e => e.eventName.toLowerCase().trim()));
 
   const existingUpcomingEvents = await prisma.event.findMany({
-    where: { promotion: 'OKTAGON', eventStatus: 'UPCOMING', scraperType: 'oktagon' },
+    where: { promotion: 'OKTAGON', eventStatus: 'UPCOMING' },
     select: { id: true, name: true, ufcUrl: true },
   });
 
   let eventsCancelled = 0;
   for (const dbEvent of existingUpcomingEvents) {
-    if (dbEvent.ufcUrl && !scrapedEventUrls.has(dbEvent.ufcUrl)) {
+    const isStillOnSite = dbEvent.ufcUrl
+      ? scrapedEventUrls.has(dbEvent.ufcUrl)
+      : scrapedEventNames.has(dbEvent.name.toLowerCase().trim());
+
+    if (!isStillOnSite) {
       await prisma.event.update({ where: { id: dbEvent.id }, data: { eventStatus: 'CANCELLED' } });
       console.log(`  ❌ Cancelling event (no longer on OKTAGON site): ${dbEvent.name}`);
       const cancelledFights = await prisma.fight.updateMany({
