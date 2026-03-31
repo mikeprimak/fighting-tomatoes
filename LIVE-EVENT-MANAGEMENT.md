@@ -42,6 +42,23 @@ Examples:
 
 Admin can also manually mark events COMPLETED via the admin panel at any time.
 
+### Event Cancellation Detection (Added Mar 2026)
+
+All 14 daily scrapers automatically detect cancelled events. After importing scraped data, each scraper checks for UPCOMING events in the DB that are no longer on the source website and marks them `CANCELLED` (along with their UPCOMING fights).
+
+**How it works:**
+1. Build a set of scraped event URLs and event names
+2. Query all UPCOMING events for that promotion from the DB
+3. For each DB event: check if its `ufcUrl` is in the scraped URLs set
+4. **If no `ufcUrl`** (older imports): fall back to case-insensitive name matching
+5. If not found by either method, mark event + its fights as `CANCELLED`
+
+**EventStatus enum:** `UPCOMING` | `LIVE` | `COMPLETED` | `CANCELLED`
+
+The lifecycle service naturally skips `CANCELLED` events (it only queries `UPCOMING` and `LIVE`).
+
+**Key detail:** Events without a `ufcUrl` are matched by name. This is important because some events were imported before scrapers set URLs. Name matching is case-insensitive but must be exact — renamed events won't match.
+
 ## Why Events Stay LIVE Until Estimated End
 
 Fights go COMPLETED at section start times so users can rate them immediately. But the **event stays on the "upcoming fights" screen** throughout the evening so users can see all fights from the current event in one place. It moves to "completed fights" based on the estimated duration formula above.
