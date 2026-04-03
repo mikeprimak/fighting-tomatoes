@@ -1,0 +1,82 @@
+'use client';
+
+import { useState } from 'react';
+import { useAuth } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login, continueAsGuest } = useAuth();
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      await login(email, password);
+      router.push('/');
+    } catch (err: any) {
+      setError(err.error || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto flex max-w-sm flex-col items-center pt-12">
+      <h1 className="mb-6 text-2xl font-bold text-primary">GOOD FIGHTS</h1>
+      <h2 className="mb-6 text-lg font-semibold">Sign In</h2>
+
+      <form onSubmit={handleSubmit} className="w-full space-y-4">
+        {error && (
+          <div className="rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+            {error}
+          </div>
+        )}
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          placeholder="Email"
+          required
+          className="w-full rounded-lg border border-border bg-card px-4 py-3 text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none"
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+          placeholder="Password"
+          required
+          className="w-full rounded-lg border border-border bg-card px-4 py-3 text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-lg bg-primary py-3 font-semibold text-text-on-accent transition-colors hover:bg-primary/90 disabled:opacity-50"
+        >
+          {loading ? 'Signing in...' : 'Sign In'}
+        </button>
+      </form>
+
+      <div className="mt-4 flex flex-col items-center gap-2 text-sm">
+        <Link href="/register" className="text-primary hover:underline">
+          Create an account
+        </Link>
+        <Link href="/forgot-password" className="text-text-secondary hover:text-foreground">
+          Forgot password?
+        </Link>
+        <button
+          onClick={() => { continueAsGuest(); router.push('/'); }}
+          className="mt-2 text-text-secondary hover:text-foreground"
+        >
+          Continue as guest
+        </button>
+      </div>
+    </div>
+  );
+}
