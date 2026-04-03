@@ -13,9 +13,9 @@ const corsOptions = {
       'https://goodfights.app', // Landing pages for email verification/password reset
       process.env.FRONTEND_URL,
       process.env.MOBILE_APP_URL
-    ].filter(Boolean)
+    ].filter(Boolean) as string[]
 
-    if (allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       callback(null, true)
     } else {
       callback(new Error('Not allowed by CORS'))
