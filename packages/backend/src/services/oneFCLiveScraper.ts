@@ -222,6 +222,19 @@ class OneFCLiveScraper {
       });
 
       const eventData = await page.evaluate(() => {
+        // Helper to extract short-form method text from a sticker element.
+        // ONE FC stickers contain two spans: long form (e.g. "Unanimous Decision (R3)")
+        // visible at xxl+ breakpoints, and short form (e.g. "UD (R3)") visible below xxl.
+        // textContent concatenates both, breaking the parser. Prefer the short form.
+        const getStickerMethodText = (sticker: Element): string => {
+          const shortSpan = sticker.querySelector('.d-xxl-none');
+          if (shortSpan?.textContent?.trim()) {
+            return shortSpan.textContent.trim();
+          }
+          // Fallback to full textContent if no short span found
+          return sticker.textContent?.trim() || '';
+        };
+
         // Helper to create a unique fight signature
         const createFightSignature = (fighterA: string, fighterB: string) => {
           return [fighterA, fighterB]
@@ -297,7 +310,7 @@ class OneFCLiveScraper {
               const sticker1 = fighter1Container.querySelector('.sticker.is-win');
               if (sticker1) {
                 fighterAWon = true;
-                methodText = sticker1.textContent?.trim() || '';
+                methodText = getStickerMethodText(sticker1);
               }
             }
           }
@@ -309,7 +322,7 @@ class OneFCLiveScraper {
               const sticker2 = fighter2Container.querySelector('.sticker.is-win');
               if (sticker2) {
                 fighterBWon = true;
-                methodText = sticker2.textContent?.trim() || '';
+                methodText = getStickerMethodText(sticker2);
               }
             }
           }
@@ -322,7 +335,7 @@ class OneFCLiveScraper {
             while (el && !fighterAWon) {
               if (el.classList.contains('sticker') && el.classList.contains('is-win')) {
                 fighterAWon = true;
-                methodText = el.textContent?.trim() || '';
+                methodText = getStickerMethodText(el);
               }
               el = el.nextElementSibling;
             }
@@ -331,7 +344,7 @@ class OneFCLiveScraper {
             while (el && !fighterBWon) {
               if (el.classList.contains('sticker') && el.classList.contains('is-win')) {
                 fighterBWon = true;
-                methodText = el.textContent?.trim() || '';
+                methodText = getStickerMethodText(el);
               }
               el = el.nextElementSibling;
             }
@@ -344,11 +357,11 @@ class OneFCLiveScraper {
 
             if (face1Sticker) {
               fighterAWon = true;
-              methodText = face1Sticker.textContent?.trim() || '';
+              methodText = getStickerMethodText(face1Sticker);
             }
             if (face2Sticker) {
               fighterBWon = true;
-              methodText = face2Sticker.textContent?.trim() || '';
+              methodText = getStickerMethodText(face2Sticker);
             }
           }
 
@@ -358,7 +371,7 @@ class OneFCLiveScraper {
             const allStickers = matchup.querySelectorAll('.sticker.is-win');
             allStickers.forEach(sticker => {
               const stickerParent = sticker.parentElement;
-              methodText = sticker.textContent?.trim() || '';
+              methodText = getStickerMethodText(sticker);
 
               // Check if this sticker is in the left or right half by traversing up
               // and checking classList for face1/face2 indicators
