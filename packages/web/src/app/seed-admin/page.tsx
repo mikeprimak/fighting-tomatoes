@@ -57,8 +57,6 @@ interface SeedPrediction {
   id: string;
   userId: string;
   predictedRating: number | null;
-  predictedWinner: string | null;
-  predictedMethod: string | null;
   user: { id: string; displayName: string; email: string };
 }
 
@@ -110,7 +108,7 @@ async function getSeedData(fightId: string, key: string): Promise<{ predictions:
   return adminFetch('/admin/seed-data/' + fightId, key);
 }
 
-async function postSeedHype(fightId: string, entries: Array<{ seedUserId: string; predictedRating: number; predictedWinner?: string; predictedMethod?: string }>, key: string) {
+async function postSeedHype(fightId: string, entries: Array<{ seedUserId: string; predictedRating: number }>, key: string) {
   return adminFetch('/admin/seed-hype', key, { method: 'POST', body: JSON.stringify({ fightId, entries }) });
 }
 
@@ -192,11 +190,6 @@ function SeedDataPanel({
   const [spread, setSpread] = useState(1.2);
   const [previewValues, setPreviewValues] = useState<number[]>([]);
 
-  // Prediction extras
-  const [winnerBias, setWinnerBias] = useState<string>('none'); // 'none', fighter1Id, fighter2Id
-  const [winnerPct, setWinnerPct] = useState(60);
-  const [methodWeights, setMethodWeights] = useState({ KO_TKO: 40, DECISION: 40, SUBMISSION: 20 });
-
   const loadSeedData = useCallback(async () => {
     setLoading(true);
     try {
@@ -232,26 +225,10 @@ function SeedDataPanel({
         if (usersToUse.length === 0) { setSaving(false); return; }
       }
 
-      const entries = usersToUse.map((u, i) => {
-        const entry: any = {
-          seedUserId: u.id,
-          predictedRating: previewValues[i] ?? gaussianRandom(targetMean, spread),
-        };
-
-        // Winner prediction
-        if (winnerBias !== 'none') {
-          const pickFavored = Math.random() * 100 < winnerPct;
-          entry.predictedWinner = pickFavored ? winnerBias : (winnerBias === fight.fighter1Id ? fight.fighter2Id : fight.fighter1Id);
-        }
-
-        // Method prediction
-        const roll = Math.random() * 100;
-        if (roll < methodWeights.KO_TKO) entry.predictedMethod = 'KO_TKO';
-        else if (roll < methodWeights.KO_TKO + methodWeights.DECISION) entry.predictedMethod = 'DECISION';
-        else entry.predictedMethod = 'SUBMISSION';
-
-        return entry;
-      });
+      const entries = usersToUse.map((u, i) => ({
+        seedUserId: u.id,
+        predictedRating: previewValues[i] ?? gaussianRandom(targetMean, spread),
+      }));
 
       await postSeedHype(fight.id, entries, adminKey);
       setSuccess(`Seeded ${entries.length} hype predictions`);
@@ -380,9 +357,6 @@ function SeedDataPanel({
                       <span className="font-bold" style={{ color: tab === 'hype' ? getHypeHeatmapColor(val) : 'var(--color-primary)' }}>
                         {val}
                       </span>
-                      {tab === 'hype' && item.predictedMethod && (
-                        <span className="text-[10px] text-text-secondary">{item.predictedMethod.replace('_', '/')}</span>
-                      )}
                     </div>
                   );
                 })}
@@ -425,60 +399,6 @@ function SeedDataPanel({
                 />
               </div>
             </div>
-
-            {/* Prediction-specific controls */}
-            {tab === 'hype' && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-text-secondary mb-1">Winner Bias</label>
-                  <select
-                    value={winnerBias}
-                    onChange={e => setWinnerBias(e.target.value)}
-                    className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-                  >
-                    <option value="none">No winner picks</option>
-                    <option value={fight.fighter1Id}>{fighterName(fight.fighter1)} favored</option>
-                    <option value={fight.fighter2Id}>{fighterName(fight.fighter2)} favored</option>
-                  </select>
-                </div>
-                {winnerBias !== 'none' && (
-                  <div>
-                    <label className="block text-xs text-text-secondary mb-1">Favored %</label>
-                    <input
-                      type="number" min={50} max={95} value={winnerPct}
-                      onChange={e => setWinnerPct(parseInt(e.target.value) || 60)}
-                      className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {tab === 'hype' && (
-              <div>
-                <label className="block text-xs text-text-secondary mb-1">Method Weights (KO / DEC / SUB)</label>
-                <div className="flex gap-2">
-                  <input
-                    type="number" min={0} max={100} value={methodWeights.KO_TKO}
-                    onChange={e => setMethodWeights({ ...methodWeights, KO_TKO: parseInt(e.target.value) || 0 })}
-                    className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-                    title="KO/TKO %"
-                  />
-                  <input
-                    type="number" min={0} max={100} value={methodWeights.DECISION}
-                    onChange={e => setMethodWeights({ ...methodWeights, DECISION: parseInt(e.target.value) || 0 })}
-                    className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-                    title="Decision %"
-                  />
-                  <input
-                    type="number" min={0} max={100} value={methodWeights.SUBMISSION}
-                    onChange={e => setMethodWeights({ ...methodWeights, SUBMISSION: parseInt(e.target.value) || 0 })}
-                    className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-                    title="Submission %"
-                  />
-                </div>
-              </div>
-            )}
 
             {/* Preview */}
             <div className="rounded-md border border-border/50 bg-background px-3 py-2">
