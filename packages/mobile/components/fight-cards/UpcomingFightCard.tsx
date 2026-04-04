@@ -324,24 +324,28 @@ function UpcomingFightCard({
                 <Text style={styles.hypeSquareNumber}>
                   {predictionStats.averageHype === 10 ? '10' : predictionStats.averageHype.toFixed(1)}
                 </Text>
-                {(fight as any).hypeCount > 0 ? (
-                  <Text style={styles.hypeSquareCount}>
-                    ({(fight as any).hypeCount})
-                  </Text>
+                {(fight as any).hypeCount > 0 || (fight as any).commentCount > 0 ? (
+                  <View style={styles.hypeSquareCountRow}>
+                    {(fight as any).hypeCount > 0 && (
+                      <Text style={styles.hypeSquareCount}>
+                        ({(fight as any).hypeCount})
+                      </Text>
+                    )}
+                    {(fight as any).commentCount > 0 && (
+                      <View style={styles.commentCountRow}>
+                        <FontAwesome name="comment" size={7} color="rgba(0,0,0,0.5)" />
+                        <Text style={styles.commentCountText}>
+                          {(fight as any).commentCount}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                 ) : (
                   <FontAwesome6
                     name="fire-flame-curved"
                     size={14}
                     color="rgba(0,0,0,0.45)"
                   />
-                )}
-                {(fight as any).commentCount > 0 && (
-                  <View style={styles.commentCountRow}>
-                    <FontAwesome name="comment" size={8} color="rgba(0,0,0,0.5)" />
-                    <Text style={styles.commentCountText}>
-                      {(fight as any).commentCount}
-                    </Text>
-                  </View>
                 )}
               </>
             ) : (
@@ -354,7 +358,7 @@ function UpcomingFightCard({
                 />
                 {(fight as any).commentCount > 0 && (
                   <View style={styles.commentCountRow}>
-                    <FontAwesome name="comment" size={8} color="rgba(255,255,255,0.5)" />
+                    <FontAwesome name="comment" size={7} color="rgba(255,255,255,0.5)" />
                     <Text style={[styles.commentCountText, { color: 'rgba(255,255,255,0.5)' }]}>
                       {(fight as any).commentCount}
                     </Text>
@@ -910,6 +914,11 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
+  hypeSquareCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
   hypeSquareCount: {
     color: 'rgba(0,0,0,0.6)',
     fontSize: 9,
@@ -920,7 +929,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-    marginTop: 1,
   },
   commentCountText: {
     color: 'rgba(0,0,0,0.5)',
