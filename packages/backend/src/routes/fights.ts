@@ -155,6 +155,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         _count: {
           select: {
             preFightComments: true,
+            reviews: true,
           },
         },
         event: {
@@ -345,8 +346,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
           transformed.averageHype = 0;
         }
 
-        // Add comment count
+        // Add comment count and review count
         transformed.commentCount = fight._count?.preFightComments || 0;
+        transformed.reviewCount = fight._count?.reviews || 0;
 
         // Transform user rating (take the first/only rating)
         if (fight.ratings && fight.ratings.length > 0) {
@@ -3610,6 +3612,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           _count: {
             select: {
               preFightComments: true,
+              reviews: true,
             },
           },
           event: {
@@ -3777,8 +3780,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
         transformed.averageHype = hypeStats?.averageHype || 0;
         transformed.totalPredictions = hypeStats?.totalPredictions || 0;
 
-        // Add comment count
+        // Add comment count and review count
         transformed.commentCount = fight._count?.preFightComments || 0;
+        transformed.reviewCount = fight._count?.reviews || 0;
 
         // Derive lowercase status from fightStatus enum
         transformed.status = fight.fightStatus === 'COMPLETED' ? 'completed'
