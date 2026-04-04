@@ -546,21 +546,15 @@ export default function WeeklyHypePage() {
     );
   }, []);
 
-  // Convert all <img> in a container to inline data URLs so html-to-image doesn't hit CORS
+  // Convert all <img> in a container to inline data URLs so html-to-image works
   const inlineImages = useCallback(async (container: HTMLElement) => {
     const imgs = container.querySelectorAll('img');
     await Promise.all(
       Array.from(imgs).map(async (img) => {
         if (!img.src || img.src.startsWith('data:')) return;
         try {
-          // For external/backend URLs, route through our proxy
-          let fetchUrl = img.src;
-          if (fetchUrl.includes('r2.dev') || fetchUrl.includes('cloudflare') || fetchUrl.includes('/api/image-proxy')) {
-            // Already proxied or external — fetch as-is
-          } else if (!fetchUrl.startsWith('data:') && !fetchUrl.includes('/good-fights')) {
-            fetchUrl = `/api/image-proxy?url=${encodeURIComponent(fetchUrl)}`;
-          }
-          const resp = await fetch(fetchUrl);
+          // All images get fetched and inlined as data URLs
+          const resp = await fetch(img.src);
           const blob = await resp.blob();
           const dataUrl = await new Promise<string>((resolve) => {
             const reader = new FileReader();
@@ -569,7 +563,7 @@ export default function WeeklyHypePage() {
           });
           img.src = dataUrl;
         } catch {
-          // If fetch fails, remove the image to avoid CORS error in toPng
+          // If fetch fails, remove the image to avoid broken image in toPng
           img.removeAttribute('src');
         }
       }),
