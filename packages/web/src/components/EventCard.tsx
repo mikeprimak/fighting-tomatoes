@@ -59,20 +59,44 @@ export function EventCard({ event, mode }: EventCardProps) {
 
   return (
     <div className="mb-6">
-      {/* Event header */}
+      {/* Event banner + header */}
       <Link href={`/events/${event.id}`} className="block">
-        <div className="mb-3 flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-foreground sm:text-base">{event.name}</h2>
-            <div className="flex items-center gap-2 text-xs text-text-secondary">
-              <span>{formatEventDate(event.date)}</span>
-              {event.venue && <span>- {event.venue}</span>}
+        {event.bannerImage ? (
+          <div className="relative mb-2 aspect-video w-full overflow-hidden rounded-lg">
+            <img
+              src={event.bannerImage}
+              alt={event.name}
+              className="h-full w-full object-cover"
+            />
+            {/* Overlay with date badge and event name */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between p-3">
+              <div>
+                <h2 className="text-sm font-bold text-white sm:text-base drop-shadow-lg">{event.name}</h2>
+                <div className="flex items-center gap-2 text-xs text-gray-300">
+                  <span>{formatEventDate(event.date)}</span>
+                  {event.venue && <span>- {event.venue}</span>}
+                </div>
+              </div>
+              <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-semibold ${timeBadgeColor}`}>
+                {timeBadge}
+              </span>
             </div>
           </div>
-          <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-semibold ${timeBadgeColor}`}>
-            {timeBadge}
-          </span>
-        </div>
+        ) : (
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-foreground sm:text-base">{event.name}</h2>
+              <div className="flex items-center gap-2 text-xs text-text-secondary">
+                <span>{formatEventDate(event.date)}</span>
+                {event.venue && <span>- {event.venue}</span>}
+              </div>
+            </div>
+            <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-semibold ${timeBadgeColor}`}>
+              {timeBadge}
+            </span>
+          </div>
+        )}
       </Link>
 
       {/* Fights by section */}

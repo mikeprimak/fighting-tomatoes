@@ -59,6 +59,17 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 
 **Archive**: See `CLAUDE-ARCHIVE.md` for detailed setup guides, troubleshooting, feature implementations, and history.
 
+## Web App
+
+- **Package**: `packages/web` (Next.js 16.2 + Tailwind v4)
+- **Production URL**: https://web-jet-gamma-12.vercel.app
+- **Vercel project**: `michael-primaks-projects/web`
+- **29 routes**, SSR with SEO metadata, dark-only theme
+- **Env vars** (set in Vercel): `API_URL` and `NEXT_PUBLIC_API_URL` → Render backend
+- **Dev**: `cd packages/web && pnpm dev` (port 3000)
+- **Deploy**: `cd packages/web && vercel --prod`
+- See `WORK-SESSION-WEB-APP.md` for full build log and remaining TODOs
+
 ## Quick Start
 
 **Commands**:
@@ -70,7 +81,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 
 ## Stack
 
-**Monorepo**: backend (Fastify, Prisma, PostgreSQL), mobile (React Native Expo, Expo Router, React Query)
+**Monorepo**: backend (Fastify, Prisma, PostgreSQL), mobile (React Native Expo, Expo Router, React Query), web (Next.js 16.2, Tailwind v4, React Query)
 **Database**: 20+ tables, UUID v4 keys, JWT dual-token (15min/7day)
 **Mobile**: iOS/Android/Web, Stack-inside-Tabs pattern
 

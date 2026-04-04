@@ -335,14 +335,32 @@ function UpcomingFightCard({
                     color="rgba(0,0,0,0.45)"
                   />
                 )}
+                {(fight as any).commentCount > 0 && (
+                  <View style={styles.commentCountRow}>
+                    <FontAwesome name="comment" size={8} color="rgba(0,0,0,0.5)" />
+                    <Text style={styles.commentCountText}>
+                      {(fight as any).commentCount}
+                    </Text>
+                  </View>
+                )}
               </>
             ) : (
-              <FontAwesome6
-                name="fire-flame-curved"
-                size={16}
-                color={colors.textSecondary}
-                style={{ opacity: 0.5 }}
-              />
+              <>
+                <FontAwesome6
+                  name="fire-flame-curved"
+                  size={16}
+                  color={colors.textSecondary}
+                  style={{ opacity: 0.5 }}
+                />
+                {(fight as any).commentCount > 0 && (
+                  <View style={styles.commentCountRow}>
+                    <FontAwesome name="comment" size={8} color="rgba(255,255,255,0.5)" />
+                    <Text style={[styles.commentCountText, { color: 'rgba(255,255,255,0.5)' }]}>
+                      {(fight as any).commentCount}
+                    </Text>
+                  </View>
+                )}
+              </>
             )}
           </View>
 
@@ -897,6 +915,17 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  commentCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    marginTop: 1,
+  },
+  commentCountText: {
+    color: 'rgba(0,0,0,0.5)',
+    fontSize: 8,
+    fontWeight: '600',
   },
   userCommentInsideBox: {
     position: 'absolute',
