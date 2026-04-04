@@ -15,6 +15,30 @@ import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrack
 
 const prisma = new PrismaClient();
 
+// ============== NAME UTILITIES ==============
+
+/**
+ * Generational suffixes that should be ignored when extracting last names
+ * e.g., "Kai Kamaka III" → last name is "Kamaka", not "III"
+ */
+const GENERATIONAL_SUFFIXES = new Set(['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v']);
+
+/**
+ * Extract the actual last name from a full name, ignoring generational suffixes.
+ * "Kai Kamaka III" → "kamaka"
+ * "Jon Jones" → "jones"
+ * "Roberto De La Cruz Jr" → "cruz"
+ */
+function extractLastName(fullName: string): string {
+  const parts = fullName.toLowerCase().trim().split(/\s+/);
+  // Walk backwards past any generational suffixes
+  let i = parts.length - 1;
+  while (i > 0 && GENERATIONAL_SUFFIXES.has(parts[i])) {
+    i--;
+  }
+  return parts[i] || '';
+}
+
 // ============== SHARED UTILITIES (from ufcDataParser.ts) ==============
 
 /**
@@ -188,8 +212,8 @@ function findFightByFighters(fights: any[], fighter1Name: string, fighter2Name: 
   return fights.find(fight => {
     const f1LastName = fight.fighter1.lastName.toLowerCase();
     const f2LastName = fight.fighter2.lastName.toLowerCase();
-    const fighter1Last = normalize(fighter1Name).split(' ').pop() || '';
-    const fighter2Last = normalize(fighter2Name).split(' ').pop() || '';
+    const fighter1Last = extractLastName(normalize(fighter1Name));
+    const fighter2Last = extractLastName(normalize(fighter2Name));
 
     // Match by last names (more reliable than full names)
     // Check both orderings since UFC.com might list fighters in either order
@@ -267,7 +291,7 @@ function getWinnerFighterId(winnerName: string, fighter1: any, fighter2: any): s
   if (!winnerName) return null;
 
   const normalize = (name: string) => stripDiacritics(name).toLowerCase().trim();
-  const winnerLast = normalize(winnerName).split(' ').pop() || '';
+  const winnerLast = extractLastName(normalize(winnerName));
 
   if (fighter1.lastName.toLowerCase() === winnerLast) {
     return fighter1.id;
