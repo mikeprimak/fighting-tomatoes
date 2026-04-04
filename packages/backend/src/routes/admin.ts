@@ -1732,8 +1732,6 @@ export async function adminRoutes(fastify: FastifyInstance) {
       entries: z.array(z.object({
         seedUserId: z.string().uuid(),
         predictedRating: z.number().int().min(1).max(10),
-        predictedWinner: z.string().uuid().optional(),
-        predictedMethod: z.enum(['DECISION', 'KO_TKO', 'SUBMISSION']).optional(),
       })),
     }).parse(request.body);
 
@@ -1748,16 +1746,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
           userId: entry.seedUserId,
           fightId: body.fightId,
           predictedRating: entry.predictedRating,
-          predictedWinner: entry.predictedWinner || null,
-          predictedMethod: (entry.predictedMethod as any) || null,
           hasRevealedHype: true,
-          hasRevealedWinner: !!entry.predictedWinner,
-          hasRevealedMethod: !!entry.predictedMethod,
         },
         update: {
           predictedRating: entry.predictedRating,
-          predictedWinner: entry.predictedWinner || null,
-          predictedMethod: (entry.predictedMethod as any) || null,
         },
       });
       results.push(prediction);
