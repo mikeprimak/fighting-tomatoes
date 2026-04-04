@@ -393,6 +393,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
             _count: {
               select: {
                 preFightComments: true,
+                reviews: true,
               },
             },
           },
@@ -512,6 +513,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   : 0,
                 hypeCount: hypeData?.count || 0,
                 commentCount: fight._count?.preFightComments || 0,
+                reviewCount: fight._count?.reviews || 0,
                 // User-specific data (null if not authenticated or no data)
                 userRating: userRating ?? null,
                 userHypePrediction: userPrediction?.predictedRating ?? null,

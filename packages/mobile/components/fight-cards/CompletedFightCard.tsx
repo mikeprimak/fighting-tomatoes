@@ -357,19 +357,41 @@ function CompletedFightCard({
                 <Text style={styles.ratingSquareNumber}>
                   {fight.averageRating === 10 ? '10' : fight.averageRating.toFixed(1)}
                 </Text>
-                {fight.totalRatings > 0 && (
-                  <Text style={{ color: 'rgba(0,0,0,0.6)', fontSize: 9, fontWeight: '600', textAlign: 'center' }}>
-                    ({fight.totalRatings})
-                  </Text>
-                )}
+                {(fight.totalRatings > 0 || (fight as any).reviewCount > 0) ? (
+                  <View style={styles.ratingSquareCountRow}>
+                    {fight.totalRatings > 0 && (
+                      <Text style={styles.ratingSquareCount}>
+                        ({fight.totalRatings})
+                      </Text>
+                    )}
+                    {(fight as any).reviewCount > 0 && (
+                      <View style={styles.reviewCountRow}>
+                        <FontAwesome name="comment" size={7} color="rgba(0,0,0,0.5)" />
+                        <Text style={styles.reviewCountText}>
+                          {(fight as any).reviewCount}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                ) : null}
               </>
             ) : (
-              <FontAwesome
-                name="star"
-                size={24}
-                color={colors.textSecondary}
-                style={{ opacity: 0.3 }}
-              />
+              <>
+                <FontAwesome
+                  name="star"
+                  size={24}
+                  color={colors.textSecondary}
+                  style={{ opacity: 0.3 }}
+                />
+                {(fight as any).reviewCount > 0 && (
+                  <View style={styles.reviewCountRow}>
+                    <FontAwesome name="comment" size={7} color="rgba(255,255,255,0.5)" />
+                    <Text style={[styles.reviewCountText, { color: 'rgba(255,255,255,0.5)' }]}>
+                      {(fight as any).reviewCount}
+                    </Text>
+                  </View>
+                )}
+              </>
             )}
           </View>
 
@@ -932,12 +954,25 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   ratingSquareCount: {
-    position: 'absolute',
-    bottom: 9,
-    color: 'rgba(0,0,0,0.5)',
-    fontSize: 10,
+    color: 'rgba(0,0,0,0.6)',
+    fontSize: 9,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  ratingSquareCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  reviewCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  reviewCountText: {
+    color: 'rgba(0,0,0,0.5)',
+    fontSize: 8,
+    fontWeight: '600',
   },
   userCommentInsideBox: {
     position: 'absolute',
