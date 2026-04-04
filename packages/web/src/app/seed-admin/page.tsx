@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Flame, Star, ChevronDown, ChevronUp, Trash2, Plus,
-  Users, Loader2, AlertCircle, Check, Shuffle,
+  Users, Loader2, AlertCircle, Check, Shuffle, KeyRound,
 } from 'lucide-react';
-import { getEvents, getEvent, getEventFights, API_BASE_URL, getAccessToken } from '@/lib/api';
+import { getEvents, getEvent, getEventFights, API_BASE_URL } from '@/lib/api';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -73,43 +73,57 @@ type Tab = 'hype' | 'ratings';
 
 // ─── Admin API helpers ──────────────────────────────────────────────
 
-async function adminFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = getAccessToken();
+const ADMIN_KEY_STORAGE = 'seed_admin_key';
+
+function getStoredKey(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem(ADMIN_KEY_STORAGE) || '';
+}
+
+function setStoredKey(key: string) {
+  localStorage.setItem(ADMIN_KEY_STORAGE, key);
+}
+
+function appendKey(endpoint: string, key: string): string {
+  const sep = endpoint.includes('?') ? '&' : '?';
+  return `${endpoint}${sep}key=${encodeURIComponent(key)}`;
+}
+
+async function adminFetch<T>(endpoint: string, key: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {};
   if (options.body && !(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
   }
-  if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_BASE_URL}${endpoint}`, { ...options, headers: { ...headers, ...(options.headers as Record<string, string>) } });
+  const res = await fetch(`${API_BASE_URL}${appendKey(endpoint, key)}`, { ...options, headers: { ...headers, ...(options.headers as Record<string, string>) } });
   const data = await res.json();
   if (!res.ok) throw { status: res.status, ...data };
   return data;
 }
 
-async function getSeedUsers(): Promise<SeedUser[]> {
-  const data = await adminFetch<{ seedUsers: SeedUser[] }>('/admin/seed-users');
+async function getSeedUsers(key: string): Promise<SeedUser[]> {
+  const data = await adminFetch<{ seedUsers: SeedUser[] }>('/admin/seed-users', key);
   return data.seedUsers;
 }
 
-async function getSeedData(fightId: string): Promise<{ predictions: SeedPrediction[]; ratings: SeedRating[] }> {
-  return adminFetch('/admin/seed-data/' + fightId);
+async function getSeedData(fightId: string, key: string): Promise<{ predictions: SeedPrediction[]; ratings: SeedRating[] }> {
+  return adminFetch('/admin/seed-data/' + fightId, key);
 }
 
-async function postSeedHype(fightId: string, entries: Array<{ seedUserId: string; predictedRating: number; predictedWinner?: string; predictedMethod?: string }>) {
-  return adminFetch('/admin/seed-hype', { method: 'POST', body: JSON.stringify({ fightId, entries }) });
+async function postSeedHype(fightId: string, entries: Array<{ seedUserId: string; predictedRating: number; predictedWinner?: string; predictedMethod?: string }>, key: string) {
+  return adminFetch('/admin/seed-hype', key, { method: 'POST', body: JSON.stringify({ fightId, entries }) });
 }
 
-async function postSeedRating(fightId: string, entries: Array<{ seedUserId: string; rating: number }>) {
-  return adminFetch('/admin/seed-rating', { method: 'POST', body: JSON.stringify({ fightId, entries }) });
+async function postSeedRating(fightId: string, entries: Array<{ seedUserId: string; rating: number }>, key: string) {
+  return adminFetch('/admin/seed-rating', key, { method: 'POST', body: JSON.stringify({ fightId, entries }) });
 }
 
-async function deleteSeedHype(fightId: string) {
-  return adminFetch('/admin/seed-hype/' + fightId, { method: 'DELETE' });
+async function deleteSeedHype(fightId: string, key: string) {
+  return adminFetch('/admin/seed-hype/' + fightId, key, { method: 'DELETE' });
 }
 
-async function deleteSeedRating(fightId: string) {
-  return adminFetch('/admin/seed-rating/' + fightId, { method: 'DELETE' });
+async function deleteSeedRating(fightId: string, key: string) {
+  return adminFetch('/admin/seed-rating/' + fightId, key, { method: 'DELETE' });
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────
@@ -157,11 +171,13 @@ function SeedDataPanel({
   fight,
   seedUsers,
   tab,
+  adminKey,
   onRefreshFight,
 }: {
   fight: Fight;
   seedUsers: SeedUser[];
   tab: Tab;
+  adminKey: string;
   onRefreshFight: () => void;
 }) {
   const [seedData, setSeedData] = useState<{ predictions: SeedPrediction[]; ratings: SeedRating[] } | null>(null);
@@ -184,13 +200,13 @@ function SeedDataPanel({
   const loadSeedData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getSeedData(fight.id);
+      const data = await getSeedData(fight.id, adminKey);
       setSeedData(data);
     } catch (err: any) {
       setError(err.error || 'Failed to load seed data');
     }
     setLoading(false);
-  }, [fight.id]);
+  }, [fight.id, adminKey]);
 
   useEffect(() => {
     loadSeedData();
@@ -237,7 +253,7 @@ function SeedDataPanel({
         return entry;
       });
 
-      await postSeedHype(fight.id, entries);
+      await postSeedHype(fight.id, entries, adminKey);
       setSuccess(`Seeded ${entries.length} hype predictions`);
       await loadSeedData();
       onRefreshFight();
@@ -264,7 +280,7 @@ function SeedDataPanel({
         rating: previewValues[i] ?? gaussianRandom(targetMean, spread),
       }));
 
-      await postSeedRating(fight.id, entries);
+      await postSeedRating(fight.id, entries, adminKey);
       setSuccess(`Seeded ${entries.length} ratings`);
       await loadSeedData();
       onRefreshFight();
@@ -281,10 +297,10 @@ function SeedDataPanel({
     setSuccess('');
     try {
       if (tab === 'hype') {
-        const res: any = await deleteSeedHype(fight.id);
+        const res: any = await deleteSeedHype(fight.id, adminKey);
         setSuccess(`Removed ${res.deleted} seed predictions`);
       } else {
-        const res: any = await deleteSeedRating(fight.id);
+        const res: any = await deleteSeedRating(fight.id, adminKey);
         setSuccess(`Removed ${res.deleted} seed ratings`);
       }
       await loadSeedData();
@@ -530,14 +546,23 @@ export default function SeedAdminPage() {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
   const [loadingEvents, setLoadingEvents] = useState<Set<string>>(new Set());
+  const [adminKey, setAdminKey] = useState('');
+  const [keyVerified, setKeyVerified] = useState(false);
+
+  // Load stored key on mount
+  useEffect(() => {
+    const stored = getStoredKey();
+    if (stored) setAdminKey(stored);
+  }, []);
 
   const eventType = tab === 'hype' ? 'upcoming' : 'past';
 
   const loadEvents = useCallback(async () => {
+    if (!adminKey) { setLoading(false); return; }
     setLoading(true);
     setAuthError(false);
     try {
-      // Load events (public endpoint - works without auth)
+      // Load events (public endpoint)
       const eventsRes = await getEvents({ type: eventType, limit: 30, includeFights: true });
       setEvents(eventsRes.events);
 
@@ -550,13 +575,16 @@ export default function SeedAdminPage() {
       }
       setEventFightsMap(fMap);
 
-      // Load seed users (admin endpoint - may fail if not logged in)
+      // Load seed users (key-protected admin endpoint)
       try {
-        const seedUsersRes = await getSeedUsers();
+        const seedUsersRes = await getSeedUsers(adminKey);
         setSeedUsers(seedUsersRes);
+        setKeyVerified(true);
+        setStoredKey(adminKey);
       } catch (adminErr: any) {
-        if (adminErr?.status === 401 || adminErr?.status === 403) {
+        if (adminErr?.status === 401) {
           setAuthError(true);
+          setKeyVerified(false);
         } else {
           console.error('Failed to load seed users:', adminErr);
         }
@@ -565,7 +593,7 @@ export default function SeedAdminPage() {
       console.error('Failed to load events:', err);
     }
     setLoading(false);
-  }, [eventType]);
+  }, [eventType, adminKey]);
 
   useEffect(() => {
     loadEvents();
@@ -599,17 +627,34 @@ export default function SeedAdminPage() {
     loadEvents();
   };
 
-  if (authError) {
+  if (!keyVerified) {
     return (
-      <div className="max-w-md mx-auto mt-20 text-center">
-        <AlertCircle size={48} className="mx-auto mb-4 text-danger" />
-        <h1 className="text-xl font-bold text-foreground mb-2">Admin Access Required</h1>
-        <p className="text-text-secondary mb-4">
-          Log in with an admin account to access the seed data dashboard.
-        </p>
-        <a href="/login" className="inline-block bg-primary text-text-on-accent px-6 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors">
-          Log In
-        </a>
+      <div className="max-w-sm mx-auto mt-20 text-center">
+        <KeyRound size={48} className="mx-auto mb-4 text-primary" />
+        <h1 className="text-xl font-bold text-foreground mb-2">Seed Admin</h1>
+        <p className="text-text-secondary mb-4">Enter the admin key to continue.</p>
+        {authError && (
+          <div className="flex items-center justify-center gap-2 text-sm text-danger bg-danger/10 rounded-lg px-3 py-2 mb-4">
+            <AlertCircle size={14} /> Invalid key
+          </div>
+        )}
+        <form onSubmit={(e) => { e.preventDefault(); loadEvents(); }} className="space-y-3">
+          <input
+            type="password"
+            value={adminKey}
+            onChange={e => { setAdminKey(e.target.value); setAuthError(false); }}
+            placeholder="Admin key"
+            className="w-full rounded-lg border border-border bg-card px-4 py-2.5 text-foreground text-center"
+            autoFocus
+          />
+          <button
+            type="submit"
+            disabled={!adminKey || loading}
+            className="w-full rounded-lg bg-primary text-text-on-accent px-4 py-2.5 font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Verifying...' : 'Continue'}
+          </button>
+        </form>
       </div>
     );
   }
@@ -761,6 +806,7 @@ export default function SeedAdminPage() {
                 fight={selectedFight}
                 seedUsers={seedUsers}
                 tab={tab}
+                adminKey={adminKey}
                 onRefreshFight={handleRefreshFight}
               />
             ) : (

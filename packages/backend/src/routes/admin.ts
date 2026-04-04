@@ -1677,10 +1677,19 @@ export async function adminRoutes(fastify: FastifyInstance) {
   const SEED_EMAIL_PREFIX = 'seed-user-';
   const SEED_EMAIL_DOMAIN = 'goodfights.app';
 
+  // Helper: validate key for seed endpoints
+  function validateSeedKey(request: any, reply: any): boolean {
+    const { key } = request.query as { key?: string };
+    if (key !== TEST_SCRAPER_KEY) {
+      reply.code(401).send({ error: 'Invalid key' });
+      return false;
+    }
+    return true;
+  }
+
   // GET /admin/seed-users - List all seed users
-  fastify.get('/admin/seed-users', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (_request, reply) => {
+  fastify.get('/admin/seed-users', async (_request: any, reply) => {
+    if (!validateSeedKey(_request, reply)) return;
     const seedUsers = await prisma.user.findMany({
       where: { email: { startsWith: SEED_EMAIL_PREFIX, endsWith: `@${SEED_EMAIL_DOMAIN}` } },
       select: { id: true, email: true, displayName: true },
@@ -1690,9 +1699,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // GET /admin/seed-data/:fightId - Get seed predictions & ratings for a fight
-  fastify.get('/admin/seed-data/:fightId', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
+  fastify.get('/admin/seed-data/:fightId', async (request: any, reply) => {
+    if (!validateSeedKey(request, reply)) return;
     const { fightId } = request.params as { fightId: string };
     const seedUsers = await prisma.user.findMany({
       where: { email: { startsWith: SEED_EMAIL_PREFIX, endsWith: `@${SEED_EMAIL_DOMAIN}` } },
@@ -1717,9 +1725,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // POST /admin/seed-hype - Create hype predictions for seed users on a fight
-  fastify.post('/admin/seed-hype', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
+  fastify.post('/admin/seed-hype', async (request: any, reply) => {
+    if (!validateSeedKey(request, reply)) return;
     const body = z.object({
       fightId: z.string().uuid(),
       entries: z.array(z.object({
@@ -1767,9 +1774,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // POST /admin/seed-rating - Create ratings for seed users on a fight
-  fastify.post('/admin/seed-rating', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
+  fastify.post('/admin/seed-rating', async (request: any, reply) => {
+    if (!validateSeedKey(request, reply)) return;
     const body = z.object({
       fightId: z.string().uuid(),
       entries: z.array(z.object({
@@ -1822,9 +1828,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // DELETE /admin/seed-hype/:fightId - Remove all seed predictions from a fight
-  fastify.delete('/admin/seed-hype/:fightId', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
+  fastify.delete('/admin/seed-hype/:fightId', async (request: any, reply) => {
+    if (!validateSeedKey(request, reply)) return;
     const { fightId } = request.params as { fightId: string };
     const seedUsers = await prisma.user.findMany({
       where: { email: { startsWith: SEED_EMAIL_PREFIX, endsWith: `@${SEED_EMAIL_DOMAIN}` } },
@@ -1840,9 +1845,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // DELETE /admin/seed-rating/:fightId - Remove all seed ratings from a fight
-  fastify.delete('/admin/seed-rating/:fightId', {
-    preValidation: [fastify.authenticate, requireAdmin],
-  }, async (request, reply) => {
+  fastify.delete('/admin/seed-rating/:fightId', async (request: any, reply) => {
+    if (!validateSeedKey(request, reply)) return;
     const { fightId } = request.params as { fightId: string };
     const seedUsers = await prisma.user.findMany({
       where: { email: { startsWith: SEED_EMAIL_PREFIX, endsWith: `@${SEED_EMAIL_DOMAIN}` } },
