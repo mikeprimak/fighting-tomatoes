@@ -1670,6 +1670,217 @@ export async function adminRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // ============================================
+  // SEED DATA MANAGEMENT
+  // ============================================
+
+  const SEED_EMAIL_PREFIX = 'seed-user-';
+  const SEED_EMAIL_DOMAIN = 'goodfights.app';
+
+  // GET /admin/seed-users - List all seed users
+  fastify.get('/admin/seed-users', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (_request, reply) => {
+    const seedUsers = await prisma.user.findMany({
+      where: { email: { startsWith: SEED_EMAIL_PREFIX, endsWith: `@${SEED_EMAIL_DOMAIN}` } },
+      select: { id: true, email: true, displayName: true },
+      orderBy: { email: 'asc' },
+    });
+    return reply.send({ seedUsers });
+  });
+
+  // GET /admin/seed-data/:fightId - Get seed predictions & ratings for a fight
+  fastify.get('/admin/seed-data/:fightId', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { fightId } = request.params as { fightId: string };
+    const seedUsers = await prisma.user.findMany({
+      where: { email: { startsWith: SEED_EMAIL_PREFIX, endsWith: `@${SEED_EMAIL_DOMAIN}` } },
+      select: { id: true },
+    });
+    const seedUserIds = seedUsers.map(u => u.id);
+
+    const [predictions, ratings] = await Promise.all([
+      prisma.fightPrediction.findMany({
+        where: { fightId, userId: { in: seedUserIds } },
+        include: { user: { select: { id: true, displayName: true, email: true } } },
+        orderBy: { createdAt: 'asc' },
+      }),
+      prisma.fightRating.findMany({
+        where: { fightId, userId: { in: seedUserIds } },
+        include: { user: { select: { id: true, displayName: true, email: true } } },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+
+    return reply.send({ predictions, ratings });
+  });
+
+  // POST /admin/seed-hype - Create hype predictions for seed users on a fight
+  fastify.post('/admin/seed-hype', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const body = z.object({
+      fightId: z.string().uuid(),
+      entries: z.array(z.object({
+        seedUserId: z.string().uuid(),
+        predictedRating: z.number().int().min(1).max(10),
+        predictedWinner: z.string().uuid().optional(),
+        predictedMethod: z.enum(['DECISION', 'KO_TKO', 'SUBMISSION']).optional(),
+      })),
+    }).parse(request.body);
+
+    const fight = await prisma.fight.findUnique({ where: { id: body.fightId } });
+    if (!fight) return reply.code(404).send({ error: 'Fight not found' });
+
+    const results = [];
+    for (const entry of body.entries) {
+      const prediction = await prisma.fightPrediction.upsert({
+        where: { userId_fightId: { userId: entry.seedUserId, fightId: body.fightId } },
+        create: {
+          userId: entry.seedUserId,
+          fightId: body.fightId,
+          predictedRating: entry.predictedRating,
+          predictedWinner: entry.predictedWinner || null,
+          predictedMethod: (entry.predictedMethod as any) || null,
+          hasRevealedHype: true,
+          hasRevealedWinner: !!entry.predictedWinner,
+          hasRevealedMethod: !!entry.predictedMethod,
+        },
+        update: {
+          predictedRating: entry.predictedRating,
+          predictedWinner: entry.predictedWinner || null,
+          predictedMethod: (entry.predictedMethod as any) || null,
+        },
+      });
+      results.push(prediction);
+    }
+
+    // Compute current aggregate hype (computed on-the-fly, not stored)
+    const agg = await prisma.fightPrediction.aggregate({
+      where: { fightId: body.fightId, predictedRating: { not: null } },
+      _avg: { predictedRating: true },
+      _count: true,
+    });
+
+    return reply.send({ created: results.length, averageHype: agg._avg.predictedRating, totalPredictions: agg._count });
+  });
+
+  // POST /admin/seed-rating - Create ratings for seed users on a fight
+  fastify.post('/admin/seed-rating', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const body = z.object({
+      fightId: z.string().uuid(),
+      entries: z.array(z.object({
+        seedUserId: z.string().uuid(),
+        rating: z.number().int().min(1).max(10),
+      })),
+    }).parse(request.body);
+
+    const fight = await prisma.fight.findUnique({ where: { id: body.fightId } });
+    if (!fight) return reply.code(404).send({ error: 'Fight not found' });
+
+    for (const entry of body.entries) {
+      await prisma.fightRating.upsert({
+        where: { userId_fightId: { userId: entry.seedUserId, fightId: body.fightId } },
+        create: {
+          userId: entry.seedUserId,
+          fightId: body.fightId,
+          rating: entry.rating,
+          hasRevealedOutcome: true,
+        },
+        update: { rating: entry.rating },
+      });
+    }
+
+    // Recompute fight aggregate rating stats
+    const ratingStats = await prisma.fightRating.aggregate({
+      where: { fightId: body.fightId },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+    const ratingCounts = await prisma.fightRating.groupBy({
+      by: ['rating'],
+      where: { fightId: body.fightId },
+      _count: { rating: true },
+    });
+    const ratingDistribution: any = {};
+    for (let i = 1; i <= 10; i++) {
+      ratingDistribution[`ratings${i}`] = ratingCounts.find(r => r.rating === i)?._count.rating || 0;
+    }
+    await prisma.fight.update({
+      where: { id: body.fightId },
+      data: {
+        averageRating: ratingStats._avg.rating || 0,
+        totalRatings: ratingStats._count.rating || 0,
+        ...ratingDistribution,
+      },
+    });
+
+    return reply.send({ created: body.entries.length, averageRating: ratingStats._avg.rating });
+  });
+
+  // DELETE /admin/seed-hype/:fightId - Remove all seed predictions from a fight
+  fastify.delete('/admin/seed-hype/:fightId', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { fightId } = request.params as { fightId: string };
+    const seedUsers = await prisma.user.findMany({
+      where: { email: { startsWith: SEED_EMAIL_PREFIX, endsWith: `@${SEED_EMAIL_DOMAIN}` } },
+      select: { id: true },
+    });
+    const seedUserIds = seedUsers.map(u => u.id);
+
+    const deleted = await prisma.fightPrediction.deleteMany({
+      where: { fightId, userId: { in: seedUserIds } },
+    });
+
+    return reply.send({ deleted: deleted.count });
+  });
+
+  // DELETE /admin/seed-rating/:fightId - Remove all seed ratings from a fight
+  fastify.delete('/admin/seed-rating/:fightId', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { fightId } = request.params as { fightId: string };
+    const seedUsers = await prisma.user.findMany({
+      where: { email: { startsWith: SEED_EMAIL_PREFIX, endsWith: `@${SEED_EMAIL_DOMAIN}` } },
+      select: { id: true },
+    });
+    const seedUserIds = seedUsers.map(u => u.id);
+
+    const deleted = await prisma.fightRating.deleteMany({
+      where: { fightId, userId: { in: seedUserIds } },
+    });
+
+    // Recompute aggregate rating stats
+    const ratingStats = await prisma.fightRating.aggregate({
+      where: { fightId },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+    const ratingCounts = await prisma.fightRating.groupBy({
+      by: ['rating'],
+      where: { fightId },
+      _count: { rating: true },
+    });
+    const ratingDistribution: any = {};
+    for (let i = 1; i <= 10; i++) {
+      ratingDistribution[`ratings${i}`] = ratingCounts.find(r => r.rating === i)?._count.rating || 0;
+    }
+    await prisma.fight.update({
+      where: { id: fightId },
+      data: {
+        averageRating: ratingStats._avg.rating || 0,
+        totalRatings: ratingStats._count.rating || 0,
+        ...ratingDistribution,
+      },
+    });
+
+    return reply.send({ deleted: deleted.count });
+  });
+
   // PUT /admin/config/notify-promotions
   fastify.put('/admin/config/notify-promotions', {
     preHandler: [fastify.authenticate, requireAdmin],
