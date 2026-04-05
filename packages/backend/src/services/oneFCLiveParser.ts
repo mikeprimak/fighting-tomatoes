@@ -16,15 +16,9 @@ const prisma = new PrismaClient();
 /**
  * Find fight by fighter names (matches by last name, handles single-name fighters)
  */
-function findFightByFighters(dbFights: any[], fighterAName: string, fighterBName: string) {
-  // Extract last names (or full name for single-name fighters)
-  const getLastName = (fullName: string) => {
-    const parts = fullName.trim().split(/\s+/);
-    return stripDiacritics(parts[parts.length - 1]).toLowerCase();
-  };
-
-  const scraperALast = getLastName(fighterAName);
-  const scraperBLast = getLastName(fighterBName);
+function findFightByFighters(dbFights: any[], fighterALastName: string, fighterBLastName: string) {
+  const scraperALast = stripDiacritics(fighterALastName).toLowerCase().trim();
+  const scraperBLast = stripDiacritics(fighterBLastName).toLowerCase().trim();
 
   return dbFights.find(fight => {
     const dbF1Last = fight.fighter1.lastName.toLowerCase();
@@ -179,9 +173,9 @@ export async function parseOneFCLiveData(
         .join('|');
       scrapedFightSignatures.add(fightSignature);
 
-      console.log(`  🔎 Looking for: ${fighterAName} vs ${fighterBName}`);
+      console.log(`  🔎 Looking for: ${fighterAName} vs ${fighterBName} (by lastName: ${fighterALast} vs ${fighterBLast})`);
 
-      const dbFight = findFightByFighters(event.fights, fighterAName, fighterBName);
+      const dbFight = findFightByFighters(event.fights, fighterALast, fighterBLast);
 
       if (!dbFight) {
         console.warn(`    ⚠ Fight not found in DB`);
