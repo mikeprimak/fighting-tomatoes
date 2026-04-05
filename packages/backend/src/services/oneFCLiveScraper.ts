@@ -83,9 +83,36 @@ interface OneFCScraperSnapshot {
 
 /**
  * Parse fighter name into first and last name
- * ONE FC often uses single-name fighters (e.g., "Superbon")
+ * Prefers athlete URL slug over display name for consistency with the daily scraper,
+ * which also parses from URL slugs. This is critical for Thai Muay Thai fighters
+ * whose display names (e.g., "Payakrut") differ from their URL slugs
+ * (e.g., "/athletes/payakrut-suajantokmuaythai/").
  */
-function parseFighterName(fullName: string): { firstName: string; lastName: string } {
+function parseFighterName(fullName: string, athleteUrl?: string): { firstName: string; lastName: string } {
+  // Try URL slug first (matches daily scraper's parseOneFCFighterName logic)
+  if (athleteUrl) {
+    const urlMatch = athleteUrl.match(/\/athletes\/([^/]+)\/?$/);
+    if (urlMatch) {
+      let slug = urlMatch[1];
+      try {
+        if (/%[0-9A-Fa-f]{2}/.test(slug)) {
+          slug = decodeURIComponent(slug);
+        }
+      } catch (e) {
+        // Keep original slug if decoding fails
+      }
+      const parts = slug.split('-').map(p =>
+        p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()
+      );
+      if (parts.length >= 2) {
+        return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
+      } else if (parts.length === 1) {
+        return { firstName: '', lastName: parts[0] };
+      }
+    }
+  }
+
+  // Fallback: parse from display name
   const parts = fullName.trim().split(/\s+/);
   if (parts.length === 1) {
     // Single name fighter - store in lastName
@@ -462,8 +489,8 @@ class OneFCLiveScraper {
       const sport = parseSport(fight.weightClass);
       const weightClass = cleanWeightClass(fight.weightClass);
 
-      const fighterANames = parseFighterName(fight.fighterAName);
-      const fighterBNames = parseFighterName(fight.fighterBName);
+      const fighterANames = parseFighterName(fight.fighterAName, fight.fighterAUrl);
+      const fighterBNames = parseFighterName(fight.fighterBName, fight.fighterBUrl);
 
       let result: OneFCFightResult | undefined;
 
