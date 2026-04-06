@@ -317,6 +317,9 @@ async function importGoldenBoyEvents(
       eventDate,
       eventData.eventStartTime
     );
+    if (!mainStartTime) {
+      console.warn(`[GoldenBoy] ⚠️ No start time found for "${eventData.eventName}" (date: ${eventData.dateText}). Event will NOT auto-transition to LIVE.`);
+    }
 
     // Try to find existing event by URL first, then by name+date
     let event = await prisma.event.findFirst({

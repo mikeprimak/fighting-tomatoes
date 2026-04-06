@@ -255,17 +255,36 @@ async function scrapeEventPage(browser, eventUrl) {
         data.dateText = dateMatch[0].trim();
       }
 
-      // Extract event start time from page text (Tapology shows times in ET)
-      const timePatterns = [
-        /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT)/i,
-        /(\d{1,2}:\d{2}(?:am|pm))\s*(?:ET|EST|EDT)/i,
-        /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:PT|PST|PDT|CT|CST|CDT)/i,
-      ];
-      for (const pattern of timePatterns) {
-        const timeMatch = pageText.match(pattern);
-        if (timeMatch) {
-          data.eventStartTime = timeMatch[1].trim().toUpperCase();
-          break;
+      // Extract event start time - try targeted CSS selector first, then fall back to page text
+      const dateTimeLi = document.querySelector('li span.font-bold');
+      if (dateTimeLi && /date\s*\/?\s*time/i.test(dateTimeLi.textContent)) {
+        const valueSpan = dateTimeLi.parentElement.querySelector('span.text-neutral-700, span:not(.font-bold)');
+        if (valueSpan) {
+          const dtText = valueSpan.textContent || '';
+          const dtTimeMatch = dtText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT|PT|PST|PDT|CT|CST|CDT)/i);
+          if (dtTimeMatch) {
+            data.eventStartTime = dtTimeMatch[1].trim().toUpperCase();
+          }
+          const numDateMatch = dtText.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+          if (numDateMatch && !data.dateText) {
+            const [, mm, dd, yyyy] = numDateMatch;
+            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            data.dateText = `${monthNames[parseInt(mm,10)-1]} ${parseInt(dd,10)}, ${yyyy}`;
+          }
+        }
+      }
+      if (!data.eventStartTime) {
+        const timePatterns = [
+          /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT)/i,
+          /(\d{1,2}:\d{2}(?:am|pm))\s*(?:ET|EST|EDT)/i,
+          /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:PT|PST|PDT|CT|CST|CDT)/i,
+        ];
+        for (const pattern of timePatterns) {
+          const timeMatch = pageText.match(pattern);
+          if (timeMatch) {
+            data.eventStartTime = timeMatch[1].trim().toUpperCase();
+            break;
+          }
         }
       }
 

@@ -140,10 +140,30 @@ async function scrapeEventPage(browser, eventUrl) {
       const dateMatch = pageText.match(/((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+)?(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}/i);
       if (dateMatch) data.dateText = dateMatch[0].trim();
 
-      const timePatterns = [/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT)/i, /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:PT|PST|PDT|CT|CST|CDT)/i];
-      for (const pattern of timePatterns) {
-        const m = pageText.match(pattern);
-        if (m) { data.eventStartTime = m[1].trim().toUpperCase(); break; }
+      // Extract event start time - try targeted CSS selector first, then fall back to page text
+      const dateTimeLi = document.querySelector('li span.font-bold');
+      if (dateTimeLi && /date\s*\/?\s*time/i.test(dateTimeLi.textContent)) {
+        const valueSpan = dateTimeLi.parentElement.querySelector('span.text-neutral-700, span:not(.font-bold)');
+        if (valueSpan) {
+          const dtText = valueSpan.textContent || '';
+          const dtTimeMatch = dtText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT|PT|PST|PDT|CT|CST|CDT)/i);
+          if (dtTimeMatch) {
+            data.eventStartTime = dtTimeMatch[1].trim().toUpperCase();
+          }
+          const numDateMatch = dtText.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+          if (numDateMatch && !data.dateText) {
+            const [, mm, dd, yyyy] = numDateMatch;
+            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            data.dateText = `${monthNames[parseInt(mm,10)-1]} ${parseInt(dd,10)}, ${yyyy}`;
+          }
+        }
+      }
+      if (!data.eventStartTime) {
+        const timePatterns = [/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT)/i, /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:PT|PST|PDT|CT|CST|CDT)/i];
+        for (const pattern of timePatterns) {
+          const m = pageText.match(pattern);
+          if (m) { data.eventStartTime = m[1].trim().toUpperCase(); break; }
+        }
       }
 
       const headshots = new Map();

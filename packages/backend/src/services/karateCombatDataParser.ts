@@ -217,6 +217,9 @@ async function importKarateCombatEvents(
     const eventDate = parseKarateCombatDate(eventData.eventDate);
     // Parse event start time (Tapology defaults to ET)
     const mainStartTime = eventTimeToUTC(eventDate, eventData.eventStartTime, 'America/New_York');
+    if (!mainStartTime) {
+      console.warn(`[KarateCombat] ⚠️ No start time found for "${eventData.eventName}" (date: ${eventData.eventDate}). Event will NOT auto-transition to LIVE.`);
+    }
 
     const location = [eventData.city, eventData.state, eventData.country]
       .filter(Boolean)
