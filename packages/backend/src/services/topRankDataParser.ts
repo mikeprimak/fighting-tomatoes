@@ -426,6 +426,9 @@ async function importTopRankEvents(
       ? timezoneAbbrevToIANA(eventData.eventStartTimezone)
       : 'America/New_York';
     const mainStartTime = eventTimeToUTC(eventDate, eventData.eventStartTime, timezone);
+    if (!mainStartTime) {
+      console.warn(`[TopRank] ⚠️ No start time found for "${eventData.eventName}" (date: ${eventData.dateText}). Event will NOT auto-transition to LIVE.`);
+    }
 
     // Parse location
     const location = [eventData.city, eventData.country]

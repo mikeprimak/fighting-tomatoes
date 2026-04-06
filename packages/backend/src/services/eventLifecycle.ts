@@ -126,6 +126,19 @@ async function triggerGitHubLiveTracker(
 }
 
 /**
+ * Check if an event has a confirmed start time (not just a date fallback).
+ * Events scraped from Tapology often only have a date (midnight) because
+ * the scraper can't find the actual start time on the page.
+ */
+function hasConfirmedStartTime(event: {
+  mainStartTime?: Date | null;
+  prelimStartTime?: Date | null;
+  earlyPrelimStartTime?: Date | null;
+}): boolean {
+  return !!(event.earlyPrelimStartTime || event.prelimStartTime || event.mainStartTime);
+}
+
+/**
  * Get the earliest known start time for an event (fallback to event.date).
  */
 function getStartTime(event: {
@@ -195,6 +208,19 @@ export async function runEventLifecycleCheck(): Promise<{
     });
 
     for (const event of upcomingEvents) {
+      // Skip events that only have a date (midnight) and no confirmed start time.
+      // These are typically Tapology-scraped events where the scraper couldn't find
+      // the actual start time. They require manual intervention via the admin panel.
+      if (!hasConfirmedStartTime(event)) {
+        const eventDate = event.date;
+        // Only log once per event (when midnight has just passed)
+        const msSinceMidnight = now.getTime() - eventDate.getTime();
+        if (msSinceMidnight >= 0 && msSinceMidnight < LIFECYCLE_INTERVAL_MS * 2) {
+          console.warn(`[Lifecycle] BLOCKED: ${event.name} has no confirmed start time (only date: ${eventDate.toISOString()}). Set start time or manually mark LIVE via admin panel.`);
+        }
+        continue;
+      }
+
       const startTime = getStartTime(event);
       if (now >= startTime) {
         await prisma.event.update({

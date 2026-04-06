@@ -1288,6 +1288,17 @@
     </div>
   </header>
 
+  <!-- Alert Banner for events missing start times -->
+  <div id="missingStartTimeAlert" style="display: none; background: #7c2d12; border-bottom: 2px solid #f97316; padding: 0.75rem 2rem; color: #fed7aa;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+      <span style="font-size: 1.2rem;">⚠️</span>
+      <strong style="color: #fb923c;">Events missing start times</strong>
+      <span id="missingStartTimeText" style="flex: 1;"></span>
+      <button onclick="document.getElementById('missingStartTimeAlert').style.display='none'" style="background: none; border: none; color: #fed7aa; cursor: pointer; font-size: 1.2rem; padding: 0 0.5rem;">✕</button>
+    </div>
+    <div id="missingStartTimeList" style="margin-top: 0.5rem; font-size: 0.85rem; color: #fdba74;"></div>
+  </div>
+
   <!-- Events Tab (default) -->
   <div id="eventsTab" class="tab-content active">
     <div class="main-container">
@@ -1889,6 +1900,7 @@
 
         hideLoginScreen();
         loadEvents();
+        checkMissingStartTimes();
         showToast('Logged in successfully', 'success');
       } catch (error) {
         errorDiv.textContent = error.message;
@@ -1915,6 +1927,7 @@
             if (res.ok) {
               hideLoginScreen();
               loadEvents();
+              checkMissingStartTimes();
             } else {
               showLoginScreen();
             }
@@ -1978,12 +1991,42 @@
                 <span>${event._count?.fights || 0} fights</span>
               </span>
               ${event.scraperType ? `<span style="color: var(--accent-orange); font-weight: 600;">⚙️ ${event.scraperType.toUpperCase()}</span>` : ''}
+              ${event.eventStatus === 'UPCOMING' && !event.mainStartTime && !event.prelimStartTime && !event.earlyPrelimStartTime ? `<span style="color: #ef4444; font-weight: 600;" title="No start time — will not auto-transition to LIVE">⚠️ NO TIME</span>` : ''}
             </div>
           </div>
         `).join('');
       } catch (err) {
         showToast('Failed to load events', 'error');
         console.error(err);
+      }
+    }
+
+    async function checkMissingStartTimes() {
+      try {
+        const res = await authFetch(`${API_BASE}/admin/events?upcoming=true&limit=100`);
+        const data = await res.json();
+        if (!data.events) return;
+
+        const missing = data.events.filter(e =>
+          e.eventStatus === 'UPCOMING' && !e.mainStartTime && !e.prelimStartTime && !e.earlyPrelimStartTime
+        );
+
+        const alert = document.getElementById('missingStartTimeAlert');
+        if (missing.length === 0) {
+          alert.style.display = 'none';
+          return;
+        }
+
+        document.getElementById('missingStartTimeText').textContent =
+          `${missing.length} upcoming event${missing.length > 1 ? 's' : ''} will NOT auto-transition to LIVE until a start time is set:`;
+
+        document.getElementById('missingStartTimeList').innerHTML = missing.map(e =>
+          `<span style="display: inline-block; background: #451a03; padding: 2px 8px; border-radius: 4px; margin: 2px 4px; cursor: pointer; border: 1px solid #92400e;" onclick="selectEvent('${e.id}')">${escapeHtml(e.name)} (${formatDate(e.date)})</span>`
+        ).join('');
+
+        alert.style.display = 'block';
+      } catch (err) {
+        console.error('Failed to check missing start times:', err);
       }
     }
 
