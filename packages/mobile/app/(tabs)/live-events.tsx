@@ -22,7 +22,7 @@ import { useOrgFilter } from '../../store/OrgFilterContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { formatEventDate, formatEventTimeCompact } from '../../utils/dateFormatters';
 
-const EVENTS_PER_PAGE = 2;
+const EVENTS_PER_PAGE = 5;
 
 interface Event {
   id: string;
@@ -60,9 +60,12 @@ export default function LiveEventsScreen() {
     ? Array.from(selectedOrgs).join(',')
     : undefined;
 
+  // Refetch stale data when tab is focused, but don't invalidate the cache —
+  // the 30s staleTime already controls freshness, so this only triggers a
+  // background refetch if data is stale (avoids a full re-fetch + spinner).
   useFocusEffect(
     React.useCallback(() => {
-      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+      queryClient.refetchQueries({ queryKey: ['upcomingEvents'], type: 'active' });
     }, [queryClient])
   );
 
@@ -98,15 +101,11 @@ export default function LiveEventsScreen() {
     }
   );
 
-  // Auto-fetch pages 2-4 so we find all live events (they may not all be on page 1).
-  // Live events are near the front by date but non-live events can be interleaved.
-  const needsMorePages = !!eventsData && hasNextPage && (eventsData.pages.length < 4);
-
+  // Auto-fetch page 2 so we find all live events (they may not all be on page 1).
+  // With 5 events per page, 2 pages = 10 events is plenty.
   React.useEffect(() => {
     if (!eventsData || !hasNextPage || isFetching) return;
-    const loadedPages = eventsData.pages.length;
-    // Always load up to 4 pages (8 events) to ensure all live events are captured
-    if (loadedPages < 4) {
+    if (eventsData.pages.length < 2) {
       fetchNextPage();
     }
   }, [eventsData, hasNextPage, isFetching, fetchNextPage]);
@@ -178,7 +177,7 @@ export default function LiveEventsScreen() {
 
       <OrgFilterTabs onFilterChange={() => {}} />
 
-      {isLoading || needsMorePages ? (
+      {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.text }]}>Loading live events...</Text>

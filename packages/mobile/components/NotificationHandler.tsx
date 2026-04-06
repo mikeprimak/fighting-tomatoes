@@ -60,12 +60,9 @@ export function NotificationHandler() {
         // Navigate to events screen
         console.log('[NotificationHandler] Navigating to events screen');
         router.push('/(tabs)/events');
-      } else if (data.screen === 'community') {
-        router.push('/(tabs)/community');
-      } else if (data.fightId) {
-        router.push(`/fight/${data.fightId}`);
-      } else if (data.crewId) {
-        router.push(`/crew/${data.crewId}`);
+      } else {
+        // All other notifications navigate to live events screen
+        router.push('/(tabs)/live-events');
       }
     });
 
