@@ -333,29 +333,22 @@
     /* Image placeholder cards */
     .img-card {
       background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
+      border: 2px solid var(--border);
+      border-radius: 28px;
       overflow: hidden;
-      aspect-ratio: 4/3;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 24px;
-      color: var(--fg-secondary);
+      max-width: 320px;
+      margin: 0 auto;
       position: relative;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
     }
-    .img-card svg { width: 56px; height: 56px; opacity: 0.35; margin-bottom: 12px; }
-    .img-card .img-label { font-weight: 600; font-size: 0.95rem; }
-    .img-card .img-sub { font-size: 0.8rem; opacity: 0.7; margin-top: 4px; }
-    .img-card img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .img-card img { width: 100%; height: auto; display: block; }
 
-    .img-card-live { border-color: rgba(239, 68, 68, 0.25); }
+    .img-card-live { border-color: rgba(239, 68, 68, 0.3); }
     .live-badge {
       position: absolute;
-      top: 16px;
-      right: 16px;
+      top: 20px;
+      right: 20px;
+      z-index: 2;
       display: flex;
       align-items: center;
       gap: 6px;
