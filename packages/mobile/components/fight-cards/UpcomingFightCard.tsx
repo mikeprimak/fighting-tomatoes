@@ -389,6 +389,12 @@ function UpcomingFightCard({
                 style={{ opacity: 0.3 }}
               />
             )}
+            {/* User commented badge */}
+            {((fight as any).userCommentCount ?? 0) > 0 && (
+              <View style={styles.userCommentBadge}>
+                <FontAwesome name="comment" size={8} color="#000000" />
+              </View>
+            )}
           </View>
 
           <View style={[styles.fighterNamesRow, { marginBottom: 0, marginTop: 0 }]}>
@@ -1018,6 +1024,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  userCommentBadge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#F5C518',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1001,
   },
 });
 

@@ -321,6 +321,11 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           fighter1: true,
           fighter2: true,
           event: true,
+          _count: {
+            select: {
+              preFightComments: true,
+            },
+          },
           predictions: userId ? {
             where: {
               OR: [
@@ -342,6 +347,12 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               predictedRating: true,
             },
           },
+          ...(userId ? {
+            preFightComments: {
+              where: { userId },
+              select: { id: true },
+            },
+          } : {}),
         },
       });
 
@@ -392,8 +403,13 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           const transformed: any = {
             ...fight,
             predictions: undefined, // Remove from response
+            preFightComments: undefined, // Remove raw data from response
+            _count: undefined, // Remove raw count from response
             averageHype,
             userHypePrediction,
+            hypeCount: allHypes.length,
+            commentCount: fight._count?.preFightComments || 0,
+            ...(userId && fight.preFightComments ? { userCommentCount: fight.preFightComments.length } : {}),
           };
 
           if (userId) {
