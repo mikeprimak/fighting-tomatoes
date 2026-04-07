@@ -442,9 +442,10 @@ export async function registerRoutes(fastify: FastifyInstance) {
           // Fetch user-specific data if authenticated (parallel queries for performance)
           let userRatingsByFight = new Map<string, number>();
           let userPredictionsByFight = new Map<string, { predictedRating: number | null; predictedWinner: string | null; predictedMethod: string | null }>();
+          let userCommentCountByFight = new Map<string, number>();
 
           if (userId) {
-            const [userRatings, userPredictions] = await Promise.all([
+            const [userRatings, userPredictions, userComments] = await Promise.all([
               fastify.prisma.fightRating.findMany({
                 where: {
                   fightId: { in: allFightIds },
@@ -467,6 +468,15 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   predictedMethod: true,
                 },
               }),
+              fastify.prisma.preFightComment.findMany({
+                where: {
+                  fightId: { in: allFightIds },
+                  userId: userId,
+                },
+                select: {
+                  fightId: true,
+                },
+              }),
             ]);
 
             for (const rating of userRatings) {
@@ -478,6 +488,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 predictedWinner: pred.predictedWinner,
                 predictedMethod: pred.predictedMethod,
               });
+            }
+            for (const comment of userComments) {
+              userCommentCountByFight.set(comment.fightId, (userCommentCountByFight.get(comment.fightId) || 0) + 1);
             }
           }
 
@@ -519,6 +532,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 userHypePrediction: userPrediction?.predictedRating ?? null,
                 userPredictedWinner: userPrediction?.predictedWinner ?? null,
                 userPredictedMethod: userPrediction?.predictedMethod ?? null,
+                userCommentCount: userCommentCountByFight.get(fight.id) || 0,
                 // Notification data (null if not authenticated)
                 notificationReasons: notificationReasons ?? null,
               };
