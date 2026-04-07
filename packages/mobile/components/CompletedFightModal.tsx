@@ -10,6 +10,10 @@ import {
   useColorScheme,
   Animated,
   Easing,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+  Keyboard,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -66,6 +70,16 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [fighter1ImgError, setFighter1ImgError] = useState(false);
   const [fighter2ImgError, setFighter2ImgError] = useState(false);
+
+  // Keyboard visibility
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    return () => { showSub.remove(); hideSub.remove(); };
+  }, []);
 
   // Comment state
   const [reviewComment, setReviewComment] = useState<string>('');
@@ -234,9 +248,20 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
-        <TouchableOpacity style={[styles.modalContainer, { backgroundColor: colors.background }]} activeOpacity={1} onPress={() => {}}>
-          {/* Title */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
+          <TouchableOpacity style={[styles.modalContainer, { backgroundColor: colors.background }]} activeOpacity={1} onPress={() => {}}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              bounces={false}
+              scrollEnabled={keyboardVisible}
+              contentContainerStyle={styles.scrollContent}
+            >
+            {/* Title */}
           <Text style={[styles.mainTitle, { color: colors.text }]}>
             Rate This Fight
           </Text>
@@ -386,8 +411,10 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
             </TouchableOpacity>
           </View>
 
+            </ScrollView>
+          </TouchableOpacity>
         </TouchableOpacity>
-      </TouchableOpacity>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -402,6 +429,9 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '88%',
     borderRadius: 20,
+    maxHeight: '90%',
+  },
+  scrollContent: {
     padding: 20,
     paddingTop: 28,
     paddingBottom: 24,
