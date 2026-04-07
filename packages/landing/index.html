@@ -51,22 +51,13 @@
       padding: 0 24px;
     }
 
-    /* ===================== NAV ===================== */
-    .nav {
-      position: sticky;
-      top: 0;
+    /* ===================== NAV (floating download button) ===================== */
+    .nav-float {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
       z-index: 100;
-      background: rgba(18, 18, 18, 0.92);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
     }
-    .nav .container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 64px;
-    }
-    .nav-logo { height: 36px; width: auto; }
     .nav-cta {
       display: inline-flex;
       align-items: center;
@@ -74,12 +65,17 @@
       background: var(--primary);
       color: #111;
       font-weight: 700;
-      font-size: 0.875rem;
-      padding: 10px 22px;
-      border-radius: 10px;
-      transition: opacity 0.2s;
+      font-size: 0.95rem;
+      padding: 14px 28px;
+      border-radius: 999px;
+      transition: opacity 0.2s, transform 0.2s;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
-    .nav-cta:hover { opacity: 0.88; }
+    .nav-cta:hover { opacity: 0.88; transform: translateY(-2px); }
+    @media (max-width: 480px) {
+      .nav-float { bottom: 16px; right: 16px; left: 16px; text-align: center; }
+      .nav-cta { width: 100%; justify-content: center; }
+    }
 
     /* ===================== HERO ===================== */
     .hero {
@@ -451,7 +447,7 @@
       color: var(--fg-secondary);
       overflow: hidden;
     }
-    .promo-card .promo-icon img { width: 100%; height: 100%; object-fit: contain; }
+    .promo-card .promo-icon img { width: 80%; height: 80%; object-fit: contain; }
     .promo-card .promo-name {
       font-size: 0.72rem;
       font-weight: 600;
@@ -498,36 +494,6 @@
     .community-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; }
     .community-card p { font-size: 0.9rem; color: var(--fg-secondary); line-height: 1.55; }
 
-    /* ===================== WEB BROWSE ===================== */
-    .browse-box {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 48px 32px;
-      text-align: center;
-    }
-    .browse-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      justify-content: center;
-      margin-top: 28px;
-    }
-    .browse-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      transition: opacity 0.2s, border-color 0.2s;
-    }
-    .browse-btn-primary { background: var(--primary); color: #111; }
-    .browse-btn-primary:hover { opacity: 0.88; }
-    .browse-btn-secondary { background: var(--bg); border: 1px solid var(--border); color: var(--fg); }
-    .browse-btn-secondary:hover { border-color: rgba(245,197,24,0.3); }
-
     /* ===================== FINAL CTA ===================== */
     .final-cta {
       border-top: 1px solid var(--border);
@@ -566,17 +532,13 @@
 <!-- ============================================================ -->
 <!-- NAV -->
 <!-- ============================================================ -->
-<nav class="nav">
-  <div class="container">
-    <a href="/">
-      <img src="logo-full.png" alt="Good Fights" class="nav-logo">
-    </a>
-    <a href="#download" class="nav-cta">
-      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 011-1z"/><path d="M4 15a1 1 0 011 1h10a1 1 0 110 2H5a1 1 0 01-1-1v-1a1 1 0 011-1z"/></svg>
-      Download App
-    </a>
-  </div>
-</nav>
+<!-- Floating download button -->
+<div class="nav-float">
+  <a href="#download" class="nav-cta">
+    <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M10 3a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V4a1 1 0 011-1z"/><path d="M4 15a1 1 0 011 1h10a1 1 0 110 2H5a1 1 0 01-1-1v-1a1 1 0 011-1z"/></svg>
+    Download App
+  </a>
+</div>
 
 <!-- ============================================================ -->
 <!-- HERO -->
@@ -585,6 +547,11 @@
   <!-- TODO: Add hero-bg.jpg — a dramatic octagon/ring shot or fighter silhouette image -->
   <div class="hero-bg"></div>
   <div class="container">
+    <div style="margin-bottom: 24px;">
+      <img src="icon.png" alt="Good Fights hand logo" style="width:80px;height:80px;margin:0 auto 12px;">
+      <img src="logo-full.png" alt="Good Fights" style="height:48px;width:auto;margin:0 auto;">
+    </div>
+
     <div class="hero-badge">
       <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L10 6.072 6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.789l1.599.799L9 4.323V3a1 1 0 011-1zm-5 8.274l-.818 2.552c.305.177.657.274 1.018.274.36 0 .713-.097 1.018-.274L5 10.274zm10 0l-.818 2.552c.305.177.657.274 1.018.274.36 0 .713-.097 1.018-.274L15 10.274z"/></svg>
       The Fight Fan's App
@@ -600,8 +567,8 @@
       The app built by fight fans, for fight fans.
     </p>
 
-    <div class="hero-buttons" id="download">
-      <div class="store-buttons">
+    <div class="hero-buttons">
+      <div class="store-buttons" id="download">
         <a href="https://apps.apple.com/us/app/good-fights/id6757172609" class="store-btn" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
           App Store
@@ -640,7 +607,7 @@
         <div class="stat-label">Combat Sports Promotions</div>
       </div>
       <div class="stat">
-        <div class="stat-value">5,000+</div>
+        <div class="stat-value">13,000+</div>
         <div class="stat-label">Fights Tracked</div>
       </div>
       <div class="stat">
@@ -958,25 +925,6 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
         <h3>Stay in the Loop</h3>
         <p>Notifications keep you informed about upcoming events, live fights, and new activity on fights you care about.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<!-- BROWSE ON WEB -->
-<!-- ============================================================ -->
-<section class="section">
-  <div class="container">
-    <div class="browse-box">
-      <h2 class="section-title">Want to browse fights on the web?</h2>
-      <p class="section-desc center" style="margin-top:12px">
-        Check out upcoming events, past fight ratings, and the best fights of all time — right here in your browser.
-      </p>
-      <div class="browse-buttons">
-        <a href="https://web-jet-gamma-12.vercel.app" class="browse-btn browse-btn-primary">Browse Upcoming Events</a>
-        <a href="https://web-jet-gamma-12.vercel.app/fights/top" class="browse-btn browse-btn-secondary">Top Rated Fights</a>
-        <a href="https://web-jet-gamma-12.vercel.app/events/live" class="browse-btn browse-btn-secondary">Live Events</a>
       </div>
     </div>
   </div>
