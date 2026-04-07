@@ -248,11 +248,12 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
+      <View style={styles.overlay}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+        <KeyboardAvoidingView
+          behavior="padding"
+          style={styles.kavContainer}
+        >
           <TouchableOpacity style={[styles.modalContainer, { backgroundColor: colors.background }]} activeOpacity={1} onPress={() => {}}>
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -413,8 +414,8 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
 
             </ScrollView>
           </TouchableOpacity>
-        </TouchableOpacity>
-      </KeyboardAvoidingView>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -423,6 +424,11 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  kavContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
