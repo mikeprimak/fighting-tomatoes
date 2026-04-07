@@ -2663,17 +2663,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
             },
           });
         } else {
-          // Review requires a rating - use existing rating or provided rating
+          // Use provided rating, existing rating, or null (comments without ratings are allowed)
           const effectiveRating = rating !== undefined && rating !== null
             ? rating
-            : previousRating?.rating;
-
-          if (!effectiveRating) {
-            return reply.code(400).send({
-              error: 'Reviews require a rating. Please provide a rating with your review.',
-              code: 'REVIEW_REQUIRES_RATING',
-            });
-          }
+            : previousRating?.rating ?? null;
 
           // Find existing top-level review or create new one
           const existingTopLevelReview = await fastify.prisma.fightReview.findFirst({

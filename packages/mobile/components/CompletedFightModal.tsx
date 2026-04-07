@@ -213,13 +213,19 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
     },
   });
 
-  const handleDone = useCallback(() => {
+  const handleDone = useCallback(async () => {
     // Save review comment if it changed (use refs to avoid stale closure)
-    if (isAuthenticated && fight && selectedRating) {
+    if (isAuthenticated && fight) {
       const fightId = fight.id;
       const trimmed = reviewCommentRef.current.trim();
-      if (trimmed !== initialCommentRef.current || selectedRating !== (fight.userRating ?? null)) {
-        ratingMutation.mutate({ fightId, rating: selectedRating, review: trimmed || null });
+      const hasCommentChange = trimmed !== initialCommentRef.current;
+      const hasRatingChange = selectedRating !== (fight.userRating ?? null);
+      if (hasCommentChange || hasRatingChange) {
+        try {
+          await ratingMutation.mutateAsync({ fightId, rating: selectedRating, review: trimmed || null });
+        } catch (e) {
+          // Mutation error handled by onError callback
+        }
       }
     }
     onClose();
@@ -388,7 +394,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
               </View>
               <TouchableOpacity
                 style={styles.seeDetailsLink}
-                onPress={() => { const fightId = fight.id; handleDone(); router.push(`/fight/${fightId}` as any); }}
+                onPress={async () => { const fightId = fight.id; await handleDone(); router.push(`/fight/${fightId}` as any); }}
               >
                 <Text style={[styles.seeDetailsText, { color: colors.textSecondary }]}>
                   {(() => {

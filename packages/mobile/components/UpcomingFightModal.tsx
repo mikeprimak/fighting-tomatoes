@@ -257,13 +257,17 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     },
   });
 
-  const handleDone = useCallback(() => {
+  const handleDone = useCallback(async () => {
     // Save comment if it changed (use refs to avoid stale closure)
     if (isAuthenticated && fight) {
       const fightId = fight.id;
       const trimmed = preFightCommentRef.current.trim();
       if (trimmed !== initialCommentRef.current) {
-        saveCommentMutation.mutate({ fightId, content: trimmed });
+        try {
+          await saveCommentMutation.mutateAsync({ fightId, content: trimmed });
+        } catch (e) {
+          // Mutation error handled by onError callback
+        }
       }
     }
     onClose();
@@ -477,7 +481,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               </View>
               <TouchableOpacity
                 style={styles.seeCommentsLink}
-                onPress={() => { const fightId = fight.id; handleDone(); router.push(`/fight/${fightId}` as any); }}
+                onPress={async () => { const fightId = fight.id; await handleDone(); router.push(`/fight/${fightId}` as any); }}
               >
                 <Text style={[styles.seeCommentsText, { color: colors.textSecondary }]}>
                   {(() => {
