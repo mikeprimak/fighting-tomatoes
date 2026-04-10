@@ -1,12 +1,12 @@
 /**
- * Top Rank Scraper - Scrapes event data from Tapology
+ * Gold Star Scraper - Scrapes event data from Tapology
  *
- * Top Rank events are listed on Tapology. This scraper extracts
+ * Gold Star Promotions events are listed on Tapology. This scraper extracts
  * fight cards from Tapology event pages.
  *
  * Usage:
- * - Manual: node src/services/scrapeTopRankTapology.js
- * - Automated: SCRAPER_MODE=automated node src/services/scrapeTopRankTapology.js
+ * - Manual: node src/services/scrapeGoldStarTapology.js
+ * - Automated: SCRAPER_MODE=automated node src/services/scrapeGoldStarTapology.js
  */
 
 const puppeteer = require('puppeteer');
@@ -17,11 +17,10 @@ const path = require('path');
 const SCRAPER_MODE = process.env.SCRAPER_MODE || 'manual';
 const OVERALL_TIMEOUT = parseInt(process.env.SCRAPER_TIMEOUT || '600000', 10);
 
-// Tapology URLs for Top Rank
-const TAPOLOGY_PROMOTION_URL = 'https://www.tapology.com/fightcenter/promotions/2487-top-rank-tr';
+// Tapology URLs for Gold Star Promotions
+const TAPOLOGY_PROMOTION_URL = 'https://www.tapology.com/fightcenter/promotions/6908-gold-star-promotions-gsp';
 const TAPOLOGY_BASE_URL = 'https://www.tapology.com';
 
-// Delays in milliseconds
 const DELAYS = {
   manual: { betweenPages: 2000, betweenFighters: 500 },
   automated: { betweenPages: 1000, betweenFighters: 200 }
@@ -36,6 +35,10 @@ const MONTHS = {
   'october': 9, 'oct': 9, 'november': 10, 'nov': 10, 'december': 11, 'dec': 11,
 };
 
+// How many days in the past to still consider "recent" — events older than
+// this are skipped entirely (Gold Star only cares about upcoming cards).
+const STALE_DAYS = 3;
+
 function parseTapologyDate(dateStr) {
   if (!dateStr) return null;
   const cleanDate = dateStr.replace(/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday),?\s*/i, '');
@@ -46,13 +49,20 @@ function parseTapologyDate(dateStr) {
   return new Date(parseInt(match[3], 10), month, parseInt(match[2], 10));
 }
 
+function isStale(eventDate) {
+  if (!eventDate) return false;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - STALE_DAYS);
+  return eventDate < cutoff;
+}
+
 function getEventSlug(url) {
   const match = url.match(/events\/\d+-([^/]+)/);
   return match ? match[1] : null;
 }
 
 async function scrapeEventsList(browser) {
-  console.log('\n📋 Scraping Top Rank events from Tapology...\n');
+  console.log('\n📋 Scraping Gold Star events from Tapology...\n');
   const page = await browser.newPage();
   await page.setViewport({ width: 1920, height: 1080 });
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
@@ -64,16 +74,14 @@ async function scrapeEventsList(browser) {
     const events = await page.evaluate(() => {
       const extractedEvents = [];
       const seenUrls = new Set();
-      document.querySelectorAll('a[href*="/fightcenter/events/"]').forEach(link => {
+      // Gold Star events use fighter-vs-fighter slugs (no org marker), so
+      // scope to #content to avoid the sidebar's other-org events.
+      const scope = document.querySelector('#content') || document;
+      scope.querySelectorAll('a[href*="/fightcenter/events/"]').forEach(link => {
         const eventUrl = link.href;
         const eventName = link.textContent.trim();
         if (!eventUrl || !eventName || eventName.length < 3) return;
         if (seenUrls.has(eventUrl)) return;
-        // Top Rank events typically contain fighter names in slugs, not a consistent prefix.
-        // Filter out obviously non-Top-Rank sidebar events by checking common other orgs.
-        const urlLower = eventUrl.toLowerCase();
-        const nonTopRank = ['ufc-', 'bellator-', 'pfl-', 'one-', 'rizin-', 'oktagon-', 'bkfc-', 'cage-warriors', 'ksw-', 'lfa-'];
-        if (nonTopRank.some(prefix => urlLower.includes(prefix))) return;
         seenUrls.add(eventUrl);
 
         const container = link.closest('div, li, section, tr') || link.parentElement;
@@ -91,10 +99,22 @@ async function scrapeEventsList(browser) {
     await page.close();
     const uniqueEvents = [];
     const seenUrls = new Set();
+    let skippedStale = 0;
     for (const event of events) {
-      if (!seenUrls.has(event.eventUrl)) { seenUrls.add(event.eventUrl); uniqueEvents.push(event); }
+      if (seenUrls.has(event.eventUrl)) continue;
+      seenUrls.add(event.eventUrl);
+      // Skip clearly-past events early to avoid a slow per-page scrape.
+      const parsedDate = parseTapologyDate(event.dateText);
+      if (parsedDate && isStale(parsedDate)) {
+        skippedStale++;
+        continue;
+      }
+      uniqueEvents.push(event);
     }
-    console.log(`✅ Found ${uniqueEvents.length} Top Rank events\n`);
+    if (skippedStale > 0) {
+      console.log(`⏭  Skipped ${skippedStale} past events (>${STALE_DAYS} days old)`);
+    }
+    console.log(`✅ Found ${uniqueEvents.length} upcoming Gold Star events\n`);
     return uniqueEvents;
   } catch (error) {
     console.error('Error scraping events list:', error.message);
@@ -196,7 +216,7 @@ async function scrapeEventPage(browser, eventUrl) {
         const a = fightersFound[i], b = fightersFound[i + 1];
         if (!a || !b) break;
         data.fights.push({
-          fightId: `top-rank-fight-${data.fights.length + 1}`,
+          fightId: `gold-star-fight-${data.fights.length + 1}`,
           order: data.fights.length + 1,
           cardType: data.fights.length === 0 ? 'Main Event' : 'Main Card',
           weightClass: '', scheduledRounds: 12, isTitle: false,
@@ -218,7 +238,7 @@ async function scrapeEventPage(browser, eventUrl) {
 }
 
 async function main() {
-  console.log('\n🚀 Starting Top Rank Tapology Scraper\n');
+  console.log('\n🚀 Starting Gold Star Tapology Scraper\n');
   console.log('='.repeat(60));
   const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
 
@@ -239,6 +259,13 @@ async function main() {
         if (parsedDate) eventData.eventDate = parsedDate.toISOString();
       }
 
+      // Backup staleness check — catches events whose listing-page date had
+      // no year so they couldn't be filtered in scrapeEventsList.
+      if (eventData.eventDate && isStale(new Date(eventData.eventDate))) {
+        console.log(`      ⏭  Skipping past event (${eventData.dateText})`);
+        continue;
+      }
+
       const eventSlug = getEventSlug(discovered.eventUrl) || discovered.eventName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const event = {
         eventName: eventData.eventName || discovered.eventName, eventType: 'Regular',
@@ -246,6 +273,7 @@ async function main() {
         city: eventData.city || '', state: '', country: eventData.country || '',
         dateText: eventData.dateText || discovered.dateText || '',
         eventDate: eventData.eventDate || null, eventImageUrl: eventData.eventImageUrl || null,
+        eventStartTime: eventData.eventStartTime || null,
         status: discovered.status || 'Upcoming', fights: eventData.fights
       };
       allEvents.push(event);
@@ -257,7 +285,7 @@ async function main() {
       }
     }
 
-    const outputDir = path.join(__dirname, '../../scraped-data/toprank');
+    const outputDir = path.join(__dirname, '../../scraped-data/goldstar');
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const outputData = { events: allEvents };
@@ -288,7 +316,7 @@ async function runWithTimeout() {
 
 if (require.main === module) {
   const startTime = Date.now();
-  console.log(`🚀 Starting Top Rank scraper in ${SCRAPER_MODE} mode...`);
+  console.log(`🚀 Starting Gold Star scraper in ${SCRAPER_MODE} mode...`);
   runWithTimeout()
     .then(() => { console.log(`✅ Completed in ${Math.floor((Date.now() - startTime) / 1000)}s`); process.exit(0); })
     .catch(error => { console.error(`\n❌ Failed after ${Math.floor((Date.now() - startTime) / 1000)}s:`, error.message); process.exit(1); });

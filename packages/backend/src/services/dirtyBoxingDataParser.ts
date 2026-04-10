@@ -260,34 +260,53 @@ async function importDirtyEvents(
     // Use event-specific image if available, otherwise use default banner
     const bannerImage = eventData.eventImageUrl || DIRTY_BOXING_DEFAULT_BANNER;
 
-    // Try to find existing event by name or URL
+    // Try to find existing event by URL first, then by (name, date) within this promotion.
+    // NOTE: do NOT match by `name contains "Dirty Boxing"` — it's way too greedy and
+    // cross-matches unrelated rows, producing P2002 conflicts when the update overwrites
+    // ufcUrl on the wrong row.
     let event = await prisma.event.findFirst({
       where: {
         OR: [
           { ufcUrl: eventData.eventUrl },
-          { name: eventData.eventName },
-          { name: { contains: 'Dirty Boxing' } }
-        ]
-      }
+          { promotion: 'Dirty Boxing', name: eventData.eventName },
+        ],
+      },
     });
+
+    const updateData = {
+      name: eventData.eventName,
+      date: eventDate,
+      mainStartTime: mainStartTime || undefined,
+      venue: eventData.venue || undefined,
+      location,
+      ufcUrl: eventData.eventUrl,
+      promotion: 'Dirty Boxing',
+      scraperType: 'tapology',
+      bannerImage,
+    };
 
     if (event) {
       // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it)
-      event = await prisma.event.update({
-        where: { id: event.id },
-        data: {
-          name: eventData.eventName,
-          date: eventDate,
-          mainStartTime: mainStartTime || undefined,
-          venue: eventData.venue || undefined,
-          location,
-          ufcUrl: eventData.eventUrl,
-          promotion: 'Dirty Boxing',
-          scraperType: 'tapology',
-          bannerImage,
+      try {
+        event = await prisma.event.update({
+          where: { id: event.id },
+          data: updateData,
+        });
+        console.log(`  ✓ Updated event: ${eventData.eventName} (status unchanged: ${event.eventStatus})`);
+      } catch (err: any) {
+        if (err.code === 'P2002' && err.meta?.target?.includes('ufcUrl')) {
+          // Another row already owns this ufcUrl (legacy duplicate). Update the matched
+          // row without overwriting ufcUrl to avoid the secondary conflict.
+          const { ufcUrl: _omit, ...safeUpdate } = updateData;
+          event = await prisma.event.update({
+            where: { id: event.id },
+            data: safeUpdate,
+          });
+          console.log(`  ⚠ Updated event without ufcUrl (duplicate row owns it): ${eventData.eventName}`);
+        } else {
+          throw err;
         }
-      });
-      console.log(`  ✓ Updated event: ${eventData.eventName} (status unchanged: ${event.eventStatus})`);
+      }
     } else {
       // Create new event - set initial status based on date
       const now = new Date();

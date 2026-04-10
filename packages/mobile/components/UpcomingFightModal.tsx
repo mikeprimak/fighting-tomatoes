@@ -172,6 +172,10 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['preFightComments', variables.fightId] });
+      // Update userCommentCount in events cache so badge updates immediately
+      const currentCount = (fight as any)?.userCommentCount ?? 0;
+      const newCount = variables.content.trim() === '' ? Math.max(0, currentCount - 1) : currentCount + 1;
+      updateEventsCache({ userCommentCount: newCount });
     },
   });
 
