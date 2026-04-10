@@ -68,8 +68,20 @@ async function scrapeEventsList(browser) {
       'oct': 9, 'october': 9, 'nov': 10, 'november': 10, 'dec': 11, 'december': 11
     };
 
-    // Find all event sections/cards - look for links to event pages
-    const eventLinks = document.querySelectorAll('a[href*="/event/"]');
+    // Scope to the "UPCOMING" tab only. PFL's all-seasons page has two
+    // tab panels: #nav-upcoming (default active) and #nav-past. Both are
+    // rendered in the DOM, so selecting all /event/ links on the page
+    // returns ~130 events back to 2018. Scoping to #nav-upcoming returns
+    // only the handful of upcoming events we actually want to scrape.
+    //
+    // Date-based filtering is not reliable as a primary signal because
+    // upcoming events show no year on the list page ("Fri, Apr 10") while
+    // past events do ("Sat, Mar 28, 2025"). Targeting the DOM tab panel
+    // avoids having to infer years.
+    const upcomingTab = document.querySelector('#nav-upcoming');
+    const eventLinks = upcomingTab
+      ? upcomingTab.querySelectorAll('a[href*="/event/"]')
+      : document.querySelectorAll('a[href*="/event/"]');
     const processedUrls = new Set();
 
     eventLinks.forEach(link => {
@@ -153,16 +165,12 @@ async function scrapeEventsList(browser) {
         }
       }
 
-      // REQUIRE a parseable date — if we can't determine when the event is,
-      // skip it rather than assume it's upcoming. Every real upcoming event on
-      // pflmma.com shows a date in the list view, so no-date almost always
-      // means either a past event or broken markup we shouldn't scrape.
-      if (!eventDate) {
-        return;
-      }
-
-      // Skip past events — only keep upcoming (today or later)
-      if (eventDate < now) {
+      // Skip past events (secondary filter — primary filter is the
+      // #nav-upcoming tab scoping above). Upcoming events on pflmma.com
+      // don't include a year so eventDate will often be null here; that's
+      // fine — Step 2 will extract the canonical ISO date from the event
+      // page. Only skip if we *have* a date and it's clearly in the past.
+      if (eventDate && eventDate < now) {
         return;
       }
 
