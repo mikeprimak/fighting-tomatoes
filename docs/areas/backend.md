@@ -33,6 +33,31 @@ All production scrapers are fully automatic — daily scrapers set `scraperType`
 
 See `areas/scrapers.md` for details.
 
+### Tapology Live Tracker — Safety Invariants (post Apr 10, 2026)
+Two guards were added after the DBX 6 incident (see `daily/2026-04-10.md`), and any future changes to the tapology parser or runner must preserve them:
+
+1. **`scrapeLooksValid` guard** in `services/tapologyLiveParser.ts`: the "missing from scraped data = CANCEL" sweep and the UPCOMING→LIVE flip only run if `scrapedData.fights.length > 0 && result.fightsMatched > 0`. An empty or unmatched scrape is logged and ignored — it must not cancel DB fights.
+2. **`hasAnyCompleted` guard** in `scripts/runTapologyLiveTracker.ts` (`autoCompleteTapologyEvent`): auto-completion requires `allTerminal && hasAnyCompleted` — i.e. at least one fight must actually be COMPLETED, not just CANCELLED. An "all-cancelled" card is treated as a broken-scrape symptom and does not complete the event.
+
+**Rule for adding new live trackers**: any "detect event state from absence in scrape" logic must first validate the scrape itself (non-empty, some matches). Never let an empty scrape cause destructive DB writes.
+
+### Tapology Live Tracker — Added Capabilities (Apr 10, 2026)
+See `areas/scrapers.md` for the long version. Highlights for backend work:
+- Parser now **creates fighters + fight row on the fly** when a scraped fight has no DB match (uses `findOrCreateFighter` pattern from `ufcLiveParser.ts`). Fight gets `orderOnCard` from Tapology's card position (extracted via `boutOrder` on the scraped fight) or `maxOrder + 1`.
+- Completion block is now **idempotent**: no longer gated on `fightStatus !== 'COMPLETED'`. Diffs each result field against the DB and writes differences. This lets the tracker backfill results onto lifecycle-prematurely-completed fights.
+- **No Contest and Draw** results set `winner = 'nc'` / `'draw'` (sentinel strings per the `Fight.winner` schema comment). Do not break this — the mobile UI keys off these strings for the NC badge / "No Contest" text.
+- `ParseResult` now has `fightsCreated` in addition to `fightsUpdated` / `fightsMatched` / `cancelledCount` / `unCancelledCount`.
+
+### VPS scraper service (Hetzner) — deploy footgun
+`scraperService.ts` runs on a Hetzner VPS (`178.156.231.241:3009`, systemd `scraper-service`) and is the **primary** execution path for all live trackers (PFL, BKFC, RIZIN, Zuffa Boxing, Karate Combat, Dirty Boxing). `eventLifecycle.ts` calls `POST {VPS_SCRAPER_URL}/track/check` every ~5 min; the VPS then runs its own 30-second scrape loop per active event. GitHub Actions workflows (`tapology-live-tracker.yml`, `ufc-live-tracker.yml`, etc.) are only a fallback for when the VPS is unreachable.
+
+**The VPS does not auto-deploy from `main`.** Any fix that touches the scraper/parser/runner files requires:
+```bash
+ssh <user>@178.156.231.241
+bash /opt/scraper-service/packages/backend/vps-update.sh   # git pull && pnpm install && pnpm build && systemctl restart scraper-service
+```
+If you push a fix, watch GH Actions for the tracker workflow, *and it never runs*, the reason is almost certainly that the VPS is handling the tracker and hasn't been updated. There's no webhook or CD pipeline for the VPS yet.
+
 ### Auth
 JWT dual-token system (15min access / 7day refresh)
 
@@ -41,6 +66,10 @@ JWT dual-token system (15min access / 7day refresh)
 cd packages/backend
 PORT=3008 pnpm dev
 ```
+
+## API Notes
+- `/api/events?includeFights=true` returns `userCommentCount` per fight (batch query on `preFightComment` table, requires auth)
+- `/api/community/top-upcoming-fights` also returns `userCommentCount`, `commentCount`, `hypeCount`
 
 ## Known Issues
 - Render free tier can cold-start slowly
