@@ -174,7 +174,11 @@ export default function UpcomingEventsScreen() {
     return filterEventsByOrg([...allEvents])
       .filter((event: Event) => event.eventStatus !== 'LIVE')
       .sort((a: Event, b: Event) => {
-        return new Date(a.date).getTime() - new Date(b.date).getTime();
+        const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+        if (dateDiff !== 0) return dateDiff;
+        const aIsUFC = a.promotion?.toUpperCase() === 'UFC' ? 0 : 1;
+        const bIsUFC = b.promotion?.toUpperCase() === 'UFC' ? 0 : 1;
+        return aIsUFC - bIsUFC;
       });
   }, [allEvents, filterEventsByOrg]);
 
