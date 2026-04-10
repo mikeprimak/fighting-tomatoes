@@ -26,7 +26,7 @@ import { isProductionScraper, getNotifyPromotions } from '../config/liveTrackerC
 // Note: DIRTY BOXING events won't match BOXING's contains patterns anyway, so no excludes needed
 const ORG_FILTER_GROUPS: Record<string, { contains?: string[] }> = {
   'BOXING': {
-    contains: ['MATCHROOM', 'TOP RANK', 'TOP_RANK', 'GOLDEN BOY', 'GOLDEN_BOY', 'SHOWTIME', 'MOST VALUABLE', 'MVP BOXING', 'MVP', 'PBC', 'PREMIER BOXING', 'DAZN', 'ESPN BOXING', 'ZUFFA BOXING', 'ZUFFA_BOXING', 'ZUFFA'],
+    contains: ['MATCHROOM', 'TOP RANK', 'TOP_RANK', 'GOLDEN BOY', 'GOLDEN_BOY', 'GOLD STAR', 'GOLD_STAR', 'SHOWTIME', 'MOST VALUABLE', 'MVP BOXING', 'MVP', 'PBC', 'PREMIER BOXING', 'DAZN', 'ESPN BOXING', 'ZUFFA BOXING', 'ZUFFA_BOXING', 'ZUFFA'],
   },
   'DIRTY BOXING': {
     contains: ['DIRTY BOXING'],
@@ -400,16 +400,58 @@ export async function registerRoutes(fastify: FastifyInstance) {
         };
       }
 
-      const [events, total] = await Promise.all([
-        fastify.prisma.event.findMany({
+      let events: any[];
+      let total: number;
+
+      if (type === 'upcoming') {
+        // For upcoming events, sort by calendar day then UFC-first within the day.
+        // Fetch a lightweight list of all matches, sort in memory, paginate, then
+        // load full selected fields for the page. This keeps ordering stable
+        // across the client's infinite-scroll pages.
+        const allEventsLite = await fastify.prisma.event.findMany({
           where: whereClause,
-          skip,
-          take: limit,
-          orderBy,
-          select,
-        }),
-        fastify.prisma.event.count({ where: whereClause }),
-      ]);
+          select: { id: true, date: true, promotion: true },
+        });
+
+        allEventsLite.sort((a: any, b: any) => {
+          const aDate = new Date(a.date);
+          const bDate = new Date(b.date);
+          const aDay = Date.UTC(aDate.getUTCFullYear(), aDate.getUTCMonth(), aDate.getUTCDate());
+          const bDay = Date.UTC(bDate.getUTCFullYear(), bDate.getUTCMonth(), bDate.getUTCDate());
+          if (aDay !== bDay) return aDay - bDay;
+          const aIsUFC = a.promotion?.toUpperCase() === 'UFC' ? 0 : 1;
+          const bIsUFC = b.promotion?.toUpperCase() === 'UFC' ? 0 : 1;
+          if (aIsUFC !== bIsUFC) return aIsUFC - bIsUFC;
+          const timeDiff = aDate.getTime() - bDate.getTime();
+          if (timeDiff !== 0) return timeDiff;
+          return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+        });
+
+        total = allEventsLite.length;
+        const pageIds = allEventsLite.slice(skip, skip + limit).map((e: any) => e.id);
+
+        const pageEvents = pageIds.length > 0
+          ? await fastify.prisma.event.findMany({
+              where: { id: { in: pageIds } },
+              select,
+            })
+          : [];
+
+        // Reorder to match pageIds (findMany doesn't preserve order of `in` list)
+        const byId = new Map(pageEvents.map((e: any) => [e.id, e]));
+        events = pageIds.map((id: string) => byId.get(id)).filter(Boolean);
+      } else {
+        [events, total] = await Promise.all([
+          fastify.prisma.event.findMany({
+            where: whereClause,
+            skip,
+            take: limit,
+            orderBy,
+            select,
+          }),
+          fastify.prisma.event.count({ where: whereClause }),
+        ]);
+      }
 
       // If fights are included, calculate aggregate hype/ratings for each fight
       let transformedEvents = events;
