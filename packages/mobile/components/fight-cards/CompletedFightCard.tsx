@@ -526,6 +526,17 @@ function CompletedFightCard({
                   )}
                 </View>
               </View>
+
+              {/* No Contest badge — neither fighter wins, centered across the full width */}
+              {!hideSpoilers && fight.winner === 'nc' && (
+                <Text
+                  style={{ position: 'absolute', bottom: -14, left: 0, right: 0, color: '#3B82F6', fontSize: 9, fontWeight: '600', textAlign: 'center' }}
+                  numberOfLines={1}
+                  pointerEvents="none"
+                >
+                  NC{fight.round ? ` R${fight.round}` : ''}
+                </Text>
+              )}
             </View>
 
           </View>

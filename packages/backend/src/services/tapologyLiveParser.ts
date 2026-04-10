@@ -5,7 +5,7 @@
  * Matches fights by fighter last names and updates results.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Gender, Sport } from '@prisma/client';
 import { TapologyEventData, TapologyFight } from './tapologyLiveScraper';
 import { stripDiacritics, similarityScore } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
@@ -18,6 +18,7 @@ interface ParseResult {
   fightsUpdated: number;
   fightsMatched: number;
   fightsNotFound: string[];
+  fightsCreated: number;
   cancelledCount: number;
   unCancelledCount: number;
 }
@@ -99,6 +100,56 @@ function findMatchingDbFight(
   }
 
   return undefined;
+}
+
+/**
+ * Split a Tapology-style full name into firstName/lastName.
+ * "Abdelrahman Mohamed" → { Abdelrahman, Mohamed }
+ * "Abdul Razac Sankara" → { "Abdul Razac", "Sankara" }
+ * Single-word names go into lastName.
+ */
+function parseFighterName(fullName: string): { firstName: string; lastName: string } {
+  const clean = fullName.trim();
+  const parts = clean.split(/\s+/);
+  if (parts.length === 1) {
+    return { firstName: '', lastName: stripDiacritics(parts[0]) };
+  }
+  const lastName = stripDiacritics(parts[parts.length - 1]);
+  const firstName = stripDiacritics(parts.slice(0, -1).join(' '));
+  return { firstName, lastName };
+}
+
+/**
+ * Find an existing fighter by first/last name or create a minimal record.
+ * Mirrors the pattern from ufcLiveParser so new fighters added mid-event
+ * get cleaned up later by the daily scraper.
+ */
+async function findOrCreateFighter(fullName: string): Promise<{ id: string; firstName: string; lastName: string } | null> {
+  const { firstName, lastName } = parseFighterName(fullName);
+  if (!lastName) return null;
+
+  try {
+    const fighter = await prisma.fighter.upsert({
+      where: { firstName_lastName: { firstName, lastName } },
+      update: {},
+      create: {
+        firstName,
+        lastName,
+        gender: Gender.MALE,
+        sport: Sport.MMA,
+        isActive: true,
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        noContests: 0,
+      },
+      select: { id: true, firstName: true, lastName: true },
+    });
+    return fighter;
+  } catch (err: any) {
+    console.error(`[Tapology Parser] Failed to upsert fighter "${fullName}":`, err.message);
+    return null;
+  }
 }
 
 /**
@@ -198,6 +249,7 @@ export async function parseTapologyData(
     fightsUpdated: 0,
     fightsMatched: 0,
     fightsNotFound: [],
+    fightsCreated: 0,
     cancelledCount: 0,
     unCancelledCount: 0,
   };
@@ -233,13 +285,59 @@ export async function parseTapologyData(
       const nameA = scrapedFight.fighterA.name;
       const nameB = scrapedFight.fighterB.name;
 
-      const dbFight = findMatchingDbFight(event.fights, nameA, nameB);
+      let dbFight = findMatchingDbFight(event.fights, nameA, nameB);
 
+      // If not in DB, create the fight on-the-fly — the daily scraper may have
+      // missed it, or it may have been added to the card after the daily run.
       if (!dbFight) {
         const label = `${extractLastName(nameA)} vs ${extractLastName(nameB)}`;
-        result.fightsNotFound.push(label);
-        console.log(`  ?? ${label} - not found in DB`);
-        continue;
+        console.log(`  NEW ${label} - not in DB, creating...`);
+
+        const fighter1 = await findOrCreateFighter(nameA);
+        const fighter2 = await findOrCreateFighter(nameB);
+
+        if (!fighter1 || !fighter2) {
+          console.warn(`  SKIP ${label} - fighter create failed`);
+          result.fightsNotFound.push(label);
+          continue;
+        }
+
+        // Pick an orderOnCard. Prefer Tapology's bout number if it doesn't
+        // collide with an existing fight; otherwise fall back to max + 1.
+        const usedOrders = new Set(event.fights.map(f => f.orderOnCard));
+        const maxOrder = event.fights.reduce((m, f) => Math.max(m, f.orderOnCard), 0);
+        const desired = scrapedFight.boutOrder;
+        const orderOnCard = (desired && !usedOrders.has(desired)) ? desired : (maxOrder + 1);
+
+        try {
+          const created = await prisma.fight.create({
+            data: {
+              eventId: event.id,
+              fighter1Id: fighter1.id,
+              fighter2Id: fighter2.id,
+              orderOnCard,
+              cardType: null,
+              scheduledRounds: 3,
+              fightStatus: 'UPCOMING',
+            },
+          });
+
+          // Synthesize a dbFight-shaped object so the rest of the loop can
+          // update it immediately with the scraped result (e.g. for a fight
+          // that Tapology already has as completed).
+          dbFight = {
+            ...created,
+            fighter1,
+            fighter2,
+          };
+          event.fights.push(dbFight);
+          result.fightsCreated++;
+          console.log(`  CREATED ${fighter1.lastName} vs ${fighter2.lastName} (orderOnCard=${orderOnCard})`);
+        } catch (err: any) {
+          console.error(`  FAIL to create fight ${label}:`, err.message);
+          result.fightsNotFound.push(label);
+          continue;
+        }
       }
 
       result.fightsMatched++;
@@ -256,44 +354,70 @@ export async function parseTapologyData(
         console.log(`    Reset ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} to UPCOMING (lifecycle premature)`);
       }
 
-      // Handle completed fights
-      if (scrapedFight.isComplete && dbFight.fightStatus !== 'COMPLETED') {
-        updateData.fightStatus = 'COMPLETED';
-        updateData.completionMethod = 'tapology-scraper';
-        updateData.completedAt = new Date();
-        changed = true;
+      // Handle completed fights — this is idempotent: if the DB fight is
+      // already COMPLETED but missing method/winner (e.g. prematurely marked
+      // by the lifecycle job), we still write the scraped result.
+      if (scrapedFight.isComplete) {
+        const isNoContest = scrapedFight.result?.method === 'NC';
+        const isDraw = scrapedFight.result?.method === 'DRAW';
 
-        // Determine winner
-        if (scrapedFight.result?.winner) {
-          const winnerId = getWinnerFighterId(
+        // Determine winner: real fighter ID, "nc", "draw", or null
+        let scrapedWinnerValue: string | null = null;
+        if (isNoContest) {
+          scrapedWinnerValue = 'nc';
+        } else if (isDraw) {
+          scrapedWinnerValue = 'draw';
+        } else if (scrapedFight.result?.winner) {
+          scrapedWinnerValue = getWinnerFighterId(
             scrapedFight.result.winner,
             dbFight.fighter1,
             dbFight.fighter2
           );
-          if (winnerId) {
-            updateData.winner = winnerId;
-          }
         }
 
-        if (scrapedFight.result?.method) {
+        const wasAlreadyCompleted = dbFight.fightStatus === 'COMPLETED';
+
+        if (!wasAlreadyCompleted) {
+          updateData.fightStatus = 'COMPLETED';
+          updateData.completionMethod = 'tapology-scraper';
+          updateData.completedAt = new Date();
+          changed = true;
+        }
+
+        // Write result fields whenever the scraper has them AND the DB
+        // doesn't already have a matching value. This lets us fill in a
+        // previously-premature completion, and specifically lets us land
+        // an NC result on a fight that was auto-completed without data.
+        if (scrapedWinnerValue && dbFight.winner !== scrapedWinnerValue) {
+          updateData.winner = scrapedWinnerValue;
+          changed = true;
+        }
+        if (scrapedFight.result?.method && dbFight.method !== scrapedFight.result.method) {
           updateData.method = scrapedFight.result.method;
+          changed = true;
         }
-
-        if (scrapedFight.result?.round) {
+        if (scrapedFight.result?.round && dbFight.round !== scrapedFight.result.round) {
           updateData.round = scrapedFight.result.round;
+          changed = true;
         }
-
-        if (scrapedFight.result?.time) {
+        if (scrapedFight.result?.time && dbFight.time !== scrapedFight.result.time) {
           updateData.time = scrapedFight.result.time;
+          changed = true;
         }
 
-        const winnerName = updateData.winner
-          ? (updateData.winner === dbFight.fighter1.id ? dbFight.fighter1.lastName : dbFight.fighter2.lastName)
-          : '?';
-        console.log(`  DONE ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} -> ${winnerName} by ${scrapedFight.result?.method || '?'}`);
+        if (changed) {
+          let winnerDesc = '?';
+          if (scrapedWinnerValue === 'nc') winnerDesc = 'NO CONTEST';
+          else if (scrapedWinnerValue === 'draw') winnerDesc = 'DRAW';
+          else if (scrapedWinnerValue === dbFight.fighter1.id) winnerDesc = dbFight.fighter1.lastName;
+          else if (scrapedWinnerValue === dbFight.fighter2.id) winnerDesc = dbFight.fighter2.lastName;
+          console.log(`  DONE ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} -> ${winnerDesc} by ${scrapedFight.result?.method || '?'}`);
+        }
 
-        // Fire next-fight notification (don't await — non-blocking)
-        notifyNextFight(eventId, dbFight.orderOnCard);
+        // Fire next-fight notification only on the transition to COMPLETED
+        if (!wasAlreadyCompleted) {
+          notifyNextFight(eventId, dbFight.orderOnCard);
+        }
       }
 
       // Handle scraped cancellations
@@ -317,7 +441,19 @@ export async function parseTapologyData(
       scrapedData.status === 'live' || scrapedData.status === 'complete' ||
       scrapedData.fights.some(f => f.isComplete);
 
-    if (hasStarted) {
+    // Safety guard: never run the missing-from-page cancellation sweep or the
+    // UPCOMING→LIVE flip if the scrape came back empty or matched zero DB fights.
+    // A broken/empty scrape would otherwise cancel every fight on the card and
+    // trigger auto-completion of an event that hasn't happened yet (DBX 6 incident).
+    const scrapeLooksValid = scrapedData.fights.length > 0 && result.fightsMatched > 0;
+    if (hasStarted && !scrapeLooksValid) {
+      console.log(
+        `[Tapology Parser] Skipping cancellation sweep and LIVE flip: scrape looks empty ` +
+        `(scraped=${scrapedData.fights.length}, matched=${result.fightsMatched})`
+      );
+    }
+
+    if (hasStarted && scrapeLooksValid) {
       for (const dbFight of event.fights) {
         // Skip fights already completed with results or already cancelled
         if (dbFight.fightStatus === 'COMPLETED' && dbFight.winner) continue;
@@ -339,13 +475,13 @@ export async function parseTapologyData(
       }
     }
 
-    // Update event status
-    if (hasStarted && event.eventStatus === 'UPCOMING') {
+    // Update event status (guarded by scrapeLooksValid so an empty scrape can't flip LIVE)
+    if (hasStarted && scrapeLooksValid && event.eventStatus === 'UPCOMING') {
       await prisma.event.update({ where: { id: eventId }, data: { eventStatus: 'LIVE' } });
       console.log(`  Event -> LIVE`);
     }
 
-    console.log(`\n[Tapology Parser] Done: ${result.fightsUpdated} updated, ${result.fightsMatched} matched, ${result.cancelledCount} cancelled, ${result.unCancelledCount} un-cancelled`);
+    console.log(`\n[Tapology Parser] Done: ${result.fightsUpdated} updated, ${result.fightsMatched} matched, ${result.fightsCreated} created, ${result.cancelledCount} cancelled, ${result.unCancelledCount} un-cancelled`);
     if (result.fightsNotFound.length > 0) {
       console.log(`[Tapology Parser] Not found: ${result.fightsNotFound.join(', ')}`);
     }

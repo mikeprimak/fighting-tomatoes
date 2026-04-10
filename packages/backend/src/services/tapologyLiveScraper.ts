@@ -27,6 +27,7 @@ export interface TapologyFightResult {
 
 export interface TapologyFight {
   order: number;
+  boutOrder?: number;     // Tapology's card position (1 = opener, N = main event)
   fighterA: TapologyFighter;
   fighterB: TapologyFighter;
   weightClass?: string;
@@ -53,6 +54,11 @@ export interface TapologyEventData {
 function normalizeMethod(method: string): string {
   const m = method.toLowerCase().trim();
 
+  // No contest / draw checked first — these can contain the word "knockout"
+  // (e.g. "No Contest, Accidental Knockdown") and must not be misclassified.
+  if (m.includes('no contest') || m === 'nc') return 'NC';
+  if (m.includes('draw')) return 'DRAW';
+
   // Check for specific decision types first (most common in boxing)
   if (m.includes('unanimous')) return 'UD';
   if (m.includes('split')) return 'SD';
@@ -64,8 +70,6 @@ function normalizeMethod(method: string): string {
   if (m.includes('knockout') || m === 'ko') return 'KO';
   if (m.includes('submission') || m === 'sub') return 'SUB';
   if (m.includes('disqualification') || m === 'dq') return 'DQ';
-  if (m.includes('no contest') || m === 'nc') return 'NC';
-  if (m.includes('draw')) return 'DRAW';
   if (m.includes('rtd') || m.includes('corner stoppage') || m.includes('retirement')) return 'RTD';
 
   // Generic decision (without type specified)
@@ -201,6 +205,17 @@ export class TapologyLiveScraper {
           if (processedPairs.has(pairKey)) return;
           processedPairs.add(pairKey);
 
+          // Extract Tapology's bout position (e.g. "11" for main event, "1" for opener).
+          // The span lives inside <div id="boutCompactNumber{boutId}"> within the same <li>.
+          // If missing, fall back to iteration counter.
+          let boutOrder: number | undefined;
+          const $orderDiv = $li.find('[id^="boutCompactNumber"]').first();
+          if ($orderDiv.length) {
+            const orderText = $orderDiv.find('span').first().text().trim();
+            const parsed = parseInt(orderText, 10);
+            if (!isNaN(parsed) && parsed > 0) boutOrder = parsed;
+          }
+
           order++;
 
           // Check for winner — look for green W badge or green background gradient
@@ -233,9 +248,18 @@ export class TapologyLiveScraper {
 
           $li.find('span.uppercase, span[class*="uppercase"]').each((_, el) => {
             const text = $(el).text().trim();
-            if (text && (text.includes('Decision') || text.includes('KO') || text.includes('TKO') ||
-                        text.includes('Submission') || text.includes('DQ') || text.includes('No Contest') ||
-                        text.includes('Draw'))) {
+            // Match any text containing a known result keyword. "No Contest" and
+            // "Draw" are checked before KO/TKO because normalizeMethod gives them
+            // priority — a "No Contest, Accidental Knockdown" must map to NC.
+            if (text && (
+              text.includes('No Contest') || /\bNC\b/.test(text) ||
+              text.includes('Draw') ||
+              text.includes('Decision') ||
+              text.includes('KO') || text.includes('TKO') ||
+              text.includes('Submission') ||
+              text.includes('DQ') || text.includes('Disqualification') ||
+              text.includes('RTD') || text.includes('Retirement')
+            )) {
               method = normalizeMethod(text);
               return false; // break
             }
@@ -255,6 +279,7 @@ export class TapologyLiveScraper {
 
           fights.push({
             order,
+            boutOrder,
             fighterA: { name: nameA, url: urlA },
             fighterB: { name: nameB, url: urlB },
             isComplete,
