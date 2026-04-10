@@ -119,25 +119,27 @@ async function scrapeEventsList(browser) {
         })
         .join(' ');
 
-      // Extract date
+      // Extract date. PFL's list page uses formats like:
+      //   "Fri, Apr 10, 2026"   (upcoming tab)
+      //   "Sat, Mar 28, 2025"   (past tab)
+      //   "Sat Dec 13 2025"     (older format)
+      // The separator between parts may be comma+space or just space.
       const dateEl = container.querySelector('[class*="date"], time, .datetime');
       let dateText = dateEl ? dateEl.textContent.trim() : '';
 
-      // Try to find date in text content
+      // Try to find date in text content — allow comma OR whitespace between parts
       if (!dateText) {
         const containerText = container.textContent;
-        // Look for date patterns like "Sat Dec 13 2025" or "December 13, 2025"
-        const dateMatch = containerText.match(/(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/i);
+        const dateMatch = containerText.match(/(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[,\s]+([A-Za-z]{3})[,\s]+(\d{1,2})[,\s]+(\d{4})/i);
         if (dateMatch) {
           dateText = dateMatch[0];
         }
       }
 
-      // Parse date
+      // Parse date — same comma/whitespace-tolerant pattern
       let eventDate = null;
       if (dateText) {
-        // Pattern: "Sat Dec 13 2025" or "Dec 13 2025"
-        const dateMatch = dateText.match(/([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/i);
+        const dateMatch = dateText.match(/([A-Za-z]{3})[,\s]+(\d{1,2})[,\s]+(\d{4})/i);
         if (dateMatch) {
           const monthStr = dateMatch[1].toLowerCase();
           const day = parseInt(dateMatch[2], 10);
@@ -151,8 +153,16 @@ async function scrapeEventsList(browser) {
         }
       }
 
-      // Skip past events (only keep upcoming)
-      if (eventDate && eventDate < now) {
+      // REQUIRE a parseable date — if we can't determine when the event is,
+      // skip it rather than assume it's upcoming. Every real upcoming event on
+      // pflmma.com shows a date in the list view, so no-date almost always
+      // means either a past event or broken markup we shouldn't scrape.
+      if (!eventDate) {
+        return;
+      }
+
+      // Skip past events — only keep upcoming (today or later)
+      if (eventDate < now) {
         return;
       }
 
