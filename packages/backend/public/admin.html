@@ -2626,8 +2626,8 @@
 
           // Show results section and populate
           document.getElementById('fightResultsSection').style.display = 'block';
-          const f1Label = f1 ? `${f1.firstName} ${f1.lastName}` : 'Fighter 1';
-          const f2Label = f2 ? `${f2.firstName} ${f2.lastName}` : 'Fighter 2';
+          const f1Label = fight.fighter1 ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}` : 'Fighter 1';
+          const f2Label = fight.fighter2 ? `${fight.fighter2.firstName} ${fight.fighter2.lastName}` : 'Fighter 2';
           document.getElementById('winnerFighter1Option').textContent = f1Label;
           document.getElementById('winnerFighter2Option').textContent = f2Label;
 
