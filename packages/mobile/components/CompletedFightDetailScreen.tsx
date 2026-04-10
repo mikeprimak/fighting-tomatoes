@@ -1530,6 +1530,13 @@ export default function CompletedFightDetailScreen({
           </View>
         )}
 
+        {/* No Contest message (winner === 'nc' is a resolved result, not missing data) */}
+        {fight.winner === 'nc' && isOutcomeRevealed && (
+          <Text style={[styles.whatHappenedPromptText, { color: '#3B82F6', textAlign: 'center', marginTop: -12, marginBottom: 10, fontWeight: '600' }]}>
+            No Contest{fight.round ? ` · R${fight.round}${fight.time ? ` ${fight.time}` : ''}` : ''}
+          </Text>
+        )}
+
         {/* Outcome not available message */}
         {!fight.winner && (
           <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center', marginTop: -12, marginBottom: 10 }]}>
