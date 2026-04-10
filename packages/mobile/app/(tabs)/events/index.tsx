@@ -169,17 +169,11 @@ export default function UpcomingEventsScreen() {
     });
   }, [eventsData]);
 
-  // Filter out hidden orgs and LIVE events (shown in Live Events tab), sort by date
+  // Filter out hidden orgs and LIVE events (shown in Live Events tab).
+  // Preserve server order — backend sorts by day + UFC-first within day.
   const upcomingEvents = React.useMemo(() => {
     return filterEventsByOrg([...allEvents])
-      .filter((event: Event) => event.eventStatus !== 'LIVE')
-      .sort((a: Event, b: Event) => {
-        const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
-        if (dateDiff !== 0) return dateDiff;
-        const aIsUFC = a.promotion?.toUpperCase() === 'UFC' ? 0 : 1;
-        const bIsUFC = b.promotion?.toUpperCase() === 'UFC' ? 0 : 1;
-        return aIsUFC - bIsUFC;
-      });
+      .filter((event: Event) => event.eventStatus !== 'LIVE');
   }, [allEvents, filterEventsByOrg]);
 
   // Scroll to top when filter changes
