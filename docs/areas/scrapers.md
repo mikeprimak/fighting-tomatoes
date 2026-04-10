@@ -9,10 +9,10 @@ Automated data collection for fight cards across 14+ promotions. Mix of direct s
 |---------|--------|------------|----------|
 | UFC | ufc.com | GitHub Actions daily cron | `services/scrapeAllUFCData.js` |
 | ONE FC | onefc.com | GitHub Actions daily cron | `services/scrapeAllOneFCData.js` |
+| PFL | pflmma.com | GitHub Actions daily cron | `services/scrapeAllPFLData.js` |
 | Karate Combat | Tapology | GitHub Actions daily cron | `services/scrapeKarateCombatTapology.js` |
 | Dirty Boxing | Tapology | GitHub Actions daily cron | `services/scrapeDirtyBoxingTapology.js` |
 | BKFC | Tapology | Auto via lifecycle | Live tracker only |
-| PFL | Tapology | Auto via lifecycle | Live tracker only |
 | RIZIN | Tapology | Auto via lifecycle | Live tracker only |
 | Zuffa Boxing | Tapology | Auto via lifecycle | Live tracker only |
 | Matchroom | Manual | — | — |
@@ -30,6 +30,7 @@ Automated data collection for fight cards across 14+ promotions. Mix of direct s
 ## GitHub Actions Workflows
 - `ufc-scraper.yml` — daily UFC data scrape
 - `ufc-live-tracker.yml` — live event tracking during UFC events
+- `pfl-scraper.yml` — daily PFL data scrape (22:00 UTC)
 - Manual trigger via curl (gh CLI not installed):
   ```bash
   curl -X POST -H "Authorization: token $(cat github-key.txt)" \
@@ -37,5 +38,8 @@ Automated data collection for fight cards across 14+ promotions. Mix of direct s
     -d '{"ref":"main"}'
   ```
 
-## Key Gotcha
-UFC scraper MUST run with `TZ=America/New_York` — UFC.com adapts times to viewer timezone via client-side JS. GitHub Actions runners are UTC, so without this the parser gets wrong times.
+## Key Gotchas
+- **UFC scraper** MUST run with `TZ=America/New_York` — UFC.com adapts times to viewer timezone via client-side JS. GitHub Actions runners are UTC, so without this the parser gets wrong times.
+- **PFL scraper** must only scrape *upcoming* events, not the full historical archive. `pflmma.com/all-seasons` renders both upcoming and past events in the same DOM via two tab panels (`#nav-upcoming` and `#nav-past`). Step 1 scopes the event-link `querySelectorAll` to `#nav-upcoming` — do NOT use the whole `document` or you'll scrape ~130 past events back to 2018 and time out before the import step runs. See `2026-04-09.md` for the debug log.
+- **PFL upcoming events show no year on the list page** (`Fri, Apr 10`), so list-view date parsing is unreliable for upcoming events — but Step 2 extracts the canonical ISO datetime from the event page's `DateTime.fromISO(...)` script and the merge in `main()` falls back to that for `eventDate`. If that fallback breaks, every upcoming event will get the parser's default `2099-01-01` placeholder date and disappear from the mobile "upcoming" tab.
+- **RAF scraper** determines event status from the per-event page's `div.past-event-tag` (`isPastEvent`), not from gallery card buttons. An earlier version keyed off "buy tickets" button presence, which wrongly marked future events as Complete whenever tickets weren't yet on sale (e.g. RAF 09 May 30 2026). Fallback when the event page scrape fails is date-based with a 24-hour buffer — don't reintroduce button-presence heuristics. Also note: `rafDataParser.ts:225` is write-once on `eventStatus`, so re-running the scraper will NOT correct a historically wrong status; those have to be fixed at the DB level. See `2026-04-09.md`.

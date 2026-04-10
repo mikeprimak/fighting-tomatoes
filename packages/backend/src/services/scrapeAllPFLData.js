@@ -898,11 +898,18 @@ async function main() {
       console.log(`📄 ${event.eventName}`);
       const eventData = await scrapeEventPage(browser, event.eventUrl, event.eventSlug);
 
-      // Merge event data
+      // Merge event data. If Step 1 couldn't extract a date (upcoming
+      // events on pflmma.com's list view don't show a year), derive it
+      // from Step 2's canonical ISO datetime scraped from the event page's
+      // DateTime.fromISO(...) script. Without this the parser falls back
+      // to 2099-01-01 for every upcoming event.
       const completeEventData = {
         ...event,
         ...eventData,
-        eventImageUrl: eventData.eventImageUrl || event.eventImageUrl
+        eventImageUrl: eventData.eventImageUrl || event.eventImageUrl,
+        eventDate: event.eventDate || (eventData.eventStartTimeISO
+          ? new Date(eventData.eventStartTimeISO).toISOString()
+          : null),
       };
 
       allEventData.push(completeEventData);
