@@ -336,8 +336,25 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         }
       }
 
+      // Extract event date from calendar share links. Every PFL event page
+      // has Google/Yahoo/Outlook "add to calendar" links with the event's
+      // specific date encoded as YYYYMMDDTHHMMSS. This is the most reliable
+      // per-event date signal — the `DateTime.fromISO(...)` in page scripts
+      // is NOT reliable because it's for the site-wide countdown timer at
+      // the top of every page (showing the next featured PFL event across
+      // all PFL events), not the current event.
+      let eventDateFromCalendar = null;
+      const htmlSource = document.documentElement.innerHTML;
+      const calMatch = htmlSource.match(/(?:dates|dtstart|st)=(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})\d{2}/);
+      if (calMatch) {
+        const [, year, month, day, hour, minute] = calMatch;
+        eventDateFromCalendar = `${year}-${month}-${day}T${hour}:${minute}:00.000Z`;
+      }
+
       // Extract event start time
       // PFL has DateTime.fromISO("2025-12-20T16:00:00.000000Z") in scripts
+      // for the featured event's countdown timer (not necessarily the
+      // current event — see comment above).
       let eventStartTime = null;
       let eventStartTimeISO = null;
 
@@ -801,6 +818,7 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
 
       return {
         eventImageUrl,
+        eventDateFromCalendar,
         eventStartTime,
         eventStartTimeISO,
         prelimStartTime,
@@ -898,18 +916,17 @@ async function main() {
       console.log(`📄 ${event.eventName}`);
       const eventData = await scrapeEventPage(browser, event.eventUrl, event.eventSlug);
 
-      // Merge event data. If Step 1 couldn't extract a date (upcoming
-      // events on pflmma.com's list view don't show a year), derive it
-      // from Step 2's canonical ISO datetime scraped from the event page's
-      // DateTime.fromISO(...) script. Without this the parser falls back
-      // to 2099-01-01 for every upcoming event.
+      // Merge event data. For eventDate, prefer the per-event calendar
+      // link extracted in Step 2 (reliable and unique per event). Fall
+      // back to the Step 1 list-view date (rarely available — upcoming
+      // events on pflmma.com's list view don't show a year). Do NOT use
+      // eventStartTimeISO — it comes from the site-wide countdown timer
+      // and is the same value on every event page.
       const completeEventData = {
         ...event,
         ...eventData,
         eventImageUrl: eventData.eventImageUrl || event.eventImageUrl,
-        eventDate: event.eventDate || (eventData.eventStartTimeISO
-          ? new Date(eventData.eventStartTimeISO).toISOString()
-          : null),
+        eventDate: eventData.eventDateFromCalendar || event.eventDate || null,
       };
 
       allEventData.push(completeEventData);
