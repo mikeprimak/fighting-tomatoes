@@ -1,33 +1,16 @@
 # CLAUDE.md
 
-## Apple Review Issues - RESOLVED
-
-1. ~~**Delete Account** - Add option to delete account from within the app~~ **DONE**
-2. ~~**Guest Access** - Allow users to browse without logging in~~ **DONE**
-
-See `LAUNCH-DOC.md` for full status and checklists.
-
 ### Important Rules
 
-- **Always ask before starting EAS builds** - Build credits are limited (91% used as of Jan 19)
+- **Always ask before starting EAS builds** - Build credits are limited
 - **Never use local DB** - Always use Render External URL unless explicitly asked
-
-### Other TODOs
-
-3. ~~**Test New Homescreen Icon**~~ **DONE** - versionCode 28 has correct icon (thick stroke, no fill)
-
-4. **Fix Reset Password 404** - `https://goodfights.app/reset-password?token=...` returns 404. The `FRONTEND_URL` env var on Render points to `goodfights.app` but the Vercel web frontend has no `/reset-password` route. Options:
-   - A) Create reset-password page on web frontend (Vercel)
-   - B) Change `FRONTEND_URL` to a deep link that opens the mobile app
-   - C) Build a simple web page that redirects to the app
-
-5. **Fix Email SPF/DKIM** - Emails from goodfights.app show "unverified" warning in recipients' inboxes ("We can't verify that this email came from the sender"). Need to configure SPF, DKIM, and DMARC records for the goodfights.app domain to authenticate outgoing emails from the SMTP provider.
+- **Document your work** - At the end of every session, create or update `docs/daily/YYYY-MM-DD.md` with what was done. If you changed how an area works, update the relevant `docs/areas/*.md` file. See `docs/README.md` for templates and process. Do this without being asked.
 
 ---
 
 ## Live Event Management
 
-See `LIVE-EVENT-MANAGEMENT.md` for full documentation.
+See `archive/LIVE-EVENT-MANAGEMENT.md` for full documentation.
 
 **TL;DR:** One background job (`eventLifecycle.ts`) runs every 5 minutes:
 1. **UPCOMING → LIVE** when start time passes
@@ -55,9 +38,9 @@ Events use `scraperType` field (null = no scraper, or `ufc`/`matchroom`/`oktagon
 
 ---
 
-FightCrewApp: React Native + Node.js combat sports fight rating app.
+Good Fights: React Native + Node.js combat sports fight rating app.
 
-**Archive**: See `CLAUDE-ARCHIVE.md` for detailed setup guides, troubleshooting, feature implementations, and history.
+**Archive**: See `archive/` folder for historical docs, work session logs, and implementation records.
 
 ## Web App
 
@@ -68,7 +51,7 @@ FightCrewApp: React Native + Node.js combat sports fight rating app.
 - **Env vars** (set in Vercel): `API_URL` and `NEXT_PUBLIC_API_URL` → Render backend
 - **Dev**: `cd packages/web && pnpm dev` (port 3000)
 - **Deploy**: `cd packages/web && vercel --prod`
-- See `WORK-SESSION-WEB-APP.md` for full build log and remaining TODOs
+- See `archive/WORK-SESSION-WEB-APP.md` for full build log
 
 ## Quick Start
 

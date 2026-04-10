@@ -9,7 +9,7 @@
  * Three steps per run:
  *   1. UPCOMING → LIVE: events whose start time has passed
  *   2. Section-based fight completion: mark fights COMPLETED by card section
- *   3. LIVE → COMPLETED: events past their estimated end time (or 8h hard cap)
+ *   3. LIVE → COMPLETED: events past their estimated end time (or 10h hard cap)
  */
 
 import { PrismaClient } from '@prisma/client';
@@ -19,7 +19,7 @@ import { startLiveTracking, getLiveTrackingStatus } from './liveEventTracker';
 const prisma = new PrismaClient();
 
 const LIFECYCLE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
-const HARD_CAP_HOURS = 8;
+const HARD_CAP_HOURS = 10;
 const MINUTES_PER_FIGHT = 30;
 const BUFFER_HOURS = 1;
 

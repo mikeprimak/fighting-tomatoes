@@ -254,7 +254,7 @@ async function main() {
       }
     }
 
-    const outputDir = path.join(__dirname, '../../scraped-data/golden-boy');
+    const outputDir = path.join(__dirname, '../../scraped-data/goldenboy');
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const outputData = { events: allEvents };

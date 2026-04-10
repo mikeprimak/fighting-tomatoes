@@ -112,15 +112,9 @@ async function scrapeEventsGallery() {
     const eventName = nameEl.text().trim();
     if (!eventName) return; // Skip non-event items
 
-    // Determine status from buttons
-    const hasBuyTickets = $el.find('a').filter((_, a) =>
-      $(a).text().trim().toLowerCase().includes('buy ticket')
-    ).length > 0;
-    const hasViewRecap = $el.find('a').filter((_, a) =>
-      $(a).text().trim().toLowerCase().includes('view recap')
-    ).length > 0;
-
-    const status = hasBuyTickets ? 'Upcoming' : 'Complete';
+    // Default to Upcoming — authoritative status comes from the event page's
+    // `div.past-event-tag` (isPastEvent), resolved per-event below.
+    const status = 'Upcoming';
 
     // Get event page URL
     let eventPageUrl = '';
@@ -399,6 +393,16 @@ async function main() {
   const allEvents = [];
   const allAthletes = new Map();
 
+  // Fallback status from gallery date text: Complete only if the event date
+  // is more than 24h in the past, otherwise Upcoming. Used when the event
+  // page can't be scraped and isPastEvent isn't available.
+  const fallbackStatusFromDate = (dateText) => {
+    const parsed = parseRAFDate(dateText);
+    if (!parsed?.date) return 'Upcoming';
+    const eventTime = new Date(parsed.date).getTime();
+    return eventTime + 24 * 60 * 60 * 1000 < Date.now() ? 'Complete' : 'Upcoming';
+  };
+
   for (const galleryEvent of galleryEvents) {
     if (!galleryEvent.eventPageUrl) {
       console.log(`  ⚠ Skipping ${galleryEvent.eventName} - no event page URL`);
@@ -410,7 +414,7 @@ async function main() {
         dateText: galleryEvent.dateText,
         eventDate: null,
         bannerImage: galleryEvent.bannerImage,
-        status: galleryEvent.status,
+        status: fallbackStatusFromDate(galleryEvent.dateText),
         fights: [],
       });
       continue;
@@ -435,6 +439,10 @@ async function main() {
         }
       }
 
+      // Trust the event page's past-event-tag as ground truth when present.
+      // This is RAF's own CMS flag and flips both directions cleanly.
+      const resolvedStatus = eventData.isPastEvent ? 'Complete' : 'Upcoming';
+
       allEvents.push({
         eventName: eventData.eventName,
         eventUrl: galleryEvent.eventPageUrl,
@@ -445,7 +453,7 @@ async function main() {
         startTime: eventData.startTime,
         timezone: eventData.timezone,
         bannerImage: galleryEvent.bannerImage,
-        status: eventData.isPastEvent ? 'Complete' : galleryEvent.status,
+        status: resolvedStatus,
         fights: eventData.fights,
       });
 
@@ -460,7 +468,7 @@ async function main() {
         dateText: galleryEvent.dateText,
         eventDate: null,
         bannerImage: galleryEvent.bannerImage,
-        status: galleryEvent.status,
+        status: fallbackStatusFromDate(galleryEvent.dateText),
         fights: [],
       });
     }

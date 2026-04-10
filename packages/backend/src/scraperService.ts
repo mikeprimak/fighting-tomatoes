@@ -386,7 +386,7 @@ function stopTracker(eventId: string): boolean {
 /**
  * Tapology URL discovery — same logic as runTapologyLiveTracker.ts
  */
-const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[] }> = {
+const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[]; scopeSelector?: string }> = {
   'Zuffa Boxing': {
     url: 'https://www.tapology.com/fightcenter/promotions/6299-zuffa-boxing-zb',
     slugFilter: ['zuffa'],
@@ -414,6 +414,13 @@ const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[
   'Golden Boy': {
     url: 'https://www.tapology.com/fightcenter/promotions/1979-golden-boy-promotions-gbp',
     slugFilter: ['golden-boy'],
+  },
+  'Gold Star': {
+    url: 'https://www.tapology.com/fightcenter/promotions/6908-gold-star-promotions-gsp',
+    // Gold Star events use fighter-vs-fighter slugs with no org marker.
+    // Scope to #content to exclude sidebar events from other promotions.
+    slugFilter: [],
+    scopeSelector: '#content',
   },
   'Matchroom Boxing': {
     url: 'https://www.tapology.com/fightcenter/promotions/2484-matchroom-boxing-mb',
@@ -454,13 +461,18 @@ async function discoverTapologyUrl(event: any): Promise<string | null> {
     const $ = cheerio.load(html);
 
     const eventLinks: { name: string; url: string }[] = [];
-    $('a[href*="/fightcenter/events/"]').each((_, el) => {
+    const linkSelector = hubConfig.scopeSelector
+      ? `${hubConfig.scopeSelector} a[href*="/fightcenter/events/"]`
+      : 'a[href*="/fightcenter/events/"]';
+    $(linkSelector).each((_, el) => {
       const href = $(el).attr('href');
       const name = $(el).text().trim();
       if (!href || !name || name.length < 3) return;
 
-      const hrefLower = href.toLowerCase();
-      if (!hubConfig.slugFilter.some(slug => hrefLower.includes(slug))) return;
+      if (hubConfig.slugFilter.length > 0) {
+        const hrefLower = href.toLowerCase();
+        if (!hubConfig.slugFilter.some(slug => hrefLower.includes(slug))) return;
+      }
 
       const fullUrl = href.startsWith('http') ? href : `https://www.tapology.com${href}`;
       eventLinks.push({ name, url: fullUrl });

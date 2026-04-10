@@ -11,6 +11,7 @@ import {
   runDailyOneFCScraper,
   runDailyMatchroomScraper,
   runDailyGoldenBoyScraper,
+  runDailyGoldStarScraper,
   runDailyTopRankScraper,
   runDailyOktagonScraper,
   runDailyZuffaBoxingScraper,
@@ -195,6 +196,14 @@ export async function triggerMatchroomScraper(): Promise<OrganizationScraperResu
 export async function triggerGoldenBoyScraper(): Promise<OrganizationScraperResults> {
   console.log('[Background Jobs] Manual trigger: Golden Boy scraper');
   return await runDailyGoldenBoyScraper();
+}
+
+/**
+ * Trigger Gold Star scraper manually (for testing/admin)
+ */
+export async function triggerGoldStarScraper(): Promise<OrganizationScraperResults> {
+  console.log('[Background Jobs] Manual trigger: Gold Star scraper');
+  return await runDailyGoldStarScraper();
 }
 
 /**

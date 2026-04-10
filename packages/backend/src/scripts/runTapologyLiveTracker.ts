@@ -36,7 +36,7 @@ const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 const TAPOLOGY_BASE_URL = 'https://www.tapology.com';
 
 // Promotion-to-Tapology-hub mapping for auto-discovery
-const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[] }> = {
+const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[]; scopeSelector?: string }> = {
   'Zuffa Boxing': {
     url: 'https://www.tapology.com/fightcenter/promotions/6299-zuffa-boxing-zb',
     slugFilter: ['zuffa'],
@@ -64,6 +64,13 @@ const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[
   'Golden Boy': {
     url: 'https://www.tapology.com/fightcenter/promotions/1979-golden-boy-promotions-gbp',
     slugFilter: ['golden-boy'],
+  },
+  'Gold Star': {
+    url: 'https://www.tapology.com/fightcenter/promotions/6908-gold-star-promotions-gsp',
+    // Gold Star events use fighter-vs-fighter slugs with no org marker.
+    // Scope to #content to exclude sidebar events from other promotions.
+    slugFilter: [],
+    scopeSelector: '#content',
   },
   'Matchroom Boxing': {
     url: 'https://www.tapology.com/fightcenter/promotions/2484-matchroom-boxing-mb',
@@ -171,17 +178,25 @@ async function discoverTapologyUrl(event: any, promotion: string): Promise<strin
     const cheerio = await import('cheerio');
     const $ = cheerio.load(html);
 
-    // Find all event links, filtering by the promotion's slug patterns
+    // Find all event links. Two filtering strategies:
+    //   1. scopeSelector — restrict to a DOM region (e.g. #content) to exclude sidebar
+    //   2. slugFilter — restrict by URL slug pattern
+    // A promotion should set at least one. If both are empty, all event links match.
     const eventLinks: { name: string; url: string }[] = [];
-    $('a[href*="/fightcenter/events/"]').each((_, el) => {
+    const linkSelector = hubConfig.scopeSelector
+      ? `${hubConfig.scopeSelector} a[href*="/fightcenter/events/"]`
+      : 'a[href*="/fightcenter/events/"]';
+    $(linkSelector).each((_, el) => {
       const href = $(el).attr('href');
       const name = $(el).text().trim();
       if (!href || !name || name.length < 3) return;
 
-      // Filter to only this promotion's events (sidebar shows events from all orgs)
-      const hrefLower = href.toLowerCase();
-      const matchesPromotion = hubConfig.slugFilter.some(slug => hrefLower.includes(slug));
-      if (!matchesPromotion) return;
+      // Slug filter (if configured)
+      if (hubConfig.slugFilter.length > 0) {
+        const hrefLower = href.toLowerCase();
+        const matchesPromotion = hubConfig.slugFilter.some(slug => hrefLower.includes(slug));
+        if (!matchesPromotion) return;
+      }
 
       const fullUrl = href.startsWith('http') ? href : `${TAPOLOGY_BASE_URL}${href}`;
       eventLinks.push({ name, url: fullUrl });
@@ -248,6 +263,10 @@ async function discoverTapologyUrl(event: any, promotion: string): Promise<strin
 
 /**
  * Check if all fights for an event are complete and auto-complete the event.
+ *
+ * Safety guard: requires at least one fight to have an actual COMPLETED status
+ * (not just CANCELLED). An "all CANCELLED" card is a symptom of a broken scrape
+ * and must NOT trigger auto-completion (DBX 6 incident, 2026-04-10).
  */
 async function autoCompleteTapologyEvent(eventId: string): Promise<boolean> {
   const fights = await prisma.fight.findMany({
@@ -257,13 +276,18 @@ async function autoCompleteTapologyEvent(eventId: string): Promise<boolean> {
 
   if (fights.length === 0) return false;
 
-  // Check if all fights are complete (either published or in shadow fields)
-  const allComplete = fights.every(
+  // Check if all fights have reached a terminal state (completed or cancelled)
+  const allTerminal = fights.every(
     f => f.fightStatus === 'COMPLETED' || f.fightStatus === 'CANCELLED' ||
          f.trackerFightStatus === 'COMPLETED' || f.trackerFightStatus === 'CANCELLED'
   );
 
-  if (allComplete) {
+  // But require at least one to actually be COMPLETED — not just cancelled
+  const hasAnyCompleted = fights.some(
+    f => f.fightStatus === 'COMPLETED' || f.trackerFightStatus === 'COMPLETED'
+  );
+
+  if (allTerminal && hasAnyCompleted) {
     await prisma.event.update({
       where: { id: eventId },
       data: {
@@ -272,6 +296,13 @@ async function autoCompleteTapologyEvent(eventId: string): Promise<boolean> {
       },
     });
     return true;
+  }
+
+  if (allTerminal && !hasAnyCompleted) {
+    console.log(
+      `[TAPOLOGY LIVE] Skipping auto-complete: all fights terminal but none COMPLETED ` +
+      `(likely a broken scrape that cancelled everything).`
+    );
   }
 
   return false;

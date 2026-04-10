@@ -474,9 +474,13 @@ export default function UpcomingFightDetailScreen({
     mutationFn: async (content: string) => {
       return apiService.createPreFightComment(fight.id, content);
     },
-    onSuccess: () => {
+    onSuccess: (_data: any, content: string) => {
       // Invalidate pre-flight comments query to refresh the comment list
       queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
+      // Update userCommentCount in events cache so badge updates immediately
+      const currentCount = (fight as any).userCommentCount ?? 0;
+      const newCount = content.trim() === '' ? Math.max(0, currentCount - 1) : currentCount + 1;
+      updateEventsCache({ userCommentCount: newCount });
       // Exit edit mode after successful save
       setIsEditingComment(false);
     },
@@ -497,6 +501,9 @@ export default function UpcomingFightDetailScreen({
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
+      // Update userCommentCount in events cache so badge updates immediately
+      const currentCount = (fight as any).userCommentCount ?? 0;
+      updateEventsCache({ userCommentCount: currentCount + 1 });
       setReplyingToCommentId(null);
       setReplyText('');
 
@@ -523,8 +530,13 @@ export default function UpcomingFightDetailScreen({
     mutationFn: async ({ commentId, content }: { commentId: string; content: string }) => {
       return apiService.updatePreFightComment(fight.id, commentId, content);
     },
-    onSuccess: () => {
+    onSuccess: (_data: any, variables: { commentId: string; content: string }) => {
       queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
+      // If content was empty, reply was deleted — decrement userCommentCount
+      if (variables.content.trim() === '') {
+        const currentCount = (fight as any).userCommentCount ?? 0;
+        updateEventsCache({ userCommentCount: Math.max(0, currentCount - 1) });
+      }
       setEditingReplyId(null);
       setEditReplyText('');
       showSuccess('Reply updated successfully');
