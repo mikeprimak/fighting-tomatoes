@@ -137,6 +137,7 @@ export const EventBannerCard = memo(function EventBannerCard({
                   event.promotion?.toUpperCase() === 'KARATE COMBAT' ? 34 :
                   event.promotion?.toUpperCase() === 'BKFC' ? 18 :
                   event.promotion?.toUpperCase() === 'OKTAGON' ? 34 :
+                  event.promotion?.toUpperCase() === 'GOLD STAR' || event.promotion?.toUpperCase() === 'GOLD_STAR' ? 22 :
                   event.promotion?.toUpperCase() === 'ZUFFA BOXING' || event.promotion?.toUpperCase() === 'ZUFFA' ? 44 : 28
                 }
                 color="#FFFFFF"
