@@ -72,7 +72,7 @@ async function scrapeEventsList(browser) {
         // Top Rank events typically contain fighter names in slugs, not a consistent prefix.
         // Filter out obviously non-Top-Rank sidebar events by checking common other orgs.
         const urlLower = eventUrl.toLowerCase();
-        const nonTopRank = ['ufc-', 'bellator-', 'pfl-', 'one-', 'rizin-', 'oktagon-', 'bkfc-', 'cage-warriors', 'ksw-', 'lfa-'];
+        const nonTopRank = ['ufc-', 'bellator-', 'pfl-', 'one-', 'rizin-', 'oktagon-', 'bkfc-', 'cage-warriors', 'ksw-', 'lfa-', 'aca-', 'acb-', 'karate-combat', 'dirty-boxing', 'zuffa-boxing', 'gold-star', 'golden-boy', 'matchroom'];
         if (nonTopRank.some(prefix => urlLower.includes(prefix))) return;
         seenUrls.add(eventUrl);
 
@@ -118,13 +118,22 @@ async function scrapeEventPage(browser, eventUrl) {
       if (consentBtn) { await consentBtn.click(); await new Promise(r => setTimeout(r, 500)); }
     } catch (e) {}
 
-    const eventData = await page.evaluate(() => {
+    const eventIdMatch = eventUrl.match(/\/events\/(\d+)-/);
+    const eventIdFromUrl = eventIdMatch ? eventIdMatch[1] : null;
+
+    const eventData = await page.evaluate((eventId) => {
       const data = { eventName: '', dateText: '', eventDate: null, eventStartTime: null, venue: '', city: '', country: '', eventImageUrl: null, fights: [] };
 
-      // Extract event poster image from Tapology
-      const posterImg = document.querySelector('img[src*="poster_images"]');
-      if (posterImg && posterImg.src) {
-        data.eventImageUrl = posterImg.src;
+      // Extract event poster image from Tapology.
+      // Prefer og:image meta (authoritative for the page). Fall back to an img whose
+      // src contains this event's numeric id, to avoid sidebar posters for other events.
+      const ogImage = document.querySelector('meta[property="og:image"]');
+      if (ogImage && ogImage.content && ogImage.content.includes('poster_images')) {
+        data.eventImageUrl = ogImage.content;
+      }
+      if (!data.eventImageUrl && eventId) {
+        const scopedImg = document.querySelector(`img[src*="poster_images/${eventId}/"]`);
+        if (scopedImg && scopedImg.src) data.eventImageUrl = scopedImg.src;
       }
 
       const eventHeader = document.querySelector('.eventPageHeaderTitles h1, .header h1, #main h1, .content h1')
@@ -205,7 +214,7 @@ async function scrapeEventPage(browser, eventUrl) {
         });
       }
       return data;
-    });
+    }, eventIdFromUrl);
 
     await page.close();
     console.log(`      ✅ Found ${eventData.fights.length} fights`);
