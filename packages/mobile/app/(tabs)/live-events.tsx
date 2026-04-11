@@ -46,6 +46,18 @@ type Fight = any;
 const formatDate = (dateString: string) => formatEventDate(dateString);
 const formatTime = (dateString: string) => formatEventTimeCompact(dateString);
 
+// Treat an event as live if the backend has flagged it LIVE *or* its earliest
+// start time has passed and it isn't COMPLETED. Mirrors the fallback on the
+// event detail screen so the Live tab doesn't lag behind the 5-minute
+// backend lifecycle tick.
+const isEventLiveNow = (event: Event): boolean => {
+  if (event.eventStatus === 'LIVE') return true;
+  if (event.eventStatus === 'COMPLETED') return false;
+  const startStr = event.earlyPrelimStartTime || event.prelimStartTime || event.mainStartTime || event.date;
+  if (!startStr) return false;
+  return Date.now() >= new Date(startStr).getTime();
+};
+
 export default function LiveEventsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -119,7 +131,7 @@ export default function LiveEventsScreen() {
       seen.add(event.id);
       return true;
     });
-    const live = deduped.filter((event: Event) => event.eventStatus === 'LIVE');
+    const live = deduped.filter(isEventLiveNow);
     // Sort UFC events to the top
     const sorted = [...live].sort((a, b) => {
       const aIsUFC = a.promotion?.toUpperCase() === 'UFC' ? 0 : 1;
