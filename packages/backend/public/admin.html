@@ -2302,18 +2302,28 @@
       const prelimTime = document.getElementById('eventPrelimTime').value;
       const earlyPrelimTime = document.getElementById('eventEarlyPrelimTime').value;
 
-      // Convert Eastern Time input to UTC ISO string
-      // Uses the browser to determine EDT vs EST offset automatically
+      // Convert Eastern Time input to UTC ISO string.
+      // Probes EDT (-04:00) and EST (-05:00) and picks whichever produces the
+      // requested wall clock when formatted in America/New_York. Does NOT
+      // depend on the browser's local timezone, so it works correctly for
+      // admins whose machines are already set to ET.
       const etToUTC = (dateStr, timeStr) => {
         if (!dateStr || !timeStr) return undefined;
-        // Create a temp date as if UTC, then find ET offset by comparing
-        const naive = new Date(`${dateStr}T${timeStr}:00Z`);
-        // Get what time it is in ET when UTC shows this time
-        const etStr = naive.toLocaleString('en-US', { timeZone: 'America/New_York' });
-        const etDate = new Date(etStr);
-        const offsetMs = naive.getTime() - etDate.getTime();
-        // offsetMs is UTC-ET (positive = ET is behind UTC). We want to go from ET→UTC, so add offset
-        return new Date(naive.getTime() + offsetMs).toISOString();
+        const fmt = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'America/New_York',
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit', hour12: false,
+        });
+        const want = `${dateStr}T${timeStr}`;
+        for (const offset of ['-04:00', '-05:00']) {
+          const candidate = new Date(`${dateStr}T${timeStr}:00${offset}`);
+          const parts = Object.fromEntries(fmt.formatToParts(candidate).map(p => [p.type, p.value]));
+          const hour = parts.hour === '24' ? '00' : parts.hour;
+          const got = `${parts.year}-${parts.month}-${parts.day}T${hour}:${parts.minute}`;
+          if (got === want) return candidate.toISOString();
+        }
+        // Fallback: assume EDT if neither matched (shouldn't happen outside the DST fold)
+        return new Date(`${dateStr}T${timeStr}:00-04:00`).toISOString();
       };
 
       const scraperType = document.getElementById('eventScraperType').value;
