@@ -46,11 +46,7 @@ jobs:
       - name: Build live tracker
         run: |
           cd packages/backend
-          # Build only the live-tracker files via a dedicated tsconfig that
-          # skips the broken routes/auth files and adds DOM lib for the
-          # page.evaluate() blocks in the scraper. Full pnpm build has been
-          # broken since March 2026 due to unrelated route-level type errors.
-          npx tsc --project tsconfig.tracker.json
+          pnpm build
 
       - name: Install Chromium for Puppeteer
         run: |

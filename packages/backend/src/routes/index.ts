@@ -607,7 +607,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       });
     } catch (error: any) {
-      request.log.error('Events fetch error:', error);
+      request.log.error(error, 'Events fetch error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -707,7 +707,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
       return reply.code(200).send({ event });
     } catch (error: any) {
-      request.log.error('Event fetch error:', error);
+      request.log.error(error, 'Event fetch error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -869,7 +869,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
       return reply.send(engagement);
     } catch (error: any) {
-      request.log.error('Event engagement fetch error:', error);
+      request.log.error(error, 'Event engagement fetch error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1089,7 +1089,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Event predictions fetch error:', error);
+      request.log.error(error, 'Event predictions fetch error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1189,7 +1189,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       });
     } catch (error: any) {
-      request.log.error('Fighters fetch error:', error);
+      request.log.error(error, 'Fighters fetch error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1313,7 +1313,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       });
     } catch (error: any) {
-      request.log.error('Fighter fetch error:', error);
+      request.log.error(error, 'Fighter fetch error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1417,7 +1417,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         isFollowing: true,
       });
     } catch (error: any) {
-      request.log.error('Follow fighter error:', error);
+      request.log.error(error, 'Follow fighter error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1484,7 +1484,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         isFollowing: false,
       });
     } catch (error: any) {
-      request.log.error('Unfollow fighter error:', error);
+      request.log.error(error, 'Unfollow fighter error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1566,7 +1566,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
       return reply.code(200).send({ fighters });
     } catch (error: any) {
-      request.log.error('Get followed fighters error:', error);
+      request.log.error(error, 'Get followed fighters error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1650,7 +1650,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         startOfFightNotification: startOfFightNotification ?? false,
       });
     } catch (error: any) {
-      request.log.error('Update fighter notification preferences error:', error);
+      request.log.error(error, 'Update fighter notification preferences error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1741,7 +1741,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         isFollowing: true,
       });
     } catch (error: any) {
-      request.log.error('Follow fight error:', error);
+      request.log.error(error, 'Follow fight error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1802,7 +1802,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         isFollowing: false,
       });
     } catch (error: any) {
-      request.log.error('Unfollow fight error:', error);
+      request.log.error(error, 'Unfollow fight error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1873,7 +1873,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         affectedMatches: result.affectedMatches,
       });
     } catch (error: any) {
-      request.log.error('Toggle fight notification error:', error);
+      request.log.error(error, 'Toggle fight notification error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',

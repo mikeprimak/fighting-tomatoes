@@ -207,7 +207,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Registration error:', error);
+      request.log.error(error, 'Registration error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -381,7 +381,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Login error:', error);
+      request.log.error(error, 'Login error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -427,7 +427,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         message: 'Logout successful',
       });
     } catch (error: any) {
-      request.log.error('Logout error:', error);
+      request.log.error(error, 'Logout error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -639,7 +639,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Refresh token error:', error);
+      request.log.error(error, 'Refresh token error:');
       return reply.code(401).send({
         error: 'Invalid refresh token',
         code: 'INVALID_TOKEN',
@@ -900,7 +900,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Get profile error:', error);
+      request.log.error(error, 'Get profile error:');
       return reply.code(401).send({
         error: 'Invalid token',
         code: 'INVALID_TOKEN',
@@ -1050,7 +1050,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Update profile error:', error);
+      request.log.error(error, 'Update profile error:');
       if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
         return reply.code(401).send({
           error: 'Invalid token',
@@ -1250,7 +1250,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Get prediction accuracy error:', error);
+      request.log.error(error, 'Get prediction accuracy error:');
       if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
         return reply.code(401).send({
           error: 'Invalid token',
@@ -1395,7 +1395,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Get global standing error:', error);
+      request.log.error(error, 'Get global standing error:');
       if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
         return reply.code(401).send({
           error: 'Invalid token',
@@ -1453,7 +1453,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         displayName: displayName.trim(),
       });
     } catch (error: any) {
-      request.log.error('Check displayName error:', error);
+      request.log.error(error, 'Check displayName error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1546,7 +1546,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
         payload = ticket.getPayload();
       } catch (verifyError: any) {
-        request.log.error('Google token verification failed:', verifyError);
+        request.log.error(verifyError, 'Google token verification failed:');
         return reply.code(400).send({
           error: 'Invalid Google token',
           code: 'INVALID_TOKEN',
@@ -1672,7 +1672,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Google auth error:', error);
+      request.log.error(error, 'Google auth error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -1772,7 +1772,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           ignoreExpiration: false,
         });
       } catch (verifyError: any) {
-        request.log.error('Apple token verification failed:', verifyError);
+        request.log.error(verifyError, 'Apple token verification failed:');
         return reply.code(400).send({
           error: 'Invalid Apple token',
           code: 'INVALID_TOKEN',
@@ -1929,7 +1929,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Apple auth error:', error);
+      request.log.error(error, 'Apple auth error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -2014,7 +2014,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Resend verification error:', error);
+      request.log.error(error, 'Resend verification error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'RESEND_FAILED',
@@ -2095,7 +2095,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Email verification error:', error);
+      request.log.error(error, 'Email verification error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'VERIFICATION_FAILED',
@@ -2175,7 +2175,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Password reset request error:', error);
+      request.log.error(error, 'Password reset request error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'RESET_REQUEST_FAILED',
@@ -2298,7 +2298,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Password reset error:', error);
+      request.log.error(error, 'Password reset error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'RESET_FAILED',
@@ -2401,7 +2401,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
     } catch (error: any) {
-      request.log.error('Claim account error:', error);
+      request.log.error(error, 'Claim account error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'CLAIM_FAILED',

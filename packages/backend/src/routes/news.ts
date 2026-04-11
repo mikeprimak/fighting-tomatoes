@@ -85,7 +85,7 @@ export default async function newsRoutes(fastify: FastifyInstance) {
         },
       });
     } catch (error: any) {
-      request.log.error('News articles fetch error:', error);
+      request.log.error(error, 'News articles fetch error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -158,7 +158,7 @@ export default async function newsRoutes(fastify: FastifyInstance) {
 
       return reply.code(200).send({ article });
     } catch (error: any) {
-      request.log.error('News article fetch error:', error);
+      request.log.error(error, 'News article fetch error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
@@ -254,7 +254,7 @@ export default async function newsRoutes(fastify: FastifyInstance) {
         sources: sourceCounts,
       });
     } catch (error: any) {
-      request.log.error('News scraping error:', error);
+      request.log.error(error, 'News scraping error:');
       return reply.code(500).send({
         error: 'Scraping failed',
         code: 'SCRAPING_ERROR',
@@ -314,7 +314,7 @@ export default async function newsRoutes(fastify: FastifyInstance) {
 
       return reply.code(200).send({ sources: sourcesWithLatest });
     } catch (error: any) {
-      request.log.error('News sources fetch error:', error);
+      request.log.error(error, 'News sources fetch error:');
       return reply.code(500).send({
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
