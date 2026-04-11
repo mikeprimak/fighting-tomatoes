@@ -53,6 +53,18 @@ type Fight = any;
 const formatDate = (dateString: string) => formatEventDate(dateString);
 const formatTime = (dateString: string) => formatEventTimeCompact(dateString);
 
+// Treat an event as live if the backend has flagged it LIVE *or* its earliest
+// start time has passed and it isn't COMPLETED. Mirrors the fallback on the
+// event detail screen so the Upcoming tab doesn't lag behind the 5-minute
+// backend lifecycle tick.
+const isEventLiveNow = (event: Event): boolean => {
+  if (event.eventStatus === 'LIVE') return true;
+  if (event.eventStatus === 'COMPLETED') return false;
+  const startStr = event.earlyPrelimStartTime || event.prelimStartTime || event.mainStartTime || event.date;
+  if (!startStr) return false;
+  return Date.now() >= new Date(startStr).getTime();
+};
+
 export default function UpcomingEventsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -169,11 +181,14 @@ export default function UpcomingEventsScreen() {
     });
   }, [eventsData]);
 
-  // Filter out hidden orgs and LIVE events (shown in Live Events tab).
+  // Filter out hidden orgs and events that are already live (shown in Live
+  // Events tab). Uses a time-based fallback so an event whose start time has
+  // passed disappears from Upcoming immediately, without waiting for the
+  // backend lifecycle tick to flip its eventStatus.
   // Preserve server order — backend sorts by day + UFC-first within day.
   const upcomingEvents = React.useMemo(() => {
     return filterEventsByOrg([...allEvents])
-      .filter((event: Event) => event.eventStatus !== 'LIVE');
+      .filter((event: Event) => !isEventLiveNow(event));
   }, [allEvents, filterEventsByOrg]);
 
   // Scroll to top when filter changes
