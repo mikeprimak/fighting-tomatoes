@@ -732,7 +732,9 @@ export default function FightOfTheNightPage() {
         style: { transform: 'scale(1)', transformOrigin: 'top left' },
       });
       const link = document.createElement('a');
-      link.download = `good-fights-fight-of-the-night-${fmt}.png`;
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      link.download = `good-fights-fight-of-the-night-${fmt}-${dateStr}.png`;
       link.href = dataUrl;
       link.click();
     } catch (e: any) {

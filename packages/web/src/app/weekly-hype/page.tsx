@@ -585,8 +585,10 @@ export default function WeeklyHypePage() {
         pixelRatio: 1,
         style: { transform: 'scale(1)', transformOrigin: 'top left' },
       });
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       const link = document.createElement('a');
-      link.download = `good-fights-weekly-hype-${fmt}.png`;
+      link.download = `good-fights-weekly-hype-${fmt}-${dateStr}.png`;
       link.href = dataUrl;
       link.click();
     } catch (e: any) {
