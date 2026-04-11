@@ -244,7 +244,9 @@ async function importMVPEvents(
     });
 
     if (event) {
-      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it)
+      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it),
+      // except un-cancel events that reappear on the source site.
+      const wasCancelled = event.eventStatus === 'CANCELLED';
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -257,9 +259,17 @@ async function importMVPEvents(
           promotion: 'MVP',
           scraperType: 'tapology',
           bannerImage: bannerImage || undefined,
+          ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
         }
       });
       console.log(`  ✓ Updated event: ${eventData.eventName} (status unchanged: ${event.eventStatus})`);
+      if (wasCancelled) {
+        console.log(`    ✅ Un-cancelled event (reappeared on source): ${eventData.eventName}`);
+        await prisma.fight.updateMany({
+          where: { eventId: event.id, fightStatus: 'CANCELLED' },
+          data: { fightStatus: 'UPCOMING' },
+        });
+      }
     } else {
       // Create new event
       const now = new Date();

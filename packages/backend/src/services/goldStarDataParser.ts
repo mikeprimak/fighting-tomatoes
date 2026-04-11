@@ -295,6 +295,9 @@ async function importGoldStarEvents(
     });
 
     if (event) {
+      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it),
+      // except un-cancel events that reappear on the source site.
+      const wasCancelled = event.eventStatus === 'CANCELLED';
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -306,8 +309,16 @@ async function importGoldStarEvents(
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
           scraperType: 'tapology',
+          ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
         }
       });
+      if (wasCancelled) {
+        console.log(`    ✅ Un-cancelled event (reappeared on source): ${eventData.eventName}`);
+        await prisma.fight.updateMany({
+          where: { eventId: event.id, fightStatus: 'CANCELLED' },
+          data: { fightStatus: 'UPCOMING' },
+        });
+      }
     } else {
       const now = new Date();
       const initialStatus = (eventData.status === 'Complete' || eventDate < now) ? 'COMPLETED' : 'UPCOMING';

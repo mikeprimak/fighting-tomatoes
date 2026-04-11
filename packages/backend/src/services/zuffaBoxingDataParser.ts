@@ -302,9 +302,11 @@ async function importZuffaEvents(
     });
 
     if (event) {
-      // Update existing event - do NOT overwrite eventStatus
+      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it),
+      // except un-cancel events that reappear on the source site.
       // The lifecycle service manages status transitions (UPCOMING→LIVE→COMPLETED).
       // Resetting past events to UPCOMING causes them to get stuck as LIVE.
+      const wasCancelled = event.eventStatus === 'CANCELLED';
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -317,9 +319,17 @@ async function importZuffaEvents(
           promotion: 'Zuffa Boxing',
           scraperType: 'tapology',
           bannerImage,
+          ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
         }
       });
       console.log(`  ✓ Updated event: ${eventData.eventName} (status unchanged: ${event.eventStatus})`);
+      if (wasCancelled) {
+        console.log(`    ✅ Un-cancelled event (reappeared on source): ${eventData.eventName}`);
+        await prisma.fight.updateMany({
+          where: { eventId: event.id, fightStatus: 'CANCELLED' },
+          data: { fightStatus: 'UPCOMING' },
+        });
+      }
     } else {
       // Create new event - set initial status based on date
       const now = new Date();

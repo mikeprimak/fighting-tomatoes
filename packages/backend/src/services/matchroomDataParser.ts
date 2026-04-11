@@ -403,7 +403,9 @@ async function importMatchroomEvents(
     });
 
     if (event) {
-      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it)
+      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it),
+      // except un-cancel events that reappear on the source site.
+      const wasCancelled = event.eventStatus === 'CANCELLED';
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -415,9 +417,17 @@ async function importMatchroomEvents(
           ufcUrl: primaryEvent.eventUrl,
           mainStartTime: mainStartTime || undefined,
           scraperType: 'tapology',
+          ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
         }
       });
       console.log(`    ✓ Updated event: ${eventName}`);
+      if (wasCancelled) {
+        console.log(`    ✅ Un-cancelled event (reappeared on source): ${eventName}`);
+        await prisma.fight.updateMany({
+          where: { eventId: event.id, fightStatus: 'CANCELLED' },
+          data: { fightStatus: 'UPCOMING' },
+        });
+      }
     } else {
       // Create new event - set initial status based on date
       const now = new Date();

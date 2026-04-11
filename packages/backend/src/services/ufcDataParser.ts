@@ -430,7 +430,9 @@ async function importEvents(
       }
     }
 
-    // Build update data - do NOT overwrite eventStatus (lifecycle service manages it)
+    // Build update data - do NOT overwrite eventStatus (lifecycle service manages it),
+    // except un-cancel events that reappear on the source site.
+    const wasCancelled = existingEvent?.eventStatus === 'CANCELLED';
     const updateData: any = {
       name: eventData.eventName,
       venue: eventData.venue,
@@ -440,6 +442,7 @@ async function importEvents(
       prelimStartTime,
       mainStartTime,
       scraperType: 'ufc',
+      ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
     };
 
     // Only update date if:
@@ -521,6 +524,14 @@ async function importEvents(
     }
 
     console.log(`  ✓ Event: ${eventData.eventName}`);
+
+    if (wasCancelled && event) {
+      console.log(`    ✅ Un-cancelled event (reappeared on source): ${eventData.eventName}`);
+      await prisma.fight.updateMany({
+        where: { eventId: event.id, fightStatus: 'CANCELLED' },
+        data: { fightStatus: 'UPCOMING' },
+      });
+    }
 
     // Import fights for this event
     let fightsImported = 0;
