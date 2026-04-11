@@ -21,101 +21,40 @@ On 2026-04-10, three stacked bugs were found and fixed in the ONE FC scrapers:
 
 **Data fixed**: ONE 150 only. All 14 fights now have correct per-side winners, `orderOnCard` 1..14, Rittidet row merged. Every other ONE FC event in the DB is still likely broken.
 
-## Task 0 (do this first): commit the in-progress code changes
+## ~~Task 0: commit the in-progress code changes~~ — DONE 2026-04-11
 
-The code fixes from the 2026-04-10 session are in the working tree but **not committed**. Before starting any other task, review the diff and commit them. Suggested groupings:
-
-- One commit for the tracker CI fix (`fighterMatcher.ts`, `tsconfig.tracker.json`, `onefc-live-tracker.yml`) — message like "Fix ONE FC live tracker build: bypass broken routes via focused tsconfig"
-- One commit for the scraper bug fixes (`oneFCLiveScraper.ts`, `scrapeAllOneFCData.js`) — message like "Fix ONE FC scrapers: reject hero-duplicate matchups + per-face sticker detection"
-
-Both commits should reference `docs/daily/2026-04-10.md` for the full narrative. Don't push without asking the user.
+Landed as `eb6177c` (tracker CI fix) and `0031664` (scraper bug fixes). Both on `main`, not pushed.
 
 ## ~~Task 1: backfill historical ONE FC event winners~~ — DESCOPED 2026-04-10
 
 Skipped for MVP. Historical ONE FC winner data is known to be structurally wrong from the per-face sticker bug, but fixing it is not blocking. Revisit post-MVP.
 
-## Task 2: fix the single-word-URL-slug fighter name bug
+## ~~Task 2: fix the single-word-URL-slug fighter name bug~~ — DONE 2026-04-11
 
-**Why**: Rittidet Lukjaoporongtom and Nuapet Torfunfarm (currently stored as "Nuapet Tded99") are known broken. Any ONE FC fighter whose URL slug is shorter than their real display name has the same issue. The ONE 150 daily scraper output shows at least these two; there are probably more across other events.
+Landed as `7815461`. Full write-up in `docs/daily/2026-04-11.md`. TL;DR:
 
-**What the task requires**:
+- Both scrapers (`scrapeAllOneFCData.js` daily, `oneFCLiveScraper.ts` live) now parse the event page's JSON-LD `performer` array and attach `fullName` to each scraped fighter. The parser prefers JSON-LD over URL slug.
+- `oneFCDataParser.ts:parseOneFCFighterName` accepts optional `fullName`, extracts nicknames from ASCII and curly quotes, handles the pre-name form (`"Petnueng" Isaac Mohammed`).
+- `oneFCLiveParser.ts:findFightByFighters` was rewritten to match via token intersection (firstName ∪ lastName) instead of last-name-only, so the live tracker bridges the name transition for legacy single-word DB rows.
+- Backfill script `packages/backend/scripts/fix-onefc-broken-names.js` applied against prod: **10 renames + 5 merges, 0 failures**. Safety guards: first-word match + word-count ≥ filter, plus scope guard limiting action to fighters whose entire history is ONE FC (30 cross-promotion fighters excluded).
+- Key fixes landed: Nuapet Tded99 → Nuapet Torfunfarm, plus merges for Rodtang Jitmuangnon, Takeru Segawa, Kompet Sitsarawatsuer, Petkhaokradong Lukjaomaesaithong, Kongklai Sor Sommai, Tonglampoon FA Group.
+- **Remaining leakage**: 10 ONE-FC-only fighters still have `firstName = ''` (Dedduanglek, Hyu, Jaosuayai, Misaki, Phetjeeja, Pompet, Ranma, Ratchasiesan, Shoma, Taku). They didn't appear in any of the 10 events with scrape-able JSON-LD at backfill time. Acceptable MVP leakage — will self-heal as they appear in future daily scrapes.
 
-1. **Identify the authoritative source for full names**. Two options on ONE FC pages:
-   - **Stats table text**: every `.event-matchup` has a `.stats table tr.vs td a` with the full text like `"Rittidet Lukjaoporongtom"`. Accessible in the current scraper's `page.evaluate`.
-   - **JSON-LD `<script type="application/ld+json">`**: the event page has a full `performer` array with every fighter's display name AND nickname in quotes (e.g. `"Dalian \"Deadly\" Dawody"`). This is the cleanest source because it's structured, has nicknames, and is stable across ONE FC's page layout changes.
+## ~~Task 3: audit other live parsers for the same per-face scope bug~~ — DONE 2026-04-11
 
-   **Recommendation**: use JSON-LD. Parse it once per event, build a fighter-name map keyed by either URL or a canonical signature, then use that as the primary name source in both `scrapeAllOneFCData.js` and `oneFCLiveScraper.ts`. Fall back to URL slug only if JSON-LD is missing or the specific fighter isn't in the `performer` array.
+**Verdict: no bugs found.** The ONE FC per-face sticker bug was structurally unique to ONE FC's DOM. Full write-up in `docs/daily/2026-04-11.md`. TL;DR:
 
-2. **Update `parseOneFCFighterName`** in `oneFCDataParser.ts`:
-   - Accept an optional `fullName` parameter (from JSON-LD or stats table)
-   - If `fullName` is present and has more words than the URL slug's parts, use `fullName`
-   - Extract nickname from quoted substrings (e.g. `"Dalian \"Deadly\" Dawody"` → `firstName='Dalian', lastName='Dawody', nickname='Deadly'`)
-   - Keep URL slug fallback for fighters not in JSON-LD
+- **Diagnostic query** (winner-side distribution per promotion) turned up skews that looked suspicious but were sampling noise:
+  - Karate Combat 100% A, MVP 90% A, RIZIN 100% A (small samples ≤10), PFL/RAF/Oktagon/ONE 60–63% (mild).
+  - Verified against live Tapology HTML for Karate Combat 59 and MVP Dubois vs Harper: scraper correctly picks winner by NAME, parser matches by name, so winner ID resolves correctly regardless of A/B storage order. One B-side win (Watson vs Makinen → Makinen) proves the scraper can pick either side.
+- **Tapology live scraper** (covers MVP, Karate Combat, RIZIN, PFL, Zuffa Boxing, Dirty Boxing, RAF, Gold Star): clean. Tapology reorders displayed fighters so the winner is on the left of the row with a `from-[#d1f7d2]` green gradient class on the winner's own cell; loser gets `from-[#ffecec]` pink. Class check is exclusive to the winner cell. Weak secondary check (`.bg-green-500`) is redundant but not harmful.
+- **Oktagon live scraper**: clean. Consumes a JSON API with `"FIGHTER_1_WIN"` / `"FIGHTER_2_WIN"` result strings. Immune by construction.
+- **Matchroom live scraper**: clean. Per-corner `$corner.hasClass('winner')` and `$corner.find('.winner')` scoped to each boxer's cell. Text-based regex fallback matches by fighter last name.
+- **BKFC** (`scrapeBKFCLiveEvent.js`): scrapes BKFC's site directly (not Tapology, despite the original handoff hint). Uses `[data-render="RedResult"]` / `[data-render="BlueResult"]` per-corner attributes. **Latent risk noted**: Strategy 2 fallback (lines 298–306) does a container-wide `querySelectorAll('[class*="winner"]')` without per-fighter scoping. Not currently firing, but fragile if BKFC ever adds a container-level winner marker.
+- **UFC**: skipped per user. Uses ESPN JSON API.
+- **RAF / Gold Star**: no dedicated live scrapers; both use Tapology. Covered by Tapology audit.
 
-3. **Update the daily scraper** (`scrapeAllOneFCData.js`):
-   - Before the matchup loop, parse the JSON-LD and build a fighter map: `{athleteUrl → {displayName, nickname}}`. The JSON-LD `performer` array doesn't include URLs, only names, so you'll need to match by name — for each `.event-matchup` loop iteration, look up the fighter by the versus-text name or the athlete-URL slug's normalized form against the JSON-LD names.
-   - Pass `fullName` into the scraped data structure
-   - The parser reads it
-
-4. **Update the live scraper** (`oneFCLiveScraper.ts`) similarly. Note: the live scraper's output goes directly to the live parser's `findFightByFighters`, which matches by last name. If you rename fighters to full names, last names change, and the tracker might stop matching existing DB rows. Handle this carefully:
-   - Check if any ONE FC fighters in the DB currently have mismatched names that would break tracker matching after the name fix
-   - Pre-run a dry backfill pass to find and merge/rename affected fighter rows BEFORE deploying the scraper fix
-   - OR: make the name fix opt-in via a feature flag so old matching still works during transition
-
-5. **Run a rename-and-merge backfill**. Use the `fix-rittidet.js` pattern from the 2026-04-10 daily doc — for each currently-broken fighter row `{firstName: '', lastName: X}`:
-   - Query JSON-LD or stats-table for the full name on the most recent event where this fighter appeared
-   - If a full-name row already exists, merge (reassign `fighter1Id`, `fighter2Id`, `winner` references from broken to full, delete broken)
-   - If no full-name row exists, rename in place
-   - Preserve all fighter-level stats, images, ratings
-
-6. **Spot-check in the app** after the backfill: load a few ONE FC events on mobile + web, verify fighter names are full.
-
-**Gotchas**:
-- Fighter rows have a `firstName_lastName` compound unique key. Any rename that collides with an existing row will throw — catch it and merge instead.
-- `Fighter` table likely has FK references from `FightRating`, `Review`, `Tag`, maybe others. Find ALL FK references before deleting any row. Use Prisma introspection: `prisma.fighter.findUnique({ include: { _count: { select: { fights1: true, fights2: true, wonFights: true, ratings: true, reviews: true, tags: true } } } })`.
-- Fighter `slug` field (if it exists) might also need updating.
-
-## Task 3: audit other live parsers for the same per-face scope bug
-
-**Why**: the method-1 sticker-detection bug in `oneFCLiveScraper.ts` was a copy-paste target. Other live parsers likely have the same `face1.closest('[class*="...]"').querySelector(...)` anti-pattern.
-
-**What the task requires**:
-
-1. **Grep for the anti-pattern** in all live parsers/scrapers:
-   ```
-   packages/backend/src/services/*LiveScraper.ts
-   packages/backend/src/services/*LiveParser.ts
-   ```
-   Look for `.closest(` followed by a broad `[class*=` selector, or any pattern where face1 and face2 iterations both query the same parent container for stickers/result markers.
-
-2. **Cross-check winner-side distribution in the DB** for each promotion:
-   ```sql
-   SELECT e.promotion,
-          COUNT(*) FILTER (WHERE f.winner = f."fighter1Id") AS a_wins,
-          COUNT(*) FILTER (WHERE f.winner = f."fighter2Id") AS b_wins,
-          COUNT(*) AS total
-   FROM "Fight" f
-   JOIN "Event" e ON e.id = f."eventId"
-   WHERE f.winner IS NOT NULL
-   GROUP BY e.promotion
-   ORDER BY e.promotion;
-   ```
-   A healthy promotion will be ~50/50. A promotion that's 85%+ side A (or side B) is almost certainly carrying the same bug.
-
-3. **For each affected promotion**: write a per-face fix (copy the pattern from `oneFCLiveScraper.ts` after the 2026-04-10 fix), verify against a current live event, then backfill historical winners using a Task 1-style script.
-
-4. **Don't assume the bug is identical**. Some live parsers use different source-of-truth for winners (e.g. UFC uses a JSON API, Tapology uses text content). Only those that use CSS-selector-based sticker/marker detection need the fix. Read each parser first to understand its winner-detection path.
-
-5. **Likely candidates**:
-   - BKFC (uses Tapology markup — check `bkfcLiveParser.ts` + `tapologyLiveScraper.ts`)
-   - Oktagon (if it uses any kind of per-face scraping)
-   - RAF (newer, less battle-tested)
-   - Matchroom (boxing)
-   - Gold Star (very new — check the 2026-04-10 commit that added it)
-
-**Gotchas**:
-- Some parsers may have a `winnerText` field that's reliable — don't "fix" a working implementation.
-- UFC live parser uses ESPN's fight-scorecard JSON endpoint, not CSS scraping — it should be immune.
+**Action items from this audit**: none for MVP. Post-MVP nice-to-have: tighten the BKFC Strategy 2 fallback to scope per-corner instead of container-wide.
 
 ## Task 4 (smaller, good palette-cleanser): generalize `tsconfig.tracker.json`
 
@@ -149,9 +88,13 @@ Skipped for MVP. Historical ONE FC winner data is known to be structurally wrong
 - Some live trackers may have their own entry-point scripts under `src/scripts/` with slightly different naming. Grep for `runXLiveTracker` to find them all.
 - `tapologyLiveParser.ts` and friends may import from `fighterMatcher.ts` which has the `@ts-nocheck` guard — that's fine, it'll still compile. But if they import functions other than `stripDiacritics`, make sure those work at runtime (the bottom-half `fighterAlias` code is dead code but the pure helpers at the top are fine).
 
-## Task 5 (big, separate): actually fix the full `pnpm build`
+## Task 5 (big, separate): actually fix the full `pnpm build` — DEFERRED FOR MVP
 
-**Why**: the tracker-focused tsconfig is a workaround. Long-term the full build needs to work so normal backend deploys (Render), daily scrapers, admin tools, and migration scripts can all build via `pnpm build`.
+**Status as of 2026-04-11**: confirmed not blocking anything. The backend `build` script in `package.json` ends with `|| true`, which swallows all TypeScript errors and exits 0. Render has been deploying successfully the whole time because the errors are type-check errors, not runtime errors. The `tsconfig.tracker.json` workaround and the `|| true` shortcut are both buckets under the same leak, but the leak isn't actively hurting anything.
+
+**Recommendation**: defer until post-MVP. Minimal post-Task-4 follow-up: remove `|| true` from the build script so type errors become loud again and the type-checker becomes a useful signal once more. But don't do that until Task 4 ships (generalizing tracker tsconfig) — otherwise Render deploys will break.
+
+**Why the full fix is still worth doing eventually**: the tracker-focused tsconfig is a workaround. Long-term the full build needs to work so normal backend deploys (Render), daily scrapers, admin tools, and migration scripts can all build via `pnpm build`.
 
 **What the task requires**:
 
