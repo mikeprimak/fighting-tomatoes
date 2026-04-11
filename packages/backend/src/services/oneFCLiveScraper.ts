@@ -282,8 +282,40 @@ class OneFCLiveScraper {
         const venueEl = document.querySelector('.location, .venue, .event-location');
         const venue = venueEl?.textContent?.trim() || '';
 
-        // Get all fight matchups
-        const matchups = document.querySelectorAll('.event-matchup');
+        // Get all fight matchups.
+        //
+        // ONE FC's event pages render a "Next Event" hero section above the
+        // fight list that includes an `.event-matchup`-classed duplicate of
+        // the currently-featured/headline fight. The duplicate is a full
+        // matchup node — same `.stats` table, same face1/face2 anchors with
+        // real athlete URLs — so it can't be distinguished by content. But
+        // it lives inside a `.box-post-event` / `.event-live-status` /
+        // `.status-matchup` ancestor chain, while real main-list matchups
+        // live inside the main content `.col-12.col-lg-9...` column.
+        //
+        // Prior to this filter, iterating `.event-matchup` in DOM order hit
+        // the hero duplicate first. The `seenFights` dedup marked the
+        // fighter pair as processed. The real matchup in the main list was
+        // silently skipped. Worse: the hero version on a finished event
+        // shows empty stickers (no `is-win` on either face), so whichever
+        // fight was featured was permanently recorded as `isComplete: false`
+        // — exactly the ONE 150 main event Kompet vs Attachai Kelasport
+        // bug. The daily scraper hit the same duplicate, causing ONE 150's
+        // `orderOnCard` values to start at 2 instead of 1.
+        //
+        // Reject any matchup that lives inside the hero section.
+        const allMatchups = document.querySelectorAll('.event-matchup');
+        const matchups = Array.from(allMatchups).filter((m) => {
+          if (m.closest('.box-post-event')) return false;
+          if (m.closest('.event-live-status')) return false;
+          if (m.closest('.status-matchup')) return false;
+          const hasStats = !!m.querySelector('.stats table tr.vs');
+          const face1 = m.querySelector('a.face.face1') as HTMLAnchorElement | null;
+          const face2 = m.querySelector('a.face.face2') as HTMLAnchorElement | null;
+          const hasFace1 = !!(face1 && face1.href && face1.href.includes('/athletes/'));
+          const hasFace2 = !!(face2 && face2.href && face2.href.includes('/athletes/'));
+          return hasStats && hasFace1 && hasFace2;
+        });
         const fights: any[] = [];
 
         matchups.forEach((matchup, index) => {
@@ -320,88 +352,50 @@ class OneFCLiveScraper {
           const fighterAImg = img1?.src || img1?.getAttribute('data-src') || '';
           const fighterBImg = img2?.src || img2?.getAttribute('data-src') || '';
 
-          // Check for WIN stickers - the key to detecting results!
-          // The sticker element is inside each fighter's face container
-          // Look for .sticker.is-win within or near each face element
+          // Check for WIN stickers.
+          //
+          // ONE FC's DOM structure puts `.sticker` elements INSIDE each
+          // face anchor (`<a class="face faceN">`). Only the winning
+          // fighter's face has its sticker flagged `is-win`. The prior
+          // detection chain (methods 1-4) was broken: method 1 used
+          // `face1.closest('[class*="matchup"]').querySelector('.sticker.is-win')`
+          // which always returns the first winner sticker anywhere inside
+          // the `.event-matchup` regardless of which face it belongs to,
+          // so both `fighterAWon` and `fighterBWon` would get set to true
+          // for every completed fight and the downstream `fighterAWon ? 'A' : 'B'`
+          // defaulted every result to side A. (That's why every fight on
+          // ONE 150 was being recorded with fighter1 as the winner.)
+          //
+          // Correct approach: scope the search strictly to each face's own
+          // subtree. If `face1` contains a `.sticker.is-win`, fighter A
+          // won; same for face2. Mutually exclusive by construction.
           let fighterAWon = false;
           let fighterBWon = false;
           let methodText = '';
 
-          // Method 1: Check for sticker within face containers
-          // The face elements have parent containers that may contain the sticker
-          if (face1) {
-            // Walk up to find the fighter container, then look for sticker within
-            const fighter1Container = face1.closest('.matchup-side, .fighter-info, [class*="matchup"]') ||
-                                      face1.parentElement?.parentElement;
-            if (fighter1Container) {
-              const sticker1 = fighter1Container.querySelector('.sticker.is-win');
-              if (sticker1) {
-                fighterAWon = true;
-                methodText = getStickerMethodText(sticker1);
-              }
-            }
+          const face1WinSticker = face1?.querySelector('.sticker.is-win') || null;
+          const face2WinSticker = face2?.querySelector('.sticker.is-win') || null;
+
+          if (face1WinSticker) {
+            fighterAWon = true;
+            methodText = getStickerMethodText(face1WinSticker);
+          }
+          if (face2WinSticker) {
+            fighterBWon = true;
+            methodText = getStickerMethodText(face2WinSticker);
           }
 
-          if (face2) {
-            const fighter2Container = face2.closest('.matchup-side, .fighter-info, [class*="matchup"]') ||
-                                      face2.parentElement?.parentElement;
-            if (fighter2Container) {
-              const sticker2 = fighter2Container.querySelector('.sticker.is-win');
-              if (sticker2) {
-                fighterBWon = true;
-                methodText = getStickerMethodText(sticker2);
-              }
-            }
-          }
-
-          // Method 2: If method 1 didn't work, try DOM structure traversal
-          // The sticker is typically a sibling of the face anchor
-          if (!fighterAWon && !fighterBWon) {
-            // Check siblings of face elements
-            let el = face1?.nextElementSibling;
-            while (el && !fighterAWon) {
-              if (el.classList.contains('sticker') && el.classList.contains('is-win')) {
-                fighterAWon = true;
-                methodText = getStickerMethodText(el);
-              }
-              el = el.nextElementSibling;
-            }
-
-            el = face2?.nextElementSibling;
-            while (el && !fighterBWon) {
-              if (el.classList.contains('sticker') && el.classList.contains('is-win')) {
-                fighterBWon = true;
-                methodText = getStickerMethodText(el);
-              }
-              el = el.nextElementSibling;
-            }
-          }
-
-          // Method 3: If still no luck, check parent's previous sibling (sticker before face)
-          if (!fighterAWon && !fighterBWon) {
-            const face1Sticker = face1?.parentElement?.querySelector('.sticker.is-win');
-            const face2Sticker = face2?.parentElement?.querySelector('.sticker.is-win');
-
-            if (face1Sticker) {
-              fighterAWon = true;
-              methodText = getStickerMethodText(face1Sticker);
-            }
-            if (face2Sticker) {
-              fighterBWon = true;
-              methodText = getStickerMethodText(face2Sticker);
-            }
-          }
-
-          // Method 4: Final fallback - look at all stickers and their text content
-          // Sometimes the sticker contains the fighter's name
+          // Fallback for defensive legacy shapes: if neither face owns a
+          // sticker but the matchup has one somewhere else (e.g. ONE FC
+          // briefly restructures the DOM), walk up from the sticker to
+          // find which face1/face2 ancestor owns it. Kept minimal.
           if (!fighterAWon && !fighterBWon) {
             const allStickers = matchup.querySelectorAll('.sticker.is-win');
             allStickers.forEach(sticker => {
               const stickerParent = sticker.parentElement;
               methodText = getStickerMethodText(sticker);
 
-              // Check if this sticker is in the left or right half by traversing up
-              // and checking classList for face1/face2 indicators
+              // Walk up and check classList for face1/face2 indicators
               let parent = stickerParent;
               while (parent && parent !== matchup) {
                 const classes = parent.className || '';

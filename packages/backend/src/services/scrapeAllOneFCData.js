@@ -211,8 +211,31 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
         }
       }
 
-      // Extract fight card
-      const matchupElements = document.querySelectorAll('.event-matchup');
+      // Extract fight card.
+      //
+      // ONE FC's event pages render a "Next Event" hero section with an
+      // `.event-matchup`-classed duplicate of the headline fight. It's
+      // indistinguishable by content — same stats table, same face anchors,
+      // same athlete URLs — but it lives inside a `.box-post-event` /
+      // `.event-live-status` / `.status-matchup` ancestor chain, while real
+      // fights live inside the main `.col-12.col-lg-9...` column. Including
+      // the duplicate shifts every real fight's `orderOnCard` up by one
+      // (which is why existing ONE 150 rows started at 2 instead of 1) and
+      // the hero version shows empty stickers on finished events, poisoning
+      // live-tracker sticker detection via fighter-signature dedup. Same
+      // filter as `oneFCLiveScraper.ts`.
+      const allMatchupElements = document.querySelectorAll('.event-matchup');
+      const matchupElements = Array.from(allMatchupElements).filter((m) => {
+        if (m.closest('.box-post-event')) return false;
+        if (m.closest('.event-live-status')) return false;
+        if (m.closest('.status-matchup')) return false;
+        const hasStats = !!m.querySelector('.stats table tr.vs');
+        const f1 = m.querySelector('a.face.face1');
+        const f2 = m.querySelector('a.face.face2');
+        const hasFace1 = !!(f1 && f1.href && f1.href.includes('/athletes/'));
+        const hasFace2 = !!(f2 && f2.href && f2.href.includes('/athletes/'));
+        return hasStats && hasFace1 && hasFace2;
+      });
       const allFights = [];
       let globalOrder = 1;
 
