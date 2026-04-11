@@ -36,9 +36,17 @@ When the backend sets `fight.winner = 'nc'` (the schema comment documents `winne
 - **CompletedFightDetailScreen.tsx**: renders `"No Contest · R2 0:18"` in the same blue below the fighter images when `fight.winner === 'nc' && isOutcomeRevealed`. Gated on `isOutcomeRevealed` so spoiler-free mode still shows the Rate-to-reveal prompt first. The existing "Outcome unavailable" grey text is still shown for truly-null winners.
 - **Not yet addressed**: the per-fighter prediction check/X indicator on the card still shows a red X for any predicted fighter when a fight ends NC, since `fight.winner !== fighter.id`. Arguably an NC prediction should be a push, not a wrong answer. Same consideration applies to detail screen prediction rings.
 
+## Live/Upcoming tab filtering (post Apr 11, 2026)
+Both `(tabs)/live-events.tsx` and `(tabs)/events/index.tsx` filter using a local `isEventLiveNow(event)` helper instead of a strict `eventStatus === 'LIVE'` check. An event is treated as live if `eventStatus === 'LIVE'` OR (start time has passed AND `eventStatus !== 'COMPLETED'`). Start time is the earliest non-null of `earlyPrelimStartTime`, `prelimStartTime`, `mainStartTime`, `date`.
+
+This mirrors the fallback already in use on the event detail screen (`(tabs)/events/[id].tsx` — `isEventLive`) and exists because the backend `UPCOMING → LIVE` flip only runs every 5 minutes (`eventLifecycle.ts` on Render). Without the fallback the list tabs lagged up to 5 min behind the detail screen. The `COMPLETED` short-circuit is the safety valve — once the lifecycle eventually flips to COMPLETED, events drop off the Live tab even if their start-time is still in the past. Both tabs already poll every 30s via React Query, so the clock-crossing is picked up automatically.
+
+**If you add a new event list screen**, use the same `isEventLiveNow` pattern. Do not filter by raw `eventStatus` alone — that reintroduces the 5-min lag.
+
 ## Known Issues
 - Notification deep links all go to Live Events tab (simplified in Apr 2026)
 - OTA updates require 2 app restarts to apply
+- `live-events.tsx` only autofetches 2 pages (10 events) of the upcoming query. If a now-live event is ranked beyond the first 10 upcoming events, it won't appear on the Live tab until the backend flips its `eventStatus` and sort promotes it. Latent edge case — backend ordering has always put imminent events first.
 
 ## Dev Setup
 ```bash
