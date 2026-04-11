@@ -138,13 +138,21 @@ async function scrapeEventPage(browser, eventUrl) {
       if (consentBtn) { await consentBtn.click(); await new Promise(r => setTimeout(r, 500)); }
     } catch (e) {}
 
-    const eventData = await page.evaluate(() => {
+    const eventIdMatch = eventUrl.match(/\/events\/(\d+)-/);
+    const eventIdFromUrl = eventIdMatch ? eventIdMatch[1] : null;
+
+    const eventData = await page.evaluate((eventId) => {
       const data = { eventName: '', dateText: '', eventDate: null, eventStartTime: null, venue: '', city: '', country: '', eventImageUrl: null, fights: [] };
 
-      // Extract event poster image from Tapology
-      const posterImg = document.querySelector('img[src*="poster_images"]');
-      if (posterImg && posterImg.src) {
-        data.eventImageUrl = posterImg.src;
+      // Prefer og:image meta for authoritative event poster; fall back to id-scoped img
+      // to avoid sidebar posters for unrelated events bleeding into the result.
+      const ogImage = document.querySelector('meta[property="og:image"]');
+      if (ogImage && ogImage.content && ogImage.content.includes('poster_images')) {
+        data.eventImageUrl = ogImage.content;
+      }
+      if (!data.eventImageUrl && eventId) {
+        const scopedImg = document.querySelector(`img[src*="poster_images/${eventId}/"]`);
+        if (scopedImg && scopedImg.src) data.eventImageUrl = scopedImg.src;
       }
 
       const eventHeader = document.querySelector('.eventPageHeaderTitles h1, .header h1, #main h1, .content h1')
@@ -225,7 +233,7 @@ async function scrapeEventPage(browser, eventUrl) {
         });
       }
       return data;
-    });
+    }, eventIdFromUrl);
 
     await page.close();
     console.log(`      ✅ Found ${eventData.fights.length} fights`);
