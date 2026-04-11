@@ -24,4 +24,13 @@ declare module 'fastify' {
     optionalAuthenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     requireVerified: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
+
+}
+
+declare module 'fastify/types/schema' {
+  interface FastifySchema {
+    description?: string;
+    summary?: string;
+    tags?: string[];
+  }
 }
