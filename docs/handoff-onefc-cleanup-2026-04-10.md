@@ -30,50 +30,9 @@ The code fixes from the 2026-04-10 session are in the working tree but **not com
 
 Both commits should reference `docs/daily/2026-04-10.md` for the full narrative. Don't push without asking the user.
 
-## Task 1: backfill historical ONE FC event winners
+## ~~Task 1: backfill historical ONE FC event winners~~ — DESCOPED 2026-04-10
 
-**Why**: bug 2 above (per-face sticker scoping) has been silently producing wrong winners for every ONE FC event since the live tracker was introduced. Every ONE FC fight in the DB that was written by the live tracker almost certainly has `winner = fighter1.id` regardless of who actually won — roughly half of those winners are wrong. Users are seeing incorrect results in the app.
-
-**Scope**: all events with `promotion = 'ONE'` and `scraperType = 'onefc'` and `eventStatus = 'COMPLETED'` that have fights with winners set by the live tracker.
-
-**What the task requires**:
-
-1. **Query** all candidate events:
-   ```sql
-   SELECT id, name, date, "ufcUrl"
-   FROM "Event"
-   WHERE "scraperType" = 'onefc'
-     AND "eventStatus" = 'COMPLETED'
-     AND "ufcUrl" IS NOT NULL
-   ORDER BY date DESC;
-   ```
-   Expect ~50-100 rows depending on how long ONE FC tracking has been live.
-
-2. **Decide which events to re-scrape safely**. Two risks:
-   - **Manual admin edits**: if an admin used `/admin.html` to correct a winner, the re-scrape would clobber it. Check the `completionMethod` field on the fight — values like `'admin'`, `'manual'`, `'hand-edit'` should be skipped. The default from the tracker is `'scraper'` or `null` in older rows. Conservatively: only re-scrape fights where `completionMethod IS NULL OR completionMethod = 'scraper'`.
-   - **Old ONE FC events may have been renamed or delisted**. The ONE FC `ufcUrl` might 404. The re-scrape should handle that gracefully (log + skip, not crash).
-
-3. **Write a backfill script** — `packages/backend/scripts/backfill-onefc-winners.ts` (new). It should:
-   - Accept a `--dry-run` flag that logs what would change without writing
-   - Accept a `--limit=N` flag to test against a few events first
-   - Accept an optional `--event-id=<uuid>` for single-event runs
-   - For each event: clear `winner`, `method`, `round`, `time` on fights where `completionMethod IS NULL OR completionMethod = 'scraper'` (leave `fightStatus` alone — already COMPLETED)
-   - Call the existing live tracker logic directly (`parseOneFCLiveData` from `oneFCLiveParser.ts` after a fresh `OneFCLiveScraper(event.ufcUrl).scrape()`) against each event to repopulate winners
-   - Log before/after counts per event: "Event X: cleared 12 fights, tracker set 11 winners, 1 fight unchanged (no sticker found)"
-   - Aggregate log at the end: "Processed 47 events, updated 312 fights, 18 fights needed manual review (no result on ONE FC page)"
-
-4. **Reference the repair pattern from the 2026-04-10 session**. The one-off `fix-one150.js` script (now deleted) demonstrated the clear-then-retrack approach. The backfill script is that same pattern but in a loop with safety flags. Find the pattern in the daily doc if you need to reconstruct it.
-
-5. **Build via `tsconfig.tracker.json`** (the focused tsconfig created in the session) — add `src/scripts/backfill-onefc-winners.ts` to its `include` list. Don't try to use `pnpm build`, it's still broken.
-
-6. **Run in stages**: first `--dry-run --limit=5` on recent events, verify the diff makes sense, then `--limit=5` for real on those 5, verify in the app, then full backfill. Commit the script but DO NOT run it against prod without checking with the user first.
-
-7. **Expected outcome**: roughly half of historical ONE FC fight winners flip from fighter1 to fighter2. That's the correct result — the old data was structurally wrong.
-
-**Gotchas**:
-- Rate-limiting on ONE FC: don't hammer their site. The live tracker uses puppeteer with `networkidle2` — that's ~3-5 seconds per event page. 47 events = ~5 minutes total, fine.
-- The `seenFights` dedup in `oneFCLiveScraper.ts` uses fighter name signatures. If multiple events share the same fighters (rematches), the signature will collide across events — but the scraper scope is a single event page so this shouldn't matter. Just verify in the first dry run.
-- Old events (pre-2024) may have totally different page layouts. If the scraper can't parse them, log + skip, don't crash.
+Skipped for MVP. Historical ONE FC winner data is known to be structurally wrong from the per-face sticker bug, but fixing it is not blocking. Revisit post-MVP.
 
 ## Task 2: fix the single-word-URL-slug fighter name bug
 

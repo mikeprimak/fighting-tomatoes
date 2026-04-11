@@ -82,14 +82,40 @@ interface OneFCScraperSnapshot {
 // ============== HELPER FUNCTIONS ==============
 
 /**
- * Parse fighter name into first and last name
- * Prefers athlete URL slug over display name for consistency with the daily scraper,
- * which also parses from URL slugs. This is critical for Thai Muay Thai fighters
- * whose display names (e.g., "Payakrut") differ from their URL slugs
- * (e.g., "/athletes/payakrut-suajantokmuaythai/").
+ * Strip a quoted nickname from a name string.
+ * Handles ASCII and curly quotes.
  */
-function parseFighterName(fullName: string, athleteUrl?: string): { firstName: string; lastName: string } {
-  // Try URL slug first (matches daily scraper's parseOneFCFighterName logic)
+function stripNicknameQuotes(name: string): string {
+  const pairRe = /["'\u201c\u201d\u2018\u2019][^"'\u201c\u201d\u2018\u2019]+["'\u201c\u201d\u2018\u2019]/;
+  return name.replace(pairRe, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Parse fighter name into first and last name.
+ *
+ * Preference: JSON-LD performer fullName > URL slug > display name.
+ * The daily scraper uses the same preference order. Without the JSON-LD
+ * hint, single-word athlete URL slugs (e.g. "/athletes/rittidet/") produce
+ * broken rows with firstName='' that never match their real multi-word
+ * identities ("Rittidet Lukjaoporongtom") coming from JSON-LD.
+ */
+function parseFighterName(
+  displayName: string,
+  athleteUrl?: string,
+  jsonLdFullName?: string
+): { firstName: string; lastName: string } {
+  // 1. Prefer JSON-LD fullName
+  if (jsonLdFullName && jsonLdFullName.trim()) {
+    const cleaned = stripNicknameQuotes(jsonLdFullName);
+    const parts = cleaned.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
+    } else if (parts.length === 1) {
+      return { firstName: '', lastName: parts[0] };
+    }
+  }
+
+  // 2. Try URL slug (matches daily scraper's parseOneFCFighterName)
   if (athleteUrl) {
     const urlMatch = athleteUrl.match(/\/athletes\/([^/]+)\/?$/);
     if (urlMatch) {
@@ -112,13 +138,11 @@ function parseFighterName(fullName: string, athleteUrl?: string): { firstName: s
     }
   }
 
-  // Fallback: parse from display name
-  const parts = fullName.trim().split(/\s+/);
+  // 3. Fallback: parse from display name
+  const parts = displayName.trim().split(/\s+/);
   if (parts.length === 1) {
-    // Single name fighter - store in lastName
     return { firstName: '', lastName: parts[0] };
   }
-  // Last part is lastName, rest is firstName
   const lastName = parts[parts.length - 1];
   const firstName = parts.slice(0, -1).join(' ');
   return { firstName, lastName };
@@ -269,6 +293,49 @@ class OneFCLiveScraper {
             .sort()
             .join('|');
         };
+
+        // Build a matchup-key -> {fighterAFullName, fighterBFullName} map
+        // from schema.org JSON-LD. See daily scraper for the full rationale —
+        // short version: the `performer` array in the page's JSON-LD Event
+        // block contains authoritative full names that ONE FC athlete URL
+        // slugs frequently truncate.
+        const normalizeMatchupKey = (s: string | null | undefined) =>
+          (s || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+
+        const fullNameMap: Record<string, { fighterAFullName: string; fighterBFullName: string }> = {};
+        const jsonLdScripts = document.querySelectorAll('script[type="application/ld+json"]');
+        jsonLdScripts.forEach((scriptEl) => {
+          let parsed: any;
+          try {
+            parsed = JSON.parse(scriptEl.textContent || '');
+          } catch {
+            return;
+          }
+          const candidates: any[] = [];
+          if (Array.isArray(parsed)) candidates.push(...parsed);
+          else candidates.push(parsed);
+          if (parsed && parsed['@graph']) candidates.push(...parsed['@graph']);
+
+          for (const entity of candidates) {
+            if (!entity || entity['@type'] !== 'Event') continue;
+            const performers = Array.isArray(entity.performer) ? entity.performer : [];
+            for (let i = 0; i < performers.length; i++) {
+              const p = performers[i];
+              if (!p || p['@type'] !== 'PerformingGroup' || !p.name) continue;
+              const a = performers[i + 1];
+              const b = performers[i + 2];
+              if (
+                a && a['@type'] === 'Person' && a.name &&
+                b && b['@type'] === 'Person' && b.name
+              ) {
+                fullNameMap[normalizeMatchupKey(p.name)] = {
+                  fighterAFullName: String(a.name).trim(),
+                  fighterBFullName: String(b.name).trim(),
+                };
+              }
+            }
+          }
+        });
 
         // Track seen fights to avoid duplicates
         const seenFights = new Set<string>();
@@ -436,6 +503,10 @@ class OneFCLiveScraper {
           seenFights.add(fightSignature);
           fightOrder++;
 
+          // Look up full names from JSON-LD by matchup versus key
+          const lookupKey = normalizeMatchupKey(versusText);
+          const jsonLdNames = fullNameMap[lookupKey] || null;
+
           fights.push({
             order: fightOrder,
             weightClass,
@@ -448,6 +519,8 @@ class OneFCLiveScraper {
             fighterBImg,
             fighterAWon,
             fighterBWon,
+            fighterAFullName: jsonLdNames?.fighterAFullName || null,
+            fighterBFullName: jsonLdNames?.fighterBFullName || null,
             isComplete,
             isLive: isLive,
             methodText
@@ -483,8 +556,8 @@ class OneFCLiveScraper {
       const sport = parseSport(fight.weightClass);
       const weightClass = cleanWeightClass(fight.weightClass);
 
-      const fighterANames = parseFighterName(fight.fighterAName, fight.fighterAUrl);
-      const fighterBNames = parseFighterName(fight.fighterBName, fight.fighterBUrl);
+      const fighterANames = parseFighterName(fight.fighterAName, fight.fighterAUrl, fight.fighterAFullName);
+      const fighterBNames = parseFighterName(fight.fighterBName, fight.fighterBUrl, fight.fighterBFullName);
 
       let result: OneFCFightResult | undefined;
 

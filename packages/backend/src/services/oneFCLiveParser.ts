@@ -14,20 +14,44 @@ const prisma = new PrismaClient();
 // ============== UTILITY FUNCTIONS ==============
 
 /**
- * Find fight by fighter names (matches by last name, handles single-name fighters)
+ * Find fight by fighter names.
+ *
+ * Primary match: scraped lastName vs DB lastName (both sides, any order).
+ *
+ * Fallback for the JSON-LD-name transition: some ONE FC fighters still
+ * exist in the DB under single-word rows (firstName='', lastName='Rittidet')
+ * from the pre-JSON-LD scraper era. Once the scraper starts emitting the
+ * full name (firstName='Rittidet', lastName='Lukjaoporongtom'), lastName
+ * matching against the old row fails. Fall back to matching the scraped
+ * firstName against the DB lastName so we keep tracking the old row until
+ * a backfill renames it. The match is mutual-exclusive across sides so
+ * fights with both fighters transitioning still resolve.
  */
-function findFightByFighters(dbFights: any[], fighterALastName: string, fighterBLastName: string) {
-  const scraperALast = stripDiacritics(fighterALastName).toLowerCase().trim();
-  const scraperBLast = stripDiacritics(fighterBLastName).toLowerCase().trim();
+function findFightByFighters(dbFights: any[], scrapedFighterA: { firstName: string; lastName: string }, scrapedFighterB: { firstName: string; lastName: string }) {
+  const normalize = (s: string) => stripDiacritics(s || '').toLowerCase().trim();
+
+  const buildTokens = (f: { firstName: string; lastName: string }) => {
+    const tokens = new Set<string>();
+    const first = normalize(f.firstName);
+    const last = normalize(f.lastName);
+    if (first) tokens.add(first);
+    if (last) tokens.add(last);
+    return tokens;
+  };
+
+  const aTokens = buildTokens(scrapedFighterA);
+  const bTokens = buildTokens(scrapedFighterB);
 
   return dbFights.find(fight => {
-    const dbF1Last = fight.fighter1.lastName.toLowerCase();
-    const dbF2Last = fight.fighter2.lastName.toLowerCase();
+    const dbF1Tokens = buildTokens(fight.fighter1);
+    const dbF2Tokens = buildTokens(fight.fighter2);
 
-    return (
-      (dbF1Last === scraperALast && dbF2Last === scraperBLast) ||
-      (dbF1Last === scraperBLast && dbF2Last === scraperALast)
-    );
+    const aMatchesF1 = [...aTokens].some(t => dbF1Tokens.has(t));
+    const bMatchesF2 = [...bTokens].some(t => dbF2Tokens.has(t));
+    const aMatchesF2 = [...aTokens].some(t => dbF2Tokens.has(t));
+    const bMatchesF1 = [...bTokens].some(t => dbF1Tokens.has(t));
+
+    return (aMatchesF1 && bMatchesF2) || (aMatchesF2 && bMatchesF1);
   });
 }
 
@@ -173,9 +197,13 @@ export async function parseOneFCLiveData(
         .join('|');
       scrapedFightSignatures.add(fightSignature);
 
-      console.log(`  🔎 Looking for: ${fighterAName} vs ${fighterBName} (by lastName: ${fighterALast} vs ${fighterBLast})`);
+      console.log(`  🔎 Looking for: ${fighterAName} vs ${fighterBName} (tokens: ${scrapedFight.fighterA.firstName}/${fighterALast} vs ${scrapedFight.fighterB.firstName}/${fighterBLast})`);
 
-      const dbFight = findFightByFighters(event.fights, fighterALast, fighterBLast);
+      const dbFight = findFightByFighters(
+        event.fights,
+        { firstName: scrapedFight.fighterA.firstName, lastName: fighterALast },
+        { firstName: scrapedFight.fighterB.firstName, lastName: fighterBLast },
+      );
 
       if (!dbFight) {
         console.warn(`    ⚠ Fight not found in DB`);
