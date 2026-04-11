@@ -61,6 +61,19 @@ If you push a fix, watch GH Actions for the tracker workflow, *and it never runs
 ### Auth
 JWT dual-token system (15min access / 7day refresh)
 
+### Build & type-check (post Apr 11, 2026)
+The backend `pnpm build` is now **honest** — type errors fail the build. Prior to the 2026-04-11 cleanup it ended with `|| true`, which silently swallowed 81 type errors for months while Render kept deploying (type-level errors, no runtime impact). That's fixed.
+
+- Build script: `prisma generate && tsc --project tsconfig.production.json && { cp src/services/*.js dist/services/ 2>/dev/null || true; }`. The `|| true` is brace-scoped so it only protects the `cp` step (Windows/bash glob-empty compat), not the `tsc` step. **Do not move `|| true` back outside the braces** — that reintroduces the silent-fail bug.
+- Main config: `tsconfig.json` extends to `tsconfig.production.json`. Base config has `"lib": ["ES2020", "DOM"]` — DOM is required so Puppeteer `page.evaluate()` callbacks (e.g. `oneFCLiveScraper.ts`) type-check. Don't accidentally use `document` in Node-only files; ESLint doesn't guard this.
+- `tsconfig.production.json` excludes ~15 legacy route/middleware/controller files. Some may be ghosts from past refactors — verify before removing entries.
+- `src/types/fastify.d.ts` augments both `fastify` (for `FastifyRequest.user`, `FastifyInstance.authenticate`) **and** `fastify/types/schema` (to re-add `description?`, `summary?`, `tags?` on `FastifySchema`). If you add another Fastify type extension, note the submodule — `FastifySchema` lives in `fastify/types/schema`, not the root `fastify` module, and augmenting the wrong module silently no-ops.
+- **Pino 9 logging gotcha**: `request.log.error(msg, err)` does not work — the order is `log.error(err, msg)`. Pino 9's `LogFn` uses template-literal `ParseLogFnArgs<TMsg>`, and when the message has no `%s` placeholders, rest args type to `never`. The (msg, err) form both fails type-checking **and** silently drops the error object at runtime (no structured error serialization via `pino-std-serializers`). **Always call `log.error(err, msg)`.** 17 more `log.error(msg, err)` sites still exist in the excluded files `routes/crews.ts` and `routes/upload.ts` — type-check misses them, runtime drops the errors, cleanup pending.
+- **Stale `.tsbuildinfo` footgun**: `incremental: true` in `tsconfig.json` means tsc caches to `tsconfig*.tsbuildinfo`. A stale cache can cause `tsc` to exit 0 without emitting anything. If CI ever ships a "successful build" with an empty `dist/`, check for stale tsbuildinfo first.
+
+### Live tracker builds
+As of 2026-04-11, all live trackers build under the normal `pnpm build`. The prior `tsconfig.tracker.json` workaround (a focused tsconfig scoped to live-tracker files) was deleted when the main build was fixed. `onefc-live-tracker.yml` uses `pnpm build` like any other workflow.
+
 ## Dev Setup
 ```bash
 cd packages/backend
