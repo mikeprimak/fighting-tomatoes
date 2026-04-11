@@ -284,27 +284,42 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       // Extract event banner image
       let eventImageUrl = null;
 
+      // Robust url(...) extractor — the naive /url\(['"]?([^'")\s]+)['"]?\)/
+      // pattern truncates at the first ')', so filenames containing literal
+      // parens (e.g. "banner (1).webp") lose everything from '(' onward.
+      // Isolate the background-image declaration, then take everything
+      // between 'url(' and the LAST ')', stripping optional wrapping quotes.
+      const extractCssUrl = (cssValue) => {
+        if (!cssValue) return null;
+        const decl = cssValue.split(/;/)
+          .find(d => /background-image/i.test(d)) || cssValue;
+        const urlOpen = decl.indexOf('url(');
+        if (urlOpen < 0) return null;
+        const urlClose = decl.lastIndexOf(')');
+        if (urlClose <= urlOpen + 4) return null;
+        let raw = decl.slice(urlOpen + 4, urlClose).trim();
+        if ((raw.startsWith('"') && raw.endsWith('"')) ||
+            (raw.startsWith("'") && raw.endsWith("'"))) {
+          raw = raw.slice(1, -1);
+        }
+        return raw || null;
+      };
+
       // PRIORITY 1: Look for background-image on schedule-dl-bg div (main event banner)
       const scheduleBgDiv = document.querySelector('.schedule-dl-bg, div[class*="schedule"][class*="bg"]');
       if (scheduleBgDiv) {
         // Try inline style first
         const style = scheduleBgDiv.getAttribute('style') || '';
-        const bgMatch = style.match(/background-image:\s*url\(['"]?([^'")\s]+)['"]?\)/i);
-        if (bgMatch && bgMatch[1]) {
-          eventImageUrl = bgMatch[1];
-        }
+        eventImageUrl = extractCssUrl(style);
 
         // Try computed style if inline didn't work
         if (!eventImageUrl) {
           const computedStyle = window.getComputedStyle(scheduleBgDiv);
           const bgImage = computedStyle.backgroundImage;
           if (bgImage && bgImage !== 'none') {
-            const computedMatch = bgImage.match(/url\(['"]?([^'")\s]+)['"]?\)/i);
-            if (computedMatch && computedMatch[1]) {
-              // Accept any banner image including the default one
-              // Previously excluded schedule-banner-default but that's better than no image
-              eventImageUrl = computedMatch[1];
-            }
+            // Accept any banner image including the default one
+            // Previously excluded schedule-banner-default but that's better than no image
+            eventImageUrl = extractCssUrl(bgImage);
           }
         }
       }
