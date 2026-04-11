@@ -327,7 +327,9 @@ async function importBKFCEvents(
     });
 
     if (event) {
-      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it)
+      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it),
+      // except un-cancel events that reappear on the source site.
+      const wasCancelled = event.eventStatus === 'CANCELLED';
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -339,8 +341,16 @@ async function importBKFCEvents(
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
           scraperType: 'bkfc',
+          ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
         }
       });
+      if (wasCancelled) {
+        console.log(`    ✅ Un-cancelled event (reappeared on source): ${eventData.eventName}`);
+        await prisma.fight.updateMany({
+          where: { eventId: event.id, fightStatus: 'CANCELLED' },
+          data: { fightStatus: 'UPCOMING' },
+        });
+      }
     } else {
       // Create new event - set initial status based on date
       const now = new Date();

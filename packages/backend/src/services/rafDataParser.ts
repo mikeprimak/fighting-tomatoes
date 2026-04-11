@@ -208,6 +208,9 @@ async function importRAFEvents(
     });
 
     if (event) {
+      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it),
+      // except un-cancel events that reappear on the source site.
+      const wasCancelled = event.eventStatus === 'CANCELLED';
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -220,9 +223,17 @@ async function importRAFEvents(
           promotion: 'RAF',
           scraperType: 'raf',
           bannerImage: bannerImage || undefined,
+          ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
         },
       });
       console.log(`  ✓ Updated event: ${eventData.eventName} (status unchanged: ${event.eventStatus})`);
+      if (wasCancelled) {
+        console.log(`    ✅ Un-cancelled event (reappeared on source): ${eventData.eventName}`);
+        await prisma.fight.updateMany({
+          where: { eventId: event.id, fightStatus: 'CANCELLED' },
+          data: { fightStatus: 'UPCOMING' },
+        });
+      }
     } else {
       // Trust the gallery status (based on "buy tickets" vs "view recap" buttons)
       // over date comparison, since eventDate is midnight which can be before now

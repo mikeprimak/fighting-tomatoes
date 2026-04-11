@@ -286,18 +286,24 @@ async function importDirtyEvents(
     };
 
     if (event) {
-      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it)
+      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it),
+      // except un-cancel events that reappear on the source site.
+      const wasCancelled = event.eventStatus === 'CANCELLED';
+      const updateDataWithUncancel = {
+        ...updateData,
+        ...(wasCancelled ? { eventStatus: 'UPCOMING' as const, completionMethod: null } : {}),
+      };
       try {
         event = await prisma.event.update({
           where: { id: event.id },
-          data: updateData,
+          data: updateDataWithUncancel,
         });
         console.log(`  ✓ Updated event: ${eventData.eventName} (status unchanged: ${event.eventStatus})`);
       } catch (err: any) {
         if (err.code === 'P2002' && err.meta?.target?.includes('ufcUrl')) {
           // Another row already owns this ufcUrl (legacy duplicate). Update the matched
           // row without overwriting ufcUrl to avoid the secondary conflict.
-          const { ufcUrl: _omit, ...safeUpdate } = updateData;
+          const { ufcUrl: _omit, ...safeUpdate } = updateDataWithUncancel;
           event = await prisma.event.update({
             where: { id: event.id },
             data: safeUpdate,
@@ -306,6 +312,13 @@ async function importDirtyEvents(
         } else {
           throw err;
         }
+      }
+      if (wasCancelled) {
+        console.log(`    ✅ Un-cancelled event (reappeared on source): ${eventData.eventName}`);
+        await prisma.fight.updateMany({
+          where: { eventId: event.id, fightStatus: 'CANCELLED' },
+          data: { fightStatus: 'UPCOMING' },
+        });
       }
     } else {
       // Create new event - set initial status based on date
