@@ -581,16 +581,18 @@ async function importOktagonEvents(
     if (fights.length > 0) {
       console.log(`    ✓ Imported ${fightsImported}/${fights.length} fights`);
 
-      // Build a set of all fighter names in the current scraped data for this event
-      // OKTAGON uses firstName/lastName directly in scraped data
+      // Build a set of all fighter names in the current scraped data for this event.
+      // Diacritics are stripped on both sides so name comparison matches DB rows
+      // (fighter firstName/lastName are stored with diacritics stripped — see
+      // line 391/407 — but scraped data still contains raw UTF-8).
+      const normName = (s: string) => stripDiacritics((s || '').toLowerCase()).trim();
       const scrapedFighterNames = new Set<string>();
       for (const fightData of fights) {
-        // Skip TBA fighters
         if (fightData.fighterA.firstName || fightData.fighterA.lastName) {
-          scrapedFighterNames.add(`${fightData.fighterA.firstName || ''} ${fightData.fighterA.lastName || ''}`.toLowerCase().trim());
+          scrapedFighterNames.add(normName(`${fightData.fighterA.firstName || ''} ${fightData.fighterA.lastName || ''}`));
         }
         if (fightData.fighterB.firstName || fightData.fighterB.lastName) {
-          scrapedFighterNames.add(`${fightData.fighterB.firstName || ''} ${fightData.fighterB.lastName || ''}`.toLowerCase().trim());
+          scrapedFighterNames.add(normName(`${fightData.fighterB.firstName || ''} ${fightData.fighterB.lastName || ''}`));
         }
       }
 
@@ -606,8 +608,8 @@ async function importOktagonEvents(
 
         if (!isFighterBTBA) {
           const pairKey = [
-            `${fightData.fighterA.firstName || ''} ${fightData.fighterA.lastName || ''}`.toLowerCase().trim(),
-            `${fightData.fighterB.firstName || ''} ${fightData.fighterB.lastName || ''}`.toLowerCase().trim()
+            normName(`${fightData.fighterA.firstName || ''} ${fightData.fighterA.lastName || ''}`),
+            normName(`${fightData.fighterB.firstName || ''} ${fightData.fighterB.lastName || ''}`)
           ].sort().join('|');
           scrapedFightPairs.add(pairKey);
         }
@@ -634,8 +636,8 @@ async function importOktagonEvents(
           continue;
         }
 
-        const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
-        const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+        const fighter1Name = normName(`${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`);
+        const fighter2Name = normName(`${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
 
         // Create the pair key for this DB fight
         const dbFightPairKey = [fighter1Name, fighter2Name].sort().join('|');
@@ -688,8 +690,8 @@ async function importOktagonEvents(
           continue;
         }
 
-        const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
-        const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+        const fighter1Name = normName(`${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`);
+        const fighter2Name = normName(`${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
         const dbFightPairKey = [fighter1Name, fighter2Name].sort().join('|');
 
         if (scrapedFightPairs.has(dbFightPairKey)) {
