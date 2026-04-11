@@ -125,12 +125,27 @@ async function scrapeEventsGallery() {
       }
     }
 
-    // Get banner image from background-image style
+    // Get banner image from background-image style.
+    // Webflow sometimes serves URLs with unescaped parens in the filename
+    // (e.g. "RAF08 (1).png" from a duplicate upload). A naive
+    // /url\("?([^")\s]+)"?\)/ truncates at the first ')'; instead isolate
+    // the background-image declaration and take everything between url(
+    // and the LAST ')' in that declaration, then strip optional quotes.
     let bannerImage = '';
     const bgStyle = bannerDiv.attr('style') || '';
-    const bgMatch = bgStyle.match(/url\("?([^")\s]+)"?\)/);
-    if (bgMatch) {
-      bannerImage = bgMatch[1];
+    const bgDecl = bgStyle.split(/;/)
+      .find(d => /background-image/i.test(d)) || bgStyle;
+    const urlOpen = bgDecl.indexOf('url(');
+    if (urlOpen >= 0) {
+      const urlClose = bgDecl.lastIndexOf(')');
+      if (urlClose > urlOpen + 4) {
+        let raw = bgDecl.slice(urlOpen + 4, urlClose).trim();
+        if ((raw.startsWith('"') && raw.endsWith('"')) ||
+            (raw.startsWith("'") && raw.endsWith("'"))) {
+          raw = raw.slice(1, -1);
+        }
+        bannerImage = raw;
+      }
     }
 
     events.push({
