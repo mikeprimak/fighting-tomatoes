@@ -16,6 +16,7 @@ interface ScrapedOneFCFighter {
   record: string | null; // "21-1-0" format or null
   headshotUrl: string | null;
   localImagePath?: string;
+  fullName?: string; // From JSON-LD performer; preferred when present
 }
 
 interface ScrapedOneFCFight {
@@ -31,6 +32,7 @@ interface ScrapedOneFCFight {
     rank: string;
     country: string;
     odds: string;
+    fullName?: string; // From JSON-LD performer; preferred over URL slug when present
   };
   fighterB: {
     name: string;
@@ -39,6 +41,7 @@ interface ScrapedOneFCFight {
     rank: string;
     country: string;
     odds: string;
+    fullName?: string;
   };
 }
 
@@ -145,16 +148,63 @@ function inferGenderFromWeightClass(weightClassStr: string): Gender {
 }
 
 /**
- * Parse ONE FC fighter name
- * ONE FC data often has just the last name (e.g., "Andrade")
- * We need to extract full names from the athlete URL
- * URL format: https://www.onefc.com/athletes/fabricio-andrade/
+ * Extract a nickname wrapped in quotes from a name string.
+ * Handles ASCII straight quotes and Unicode curly quotes.
+ * Examples:
+ *   'Regian "The Immortal" Eersel' -> { cleanName: 'Regian Eersel', nickname: 'The Immortal' }
+ *   '"Petnueng" Isaac Mohammed' -> { cleanName: 'Isaac Mohammed', nickname: 'Petnueng' }
+ */
+function extractNickname(name: string): { cleanName: string; nickname?: string } {
+  // Match any of: ASCII " ', curly " " ' '
+  const quoteRe = /["'\u201c\u201d\u2018\u2019]/;
+  if (!quoteRe.test(name)) {
+    return { cleanName: name };
+  }
+  const pairRe = /["'\u201c\u201d\u2018\u2019]([^"'\u201c\u201d\u2018\u2019]+)["'\u201c\u201d\u2018\u2019]/;
+  const match = name.match(pairRe);
+  if (!match) {
+    return { cleanName: name };
+  }
+  const nickname = match[1].trim();
+  const cleanName = name.replace(pairRe, ' ').replace(/\s+/g, ' ').trim();
+  return { cleanName, nickname: nickname || undefined };
+}
+
+/**
+ * Parse ONE FC fighter name.
+ *
+ * Preference order:
+ *   1. `fullName` (from JSON-LD performer array) — authoritative, includes
+ *      real camp/surname suffixes that URL slugs often truncate.
+ *      Example: JSON-LD "Rittidet Lukjaoporongtom" vs URL slug "rittidet".
+ *   2. URL slug — reliable when JSON-LD is unavailable and the slug has
+ *      multiple parts, but single-word slugs produce broken rows.
+ *   3. Display name from `.versus` text — short-form, frequently just one
+ *      word, used only as last-ditch fallback.
  */
 function parseOneFCFighterName(
   name: string,
-  athleteUrl?: string
+  athleteUrl?: string,
+  fullName?: string
 ): { firstName: string; lastName: string; nickname?: string } {
-  // Try to extract full name from URL
+  // 1. Prefer JSON-LD fullName if present
+  if (fullName && fullName.trim()) {
+    const { cleanName, nickname } = extractNickname(fullName);
+    const parts = cleanName.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      const firstName = stripDiacritics(parts[0]);
+      const lastName = stripDiacritics(parts.slice(1).join(' '));
+      return nickname ? { firstName, lastName, nickname } : { firstName, lastName };
+    } else if (parts.length === 1) {
+      const single = stripDiacritics(parts[0]);
+      return nickname
+        ? { firstName: '', lastName: single, nickname }
+        : { firstName: '', lastName: single };
+    }
+    // fullName was all punctuation/quotes — fall through to URL slug
+  }
+
+  // 2. Try to extract name from URL slug
   if (athleteUrl) {
     const urlMatch = athleteUrl.match(/\/athletes\/([^/]+)\/?$/);
     if (urlMatch) {
@@ -184,13 +234,11 @@ function parseOneFCFighterName(
     }
   }
 
-  // Fallback: use the provided name
+  // 3. Fallback: use the provided display name
   const nameParts = name.trim().split(/\s+/);
   if (nameParts.length === 1) {
-    // Single-name fighters (e.g., "Tawanchai") - store in lastName for proper sorting
     return { firstName: '', lastName: stripDiacritics(nameParts[0].trim()) };
   }
-
   const firstName = stripDiacritics(nameParts[0].trim());
   const lastName = stripDiacritics(nameParts.slice(1).join(' ').trim());
   return { firstName, lastName };
@@ -314,7 +362,11 @@ async function importOneFCFighters(
   console.log(`\n📦 Importing ${athletesData.athletes.length} ONE FC fighters...`);
 
   for (const athlete of athletesData.athletes) {
-    const { firstName, lastName } = parseOneFCFighterName(athlete.name, athlete.url);
+    const { firstName, lastName, nickname } = parseOneFCFighterName(
+      athlete.name,
+      athlete.url,
+      athlete.fullName
+    );
     const recordParts = parseRecord(athlete.record);
 
     // Skip if no valid name
@@ -347,10 +399,12 @@ async function importOneFCFighters(
         update: {
           ...recordParts,
           profileImage: profileImageUrl || undefined,
+          ...(nickname ? { nickname } : {}),
         },
         create: {
           firstName,
           lastName,
+          nickname: nickname || null,
           ...recordParts,
           profileImage: profileImageUrl,
           gender: Gender.MALE, // Will be updated when we process fights
@@ -552,8 +606,8 @@ async function importOneFCEvents(
       const scrapedFighterNames = new Set<string>();
       for (const fightData of fights) {
         // Parse names from athlete URLs for consistency with DB storage
-        const nameA = parseOneFCFighterName(fightData.fighterA.name, fightData.fighterA.athleteUrl);
-        const nameB = parseOneFCFighterName(fightData.fighterB.name, fightData.fighterB.athleteUrl);
+        const nameA = parseOneFCFighterName(fightData.fighterA.name, fightData.fighterA.athleteUrl, fightData.fighterA.fullName);
+        const nameB = parseOneFCFighterName(fightData.fighterB.name, fightData.fighterB.athleteUrl, fightData.fighterB.fullName);
         scrapedFighterNames.add(`${nameA.firstName} ${nameA.lastName}`.toLowerCase().trim());
         scrapedFighterNames.add(`${nameB.firstName} ${nameB.lastName}`.toLowerCase().trim());
       }
@@ -561,8 +615,8 @@ async function importOneFCEvents(
       // Build a map of scraped fight pairs (to check if a specific matchup exists)
       const scrapedFightPairs = new Set<string>();
       for (const fightData of fights) {
-        const nameA = parseOneFCFighterName(fightData.fighterA.name, fightData.fighterA.athleteUrl);
-        const nameB = parseOneFCFighterName(fightData.fighterB.name, fightData.fighterB.athleteUrl);
+        const nameA = parseOneFCFighterName(fightData.fighterA.name, fightData.fighterA.athleteUrl, fightData.fighterA.fullName);
+        const nameB = parseOneFCFighterName(fightData.fighterB.name, fightData.fighterB.athleteUrl, fightData.fighterB.fullName);
         const pairKey = [
           `${nameA.firstName} ${nameA.lastName}`.toLowerCase().trim(),
           `${nameB.firstName} ${nameB.lastName}`.toLowerCase().trim()

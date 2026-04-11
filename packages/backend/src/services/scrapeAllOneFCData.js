@@ -147,25 +147,66 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
     });
 
     const eventData = await page.evaluate(() => {
-      // Extract event start time from schema.org JSON-LD data
+      // ========================================
+      // JSON-LD extraction: start time + performer name map.
+      //
+      // ONE FC event pages include a schema.org Event with a `performer`
+      // array. It alternates PerformingGroup entries (the matchup name,
+      // e.g. "Kompet vs. Attachai") with Person entries (each fighter's
+      // authoritative full name, e.g. "Kompet Sitsarawatsuer"). The
+      // Person.name frequently includes camp/gym suffixes that ONE FC's
+      // athlete URL slugs truncate, which is why URL-slug-derived names
+      // for fighters like Rittidet Lukjaoporongtom or Nuapet Torfunfarm
+      // come out wrong. Use the JSON-LD names as the primary source.
+      // ========================================
       let startTime = null;
-      const jsonLdScript = document.querySelector('script[type="application/ld+json"]');
-      if (jsonLdScript) {
+      const fullNameMap = {}; // normalized matchup key -> { fighterAFullName, fighterBFullName }
+
+      const normalizeMatchupKey = (s) =>
+        (s || '').toLowerCase().replace(/\./g, '').replace(/\s+/g, ' ').trim();
+
+      const jsonLdScripts = document.querySelectorAll('script[type="application/ld+json"]');
+      for (const jsonLdScript of jsonLdScripts) {
+        let jsonLd;
         try {
-          const jsonLd = JSON.parse(jsonLdScript.textContent);
-          // Schema.org Event uses "startDate" field
-          if (jsonLd.startDate) {
-            startTime = jsonLd.startDate;
+          jsonLd = JSON.parse(jsonLdScript.textContent);
+        } catch (e) {
+          continue;
+        }
+
+        // The script may be a single Event, an array of entities, or a
+        // graph. Flatten the candidate Event objects.
+        const candidates = [];
+        if (Array.isArray(jsonLd)) {
+          candidates.push(...jsonLd);
+        } else {
+          candidates.push(jsonLd);
+        }
+        if (jsonLd && jsonLd['@graph']) {
+          candidates.push(...jsonLd['@graph']);
+        }
+
+        for (const entity of candidates) {
+          if (!entity || entity['@type'] !== 'Event') continue;
+          if (!startTime && entity.startDate) {
+            startTime = entity.startDate;
           }
-          // Sometimes it's nested in @graph array
-          if (!startTime && jsonLd['@graph']) {
-            const eventSchema = jsonLd['@graph'].find(item => item['@type'] === 'Event');
-            if (eventSchema && eventSchema.startDate) {
-              startTime = eventSchema.startDate;
+          const performers = Array.isArray(entity.performer) ? entity.performer : [];
+          for (let i = 0; i < performers.length; i++) {
+            const p = performers[i];
+            if (!p || p['@type'] !== 'PerformingGroup' || !p.name) continue;
+            const a = performers[i + 1];
+            const b = performers[i + 2];
+            if (
+              a && a['@type'] === 'Person' && a.name &&
+              b && b['@type'] === 'Person' && b.name
+            ) {
+              fullNameMap[normalizeMatchupKey(p.name)] = {
+                fighterAFullName: String(a.name).trim(),
+                fighterBFullName: String(b.name).trim(),
+              };
             }
           }
-        } catch (e) {
-          // JSON parse failed, continue without start time
         }
       }
 
@@ -266,6 +307,14 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
           }
         }
 
+        // Look up JSON-LD full names by matchup versus key
+        const lookupKey = normalizeMatchupKey(versusText);
+        const fullNames = fullNameMap[lookupKey];
+        if (fullNames) {
+          fighterA.fullName = fullNames.fighterAFullName;
+          fighterB.fullName = fullNames.fighterBFullName;
+        }
+
         // Get athlete URLs and images from face links
         const face1 = matchup.querySelector('a.face.face1');
         const face2 = matchup.querySelector('a.face.face2');
@@ -299,7 +348,8 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
             imageUrl: fighterA.imageUrl,
             rank: '', // ONE FC doesn't show ranks on event pages
             country: '',
-            odds: ''
+            odds: '',
+            fullName: fighterA.fullName || null
           },
           fighterB: {
             name: fighterB.name,
@@ -307,7 +357,8 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
             imageUrl: fighterB.imageUrl,
             rank: '',
             country: '',
-            odds: ''
+            odds: '',
+            fullName: fighterB.fullName || null
           }
         };
 
@@ -520,15 +571,24 @@ async function main() {
             uniqueAthletes.set(fight.fighterA.athleteUrl, {
               name: fight.fighterA.name,
               url: fight.fighterA.athleteUrl,
-              imageUrl: fight.fighterA.imageUrl
+              imageUrl: fight.fighterA.imageUrl,
+              fullName: fight.fighterA.fullName || null
             });
+          } else if (fight.fighterA.athleteUrl && fight.fighterA.fullName) {
+            // Backfill fullName if this later event has it but the earlier one didn't
+            const existing = uniqueAthletes.get(fight.fighterA.athleteUrl);
+            if (existing && !existing.fullName) existing.fullName = fight.fighterA.fullName;
           }
           if (fight.fighterB.athleteUrl && !uniqueAthletes.has(fight.fighterB.athleteUrl)) {
             uniqueAthletes.set(fight.fighterB.athleteUrl, {
               name: fight.fighterB.name,
               url: fight.fighterB.athleteUrl,
-              imageUrl: fight.fighterB.imageUrl
+              imageUrl: fight.fighterB.imageUrl,
+              fullName: fight.fighterB.fullName || null
             });
+          } else if (fight.fighterB.athleteUrl && fight.fighterB.fullName) {
+            const existing = uniqueAthletes.get(fight.fighterB.athleteUrl);
+            if (existing && !existing.fullName) existing.fullName = fight.fighterB.fullName;
           }
         });
       }
