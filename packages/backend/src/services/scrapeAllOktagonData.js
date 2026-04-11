@@ -294,13 +294,17 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
             const queryKey = query?.queryKey || [];
             const data = query?.state?.data;
 
-            // Look for fightCard query
-            if (queryKey.includes('fightCard') && Array.isArray(data)) {
+            // Look for the events/fightCard query specifically. There is also a
+            // `['bettings', 'fightCard', <id>]` query that returns an array of
+            // fight ID strings (no fighter data); matching it with a loose
+            // `queryKey.includes('fightCard')` check would let it clobber the
+            // real fight-card data since it iterates later.
+            if (queryKey[0] === 'events' && queryKey[1] === 'fightCard' && Array.isArray(data)) {
               fightCards = data;
             }
 
             // Look for tournament/event data for the image
-            if (queryKey.includes('events') && !queryKey.includes('fightCard') && data && typeof data === 'object') {
+            if (queryKey[0] === 'events' && queryKey[1] !== 'fightCard' && data && typeof data === 'object') {
               if (data.coverImage || data.title) {
                 tournament = data;
               }
