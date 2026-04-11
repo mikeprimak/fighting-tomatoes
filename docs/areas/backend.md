@@ -58,6 +58,13 @@ bash /opt/scraper-service/packages/backend/vps-update.sh   # git pull && pnpm in
 ```
 If you push a fix, watch GH Actions for the tracker workflow, *and it never runs*, the reason is almost certainly that the VPS is handling the tracker and hasn't been updated. There's no webhook or CD pipeline for the VPS yet.
 
+### Admin panel (`public/admin.html`)
+Static file served by `@fastify/static` in `server.ts`. Ships with normal backend redeploys — no separate build step.
+
+**Event start-time entry is always in Eastern Time.** The `saveEvent` form calls `etToUTC(dateStr, timeStr)` at line ~2307 to convert ET wall-clock input to a UTC ISO string for the DB. As of 2026-04-11 (commit `fb0f94e`) this helper probes both `-04:00` (EDT) and `-05:00` (EST) candidates, formats each back in `America/New_York`, and picks whichever reproduces the requested wall clock. It is **DST-aware and independent of the browser's local timezone** — critical because many admins run their browsers in ET themselves.
+
+**Do not** "simplify" `etToUTC` to a round-trip through `toLocaleString` + `new Date(str)`. That approach silently returns a zero offset when the browser is already in ET (both sides of the round trip land on the same instant) and stores the entered wall clock as UTC verbatim, producing a consistent −4-hour (EDT) / −5-hour (EST) shift on reload and in the app. That exact bug lived in this file for months before being caught.
+
 ### Auth
 JWT dual-token system (15min access / 7day refresh)
 
