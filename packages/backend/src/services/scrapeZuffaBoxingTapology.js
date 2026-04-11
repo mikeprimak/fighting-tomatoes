@@ -324,34 +324,36 @@ async function scrapeEventPage(browser, eventUrl) {
         }
       });
 
-      // Find all fighter links and collect unique fighters in page order
-      const allFighterLinks = document.querySelectorAll('a[href*="/fightcenter/fighters/"]');
-      const fightersFound = [];
-      const seenUrls = new Set();
+      // SCOPED FIGHT EXTRACTION: iterate fight list items (Tapology uses <li> with
+      // border-b styling for each bout). Collect fighter links only from inside each
+      // <li> — NOT from the whole page — so sidebar/related-events widgets don't
+      // bleed unrelated fights into the card.
+      const fightListItems = document.querySelectorAll('li.border-b, li[class*="border-b"]');
+      const processedPairs = new Set();
 
-      allFighterLinks.forEach(link => {
-        const name = link.textContent.trim();
-        const url = link.href;
-        // Skip nav/menu links and short names
-        if (!name || name.length < 3 || link.closest('nav, header, footer')) return;
-        if (seenUrls.has(url)) return;
-        seenUrls.add(url);
+      fightListItems.forEach(li => {
+        if (li.closest('nav, header, footer, aside')) return;
 
-        // Extract fighter ID from URL
-        const idMatch = url.match(/\/fightcenter\/fighters\/(\d+)-/);
-        const fighterId = idMatch ? idMatch[1] : null;
+        const linksInLi = [];
+        const seenUrlsInLi = new Set();
+        li.querySelectorAll('a[href*="/fightcenter/fighters/"]').forEach(link => {
+          const name = link.textContent.trim();
+          const url = link.href;
+          if (!name || name.length < 3 || seenUrlsInLi.has(url)) return;
+          seenUrlsInLi.add(url);
+          const idMatch = url.match(/\/fightcenter\/fighters\/(\d+)-/);
+          const fighterId = idMatch ? idMatch[1] : null;
+          const imageUrl = fighterId ? (headshots.get(fighterId) || null) : null;
+          linksInLi.push({ name, url, fighterId, imageUrl });
+        });
 
-        // Get headshot from the map we built
-        const imageUrl = fighterId ? (headshots.get(fighterId) || null) : null;
+        if (linksInLi.length < 2) return;
+        const fighterA = linksInLi[0];
+        const fighterB = linksInLi[1];
 
-        fightersFound.push({ name, url, fighterId, imageUrl });
-      });
-
-      // Group fighters into pairs (they appear in bout order: A vs B, A vs B, ...)
-      for (let i = 0; i < fightersFound.length - 1; i += 2) {
-        const fighterA = fightersFound[i];
-        const fighterB = fightersFound[i + 1];
-        if (!fighterA || !fighterB) break;
+        const pairKey = [fighterA.url, fighterB.url].sort().join('|');
+        if (processedPairs.has(pairKey)) return;
+        processedPairs.add(pairKey);
 
         data.fights.push({
           fightId: `zuffa-fight-${data.fights.length + 1}`,
@@ -377,7 +379,7 @@ async function scrapeEventPage(browser, eventUrl) {
             country: ''
           }
         });
-      }
+      });
 
       return data;
     }, eventIdFromUrl);

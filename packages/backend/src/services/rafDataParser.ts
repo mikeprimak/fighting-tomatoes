@@ -251,16 +251,10 @@ async function importRAFEvents(
 
     // Import fights
     let fightsImported = 0;
+    // ID-based sigs avoid collisions with shared last names (e.g. the Blaze brothers)
     const scrapedFightSignatures = new Set<string>();
 
     for (const fightData of eventData.fights) {
-      // Build signature for cancellation detection
-      const scrapedSignature = [
-        normalizeName(fightData.fighter1.name).split(/\s+/).pop()?.toLowerCase() || '',
-        normalizeName(fightData.fighter2.name).split(/\s+/).pop()?.toLowerCase() || '',
-      ].sort().join('|');
-      scrapedFightSignatures.add(scrapedSignature);
-
       // Find or create fighters
       let fighter1Id = fighterNameToId.get(normalizeName(fightData.fighter1.name).toLowerCase());
       let fighter2Id = fighterNameToId.get(normalizeName(fightData.fighter2.name).toLowerCase());
@@ -314,6 +308,8 @@ async function importRAFEvents(
       }
 
       if (!fighter1Id || !fighter2Id) continue;
+
+      scrapedFightSignatures.add([fighter1Id, fighter2Id].sort().join('|'));
 
       const weightClass = parseRAFWeightClass(fightData.weightClass);
 
@@ -389,10 +385,7 @@ async function importRAFEvents(
     for (const dbFight of dbFights) {
       if (dbFight.fightStatus === 'COMPLETED') continue;
 
-      const dbFightSignature = [
-        stripDiacritics(dbFight.fighter1.lastName).toLowerCase().trim(),
-        stripDiacritics(dbFight.fighter2.lastName).toLowerCase().trim(),
-      ].sort().join('|');
+      const dbFightSignature = [dbFight.fighter1Id, dbFight.fighter2Id].sort().join('|');
 
       const fightIsInScrapedData = scrapedFightSignatures.has(dbFightSignature);
 

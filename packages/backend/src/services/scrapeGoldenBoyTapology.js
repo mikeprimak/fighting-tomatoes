@@ -182,24 +182,29 @@ async function scrapeEventPage(browser, eventUrl) {
         if (idMatch) headshots.set(idMatch[1], src);
       });
 
-      const allFighterLinks = document.querySelectorAll('a[href*="/fightcenter/fighters/"]');
-      const fightersFound = [];
-      const seenUrls = new Set();
-      allFighterLinks.forEach(link => {
-        const name = link.textContent.trim();
-        const url = link.href;
-        if (!name || name.length < 3 || link.closest('nav, header, footer')) return;
-        if (seenUrls.has(url)) return;
-        seenUrls.add(url);
-        const idMatch = url.match(/\/fightcenter\/fighters\/(\d+)-/);
-        const fighterId = idMatch ? idMatch[1] : null;
-        const imageUrl = fighterId ? (headshots.get(fighterId) || null) : null;
-        fightersFound.push({ name, url, fighterId, imageUrl });
-      });
-
-      for (let i = 0; i < fightersFound.length - 1; i += 2) {
-        const a = fightersFound[i], b = fightersFound[i + 1];
-        if (!a || !b) break;
+      // SCOPED FIGHT EXTRACTION: iterate <li> fight rows so sidebar/related-event
+      // widgets can't bleed unrelated fighters into the card.
+      const fightListItems = document.querySelectorAll('li.border-b, li[class*="border-b"]');
+      const processedPairs = new Set();
+      fightListItems.forEach(li => {
+        if (li.closest('nav, header, footer, aside')) return;
+        const linksInLi = [];
+        const seenUrlsInLi = new Set();
+        li.querySelectorAll('a[href*="/fightcenter/fighters/"]').forEach(link => {
+          const name = link.textContent.trim();
+          const url = link.href;
+          if (!name || name.length < 3 || seenUrlsInLi.has(url)) return;
+          seenUrlsInLi.add(url);
+          const idMatch = url.match(/\/fightcenter\/fighters\/(\d+)-/);
+          const fighterId = idMatch ? idMatch[1] : null;
+          const imageUrl = fighterId ? (headshots.get(fighterId) || null) : null;
+          linksInLi.push({ name, url, fighterId, imageUrl });
+        });
+        if (linksInLi.length < 2) return;
+        const a = linksInLi[0], b = linksInLi[1];
+        const pairKey = [a.url, b.url].sort().join('|');
+        if (processedPairs.has(pairKey)) return;
+        processedPairs.add(pairKey);
         data.fights.push({
           fightId: `golden-boy-fight-${data.fights.length + 1}`,
           order: data.fights.length + 1,
@@ -208,7 +213,7 @@ async function scrapeEventPage(browser, eventUrl) {
           fighterA: { name: a.name, athleteUrl: a.url || '', fighterId: a.fighterId, imageUrl: a.imageUrl, record: '', country: '' },
           fighterB: { name: b.name, athleteUrl: b.url || '', fighterId: b.fighterId, imageUrl: b.imageUrl, record: '', country: '' }
         });
-      }
+      });
       return data;
     }, eventIdFromUrl);
 

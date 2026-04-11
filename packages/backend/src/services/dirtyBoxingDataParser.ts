@@ -332,16 +332,10 @@ async function importDirtyEvents(
     let fightsImported = 0;
     const fights = eventData.fights || [];
 
-    // Track scraped fight signatures for cancellation detection
+    // ID-based sigs avoid collisions with shared/multi-word last names.
     const scrapedFightSignatures = new Set<string>();
 
     for (const fightData of fights) {
-      // Build signature for this scraped fight (sorted last names)
-      const scrapedSignature = [
-        normalizeName(fightData.fighterA.name).split(/\s+/).pop()?.toLowerCase() || '',
-        normalizeName(fightData.fighterB.name).split(/\s+/).pop()?.toLowerCase() || ''
-      ].sort().join('|');
-      scrapedFightSignatures.add(scrapedSignature);
       // Find or create fighters
       let fighter1Id = fighterNameToId.get(normalizeName(fightData.fighterA.name).toLowerCase());
       let fighter2Id = fighterNameToId.get(normalizeName(fightData.fighterB.name).toLowerCase());
@@ -403,6 +397,8 @@ async function importDirtyEvents(
         continue;
       }
 
+      scrapedFightSignatures.add([fighter1Id, fighter2Id].sort().join('|'));
+
       const weightClass = parseBoxingWeightClass(fightData.weightClass);
       const titleName = fightData.isTitle ? `${fightData.weightClass} Championship` : undefined;
 
@@ -459,10 +455,7 @@ async function importDirtyEvents(
     for (const dbFight of dbFights) {
       if (dbFight.fightStatus === 'COMPLETED') continue;
 
-      const dbFightSignature = [
-        stripDiacritics(dbFight.fighter1.lastName).toLowerCase().trim(),
-        stripDiacritics(dbFight.fighter2.lastName).toLowerCase().trim()
-      ].sort().join('|');
+      const dbFightSignature = [dbFight.fighter1Id, dbFight.fighter2Id].sort().join('|');
 
       const fightIsInScrapedData = scrapedFightSignatures.has(dbFightSignature);
 
