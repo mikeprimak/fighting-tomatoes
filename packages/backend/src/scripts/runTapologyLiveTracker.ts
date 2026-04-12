@@ -58,12 +58,17 @@ const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[
     slugFilter: ['karate-combat', 'kc-'],
   },
   'TOP_RANK': {
+    // Top Rank event URLs on Tapology are named by headliners (no "top-rank"
+    // prefix), so a slug filter misses most cards. Use DOM scoping instead.
     url: 'https://www.tapology.com/fightcenter/promotions/2487-top-rank-tr',
-    slugFilter: ['top-rank'],
+    slugFilter: [],
+    scopeSelector: '#content',
   },
   'Golden Boy': {
+    // Same pattern as Top Rank — event URLs use headliners, not the org slug.
     url: 'https://www.tapology.com/fightcenter/promotions/1979-golden-boy-promotions-gbp',
-    slugFilter: ['golden-boy'],
+    slugFilter: [],
+    scopeSelector: '#content',
   },
   'Gold Star': {
     url: 'https://www.tapology.com/fightcenter/promotions/6908-gold-star-promotions-gsp',
