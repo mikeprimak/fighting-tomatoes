@@ -453,7 +453,17 @@ export async function parseTapologyData(
       );
     }
 
-    if (hasStarted && scrapeLooksValid) {
+    // Once an event is COMPLETED, the card is frozen. The missing-from-page
+    // sweep should not run — any "missing" is almost certainly a Tapology UI
+    // quirk (pagination, exhibition hidden, stale cache), not a real cancel.
+    // Result backfills for completed events still update winner/method/round
+    // via the per-fight block above; only the sweep is skipped here.
+    const eventIsComplete = event.eventStatus === 'COMPLETED';
+    if (hasStarted && scrapeLooksValid && eventIsComplete) {
+      console.log('[Tapology Parser] Skipping cancellation sweep: event already COMPLETED (backfill mode)');
+    }
+
+    if (hasStarted && scrapeLooksValid && !eventIsComplete) {
       for (const dbFight of event.fights) {
         // Skip fights already completed with results or already cancelled
         if (dbFight.fightStatus === 'COMPLETED' && dbFight.winner) continue;
