@@ -440,6 +440,41 @@ export async function registerRoutes(fastify: FastifyInstance) {
         // Reorder to match pageIds (findMany doesn't preserve order of `in` list)
         const byId = new Map(pageEvents.map((e: any) => [e.id, e]));
         events = pageIds.map((id: string) => byId.get(id)).filter(Boolean);
+      } else if (type === 'past') {
+        // For past events, sort by calendar day (most recent first) then
+        // UFC-first within the same day — mirrors the upcoming-events logic.
+        const allEventsLite = await fastify.prisma.event.findMany({
+          where: whereClause,
+          select: { id: true, date: true, promotion: true },
+        });
+
+        allEventsLite.sort((a: any, b: any) => {
+          const aDate = new Date(a.date);
+          const bDate = new Date(b.date);
+          const aDay = Date.UTC(aDate.getUTCFullYear(), aDate.getUTCMonth(), aDate.getUTCDate());
+          const bDay = Date.UTC(bDate.getUTCFullYear(), bDate.getUTCMonth(), bDate.getUTCDate());
+          if (aDay !== bDay) return bDay - aDay; // descending — most recent first
+          const aIsUFC = a.promotion?.toUpperCase() === 'UFC' ? 0 : 1;
+          const bIsUFC = b.promotion?.toUpperCase() === 'UFC' ? 0 : 1;
+          if (aIsUFC !== bIsUFC) return aIsUFC - bIsUFC;
+          const timeDiff = bDate.getTime() - aDate.getTime();
+          if (timeDiff !== 0) return timeDiff;
+          return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+        });
+
+        total = allEventsLite.length;
+        const pageIds = allEventsLite.slice(skip, skip + limit).map((e: any) => e.id);
+
+        const pageEvents = pageIds.length > 0
+          ? await fastify.prisma.event.findMany({
+              where: { id: { in: pageIds } },
+              select,
+            })
+          : [];
+
+        // Reorder to match pageIds (findMany doesn't preserve order of `in` list)
+        const byId = new Map(pageEvents.map((e: any) => [e.id, e]));
+        events = pageIds.map((id: string) => byId.get(id)).filter(Boolean);
       } else {
         [events, total] = await Promise.all([
           fastify.prisma.event.findMany({
