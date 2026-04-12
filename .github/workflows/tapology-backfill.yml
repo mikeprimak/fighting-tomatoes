@@ -1,0 +1,62 @@
+name: Tapology Results Backfill
+
+on:
+  schedule:
+    # Daily at 09:00 UTC (4am ET / 5am EDT) — after most events conclude and
+    # Tapology has had time to post results overnight.
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+    inputs:
+      window_days:
+        description: 'Lookback window in days (default 7)'
+        required: false
+        type: string
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd packages/backend
+          pnpm install
+
+      - name: Generate Prisma client
+        run: |
+          cd packages/backend
+          npx prisma generate
+
+      - name: Build TypeScript
+        run: |
+          cd packages/backend
+          pnpm build
+
+      - name: Run Tapology Results Backfill
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKFILL_WINDOW_DAYS: ${{ github.event.inputs.window_days || '7' }}
+          NODE_ENV: production
+        run: |
+          cd packages/backend
+          node dist/scripts/backfillTapologyResults.js
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "Tapology Backfill workflow FAILED at $(date)"
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=backfill&org=TAPOLOGY" || echo "Failed to send alert"
