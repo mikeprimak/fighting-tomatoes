@@ -410,16 +410,31 @@ async function importTopRankEvents(
 
   // Deduplicate events by URL
   const uniqueEvents = new Map<string, ScrapedTopRankEvent>();
+  const MAX_AGE_DAYS = 14; // Skip events older than 2 weeks
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - MAX_AGE_DAYS);
+
   for (const event of eventsData.events) {
     if (!uniqueEvents.has(event.eventUrl)) {
+      // Skip old events that aren't already in the DB — prevents re-creating deleted events
+      const parsedDate = parseTopRankDate(event.dateText);
+      if (parsedDate && parsedDate < cutoffDate) {
+        console.log(`  ⏭ Skipping old event: ${event.eventName} (${event.dateText})`);
+        continue;
+      }
       uniqueEvents.set(event.eventUrl, event);
     }
   }
-  console.log(`  📋 ${uniqueEvents.size} unique events (${eventsData.events.length - uniqueEvents.size} duplicates removed)`);
+  console.log(`  📋 ${uniqueEvents.size} events to import (${eventsData.events.length - uniqueEvents.size} skipped/deduplicated)`);
 
   for (const [eventUrl, eventData] of Array.from(uniqueEvents.entries())) {
-    // Parse date
+    // Parse date - skip events with unparseable dates to avoid creating events
+    // with wrong dates (e.g., when toprank.com page structure changes)
     const eventDate = parseTopRankDate(eventData.dateText);
+    if (!eventDate) {
+      console.warn(`[TopRank] ⚠️ Skipping "${eventData.eventName}" — no parseable date (dateText: "${eventData.dateText}")`);
+      continue;
+    }
 
     // Parse event start time
     const timezone = eventData.eventStartTimezone
@@ -752,32 +767,42 @@ async function importTopRankEvents(
   }
 
   // ============== EVENT-LEVEL CANCELLATION DETECTION ==============
-  const scrapedEventUrls = new Set(Array.from(uniqueEvents.keys()));
-  const scrapedEventNames = new Set(Array.from(uniqueEvents.values()).map(e => e.eventName.toLowerCase().trim()));
+  // Only cancel future/recent events that the scraper should have seen.
+  // Skip this if the scraper returned very few events (likely a partial/failed scrape).
+  if (uniqueEvents.size >= 3) {
+    const scrapedEventUrls = new Set(Array.from(uniqueEvents.keys()));
+    const scrapedEventNames = new Set(Array.from(uniqueEvents.values()).map(e => e.eventName.toLowerCase().trim()));
 
-  const existingUpcomingEvents = await prisma.event.findMany({
-    where: { promotion: 'TOP_RANK', eventStatus: 'UPCOMING' },
-    select: { id: true, name: true, ufcUrl: true },
-  });
+    const existingUpcomingEvents = await prisma.event.findMany({
+      where: { promotion: 'TOP_RANK', eventStatus: 'UPCOMING' },
+      select: { id: true, name: true, ufcUrl: true, date: true },
+    });
 
-  let eventsCancelled = 0;
-  for (const dbEvent of existingUpcomingEvents) {
-    const isStillOnSite = dbEvent.ufcUrl
-      ? scrapedEventUrls.has(dbEvent.ufcUrl)
-      : scrapedEventNames.has(dbEvent.name.toLowerCase().trim());
+    let eventsCancelled = 0;
+    for (const dbEvent of existingUpcomingEvents) {
+      // Only cancel events whose dates are within our import window (future or recent).
+      // Don't cancel events we intentionally skipped due to the age filter.
+      if (dbEvent.date && dbEvent.date < cutoffDate) continue;
 
-    if (!isStillOnSite) {
-      await prisma.event.update({ where: { id: dbEvent.id }, data: { eventStatus: 'CANCELLED' } });
-      console.log(`  ❌ Cancelling event (no longer on Tapology): ${dbEvent.name}`);
-      const cancelledFights = await prisma.fight.updateMany({
-        where: { eventId: dbEvent.id, fightStatus: 'UPCOMING' },
-        data: { fightStatus: 'CANCELLED' },
-      });
-      if (cancelledFights.count > 0) console.log(`    ❌ Cancelled ${cancelledFights.count} fights`);
-      eventsCancelled++;
+      const isStillOnSite = dbEvent.ufcUrl
+        ? scrapedEventUrls.has(dbEvent.ufcUrl)
+        : scrapedEventNames.has(dbEvent.name.toLowerCase().trim());
+
+      if (!isStillOnSite) {
+        await prisma.event.update({ where: { id: dbEvent.id }, data: { eventStatus: 'CANCELLED' } });
+        console.log(`  ❌ Cancelling event (no longer on source): ${dbEvent.name}`);
+        const cancelledFights = await prisma.fight.updateMany({
+          where: { eventId: dbEvent.id, fightStatus: 'UPCOMING' },
+          data: { fightStatus: 'CANCELLED' },
+        });
+        if (cancelledFights.count > 0) console.log(`    ❌ Cancelled ${cancelledFights.count} fights`);
+        eventsCancelled++;
+      }
     }
+    if (eventsCancelled > 0) console.log(`  ⚠ Cancelled ${eventsCancelled} Top Rank events no longer on source`);
+  } else {
+    console.log(`  ⏭ Skipping event-level cancellation (only ${uniqueEvents.size} events — possible partial scrape)`);
   }
-  if (eventsCancelled > 0) console.log(`  ⚠ Cancelled ${eventsCancelled} Top Rank events no longer on Tapology`);
 
   console.log(`✅ Imported all Top Rank events\n`);
 }
