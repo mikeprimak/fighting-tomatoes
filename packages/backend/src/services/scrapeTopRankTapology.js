@@ -243,14 +243,37 @@ async function main() {
     const allEvents = [];
     const athleteMap = new Map();
 
+    // Pre-filter: skip events whose date (from hub page listing) is clearly old
+    const MAX_AGE_DAYS = 14;
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - MAX_AGE_DAYS);
+    let skippedOld = 0;
+
     for (const discovered of discoveredEvents) {
+      // Check hub-level date text — if parseable and too old, skip the detail scrape
+      if (discovered.dateText) {
+        const hubDate = parseTapologyDate(discovered.dateText);
+        if (hubDate && hubDate < cutoffDate) {
+          skippedOld++;
+          continue;
+        }
+      }
+
       console.log(`\n📄 Processing event: ${discovered.eventName}`);
       await new Promise(r => setTimeout(r, delays.betweenPages));
       const eventData = await scrapeEventPage(browser, discovered.eventUrl);
 
       if (eventData.dateText) {
         const parsedDate = parseTapologyDate(eventData.dateText);
-        if (parsedDate) eventData.eventDate = parsedDate.toISOString();
+        if (parsedDate) {
+          // Double-check after detail scrape: skip if event date is too old
+          if (parsedDate < cutoffDate) {
+            console.log(`   ⏭ Skipping old event: ${discovered.eventName} (${eventData.dateText})`);
+            skippedOld++;
+            continue;
+          }
+          eventData.eventDate = parsedDate.toISOString();
+        }
       }
 
       const eventSlug = getEventSlug(discovered.eventUrl) || discovered.eventName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -283,7 +306,7 @@ async function main() {
     const totalFights = allEvents.reduce((sum, e) => sum + e.fights.length, 0);
     console.log('\n' + '='.repeat(60));
     console.log('\n📈 SUMMARY\n');
-    console.log(`   Events: ${allEvents.length}`);
+    console.log(`   Events: ${allEvents.length} (${skippedOld} old events skipped)`);
     allEvents.forEach(e => console.log(`     - ${e.eventName} (${e.dateText}) - ${e.fights.length} fights`));
     console.log(`   Total Fights: ${totalFights}`);
     console.log(`   Athletes: ${athletes.length}`);
