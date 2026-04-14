@@ -1832,20 +1832,57 @@
     // AUTHENTICATION
     // ============================================
     const AUTH_TOKEN_KEY = 'admin_auth_token';
+    const AUTH_REFRESH_KEY = 'admin_refresh_token';
     const AUTH_USER_KEY = 'admin_auth_user';
 
     function getAuthToken() {
       return localStorage.getItem(AUTH_TOKEN_KEY);
     }
 
-    function setAuthToken(token, user) {
+    function getRefreshToken() {
+      return localStorage.getItem(AUTH_REFRESH_KEY);
+    }
+
+    function setAuthToken(token, user, refreshToken) {
       localStorage.setItem(AUTH_TOKEN_KEY, token);
       localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+      if (refreshToken) localStorage.setItem(AUTH_REFRESH_KEY, refreshToken);
     }
 
     function clearAuth() {
       localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(AUTH_REFRESH_KEY);
       localStorage.removeItem(AUTH_USER_KEY);
+    }
+
+    // Attempts to refresh the access token using the stored refresh token.
+    // Returns the new access token on success, or null if refresh failed.
+    let refreshInFlight = null;
+    async function tryRefreshToken() {
+      if (refreshInFlight) return refreshInFlight;
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) return null;
+
+      refreshInFlight = (async () => {
+        try {
+          const res = await fetch(`${API_BASE}/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
+          });
+          if (!res.ok) return null;
+          const data = await res.json();
+          if (!data.accessToken) return null;
+          localStorage.setItem(AUTH_TOKEN_KEY, data.accessToken);
+          if (data.refreshToken) localStorage.setItem(AUTH_REFRESH_KEY, data.refreshToken);
+          return data.accessToken;
+        } catch {
+          return null;
+        } finally {
+          refreshInFlight = null;
+        }
+      })();
+      return refreshInFlight;
     }
 
     function getAuthUser() {
@@ -1860,13 +1897,22 @@
 
     // Authenticated fetch wrapper
     async function authFetch(url, options = {}) {
-      const headers = {
-        ...options.headers,
-        ...getAuthHeaders(),
-      };
-      const response = await fetch(url, { ...options, headers });
+      const doFetch = () => fetch(url, {
+        ...options,
+        headers: { ...options.headers, ...getAuthHeaders() },
+      });
 
-      // If unauthorized, redirect to login
+      let response = await doFetch();
+
+      // If access token expired, try refreshing once, then retry the request
+      if (response.status === 401) {
+        const newToken = await tryRefreshToken();
+        if (newToken) {
+          response = await doFetch();
+        }
+      }
+
+      // Still unauthorized — log out
       if (response.status === 401 || response.status === 403) {
         clearAuth();
         showLoginScreen();
@@ -1913,7 +1959,7 @@
         }
 
         // Check if user is admin by making an admin request
-        setAuthToken(data.accessToken, data.user);
+        setAuthToken(data.accessToken, data.user, data.refreshToken);
 
         // Verify admin access
         const adminCheck = await fetch(`${API_BASE}/admin/events?limit=1`, {
