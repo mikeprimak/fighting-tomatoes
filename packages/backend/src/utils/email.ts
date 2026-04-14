@@ -274,4 +274,65 @@ export class EmailService {
       console.error('[Email] Failed to send feedback notification:', error)
     }
   }
+
+  /**
+   * Send reply to a user's feedback, from contact@goodfights.app.
+   * Replies to this email land in the contact@ inbox via Reply-To.
+   */
+  static async sendFeedbackReply(
+    toEmail: string,
+    replyBody: string,
+    originalContent: string,
+    firstName?: string | null
+  ) {
+    const logoUrl = `${process.env.BACKEND_URL || 'https://fightcrewapp-backend.onrender.com'}/images/logo-v2.png`
+    const supportAddress = 'contact@goodfights.app'
+    const fromAddress = `Good Fights Support <${supportAddress}>`
+
+    const escapedReply = replyBody
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>')
+    const escapedOriginal = originalContent
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>')
+
+    const mailOptions = {
+      from: fromAddress,
+      to: toEmail,
+      replyTo: supportAddress,
+      subject: 'Re: Your Good Fights feedback',
+      text: `Hi ${firstName || 'there'},\n\n${replyBody}\n\n— The Good Fights Team\n\n---\nYour original message:\n${originalContent}`,
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; background-color: #ffffff; padding: 30px; border-radius: 10px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <div style="display: inline-block; background-color: #181818; border-radius: 12px; padding: 20px 30px;">
+              <img src="${logoUrl}" alt="Good Fights" style="max-height: 150px; width: auto;" />
+            </div>
+          </div>
+
+          <p style="color: #000000;">Hi ${firstName ? firstName.replace(/</g, '&lt;') : 'there'},</p>
+
+          <p style="color: #000000;">Thanks for reaching out. Here's our response to your feedback:</p>
+
+          <div style="background-color: #f9fafb; border-left: 4px solid #16a34a; border-radius: 4px; padding: 15px 20px; margin: 20px 0;">
+            <p style="color: #000000; margin: 0; line-height: 1.6;">${escapedReply}</p>
+          </div>
+
+          <p style="color: #000000;">If you'd like to follow up, just reply to this email — it comes straight to us.</p>
+
+          <p style="color: #000000; font-weight: bold;">— The Good Fights Team</p>
+
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0 15px;">
+          <p style="color: #6b7280; font-size: 12px; margin: 0 0 8px;">Your original message:</p>
+          <div style="color: #6b7280; font-size: 13px; font-style: italic; line-height: 1.5;">${escapedOriginal}</div>
+        </div>
+      `
+    }
+
+    await transporter.sendMail(mailOptions)
+  }
 }
