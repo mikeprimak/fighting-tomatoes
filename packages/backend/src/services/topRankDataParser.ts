@@ -250,9 +250,9 @@ function parseTopRankFighterName(
  * Parse Top Rank date string to Date
  * Common formats: "January 25, 2025", "Jan 25 2025", "01/25/2025", "Sat, Jan 31"
  */
-function parseTopRankDate(dateText: string): Date {
-  if (!dateText) {
-    return new Date();
+function parseTopRankDate(dateText: string): Date | null {
+  if (!dateText || !dateText.trim()) {
+    return null;
   }
 
   const months: Record<string, number> = {
@@ -304,8 +304,8 @@ function parseTopRankDate(dateText: string): Date {
     return parsed;
   }
 
-  // Fallback to today
-  return new Date();
+  // Unparseable — return null so callers can skip the event
+  return null;
 }
 
 /**
@@ -416,9 +416,16 @@ async function importTopRankEvents(
 
   for (const event of eventsData.events) {
     if (!uniqueEvents.has(event.eventUrl)) {
-      // Skip old events that aren't already in the DB — prevents re-creating deleted events
       const parsedDate = parseTopRankDate(event.dateText);
-      if (parsedDate && parsedDate < cutoffDate) {
+      // Skip events with unparseable dates — the direct toprank.com scraper
+      // sometimes returns empty/garbled dateText; without this we'd create
+      // events stamped with the scraper run time.
+      if (!parsedDate) {
+        console.warn(`  ⚠ Skipping event with unparseable date: ${event.eventName} (dateText: "${event.dateText}")`);
+        continue;
+      }
+      // Skip old events that aren't already in the DB — prevents re-creating deleted events
+      if (parsedDate < cutoffDate) {
         console.log(`  ⏭ Skipping old event: ${event.eventName} (${event.dateText})`);
         continue;
       }

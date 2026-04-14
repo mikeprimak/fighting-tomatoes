@@ -1,8 +1,10 @@
 name: Top Rank Scraper
 
 on:
-  schedule:
-    - cron: "0 0 * * *"
+  # Scheduled runs disabled 2026-04-14 — toprank.com page structure changed
+  # and dates no longer parse, producing garbage events. Tapology scraper
+  # (toprank-tapology-scraper.yml) covers Top Rank events. Keep manual
+  # dispatch available in case the direct scraper is ever repaired.
   workflow_dispatch:
 
 jobs:
