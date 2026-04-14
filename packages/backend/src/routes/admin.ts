@@ -1638,6 +1638,58 @@ export async function adminRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Send email reply to feedback
+  fastify.post('/admin/feedback/:id/reply', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { replyBody } = request.body as { replyBody?: string };
+    const adminEmail = (request as any).user?.email || 'admin';
+
+    if (!replyBody || !replyBody.trim()) {
+      return reply.code(400).send({ error: 'replyBody is required' });
+    }
+    if (replyBody.length > 10000) {
+      return reply.code(400).send({ error: 'replyBody must be 10000 characters or less' });
+    }
+
+    try {
+      const feedback = await prisma.userFeedback.findUnique({
+        where: { id },
+        include: { user: { select: { email: true, firstName: true, displayName: true } } },
+      });
+
+      if (!feedback) {
+        return reply.code(404).send({ error: 'Feedback not found' });
+      }
+
+      const toEmail = feedback.user?.email || feedback.userEmail;
+      if (!toEmail) {
+        return reply.code(400).send({ error: 'No email address on file for this feedback — cannot send reply.' });
+      }
+
+      const firstName = feedback.user?.firstName || feedback.user?.displayName || null;
+
+      const { EmailService } = await import('../utils/email');
+      await EmailService.sendFeedbackReply(toEmail, replyBody.trim(), feedback.content, firstName);
+
+      const updated = await prisma.userFeedback.update({
+        where: { id },
+        data: {
+          replyBody: replyBody.trim(),
+          repliedAt: new Date(),
+          repliedBy: adminEmail,
+          isRead: true,
+        },
+      });
+
+      return reply.send({ feedback: updated, sentTo: toEmail });
+    } catch (error: any) {
+      console.error('[Admin] Failed to send feedback reply:', error);
+      return reply.code(500).send({ error: 'Failed to send reply', message: error.message });
+    }
+  });
+
   // Delete feedback
   fastify.delete('/admin/feedback/:id', {
     preValidation: [fastify.authenticate, requireAdmin],

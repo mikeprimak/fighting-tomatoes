@@ -1239,6 +1239,11 @@ model UserFeedback {
   isResolved      Boolean   @default(false)
   adminNotes      String?   @db.Text
 
+  // Admin reply (sent via email from contact@goodfights.app)
+  replyBody       String?   @db.Text
+  repliedAt       DateTime?
+  repliedBy       String?   // Admin email who sent the reply
+
   // Timestamps
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

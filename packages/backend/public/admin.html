@@ -1440,6 +1440,34 @@
     </div>
   </div>
 
+  <!-- Feedback Reply Modal -->
+  <div id="feedbackReplyModal" class="modal-overlay" onclick="closeModal(event, 'feedbackReplyModal')">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width: 640px;">
+      <div class="modal-header">
+        <h2 class="modal-title">Reply to Feedback</h2>
+        <button class="modal-close" onclick="closeFeedbackReply()">&times;</button>
+      </div>
+      <input type="hidden" id="replyFeedbackId">
+      <div class="form-group">
+        <label class="form-label">To</label>
+        <div id="replyToEmail" style="padding: 8px 12px; background: #f3f4f6; border-radius: 6px; color: #000;"></div>
+        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Sent from contact@goodfights.app — their reply will come back to that inbox.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Their original message</label>
+        <div id="replyOriginalMsg" style="padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; color: #000; white-space: pre-wrap; max-height: 140px; overflow-y: auto; font-size: 13px; line-height: 1.5;"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your reply</label>
+        <textarea id="replyBodyInput" class="form-input" rows="8" maxlength="10000" placeholder="Type your reply here..." style="width: 100%; font-family: inherit;"></textarea>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+        <button class="btn btn-secondary" onclick="closeFeedbackReply()">Cancel</button>
+        <button id="replySendBtn" class="btn btn-primary" onclick="sendFeedbackReply()">Send Reply</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Event Modal -->
   <div id="eventModal" class="modal-overlay" onclick="closeModal(event, 'eventModal')">
     <div class="modal" onclick="event.stopPropagation()">
@@ -3543,8 +3571,12 @@
     function renderFeedbackCard(fb) {
       const statusIcon = fb.isResolved ? '✅' : (fb.isRead ? '👀' : '🔵');
       const email = fb.userEmail || fb.user?.email || 'Anonymous';
+      const hasEmail = !!(fb.userEmail || fb.user?.email);
       const platform = fb.platform ? `${fb.platform}${fb.appVersion ? ' v' + fb.appVersion : ''}` : '';
       const timeAgo = formatTimeAgo(fb.createdAt);
+      const repliedBadge = fb.repliedAt
+        ? `<span style="display:inline-block; background:#16a34a; color:#fff; font-size:11px; padding:2px 8px; border-radius:10px; margin-left:8px;">✉️ Replied ${formatTimeAgo(fb.repliedAt)}</span>`
+        : '';
 
       return `
         <div class="feedback-card ${fb.isRead ? '' : 'unread'}" data-id="${fb.id}">
@@ -3553,10 +3585,17 @@
               <span class="feedback-status-icon">${statusIcon}</span>
               <span class="feedback-email">${escapeHtml(email)}</span>
               ${platform ? `<span class="feedback-platform">${escapeHtml(platform)}</span>` : ''}
+              ${repliedBadge}
             </div>
             <span class="feedback-time">${timeAgo}</span>
           </div>
           <div class="feedback-content">${escapeHtml(fb.content)}</div>
+          ${fb.replyBody ? `
+            <div class="feedback-notes" style="border-left:3px solid #16a34a;">
+              <div class="feedback-notes-label">Your Reply (sent ${formatTimeAgo(fb.repliedAt)}${fb.repliedBy ? ' by ' + escapeHtml(fb.repliedBy) : ''})</div>
+              ${escapeHtml(fb.replyBody)}
+            </div>
+          ` : ''}
           ${fb.adminNotes ? `
             <div class="feedback-notes">
               <div class="feedback-notes-label">Admin Notes</div>
@@ -3564,6 +3603,7 @@
             </div>
           ` : ''}
           <div class="feedback-actions">
+            ${hasEmail ? `<button class="btn btn-primary btn-sm" onclick="openFeedbackReply('${fb.id}')">${fb.replyBody ? 'Send Another Reply' : '✉️ Reply'}</button>` : ''}
             ${!fb.isRead ? `<button class="btn btn-secondary btn-sm" onclick="markFeedbackRead('${fb.id}')">Mark Read</button>` : ''}
             ${!fb.isResolved ? `<button class="btn btn-success btn-sm" onclick="markFeedbackResolved('${fb.id}')">Resolve</button>` : ''}
             <button class="btn btn-secondary btn-sm" onclick="addFeedbackNotes('${fb.id}')">Add Notes</button>
@@ -3571,6 +3611,57 @@
           </div>
         </div>
       `;
+    }
+
+    function openFeedbackReply(id) {
+      const fb = feedbackData.find(f => f.id === id);
+      if (!fb) return;
+      const toEmail = fb.userEmail || fb.user?.email;
+      if (!toEmail) {
+        showToast('No email address on file for this user', 'error');
+        return;
+      }
+      document.getElementById('replyToEmail').textContent = toEmail;
+      document.getElementById('replyOriginalMsg').textContent = fb.content;
+      document.getElementById('replyBodyInput').value = '';
+      document.getElementById('replyFeedbackId').value = id;
+      document.getElementById('feedbackReplyModal').classList.add('active');
+      setTimeout(() => document.getElementById('replyBodyInput').focus(), 50);
+    }
+
+    function closeFeedbackReply() {
+      document.getElementById('feedbackReplyModal').classList.remove('active');
+    }
+
+    async function sendFeedbackReply() {
+      const id = document.getElementById('replyFeedbackId').value;
+      const body = document.getElementById('replyBodyInput').value.trim();
+      if (!body) {
+        showToast('Reply body is empty', 'error');
+        return;
+      }
+      const btn = document.getElementById('replySendBtn');
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      try {
+        const res = await authFetch(`${API_BASE}/admin/feedback/${id}/reply`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ replyBody: body }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed');
+        }
+        showToast('Reply sent', 'success');
+        closeFeedbackReply();
+        loadFeedback();
+      } catch (err) {
+        showToast('Failed to send reply: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send Reply';
+      }
     }
 
     async function markFeedbackRead(id) {
