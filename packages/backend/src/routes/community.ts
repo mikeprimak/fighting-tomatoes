@@ -518,6 +518,12 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           fighter1: true,
           fighter2: true,
           event: true,
+          _count: {
+            select: {
+              reviews: true,
+              preFightComments: true,
+            },
+          },
           ratings: userId ? {
             where: {
               userId,
@@ -564,6 +570,8 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           ...fight,
           ratings: undefined, // Remove from response
           userRating,
+          reviewCount: fight._count?.reviews || 0,
+          commentCount: fight._count?.preFightComments || 0,
         };
 
         // Add fighter follow data if user is authenticated
