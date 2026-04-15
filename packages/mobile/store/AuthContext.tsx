@@ -6,7 +6,16 @@ import { secureStorage } from '../utils/secureStorage';
 import { AnalyticsService } from '../services/analytics';
 import { notificationService } from '../services/notificationService';
 import type { Notification, NotificationResponse } from 'expo-notifications';
+import * as Sentry from '@sentry/react-native';
 import { queryClient } from '../app/_layout';
+
+const tagSentryUser = (user: { id: string; email: string; displayName?: string | null } | null) => {
+  if (user) {
+    Sentry.setUser({ id: user.id, email: user.email, username: user.displayName ?? undefined });
+  } else {
+    Sentry.setUser(null);
+  }
+};
 
 interface User {
   id: string;
@@ -87,6 +96,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    tagSentryUser(user);
+  }, [user?.id]);
   const [isGuest, setIsGuest] = useState(false);
   const appState = useRef(AppState.currentState);
 

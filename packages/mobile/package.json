@@ -24,6 +24,7 @@
     "@react-native-google-signin/google-signin": "^16.0.0",
     "@react-navigation/bottom-tabs": "^7.4.7",
     "@react-navigation/native": "^7.1.17",
+    "@sentry/react-native": "~7.2.0",
     "@tanstack/react-query": "^4.32.6",
     "assert": "^2.1.0",
     "axios": "^1.4.0",
