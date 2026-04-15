@@ -6,7 +6,21 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
+import Constants from 'expo-constants';
 import { AuthProvider } from '../store/AuthContext';
+
+const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    enableAutoSessionTracking: true,
+    tracesSampleRate: 0.1,
+    debug: false,
+    environment: __DEV__ ? 'development' : 'production',
+    release: `${Constants.expoConfig?.version ?? 'unknown'}+${Constants.expoConfig?.ios?.buildNumber ?? Constants.expoConfig?.android?.versionCode ?? 'unknown'}`,
+  });
+}
 import { VerificationProvider } from '../store/VerificationContext';
 import { PredictionAnimationProvider } from '../store/PredictionAnimationContext';
 import { NotificationProvider } from '../store/NotificationContext';
@@ -43,7 +57,7 @@ export const queryClient = new QueryClient({
   },
 });
 
-export default function RootLayout() {
+function RootLayout() {
   const [loaded, error] = useFonts({
     // Note: SpaceMono font removed for now
     ...FontAwesome.font,
@@ -66,6 +80,8 @@ export default function RootLayout() {
 
   return <RootLayoutNav />;
 }
+
+export default sentryDsn ? Sentry.wrap(RootLayout) : RootLayout;
 
 function RootLayoutNav() {
   // Force dark mode for all users

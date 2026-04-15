@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as Sentry from '@sentry/react-native';
 import { useAuth } from '../store/AuthContext';
 
 // Google OAuth Client IDs - these are PUBLIC by design (not secrets)
@@ -56,9 +57,19 @@ export function useGoogleAuth() {
       // Check if Google Play Services are available
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
-      // Sign out first to force account picker to show
-      // (otherwise it auto-selects the last used account)
-      await GoogleSignin.signOut();
+      // Try to sign out first so the account picker shows instead of auto-selecting.
+      // Isolated in its own try/catch because on some Android builds this throws a
+      // native exception when there's no existing session — we don't want that to
+      // block sign-in.
+      try {
+        await GoogleSignin.signOut();
+      } catch (signOutErr) {
+        console.log('[GoogleAuth] Pre-signin signOut failed (non-fatal):', signOutErr);
+        Sentry.captureMessage('Pre-signin signOut failed (non-fatal)', {
+          level: 'warning',
+          extra: { error: String(signOutErr) },
+        });
+      }
 
       // Sign in - will now show account picker
       const response = await GoogleSignin.signIn();
@@ -81,10 +92,17 @@ export function useGoogleAuth() {
     } catch (err) {
       console.error('[GoogleAuth] Error:', err);
 
+      const isCancelled = isErrorWithCode(err) && err.code === statusCodes.SIGN_IN_CANCELLED;
+      if (!isCancelled) {
+        Sentry.captureException(err, {
+          tags: { feature: 'google-signin' },
+          extra: { errorCode: isErrorWithCode(err) ? err.code : undefined },
+        });
+      }
+
       if (isErrorWithCode(err)) {
         switch (err.code) {
           case statusCodes.SIGN_IN_CANCELLED:
-            // User cancelled, don't show error
             console.log('[GoogleAuth] Sign-in cancelled by user');
             break;
           case statusCodes.IN_PROGRESS:
