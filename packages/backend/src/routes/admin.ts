@@ -775,12 +775,13 @@ export async function adminRoutes(fastify: FastifyInstance) {
       },
     });
 
-    // If marking event complete, also mark all incomplete fights as complete
+    // If marking event complete, also mark all incomplete fights as complete.
+    // Exclude CANCELLED — those fights weren't fought and must not be flipped to COMPLETED.
     if (eventStatus === 'COMPLETED') {
       await prisma.fight.updateMany({
         where: {
           eventId: id,
-          fightStatus: { not: 'COMPLETED' },
+          fightStatus: { notIn: ['COMPLETED', 'CANCELLED'] },
         },
         data: {
           fightStatus: 'COMPLETED',
