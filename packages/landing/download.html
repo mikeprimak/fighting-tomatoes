@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Get Good Fights — iOS & Android</title>
+  <meta name="description" content="Download the Good Fights app on iOS or Android.">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #121212;
+      --bg-card: #1a1a1a;
+      --fg: #ffffff;
+      --fg-secondary: #9ca3af;
+      --primary: #F5C518;
+      --border: #2a2a2a;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .card {
+      max-width: 420px;
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 28px;
+      text-align: center;
+    }
+    .logo {
+      max-width: 180px;
+      margin: 0 auto 24px;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    p.sub {
+      color: var(--fg-secondary);
+      font-size: 0.95rem;
+      margin-bottom: 28px;
+    }
+    .store-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .store-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 20px;
+      background: var(--primary);
+      color: #111;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1rem;
+      border-radius: 10px;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .store-btn.secondary {
+      background: transparent;
+      color: var(--fg);
+      border: 1px solid var(--border);
+    }
+    .store-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .home-link {
+      margin-top: 20px;
+      display: inline-block;
+      color: var(--fg-secondary);
+      font-size: 0.85rem;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="logo-full.png" alt="Good Fights" class="logo" onerror="this.style.display='none'">
+    <h1>Get the App</h1>
+    <p class="sub">Pick your phone to download.</p>
+    <div class="store-buttons">
+      <a class="store-btn" href="https://apps.apple.com/us/app/good-fights/id6757172609">Download on the App Store</a>
+      <a class="store-btn secondary" href="https://play.google.com/store/apps/details?id=com.fightcrewapp.mobile">Get it on Google Play</a>
+    </div>
+    <a class="home-link" href="/">← Back to goodfights.app</a>
+  </div>
+</body>
+</html>
