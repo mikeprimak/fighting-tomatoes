@@ -10,11 +10,21 @@ import { OAuth2Client } from 'google-auth-library'
 
 const prisma = new PrismaClient()
 
+// GOOGLE_CLIENT_ID may be a comma-separated list of accepted audiences. During
+// rollouts of a new OAuth client, both the old and new client IDs need to be
+// accepted until users have updated the mobile app.
+const getGoogleAudiences = (): string | string[] | undefined => {
+  const raw = process.env.GOOGLE_CLIENT_ID
+  if (!raw) return undefined
+  const parts = raw.split(',').map(s => s.trim()).filter(Boolean)
+  return parts.length > 1 ? parts : parts[0]
+}
+
 // Google OAuth client - initialized lazily
 let googleClient: OAuth2Client | null = null
 const getGoogleClient = () => {
   if (!googleClient) {
-    googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+    googleClient = new OAuth2Client()
   }
   return googleClient
 }
@@ -239,7 +249,7 @@ export class AuthController {
       const client = getGoogleClient()
       const ticket = await client.verifyIdToken({
         idToken,
-        audience: process.env.GOOGLE_CLIENT_ID,
+        audience: getGoogleAudiences(),
       })
 
       const payload = ticket.getPayload()
