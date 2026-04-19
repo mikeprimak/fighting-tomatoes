@@ -7,11 +7,20 @@ import appleSignIn from 'apple-signin-auth';
 import { EmailService } from '../utils/email';
 import { ACCESS_TOKEN_EXPIRES, REFRESH_TOKEN_EXPIRES } from '../utils/jwt';
 
+// GOOGLE_CLIENT_ID may be a comma-separated list of accepted audiences so that
+// the old and new OAuth client IDs can both be honored during an app rollout.
+function getGoogleAudiences(): string | string[] | undefined {
+  const raw = process.env.GOOGLE_CLIENT_ID;
+  if (!raw) return undefined;
+  const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
+  return parts.length > 1 ? parts : parts[0];
+}
+
 // Google OAuth client (lazily initialized)
 let googleClient: OAuth2Client | null = null;
 function getGoogleClient(): OAuth2Client {
   if (!googleClient) {
-    googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    googleClient = new OAuth2Client();
   }
   return googleClient;
 }
@@ -1542,7 +1551,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       try {
         const ticket = await client.verifyIdToken({
           idToken,
-          audience: process.env.GOOGLE_CLIENT_ID,
+          audience: getGoogleAudiences(),
         });
         payload = ticket.getPayload();
       } catch (verifyError: any) {
