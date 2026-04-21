@@ -164,6 +164,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
         name="index"
         options={{
           href: null, // Hide from tab bar
+          headerShown: false, // Redirect-only route; avoid flashing "index" header before redirect
         }}
       />
       <Tabs.Screen
