@@ -404,21 +404,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
       let total: number;
 
       if (type === 'upcoming') {
-        // Marketing demo override: pin one specific event at position 0 for a
-        // single user (used while recording promo screen captures). Scoped by
-        // email so it cannot leak to other accounts. Revert after the shoot.
-        let pinEventId: string | null = null;
-        if (userId) {
-          const user = await fastify.prisma.user.findUnique({
-            where: { id: userId },
-            select: { email: true },
-          });
-          if (user?.email === 'avocadomike@hotmail.com') {
-            // UFC 328: Chimaev vs. Strickland (2026-05-09)
-            pinEventId = 'b992560c-fe62-417b-8953-e3323cdf7b2a';
-          }
-        }
-
         // For upcoming events, sort by calendar day then UFC-first within the day.
         // Fetch a lightweight list of all matches, sort in memory, paginate, then
         // load full selected fields for the page. This keeps ordering stable
@@ -441,14 +426,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
           if (timeDiff !== 0) return timeDiff;
           return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
         });
-
-        if (pinEventId) {
-          const pinIdx = allEventsLite.findIndex((e: any) => e.id === pinEventId);
-          if (pinIdx > 0) {
-            const [pinned] = allEventsLite.splice(pinIdx, 1);
-            allEventsLite.unshift(pinned);
-          }
-        }
 
         total = allEventsLite.length;
         const pageIds = allEventsLite.slice(skip, skip + limit).map((e: any) => e.id);
