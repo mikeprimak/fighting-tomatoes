@@ -1,0 +1,25 @@
+name: Keep Backend Warm
+
+on:
+  schedule:
+    # Every 10 minutes. Render free tier spins down after ~15 min idle,
+    # so this stays comfortably under that.
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /api/health
+        run: |
+          URL="https://fightcrewapp-backend.onrender.com/health"
+          echo "Pinging $URL"
+          STATUS=$(curl -s -o /tmp/body.txt -w "%{http_code}" --max-time 60 "$URL")
+          echo "HTTP $STATUS"
+          cat /tmp/body.txt
+          echo
+          if [ "$STATUS" != "200" ]; then
+            echo "Health check failed"
+            exit 1
+          fi
