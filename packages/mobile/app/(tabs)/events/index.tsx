@@ -107,11 +107,12 @@ export default function UpcomingEventsScreen() {
     checkPendingMessage();
   }, [setPreEventMessage]);
 
-  // Refetch fight data when screen comes into focus
+  // Refetch fight data when screen comes into focus, but only if stale.
+  // refetchQueries (vs invalidateQueries) respects staleTime, so a quick tab
+  // switch within 30s reuses the cache instead of hitting the network.
   useFocusEffect(
     React.useCallback(() => {
-      // Invalidate upcoming events queries to trigger refetch
-      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+      queryClient.refetchQueries({ queryKey: ['upcomingEvents'], type: 'active', stale: true });
     }, [queryClient])
   );
 
@@ -153,7 +154,7 @@ export default function UpcomingEventsScreen() {
       },
       staleTime: 30 * 1000, // 30 seconds - refresh frequently for live status
       refetchInterval: 30000, // Poll every 30s so fight status changes appear automatically
-      refetchOnMount: 'always',
+      refetchOnMount: true, // only refetch if stale (respects staleTime)
       refetchOnWindowFocus: true,
       onError: (err: any) => {
         console.error('[Events] Query error:', err?.message || err);
