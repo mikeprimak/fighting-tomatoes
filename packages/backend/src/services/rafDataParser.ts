@@ -119,6 +119,34 @@ function parseFighterName(name: string): { firstName: string; lastName: string }
 /**
  * Parse event date string to a Date object (date only, no time).
  */
+/**
+ * Infer a wrestling win method from score data. RAF's site only publishes
+ * scores, so we use freestyle-wrestling conventions to classify the finish:
+ *   - ≥10-point differential → Tech Fall (technical superiority)
+ *   - Any smaller score margin → Decision
+ *   - No score data at all → Decision (no detail)
+ */
+function inferRAFMethod(
+  scores?: {
+    total: { fighter1: string; fighter2: string };
+    rounds: { fighter1: string; fighter2: string }[];
+  } | null
+): string {
+  if (!scores?.total) return 'Decision';
+
+  const f1 = parseInt(scores.total.fighter1, 10);
+  const f2 = parseInt(scores.total.fighter2, 10);
+  if (!Number.isFinite(f1) || !Number.isFinite(f2)) {
+    return 'Decision';
+  }
+
+  const margin = Math.abs(f1 - f2);
+  if (margin >= 10) {
+    return `Tech Fall (${scores.total.fighter1}-${scores.total.fighter2})`;
+  }
+  return `Decision (${scores.total.fighter1}-${scores.total.fighter2})`;
+}
+
 function parseRAFEventDate(dateStr: string | null): Date {
   if (!dateStr) return new Date('2099-01-01');
   return new Date(dateStr);
@@ -330,10 +358,13 @@ async function importRAFEvents(
       if (fightData.winner === 'fighter1') winnerId = fighter1Id;
       else if (fightData.winner === 'fighter2') winnerId = fighter2Id;
 
-      // Build method string from scores if available
-      if (winnerId && fightData.scores) {
-        const { total } = fightData.scores;
-        method = `Decision (${total.fighter1}-${total.fighter2})`;
+      // Build wrestling method from scores. RAF's site doesn't expose an
+      // explicit method field, so we infer:
+      //  - 10+ point differential → Tech Fall (freestyle wrestling convention)
+      //  - Any point differential with scores → Decision
+      //  - Scores missing but winner present → Decision (no score detail)
+      if (winnerId) {
+        method = inferRAFMethod(fightData.scores);
       }
 
       const fightStatus = fightData.winner ? 'COMPLETED' : 'UPCOMING';

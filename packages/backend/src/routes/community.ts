@@ -446,7 +446,16 @@ export default async function communityRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const userId = request.user?.id;
-      const { period = 'week', promotions } = request.query as { period?: string; promotions?: string };
+      const { period = 'week', promotions, page = '1', limit = '25' } = request.query as {
+        period?: string;
+        promotions?: string;
+        page?: string;
+        limit?: string;
+      };
+
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 25));
+      const skip = (pageNum - 1) * limitNum;
 
       // Parse promotions filter (comma-separated list)
       const promotionList = promotions ? promotions.split(',').map(p => p.trim()).filter(p => p) : null;
@@ -533,10 +542,12 @@ export default async function communityRoutes(fastify: FastifyInstance) {
             },
           } : false,
         },
-        orderBy: {
-          averageRating: 'desc',
-        },
-        take: period === 'all' ? 100 : 25,
+        orderBy: [
+          { averageRating: 'desc' },
+          { id: 'asc' },
+        ],
+        skip,
+        take: limitNum,
       });
 
       // Get user's fighter follows if authenticated
@@ -583,7 +594,15 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         return transformed;
       });
 
-      return reply.send({ data: fightsWithUserData });
+      const hasMore = fights.length === limitNum;
+      return reply.send({
+        data: fightsWithUserData,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          hasMore,
+        },
+      });
     } catch (error) {
       console.error('Error fetching top recent fights:', error);
       return reply.status(500).send({

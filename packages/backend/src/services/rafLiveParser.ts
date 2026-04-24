@@ -185,12 +185,25 @@ export async function parseRAFLiveData(
           : dbFight.fighter1.id;
       }
 
-      // Build method from scores
+      // Infer wrestling method from scores (see rafDataParser for the same
+      // logic). RAF's page publishes scores only, so we classify a ≥10-point
+      // margin as Tech Fall and anything less as Decision.
       let method: string | null = null;
-      if (fightUpdate.scores) {
-        const { total } = fightUpdate.scores;
-        if (total.fighter1 && total.fighter2) {
-          method = `Decision (${total.fighter1}-${total.fighter2})`;
+      if (fightUpdate.winner) {
+        const scores = fightUpdate.scores;
+        if (scores?.total) {
+          const f1 = parseInt(scores.total.fighter1, 10);
+          const f2 = parseInt(scores.total.fighter2, 10);
+          if (Number.isFinite(f1) && Number.isFinite(f2)) {
+            const margin = Math.abs(f1 - f2);
+            method = margin >= 10
+              ? `Tech Fall (${scores.total.fighter1}-${scores.total.fighter2})`
+              : `Decision (${scores.total.fighter1}-${scores.total.fighter2})`;
+          } else {
+            method = 'Decision';
+          }
+        } else {
+          method = 'Decision';
         }
       }
 

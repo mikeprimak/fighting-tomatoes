@@ -22,6 +22,7 @@ import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
 import { useAuth } from '../store/AuthContext';
+import { useVerification } from '../store/VerificationContext';
 import { getFighterImage } from './fight-cards/shared/utils';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 import { usePredictionAnimation } from '../store/PredictionAnimationContext';
@@ -64,6 +65,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
+  const { requireVerification } = useVerification();
   const queryClient = useQueryClient();
   const { setPendingRatingAnimation } = usePredictionAnimation();
 
@@ -96,7 +98,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
   const { data: fightDetailData } = useQuery({
     queryKey: ['fight', fight?.id],
     queryFn: () => apiService.getFight(fight!.id),
-    enabled: !!fight?.id && isAuthenticated && visible,
+    enabled: !!fight?.id && visible,
   });
 
   // Wheel animation
@@ -151,8 +153,8 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
   // Helper to optimistically update events cache
   const updateEventsCache = useCallback((updates: Record<string, any>) => {
     if (!fight) return;
-    // Update all event-related query caches
-    const queryKeys = ['upcomingEvents', 'pastEvents', 'liveEvents', 'topFights'];
+    // Update all event-related query caches (live-events tab uses 'upcomingEvents')
+    const queryKeys = ['upcomingEvents', 'pastEvents', 'topFights'];
     queryKeys.forEach(key => {
       queryClient.setQueriesData({ queryKey: [key] }, (old: any) => {
         if (!old?.pages) return old;
@@ -200,14 +202,14 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
     },
     onError: () => {
       // Revert on error
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
       queryClient.invalidateQueries({ queryKey: ['pastEvents'] });
-      queryClient.invalidateQueries({ queryKey: ['liveEvents'] });
       queryClient.invalidateQueries({ queryKey: ['topFights'] });
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['fight', variables.fightId] });
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
       queryClient.invalidateQueries({ queryKey: ['pastEvents'] });
-      queryClient.invalidateQueries({ queryKey: ['liveEvents'] });
       queryClient.invalidateQueries({ queryKey: ['topFights'] });
       setPendingRatingAnimation(variables.fightId);
     },
@@ -232,6 +234,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
   }, [isAuthenticated, fight, selectedRating, ratingMutation, onClose]);
 
   const handleRatingSelection = useCallback((level: number) => {
+    if (!requireVerification('rate this fight')) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const newRating = selectedRating === level ? null : level;
     setSelectedRating(newRating);
@@ -239,7 +242,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
     if (isAuthenticated && fight) {
       ratingMutation.mutate({ fightId: fight.id, rating: newRating, review: reviewCommentRef.current.trim() || null });
     }
-  }, [isAuthenticated, fight, selectedRating, animateToNumber, ratingMutation]);
+  }, [isAuthenticated, requireVerification, fight, selectedRating, animateToNumber, ratingMutation]);
 
   if (!fight) return null;
 
@@ -365,8 +368,8 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
           </View>
 
           {/* Comment input */}
-          {isAuthenticated && (
-            <View style={styles.commentSection}>
+          <View style={styles.commentSection}>
+            {isAuthenticated && (
               <View style={[
                 styles.commentInputContainer,
                 {
@@ -392,21 +395,21 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
                   onChangeText={handleCommentChange}
                 />
               </View>
-              <TouchableOpacity
-                style={styles.seeDetailsLink}
-                onPress={async () => { const fightId = fight.id; await handleDone(); router.push(`/fight/${fightId}` as any); }}
-              >
-                <Text style={[styles.seeDetailsText, { color: colors.textSecondary }]}>
-                  {(() => {
-                    const count = fightDetailData?.fight?.totalReviews || fightDetailData?.fight?.reviewCount || fight.totalReviews || fight.reviewCount || 0;
-                    return count > 0
-                      ? `See ${count} ${count === 1 ? 'Comment' : 'Comments'} >`
-                      : 'See Comments >';
-                  })()}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            )}
+            <TouchableOpacity
+              style={styles.seeDetailsLink}
+              onPress={async () => { const fightId = fight.id; await handleDone(); router.push(`/fight/${fightId}?mode=completed` as any); }}
+            >
+              <Text style={[styles.seeDetailsText, { color: colors.textSecondary }]}>
+                {(() => {
+                  const count = fightDetailData?.fight?.totalReviews || fightDetailData?.fight?.reviewCount || fight.totalReviews || fight.reviewCount || 0;
+                  return count > 0
+                    ? `See ${count} ${count === 1 ? 'Comment' : 'Comments'} >`
+                    : 'See Comments >';
+                })()}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Done button */}
           <View style={styles.bottomRow}>

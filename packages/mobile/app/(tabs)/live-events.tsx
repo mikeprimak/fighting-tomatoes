@@ -386,7 +386,7 @@ const LiveEventSection = memo(function LiveEventSection({
         )}
 
         {/* Standalone card section title when no upcoming fights but live/up-next exist.
-            Skip entirely if section is all completed — the COMPLETED BOUTS header suffices. */}
+            Skip entirely if section is all completed — the BOUTS header suffices. */}
         {upcoming.length === 0 && (live.length > 0 || completed.length === 0) && (
           isPrelimSection ? (
             <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
@@ -434,7 +434,7 @@ const LiveEventSection = memo(function LiveEventSection({
                 </View>
                 <View style={styles.sectionHeaderCenter}>
                   <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                    COMPLETED BOUTS
+                    BOUTS
                   </Text>
                 </View>
                 <View style={[styles.columnHeadersRight, { marginRight: -18 }]}>

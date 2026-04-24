@@ -22,6 +22,10 @@ const LIFECYCLE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const HARD_CAP_HOURS = 10;
 const MINUTES_PER_FIGHT = 30;
 const BUFFER_HOURS = 1;
+// Events without a production live tracker get a fixed live window so users
+// can still rate the fights during/after the broadcast, even though we can't
+// follow the card in real time.
+const NO_TRACKER_LIVE_WINDOW_HOURS = 7;
 
 let lifecycleTimer: ReturnType<typeof setInterval> | null = null;
 const lastGitHubDispatchByWorkflow: Record<string, number> = {};
@@ -332,54 +336,31 @@ export async function runEventLifecycleCheck(): Promise<{
     });
 
     for (const event of liveEvents) {
-      // Skip events handled by a production scraper
+      // Skip events handled by a production scraper — their live tracker
+      // handles fight-by-fight completion with accurate timestamps.
       if (isProductionScraper(event.scraperType)) continue;
 
       // Skip events with no upcoming fights to complete
       if (event.fights.length === 0) continue;
 
-      const hasSectionTimes = !!(event.mainStartTime || event.prelimStartTime || event.earlyPrelimStartTime);
-      const hasCardTypes = event.fights.some((f) => f.cardType !== null);
-
-      if (hasSectionTimes && hasCardTypes) {
-        // Section-based: complete fights whose section start time has passed
-        for (const fight of event.fights) {
-          const normalized = normalizeCardType(fight.cardType);
-          if (!normalized) continue;
-
-          const sectionTime = getSectionTime(normalized, event);
-          if (sectionTime && now >= sectionTime) {
-            await prisma.fight.update({
-              where: { id: fight.id },
-              data: {
-                fightStatus: 'COMPLETED',
-                completionMethod: 'lifecycle-section',
-                completedAt: now,
-              },
-            });
-            results.fightsCompleted++;
-          }
-        }
-      } else {
-        // Fallback: complete ALL upcoming fights when start time has passed
-        const startTime = getStartTime(event);
-        if (now >= startTime) {
-          const updated = await prisma.fight.updateMany({
-            where: {
-              eventId: event.id,
-              fightStatus: 'UPCOMING',
-            },
-            data: {
-              fightStatus: 'COMPLETED',
-              completionMethod: 'lifecycle-fallback',
-              completedAt: now,
-            },
-          });
-          results.fightsCompleted += updated.count;
-          if (updated.count > 0) {
-            console.log(`[Lifecycle] Completed ${updated.count} fights (fallback): ${event.name}`);
-          }
-        }
+      // No-tracker events: flip ALL upcoming fights to COMPLETED as soon as the
+      // event goes LIVE. Fights remain ratable during the LIVE window (step 3
+      // keeps the event LIVE for NO_TRACKER_LIVE_WINDOW_HOURS), and users don't
+      // have to wait for a section-based timer to expire before rating.
+      const updated = await prisma.fight.updateMany({
+        where: {
+          eventId: event.id,
+          fightStatus: 'UPCOMING',
+        },
+        data: {
+          fightStatus: 'COMPLETED',
+          completionMethod: 'lifecycle-no-tracker',
+          completedAt: now,
+        },
+      });
+      results.fightsCompleted += updated.count;
+      if (updated.count > 0) {
+        console.log(`[Lifecycle] No-tracker event LIVE: completed ${updated.count} fights immediately: ${event.name}`);
       }
     }
   } catch (error: any) {
@@ -398,6 +379,7 @@ export async function runEventLifecycleCheck(): Promise<{
         mainStartTime: true,
         prelimStartTime: true,
         earlyPrelimStartTime: true,
+        scraperType: true,
         _count: { select: { fights: true } },
       },
     });
@@ -406,10 +388,17 @@ export async function runEventLifecycleCheck(): Promise<{
       const startTime = getStartTime(event);
       const numFights = event._count.fights;
 
-      // Estimated duration = (numFights * 30 min) + 1 hour buffer
-      const estimatedMs = (numFights * MINUTES_PER_FIGHT + BUFFER_HOURS * 60) * 60 * 1000;
-      const hardCapMs = HARD_CAP_HOURS * 60 * 60 * 1000;
-      const completionMs = Math.min(estimatedMs, hardCapMs);
+      let completionMs: number;
+      if (!isProductionScraper(event.scraperType)) {
+        // No-tracker events: fixed live window so users have time to rate
+        // after watching. Independent of numFights.
+        completionMs = NO_TRACKER_LIVE_WINDOW_HOURS * 60 * 60 * 1000;
+      } else {
+        // Tracker-backed events: estimated duration = (numFights * 30 min) + 1 hour buffer
+        const estimatedMs = (numFights * MINUTES_PER_FIGHT + BUFFER_HOURS * 60) * 60 * 1000;
+        const hardCapMs = HARD_CAP_HOURS * 60 * 60 * 1000;
+        completionMs = Math.min(estimatedMs, hardCapMs);
+      }
 
       const completionTime = new Date(startTime.getTime() + completionMs);
 
