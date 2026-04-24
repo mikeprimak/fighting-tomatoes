@@ -376,6 +376,7 @@ export default function PastEventsScreen() {
             onRefresh={onRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
+            progressBackgroundColor="#181818"
           />
         }
         onEndReached={handleLoadMore}

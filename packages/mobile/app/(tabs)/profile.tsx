@@ -599,6 +599,7 @@ export default function ProfileScreen() {
             onRefresh={onRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
+            progressBackgroundColor="#181818"
           />
         }
       >
