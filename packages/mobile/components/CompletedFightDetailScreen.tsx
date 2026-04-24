@@ -477,6 +477,7 @@ export default function CompletedFightDetailScreen({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isLoading: isReviewsLoading,
   } = useInfiniteQuery({
     queryKey: ['fightReviews', fight.id],
     queryFn: ({ pageParam = 1 }) =>
@@ -1537,6 +1538,13 @@ export default function CompletedFightDetailScreen({
           </Text>
         )}
 
+        {/* Draw message (winner === 'draw' is a resolved result, not missing data) */}
+        {fight.winner === 'draw' && isOutcomeRevealed && (
+          <Text style={[styles.whatHappenedPromptText, { color: '#F59E0B', textAlign: 'center', marginTop: -12, marginBottom: 10, fontWeight: '600' }]}>
+            Draw{fight.round ? ` · R${fight.round}${fight.time ? ` ${fight.time}` : ''}` : ''}
+          </Text>
+        )}
+
         {/* Outcome not available message */}
         {!fight.winner && (
           <Text style={[styles.whatHappenedPromptText, { color: colors.textSecondary, textAlign: 'center', marginTop: -12, marginBottom: 10 }]}>
@@ -2330,9 +2338,17 @@ export default function CompletedFightDetailScreen({
                 )}
               </View>
             ) : !fight.userReview ? (
-              <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
-                No comments yet.
-              </Text>
+              isReviewsLoading ? (
+                <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
+                  {aggregateStats?.reviewCount
+                    ? `Loading ${aggregateStats.reviewCount} ${aggregateStats.reviewCount === 1 ? 'comment' : 'comments'}...`
+                    : 'Loading comments...'}
+                </Text>
+              ) : (
+                <Text style={[styles.noReviewsText, { color: colors.textSecondary }]}>
+                  No comments yet.
+                </Text>
+              )
             ) : null}
         </View>
         )}

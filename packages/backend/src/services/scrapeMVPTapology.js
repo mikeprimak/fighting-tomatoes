@@ -328,6 +328,16 @@ async function scrapeEventPage(browser, eventUrl) {
         // Skip <li> inside nav/header/footer/aside
         if (li.closest('nav, header, footer, aside')) return;
 
+        // Collect headshot images scoped to this <li> (positional fallback for
+        // legacy-slug fighters whose URL has no numeric ID — e.g. Rousey, Carano).
+        // Tapology renders bout rows with fighter images left/right; first img is
+        // fighterA, second is fighterB.
+        const liHeadshotSrcs = [];
+        li.querySelectorAll('img[src*="headshot_images"]').forEach(img => {
+          const src = img.src || img.getAttribute('data-src');
+          if (src) liHeadshotSrcs.push(src);
+        });
+
         // Collect unique fighter links inside this <li>
         const linksInLi = [];
         const seenUrlsInLi = new Set();
@@ -338,7 +348,12 @@ async function scrapeEventPage(browser, eventUrl) {
           seenUrlsInLi.add(url);
           const idMatch = url.match(/\/fightcenter\/fighters\/(\d+)-/);
           const fighterId = idMatch ? idMatch[1] : null;
-          const imageUrl = fighterId ? (headshots.get(fighterId) || null) : null;
+          // Primary match: numeric-id keyed headshot map. Fallback: positional
+          // image from within this <li> (index 0 for fighterA, 1 for fighterB).
+          let imageUrl = fighterId ? (headshots.get(fighterId) || null) : null;
+          if (!imageUrl && liHeadshotSrcs[linksInLi.length]) {
+            imageUrl = liHeadshotSrcs[linksInLi.length];
+          }
           linksInLi.push({ name, url, fighterId, imageUrl });
         });
 

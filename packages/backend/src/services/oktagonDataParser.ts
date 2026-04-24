@@ -2,7 +2,7 @@
 import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { uploadFighterImage, uploadEventImage } from './imageStorage';
+import { uploadFighterImage, uploadFighterImageFromFile, uploadEventImage } from './imageStorage';
 import { TBA_FIGHTER_ID, TBA_FIGHTER_NAME, isTBAFighter } from '../constants/tba';
 import { stripDiacritics } from '../utils/fighterMatcher';
 
@@ -213,12 +213,27 @@ async function importOktagonFighters(
       continue;
     }
 
-    // Use local cropped image if available, otherwise try to upload to R2
+    // Prefer local cropped headshot (uploaded to R2 for persistence across CI
+    // runs). Fall back to uploading the original imageUrl, then to the raw URL.
+    // The previous code stored the ephemeral GH Actions filesystem path directly
+    // into profileImage, which broke once the runner was destroyed.
     let profileImageUrl: string | null = null;
     if (athlete.localImagePath) {
-      // Use local cropped image path (these are already cropped headshots)
-      profileImageUrl = athlete.localImagePath;
-    } else if (athlete.imageUrl) {
+      const absoluteLocalPath = path.join(
+        __dirname,
+        '../../public',
+        athlete.localImagePath.replace(/^\//, ''),
+      );
+      try {
+        profileImageUrl = await uploadFighterImageFromFile(
+          absoluteLocalPath,
+          `${firstName} ${lastName}`,
+        );
+      } catch (error) {
+        console.warn(`  ⚠ Local fighter image upload failed for ${firstName} ${lastName}`);
+      }
+    }
+    if (!profileImageUrl && athlete.imageUrl) {
       try {
         profileImageUrl = await uploadFighterImage(athlete.imageUrl, `${firstName} ${lastName}`);
       } catch (error) {

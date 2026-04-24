@@ -537,6 +537,17 @@ function CompletedFightCard({
                   NC{fight.round ? ` R${fight.round}` : ''}
                 </Text>
               )}
+
+              {/* Draw badge — neither fighter wins, centered across the full width */}
+              {!hideSpoilers && fight.winner === 'draw' && (
+                <Text
+                  style={{ position: 'absolute', bottom: -14, left: 0, right: 0, color: '#F59E0B', fontSize: 9, fontWeight: '600', textAlign: 'center' }}
+                  numberOfLines={1}
+                  pointerEvents="none"
+                >
+                  DRAW{fight.round ? ` R${fight.round}` : ''}
+                </Text>
+              )}
             </View>
 
           </View>

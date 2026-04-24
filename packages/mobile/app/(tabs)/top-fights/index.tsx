@@ -10,7 +10,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../../constants/Colors';
@@ -39,14 +39,28 @@ export default function TopFightsScreen() {
     ? Array.from(selectedOrgs).join(',')
     : undefined;
 
-  // Fetch top rated fights (with server-side promotion filtering)
-  const { data: topRatedFights, isLoading, refetch } = useQuery({
-    queryKey: ['topRecentFights', isAuthenticated, topRatedPeriod, promotionsFilter],
-    queryFn: () => apiService.getTopRecentFights(topRatedPeriod, promotionsFilter),
-    staleTime: 5 * 60 * 1000,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-  });
+  // Fetch top rated fights (with server-side promotion filtering, infinite scroll)
+  const {
+    data: topRatedFights,
+    isLoading,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery(
+    ['topRecentFights', isAuthenticated, topRatedPeriod, promotionsFilter],
+    ({ pageParam = 1 }) =>
+      apiService.getTopRecentFights(topRatedPeriod, promotionsFilter, pageParam, 25),
+    {
+      getNextPageParam: (lastPage, allPages) => {
+        if (lastPage.pagination?.hasMore) return allPages.length + 1;
+        return undefined;
+      },
+      staleTime: 5 * 60 * 1000,
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: true,
+    }
+  );
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
@@ -58,14 +72,29 @@ export default function TopFightsScreen() {
     }
   }, [refetch]);
 
-  // Top rated fights data - filter out hidden orgs client-side
+  // Top rated fights data - flatten pages and filter out hidden orgs client-side
   const topRatedData = React.useMemo(() => {
-    const fights = topRatedFights?.data || [];
+    const fights = topRatedFights?.pages?.flatMap((p: any) => p.data) || [];
     return fights.filter((fight: any) => {
       const promotion = (fight.event?.promotion || '').toUpperCase();
       return !promotion.includes('MATCHROOM');
     });
-  }, [topRatedFights?.data]);
+  }, [topRatedFights?.pages]);
+
+  const handleEndReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const ListFooterComponent = useCallback(() => {
+    if (!isFetchingNextPage) return null;
+    return (
+      <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+        <ActivityIndicator color={colors.primary} />
+      </View>
+    );
+  }, [isFetchingNextPage, colors.primary]);
 
   // Scroll to top when filter changes
   const handleFilterChange = useCallback(() => {
@@ -175,6 +204,9 @@ export default function TopFightsScreen() {
         renderItem={renderTopRatedFight}
         keyExtractor={fightKeyExtractor}
         ListEmptyComponent={ListEmptyComponent}
+        ListFooterComponent={ListFooterComponent}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.5}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"

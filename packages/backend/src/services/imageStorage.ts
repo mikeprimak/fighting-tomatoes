@@ -231,6 +231,62 @@ export async function uploadFighterImage(
 }
 
 /**
+ * Upload a locally-cropped fighter image file to R2.
+ * Used by scrapers that crop headshots on disk (e.g. Oktagon) so the cropped
+ * version is persisted to R2 instead of a filesystem path that only exists
+ * for the duration of the CI run.
+ *
+ * Key is derived from file content hash to keep dedupe semantics consistent
+ * with the URL-based uploader.
+ */
+export async function uploadFighterImageFromFile(
+  filePath: string,
+  fighterName: string
+): Promise<string | null> {
+  if (!isR2Configured()) return null;
+
+  const fs = await import('fs/promises');
+  let buffer: Buffer;
+  try {
+    buffer = await fs.readFile(filePath);
+  } catch (error: any) {
+    console.warn(`[R2] Local fighter image missing at ${filePath}: ${error.message}`);
+    return null;
+  }
+
+  try {
+    const client = getS3Client();
+    const extension = filePath.match(/\.(jpg|jpeg|png|gif|webp)$/i)?.[1]?.toLowerCase() || 'png';
+    const hash = crypto.createHash('md5').update(buffer).digest('hex').substring(0, 8);
+    const cleanPrefix = fighterName
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .substring(0, 50) || hash;
+    const fileName = `${cleanPrefix}-${hash}.${extension}`;
+    const key = `fighters/${fileName}`;
+
+    if (await imageExists(key)) {
+      return getPublicUrl(key);
+    }
+
+    await client.send(new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET!,
+      Key: key,
+      Body: buffer,
+      ContentType: getContentType(fileName),
+      CacheControl: 'public, max-age=31536000',
+    }));
+
+    return getPublicUrl(key);
+  } catch (error: any) {
+    console.error(`[R2] Local fighter image upload failed for ${filePath}:`, error.message);
+    return null;
+  }
+}
+
+/**
  * Upload event banner image
  * Example: UFC 320 banner → events/ufc-320-def456.jpg
  */

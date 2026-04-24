@@ -129,12 +129,20 @@ export const getFighterPrimaryName = (fighter: Fighter) => {
 // Format date string
 export const formatDate = (dateString: string) => formatEventDate(dateString, { weekday: false, year: true });
 
-// Format fight method
+// Format fight method. Handles MMA enum values + free-form strings from
+// scrapers (including wrestling methods from RAF like "Tech Fall (9-3)").
 export const formatMethod = (method: string | null | undefined) => {
   if (!method) return '';
   if (method === 'KO_TKO') return 'KO/TKO';
   if (method === 'DECISION') return 'Decision';
   if (method === 'SUBMISSION') return 'Submission';
+  // Wrestling enum values (in case any scraper normalizes to these later)
+  if (method === 'PIN' || method === 'PINFALL') return 'Pin';
+  if (method === 'TECH_FALL' || method === 'TECHNICAL_FALL') return 'Tech Fall';
+  if (method === 'TECH_SUPERIORITY') return 'Tech Superiority';
+  if (method === 'DISQUALIFICATION' || method === 'DQ') return 'DQ';
+  if (method === 'FORFEIT') return 'Forfeit';
+  if (method === 'INJURY_DEFAULT' || method === 'INJURY') return 'Injury Default';
   return method;
 };
 

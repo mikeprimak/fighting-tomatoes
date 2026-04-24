@@ -1106,8 +1106,16 @@ class ApiService {
     return this.makeRequest(`/community/top-upcoming-fights?period=${period}`);
   }
 
-  async getTopRecentFights(period: string = 'week', promotions?: string): Promise<{ data: Fight[] }> {
-    const params = new URLSearchParams({ period });
+  async getTopRecentFights(
+    period: string = 'week',
+    promotions?: string,
+    page: number = 1,
+    limit: number = 25,
+  ): Promise<{
+    data: Fight[];
+    pagination?: { page: number; limit: number; hasMore: boolean };
+  }> {
+    const params = new URLSearchParams({ period, page: String(page), limit: String(limit) });
     if (promotions) {
       params.append('promotions', promotions);
     }
