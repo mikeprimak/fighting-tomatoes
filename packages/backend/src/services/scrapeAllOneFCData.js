@@ -75,14 +75,23 @@ async function scrapeEventsList(browser) {
       const dateText = datetimeEl ? datetimeEl.textContent.trim() : '';
       const timestamp = datetimeEl ? datetimeEl.getAttribute('data-timestamp') : '';
 
-      // Parse timestamp to filter past events
+      // Parse timestamp to filter past events.
+      //
+      // Keep events up to 2 days old in the re-scrape window. Reason:
+      // ONE FC regularly adds late fights (e.g. the "Inner Circle" companion
+      // card) within ~24h of a Friday Fights event, and the live tracker
+      // can't insert fights it didn't see in the daily import. Keeping the
+      // event on the re-scrape list until ~48h after its start lets the
+      // daily import pick those additions up even if the site lists the
+      // event briefly during/after it wraps.
       let eventDate = null;
       if (timestamp) {
         eventDate = new Date(parseInt(timestamp, 10) * 1000);
         eventDate.setHours(0, 0, 0, 0);
 
-        // Skip past events
-        if (eventDate < now) {
+        const cutoff = new Date(now);
+        cutoff.setDate(cutoff.getDate() - 2);
+        if (eventDate < cutoff) {
           return;
         }
       }
