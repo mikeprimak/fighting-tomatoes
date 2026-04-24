@@ -8,6 +8,7 @@ import {
   Image,
   StatusBar,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -125,6 +126,7 @@ export default function UpcomingEventsScreen() {
     isFetchingNextPage,
     error: eventsError,
     isError,
+    refetch,
   } = useInfiniteQuery(
     ['upcomingEvents', isAuthenticated, promotionsFilter],
     async ({ pageParam = 1 }) => {
@@ -204,6 +206,16 @@ export default function UpcomingEventsScreen() {
       fetchNextPage();
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetch]);
 
   const handleFightPress = useCallback((fight: Fight, event?: Event) => {
     // Upcoming fights open in a modal; live/completed navigate to detail screen
@@ -322,6 +334,14 @@ export default function UpcomingEventsScreen() {
         ListEmptyComponent={ListEmptyComponent}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
         // Lazy loading - load more events when reaching end
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
