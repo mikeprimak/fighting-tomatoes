@@ -126,14 +126,9 @@ export default function LiveEventsScreen() {
     }
   }, [refetch]);
 
-  // Auto-fetch page 2 so we find all live events (they may not all be on page 1).
-  // With 5 events per page, 2 pages = 10 events is plenty.
-  React.useEffect(() => {
-    if (!eventsData || !hasNextPage || isFetching) return;
-    if (eventsData.pages.length < 2) {
-      fetchNextPage();
-    }
-  }, [eventsData, hasNextPage, isFetching, fetchNextPage]);
+  // Page 2 is fetched on-demand via pull-to-refresh or scroll rather than
+  // automatically on mount — the extra request doubled the round trips on
+  // startup. Five events on page 1 covers the common case.
 
   // Filter to only LIVE events from all loaded pages
   const liveEvents = React.useMemo(() => {
