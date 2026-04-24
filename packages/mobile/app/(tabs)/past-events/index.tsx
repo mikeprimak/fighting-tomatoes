@@ -1,4 +1,4 @@
-import React, { useCallback, memo, useRef } from 'react';
+import React, { useCallback, memo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   StatusBar,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -240,6 +241,7 @@ export default function PastEventsScreen() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    refetch,
   } = useInfiniteQuery(
     ['pastEvents', promotionsFilter],
     async ({ pageParam = 1 }) => {
@@ -284,6 +286,16 @@ export default function PastEventsScreen() {
       fetchNextPage();
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetch]);
 
   const styles = createStyles(colors);
 
@@ -358,6 +370,14 @@ export default function PastEventsScreen() {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         // Virtualization settings - keep render window small so off-screen

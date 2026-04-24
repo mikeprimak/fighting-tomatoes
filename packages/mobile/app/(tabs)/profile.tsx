@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
@@ -290,6 +291,53 @@ export default function ProfileScreen() {
     }
   };
 
+  // Pull-to-refresh: reload user data + prediction accuracy + top reviews/comments
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    if (!user) return;
+    setIsRefreshing(true);
+    try {
+      const orgsArray = Array.from(selectedOrgs);
+      await Promise.all([
+        refreshUserData(orgsArray.length > 0 ? orgsArray : undefined),
+        (async () => {
+          try {
+            const [accuracyData, standingData] = await Promise.all([
+              api.getPredictionAccuracyByEvent(timeFilter),
+              api.getGlobalStanding(timeFilter),
+            ]);
+            setPredictionAccuracy({
+              accuracyByEvent: accuracyData.accuracyByEvent,
+              totalCorrect: accuracyData.totalCorrect,
+              totalIncorrect: accuracyData.totalIncorrect,
+            });
+            setGlobalStanding({
+              position: standingData.position,
+              totalUsers: standingData.totalUsers,
+              hasRanking: standingData.hasRanking,
+            });
+          } catch (error) {
+            console.error('Failed to refresh prediction data:', error);
+          }
+        })(),
+        (async () => {
+          try {
+            const [reviewsData, commentsData] = await Promise.all([
+              api.getMyTopReviews(3),
+              api.getMyTopPreflightComments(3),
+            ]);
+            if (reviewsData?.reviews) setTopReviews(reviewsData);
+            if (commentsData?.comments) setTopPreflightComments(commentsData);
+          } catch (error) {
+            console.error('Failed to refresh profile comments:', error);
+          }
+        })(),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [user, selectedOrgs, refreshUserData, timeFilter]);
+
   // Handle upvote on a pre-flight comment
   const handleUpvotePreflight = async (fightId: string, commentId: string) => {
     if (upvotingPreflightId) return;
@@ -489,7 +537,17 @@ export default function ProfileScreen() {
       {/* Organization Filter Tabs */}
       <OrgFilterTabs />
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
         {/* Predictions Section - TEMPORARILY REMOVED */}
         {false && <SectionContainer
           title="My Winner Picks"

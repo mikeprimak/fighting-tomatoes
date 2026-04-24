@@ -7,6 +7,7 @@ import {
   StyleSheet,
   StatusBar,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -39,13 +40,23 @@ export default function TopFightsScreen() {
     : undefined;
 
   // Fetch top rated fights (with server-side promotion filtering)
-  const { data: topRatedFights, isLoading } = useQuery({
+  const { data: topRatedFights, isLoading, refetch } = useQuery({
     queryKey: ['topRecentFights', isAuthenticated, topRatedPeriod, promotionsFilter],
     queryFn: () => apiService.getTopRecentFights(topRatedPeriod, promotionsFilter),
     staleTime: 5 * 60 * 1000,
     refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   });
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetch]);
 
   // Top rated fights data - filter out hidden orgs client-side
   const topRatedData = React.useMemo(() => {
@@ -167,6 +178,14 @@ export default function TopFightsScreen() {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       />
     </SafeAreaView>
   );

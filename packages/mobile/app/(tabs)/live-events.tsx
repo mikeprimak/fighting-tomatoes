@@ -7,6 +7,7 @@ import {
   StyleSheet,
   StatusBar,
   TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -90,6 +91,7 @@ export default function LiveEventsScreen() {
     isError,
     fetchNextPage,
     hasNextPage,
+    refetch,
   } = useInfiniteQuery(
     ['upcomingEvents', isAuthenticated, promotionsFilter],
     async ({ pageParam = 1 }) => {
@@ -109,9 +111,20 @@ export default function LiveEventsScreen() {
       },
       staleTime: 30 * 1000,
       refetchInterval: 30000,
+      refetchIntervalInBackground: false,
       refetchOnWindowFocus: true,
     }
   );
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const onRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetch]);
 
   // Auto-fetch page 2 so we find all live events (they may not all be on page 1).
   // With 5 events per page, 2 pages = 10 events is plenty.
@@ -214,6 +227,14 @@ export default function LiveEventsScreen() {
           ListEmptyComponent={ListEmptyComponent}
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
         />
       )}
 
