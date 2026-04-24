@@ -275,10 +275,24 @@ export async function syncAllUserRuleMatches(userId: string): Promise<number> {
 
 /**
  * Gets all notification reasons for a specific fight for a user
- * Uses the unified rule-based notification system
  *
- * IMPORTANT: This now evaluates rules dynamically for hype-based rules,
- * since hype scores can change after rules are created/enabled.
+ * SIMPLIFIED (2026-04-24): reads only from pre-synced `fightNotificationMatch`
+ * rows. The previous implementation also ran a dynamic rule-evaluation pass
+ * that re-checked every active rule against the fight — necessary when
+ * hype-based rules existed, because hype scores drift after a rule is
+ * created and a pre-synced match could become stale (or a new match needed).
+ *
+ * Hype-based notifications are currently disabled. Manual fight follows and
+ * fighter follows create matches up-front via `syncRuleMatches`, so a plain
+ * read of `fightNotificationMatch` is the full answer for now.
+ *
+ * RESTORING DYNAMIC EVALUATION (when re-enabling hype rules or any rule
+ * whose match set can change after creation): re-add a block that fetches
+ * `userNotificationRule` where `isActive: true`, skips rules already in
+ * `addedRuleIds`, and calls `evaluateFightAgainstConditions(fightId,
+ * rule.conditions)` for the rest. `evaluateFightAgainstConditions` is still
+ * exported from this file for that purpose. See git history for the exact
+ * shape removed here.
  */
 export async function getNotificationReasonsForFight(
   userId: string,
@@ -292,29 +306,6 @@ export async function getNotificationReasonsForFight(
     isActive: boolean;
   }>;
 }> {
-  const fight = await prisma.fight.findUnique({
-    where: { id: fightId },
-    include: {
-      fighter1: true,
-      fighter2: true,
-    },
-  });
-
-  if (!fight) {
-    return { willBeNotified: false, reasons: [] };
-  }
-
-  const reasons: Array<{
-    type: 'manual' | 'fighter' | 'rule';
-    source: string;
-    ruleId?: string;
-    isActive: boolean;
-  }> = [];
-
-  // Track which rules we've already added to avoid duplicates
-  const addedRuleIds = new Set<string>();
-
-  // Check rule-based matches (unified notification system)
   const ruleMatches = await prisma.fightNotificationMatch.findMany({
     where: {
       userId,
@@ -325,60 +316,20 @@ export async function getNotificationReasonsForFight(
     },
   });
 
-  for (const match of ruleMatches) {
-    // Determine notification type based on rule name pattern
+  const reasons = ruleMatches.map(match => {
     let type: 'manual' | 'fighter' | 'rule' = 'rule';
     if (match.rule.name.startsWith('Manual Fight Follow:')) {
       type = 'manual';
     } else if (match.rule.name.startsWith('Fighter Follow:')) {
       type = 'fighter';
     }
-
-    reasons.push({
+    return {
       type,
       source: match.rule.name,
       ruleId: match.ruleId,
       isActive: match.isActive,
-    });
-    addedRuleIds.add(match.ruleId);
-  }
-
-  // DYNAMIC EVALUATION: Check active rules that weren't in pre-synced matches
-  // This handles cases where hype scores changed after the rule was created
-  const activeRules = await prisma.userNotificationRule.findMany({
-    where: {
-      userId,
-      isActive: true,
-    },
+    };
   });
-
-  for (const rule of activeRules) {
-    // Skip rules already added from matches
-    if (addedRuleIds.has(rule.id)) {
-      continue;
-    }
-
-    // Dynamically evaluate if this rule matches the fight
-    const conditions = rule.conditions as NotificationRuleConditions;
-    const matches = await evaluateFightAgainstConditions(fightId, conditions);
-
-    if (matches) {
-      // Determine notification type based on rule name pattern
-      let type: 'manual' | 'fighter' | 'rule' = 'rule';
-      if (rule.name.startsWith('Manual Fight Follow:')) {
-        type = 'manual';
-      } else if (rule.name.startsWith('Fighter Follow:')) {
-        type = 'fighter';
-      }
-
-      reasons.push({
-        type,
-        source: rule.name,
-        ruleId: rule.id,
-        isActive: true, // Rule is active and matches dynamically
-      });
-    }
-  }
 
   const willBeNotified = reasons.some(r => r.isActive);
 

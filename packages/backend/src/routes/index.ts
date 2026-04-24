@@ -571,18 +571,54 @@ export async function registerRoutes(fastify: FastifyInstance) {
             }
           }
 
-          // Fetch notification reasons for each fight if user is authenticated
-          // Skip for past events - notification reasons are irrelevant for completed fights
+          // Fetch notification reasons for each fight if user is authenticated.
+          // Skip for past events - notification reasons are irrelevant for completed fights.
+          //
+          // Only manual per-fight bells produce notifications now, so the source of
+          // truth is `fightNotificationMatch` (pre-synced on toggle). One query
+          // replaces the old per-fight loop through the rule engine's dynamic
+          // evaluation path (which used to also cover hype/fighter-follow rules).
           let notificationReasonsByFight = new Map<string, { willBeNotified: boolean; reasons: any[] }>();
           if (userId && type !== 'past') {
-            // Batch fetch notification reasons for all fights
-            const notificationPromises = allFightIds.map(async (fightId: string) => {
-              const reasons = await notificationRuleEngine.getNotificationReasonsForFight(userId, fightId);
-              return { fightId, reasons };
+            const matches = await fastify.prisma.fightNotificationMatch.findMany({
+              where: {
+                userId,
+                fightId: { in: allFightIds },
+                isActive: true,
+              },
+              select: {
+                fightId: true,
+                ruleId: true,
+                isActive: true,
+                rule: { select: { name: true } },
+              },
             });
-            const notificationResults = await Promise.all(notificationPromises);
-            for (const result of notificationResults) {
-              notificationReasonsByFight.set(result.fightId, result.reasons);
+
+            for (const match of matches) {
+              let reasonType: 'manual' | 'fighter' | 'rule' = 'rule';
+              if (match.rule.name.startsWith('Manual Fight Follow:')) {
+                reasonType = 'manual';
+              } else if (match.rule.name.startsWith('Fighter Follow:')) {
+                reasonType = 'fighter';
+              }
+
+              const reason = {
+                type: reasonType,
+                source: match.rule.name,
+                ruleId: match.ruleId,
+                isActive: match.isActive,
+              };
+
+              const existing = notificationReasonsByFight.get(match.fightId);
+              if (existing) {
+                existing.reasons.push(reason);
+                existing.willBeNotified = existing.willBeNotified || match.isActive;
+              } else {
+                notificationReasonsByFight.set(match.fightId, {
+                  willBeNotified: match.isActive,
+                  reasons: [reason],
+                });
+              }
             }
           }
 
