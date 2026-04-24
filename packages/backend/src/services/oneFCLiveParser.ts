@@ -4,7 +4,7 @@
  * Detects changes in event status, fight status, and results
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, WeightClass, Sport, Gender } from '@prisma/client';
 import { OneFCEventData, OneFCFightData } from './oneFCLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
@@ -117,6 +117,108 @@ async function notifyNextFight(eventId: string, completedFightOrder: number): Pr
   }
 }
 
+// ============== LIVE-INSERT HELPERS ==============
+//
+// When the live scraper surfaces a fight the daily scraper never imported
+// (common when ONE FC publishes late additions — e.g. the Inner Circle
+// companion card — after the last daily run), we insert it on the fly so
+// users see the full card even though we found it live. These helpers are
+// scoped to that path; the daily scraper still owns the canonical import
+// and will overwrite gender/sport/weightClass with better-parsed values on
+// its next run.
+
+function parseWeightClassEnum(weightClassStr: string): WeightClass | null {
+  const normalized = (weightClassStr || '').toLowerCase();
+  if (normalized.includes('light heavy')) return WeightClass.LIGHT_HEAVYWEIGHT;
+  if (normalized.includes('heavyweight')) return WeightClass.HEAVYWEIGHT;
+  if (normalized.includes('middleweight')) return WeightClass.MIDDLEWEIGHT;
+  if (normalized.includes('welterweight')) return WeightClass.WELTERWEIGHT;
+  if (normalized.includes('lightweight')) return WeightClass.LIGHTWEIGHT;
+  if (normalized.includes('featherweight')) return WeightClass.FEATHERWEIGHT;
+  if (normalized.includes('bantamweight')) return WeightClass.BANTAMWEIGHT;
+  if (normalized.includes('flyweight')) return WeightClass.FLYWEIGHT;
+  // ONE's atomweight maps to strawweight (matches daily scraper)
+  if (normalized.includes('strawweight') || normalized.includes('atomweight')) return WeightClass.STRAWWEIGHT;
+  return null;
+}
+
+function parseSportEnum(sportStr: string): Sport {
+  const normalized = (sportStr || '').toLowerCase();
+  if (normalized.includes('muay thai')) return Sport.MUAY_THAI;
+  if (normalized.includes('kickboxing')) return Sport.KICKBOXING;
+  return Sport.MMA;
+}
+
+async function upsertFighterForLiveInsert(
+  fighter: { firstName: string; lastName: string },
+  sport: Sport,
+  weightClass: WeightClass | null
+): Promise<{ id: string; firstName: string; lastName: string } | null> {
+  const firstName = (fighter.firstName || '').trim();
+  const lastName = (fighter.lastName || '').trim();
+  if (!firstName && !lastName) return null;
+
+  try {
+    return await prisma.fighter.upsert({
+      where: { firstName_lastName: { firstName, lastName } },
+      update: {}, // don't clobber anything the daily scraper set
+      create: {
+        firstName,
+        lastName,
+        gender: Gender.MALE, // best-effort default; daily scraper corrects
+        sport,
+        weightClass: weightClass || undefined,
+        isActive: true,
+      },
+      select: { id: true, firstName: true, lastName: true },
+    });
+  } catch (err) {
+    console.error(`    ❌ Failed to upsert fighter ${firstName} ${lastName}:`, err);
+    return null;
+  }
+}
+
+async function createFightFromScrape(
+  eventId: string,
+  scrapedFight: OneFCFightData
+): Promise<any | null> {
+  try {
+    const weightClass = parseWeightClassEnum(scrapedFight.weightClass);
+    const sport = parseSportEnum(scrapedFight.sport);
+
+    const fighter1 = await upsertFighterForLiveInsert(scrapedFight.fighterA, sport, weightClass);
+    const fighter2 = await upsertFighterForLiveInsert(scrapedFight.fighterB, sport, weightClass);
+    if (!fighter1 || !fighter2) return null;
+    if (fighter1.id === fighter2.id) {
+      console.warn('    ⚠ Refusing to create fight with identical fighter1/fighter2');
+      return null;
+    }
+
+    const titleName = scrapedFight.isTitle
+      ? `ONE ${scrapedFight.weightClass} World Championship`
+      : undefined;
+
+    return await prisma.fight.create({
+      data: {
+        eventId,
+        fighter1Id: fighter1.id,
+        fighter2Id: fighter2.id,
+        weightClass,
+        isTitle: scrapedFight.isTitle,
+        titleName,
+        scheduledRounds: scrapedFight.isTitle ? 5 : 3,
+        orderOnCard: scrapedFight.order,
+        cardType: 'Main Card',
+        fightStatus: 'UPCOMING',
+      },
+      include: { fighter1: true, fighter2: true },
+    });
+  } catch (err) {
+    console.error('    ❌ Failed to create fight from scrape:', err);
+    return null;
+  }
+}
+
 // ============== MAIN PARSER FUNCTION ==============
 
 /**
@@ -199,15 +301,25 @@ export async function parseOneFCLiveData(
 
       console.log(`  🔎 Looking for: ${fighterAName} vs ${fighterBName} (tokens: ${scrapedFight.fighterA.firstName}/${fighterALast} vs ${scrapedFight.fighterB.firstName}/${fighterBLast})`);
 
-      const dbFight = findFightByFighters(
+      let dbFight = findFightByFighters(
         event.fights,
         { firstName: scrapedFight.fighterA.firstName, lastName: fighterALast },
         { firstName: scrapedFight.fighterB.firstName, lastName: fighterBLast },
       );
 
       if (!dbFight) {
-        console.warn(`    ⚠ Fight not found in DB`);
-        continue;
+        // Late-addition path: daily scraper never imported this matchup
+        // (e.g. ONE FC "Inner Circle" card added after the last daily run).
+        // Create the fight live so the rest of the poll can update it
+        // normally and cancellation detection doesn't flag it as missing.
+        console.log(`    ➕ Fight not in DB — inserting via live scraper`);
+        const created = await createFightFromScrape(eventId, scrapedFight);
+        if (!created) {
+          console.warn(`    ⚠ Could not create fight, skipping`);
+          continue;
+        }
+        dbFight = created;
+        event.fights.push(created);
       }
 
       console.log(`    ✓ Found: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
@@ -305,6 +417,20 @@ export async function parseOneFCLiveData(
     let cancelledCount = 0;
     let unCancelledCount = 0;
 
+    // Guard against partial/glitchy scrapes mass-cancelling legit fights.
+    // If the scrape returned materially fewer fights than the DB has
+    // (non-cancelled), it's most likely a transient page render issue —
+    // skip cancellation this poll. Un-cancellation is always safe to run
+    // since it only triggers when the fight *reappears* in the scrape.
+    const dbNonCancelledCount = event.fights.filter(f => f.fightStatus !== 'CANCELLED').length;
+    const scrapedCount = liveData.fights.length;
+    const cancellationSafetyFloor = Math.max(2, Math.floor(dbNonCancelledCount * 0.75));
+    const scrapeLooksComplete = scrapedCount >= cancellationSafetyFloor;
+
+    if (!scrapeLooksComplete && dbNonCancelledCount > 0) {
+      console.log(`  ⚠️  Skipping cancellation (scrape returned ${scrapedCount} fights, DB has ${dbNonCancelledCount} non-cancelled, need ≥${cancellationSafetyFloor}). Treating as partial scrape.`);
+    }
+
     for (const dbFight of event.fights) {
       // Skip fights that are already complete
       if (dbFight.fightStatus === 'COMPLETED') {
@@ -331,7 +457,8 @@ export async function parseOneFCLiveData(
         unCancelledCount++;
       }
       // Case 2: Fight is NOT cancelled and missing from scraped data -> CANCEL it
-      else if (dbFight.fightStatus !== 'CANCELLED' && !fightIsInScrapedData) {
+      // (only if this scrape looks complete — otherwise defer to a later poll)
+      else if (dbFight.fightStatus !== 'CANCELLED' && !fightIsInScrapedData && scrapeLooksComplete) {
         console.log(`  ⚠️  Fight missing from scraped data: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
 
         // Only mark as cancelled if event has started (to avoid false positives before event begins)
