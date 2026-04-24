@@ -174,14 +174,13 @@ export default function LiveEventsScreen() {
   const keyExtractor = useCallback((item: Event) => item.id, []);
 
   const emptyMessage = React.useMemo(() => {
-    if (selectedOrgs.size === 0) return 'No live events right now';
+    if (selectedOrgs.size === 0) return 'No live events currently';
     const orgNames = Array.from(selectedOrgs).join(', ');
     if (selectedOrgs.size === 1) return `No ${orgNames} events live currently`;
     return `No ${orgNames} events live currently`;
   }, [selectedOrgs]);
 
   const ListEmptyComponent = useCallback(() => {
-    if (isFetching) return null;
     return (
       <View style={styles.emptyContainer}>
         <Text style={[styles.noEventsText, { color: colors.textSecondary }]}>
@@ -189,7 +188,7 @@ export default function LiveEventsScreen() {
         </Text>
       </View>
     );
-  }, [colors, styles, isFetching, emptyMessage]);
+  }, [colors, styles, emptyMessage]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
