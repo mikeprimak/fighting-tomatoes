@@ -341,6 +341,7 @@ export default function UpcomingEventsScreen() {
             onRefresh={onRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
+            progressBackgroundColor="#181818"
           />
         }
         // Lazy loading - load more events when reaching end

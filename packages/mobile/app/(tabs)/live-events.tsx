@@ -228,6 +228,7 @@ export default function LiveEventsScreen() {
               onRefresh={onRefresh}
               tintColor={colors.primary}
               colors={[colors.primary]}
+              progressBackgroundColor="#181818"
             />
           }
         />

@@ -184,6 +184,7 @@ export default function TopFightsScreen() {
             onRefresh={onRefresh}
             tintColor={colors.primary}
             colors={[colors.primary]}
+            progressBackgroundColor="#181818"
           />
         }
       />
