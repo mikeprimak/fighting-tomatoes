@@ -5,6 +5,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Switch,
+  Linking,
+  Platform,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,12 +17,15 @@ import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../store/AuthContext';
 import { useOrgFilter } from '../../store/OrgFilterContext';
+import { useSpoilerFree } from '../../store/SpoilerFreeContext';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { CustomAlert } from '../../components/CustomAlert';
 import { CommentCard, PreFightCommentCard } from '../../components';
 import OrgFilterTabs from '../../components/OrgFilterTabs';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import { api, apiService } from '../../services/api';
+import { notificationService } from '../../services/notificationService';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import PredictionAccuracyChart from '../../components/PredictionAccuracyChart';
 import SectionContainer from '../../components/SectionContainer';
@@ -86,6 +92,54 @@ const getOrdinalSuffix = (n: number): string => {
 export default function ProfileScreen() {
   const { user, logout, refreshUserData, isAuthenticated } = useAuth();
   const { selectedOrgs, filterByPromotion } = useOrgFilter();
+  const { spoilerFreeMode, setSpoilerFreeMode } = useSpoilerFree();
+  const queryClient = useQueryClient();
+
+  // Notification permission + master toggle state
+  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    (async () => {
+      try {
+        const hasPermission = await notificationService.requestNotificationPermissions();
+        setPermissionStatus(hasPermission ? 'granted' : 'denied');
+      } catch {}
+      try {
+        const response = await apiService.getNotificationPreferences();
+        if (response?.preferences) {
+          setNotificationsEnabled(!!response.preferences.notificationsEnabled);
+        }
+      } catch {}
+    })();
+  }, [isAuthenticated]);
+
+  const updateNotificationsEnabled = async (value: boolean) => {
+    const old = notificationsEnabled;
+    setNotificationsEnabled(value);
+    try {
+      await apiService.updateNotificationPreferences({ notificationsEnabled: value });
+      queryClient.invalidateQueries({ queryKey: ['fights'] });
+      queryClient.invalidateQueries({ queryKey: ['fight'] });
+      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
+    } catch {
+      setNotificationsEnabled(old);
+      showError('Failed to update preference');
+    }
+  };
+
+  const requestPermissions = async () => {
+    const hasPermission = await notificationService.requestNotificationPermissions();
+    setPermissionStatus(hasPermission ? 'granted' : 'denied');
+  };
+
+  const openAppSettings = () => {
+    if (Platform.OS === 'ios') Linking.openURL('app-settings:');
+    else Linking.openSettings();
+  };
 
   // Refresh user data when org filter changes
   useEffect(() => {
@@ -666,6 +720,107 @@ export default function ProfileScreen() {
           )}
         </SectionContainer>}
 
+        {/* Settings */}
+        <View style={styles.settingsContainer}>
+          {/* Account */}
+          <Text style={[styles.settingsGroupLabel, { color: colors.textSecondary }]}>ACCOUNT</Text>
+          <View style={[styles.settingsGroup, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+            <TouchableOpacity
+              style={[styles.settingsRow, { borderBottomColor: colors.border }]}
+              onPress={() => router.push('/change-display-name')}
+            >
+              <View style={styles.settingsRowLeft}>
+                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Display Name</Text>
+                <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {user?.displayName || '—'}
+                </Text>
+              </View>
+              <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+            </TouchableOpacity>
+
+            <View style={[styles.settingsRow, { borderBottomColor: colors.border }]}>
+              <View style={styles.settingsRowLeft}>
+                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Email</Text>
+                <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {user?.email || '—'}
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.settingsRow, { borderBottomWidth: 0 }]}
+              onPress={() => router.push('/advanced-settings')}
+            >
+              <View style={styles.settingsRowLeft}>
+                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Advanced Settings</Text>
+              </View>
+              <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Preferences */}
+          <Text style={[styles.settingsGroupLabel, { color: colors.textSecondary }]}>PREFERENCES</Text>
+          <View style={[styles.settingsGroup, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+            <View style={[styles.settingsRow, { borderBottomWidth: 0 }]}>
+              <View style={styles.settingsRowLeft}>
+                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Spoiler-Free Mode</Text>
+                <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+                  Hide fight outcomes until you rate
+                </Text>
+              </View>
+              <Switch
+                value={spoilerFreeMode}
+                onValueChange={setSpoilerFreeMode}
+                trackColor={{ false: '#767577', true: '#4CAF50' }}
+                thumbColor={spoilerFreeMode ? '#FFFFFF' : '#f4f3f4'}
+              />
+            </View>
+          </View>
+
+          {/* Notifications */}
+          <Text style={[styles.settingsGroupLabel, { color: colors.textSecondary }]}>NOTIFICATIONS</Text>
+          {permissionStatus !== 'granted' && (
+            <View style={[styles.permissionBanner, { backgroundColor: colors.warning + '20', borderColor: colors.warning }]}>
+              <FontAwesome name="exclamation-triangle" size={20} color={colors.warning} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.permissionTitle, { color: colors.text }]}>Notifications off</Text>
+                <Text style={[styles.permissionText, { color: colors.textSecondary }]}>
+                  {permissionStatus === 'denied'
+                    ? 'Enable them in your device settings.'
+                    : 'Grant permission to receive push notifications.'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.permissionButton, { backgroundColor: colors.primary }]}
+                onPress={permissionStatus === 'denied' ? openAppSettings : requestPermissions}
+              >
+                <Text style={styles.permissionButtonText}>
+                  {permissionStatus === 'denied' ? 'Open Settings' : 'Enable'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          <View style={[styles.settingsGroup, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+            <View style={[styles.settingsRow, { borderBottomWidth: 0 }]}>
+              <View style={styles.settingsRowLeft}>
+                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Allow Notifications</Text>
+                <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+                  Get notified when followed fights are about to start
+                </Text>
+              </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={updateNotificationsEnabled}
+                trackColor={{ false: '#767577', true: '#4CAF50' }}
+                thumbColor={notificationsEnabled ? '#FFFFFF' : '#f4f3f4'}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* My Activity */}
+        <Text style={[styles.activityHeader, { color: colors.text }]}>MY ACTIVITY</Text>
+
         {/* Average Rating */}
         <SectionContainer
           title="My Ratings"
@@ -926,26 +1081,6 @@ export default function ProfileScreen() {
         <View style={styles.actionsContainer}>
           <TouchableOpacity
             style={[styles.actionButtonFull, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => router.push('/settings')}
-          >
-            <View style={styles.actionButtonContent}>
-              <FontAwesome name="bell" size={18} color={colors.text} />
-              <Text style={[styles.actionButtonText, { color: colors.text }]}>Notification Settings</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButtonFull, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => router.push('/edit-profile')}
-          >
-            <View style={styles.actionButtonContent}>
-              <FontAwesome name="user" size={18} color={colors.text} />
-              <Text style={[styles.actionButtonText, { color: colors.text }]}>Edit Profile</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButtonFull, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
             onPress={() => router.push('/send-feedback')}
           >
             <View style={styles.actionButtonContent}>
@@ -1118,8 +1253,82 @@ const createStyles = (colors: any) => StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
-  actionsContainer: {
+  settingsContainer: {
     marginTop: 8,
+    marginHorizontal: 12,
+  },
+  activityHeader: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginTop: 24,
+    marginBottom: 4,
+    marginHorizontal: 16,
+  },
+  settingsGroupLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1,
+    marginTop: 16,
+    marginBottom: 6,
+    marginLeft: 4,
+  },
+  settingsGroup: {
+    borderRadius: 10,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    minHeight: 54,
+  },
+  settingsRowLeft: {
+    flex: 1,
+    marginRight: 12,
+  },
+  settingsRowLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  settingsRowValue: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  permissionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 8,
+    gap: 10,
+  },
+  permissionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  permissionText: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  permissionButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  permissionButtonText: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  actionsContainer: {
+    marginTop: 16,
     marginHorizontal: 12,
     gap: 11,
   },
