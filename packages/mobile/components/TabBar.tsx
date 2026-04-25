@@ -5,7 +5,7 @@ import { Tabs, useRouter, usePathname } from 'expo-router';
 import { useColorScheme, Text, View, Image, TouchableOpacity, Platform } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { useAuth } from '../store/AuthContext';
-import { useHasLiveEvent } from '../hooks/useHasLiveEvent';
+import { useAnyLiveEvent } from '../hooks/useHasLiveEvent';
 import { useSearch } from '../store/SearchContext';
 
 /**
@@ -118,7 +118,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { user } = useAuth();
-  const hasLiveEvent = useHasLiveEvent();
+  const anyLiveEvent = useAnyLiveEvent();
   const { toggleSearch, isSearchVisible } = useSearch();
 
   return (
@@ -176,12 +176,28 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
           href: '/(tabs)/live-events', // Always show live events tab
           title: 'Live Events',
           tabBarIcon: ({ color, focused }) => (
-            <FontAwesome
-              name="podcast"
-              size={24}
-              style={{ marginBottom: -3 }}
-              color={focused ? colors.primary : color}
-            />
+            <View style={{ width: 24, height: 24, marginBottom: -3 }}>
+              <FontAwesome
+                name="podcast"
+                size={24}
+                color={focused ? colors.primary : color}
+              />
+              {anyLiveEvent && (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: -2,
+                    right: -4,
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: '#FF3B30',
+                    borderWidth: 1,
+                    borderColor: colors.card,
+                  }}
+                />
+              )}
+            </View>
           ),
           tabBarLabel: ({ focused }) => (
             <Text style={{ fontSize: 10, color: focused ? colors.primary : colors.tabIconDefault, textAlign: 'center' }}>
@@ -218,7 +234,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
           ),
           tabBarLabel: ({ color }) => (
             <Text style={{ fontSize: 10, color, textAlign: 'center' }}>
-              {hasLiveEvent ? 'Upcoming' : 'Upcoming Events'}
+              Upcoming
             </Text>
           ),
           headerTitle: () => <HeaderLogo title="Upcoming Events" />,
