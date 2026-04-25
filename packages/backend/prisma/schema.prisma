@@ -488,6 +488,10 @@ model FightReview {
   upvotes         Int       @default(0)
   downvotes       Int       @default(0)
 
+  // Highest tier (1, 5, 10, 25, 50, 100) for which we've already pushed a like-milestone
+  // notification to the author. Used to avoid duplicate / oscillating sends.
+  lastNotifiedLikeCount Int @default(0)
+
   // Timestamps
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -519,6 +523,10 @@ model PreFightComment {
 
   // Vote counts
   upvotes         Int       @default(0)
+
+  // Highest tier (1, 5, 10, 25, 50, 100) for which we've already pushed a like-milestone
+  // notification to the author. Used to avoid duplicate / oscillating sends.
+  lastNotifiedLikeCount Int @default(0)
 
   // Relations
   votes           PreFightCommentVote[]
