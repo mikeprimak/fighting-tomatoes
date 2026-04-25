@@ -58,6 +58,7 @@ interface ScrapedPFLEvent {
   eventStartTime?: string;
   eventStartTimeISO?: string; // ISO format datetime from PFL scripts
   prelimStartTime?: string;
+  earlyPrelimStartTime?: string;
 }
 
 interface ScrapedPFLEventsData {
@@ -337,6 +338,7 @@ async function importPFLEvents(
 
     // Parse prelim start time (PFL times are ET)
     const prelimStartTime = eventTimeToUTC(eventDate, eventData.prelimStartTime, 'America/New_York');
+    const earlyPrelimStartTime = eventTimeToUTC(eventDate, eventData.earlyPrelimStartTime, 'America/New_York');
 
     // Try to find existing event by URL first, then by name+date
     let event = await prisma.event.findFirst({
@@ -363,6 +365,7 @@ async function importPFLEvents(
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
           prelimStartTime: prelimStartTime || undefined,
+          earlyPrelimStartTime: earlyPrelimStartTime || undefined,
           scraperType: 'tapology',
           ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
         }
@@ -389,6 +392,7 @@ async function importPFLEvents(
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
           prelimStartTime: prelimStartTime || undefined,
+          earlyPrelimStartTime: earlyPrelimStartTime || undefined,
           scraperType: 'tapology',
           eventStatus: initialStatus,
         }

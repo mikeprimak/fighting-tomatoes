@@ -266,10 +266,18 @@ async function scrapeEventPage(browser, eventUrl) {
         data.dateText = dateMatch[0].trim();
       }
 
-      // Extract event start time - try targeted CSS selector first, then fall back to page text
-      // Tapology shows date/time in: <li><span>Date/Time:</span><span>Sunday 04.05.2026 at 06:30 PM ET</span></li>
-      const dateTimeLi = document.querySelector('li span.font-bold');
-      if (dateTimeLi && /date\s*\/?\s*time/i.test(dateTimeLi.textContent)) {
+      // Extract event start time - iterate ALL li > span.font-bold to find the
+      // one labeled "Date/Time:". Tapology format: <li><span>Date/Time:</span>
+      // <span>Sunday 04.05.2026 at 06:30 PM ET</span></li>
+      // Fight-row labels (e.g. "[W]", "[Main Event]") are also `li span.font-bold`
+      // and on some renderings appear earlier in DOM order, so querySelector
+      // (first match) would land on the wrong span and skip extraction.
+      const fontBoldLabels_dt = document.querySelectorAll('li span.font-bold');
+      let dateTimeLi = null;
+      for (const lbl_dt of fontBoldLabels_dt) {
+        if (/date\s*\/?\s*time/i.test(lbl_dt.textContent)) { dateTimeLi = lbl_dt; break; }
+      }
+      if (dateTimeLi) {
         const valueSpan = dateTimeLi.parentElement.querySelector('span.text-neutral-700, span:not(.font-bold)');
         if (valueSpan) {
           const dtText = valueSpan.textContent || '';
