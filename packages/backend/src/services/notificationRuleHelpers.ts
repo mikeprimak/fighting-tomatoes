@@ -30,16 +30,43 @@ export async function manageManualFightRule(
   });
 
   if (existingRule) {
-    await prisma.$transaction([
-      prisma.userNotificationRule.update({
+    await prisma.$transaction(async (tx) => {
+      await tx.userNotificationRule.update({
         where: { id: existingRule.id },
         data: { isActive: enabled },
-      }),
-      prisma.fightNotificationMatch.updateMany({
-        where: { ruleId: existingRule.id },
-        data: { isActive: enabled },
-      }),
-    ]);
+      });
+
+      if (enabled) {
+        // Upsert (not updateMany) so an orphaned rule with no match row —
+        // possible from a pre-fix syncRuleMatches that never completed —
+        // gets a match row created here instead of silently no-op'ing.
+        await tx.fightNotificationMatch.upsert({
+          where: {
+            userId_fightId_ruleId: {
+              userId,
+              fightId,
+              ruleId: existingRule.id,
+            },
+          },
+          create: {
+            userId,
+            fightId,
+            ruleId: existingRule.id,
+            isActive: true,
+            notificationSent: false,
+          },
+          update: {
+            isActive: true,
+            matchedAt: new Date(),
+          },
+        });
+      } else {
+        await tx.fightNotificationMatch.updateMany({
+          where: { ruleId: existingRule.id },
+          data: { isActive: false },
+        });
+      }
+    });
   } else if (enabled) {
     await prisma.$transaction(async (tx) => {
       const newRule = await tx.userNotificationRule.create({
@@ -53,24 +80,13 @@ export async function manageManualFightRule(
         },
       });
 
-      await tx.fightNotificationMatch.upsert({
-        where: {
-          userId_fightId_ruleId: {
-            userId,
-            fightId,
-            ruleId: newRule.id,
-          },
-        },
-        create: {
+      await tx.fightNotificationMatch.create({
+        data: {
           userId,
           fightId,
           ruleId: newRule.id,
           isActive: true,
           notificationSent: false,
-        },
-        update: {
-          isActive: true,
-          matchedAt: new Date(),
         },
       });
     });
