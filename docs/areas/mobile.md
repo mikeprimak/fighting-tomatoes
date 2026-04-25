@@ -18,10 +18,24 @@ React Native (Expo) app for iOS and Android. Combat sports fight rating, hype sc
 - Android `eas submit` fails — upload `.aab` manually via Play Console
 - iOS: create new version in App Store Connect (can't swap builds on existing version)
 
-### Google Sign-In OAuth clients (as of 2026-04-18)
-All Google Sign-In references are aligned to the **good-fights-app** Google Cloud project (project number `499367908516`). The older `fight-app-ba5cd` project (`1082468109842`) still hosts FCM push notifications — that's a separate concern and is fine to keep split. Backend `GOOGLE_CLIENT_ID` env var accepts a comma-separated list of audiences so old builds (legacy `1082468109842-pehb...` audience) keep working until adoption of 2.0.2/36+ is high; drop the legacy value afterward.
+### Google Sign-In OAuth clients (as of 2026-04-25 — split intentionally across two GCP projects)
 
-iOS URL scheme `com.googleusercontent.apps.499367908516-j03poule51s7sfvpvdufna0upqa3oseg` in `app.json` `CFBundleURLTypes` **must match** the iOS client ID in `hooks/useGoogleAuth.ts`. A mismatch causes an instant native crash on tap of "Sign in with Google" on iOS (iOS Google Sign-In SDK hard-asserts on missing URL scheme). See `docs/daily/2026-04-18.md` for full incident notes.
+**Current setup** (in `hooks/useGoogleAuth.ts`):
+- `webClientId` → `1082468109842-pehb...` (project **fight-app-ba5cd**) — used by Android for the on-device handshake
+- `iosClientId` → `499367908516-j03p...` (project **good-fights-app**) — used by iOS
+
+**Why the split:** Android Google Sign-In does a local handshake against `(package_name, SHA-1)` before any network call. The Android OAuth client registered with the Play Store **app signing key** SHA-1 (`D8:FA:1B:B6:EA:EA:64:0D:53:2A:C6:64:89:C0:77:AD:10:FC:DE:59`) lives in the old `fight-app-ba5cd` project. Google enforces `(package_name, SHA-1)` uniqueness globally across all GCP projects, so we can't duplicate it onto `good-fights-app` without deleting it from `fight-app-ba5cd` first — and that would break any user still on a pre-versionCode-36 app version. So Android stays on old project, iOS stays on new project. See `docs/decisions/0002-google-oauth-cross-project-split.md`.
+
+**Backend audience config:** Render env `GOOGLE_CLIENT_ID` is a comma-separated list including BOTH `1082468109842-pehb...` (Android audience) AND `499367908516-j03p...` (iOS audience). **Do NOT remove the `1082468109842-pehb...` entry** — it's load-bearing for ALL Android sign-ins, not legacy. (Earlier docs said to drop it on 2026-05-10 — that was based on the pre-2026-04-25 understanding and is no longer correct.)
+
+**iOS URL scheme:** `com.googleusercontent.apps.499367908516-j03poule51s7sfvpvdufna0upqa3oseg` in `app.json` `CFBundleURLTypes` **must match** the iOS client ID. A mismatch causes an instant native crash on tap of "Sign in with Google" on iOS (iOS Google Sign-In SDK hard-asserts on missing URL scheme).
+
+**Push notifications (FCM)** still live on the old `fight-app-ba5cd` project — independent concern, no change.
+
+**History:**
+- Pre-4/18: both client IDs on old project. Worked everywhere.
+- 4/18: flipped both to new project to fix an iOS native crash from URL-scheme/client-ID mismatch. Inadvertently broke Android (new project's Android OAuth client had the upload key SHA-1, not the app signing key). See `docs/daily/2026-04-18.md`.
+- 4/25: split — `webClientId` back to old project (Android), `iosClientId` stays on new project. See `docs/daily/2026-04-25.md`.
 
 ## Key Features
 - Hype upcoming fights (1-10 flame rating)
