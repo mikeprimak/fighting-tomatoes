@@ -445,6 +445,22 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         }
       }
 
+      // Extract early card / early prelim start time (pflmma.com lists this
+      // separately when applicable, e.g. ESPN+ early card before the main
+      // prelim broadcast).
+      let earlyPrelimStartTime = null;
+      const earlyPatterns = [
+        /EARLY\s*(?:PRELIM(?:S|INARY)?|CARD)\s*[^|\n]*\|\s*(\d{1,2}:\d{2}\s*(?:am|pm))/i,
+        /EARLY\s*(?:PRELIM(?:S|INARY)?|CARD)\s*.*?(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT)/i,
+      ];
+      for (const pattern of earlyPatterns) {
+        const match = prelimPageText.match(pattern);
+        if (match) {
+          earlyPrelimStartTime = match[1].trim().toUpperCase();
+          break;
+        }
+      }
+
       // Helper function to check if a string is a valid fighter name
       function isValidFighterName(name) {
         if (!name || name.length < 2 || name.length > 50) return false;
@@ -837,6 +853,7 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         eventStartTime,
         eventStartTimeISO,
         prelimStartTime,
+        earlyPrelimStartTime,
         fights: allFights
       };
     });
