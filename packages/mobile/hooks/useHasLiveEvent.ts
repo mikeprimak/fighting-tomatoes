@@ -31,6 +31,23 @@ export function useHasLiveEvent() {
 }
 
 /**
+ * Returns true if any event is currently LIVE, regardless of the user's org filter.
+ * Used for the Live Events tab red-dot indicator — the badge should appear even if
+ * the live event belongs to a promotion the user has filtered out.
+ */
+export function useAnyLiveEvent() {
+  const { data: eventsData } = useQuery({
+    queryKey: ['upcomingEvents', 'liveCheck'],
+    queryFn: () => apiService.getEvents({ type: 'upcoming', limit: 20 }),
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
+  });
+
+  const allEvents = eventsData?.events || [];
+  return allEvents.some((event: Event) => event.eventStatus === 'LIVE');
+}
+
+/**
  * Same as useHasLiveEvent but also returns loading state,
  * so callers can wait before acting on the result.
  */
