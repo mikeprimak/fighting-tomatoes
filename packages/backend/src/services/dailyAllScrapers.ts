@@ -14,6 +14,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import { EmailService } from '../utils/email';
+import { getOrg, SHARED_DAILY_SCRAPER_ORG_KEYS, type OrgKey } from '../config/orgs';
 
 // Import functions from each parser
 import { importBKFCData } from './bkfcDataParser';
@@ -42,100 +43,56 @@ export interface OrganizationScraperResults {
   error?: string;
 }
 
-type OrganizationType = 'BKFC' | 'PFL' | 'ONEFC' | 'MATCHROOM' | 'GOLDENBOY' | 'GOLDSTAR' | 'TOPRANK' | 'OKTAGON' | 'RIZIN' | 'ZUFFA_BOXING' | 'DIRTY_BOXING' | 'KARATE_COMBAT' | 'MVP' | 'RAF';
+type OrganizationType = Exclude<OrgKey, 'UFC'>;
 
-// Config for each organization's scraper
-const SCRAPER_CONFIG: Record<OrganizationType, {
+// Maps the importFnName from the registry to the actual imported function reference.
+// (The registry can't hold function references because the registry must be importable
+// from anywhere; per-org parsers would create circular imports.)
+const IMPORT_FN_BY_NAME: Record<string, (options?: any) => Promise<void>> = {
+  importBKFCData,
+  importPFLData,
+  importOneFCData,
+  importMatchroomData,
+  importGoldenBoyData,
+  importGoldStarData,
+  importTopRankData,
+  importOktagonData,
+  importRizinData,
+  importZuffaBoxingData,
+  importDirtyBoxingData,
+  importKarateCombatData,
+  importMVPData,
+  importRAFData,
+};
+
+interface ScraperConfigEntry {
   scraperFile: string;
   importFn: (options?: any) => Promise<void>;
   displayName: string;
-  timeout: number; // in ms
-}> = {
-  BKFC: {
-    scraperFile: 'scrapeAllBKFCData.js',
-    importFn: importBKFCData,
-    displayName: 'BKFC (Bare Knuckle FC)',
-    timeout: 1500000, // 25 minutes
+  timeout: number;
+}
+
+// Config for each organization's scraper — derived from the org registry.
+const SCRAPER_CONFIG: Record<OrganizationType, ScraperConfigEntry> = SHARED_DAILY_SCRAPER_ORG_KEYS.reduce(
+  (acc, key) => {
+    const org = getOrg(key);
+    if (!org.dailyScraper) {
+      throw new Error(`Org ${key} is in SHARED_DAILY_SCRAPER_ORG_KEYS but has no dailyScraper config`);
+    }
+    const importFn = IMPORT_FN_BY_NAME[org.dailyScraper.importFnName];
+    if (!importFn) {
+      throw new Error(`Org ${key} references importFn '${org.dailyScraper.importFnName}' which is not in IMPORT_FN_BY_NAME`);
+    }
+    acc[key] = {
+      scraperFile: org.dailyScraper.scraperFile,
+      importFn,
+      displayName: org.longDisplayName,
+      timeout: org.dailyScraper.timeoutMs,
+    };
+    return acc;
   },
-  PFL: {
-    scraperFile: 'scrapeAllPFLData.js',
-    importFn: importPFLData,
-    displayName: 'PFL (Professional Fighters League)',
-    timeout: 1500000, // 25 minutes
-  },
-  ONEFC: {
-    scraperFile: 'scrapeAllOneFCData.js',
-    importFn: importOneFCData,
-    displayName: 'ONE Championship',
-    timeout: 1500000, // 25 minutes
-  },
-  MATCHROOM: {
-    scraperFile: 'scrapeAllMatchroomData.js',
-    importFn: importMatchroomData,
-    displayName: 'Matchroom Boxing',
-    timeout: 1500000, // 25 minutes
-  },
-  GOLDENBOY: {
-    scraperFile: 'scrapeAllGoldenBoyData.js',
-    importFn: importGoldenBoyData,
-    displayName: 'Golden Boy Promotions',
-    timeout: 1500000, // 25 minutes
-  },
-  GOLDSTAR: {
-    scraperFile: 'scrapeGoldStarTapology.js',
-    importFn: importGoldStarData,
-    displayName: 'Gold Star Promotions',
-    timeout: 1500000, // 25 minutes
-  },
-  TOPRANK: {
-    scraperFile: 'scrapeAllTopRankData.js',
-    importFn: importTopRankData,
-    displayName: 'Top Rank Boxing',
-    timeout: 1500000, // 25 minutes
-  },
-  OKTAGON: {
-    scraperFile: 'scrapeAllOktagonData.js',
-    importFn: importOktagonData,
-    displayName: 'OKTAGON MMA',
-    timeout: 1500000, // 25 minutes
-  },
-  RIZIN: {
-    scraperFile: 'scrapeAllRizinData.js',
-    importFn: importRizinData,
-    displayName: 'RIZIN Fighting Federation',
-    timeout: 1500000, // 25 minutes
-  },
-  ZUFFA_BOXING: {
-    scraperFile: 'scrapeZuffaBoxingTapology.js',
-    importFn: importZuffaBoxingData,
-    displayName: 'Zuffa Boxing',
-    timeout: 1500000, // 25 minutes
-  },
-  DIRTY_BOXING: {
-    scraperFile: 'scrapeDirtyBoxingTapology.js',
-    importFn: importDirtyBoxingData,
-    displayName: 'Dirty Boxing Championship',
-    timeout: 1500000, // 25 minutes
-  },
-  KARATE_COMBAT: {
-    scraperFile: 'scrapeKarateCombatTapology.js',
-    importFn: importKarateCombatData,
-    displayName: 'Karate Combat',
-    timeout: 1500000, // 25 minutes
-  },
-  MVP: {
-    scraperFile: 'scrapeMVPTapology.js',
-    importFn: importMVPData,
-    displayName: 'Most Valuable Promotions',
-    timeout: 1500000, // 25 minutes
-  },
-  RAF: {
-    scraperFile: 'scrapeAllRAFData.js',
-    importFn: importRAFData,
-    displayName: 'Real American Freestyle',
-    timeout: 600000, // 10 minutes (cheerio-based, no browser)
-  },
-};
+  {} as Record<OrganizationType, ScraperConfigEntry>,
+);
 
 /**
  * Run scraper for a specific organization
@@ -295,7 +252,7 @@ export async function runAllOrganizationScrapers(): Promise<OrganizationScraperR
   const startTime = Date.now();
 
   const results: OrganizationScraperResults[] = [];
-  const organizations: OrganizationType[] = ['BKFC', 'PFL', 'ONEFC', 'MATCHROOM', 'GOLDENBOY', 'GOLDSTAR', 'TOPRANK', 'OKTAGON', 'RIZIN', 'ZUFFA_BOXING', 'DIRTY_BOXING', 'KARATE_COMBAT', 'MVP', 'RAF'];
+  const organizations: OrganizationType[] = SHARED_DAILY_SCRAPER_ORG_KEYS;
 
   for (const org of organizations) {
     const result = await runOrganizationScraper(org);

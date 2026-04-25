@@ -3,9 +3,15 @@
  *
  * Simplified config: an event either has a scraper (scraperType) or it doesn't (null).
  * The lifecycle service handles all time-based status transitions.
+ *
+ * The ScraperType union and PRODUCTION_SCRAPERS list are now derived from the org
+ * registry (see ./orgs.ts). This file re-exports them under their legacy names so
+ * existing imports keep working unchanged.
  */
 
-export type ScraperType = 'ufc' | 'matchroom' | 'oktagon' | 'onefc' | 'tapology' | 'bkfc' | 'raf';
+import { DERIVED_PRODUCTION_SCRAPERS, type ScraperType as RegistryScraperType } from './orgs';
+
+export type ScraperType = RegistryScraperType;
 
 /**
  * Scrapers that are production-ready and trusted to auto-publish results.
@@ -14,7 +20,7 @@ export type ScraperType = 'ufc' | 'matchroom' | 'oktagon' | 'onefc' | 'tapology'
  *
  * Add a scraper here only after thorough testing.
  */
-export const PRODUCTION_SCRAPERS: ScraperType[] = ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc', 'raf'];
+export const PRODUCTION_SCRAPERS: ScraperType[] = DERIVED_PRODUCTION_SCRAPERS;
 
 /**
  * Check if a scraper type is production-ready (trusted to auto-publish).

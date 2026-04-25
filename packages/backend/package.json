@@ -9,6 +9,8 @@
     "start": "node dist/server.js",
     "test": "jest",
     "test:watch": "jest --watch",
+    "verify:orgs": "tsx scripts/verify-org-registry.ts",
+    "verify:orgs:db": "tsx scripts/verify-org-registry.ts --db",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "type-check": "tsc --noEmit",

@@ -8,6 +8,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requireAdmin } from '../middleware/auth';
 import { invalidateNotifyPromotionsCache } from '../config/liveTrackerConfig';
+import { ORGS, getOrg, ADMIN_TRIGGER_ORG_ORDER } from '../config/orgs';
 import {
   triggerDailyUFCScraper,
   triggerEventLifecycleCheck,
@@ -41,7 +42,11 @@ const CreateEventSchema = z.object({
   earlyPrelimStartTime: z.string().transform((val) => new Date(val)).optional(),
   prelimStartTime: z.string().transform((val) => new Date(val)).optional(),
   mainStartTime: z.string().transform((val) => new Date(val)).optional(),
-  // Scraper type: null = no scraper, or a specific scraper name
+  // Scraper type: null = no scraper, or a specific scraper name.
+  // NOTE: this enum is intentionally narrower than the full ScraperType union — 'raf'
+  // is omitted here to preserve pre-registry behavior. Fix in a follow-up PR after
+  // confirming RAF events are consistently created via the daily scraper rather than
+  // the admin panel.
   scraperType: z.enum(['ufc', 'matchroom', 'oktagon', 'onefc', 'tapology', 'bkfc']).nullable().optional(),
 });
 
@@ -92,20 +97,35 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // ============================================
   const TEST_SCRAPER_KEY = process.env.TEST_SCRAPER_KEY || 'fightcrew-test-2026';
 
-  const scraperMap: Record<string, () => Promise<any>> = {
-    'ufc': triggerDailyUFCScraper,
-    'bkfc': triggerBKFCScraper,
-    'pfl': triggerPFLScraper,
-    'onefc': triggerOneFCScraper,
-    'matchroom': triggerMatchroomScraper,
-    'goldenboy': triggerGoldenBoyScraper,
-    'goldstar': triggerGoldStarScraper,
-    'toprank': triggerTopRankScraper,
-    'oktagon': triggerOktagonScraper,
-    'zuffa-boxing': triggerZuffaBoxingScraper,
-    'zuffa': triggerZuffaBoxingScraper,
-    'rizin': triggerRizinScraper,
+  // Maps each org's `adminTriggerKeys` to its trigger function.
+  // The trigger functions live in backgroundJobs.ts and are looked up here by org key.
+  // Order matches the legacy hardcoded scraperMap (ADMIN_TRIGGER_ORG_ORDER in orgs.ts).
+  const TRIGGER_FN_BY_ORG_KEY: Partial<Record<typeof ADMIN_TRIGGER_ORG_ORDER[number], () => Promise<any>>> = {
+    UFC: triggerDailyUFCScraper,
+    BKFC: triggerBKFCScraper,
+    PFL: triggerPFLScraper,
+    ONEFC: triggerOneFCScraper,
+    MATCHROOM: triggerMatchroomScraper,
+    GOLDENBOY: triggerGoldenBoyScraper,
+    GOLDSTAR: triggerGoldStarScraper,
+    TOPRANK: triggerTopRankScraper,
+    OKTAGON: triggerOktagonScraper,
+    ZUFFA_BOXING: triggerZuffaBoxingScraper,
+    RIZIN: triggerRizinScraper,
   };
+
+  const scraperMap: Record<string, () => Promise<any>> = ADMIN_TRIGGER_ORG_ORDER.reduce(
+    (acc, key) => {
+      const fn = TRIGGER_FN_BY_ORG_KEY[key];
+      if (!fn) return acc;
+      const org = getOrg(key);
+      for (const triggerKey of org.adminTriggerKeys) {
+        acc[triggerKey] = fn;
+      }
+      return acc;
+    },
+    {} as Record<string, () => Promise<any>>,
+  );
 
   fastify.get('/admin/test-scraper/:org', async (request, reply) => {
     const { org } = request.params as { org: string };
