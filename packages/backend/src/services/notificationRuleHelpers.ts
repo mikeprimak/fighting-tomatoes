@@ -4,8 +4,15 @@ import { notificationRuleEngine } from './notificationRuleEngine';
 const prisma = new PrismaClient();
 
 /**
- * Manages the "Manual Fight Follow" notification rule for a specific fight
- * Creates/activates or deactivates the rule based on the enabled flag
+ * Manages the "Manual Fight Follow" notification rule for a specific fight.
+ *
+ * Manual follows have a known match set of size 1 (the fight itself), so the
+ * rule and its match row are written transactionally up-front — no need to
+ * route through the generic `syncRuleMatches` evaluator that iterates every
+ * upcoming fight. This guarantees `fightNotificationMatch` is populated by
+ * the time this function returns, so the events endpoint's batched read
+ * (which is the source of truth for the bell indicator) sees it on the very
+ * next refetch.
  */
 export async function manageManualFightRule(
   userId: string,
@@ -15,7 +22,6 @@ export async function manageManualFightRule(
   const RULE_NAME = `Manual Fight Follow: ${fightId}`;
   const NOTIFY_MINUTES_BEFORE = 15;
 
-  // Check if rule already exists for this fight
   const existingRule = await prisma.userNotificationRule.findFirst({
     where: {
       userId,
@@ -24,44 +30,49 @@ export async function manageManualFightRule(
   });
 
   if (existingRule) {
-    // Update existing rule
-    await prisma.userNotificationRule.update({
-      where: { id: existingRule.id },
-      data: { isActive: enabled },
-    });
-
-    if (enabled) {
-      // If enabled, sync matches
-      notificationRuleEngine.syncRuleMatches(existingRule.id).catch(err => {
-        console.error('Error syncing manual fight rule matches:', err);
-      });
-    } else {
-      // If disabled, deactivate all matches for this rule
-      await prisma.fightNotificationMatch.updateMany({
-        where: {
-          ruleId: existingRule.id,
-        },
-        data: {
-          isActive: false,
-        },
-      });
-    }
+    await prisma.$transaction([
+      prisma.userNotificationRule.update({
+        where: { id: existingRule.id },
+        data: { isActive: enabled },
+      }),
+      prisma.fightNotificationMatch.updateMany({
+        where: { ruleId: existingRule.id },
+        data: { isActive: enabled },
+      }),
+    ]);
   } else if (enabled) {
-    // Create new rule (only if enabled)
-    const newRule = await prisma.userNotificationRule.create({
-      data: {
-        userId,
-        name: RULE_NAME,
-        conditions: { fightIds: [fightId] },
-        notifyMinutesBefore: NOTIFY_MINUTES_BEFORE,
-        priority: 10, // Higher priority than general rules
-        isActive: true,
-      },
-    });
+    await prisma.$transaction(async (tx) => {
+      const newRule = await tx.userNotificationRule.create({
+        data: {
+          userId,
+          name: RULE_NAME,
+          conditions: { fightIds: [fightId] },
+          notifyMinutesBefore: NOTIFY_MINUTES_BEFORE,
+          priority: 10,
+          isActive: true,
+        },
+      });
 
-    // Sync matches for new rule
-    notificationRuleEngine.syncRuleMatches(newRule.id).catch(err => {
-      console.error('Error syncing manual fight rule matches:', err);
+      await tx.fightNotificationMatch.upsert({
+        where: {
+          userId_fightId_ruleId: {
+            userId,
+            fightId,
+            ruleId: newRule.id,
+          },
+        },
+        create: {
+          userId,
+          fightId,
+          ruleId: newRule.id,
+          isActive: true,
+          notificationSent: false,
+        },
+        update: {
+          isActive: true,
+          matchedAt: new Date(),
+        },
+      });
     });
   }
 }
