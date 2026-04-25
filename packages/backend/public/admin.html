@@ -1231,6 +1231,308 @@
       border-radius: 10px;
       margin-left: 0.5rem;
     }
+
+    /* Mobile back button (events list) - hidden on desktop */
+    .mobile-back-btn {
+      display: none;
+      align-items: center;
+      gap: 0.375rem;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 0.75rem;
+    }
+
+    .mobile-back-btn:hover {
+      background: var(--border-color);
+    }
+
+    /* ================================
+       MOBILE RESPONSIVE
+       ================================ */
+    @media (max-width: 900px) {
+      /* Header: wrap rows, full-width controls */
+      .header {
+        padding: 0.625rem 0.875rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .header h1 {
+        font-size: 1.125rem;
+      }
+      .header-controls {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        width: 100%;
+        justify-content: space-between;
+      }
+      .tab-nav {
+        margin-right: 0;
+        order: 1;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .tab-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      #userInfo {
+        order: 2;
+        margin-left: auto;
+      }
+      #globalPromotion {
+        width: 100% !important;
+        order: 3;
+      }
+
+      /* Alert banner */
+      #missingStartTimeAlert {
+        padding: 0.625rem 0.875rem !important;
+      }
+
+      /* Tab content scrolls naturally with page on mobile */
+      .tab-content {
+        height: auto;
+        min-height: calc(100vh - 60px);
+        overflow-y: visible;
+      }
+
+      /* Master-detail: show events OR fights, not both */
+      .main-container {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      .panel {
+        padding: 0.875rem;
+        overflow-y: visible;
+      }
+      .events-panel {
+        border-right: none;
+      }
+      body.event-selected .events-panel {
+        display: none;
+      }
+      body:not(.event-selected) .fights-panel {
+        display: none;
+      }
+
+      /* Mobile back button visible on mobile */
+      .mobile-back-btn {
+        display: inline-flex;
+      }
+
+      /* Fight panel header: stack title and action buttons */
+      .fights-panel .panel-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
+      .fights-panel .panel-header > div {
+        flex-wrap: wrap;
+      }
+
+      /* Form rows stack to single column */
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+      }
+      .form-row-3 {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.5rem;
+      }
+
+      /* Modal: nearly full-screen, top-aligned for keyboard */
+      .modal-overlay {
+        align-items: flex-start;
+        padding: 0.5rem;
+      }
+      .modal {
+        max-width: 100%;
+        max-height: calc(100vh - 1rem);
+        padding: 1.125rem;
+        border-radius: 10px;
+      }
+      .modal-footer {
+        flex-direction: column-reverse;
+        gap: 0.5rem;
+        align-items: stretch;
+      }
+      .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Fight cards: stack vertically with always-visible actions */
+      .fight-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.625rem;
+        padding: 0.875rem;
+      }
+      .fight-info {
+        width: 100%;
+      }
+      .fight-status-section {
+        margin-right: 0;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 0.375rem;
+      }
+      .fight-actions {
+        opacity: 1;
+        width: 100%;
+        justify-content: flex-end;
+        gap: 0.5rem;
+      }
+
+      /* Bigger touch targets */
+      .btn {
+        min-height: 38px;
+      }
+      .btn-sm {
+        min-height: 32px;
+        padding: 0.4rem 0.65rem;
+        font-size: 0.8rem;
+      }
+      .status-btn {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.75rem;
+        min-width: 32px;
+      }
+      .btn-icon {
+        min-height: 36px;
+        min-width: 36px;
+        padding: 0.5rem;
+        font-size: 1rem;
+      }
+
+      /* Filter bar full width */
+      .filter-bar {
+        flex-direction: column;
+      }
+
+      /* Form input bigger on mobile (avoid iOS auto-zoom: font-size >= 16px) */
+      .form-input,
+      .form-select {
+        font-size: 16px;
+        padding: 0.625rem 0.75rem;
+      }
+
+      /* Operations tab */
+      .ops-container {
+        padding: 1rem 0.875rem;
+      }
+      .ops-section {
+        padding: 1rem;
+      }
+      .ops-section-header {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .scraper-grid {
+        grid-template-columns: 1fr;
+      }
+      .scraper-card,
+      .tracker-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.625rem;
+      }
+      .backup-status {
+        grid-template-columns: 1fr;
+      }
+
+      /* Feedback */
+      .feedback-container {
+        padding: 1rem 0.875rem;
+      }
+      .feedback-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.625rem;
+      }
+      .feedback-card {
+        padding: 1rem;
+      }
+      .feedback-card-header {
+        flex-direction: column;
+        gap: 0.375rem;
+      }
+      .feedback-actions {
+        flex-direction: column;
+      }
+      .feedback-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+      #feedbackFilter {
+        width: 100% !important;
+      }
+
+      /* Notify card */
+      .notify-card {
+        gap: 0.75rem;
+      }
+
+      /* Login */
+      .login-container {
+        padding: 1.5rem 1.25rem;
+        margin: 0.875rem;
+        max-width: 100%;
+      }
+
+      /* Toast: span across bottom */
+      .toast-container {
+        bottom: 0.5rem;
+        right: 0.5rem;
+        left: 0.5rem;
+      }
+      .toast {
+        padding: 0.75rem 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 1rem;
+      }
+      .header h1::before {
+        height: 18px;
+      }
+      .panel {
+        padding: 0.75rem;
+      }
+      .ops-container,
+      .feedback-container {
+        padding: 0.75rem;
+      }
+      .ops-section {
+        padding: 0.875rem;
+      }
+      .modal {
+        padding: 1rem;
+      }
+      .tab-btn {
+        padding: 0.45rem 0.625rem;
+        font-size: 0.8rem;
+      }
+      .event-card {
+        padding: 0.875rem;
+      }
+      /* Make the inline event-status row inside fights panel header wrap */
+      .fights-panel .panel-header [style*="display: flex"][style*="gap: 0.75rem"] {
+        flex-wrap: wrap;
+        gap: 0.5rem !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -2119,11 +2421,21 @@
           card.classList.toggle('selected', card.dataset.id === eventId);
         });
 
+        // On mobile, switch master-detail view to fights
+        document.body.classList.add('event-selected');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+
         renderFights();
       } catch (err) {
         showToast('Failed to load event', 'error');
         console.error(err);
       }
+    }
+
+    // Mobile master-detail: return to events list
+    function showEventsList() {
+      document.body.classList.remove('event-selected');
+      window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
     function renderFights() {
@@ -2162,6 +2474,7 @@
       const scraperLabel = selectedEvent.scraperType ? ` (Scraper: ${selectedEvent.scraperType})` : '';
 
       container.innerHTML = `
+        <button class="mobile-back-btn" onclick="showEventsList()">← Events</button>
         <div class="panel-header">
           <div>
             <span class="panel-title">${escapeHtml(selectedEvent.name)}</span>
