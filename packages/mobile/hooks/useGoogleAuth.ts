@@ -5,8 +5,11 @@ import { useAuth } from '../store/AuthContext';
 // Google OAuth Client IDs - these are PUBLIC by design (not secrets)
 // Security is enforced via package name, SHA-1 fingerprint, and app store verification
 // See: https://developers.google.com/identity/protocols/oauth2
+// WEB: old project (fight-app-ba5cd / 1082468109842) — has the Android OAuth client registered with the Play Store app signing SHA-1.
+// IOS: new project (good-fights-app / 499367908516) — matches the iOS URL scheme baked into the shipped 2.0.2 binary.
+// Backend GOOGLE_CLIENT_ID env on Render lists both audiences so tokens from either platform validate.
 const GOOGLE_CLIENT_ID_WEB = '1082468109842-pehb7kkuclbv8g4acjba9eeeajprd8j7.apps.googleusercontent.com';
-const GOOGLE_CLIENT_ID_IOS = '1082468109842-qpifgfjjg3ve22bnhofhk99purj0aidf.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID_IOS = '499367908516-j03poule51s7sfvpvdufna0upqa3oseg.apps.googleusercontent.com';
 
 // Try to import Google Sign-In, but gracefully handle if not available (e.g., Expo Go dev)
 let GoogleSignin: any = null;
