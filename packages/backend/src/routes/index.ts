@@ -21,17 +21,12 @@ import { triggerDailyUFCScraper } from '../services/backgroundJobs';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 import { isProductionScraper, getNotifyPromotions } from '../config/liveTrackerConfig';
 
-// Organization filter groups - maps filter buttons to actual promotions
-// BOXING is an aggregate that includes multiple boxing promoters
-// Note: DIRTY BOXING events won't match BOXING's contains patterns anyway, so no excludes needed
-const ORG_FILTER_GROUPS: Record<string, { contains?: string[] }> = {
-  'BOXING': {
-    contains: ['MATCHROOM', 'TOP RANK', 'TOP_RANK', 'GOLDEN BOY', 'GOLDEN_BOY', 'GOLD STAR', 'GOLD_STAR', 'SHOWTIME', 'MOST VALUABLE', 'MVP BOXING', 'MVP', 'PBC', 'PREMIER BOXING', 'DAZN', 'ESPN BOXING', 'ZUFFA BOXING', 'ZUFFA_BOXING', 'ZUFFA'],
-  },
-  'DIRTY BOXING': {
-    contains: ['DIRTY BOXING'],
-  },
-};
+import { buildOrgFilterGroups } from '../config/orgs';
+
+// Organization filter groups - maps filter buttons to actual promotions.
+// BOXING is an aggregate that includes multiple boxing promoters.
+// Derived from the org registry — to edit, see ../config/orgs.ts.
+const ORG_FILTER_GROUPS: Record<string, { contains?: string[] }> = buildOrgFilterGroups();
 
 import { HIDDEN_PROMOTIONS } from '../config/hiddenPromotions';
 
