@@ -208,10 +208,21 @@ export async function runEventLifecycleCheck(): Promise<{
         earlyPrelimStartTime: true,
         scraperType: true,
         ufcUrl: true,
+        completionMethod: true,
       },
     });
 
     for (const event of upcomingEvents) {
+      // Respect admin manual overrides. If an admin set this event back to
+      // UPCOMING via the admin panel (completionMethod='manual'), don't
+      // auto-flip it to LIVE — the stored start time may be wrong, which is
+      // exactly why the admin had to intervene. They will flip to LIVE
+      // manually when the event actually starts, or update the start time
+      // to clear the override.
+      if (event.completionMethod === 'manual') {
+        continue;
+      }
+
       // Skip events that only have a date (midnight) and no confirmed start time.
       // These are typically Tapology-scraped events where the scraper couldn't find
       // the actual start time. They require manual intervention via the admin panel.
@@ -232,7 +243,13 @@ export async function runEventLifecycleCheck(): Promise<{
           data: { eventStatus: 'LIVE' },
         });
         results.eventsStarted++;
-        console.log(`[Lifecycle] UPCOMING → LIVE: ${event.name}`);
+        // Include which start-time field triggered the flip so we can
+        // diagnose bad scraper data (e.g. doors-open time used as main start).
+        const which = event.earlyPrelimStartTime ? 'earlyPrelimStartTime'
+          : event.prelimStartTime ? 'prelimStartTime'
+          : event.mainStartTime ? 'mainStartTime'
+          : 'date';
+        console.log(`[Lifecycle] UPCOMING → LIVE: ${event.name} (${which}=${startTime.toISOString()}, now=${now.toISOString()})`);
 
         // Trigger live tracker: try VPS first, fall back to GitHub Actions
         if (event.scraperType && ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc', 'raf'].includes(event.scraperType)) {
