@@ -27,6 +27,10 @@ export function NotificationHandler() {
           if (data.type === 'preEventReport') {
             console.log('[NotificationHandler] Saving initial notification message to AsyncStorage');
             await AsyncStorage.setItem('pendingPreEventMessage', body || '');
+          } else if (data.fightId) {
+            // Cold-start route to fight detail (covers comment_liked + fight_start).
+            console.log('[NotificationHandler] Cold-start → /fight/' + data.fightId);
+            router.push(`/fight/${data.fightId}` as any);
           }
         }
       } catch (error) {
@@ -60,8 +64,17 @@ export function NotificationHandler() {
         // Navigate to events screen
         console.log('[NotificationHandler] Navigating to events screen');
         router.push('/(tabs)/events');
+      } else if (data.type === 'comment_liked' && data.fightId) {
+        // Open the fight detail screen for the comment that got liked.
+        // /fight/[id] auto-routes to UpcomingFightDetailScreen or CompletedFightDetailScreen
+        // based on fight/event status.
+        console.log('[NotificationHandler] comment_liked → /fight/' + data.fightId);
+        router.push(`/fight/${data.fightId}` as any);
+      } else if (data.fightId) {
+        // Any other fight-scoped notification (e.g. fight start) — route to the fight detail.
+        router.push(`/fight/${data.fightId}` as any);
       } else {
-        // All other notifications navigate to live events screen
+        // Unscoped fallback — go to live events.
         router.push('/(tabs)/live-events');
       }
     });

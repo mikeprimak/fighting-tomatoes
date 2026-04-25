@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { WeightClass, Sport, Gender, ActivityType, PredictionMethod } from '@prisma/client';
 import { authenticateUser, requireEmailVerification, optionalAuth } from '../middleware/auth';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
+import { maybeNotifyReviewLike, maybeNotifyPreFightCommentLike } from '../services/commentLikeNotifications';
 import { calculateQualityThreadScore } from '../utils/commentSorting';
 import { TBA_FIGHTER_ID, isTBAFighter, fightHasTBA } from '../constants/tba';
 import { isProductionScraper, getNotifyPromotions } from '../config/liveTrackerConfig';
@@ -2156,6 +2157,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
           }),
         ]);
 
+        // Fire milestone notification (best-effort, doesn't block response)
+        maybeNotifyPreFightCommentLike(commentId, userId).catch((err) => {
+          console.error('[CommentLike] pre-fight notify error:', err);
+        });
+
         return reply.code(200).send({
           userHasUpvoted: true,
           upvotes: updatedComment.upvotes,
@@ -2492,6 +2498,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
           ]);
           upvotesCount = review.upvotes + 1;
           isUpvoted = true;
+
+          maybeNotifyReviewLike(reviewId, currentUserId).catch((err) => {
+            console.error('[CommentLike] post-fight notify error:', err);
+          });
         }
       } else {
         // Create new upvote
@@ -2526,6 +2536,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
             },
           });
         }
+
+        maybeNotifyReviewLike(reviewId, currentUserId).catch((err) => {
+          console.error('[CommentLike] post-fight notify error:', err);
+        });
       }
 
       return reply.code(200).send({
