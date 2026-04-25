@@ -159,11 +159,17 @@ export async function parseBKFCLiveData(
 
     const scraperType = getEventTrackerType({ scraperType: event.scraperType });
 
-    // Update event status
+    // Update event status. Respect admin manual overrides — if an admin set
+    // the event to UPCOMING via the admin panel (completionMethod='manual'),
+    // don't let a false-positive `hasStarted` from the scraper flip it back.
     if (liveData.hasStarted && event.eventStatus === 'UPCOMING') {
-      await prisma.event.update({ where: { id: eventId }, data: { eventStatus: 'LIVE' } });
-      console.log(`  Event -> LIVE`);
-      eventUpdated = true;
+      if (event.completionMethod === 'manual') {
+        console.log(`  Event -> LIVE skipped (admin manual override on UPCOMING)`);
+      } else {
+        await prisma.event.update({ where: { id: eventId }, data: { eventStatus: 'LIVE' } });
+        console.log(`  Event -> LIVE`);
+        eventUpdated = true;
+      }
     }
 
     if (liveData.isComplete && event.eventStatus !== 'COMPLETED') {
