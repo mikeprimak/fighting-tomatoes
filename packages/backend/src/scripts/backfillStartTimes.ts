@@ -97,7 +97,8 @@ async function extractDateTimeFromTapologyPage(page: Page): Promise<ExtractedDat
     const pageText = document.body.innerText || '';
 
     // Iterate every li > span.font-bold and pick the one labeled Date/Time.
-    const labels = document.querySelectorAll('li span.font-bold');
+    // Array.from for NodeList iteration so this compiles without dom.iterable lib.
+    const labels = Array.from(document.querySelectorAll('li span.font-bold'));
     for (const lbl of labels) {
       if (!/date\s*\/?\s*time/i.test(lbl.textContent || '')) continue;
       const li = (lbl as HTMLElement).parentElement;
@@ -273,7 +274,7 @@ async function main() {
   console.log(`Found ${events.length} upcoming events with no start time.\n`);
   if (events.length === 0) { await prisma.$disconnect(); return; }
 
-  const browser = await puppeteer.launch({ headless: 'new' });
+  const browser = await puppeteer.launch({ headless: true });
 
   let fixed = 0;
   let skipped = 0;
