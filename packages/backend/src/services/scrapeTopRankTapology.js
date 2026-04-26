@@ -162,6 +162,16 @@ async function scrapeEventPage(browser, eventUrl) {
       for (const lbl_dt of fontBoldLabels_dt) {
         if (/date\s*\/?\s*time/i.test(lbl_dt.textContent)) { dateTimeLi = lbl_dt; break; }
       }
+      // CI diagnostics for the Tapology start-time bug. Surface to the page
+      // result so the scraper logs it; harmless on success path.
+      data.__diag = {
+        fontBoldCount: fontBoldLabels_dt.length,
+        firstFontBoldLabels: Array.from(fontBoldLabels_dt).slice(0, 5).map(s => (s.textContent || '').trim().slice(0, 40)),
+        dateTimeFound: !!dateTimeLi,
+        pageTextContainsDateTime: /Date\s*\/?\s*Time/i.test(pageText),
+        pageTextContainsPMET: /\d{1,2}:\d{2}\s*(?:AM|PM)\s*(?:ET|EST|EDT)/i.test(pageText),
+        pageTextSnippet: pageText.slice(0, 200),
+      };
       if (dateTimeLi) {
         const valueSpan = dateTimeLi.parentElement.querySelector('span.text-neutral-700, span:not(.font-bold)');
         if (valueSpan) {
@@ -230,7 +240,12 @@ async function scrapeEventPage(browser, eventUrl) {
     }, eventIdFromUrl);
 
     await page.close();
-    console.log(`      ✅ Found ${eventData.fights.length} fights`);
+    console.log(`      ✅ Found ${eventData.fights.length} fights, eventStartTime=${eventData.eventStartTime}`);
+    if (eventData.__diag) {
+      console.log(`      [DIAG] fontBoldCount=${eventData.__diag.fontBoldCount} dateTimeFound=${eventData.__diag.dateTimeFound} pageContainsDT=${eventData.__diag.pageTextContainsDateTime} pageContainsPMET=${eventData.__diag.pageTextContainsPMET}`);
+      console.log(`      [DIAG] firstLabels: ${JSON.stringify(eventData.__diag.firstFontBoldLabels)}`);
+      console.log(`      [DIAG] snippet: ${JSON.stringify(eventData.__diag.pageTextSnippet)}`);
+    }
     return eventData;
   } catch (error) {
     console.error(`      ❌ Error: ${error.message}`);
