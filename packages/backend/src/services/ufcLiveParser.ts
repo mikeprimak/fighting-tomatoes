@@ -394,8 +394,12 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
 
     // ============== FIGHT PROCESSING ==============
 
-    // Track which fights from scraped data we've seen (by ufcFightId and name signature)
-    const scrapedUfcFightIds = new Set<string>();
+    // Track which fights from scraped data we've seen. We keep ufcFightId → signature
+    // (rather than just a Set of ids) so the cancellation pass below can verify the
+    // DB fight's fighter names also match the scraped fight with that id — guarding
+    // against duplicate DB rows that share a ufcFightId (e.g. when UFC renames a
+    // fighter and the daily parser forks a new fighter+fight pair).
+    const scrapedFightsByUfcId = new Map<string, string>();
     const scrapedFightSignatures = new Set<string>();
 
     console.log(`  🔍 Processing ${liveData.fights.length} fight updates...`);
@@ -403,14 +407,14 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
       console.log(`  🔎 Looking for fight: ${fightUpdate.fighterAName} vs ${fightUpdate.fighterBName} (ufcFightId: ${fightUpdate.ufcFightId}, fightStatus: ${fightUpdate.fightStatus})`);
 
       // Track by ufcFightId (preferred) and name signature (fallback)
-      if (fightUpdate.ufcFightId) {
-        scrapedUfcFightIds.add(fightUpdate.ufcFightId);
-      }
       const fightSignature = [fightUpdate.fighterAName, fightUpdate.fighterBName]
         .map(n => n.toLowerCase().trim())
         .sort()
         .join('|');
       scrapedFightSignatures.add(fightSignature);
+      if (fightUpdate.ufcFightId) {
+        scrapedFightsByUfcId.set(fightUpdate.ufcFightId, fightSignature);
+      }
 
       // First try to match by ufcFightId (most reliable)
       let dbFight = fightUpdate.ufcFightId
@@ -619,7 +623,7 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
     // Also check for previously cancelled fights that have reappeared (un-cancel them)
 
     console.log(`  🔍 Checking for cancelled/un-cancelled fights...`);
-    console.log(`  📋 Scraped ufcFightIds: ${Array.from(scrapedUfcFightIds).join(', ')}`);
+    console.log(`  📋 Scraped ufcFightIds: ${Array.from(scrapedFightsByUfcId.keys()).join(', ')}`);
     console.log(`  📋 Scraped fight signatures: ${Array.from(scrapedFightSignatures).join(', ')}`);
     let cancelledCount = 0;
     let unCancelledCount = 0;
@@ -630,20 +634,28 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         continue;
       }
 
-      // Check if fight is in scraped data - prefer ufcFightId, fall back to name signature
+      // Check if fight is in scraped data. Build the DB signature first so the
+      // ufcFightId branch can verify names too — a duplicate row sharing a ufcFightId
+      // with the real fight must NOT count as "in scraped data" or it would get
+      // un-cancelled on every live tracker tick (see Davey Grant vs Juan Martinetti
+      // dup, 2026-04-25).
+      const fighter1FullName = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
+      const fighter2FullName = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+      const dbFightSignature = [fighter1FullName, fighter2FullName].sort().join('|');
+
       let fightIsInScrapedData = false;
+      const scrapedSigForId = dbFight.ufcFightId ? scrapedFightsByUfcId.get(dbFight.ufcFightId) : undefined;
 
-      if (dbFight.ufcFightId && scrapedUfcFightIds.has(dbFight.ufcFightId)) {
-        fightIsInScrapedData = true;
-        console.log(`  🔎 DB fight "${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}" matched by ufcFightId: ${dbFight.ufcFightId}`);
+      if (scrapedSigForId !== undefined) {
+        fightIsInScrapedData = scrapedSigForId === dbFightSignature;
+        if (fightIsInScrapedData) {
+          console.log(`  🔎 DB fight "${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}" matched by ufcFightId+names: ${dbFight.ufcFightId}`);
+        } else {
+          console.log(`  ⚠ DB fight "${dbFightSignature}" shares ufcFightId ${dbFight.ufcFightId} with scraped "${scrapedSigForId}" — name mismatch, treating as NOT in scraped data`);
+        }
       } else {
-        // Fall back to name signature matching
-        const fighter1FullName = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
-        const fighter2FullName = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
-        const dbFightSignature = [fighter1FullName, fighter2FullName].sort().join('|');
-
         fightIsInScrapedData = scrapedFightSignatures.has(dbFightSignature);
-        console.log(`  🔎 DB fight "${dbFightSignature}" (no ufcFightId) matched by name: ${fightIsInScrapedData}`);
+        console.log(`  🔎 DB fight "${dbFightSignature}" matched by name: ${fightIsInScrapedData}`);
       }
 
       // Case 1: Fight was cancelled but has reappeared in scraped data -> UN-CANCEL it
