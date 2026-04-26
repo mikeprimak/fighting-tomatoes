@@ -490,10 +490,19 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
       const updateData: any = {};
       let changed = false;
 
-      // Check status changes — never downgrade from COMPLETED (protects manual fixes & draws)
+      // Check status changes — never downgrade from COMPLETED or LIVE.
+      // - COMPLETED downgrade protects manual fixes & draws.
+      // - LIVE→UPCOMING protects against UFC.com momentarily hiding the live banner
+      //   between rounds (Sterling vs Zalal card, 2026-04-25: live fight flapped
+      //   LIVE→UPCOMING→LIVE because scrapeLiveEvent.js reads the .hidden class on
+      //   .c-listing-fight__banner--live, which UFC.com toggles mid-round).
+      //   A LIVE fight can only progress to COMPLETED (or be CANCELLED by the
+      //   cancellation block below — scraper itself never emits CANCELLED).
       if (fightUpdate.fightStatus !== undefined && dbFight.fightStatus !== fightUpdate.fightStatus) {
         if (dbFight.fightStatus === 'COMPLETED' && fightUpdate.fightStatus !== 'COMPLETED') {
           console.log(`    ⏭️  Skipping status downgrade for ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: DB is COMPLETED, scraper says ${fightUpdate.fightStatus}`);
+        } else if (dbFight.fightStatus === 'LIVE' && fightUpdate.fightStatus === 'UPCOMING') {
+          console.log(`    ⏭️  Skipping LIVE→UPCOMING downgrade for ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (likely transient missing live banner)`);
         } else {
         updateData.fightStatus = fightUpdate.fightStatus;
         changed = true;
@@ -564,14 +573,19 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
           }
         }
       } else if (fightUpdate.fightStatus === 'COMPLETED' && fightUpdate.method && !fightUpdate.winner) {
-        // Draw or No Contest — fight is complete but no winner
-        // Clear winner if previously set (correction)
-        if (dbFight.winner) {
-          updateData.winner = null;
+        // Draw or No Contest — fight is complete but no winner side.
+        // Encode the outcome as winner='draw' or winner='nc' so the UI can render
+        // a DRAW/NC badge instead of "Outcome not available".
+        const m = fightUpdate.method.toLowerCase();
+        let resolvedWinner: string | null = null;
+        if (m === 'nc' || m.includes('no contest')) resolvedWinner = 'nc';
+        else if (m.includes('draw')) resolvedWinner = 'draw';
+
+        if (resolvedWinner && dbFight.winner !== resolvedWinner) {
+          updateData.winner = resolvedWinner;
           changed = true;
-          console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner CLEARED (draw/NC)`);
+          console.log(`    🤝 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner → ${resolvedWinner.toUpperCase()} (${fightUpdate.method})`);
         }
-        console.log(`    🤝 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: ${fightUpdate.method} (no winner)`);
       }
 
       if (fightUpdate.method && dbFight.method !== fightUpdate.method) {
