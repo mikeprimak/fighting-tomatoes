@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Platform } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 import { useAuth } from '../store/AuthContext';
 
@@ -25,13 +26,26 @@ try {
   isSuccessResponse = googleSignIn.isSuccessResponse;
   isErrorWithCode = googleSignIn.isErrorWithCode;
 
-  // Configure Google Sign-In
-  GoogleSignin.configure({
-    webClientId: GOOGLE_CLIENT_ID_WEB,
-    iosClientId: GOOGLE_CLIENT_ID_IOS,
-    offlineAccess: true,
-    scopes: ['profile', 'email'],
-  });
+  // Configure Google Sign-In.
+  // The web and iOS OAuth clients live in different GCP projects (Android = old
+  // project, iOS = new project — see docs/decisions/0002). Google's iOS SDK
+  // requires webClientId + iosClientId to be in the same project, so on iOS we
+  // only pass iosClientId and skip offlineAccess (we never consume the
+  // serverAuthCode anyway — only idToken). Android continues to need webClientId
+  // because that's what its requestIdToken handshake uses.
+  GoogleSignin.configure(
+    Platform.OS === 'ios'
+      ? {
+          iosClientId: GOOGLE_CLIENT_ID_IOS,
+          offlineAccess: false,
+          scopes: ['profile', 'email'],
+        }
+      : {
+          webClientId: GOOGLE_CLIENT_ID_WEB,
+          offlineAccess: true,
+          scopes: ['profile', 'email'],
+        }
+  );
   isGoogleSignInAvailable = true;
   console.log('[GoogleAuth] Native Google Sign-In configured successfully');
 } catch (e) {
