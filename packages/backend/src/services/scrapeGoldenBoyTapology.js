@@ -263,6 +263,7 @@ async function main() {
         city: eventData.city || '', state: '', country: eventData.country || '',
         dateText: eventData.dateText || discovered.dateText || '',
         eventDate: eventData.eventDate || null, eventImageUrl: eventData.eventImageUrl || null,
+        eventStartTime: eventData.eventStartTime || null,
         status: discovered.status || 'Upcoming', fights: eventData.fights
       };
       allEvents.push(event);
