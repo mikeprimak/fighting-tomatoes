@@ -395,6 +395,21 @@ export async function parseOneFCLiveData(
           changed = true;
           console.log(`    ⏱️  Time: ${scrapedFight.result.time}`);
         }
+
+        // Draw / No Contest: scraper indicates outcome via method but no winner side.
+        // Encode as winner='draw'/'nc' so UI renders the badge.
+        if (!updateData.winner && scrapedFight.result.method) {
+          const m = scrapedFight.result.method.toLowerCase();
+          if (m === 'nc' || m.includes('no contest')) {
+            updateData.winner = 'nc';
+            changed = true;
+            console.log(`    🤝 NO CONTEST`);
+          } else if (m.includes('draw')) {
+            updateData.winner = 'draw';
+            changed = true;
+            console.log(`    🤝 DRAW`);
+          }
+        }
       }
 
       // Apply updates (route through shadow field helper)

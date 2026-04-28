@@ -72,6 +72,8 @@ export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps)
 
   const isWinner1 = fight.winner === fight.fighter1.id;
   const isWinner2 = fight.winner === fight.fighter2.id;
+  const isNoContest = fight.winner === 'nc';
+  const isDraw = fight.winner === 'draw';
 
   return (
     <Link href={`/fights/${fight.id}`} className="block">
@@ -93,6 +95,18 @@ export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps)
           <div className="flex flex-col items-center gap-1 px-2">
             {fight.weightClass && (
               <span className="text-[10px] text-text-secondary">{fight.weightClass}</span>
+            )}
+
+            {/* No Contest / Draw badge */}
+            {!hideSpoilers && isNoContest && (
+              <span className="rounded px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#3B82F6' }}>
+                NO CONTEST
+              </span>
+            )}
+            {!hideSpoilers && isDraw && (
+              <span className="rounded px-2 py-0.5 text-[10px] font-bold" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#F59E0B' }}>
+                DRAW
+              </span>
             )}
 
             {/* Method */}
