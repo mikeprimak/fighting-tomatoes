@@ -199,8 +199,15 @@ function parseBKFCDate(dateStr: string | null): Date {
 /**
  * Parse event start time string (e.g., "7:00 PM") and combine with event date.
  * BKFC times are in US Eastern (handles EDT/EST automatically).
+ *
+ * Treats "12:00 AM" as not-present: BKFC fight cards do not start at midnight ET,
+ * and that value is a known artifact of `data-countdown-date` rollover elements
+ * on bkfc.com event pages. Returning null leaves any existing DB value untouched.
  */
 function parseEventStartTime(eventDate: Date, timeStr: string | null | undefined): Date | null {
+  if (timeStr && /^\s*12:00\s*AM\s*$/i.test(timeStr)) {
+    return null;
+  }
   return eventTimeToUTC(eventDate, timeStr, 'America/New_York');
 }
 
