@@ -74,6 +74,17 @@ interface ScrapedAthletesData {
 // ============== UTILITY FUNCTIONS ==============
 
 /**
+ * Extract the UFC athlete slug from a profile URL.
+ * `https://www.ufc.com/athlete/justin-gaethje` -> `justin-gaethje`
+ * Returns null when the URL is missing or doesn't match the expected shape.
+ */
+export function extractUfcAthleteSlug(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const m = url.match(/\/athlete\/([^\/?#]+)/i);
+  return m ? m[1].toLowerCase() : null;
+}
+
+/**
  * Parse fighter record string "W-L-D" into numbers
  */
 function parseRecord(record: string): { wins: number; losses: number; draws: number } {
@@ -127,7 +138,7 @@ function inferGenderFromWeightClass(weightClass: WeightClass | null): Gender {
 /**
  * Parse fighter name into first/last name
  */
-function parseFighterName(fullName: string): { firstName: string; lastName: string; nickname?: string } {
+export function parseFighterName(fullName: string): { firstName: string; lastName: string; nickname?: string } {
   // Decode URL-encoded characters (e.g., M%c3%a9l%c3%a8dje → Mélèdje)
   let decodedName = fullName;
   try {
@@ -294,29 +305,58 @@ async function importFighters(athletesData: ScrapedAthletesData): Promise<Map<st
       }
     }
 
-    // Upsert fighter using firstName + lastName unique constraint
-    const fighter = await prisma.fighter.upsert({
-      where: {
-        firstName_lastName: {
+    // Prefer upsert by ufcAthleteSlug — it survives a UFC display-name
+    // correction (e.g. Juan Martinetti -> Adrian Luna Martinetti, 2026-04-16),
+    // which the firstName+lastName key would have forked into a new fighter.
+    // Fall back to the name-based upsert when the scrape row has no URL.
+    const slug = extractUfcAthleteSlug(athlete.url);
+
+    let fighter;
+    if (slug) {
+      fighter = await prisma.fighter.upsert({
+        where: { ufcAthleteSlug: slug },
+        update: {
           firstName,
           lastName,
+          nickname: nickname || undefined,
+          ...recordParts,
+          profileImage: profileImageUrl,
+        },
+        create: {
+          ufcAthleteSlug: slug,
+          firstName,
+          lastName,
+          nickname,
+          ...recordParts,
+          profileImage: profileImageUrl,
+          gender: Gender.MALE,
+          isActive: true,
         }
-      },
-      update: {
-        ...recordParts,
-        profileImage: profileImageUrl,
-        nickname: nickname || undefined,
-      },
-      create: {
-        firstName,
-        lastName,
-        nickname,
-        ...recordParts,
-        profileImage: profileImageUrl,
-        gender: Gender.MALE, // Will be updated when we process fights
-        isActive: true,
-      }
-    });
+      });
+    } else {
+      fighter = await prisma.fighter.upsert({
+        where: {
+          firstName_lastName: {
+            firstName,
+            lastName,
+          }
+        },
+        update: {
+          ...recordParts,
+          profileImage: profileImageUrl,
+          nickname: nickname || undefined,
+        },
+        create: {
+          firstName,
+          lastName,
+          nickname,
+          ...recordParts,
+          profileImage: profileImageUrl,
+          gender: Gender.MALE,
+          isActive: true,
+        }
+      });
+    }
 
     fighterNameToId.set(athlete.name, fighter.id);
     console.log(`  ✓ ${athlete.name} (${athlete.record})`);
