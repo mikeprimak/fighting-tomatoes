@@ -120,6 +120,13 @@ model Fighter {
   lastName        String
   nickname        String?
 
+  // External identifier (UFC athlete URL slug, e.g. "justin-gaethje").
+  // Used as the primary upsert key in importFighters so a UFC display-name
+  // correction updates the existing row instead of forking a new fighter.
+  // Nullable because non-UFC fighters won't have one. Multiple nulls
+  // are allowed under @unique on Postgres.
+  ufcAthleteSlug  String?   @unique
+
   // Record
   wins            Int       @default(0)
   losses          Int       @default(0)
