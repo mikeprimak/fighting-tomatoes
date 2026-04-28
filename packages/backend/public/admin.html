@@ -1615,9 +1615,9 @@
 
         <div class="filter-bar">
           <select id="eventFilter" class="form-select" onchange="loadEvents()">
-            <option value="current">Current</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="all">All Events</option>
+            <option value="live">Live</option>
+            <option value="upcoming" selected>Upcoming</option>
+            <option value="past">Past</option>
           </select>
         </div>
 
@@ -2338,8 +2338,7 @@
       const params = new URLSearchParams();
 
       if (promotion) params.set('promotion', promotion);
-      if (filter === 'upcoming') params.set('upcoming', 'true');
-      if (filter === 'current') params.set('current', 'true');
+      if (filter) params.set('status', filter);
       params.set('limit', '100');
 
       try {
@@ -2383,7 +2382,7 @@
 
     async function checkMissingStartTimes() {
       try {
-        const res = await authFetch(`${API_BASE}/admin/events?upcoming=true&limit=100`);
+        const res = await authFetch(`${API_BASE}/admin/events?status=upcoming&limit=100`);
         const data = await res.json();
         if (!data.events) return;
 
