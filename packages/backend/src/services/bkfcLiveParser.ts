@@ -266,6 +266,20 @@ export async function parseBKFCLiveData(
           updateData.time = fightUpdate.result.time;
           changed = true;
         }
+
+        // Draw / No Contest: scraper indicates outcome via method but no winner side.
+        // Encode as winner='draw'/'nc' so UI renders the badge.
+        if (!updateData.winner && method) {
+          if (method === 'DRAW') {
+            updateData.winner = 'draw';
+            changed = true;
+            console.log(`    DRAW`);
+          } else if (method === 'NC') {
+            updateData.winner = 'nc';
+            changed = true;
+            console.log(`    NO CONTEST`);
+          }
+        }
       }
 
       if (changed) {

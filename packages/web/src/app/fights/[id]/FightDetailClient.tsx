@@ -91,6 +91,8 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
 
   const isWinner1 = fight.winner === fight.fighter1.id;
   const isWinner2 = fight.winner === fight.fighter2.id;
+  const isNoContest = fight.winner === 'nc';
+  const isDraw = fight.winner === 'draw';
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -123,6 +125,22 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
           <p className="text-sm font-medium text-text-secondary">
             {fight.method}{fight.round ? ` — Round ${fight.round}` : ''}{fight.time ? ` (${fight.time})` : ''}
           </p>
+        </div>
+      )}
+
+      {/* No Contest / Draw badge */}
+      {isCompleted && !hideSpoilers && isNoContest && (
+        <div className="mb-4 text-center">
+          <span className="rounded px-3 py-1 text-sm font-bold" style={{ backgroundColor: 'rgba(59,130,246,0.15)', color: '#3B82F6' }}>
+            NO CONTEST
+          </span>
+        </div>
+      )}
+      {isCompleted && !hideSpoilers && isDraw && (
+        <div className="mb-4 text-center">
+          <span className="rounded px-3 py-1 text-sm font-bold" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#F59E0B' }}>
+            DRAW
+          </span>
         </div>
       )}
 
