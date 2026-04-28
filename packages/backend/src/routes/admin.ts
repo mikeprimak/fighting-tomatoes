@@ -634,10 +634,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
   fastify.get('/admin/events', {
     preValidation: [fastify.authenticate, requireAdmin],
   }, async (request, reply) => {
-    const { promotion, upcoming, current, limit = '50', offset = '0' } = request.query as {
+    const { promotion, status, limit = '50', offset = '0' } = request.query as {
       promotion?: string;
-      upcoming?: string;
-      current?: string;
+      status?: string;
       limit?: string;
       offset?: string;
     };
@@ -646,32 +645,27 @@ export async function adminRoutes(fastify: FastifyInstance) {
     if (promotion) {
       where.promotion = { equals: promotion, mode: 'insensitive' };
     }
-    if (upcoming === 'true') {
-      where.date = { gte: new Date() };
+
+    // status: 'live' | 'upcoming' | 'past'
+    // - live: most recently started first
+    // - upcoming: next to start first
+    // - past: most recently finished first (updatedAt reflects the flip to COMPLETED)
+    let orderBy: any = { date: 'desc' };
+    if (status === 'live') {
+      where.eventStatus = 'LIVE';
+      orderBy = { date: 'desc' };
+    } else if (status === 'upcoming') {
+      where.eventStatus = 'UPCOMING';
+      orderBy = { date: 'asc' };
+    } else if (status === 'past') {
+      where.eventStatus = 'COMPLETED';
+      orderBy = { updatedAt: 'desc' };
     }
-    if (current === 'true') {
-      // Events between yesterday and 2 days from now
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      yesterday.setHours(0, 0, 0, 0);
-
-      const twoDaysFromNow = new Date();
-      twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2);
-      twoDaysFromNow.setHours(23, 59, 59, 999);
-
-      where.date = {
-        gte: yesterday,
-        lte: twoDaysFromNow,
-      };
-    }
-
-    // Determine sort order: current = desc (furthest future first), upcoming = asc (soonest first), all = desc
-    const orderDirection = upcoming === 'true' ? 'asc' : 'desc';
 
     const [events, total] = await Promise.all([
       prisma.event.findMany({
         where,
-        orderBy: { date: orderDirection },
+        orderBy,
         take: parseInt(limit),
         skip: parseInt(offset),
         include: {
