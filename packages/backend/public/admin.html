@@ -243,10 +243,13 @@
     .event-card {
       background: var(--bg-card);
       border-radius: 8px;
-      padding: 1rem;
+      padding: 0.75rem;
       cursor: pointer;
       border: 2px solid transparent;
       transition: all 0.2s;
+      display: flex;
+      gap: 0.75rem;
+      align-items: stretch;
     }
 
     .event-card:hover {
@@ -258,40 +261,126 @@
       background: rgba(59, 130, 246, 0.1);
     }
 
+    .event-card-logo {
+      flex: 0 0 48px;
+      width: 48px;
+      height: 48px;
+      align-self: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 4px;
+      overflow: hidden;
+    }
+
+    .event-card-logo img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .event-card-logo-fallback {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+
+    .event-card-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
     .event-card-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 0.5rem;
+      gap: 0.5rem;
     }
 
     .event-name {
       font-weight: 600;
       font-size: 0.9rem;
       line-height: 1.3;
+      flex: 1;
+      min-width: 0;
     }
 
-    .event-promotion {
+    .event-countdown-badge {
       font-size: 0.7rem;
-      font-weight: 600;
-      padding: 0.125rem 0.375rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
       border-radius: 4px;
       background: var(--accent-gold);
       color: #000;
       white-space: nowrap;
+      letter-spacing: 0.5px;
+    }
+
+    .event-countdown-badge.live {
+      background: var(--accent-red);
+      color: #fff;
+      animation: pulse 2s infinite;
+    }
+
+    .event-start-times {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 0.75rem;
+    }
+
+    .event-start-times .start-label {
+      color: var(--text-muted);
+      margin-right: 0.25rem;
     }
 
     .event-meta {
       display: flex;
-      gap: 1rem;
-      font-size: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      font-size: 0.72rem;
       color: var(--text-secondary);
+      align-items: center;
     }
 
     .event-fights-count {
       display: flex;
       align-items: center;
       gap: 0.25rem;
+    }
+
+    .event-banner-thumb {
+      flex: 0 0 64px;
+      width: 64px;
+      height: 48px;
+      align-self: center;
+      border-radius: 4px;
+      background: var(--bg-input);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .event-banner-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .event-banner-thumb-empty {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 0 4px;
     }
 
     /* Fight List */
@@ -2356,24 +2445,53 @@
           return;
         }
 
-        container.innerHTML = data.events.map(event => `
+        container.innerHTML = data.events.map(event => {
+          const earliest = event.earlyPrelimStartTime || event.prelimStartTime || event.mainStartTime || event.date;
+          const isLiveByTime = event.eventStatus === 'LIVE' ||
+            (event.eventStatus !== 'COMPLETED' && earliest && Date.now() >= new Date(earliest).getTime());
+          const badgeText = event.eventStatus === 'COMPLETED'
+            ? 'COMPLETED'
+            : isLiveByTime
+              ? 'LIVE NOW'
+              : formatTimeUntil(event.date, earliest);
+          const badgeClass = isLiveByTime && event.eventStatus !== 'COMPLETED' ? 'event-countdown-badge live' : 'event-countdown-badge';
+
+          const startTimes = [];
+          if (event.mainStartTime) startTimes.push(`<span><span class="start-label">Main</span>${formatStartTime(event.mainStartTime)}</span>`);
+          if (event.prelimStartTime) startTimes.push(`<span><span class="start-label">Prelims</span>${formatStartTime(event.prelimStartTime)}</span>`);
+          if (event.earlyPrelimStartTime) startTimes.push(`<span><span class="start-label">Early</span>${formatStartTime(event.earlyPrelimStartTime)}</span>`);
+
+          const logoSrc = getPromotionLogo(event.promotion);
+          const logoHtml = logoSrc
+            ? `<img src="${logoSrc}" alt="${escapeHtml(event.promotion)}" onerror="this.parentElement.innerHTML='<span class=\\'event-card-logo-fallback\\'>${escapeHtml(event.promotion)}</span>'">`
+            : `<span class="event-card-logo-fallback">${escapeHtml(event.promotion)}</span>`;
+
+          const bannerHtml = event.bannerImage
+            ? `<img src="${escapeHtml(event.bannerImage)}" alt="" onerror="this.parentElement.innerHTML='<span class=\\'event-banner-thumb-empty\\'>no img</span>'">`
+            : `<span class="event-banner-thumb-empty">no img</span>`;
+
+          return `
           <div class="event-card ${selectedEvent?.id === event.id ? 'selected' : ''}"
                onclick="selectEvent('${event.id}')"
                data-id="${event.id}">
-            <div class="event-card-header">
-              <div class="event-name">${escapeHtml(event.name)}</div>
-              <span class="event-promotion">${escapeHtml(event.promotion)}</span>
+            <div class="event-card-logo">${logoHtml}</div>
+            <div class="event-card-body">
+              <div class="event-card-header">
+                <div class="event-name">${escapeHtml(event.name)}</div>
+                <span class="${badgeClass}">${badgeText}</span>
+              </div>
+              ${startTimes.length ? `<div class="event-start-times">${startTimes.join('')}</div>` : ''}
+              <div class="event-meta">
+                <span>${formatDate(event.date)}</span>
+                <span class="event-fights-count"><span>${event._count?.fights || 0} fights</span></span>
+                ${event.scraperType ? `<span style="color: var(--accent-orange); font-weight: 600;">⚙️ ${event.scraperType.toUpperCase()}</span>` : ''}
+                ${event.eventStatus === 'UPCOMING' && !event.mainStartTime && !event.prelimStartTime && !event.earlyPrelimStartTime ? `<span style="color: #ef4444; font-weight: 600;" title="No start time — will not auto-transition to LIVE">⚠️ NO TIME</span>` : ''}
+              </div>
             </div>
-            <div class="event-meta">
-              <span>${formatDate(event.date)}</span>
-              <span class="event-fights-count">
-                <span>${event._count?.fights || 0} fights</span>
-              </span>
-              ${event.scraperType ? `<span style="color: var(--accent-orange); font-weight: 600;">⚙️ ${event.scraperType.toUpperCase()}</span>` : ''}
-              ${event.eventStatus === 'UPCOMING' && !event.mainStartTime && !event.prelimStartTime && !event.earlyPrelimStartTime ? `<span style="color: #ef4444; font-weight: 600;" title="No start time — will not auto-transition to LIVE">⚠️ NO TIME</span>` : ''}
-            </div>
+            <div class="event-banner-thumb">${bannerHtml}</div>
           </div>
-        `).join('');
+          `;
+        }).join('');
       } catch (err) {
         showToast('Failed to load events', 'error');
         console.error(err);
@@ -3419,6 +3537,108 @@
       if (!dateStr) return '';
       const date = new Date(dateStr);
       return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    // Format a start-time ISO string as "8:00pm EDT" using the viewer's local TZ.
+    function formatStartTime(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      const hours24 = date.getHours();
+      const minutes = date.getMinutes();
+      const ampm = hours24 >= 12 ? 'pm' : 'am';
+      const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+      const timeStr = minutes === 0
+        ? `${hours12}${ampm}`
+        : `${hours12}:${minutes.toString().padStart(2, '0')}${ampm}`;
+      let tz = '';
+      try {
+        const parts = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short', hour: 'numeric' }).formatToParts(date);
+        tz = parts.find(p => p.type === 'timeZoneName')?.value || '';
+      } catch {}
+      return tz ? `${timeStr} ${tz}` : timeStr;
+    }
+
+    // Mirrors mobile/utils/dateFormatters.ts formatTimeUntil — returns ALL CAPS
+    // strings like "TODAY", "TOMORROW", "IN 6 HOURS", "IN 2 WEEKS".
+    function formatTimeUntil(eventDateStr, startTimeStr) {
+      const eventDate = new Date(eventDateStr);
+      const now = new Date();
+      const eventLocalDate = new Date(
+        eventDate.getUTCFullYear(),
+        eventDate.getUTCMonth(),
+        eventDate.getUTCDate(),
+      );
+      const todayLocalDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const diffDays = Math.round((eventLocalDate.getTime() - todayLocalDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) {
+        const startTime = startTimeStr ? new Date(startTimeStr) : eventDate;
+        const hoursUntil = (startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+        if (hoursUntil <= 0) return 'TODAY';
+        if (hoursUntil < 1) return 'STARTING SOON';
+        const hours = Math.floor(hoursUntil);
+        return hours === 1 ? 'IN 1 HOUR' : `IN ${hours} HOURS`;
+      }
+      if (diffDays < 0) {
+        const past = Math.abs(diffDays);
+        if (past === 1) return 'YESTERDAY';
+        if (past < 7) return `${past} DAYS AGO`;
+        const weeks = Math.round(past / 7);
+        if (weeks === 1) return '1 WEEK AGO';
+        return `${weeks} WEEKS AGO`;
+      }
+      if (diffDays === 1) return 'TOMORROW';
+      if (diffDays < 7) {
+        const dayNames = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+        return dayNames[eventLocalDate.getDay()];
+      }
+      const weeksUntil = Math.round(diffDays / 7);
+      if (weeksUntil === 1) return 'IN 1 WEEK';
+      if (weeksUntil <= 7) return `IN ${weeksUntil} WEEKS`;
+      const monthsUntil = Math.round(diffDays / 30);
+      if (monthsUntil === 1) return 'IN 1 MONTH';
+      if (monthsUntil < 12) return `IN ${monthsUntil} MONTHS`;
+      const yearsUntil = Math.round(diffDays / 365);
+      return yearsUntil === 1 ? 'IN 1 YEAR' : `IN ${yearsUntil} YEARS`;
+    }
+
+    // Map a promotion name (as stored in event.promotion) to a logo file served
+    // from /images/promotions/. Returns null if unknown — the renderer falls
+    // back to a text label.
+    const PROMOTION_LOGOS = {
+      'ufc': '/images/promotions/UFC_Logo.svg',
+      'pfl': '/images/promotions/PFL_logo.svg',
+      'one': '/images/promotions/ONE_logo.svg',
+      'one championship': '/images/promotions/ONE_logo.svg',
+      'one fc': '/images/promotions/ONE_logo.svg',
+      'bkfc': '/images/promotions/BKFC_logo.svg',
+      'matchroom': '/images/promotions/Matchroom_logo.svg',
+      'matchroom boxing': '/images/promotions/Matchroom_logo.svg',
+      'mvp': '/images/promotions/Most_Valuable_Promotions_Logo.svg',
+      'most valuable promotions': '/images/promotions/Most_Valuable_Promotions_Logo.svg',
+      'rizin': '/images/promotions/RIZIN_logo.svg',
+      'rizin fighting federation': '/images/promotions/RIZIN_logo.svg',
+      'oktagon': '/images/promotions/oktagon_logo_png.svg',
+      'oktagon mma': '/images/promotions/oktagon_logo_png.svg',
+      'karate combat': '/images/promotions/KARATECOMBATlogo.svg',
+      'dirty boxing': '/images/promotions/dirtyboxing_logo.svg',
+      'dirty boxing championship': '/images/promotions/dirtyboxing_logo.svg',
+      'dbx': '/images/promotions/dirtyboxing_logo.svg',
+      'zuffa boxing': '/images/promotions/zuffa_boxing_logo.png',
+      'gold star': '/images/promotions/goldstar_logo.png',
+      'gold star promotions': '/images/promotions/goldstar_logo.png',
+      'golden boy': '/images/promotions/golden-boy-logo.svg',
+      'golden boy promotions': '/images/promotions/golden-boy-logo.svg',
+      'top rank': '/images/promotions/toprank_logo.svg',
+      'top rank boxing': '/images/promotions/toprank_logo.svg',
+      'pbc': '/images/promotions/premier_boxing_champions_logo.svg',
+      'premier boxing champions': '/images/promotions/premier_boxing_champions_logo.svg',
+      'raf': '/images/promotions/RAF_logo.svg',
+      'the ring': '/images/promotions/the_ring_logo.svg',
+    };
+    function getPromotionLogo(promotion) {
+      if (!promotion) return null;
+      return PROMOTION_LOGOS[promotion.toLowerCase().trim()] || null;
     }
 
     function showToast(message, type = 'success') {
