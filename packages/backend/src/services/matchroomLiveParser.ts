@@ -9,7 +9,7 @@
 import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import { MatchroomEventData, MatchroomFightData } from './matchroomLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
-import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
+import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 
 const prisma = new PrismaClient();
 
@@ -122,9 +122,15 @@ function getWinnerFighterId(winnerName: string, fighter1: any, fighter2: any): s
  */
 export async function parseMatchroomLiveData(
   liveData: MatchroomEventData,
-  eventId: string
+  eventId: string,
+  options: BackfillOptions = {}
 ): Promise<{ fightsUpdated: number; eventUpdated: boolean }> {
-  console.log(`\n📊 [MATCHROOM PARSER] Processing live data for: ${liveData.eventName}`);
+  const isBackfill = !!(
+    options.nullOnlyResults ||
+    options.skipNotifications ||
+    options.completionMethodOverride
+  );
+  console.log(`\n${isBackfill ? '📦 [MATCHROOM BACKFILL]' : '📊 [MATCHROOM PARSER]'} Processing live data for: ${liveData.eventName}`);
 
   let fightsUpdated = 0;
   let eventUpdated = false;
@@ -210,8 +216,10 @@ export async function parseMatchroomLiveData(
         changed = true;
         console.log(`    ✅ Fight COMPLETE`);
 
-        // When a fight completes, notify for the next fight
-        notifyNextFight(dbFight.eventId, dbFight.orderOnCard);
+        // When a fight completes, notify for the next fight (skipped during backfill)
+        if (!options.skipNotifications) {
+          notifyNextFight(dbFight.eventId, dbFight.orderOnCard);
+        }
       }
 
       // Check result
@@ -269,6 +277,16 @@ export async function parseMatchroomLiveData(
 
       // Apply updates (route through shadow field helper)
       if (changed) {
+        // Backfill: stamp audit trail on fights flipping to COMPLETED on this run.
+        if (
+          options.completionMethodOverride &&
+          updateData.fightStatus === 'COMPLETED' &&
+          dbFight.fightStatus !== 'COMPLETED'
+        ) {
+          updateData.completionMethod = options.completionMethodOverride;
+          updateData.completedAt = new Date();
+        }
+
         const finalUpdateData = buildTrackerUpdateData(updateData, scraperType);
         await prisma.fight.update({
           where: { id: dbFight.id },
