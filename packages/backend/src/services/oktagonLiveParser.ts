@@ -7,7 +7,7 @@
 import { PrismaClient } from '@prisma/client';
 import { OktagonEventData, OktagonFightData } from './oktagonLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
-import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
+import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 
 const prisma = new PrismaClient();
 
@@ -102,9 +102,17 @@ async function notifyNextFight(eventId: string, completedFightOrder: number): Pr
  */
 export async function parseOktagonLiveData(
   liveData: OktagonEventData,
-  eventId: string
+  eventId: string,
+  options: BackfillOptions = {}
 ): Promise<{ fightsUpdated: number; eventUpdated: boolean; cancelledCount: number; unCancelledCount: number }> {
-  console.log(`\n📊 [OKTAGON PARSER] Processing live data for: ${liveData.eventName}`);
+  const isBackfill = !!(
+    options.nullOnlyResults ||
+    options.skipCancellationCheck ||
+    options.skipNotifications ||
+    options.skipStaleLiveReset ||
+    options.completionMethodOverride
+  );
+  console.log(`\n${isBackfill ? '📦 [OKTAGON BACKFILL]' : '📊 [OKTAGON PARSER]'} Processing live data for: ${liveData.eventName}`);
 
   let fightsUpdated = 0;
   let eventUpdated = false;
@@ -187,8 +195,13 @@ export async function parseOktagonLiveData(
       const updateData: any = {};
       let changed = false;
 
-      // Reset fights that lifecycle incorrectly completed (COMPLETED with no winner, but API says not complete)
-      if (!fightUpdate.isComplete && !fightUpdate.hasStarted && dbFight.fightStatus === 'COMPLETED' && !dbFight.winner) {
+      // Reset fights that lifecycle incorrectly completed (COMPLETED with no winner, but API says not complete).
+      // Backfill skips this — see BackfillOptions.skipStaleLiveReset.
+      if (
+        !options.skipStaleLiveReset &&
+        !fightUpdate.isComplete && !fightUpdate.hasStarted &&
+        dbFight.fightStatus === 'COMPLETED' && !dbFight.winner
+      ) {
         updateData.fightStatus = 'UPCOMING';
         changed = true;
         console.log(`    ⏪ Fight reset to UPCOMING (lifecycle completed prematurely)`);
@@ -207,8 +220,10 @@ export async function parseOktagonLiveData(
         changed = true;
         console.log(`    ✅ Fight COMPLETE`);
 
-        // Notify for next fight
-        notifyNextFight(dbFight.eventId, dbFight.orderOnCard);
+        // Notify for next fight (skipped during backfill)
+        if (!options.skipNotifications) {
+          notifyNextFight(dbFight.eventId, dbFight.orderOnCard);
+        }
       }
 
       // Check result
@@ -266,6 +281,16 @@ export async function parseOktagonLiveData(
 
       // Apply updates (route through shadow field helper)
       if (changed) {
+        // Backfill: stamp audit trail on fights flipping to COMPLETED on this run.
+        if (
+          options.completionMethodOverride &&
+          updateData.fightStatus === 'COMPLETED' &&
+          dbFight.fightStatus !== 'COMPLETED'
+        ) {
+          updateData.completionMethod = options.completionMethodOverride;
+          updateData.completedAt = new Date();
+        }
+
         const finalUpdateData = buildTrackerUpdateData(updateData, scraperType);
         await prisma.fight.update({
           where: { id: dbFight.id },
@@ -278,7 +303,14 @@ export async function parseOktagonLiveData(
 
     // ============== CANCELLATION DETECTION ==============
     // Check for fights in DB that were NOT in the scraped data (possibly cancelled)
-    // Also check for previously cancelled fights that have reappeared (un-cancel them)
+    // Also check for previously cancelled fights that have reappeared (un-cancel them).
+    // Backfill skips this — see UFC parser notes.
+
+    if (options.skipCancellationCheck) {
+      console.log(`  ⏭️  [backfill] Skipping cancellation check`);
+      console.log(`  ✅ Parser complete: ${fightsUpdated} fights updated\n`);
+      return { fightsUpdated, eventUpdated, cancelledCount: 0, unCancelledCount: 0 };
+    }
 
     console.log(`  🔍 Checking for cancelled/un-cancelled fights...`);
     let cancelledCount = 0;

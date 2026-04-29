@@ -6,14 +6,17 @@
  * to scrape and parse that org. Each wrapper reuses the existing live
  * scraper + live parser as the single source of truth.
  *
- * Coverage at first ship:
- *   - scraperType = 'ufc'      → backfillUFCResults
- *   - scraperType = 'tapology' → handled by the older `backfillTapologyResults`
- *                                workflow (logged here, not invoked)
- *   - others                   → logged as not-yet-covered
- *
- * Wrappers for BKFC, ONE FC, Oktagon, and Matchroom-native land next; once
- * each ships, drop a new case below.
+ * Coverage:
+ *   - scraperType = 'ufc'       → backfillUFCResults
+ *   - scraperType = 'bkfc'      → backfillBKFCResults
+ *   - scraperType = 'onefc'     → backfillOneFCResults
+ *   - scraperType = 'oktagon'   → backfillOktagonResults
+ *   - scraperType = 'matchroom' → backfillMatchroomResults  (Matchroom-native;
+ *                                 Matchroom-via-Tapology is on the older
+ *                                 tapology-backfill.yml path)
+ *   - scraperType = 'tapology'  → handled by tapology-backfill.yml; logged
+ *                                 here for visibility, not invoked.
+ *   - others                    → logged as not-yet-covered (e.g. 'raf').
  *
  * Candidates:
  *   - eventStatus = COMPLETED
@@ -29,6 +32,9 @@
 import { PrismaClient } from '@prisma/client';
 import { backfillUFCResults } from '../services/backfillUFCResults';
 import { backfillBKFCResults } from '../services/backfillBKFCResults';
+import { backfillOneFCResults } from '../services/backfillOneFCResults';
+import { backfillOktagonResults } from '../services/backfillOktagonResults';
+import { backfillMatchroomResults } from '../services/backfillMatchroomResults';
 
 const prisma = new PrismaClient();
 
@@ -122,11 +128,41 @@ async function main() {
           break;
         }
 
-        case 'onefc':
-        case 'oktagon':
-        case 'matchroom':
-          console.log(`  [backfill] ${org}: wrapper not yet implemented, skipping`);
+        case 'onefc': {
+          const r = await backfillOneFCResults(prisma, {
+            id: event.id,
+            name: event.name,
+            ufcUrl: event.ufcUrl,
+          });
+          tally(org).succeeded++;
+          tally(org).filledWinners += r.filledWinners;
+          console.log(`  [backfill] onefc: filled ${r.filledWinners} winner(s)`);
           break;
+        }
+
+        case 'oktagon': {
+          const r = await backfillOktagonResults(prisma, {
+            id: event.id,
+            name: event.name,
+            ufcUrl: event.ufcUrl,
+          });
+          tally(org).succeeded++;
+          tally(org).filledWinners += r.filledWinners;
+          console.log(`  [backfill] oktagon: filled ${r.filledWinners} winner(s)`);
+          break;
+        }
+
+        case 'matchroom': {
+          const r = await backfillMatchroomResults(prisma, {
+            id: event.id,
+            name: event.name,
+            ufcUrl: event.ufcUrl,
+          });
+          tally(org).succeeded++;
+          tally(org).filledWinners += r.filledWinners;
+          console.log(`  [backfill] matchroom: filled ${r.filledWinners} winner(s)`);
+          break;
+        }
 
         default:
           console.log(`  [backfill] ${org}: no backfill path defined, skipping`);

@@ -27,9 +27,11 @@ export interface BackfillOptions {
   /** Suppress next-fight push notifications when a fight flips to COMPLETED.
    *  Backfill is processing past events; users shouldn't be paged. */
   skipNotifications?: boolean;
-  /** Skip the "reset stale LIVE -> UPCOMING" pass that some parsers run.
-   *  Past events shouldn't have LIVE fights; if any do, backfill leaves them
-   *  alone and lets a human investigate. */
+  /** Skip the live-tracker self-healing status downgrade passes (BKFC's
+   *  "reset stale LIVE -> UPCOMING", Oktagon's "lifecycle-completed-with-no-
+   *  winner -> UPCOMING", etc.). Backfill must not retroactively downgrade a
+   *  fight's status based on a stale source page; if any fight needs that, a
+   *  human should investigate. */
   skipStaleLiveReset?: boolean;
   /** When set (e.g. "backfill-ufc"), stamp this onto Fight.completionMethod
    *  and set Fight.completedAt = now() for any fight whose status flips to

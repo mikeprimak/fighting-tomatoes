@@ -7,7 +7,7 @@
 import { PrismaClient, WeightClass, Sport, Gender } from '@prisma/client';
 import { OneFCEventData, OneFCFightData } from './oneFCLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
-import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
+import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 
 const prisma = new PrismaClient();
 
@@ -226,9 +226,16 @@ async function createFightFromScrape(
  */
 export async function parseOneFCLiveData(
   liveData: OneFCEventData,
-  eventId: string
+  eventId: string,
+  options: BackfillOptions = {}
 ): Promise<{ fightsUpdated: number; eventUpdated: boolean; cancelledCount: number; unCancelledCount: number }> {
-  console.log(`\n📊 [ONE FC PARSER] Processing live data for: ${liveData.eventName}`);
+  const isBackfill = !!(
+    options.nullOnlyResults ||
+    options.skipCancellationCheck ||
+    options.skipNotifications ||
+    options.completionMethodOverride
+  );
+  console.log(`\n${isBackfill ? '📦 [ONE FC BACKFILL]' : '📊 [ONE FC PARSER]'} Processing live data for: ${liveData.eventName}`);
 
   let fightsUpdated = 0;
   let eventUpdated = false;
@@ -333,18 +340,20 @@ export async function parseOneFCLiveData(
         changed = true;
         console.log(`    🔴 Fight is LIVE`);
 
-        // Notify that this fight just started
-        const formatName = (f: { firstName: string; lastName: string }) =>
-          f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : (f.lastName || f.firstName);
-        const fighter1Name = formatName(dbFight.fighter1);
-        const fighter2Name = formatName(dbFight.fighter2);
+        // Notify that this fight just started (skipped during backfill)
+        if (!options.skipNotifications) {
+          const formatName = (f: { firstName: string; lastName: string }) =>
+            f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : (f.lastName || f.firstName);
+          const fighter1Name = formatName(dbFight.fighter1);
+          const fighter2Name = formatName(dbFight.fighter2);
 
-        try {
-          const { notifyFightStartViaRules } = await import('./notificationService');
-          await notifyFightStartViaRules(dbFight.id, fighter1Name, fighter2Name);
-          console.log(`    🔔 Sent "fight started" notification`);
-        } catch (err) {
-          console.error(`    ⚠️ Failed to send notification:`, err);
+          try {
+            const { notifyFightStartViaRules } = await import('./notificationService');
+            await notifyFightStartViaRules(dbFight.id, fighter1Name, fighter2Name);
+            console.log(`    🔔 Sent "fight started" notification`);
+          } catch (err) {
+            console.error(`    ⚠️ Failed to send notification:`, err);
+          }
         }
       }
 
@@ -361,8 +370,10 @@ export async function parseOneFCLiveData(
         changed = true;
         console.log(`    ✅ Fight COMPLETE`);
 
-        // Notify for next fight
-        await notifyNextFight(dbFight.eventId, dbFight.orderOnCard);
+        // Notify for next fight (skipped during backfill)
+        if (!options.skipNotifications) {
+          await notifyNextFight(dbFight.eventId, dbFight.orderOnCard);
+        }
       }
 
       // Check result
@@ -414,6 +425,16 @@ export async function parseOneFCLiveData(
 
       // Apply updates (route through shadow field helper)
       if (changed) {
+        // Backfill: stamp audit trail on fights flipping to COMPLETED on this run.
+        if (
+          options.completionMethodOverride &&
+          updateData.fightStatus === 'COMPLETED' &&
+          dbFight.fightStatus !== 'COMPLETED'
+        ) {
+          updateData.completionMethod = options.completionMethodOverride;
+          updateData.completedAt = new Date();
+        }
+
         const finalUpdateData = buildTrackerUpdateData(updateData, scraperType);
         await prisma.fight.update({
           where: { id: dbFight.id },
@@ -426,7 +447,15 @@ export async function parseOneFCLiveData(
 
     // ============== CANCELLATION DETECTION ==============
     // Check for fights in DB that were NOT in the scraped data (possibly cancelled)
-    // Also check for previously cancelled fights that have reappeared (un-cancel them)
+    // Also check for previously cancelled fights that have reappeared (un-cancel them).
+    // Backfill skips this — the source page may have shifted weeks after the
+    // event and we don't want to retroactively cancel real fights.
+
+    if (options.skipCancellationCheck) {
+      console.log(`  ⏭️  [backfill] Skipping cancellation check`);
+      console.log(`  ✅ Parser complete: ${fightsUpdated} fights updated\n`);
+      return { fightsUpdated, eventUpdated, cancelledCount: 0, unCancelledCount: 0 };
+    }
 
     console.log(`  🔍 Checking for cancelled/un-cancelled fights...`);
     let cancelledCount = 0;
