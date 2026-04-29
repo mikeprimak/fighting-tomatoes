@@ -2632,6 +2632,9 @@
         <button class="mobile-back-btn" onclick="showEventsList()">← Events</button>
         <div class="panel-header">
           <div>
+            <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; color: var(--accent-gold); text-transform: uppercase; margin-bottom: 0.25rem;">
+              ${escapeHtml(selectedEvent.promotion || 'Unknown promotion')}
+            </div>
             <span class="panel-title">${escapeHtml(selectedEvent.name)}</span>
             <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
               ${formatDate(selectedEvent.date)} • ${selectedEvent.venue || ''} ${selectedEvent.location || ''}
