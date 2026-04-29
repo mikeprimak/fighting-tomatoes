@@ -2556,7 +2556,7 @@
           `${missing.length} upcoming event${missing.length > 1 ? 's' : ''} will NOT auto-transition to LIVE until a start time is set:`;
 
         document.getElementById('missingStartTimeList').innerHTML = missing.map(e =>
-          `<span style="display: inline-block; background: #451a03; padding: 2px 8px; border-radius: 4px; margin: 2px 4px; cursor: pointer; border: 1px solid #92400e;" onclick="selectEvent('${e.id}')">${escapeHtml(e.name)} (${formatDate(e.date)})</span>`
+          `<span style="display: inline-block; background: #451a03; padding: 2px 8px; border-radius: 4px; margin: 2px 4px; cursor: pointer; border: 1px solid #92400e;" onclick="selectEvent('${e.id}')"><span style="color: #fed7aa; font-weight: 700; margin-right: 0.4rem;">${escapeHtml(e.promotion || '?')}</span>${escapeHtml(e.name)} (${formatDate(e.date)})</span>`
         ).join('');
 
         alert.style.display = 'block';
