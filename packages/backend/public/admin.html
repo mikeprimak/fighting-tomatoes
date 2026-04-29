@@ -240,6 +240,30 @@
       gap: 0.5rem;
     }
 
+    .live-count-notice {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+      text-align: center;
+    }
+
+    .live-count-notice.none {
+      background: rgba(160, 174, 192, 0.12);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+
+    .live-count-notice.live {
+      background: rgba(239, 68, 68, 0.18);
+      color: var(--accent-red);
+      border: 1px solid var(--accent-red);
+      animation: pulse 2s infinite;
+    }
+
     .event-day-header {
       font-size: 1.5rem;
       font-weight: 800;
@@ -1731,6 +1755,8 @@
           <button class="btn btn-primary btn-sm" onclick="openEventModal()">+ New Event</button>
         </div>
 
+        <div id="liveEventCountNotice" class="live-count-notice none">No events live</div>
+
         <div class="filter-bar">
           <select id="eventFilter" class="form-select" onchange="loadEvents()">
             <option value="live">Live</option>
@@ -2399,6 +2425,7 @@
         hideLoginScreen();
         loadEvents();
         checkMissingStartTimes();
+        updateLiveEventCount();
         showToast('Logged in successfully', 'success');
       } catch (error) {
         errorDiv.textContent = error.message;
@@ -2426,6 +2453,7 @@
               hideLoginScreen();
               loadEvents();
               checkMissingStartTimes();
+              updateLiveEventCount();
             } else {
               showLoginScreen();
             }
@@ -2451,6 +2479,7 @@
     // EVENTS
     // ============================================
     async function loadEvents() {
+      updateLiveEventCount();
       const promotion = document.getElementById('globalPromotion').value;
       const filter = document.getElementById('eventFilter').value;
       const params = new URLSearchParams();
@@ -2566,6 +2595,25 @@
         alert.style.display = 'block';
       } catch (err) {
         console.error('Failed to check missing start times:', err);
+      }
+    }
+
+    async function updateLiveEventCount() {
+      const notice = document.getElementById('liveEventCountNotice');
+      if (!notice) return;
+      try {
+        const res = await authFetch(`${API_BASE}/admin/events?status=live&limit=100`);
+        const data = await res.json();
+        const count = data.events ? data.events.length : 0;
+        if (count === 0) {
+          notice.className = 'live-count-notice none';
+          notice.textContent = 'No events live';
+        } else {
+          notice.className = 'live-count-notice live';
+          notice.textContent = `● ${count} event${count === 1 ? '' : 's'} live`;
+        }
+      } catch (err) {
+        console.error('Failed to load live event count:', err);
       }
     }
 
