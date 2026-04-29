@@ -126,9 +126,22 @@ export const formatEventTimeCompact = (dateString: string): string => {
 };
 
 /**
- * Get the device's timezone abbreviation (e.g. "EDT", "PST") for the given
- * date, accounting for DST. Falls back to a GMT offset like "GMT-4" if the
- * platform's Intl support can't produce a short name.
+ * Collapse Daylight/Standard variants to a single short form so the user
+ * doesn't see DST flips (EDT → ET in summer, EST → ET in winter).
+ * EDT/EST → ET, CDT/CST → CT, MDT/MST → MT, PDT/PST → PT, AKDT/AKST → AKT,
+ * HDT/HST → HT, AEDT/AEST → AET, etc.
+ * Leaves non-D/S-pattern abbreviations (GMT, UTC, IST, etc.) untouched.
+ */
+const collapseDstAbbr = (tz: string): string => {
+  const m = tz.match(/^([A-Z]{1,3})[DS]T$/);
+  return m ? `${m[1]}T` : tz;
+};
+
+/**
+ * Get the device's timezone abbreviation (e.g. "ET", "PT") for the given date.
+ * DST and Standard variants are collapsed (EDT and EST both render as "ET").
+ * Falls back to a GMT offset like "GMT-4" if the platform's Intl support can't
+ * produce a short name.
  */
 export const getTimezoneAbbreviation = (date: Date): string => {
   try {
@@ -138,7 +151,7 @@ export const getTimezoneAbbreviation = (date: Date): string => {
     }).formatToParts(date);
     const tzPart = parts.find((p) => p.type === 'timeZoneName');
     if (tzPart?.value) {
-      return tzPart.value;
+      return collapseDstAbbr(tzPart.value);
     }
   } catch {
     // fall through
