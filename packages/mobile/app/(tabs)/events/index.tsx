@@ -25,7 +25,7 @@ import { useNotification } from '../../../store/NotificationContext';
 import { useOrgFilter } from '../../../store/OrgFilterContext';
 import { useSearch } from '../../../store/SearchContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { formatEventDate, formatEventTimeCompact, formatTimeUntil } from '../../../utils/dateFormatters';
+import { formatEventDate, formatEventTimeCompact, formatTimeUntil, getTimezoneAbbreviation } from '../../../utils/dateFormatters';
 
 // Number of events to load initially and per page
 const EVENTS_PER_PAGE = 2;
@@ -52,7 +52,8 @@ type Fight = any;
 
 // Aliases for stable references used in JSX
 const formatDate = (dateString: string) => formatEventDate(dateString);
-const formatTime = (dateString: string) => formatEventTimeCompact(dateString);
+const formatTime = (dateString: string) =>
+  `${formatEventTimeCompact(dateString)} ${getTimezoneAbbreviation(new Date(dateString))}`;
 
 // Treat an event as live if the backend has flagged it LIVE *or* its earliest
 // start time has passed and it isn't COMPLETED. Mirrors the fallback on the

@@ -126,6 +126,35 @@ export const formatEventTimeCompact = (dateString: string): string => {
 };
 
 /**
+ * Get the device's timezone abbreviation (e.g. "EDT", "PST") for the given
+ * date, accounting for DST. Falls back to a GMT offset like "GMT-4" if the
+ * platform's Intl support can't produce a short name.
+ */
+export const getTimezoneAbbreviation = (date: Date): string => {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZoneName: 'short',
+      hour: 'numeric',
+    }).formatToParts(date);
+    const tzPart = parts.find((p) => p.type === 'timeZoneName');
+    if (tzPart?.value) {
+      return tzPart.value;
+    }
+  } catch {
+    // fall through
+  }
+  const offsetMins = date.getTimezoneOffset();
+  const offsetHours = -offsetMins / 60;
+  const sign = offsetHours >= 0 ? '+' : '-';
+  const abs = Math.abs(offsetHours);
+  const whole = Math.floor(abs);
+  const frac = Math.round((abs - whole) * 60);
+  return frac === 0
+    ? `GMT${sign}${whole}`
+    : `GMT${sign}${whole}:${frac.toString().padStart(2, '0')}`;
+};
+
+/**
  * Format how long until an event starts.
  * Returns e.g. "TODAY", "TOMORROW", "IN 3 DAYS", "IN 2 WEEKS", etc.
  */
