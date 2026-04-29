@@ -25,7 +25,24 @@ Automated data collection for fight cards across 14+ promotions. Mix of direct s
 ## Live Trackers
 - **UFC Live Tracker:** `services/ufcLiveParser.ts` — dispatched by lifecycle
 - **Tapology Live Tracker:** `scripts/runTapologyLiveTracker.ts` — generic, covers multiple promotions
-- Config: `src/config/liveTrackerConfig.ts` (`PRODUCTION_SCRAPERS`, `buildTrackerUpdateData()`)
+- Config: `src/config/liveTrackerConfig.ts` (`PRODUCTION_SCRAPERS`, `buildTrackerUpdateData()`, `BackfillOptions`)
+
+## Backfill (retroactive results) architecture (2026-04-28)
+All 5 native live parsers (`ufcLiveParser`, `bkfcLiveParser`, `oneFCLiveParser`, `oktagonLiveParser`, `matchroomLiveParser`) accept an optional third `BackfillOptions` parameter (defined in `liveTrackerConfig.ts`). Defaults preserve existing live-tracker behavior; the backfill orchestrator (`scripts/backfillResults.ts`) opts in. Flags:
+- `nullOnlyResults` — only write winner/method/round/time when DB value is NULL.
+- `skipCancellationCheck` — bypass the CANCELLED↔UPCOMING reconciliation pass.
+- `skipNotifications` — suppress next-fight push notifications.
+- `skipStaleLiveReset` — bypass live-tracker self-healing status downgrades (BKFC's stale-LIVE pass, Oktagon's lifecycle-completed-no-winner reset).
+- `completionMethodOverride` — when set (e.g. `'backfill-ufc'`), stamp `Fight.completionMethod` + `Fight.completedAt = now()` on COMPLETED transitions.
+
+Per-org backfill wrappers live alongside each parser as `services/backfill<Org>Results.ts`. Each one re-uses the existing live scraper + parser (single source of truth per org). Wrapper invocation styles vary:
+- **UFC, BKFC** spawn the JS scraper as a child node process and read its JSON output (existing pattern from the live trackers — `scrapeLiveEvent.js`, `scrapeBKFCLiveEvent.js`).
+- **ONE FC, Oktagon, Matchroom** instantiate the TS scraper class in-process (`new XxxLiveScraper(input).scrape()`).
+- **Oktagon takes a slug, not a URL** — extracted from `event.ufcUrl` via `events/([^/?]+)` regex; the wrapper carries this same extraction.
+
+The orchestrator runs daily at 10:00 UTC via `.github/workflows/results-backfill.yml`, 1hr after `tapology-backfill.yml` so the two don't fight for Render DB connections or Puppeteer memory. `BACKFILL_ORGS` env var (CSV) narrows a manual dispatch to specific orgs for smoke-testing.
+
+Tapology family (PFL/RIZIN/BKFC-via-Tapology/Zuffa/KC/DBX/Top Rank/Golden Boy/Gold Star/The Ring/Matchroom-via-Tapology/MVP) stays on the older `backfillTapologyResults.ts` + `tapology-backfill.yml` path.
 
 ## GitHub Actions Workflows
 - `ufc-scraper.yml` — daily UFC data scrape
