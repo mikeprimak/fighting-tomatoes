@@ -240,6 +240,28 @@
       gap: 0.5rem;
     }
 
+    .event-day-header {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      padding: 0.5rem 0 0.25rem;
+      margin-top: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .event-day-header:first-child {
+      margin-top: 0;
+    }
+
+    .event-day-header.today {
+      color: var(--accent-gold);
+    }
+
+    .event-day-header.live {
+      color: var(--accent-red);
+    }
+
     .event-card {
       background: var(--bg-card);
       border-radius: 8px;
@@ -2448,10 +2470,20 @@
           return;
         }
 
+        let lastDayKey = null;
         container.innerHTML = data.events.map(event => {
           const earliest = event.earlyPrelimStartTime || event.prelimStartTime || event.mainStartTime || event.date;
           const isLiveByTime = event.eventStatus === 'LIVE' ||
             (event.eventStatus !== 'COMPLETED' && earliest && Date.now() >= new Date(earliest).getTime());
+
+          const dayKey = getDayKey(event.date);
+          let dayHeader = '';
+          if (dayKey !== lastDayKey) {
+            lastDayKey = dayKey;
+            const headerText = formatDayHeader(event.date);
+            const headerClass = headerText === 'TODAY' ? 'event-day-header today' : 'event-day-header';
+            dayHeader = `<div class="${headerClass}">${headerText}</div>`;
+          }
           const badgeText = event.eventStatus === 'COMPLETED'
             ? 'COMPLETED'
             : isLiveByTime
@@ -2474,6 +2506,7 @@
             : `<span class="event-card-banner-empty">no banner</span>`;
 
           return `
+          ${dayHeader}
           <div class="event-card ${selectedEvent?.id === event.id ? 'selected' : ''}"
                onclick="selectEvent('${event.id}')"
                data-id="${event.id}">
@@ -3542,6 +3575,36 @@
       if (!dateStr) return '';
       const date = new Date(dateStr);
       return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    // Day-group key based on the event's UTC calendar date (matches how
+    // formatTimeUntil compares days). Two events with the same key belong in
+    // the same day section.
+    function getDayKey(dateStr) {
+      const d = new Date(dateStr);
+      return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+    }
+
+    // Section header for a day group — TODAY / TOMORROW / SATURDAY / MAY 9.
+    function formatDayHeader(dateStr) {
+      const eventDate = new Date(dateStr);
+      const now = new Date();
+      const eventLocalDate = new Date(
+        eventDate.getUTCFullYear(),
+        eventDate.getUTCMonth(),
+        eventDate.getUTCDate(),
+      );
+      const todayLocalDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const diffDays = Math.round((eventLocalDate.getTime() - todayLocalDate.getTime()) / (1000 * 60 * 60 * 24));
+      const dayNames = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+      if (diffDays === 0) return 'TODAY';
+      if (diffDays === 1) return 'TOMORROW';
+      if (diffDays === -1) return 'YESTERDAY';
+      if (diffDays > 1 && diffDays < 7) return dayNames[eventLocalDate.getDay()];
+      if (diffDays < -1 && diffDays > -7) return `LAST ${dayNames[eventLocalDate.getDay()]}`;
+      const opts = { month: 'short', day: 'numeric' };
+      if (Math.abs(diffDays) > 200) opts.year = 'numeric';
+      return eventLocalDate.toLocaleDateString('en-US', opts).toUpperCase();
     }
 
     // Format a start-time ISO string as "8:00pm EDT" using the viewer's local TZ.
