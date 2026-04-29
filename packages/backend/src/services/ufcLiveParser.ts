@@ -151,6 +151,27 @@ interface LiveEventUpdate {
   fights: LiveFightUpdate[];
 }
 
+/**
+ * Opt-in flags for non-live invocations of the parser (e.g. retroactive backfill).
+ * Defaults preserve existing live-tracker behavior exactly.
+ */
+export interface ParseLiveEventOptions {
+  /** Only write winner/method/round/time when the DB value is currently NULL.
+   *  Backfill must never overwrite manual fixes or live-tracker results. */
+  nullOnlyResults?: boolean;
+  /** Skip the CANCELLED↔UPCOMING reconciliation pass. Backfill runs days after
+   *  the event; the live source may have shifted the card and we don't want to
+   *  retroactively cancel real fights. */
+  skipCancellationCheck?: boolean;
+  /** Suppress the "next fight on card" notification when a fight flips to
+   *  COMPLETED. Backfill is processing past events; users shouldn't be paged. */
+  skipNotifications?: boolean;
+  /** When set, write this string to Fight.completionMethod (and completedAt = now)
+   *  for any fight whose status flips to COMPLETED on this run. Used for audit
+   *  trail (e.g. "backfill-ufc"). */
+  completionMethodOverride?: string;
+}
+
 // ============== HELPER FUNCTIONS ==============
 
 /**
@@ -310,8 +331,19 @@ function getWinnerFighterId(winnerName: string, fighter1: any, fighter2: any): s
  * @param liveData - Live event data from scraper
  * @param eventId - Optional UUID of event (if not provided, will search by name)
  */
-export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: string): Promise<void> {
-  console.log(`\n📊 [LIVE PARSER] Processing live data for: ${liveData.eventName}`);
+export async function parseLiveEventData(
+  liveData: LiveEventUpdate,
+  eventId?: string,
+  options: ParseLiveEventOptions = {}
+): Promise<void> {
+  const isBackfill = !!(
+    options.nullOnlyResults ||
+    options.skipCancellationCheck ||
+    options.skipNotifications ||
+    options.completionMethodOverride
+  );
+  const tag = isBackfill ? '📦 [BACKFILL PARSER]' : '📊 [LIVE PARSER]';
+  console.log(`\n${tag} Processing live data for: ${liveData.eventName}`);
 
   try {
     // Find event in database - use UUID if provided, otherwise search by name
@@ -509,7 +541,7 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         console.log(`    🥊 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: fightStatus → ${fightUpdate.fightStatus}`);
 
         // When a fight completes, send notifications for the NEXT fight on the card
-        if (fightUpdate.fightStatus === 'COMPLETED') {
+        if (fightUpdate.fightStatus === 'COMPLETED' && !options.skipNotifications) {
           try {
             const nextFight = await prisma.fight.findFirst({
               where: {
@@ -560,16 +592,22 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         console.log(`    ⚫ ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: completedRounds → ${fightUpdate.completedRounds}`);
       }
 
-      // Check result changes - update even if already set (UFC.com may correct results)
+      // Check result changes - update even if already set (UFC.com may correct results).
+      // Backfill mode (`nullOnlyResults`) skips the corrective write so manual fixes
+      // and live-tracker results are never overwritten.
       if (fightUpdate.winner) {
         const winnerId = getWinnerFighterId(fightUpdate.winner, dbFight.fighter1, dbFight.fighter2);
         if (winnerId && dbFight.winner !== winnerId) {
-          updateData.winner = winnerId;
-          changed = true;
-          if (dbFight.winner) {
-            console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner CORRECTED → ${fightUpdate.winner}`);
+          if (options.nullOnlyResults && dbFight.winner) {
+            console.log(`    ⏭️  [backfill] Skipping winner correction for ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (already set: ${dbFight.winner})`);
           } else {
-            console.log(`    🏆 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner → ${fightUpdate.winner}`);
+            updateData.winner = winnerId;
+            changed = true;
+            if (dbFight.winner) {
+              console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner CORRECTED → ${fightUpdate.winner}`);
+            } else {
+              console.log(`    🏆 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner → ${fightUpdate.winner}`);
+            }
           }
         }
       } else if (fightUpdate.fightStatus === 'COMPLETED' && fightUpdate.method && !fightUpdate.winner) {
@@ -582,44 +620,73 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
         else if (m.includes('draw')) resolvedWinner = 'draw';
 
         if (resolvedWinner && dbFight.winner !== resolvedWinner) {
-          updateData.winner = resolvedWinner;
-          changed = true;
-          console.log(`    🤝 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner → ${resolvedWinner.toUpperCase()} (${fightUpdate.method})`);
+          if (options.nullOnlyResults && dbFight.winner) {
+            console.log(`    ⏭️  [backfill] Skipping draw/NC correction for ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (already set: ${dbFight.winner})`);
+          } else {
+            updateData.winner = resolvedWinner;
+            changed = true;
+            console.log(`    🤝 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: winner → ${resolvedWinner.toUpperCase()} (${fightUpdate.method})`);
+          }
         }
       }
 
       if (fightUpdate.method && dbFight.method !== fightUpdate.method) {
-        updateData.method = fightUpdate.method;
-        changed = true;
-        if (dbFight.method) {
-          console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: method CORRECTED → ${fightUpdate.method}`);
+        if (options.nullOnlyResults && dbFight.method) {
+          console.log(`    ⏭️  [backfill] Skipping method correction for ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (already set: ${dbFight.method})`);
         } else {
-          console.log(`    📋 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: method → ${fightUpdate.method}`);
+          updateData.method = fightUpdate.method;
+          changed = true;
+          if (dbFight.method) {
+            console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: method CORRECTED → ${fightUpdate.method}`);
+          } else {
+            console.log(`    📋 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: method → ${fightUpdate.method}`);
+          }
         }
       }
 
       if (fightUpdate.winningRound !== undefined && dbFight.round !== fightUpdate.winningRound) {
-        updateData.round = fightUpdate.winningRound;
-        changed = true;
-        if (dbFight.round) {
-          console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: round CORRECTED → ${fightUpdate.winningRound}`);
+        if (options.nullOnlyResults && dbFight.round != null) {
+          console.log(`    ⏭️  [backfill] Skipping round correction for ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (already set: ${dbFight.round})`);
         } else {
-          console.log(`    🔢 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: round → ${fightUpdate.winningRound}`);
+          updateData.round = fightUpdate.winningRound;
+          changed = true;
+          if (dbFight.round) {
+            console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: round CORRECTED → ${fightUpdate.winningRound}`);
+          } else {
+            console.log(`    🔢 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: round → ${fightUpdate.winningRound}`);
+          }
         }
       }
 
       if (fightUpdate.winningTime && dbFight.time !== fightUpdate.winningTime) {
-        updateData.time = fightUpdate.winningTime;
-        changed = true;
-        if (dbFight.time) {
-          console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: time CORRECTED → ${fightUpdate.winningTime}`);
+        if (options.nullOnlyResults && dbFight.time) {
+          console.log(`    ⏭️  [backfill] Skipping time correction for ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (already set: ${dbFight.time})`);
         } else {
-          console.log(`    ⏱️  ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: time → ${fightUpdate.winningTime}`);
+          updateData.time = fightUpdate.winningTime;
+          changed = true;
+          if (dbFight.time) {
+            console.log(`    🔄 ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: time CORRECTED → ${fightUpdate.winningTime}`);
+          } else {
+            console.log(`    ⏱️  ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}: time → ${fightUpdate.winningTime}`);
+          }
         }
       }
 
       // Apply updates (route through shadow field helper)
       if (changed) {
+        // Backfill: stamp audit trail on fights flipping to COMPLETED on this run.
+        // buildTrackerUpdateData copies extra published-side keys via Object.assign
+        // when the scraper auto-publishes (UFC does), so completionMethod and
+        // completedAt land on the published Fight columns.
+        if (
+          options.completionMethodOverride &&
+          updateData.fightStatus === 'COMPLETED' &&
+          dbFight.fightStatus !== 'COMPLETED'
+        ) {
+          updateData.completionMethod = options.completionMethodOverride;
+          updateData.completedAt = new Date();
+        }
+
         const finalUpdateData = buildTrackerUpdateData(updateData, scraperType);
         console.log(`  💾 Updating fight ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} with:`, finalUpdateData);
         await prisma.fight.update({
@@ -634,7 +701,15 @@ export async function parseLiveEventData(liveData: LiveEventUpdate, eventId?: st
 
     // ============== CANCELLATION DETECTION ==============
     // Check for fights in DB that were NOT in the scraped data (possibly cancelled)
-    // Also check for previously cancelled fights that have reappeared (un-cancel them)
+    // Also check for previously cancelled fights that have reappeared (un-cancel them).
+    // Backfill skips this entire pass — the source page may have shifted weeks after
+    // the event and we don't want to retroactively cancel real fights.
+
+    if (options.skipCancellationCheck) {
+      console.log(`  ⏭️  [backfill] Skipping cancellation check`);
+      console.log(`  ✅ Parser complete: ${fightsUpdated} fights updated\n`);
+      return;
+    }
 
     console.log(`  🔍 Checking for cancelled/un-cancelled fights...`);
     console.log(`  📋 Scraped ufcFightIds: ${Array.from(scrapedFightsByUfcId.keys()).join(', ')}`);
