@@ -7,7 +7,7 @@
 import { PrismaClient } from '@prisma/client';
 import { BKFCEventData, BKFCFightData } from './bkfcLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
-import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
+import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 
 const prisma = new PrismaClient();
 
@@ -132,9 +132,17 @@ async function notifyNextFight(eventId: string, completedFightOrder: number): Pr
 
 export async function parseBKFCLiveData(
   liveData: BKFCEventData,
-  eventId: string
+  eventId: string,
+  options: BackfillOptions = {}
 ): Promise<{ fightsUpdated: number; eventUpdated: boolean; cancelledCount: number; unCancelledCount: number }> {
-  console.log(`\n[BKFC PARSER] Processing: ${liveData.eventName}`);
+  const isBackfill = !!(
+    options.nullOnlyResults ||
+    options.skipCancellationCheck ||
+    options.skipNotifications ||
+    options.skipStaleLiveReset ||
+    options.completionMethodOverride
+  );
+  console.log(`\n[${isBackfill ? 'BKFC BACKFILL' : 'BKFC PARSER'}] Processing: ${liveData.eventName}`);
 
   let fightsUpdated = 0;
   let eventUpdated = false;
@@ -232,7 +240,9 @@ export async function parseBKFCLiveData(
         updateData.fightStatus = 'COMPLETED';
         changed = true;
         console.log(`    -> COMPLETED`);
-        notifyNextFight(dbFight.eventId, dbFight.orderOnCard);
+        if (!options.skipNotifications) {
+          notifyNextFight(dbFight.eventId, dbFight.orderOnCard);
+        }
       }
 
       // Result
@@ -283,6 +293,16 @@ export async function parseBKFCLiveData(
       }
 
       if (changed) {
+        // Backfill: stamp audit trail on fights flipping to COMPLETED on this run.
+        if (
+          options.completionMethodOverride &&
+          updateData.fightStatus === 'COMPLETED' &&
+          dbFight.fightStatus !== 'COMPLETED'
+        ) {
+          updateData.completionMethod = options.completionMethodOverride;
+          updateData.completedAt = new Date();
+        }
+
         const finalData = buildTrackerUpdateData(updateData, scraperType);
         await prisma.fight.update({ where: { id: dbFight.id }, data: finalData });
         fightsUpdated++;
@@ -293,18 +313,29 @@ export async function parseBKFCLiveData(
     // Reset stale LIVE fights: any DB fight that is LIVE but the scraper didn't
     // identify as currently live should be reset to UPCOMING.
     // This prevents multiple fights from being stuck in LIVE status simultaneously.
-    for (const dbFight of event.fights) {
-      if (dbFight.fightStatus === 'LIVE' && !scrapedLiveFightIds.has(dbFight.id)) {
-        const resetData = buildTrackerUpdateData({ fightStatus: 'UPCOMING' }, scraperType);
-        await prisma.fight.update({ where: { id: dbFight.id }, data: resetData });
-        fightsUpdated++;
-        console.log(`  Reset stale LIVE: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} -> UPCOMING`);
+    // Backfill skips this — past events shouldn't be having LIVE rows reshuffled.
+    if (!options.skipStaleLiveReset) {
+      for (const dbFight of event.fights) {
+        if (dbFight.fightStatus === 'LIVE' && !scrapedLiveFightIds.has(dbFight.id)) {
+          const resetData = buildTrackerUpdateData({ fightStatus: 'UPCOMING' }, scraperType);
+          await prisma.fight.update({ where: { id: dbFight.id }, data: resetData });
+          fightsUpdated++;
+          console.log(`  Reset stale LIVE: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} -> UPCOMING`);
+        }
       }
     }
 
-    // Cancellation detection
+    // Cancellation detection. Backfill skips this entire pass — see UFC parser
+    // notes; we don't want to retroactively cancel real fights based on a
+    // shifted source page.
     let cancelledCount = 0;
     let unCancelledCount = 0;
+
+    if (options.skipCancellationCheck) {
+      console.log(`  [backfill] Skipping cancellation check`);
+      console.log(`  Done: ${fightsUpdated} updated\n`);
+      return { fightsUpdated, eventUpdated, cancelledCount: 0, unCancelledCount: 0 };
+    }
 
     for (const dbFight of event.fights) {
       if (dbFight.fightStatus === 'COMPLETED') continue;

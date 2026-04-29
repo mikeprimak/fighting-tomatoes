@@ -11,7 +11,7 @@
 
 import { PrismaClient, WeightClass, Gender, FightStatus } from '@prisma/client';
 import { stripDiacritics } from '../utils/fighterMatcher';
-import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
+import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 
 const prisma = new PrismaClient();
 
@@ -152,25 +152,11 @@ interface LiveEventUpdate {
 }
 
 /**
- * Opt-in flags for non-live invocations of the parser (e.g. retroactive backfill).
- * Defaults preserve existing live-tracker behavior exactly.
+ * Re-export the shared backfill flags for callers that import from this
+ * module. The UFC parser ignores `skipStaleLiveReset` (no such pass exists
+ * in this parser) and honors the rest.
  */
-export interface ParseLiveEventOptions {
-  /** Only write winner/method/round/time when the DB value is currently NULL.
-   *  Backfill must never overwrite manual fixes or live-tracker results. */
-  nullOnlyResults?: boolean;
-  /** Skip the CANCELLED↔UPCOMING reconciliation pass. Backfill runs days after
-   *  the event; the live source may have shifted the card and we don't want to
-   *  retroactively cancel real fights. */
-  skipCancellationCheck?: boolean;
-  /** Suppress the "next fight on card" notification when a fight flips to
-   *  COMPLETED. Backfill is processing past events; users shouldn't be paged. */
-  skipNotifications?: boolean;
-  /** When set, write this string to Fight.completionMethod (and completedAt = now)
-   *  for any fight whose status flips to COMPLETED on this run. Used for audit
-   *  trail (e.g. "backfill-ufc"). */
-  completionMethodOverride?: string;
-}
+export type ParseLiveEventOptions = BackfillOptions;
 
 // ============== HELPER FUNCTIONS ==============
 
