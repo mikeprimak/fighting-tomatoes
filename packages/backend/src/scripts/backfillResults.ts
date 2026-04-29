@@ -28,6 +28,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { backfillUFCResults } from '../services/backfillUFCResults';
+import { backfillBKFCResults } from '../services/backfillBKFCResults';
 
 const prisma = new PrismaClient();
 
@@ -109,7 +110,18 @@ async function main() {
           tally(org).succeeded++;
           break;
 
-        case 'bkfc':
+        case 'bkfc': {
+          const r = await backfillBKFCResults(prisma, {
+            id: event.id,
+            name: event.name,
+            ufcUrl: event.ufcUrl,
+          });
+          tally(org).succeeded++;
+          tally(org).filledWinners += r.filledWinners;
+          console.log(`  [backfill] bkfc: filled ${r.filledWinners} winner(s)`);
+          break;
+        }
+
         case 'onefc':
         case 'oktagon':
         case 'matchroom':

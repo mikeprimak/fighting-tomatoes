@@ -8,6 +8,36 @@
 export type ScraperType = 'ufc' | 'matchroom' | 'oktagon' | 'onefc' | 'tapology' | 'bkfc' | 'raf';
 
 /**
+ * Opt-in flags passed by the retroactive backfill (`backfillResults.ts`) to
+ * each per-org live parser. Defaults preserve the live tracker's existing
+ * behavior; only the backfill orchestrator enables them.
+ *
+ * Per-parser support is incremental — the UFC and BKFC parsers honor these
+ * today. Other parsers ignore unknown flags safely until they're plumbed
+ * through.
+ */
+export interface BackfillOptions {
+  /** Only write winner/method/round/time when the DB value is currently NULL.
+   *  Backfill must never overwrite manual fixes or live-tracker results. */
+  nullOnlyResults?: boolean;
+  /** Skip the CANCELLED↔UPCOMING reconciliation pass. Backfill runs days
+   *  after the event; the live source may have shifted the card and we don't
+   *  want to retroactively cancel real fights. */
+  skipCancellationCheck?: boolean;
+  /** Suppress next-fight push notifications when a fight flips to COMPLETED.
+   *  Backfill is processing past events; users shouldn't be paged. */
+  skipNotifications?: boolean;
+  /** Skip the "reset stale LIVE -> UPCOMING" pass that some parsers run.
+   *  Past events shouldn't have LIVE fights; if any do, backfill leaves them
+   *  alone and lets a human investigate. */
+  skipStaleLiveReset?: boolean;
+  /** When set (e.g. "backfill-ufc"), stamp this onto Fight.completionMethod
+   *  and set Fight.completedAt = now() for any fight whose status flips to
+   *  COMPLETED on this run. Audit trail. */
+  completionMethodOverride?: string;
+}
+
+/**
  * Scrapers that are production-ready and trusted to auto-publish results.
  * When a scraper is in this list, the lifecycle service skips that event
  * (the scraper handles fight completion directly).
