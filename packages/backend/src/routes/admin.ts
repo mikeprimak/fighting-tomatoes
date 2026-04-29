@@ -649,7 +649,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
     // status: 'live' | 'upcoming' | 'past'
     // - live: most recently started first
     // - upcoming: next to start first
-    // - past: most recently finished first (updatedAt reflects the flip to COMPLETED)
+    // - past: most recent event date first (so the admin's day-group headers
+    //   group correctly; previously sorted by updatedAt which scattered
+    //   same-date events across the list).
     let orderBy: any = { date: 'desc' };
     if (status === 'live') {
       where.eventStatus = 'LIVE';
@@ -659,7 +661,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
       orderBy = { date: 'asc' };
     } else if (status === 'past') {
       where.eventStatus = 'COMPLETED';
-      orderBy = { updatedAt: 'desc' };
+      orderBy = { date: 'desc' };
     }
 
     const [events, total] = await Promise.all([
