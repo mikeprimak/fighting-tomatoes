@@ -305,57 +305,83 @@ async function importFighters(athletesData: ScrapedAthletesData): Promise<Map<st
       }
     }
 
-    // Prefer upsert by ufcAthleteSlug — it survives a UFC display-name
-    // correction (e.g. Juan Martinetti -> Adrian Luna Martinetti, 2026-04-16),
-    // which the firstName+lastName key would have forked into a new fighter.
-    // Fall back to the name-based upsert when the scrape row has no URL.
+    // Prefer matching by ufcAthleteSlug — it survives a UFC display-name
+    // correction (e.g. Juan Martinetti -> Adrian Luna Martinetti, 2026-04-16).
+    // When no slug match exists, fall back to claiming the existing name-keyed
+    // row (adopting it onto this slug). Only create a brand-new row when
+    // neither lookup finds anything — otherwise we'd violate the
+    // (firstName, lastName) unique constraint.
     const slug = extractUfcAthleteSlug(athlete.url);
 
+    const updateCommon = {
+      nickname: nickname || undefined,
+      ...recordParts,
+      profileImage: profileImageUrl,
+    };
+
     let fighter;
-    if (slug) {
-      fighter = await prisma.fighter.upsert({
-        where: { ufcAthleteSlug: slug },
-        update: {
-          firstName,
-          lastName,
-          nickname: nickname || undefined,
-          ...recordParts,
-          profileImage: profileImageUrl,
-        },
-        create: {
-          ufcAthleteSlug: slug,
-          firstName,
-          lastName,
-          nickname,
-          ...recordParts,
-          profileImage: profileImageUrl,
-          gender: Gender.MALE,
-          isActive: true,
+    const bySlug = slug
+      ? await prisma.fighter.findUnique({ where: { ufcAthleteSlug: slug } })
+      : null;
+
+    if (bySlug) {
+      try {
+        fighter = await prisma.fighter.update({
+          where: { id: bySlug.id },
+          data: { firstName, lastName, ...updateCommon },
+        });
+      } catch (e: any) {
+        // Slug-tagged row's existing name conflicts with another row that
+        // already owns (firstName, lastName). Don't rename — just refresh
+        // the non-name fields so the import continues.
+        if (e?.code === 'P2002') {
+          console.warn(`  ⚠ Skipping rename of slug=${slug} to ${firstName} ${lastName} — name already taken (id=${bySlug.id})`);
+          fighter = await prisma.fighter.update({
+            where: { id: bySlug.id },
+            data: updateCommon,
+          });
+        } else {
+          throw e;
         }
-      });
+      }
     } else {
-      fighter = await prisma.fighter.upsert({
-        where: {
-          firstName_lastName: {
+      const byName = await prisma.fighter.findUnique({
+        where: { firstName_lastName: { firstName, lastName } },
+      });
+
+      if (byName) {
+        // Adopt: claim the slug onto the existing name-keyed row.
+        try {
+          fighter = await prisma.fighter.update({
+            where: { id: byName.id },
+            data: slug ? { ufcAthleteSlug: slug, ...updateCommon } : updateCommon,
+          });
+        } catch (e: any) {
+          // Another row already owns this slug — refresh non-slug fields only.
+          if (e?.code === 'P2002') {
+            console.warn(`  ⚠ Skipping slug claim "${slug}" on ${firstName} ${lastName} — slug already taken`);
+            fighter = await prisma.fighter.update({
+              where: { id: byName.id },
+              data: updateCommon,
+            });
+          } else {
+            throw e;
+          }
+        }
+      } else {
+        fighter = await prisma.fighter.create({
+          data: {
+            ...(slug ? { ufcAthleteSlug: slug } : {}),
             firstName,
             lastName,
-          }
-        },
-        update: {
-          ...recordParts,
-          profileImage: profileImageUrl,
-          nickname: nickname || undefined,
-        },
-        create: {
-          firstName,
-          lastName,
-          nickname,
-          ...recordParts,
-          profileImage: profileImageUrl,
-          gender: Gender.MALE,
-          isActive: true,
-        }
-      });
+            nickname,
+            ...recordParts,
+            profileImage: profileImageUrl,
+            gender: Gender.MALE,
+            isActive: true,
+          },
+        });
+      }
     }
 
     fighterNameToId.set(athlete.name, fighter.id);
