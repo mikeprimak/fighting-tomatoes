@@ -649,39 +649,63 @@ async function importOneFCEvents(
       let cancelledCount = 0;
       let unCancelledCount = 0;
 
-      for (const dbFight of existingDbFights) {
-        const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
-        const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+      // Cancellation guards. The daily scraper re-scrapes events for ~48h
+      // after start (see scrapeAllOneFCData.js), and ONE FC's event page
+      // sheds matchups post-event (collapsing to a "Next Event" hero or a
+      // pared-down summary). Once the event has gone LIVE/COMPLETED the
+      // live tracker is the source of truth for which fights are still
+      // on the card — the daily scraper must not cancel anything. For
+      // UPCOMING events we still cancel, but require the scrape to have
+      // returned at least 75% of the DB's non-cancelled fight count
+      // (matching oneFCLiveParser's safety floor) to avoid mass-cancelling
+      // on a transient partial render.
+      const eventInProgress = event.eventStatus !== 'UPCOMING';
+      const cancellationSafetyFloor = Math.max(2, Math.floor(existingDbFights.length * 0.75));
+      const scrapeLooksComplete = fights.length >= cancellationSafetyFloor;
+      const shouldCancelMissing =
+        !eventInProgress && (existingDbFights.length === 0 || scrapeLooksComplete);
 
-        // Create the pair key for this DB fight
-        const dbFightPairKey = [fighter1Name, fighter2Name].sort().join('|');
+      if (eventInProgress) {
+        console.log(`    ⏭️  Skipping cancellation (event is ${event.eventStatus} — live tracker owns this).`);
+      } else if (!scrapeLooksComplete && existingDbFights.length > 0) {
+        console.log(`    ⚠️  Skipping cancellation (scrape returned ${fights.length} fights, DB has ${existingDbFights.length} non-cancelled, need ≥${cancellationSafetyFloor}). Treating as partial scrape.`);
+      }
 
-        // Check if this exact matchup still exists in scraped data
-        if (!scrapedFightPairs.has(dbFightPairKey)) {
-          // Matchup no longer exists - check if either fighter was rebooked
-          const fighter1Rebooked = scrapedFighterNames.has(fighter1Name);
-          const fighter2Rebooked = scrapedFighterNames.has(fighter2Name);
+      if (shouldCancelMissing) {
+        for (const dbFight of existingDbFights) {
+          const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
+          const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
 
-          if (fighter1Rebooked || fighter2Rebooked) {
-            // At least one fighter appears in a different fight - this was a rebooking
-            console.log(`    ❌ Cancelling fight (fighter rebooked): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+          // Create the pair key for this DB fight
+          const dbFightPairKey = [fighter1Name, fighter2Name].sort().join('|');
 
-            await prisma.fight.update({
-              where: { id: dbFight.id },
-              data: { fightStatus: 'CANCELLED' }
-            });
+          // Check if this exact matchup still exists in scraped data
+          if (!scrapedFightPairs.has(dbFightPairKey)) {
+            // Matchup no longer exists - check if either fighter was rebooked
+            const fighter1Rebooked = scrapedFighterNames.has(fighter1Name);
+            const fighter2Rebooked = scrapedFighterNames.has(fighter2Name);
 
-            cancelledCount++;
-          } else {
-            // Neither fighter appears in scraped data - fight was fully cancelled
-            console.log(`    ❌ Cancelling fight (not in scraped data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+            if (fighter1Rebooked || fighter2Rebooked) {
+              // At least one fighter appears in a different fight - this was a rebooking
+              console.log(`    ❌ Cancelling fight (fighter rebooked): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
 
-            await prisma.fight.update({
-              where: { id: dbFight.id },
-              data: { fightStatus: 'CANCELLED' }
-            });
+              await prisma.fight.update({
+                where: { id: dbFight.id },
+                data: { fightStatus: 'CANCELLED' }
+              });
 
-            cancelledCount++;
+              cancelledCount++;
+            } else {
+              // Neither fighter appears in scraped data - fight was fully cancelled
+              console.log(`    ❌ Cancelling fight (not in scraped data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+
+              await prisma.fight.update({
+                where: { id: dbFight.id },
+                data: { fightStatus: 'CANCELLED' }
+              });
+
+              cancelledCount++;
+            }
           }
         }
       }
