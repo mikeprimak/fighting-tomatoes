@@ -661,7 +661,24 @@ async function importMatchroomEvents(
       let cancelledCount = 0;
       let unCancelledCount = 0;
 
-      for (const dbFight of existingDbFights) {
+      // Cancellation guards. Once an event has gone LIVE/COMPLETED the live
+      // tracker owns the fight list — daily scrapers must not cancel.
+      // For UPCOMING events, require the scrape to return ≥75% of the DB's
+      // non-cancelled fight count to guard against partial-page renders.
+      const eventInProgress = event.eventStatus !== 'UPCOMING';
+      const cancellationSafetyFloor = Math.max(2, Math.floor(existingDbFights.length * 0.75));
+      const scrapeLooksComplete = fights.length >= cancellationSafetyFloor;
+      const shouldCancelMissing =
+        !eventInProgress && (existingDbFights.length === 0 || scrapeLooksComplete);
+
+      if (eventInProgress) {
+        console.log(`    ⏭️  Skipping cancellation (event is ${event.eventStatus} — live tracker owns this).`);
+      } else if (!scrapeLooksComplete && existingDbFights.length > 0) {
+        console.log(`    ⚠️  Skipping cancellation (scrape returned ${fights.length} fights, DB has ${existingDbFights.length} non-cancelled, need ≥${cancellationSafetyFloor}). Treating as partial scrape.`);
+      }
+
+      if (shouldCancelMissing) {
+       for (const dbFight of existingDbFights) {
         const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
         const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
 
@@ -696,6 +713,7 @@ async function importMatchroomEvents(
             cancelledCount++;
           }
         }
+       }
       }
 
       // Also check for fights that were previously cancelled but now reappear (un-cancel them)
