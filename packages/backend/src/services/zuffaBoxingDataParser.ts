@@ -482,6 +482,23 @@ async function importZuffaEvents(
     let cancelledCount = 0;
     let unCancelledCount = 0;
 
+    // Cancellation guards. Once an event has gone LIVE/COMPLETED the live
+    // tracker owns the fight list — daily scrapers must not cancel.
+    // For UPCOMING events, require the scrape to return ≥75% of the DB's
+    // non-cancelled fight count to guard against partial-page renders.
+    const eventInProgress = event.eventStatus !== 'UPCOMING';
+    const dbNonCancelledCount = dbFights.filter(f => f.fightStatus !== 'CANCELLED').length;
+    const cancellationSafetyFloor = Math.max(2, Math.floor(dbNonCancelledCount * 0.75));
+    const scrapeLooksComplete = scrapedFightSignatures.size >= cancellationSafetyFloor;
+    const canCancelMissing =
+      !eventInProgress && (dbNonCancelledCount === 0 || scrapeLooksComplete);
+
+    if (eventInProgress) {
+      console.log(`    ⏭️  Skipping cancellation (event is ${event.eventStatus} — live tracker owns this).`);
+    } else if (!scrapeLooksComplete && dbNonCancelledCount > 0) {
+      console.log(`    ⚠️  Skipping cancellation (scrape returned ${scrapedFightSignatures.size} fights, DB has ${dbNonCancelledCount} non-cancelled, need ≥${cancellationSafetyFloor}). Treating as partial scrape.`);
+    }
+
     for (const dbFight of dbFights) {
       // Skip fights that are already complete
       if (dbFight.fightStatus === 'COMPLETED') {
@@ -504,7 +521,7 @@ async function importZuffaEvents(
         unCancelledCount++;
       }
       // Case 2: Fight is NOT cancelled and missing from scraped data -> CANCEL it
-      else if (dbFight.fightStatus !== 'CANCELLED' && !fightIsInScrapedData) {
+      else if (dbFight.fightStatus !== 'CANCELLED' && !fightIsInScrapedData && canCancelMissing) {
         console.log(`    ❌ Fight missing from scraped data, CANCELLING: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
 
         await prisma.fight.update({
