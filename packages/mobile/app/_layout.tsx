@@ -27,8 +27,10 @@ import { NotificationProvider } from '../store/NotificationContext';
 import { SearchProvider } from '../store/SearchContext';
 import { OrgFilterProvider } from '../store/OrgFilterContext';
 import { SpoilerFreeProvider } from '../store/SpoilerFreeContext';
+import { ReviewPromptProvider } from '../store/ReviewPromptContext';
 import { Colors } from '../constants/Colors';
 import { NotificationHandler } from '../components/NotificationHandler';
+import { seedInstallDate } from '../services/reviewPrompt';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -74,6 +76,10 @@ function RootLayout() {
     }
   }, [loaded]);
 
+  useEffect(() => {
+    seedInstallDate().catch(() => {});
+  }, []);
+
   if (!loaded) {
     return null;
   }
@@ -107,6 +113,7 @@ function RootLayoutNav() {
         <VerificationProvider>
           <PredictionAnimationProvider>
             <NotificationProvider>
+              <ReviewPromptProvider>
               <SearchProvider>
               <OrgFilterProvider>
               <ThemeProvider value={customDarkTheme}>
@@ -144,6 +151,7 @@ function RootLayoutNav() {
               </ThemeProvider>
               </OrgFilterProvider>
               </SearchProvider>
+              </ReviewPromptProvider>
             </NotificationProvider>
           </PredictionAnimationProvider>
         </VerificationProvider>
