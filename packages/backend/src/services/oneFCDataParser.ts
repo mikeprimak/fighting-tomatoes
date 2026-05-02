@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { uploadFighterImage, uploadEventImage } from './imageStorage';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 
 const prisma = new PrismaClient();
 
@@ -569,7 +570,7 @@ async function importOneFCEvents(
 
       // Upsert fight
       try {
-        await prisma.fight.upsert({
+        const upsertedFight = await prisma.fight.upsert({
           where: {
             eventId_fighter1Id_fighter2Id: {
               eventId: event.id,
@@ -598,6 +599,10 @@ async function importOneFCEvents(
             fightStatus: 'UPCOMING',
           }
         });
+
+        await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
+          console.warn('[FollowSync]', err)
+        );
 
         fightsImported++;
       } catch (error) {

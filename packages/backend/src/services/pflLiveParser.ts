@@ -17,6 +17,7 @@ import { PrismaClient, WeightClass, Sport, Gender } from '@prisma/client';
 import { PFLEventData, PFLFightData } from './pflLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
+import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 
 const prisma = new PrismaClient();
 
@@ -181,7 +182,7 @@ async function createFightFromScrape(
       return null;
     }
 
-    return await prisma.fight.create({
+    const created = await prisma.fight.create({
       data: {
         eventId,
         fighter1Id: fighter1.id,
@@ -195,6 +196,10 @@ async function createFightFromScrape(
       },
       include: { fighter1: true, fighter2: true },
     });
+    await syncFighterFollowMatchesForFight(created.id).catch(err =>
+      console.warn('[FollowSync]', err)
+    );
+    return created;
   } catch (err) {
     console.error('    ❌ Failed to create fight from scrape:', err);
     return null;

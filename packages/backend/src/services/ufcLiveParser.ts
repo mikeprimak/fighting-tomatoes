@@ -12,6 +12,7 @@
 import { PrismaClient, WeightClass, Gender, FightStatus } from '@prisma/client';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
+import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 
 const prisma = new PrismaClient();
 
@@ -485,6 +486,10 @@ export async function parseLiveEventData(
               completedRounds: fightUpdate.completedRounds ?? null,
             }
           });
+
+          await syncFighterFollowMatchesForFight(newFight.id).catch(err =>
+            console.warn('[FollowSync]', err)
+          );
 
           console.log(`  ✅ Created new fight: ${fighter1.lastName} vs ${fighter2.lastName} (${fightUpdate.cardType || 'Unknown Card'}, orderOnCard: ${orderOnCard})`);
 

@@ -520,9 +520,20 @@ export async function registerRoutes(fastify: FastifyInstance) {
           let userRatingsByFight = new Map<string, number>();
           let userPredictionsByFight = new Map<string, { predictedRating: number | null; predictedWinner: string | null; predictedMethod: string | null }>();
           let userCommentCountByFight = new Map<string, number>();
+          let followedFighterIds = new Set<string>();
 
           if (userId) {
-            const [userRatings, userPredictions, userComments] = await Promise.all([
+            // Collect every fighter on the page so we can ask the DB about
+            // follows in a single query. Avoids N+1 across the fights map.
+            const allFighterIds = new Set<string>();
+            for (const event of events) {
+              for (const f of (event.fights || [])) {
+                if (f.fighter1?.id) allFighterIds.add(f.fighter1.id);
+                if (f.fighter2?.id) allFighterIds.add(f.fighter2.id);
+              }
+            }
+
+            const [userRatings, userPredictions, userComments, follows] = await Promise.all([
               fastify.prisma.fightRating.findMany({
                 where: {
                   fightId: { in: allFightIds },
@@ -554,6 +565,15 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   fightId: true,
                 },
               }),
+              allFighterIds.size > 0
+                ? fastify.prisma.userFighterFollow.findMany({
+                    where: {
+                      userId,
+                      fighterId: { in: Array.from(allFighterIds) },
+                    },
+                    select: { fighterId: true },
+                  })
+                : Promise.resolve([] as { fighterId: string }[]),
             ]);
 
             for (const rating of userRatings) {
@@ -569,6 +589,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
             for (const comment of userComments) {
               userCommentCountByFight.set(comment.fightId, (userCommentCountByFight.get(comment.fightId) || 0) + 1);
             }
+            followedFighterIds = new Set(follows.map(f => f.fighterId));
           }
 
           // Fetch notification reasons for each fight if user is authenticated.
@@ -646,6 +667,13 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 userPredictedWinner: userPrediction?.predictedWinner ?? null,
                 userPredictedMethod: userPrediction?.predictedMethod ?? null,
                 userCommentCount: userCommentCountByFight.get(fight.id) || 0,
+                // Fighter follow flags (drives the "+" follow button on fight modals)
+                isFollowingFighter1: userId
+                  ? followedFighterIds.has(fight.fighter1?.id)
+                  : undefined,
+                isFollowingFighter2: userId
+                  ? followedFighterIds.has(fight.fighter2?.id)
+                  : undefined,
                 // Notification data (null if not authenticated)
                 notificationReasons: notificationReasons ?? null,
               };

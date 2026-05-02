@@ -9,6 +9,7 @@ import { PrismaClient, Gender, Sport } from '@prisma/client';
 import { TapologyEventData, TapologyFight } from './tapologyLiveScraper';
 import { stripDiacritics, similarityScore } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
+import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 
 const prisma = new PrismaClient();
 
@@ -321,6 +322,10 @@ export async function parseTapologyData(
               fightStatus: 'UPCOMING',
             },
           });
+
+          await syncFighterFollowMatchesForFight(created.id).catch(err =>
+            console.warn('[FollowSync]', err)
+          );
 
           // Synthesize a dbFight-shaped object so the rest of the loop can
           // update it immediately with the scraped result (e.g. for a fight

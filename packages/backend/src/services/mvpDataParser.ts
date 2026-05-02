@@ -4,6 +4,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { eventTimeToUTC } from '../utils/timezone';
+import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 
 const prisma = new PrismaClient();
 
@@ -369,7 +370,7 @@ async function importMVPEvents(
       const titleName = fightData.isTitle ? `${fightData.weightClass} Championship` : undefined;
 
       try {
-        await prisma.fight.upsert({
+        const upsertedFight = await prisma.fight.upsert({
           where: {
             eventId_fighter1Id_fighter2Id: {
               eventId: event.id,
@@ -398,6 +399,9 @@ async function importMVPEvents(
             fightStatus: 'UPCOMING',
           }
         });
+        await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
+          console.warn('[FollowSync]', err)
+        );
         fightsImported++;
       } catch (error) {
         console.warn(`    ⚠ Failed to upsert fight:`, error);
