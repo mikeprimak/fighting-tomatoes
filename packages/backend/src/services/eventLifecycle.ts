@@ -25,7 +25,7 @@ const BUFFER_HOURS = 1;
 // Events without a production live tracker get a fixed live window so users
 // can still rate the fights during/after the broadcast, even though we can't
 // follow the card in real time.
-const NO_TRACKER_LIVE_WINDOW_HOURS = 7;
+const NO_TRACKER_LIVE_WINDOW_HOURS = 8;
 
 let lifecycleTimer: ReturnType<typeof setInterval> | null = null;
 const lastGitHubDispatchByWorkflow: Record<string, number> = {};
