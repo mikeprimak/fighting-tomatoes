@@ -520,7 +520,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             </View>
           )}
 
-          {/* Bottom row: notify bell (if live tracking available) + done button */}
+          {/* Bottom row: notify bell + done button */}
           <View style={styles.bottomRow}>
             {showNotificationBell && (
               <Animated.View style={{ transform: [{ scale: notifyScaleAnim }] }}>
@@ -551,6 +551,26 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               <Text style={styles.doneButtonText}>Done</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Honest delivery promise for non-tracker orgs — sets expectation
+              that the ping fires at section start, not at the actual walkout. */}
+          {showNotificationBell && fight?.event?.hasLiveTracking === false && (() => {
+            const ct = ((fight as any)?.cardType as string | null | undefined)?.trim().toLowerCase();
+            const section = !ct
+              ? 'the card'
+              : ct.includes('early prelim')
+                ? 'early prelims'
+                : ct.includes('prelim')
+                  ? 'prelims'
+                  : ct.includes('main')
+                    ? 'main card'
+                    : 'the card';
+            return (
+              <Text style={[styles.fallbackCaption, { color: colors.textSecondary }]}>
+                ~15 min before {section}. (No live tracker for this org.)
+              </Text>
+            );
+          })()}
 
           {/* Notify toast message — always rendered to reserve height and avoid layout jump */}
           <Animated.Text
@@ -724,6 +744,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 12,
     textAlign: 'center',
+  },
+  fallbackCaption: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginTop: 8,
+    textAlign: 'center',
+    paddingHorizontal: 12,
   },
   commentSection: {
     width: '100%',

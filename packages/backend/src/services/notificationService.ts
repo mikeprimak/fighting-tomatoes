@@ -201,8 +201,122 @@ export async function notifyFightStartViaRules(
   console.log(`[Notifications] Marked ${matches.length} notification matches as sent`);
 }
 
+/**
+ * Send a section-start notification for events without a live tracker.
+ *
+ * Fires once per (user, event-section): aggregates all of a user's active
+ * unsent match rows whose fight is in `sectionFightIds`, sends one push, and
+ * marks those rows notificationSent=true. Match rows for fights NOT in this
+ * section are untouched, so a later section can still fire for the same user.
+ *
+ * This is the "live-tracker-less" cousin of notifyFightStartViaRules — same
+ * fightNotificationMatch table, different unit of work (per-section vs
+ * per-fight).
+ */
+export async function notifyEventSectionStart(
+  eventId: string,
+  sectionFightIds: string[],
+  eventName: string,
+  sectionLabel: string | null,
+): Promise<void> {
+  if (sectionFightIds.length === 0) return;
+
+  const matches = await prisma.fightNotificationMatch.findMany({
+    where: {
+      fightId: { in: sectionFightIds },
+      isActive: true,
+      notificationSent: false,
+    },
+  });
+
+  if (matches.length === 0) return;
+
+  // FightNotificationMatch has no `fight` relation — pull names in one query.
+  const fightsForNames = await prisma.fight.findMany({
+    where: { id: { in: matches.map((m) => m.fightId) } },
+    select: {
+      id: true,
+      fighter1: { select: { firstName: true, lastName: true } },
+      fighter2: { select: { firstName: true, lastName: true } },
+    },
+  });
+  const fightById = new Map(fightsForNames.map((f) => [f.id, f]));
+
+  // Group matches by user
+  const matchesByUser = new Map<string, typeof matches>();
+  for (const m of matches) {
+    const arr = matchesByUser.get(m.userId) ?? [];
+    arr.push(m);
+    matchesByUser.set(m.userId, arr);
+  }
+
+  const userIds = [...matchesByUser.keys()];
+  const users = await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, pushToken: true, notificationsEnabled: true },
+  });
+
+  const validUsers = users.filter(
+    (u) => u.notificationsEnabled && u.pushToken && Expo.isExpoPushToken(u.pushToken),
+  );
+
+  if (validUsers.length === 0) {
+    console.log(`[Notifications] Section-start: no valid push tokens for event ${eventName}`);
+    return;
+  }
+
+  const title = sectionLabel
+    ? `${eventName} ${sectionLabel} starts soon!`
+    : `${eventName} starts soon!`;
+
+  const matchedRowIds: string[] = [];
+
+  for (const user of validUsers) {
+    const userMatches = matchesByUser.get(user.id) ?? [];
+    if (userMatches.length === 0) continue;
+
+    let body: string;
+    if (userMatches.length === 1) {
+      const f = fightById.get(userMatches[0].fightId);
+      const name1 = f?.fighter1
+        ? `${f.fighter1.firstName} ${f.fighter1.lastName}`.trim()
+        : 'Fighter 1';
+      const name2 = f?.fighter2
+        ? `${f.fighter2.firstName} ${f.fighter2.lastName}`.trim()
+        : 'Fighter 2';
+      body = `${name1} vs ${name2} is up soon.`;
+    } else {
+      // Row count, not distinct fighter count — close enough for the user-facing
+      // copy and avoids a second query.
+      body = `${userMatches.length} fighters you follow are fighting soon.`;
+    }
+
+    await sendPushNotifications(
+      [user.id],
+      {
+        title,
+        body,
+        data: { eventId, screen: 'event-detail' },
+      },
+    );
+
+    for (const m of userMatches) matchedRowIds.push(m.id);
+  }
+
+  if (matchedRowIds.length > 0) {
+    await prisma.fightNotificationMatch.updateMany({
+      where: { id: { in: matchedRowIds } },
+      data: { notificationSent: true },
+    });
+    console.log(
+      `[Notifications] Section-start sent for ${eventName} (${sectionLabel ?? 'card'}): ${validUsers.length} users, ${matchedRowIds.length} rows marked sent`,
+    );
+  }
+}
+
 export const notificationService = {
   sendPushNotifications,
   notifyFightStartViaRules,
+  notifyEventSectionStart,
   notifyCrewMessage,
 };
