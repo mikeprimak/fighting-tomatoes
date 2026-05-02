@@ -115,6 +115,44 @@ export function shouldAutoPublish(scraperType: string | null | undefined): boole
 }
 
 /**
+ * Tapology promotions whose live tracker is reliable enough to promise
+ * walkout-time precision. The Tapology hub map in runTapologyLiveTracker.ts
+ * also lists Top Rank, Golden Boy, Gold Star, MVP, and Matchroom — those are
+ * scraped daily but their live cards are not tracked in real time. They
+ * fall back to the section-start ping (Step 1.7 in eventLifecycle.ts).
+ */
+const TAPOLOGY_RELIABLE_PROMOTIONS_UPPER = new Set([
+  'ZUFFA BOXING',
+  'KARATE COMBAT',
+  'DIRTY BOXING',
+  'PFL',
+  'RIZIN',
+]);
+
+/**
+ * Whether an event is actually backed by a reliable real-time live tracker.
+ *
+ * Stricter than `isProductionScraper(scraperType)`: the Tapology scraper is a
+ * production scraper for daily data, but its live tracker only delivers
+ * reliable per-fight updates for a subset of the promotions listed in its
+ * hub map. Use this to gate the user-facing `hasLiveTracking` flag so the
+ * mobile bell shows accurate copy, and to gate the section-start fallback
+ * (Step 1.7) so unreliable-tracker promotions also get a ping.
+ */
+export function hasReliableLiveTracker(
+  scraperType: string | null | undefined,
+  promotion: string | null | undefined,
+): boolean {
+  if (!scraperType) return false;
+  if (!isProductionScraper(scraperType)) return false;
+  if (scraperType === 'tapology') {
+    if (!promotion) return false;
+    return TAPOLOGY_RELIABLE_PROMOTIONS_UPPER.has(promotion.toUpperCase());
+  }
+  return true;
+}
+
+/**
  * Cache for notify-allowed promotions (loaded from DB).
  * Refreshed every 60 seconds to avoid hitting DB on every request.
  */

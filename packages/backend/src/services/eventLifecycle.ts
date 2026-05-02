@@ -13,7 +13,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { isProductionScraper } from '../config/liveTrackerConfig';
+import { isProductionScraper, hasReliableLiveTracker } from '../config/liveTrackerConfig';
 import { startLiveTracking, getLiveTrackingStatus } from './liveEventTracker';
 import { notifyEventSectionStart } from './notificationService';
 
@@ -322,9 +322,16 @@ export async function runEventLifecycleCheck(): Promise<{
 
   // === STEP 1.7: Section-start notifications for non-tracker events ===
   // Tracker-backed events get walkout warnings via notifyFightStartViaRules
-  // from the live parser. Non-tracker events have no per-fight signal, so we
-  // fire one notification per (user, event-section) ~15 min before each
-  // section's start time. notificationSent prevents re-fires.
+  // from the live parser. Events without a reliable real-time tracker have
+  // no per-fight signal, so we fire one notification per (user, event-
+  // section) ~15 min before each section's start time. notificationSent
+  // prevents re-fires.
+  //
+  // Gate uses hasReliableLiveTracker (NOT isProductionScraper) — the
+  // Tapology scraper is "production" but only delivers reliable per-fight
+  // updates for a subset of its hub-mapped promotions. Top Rank, Golden Boy,
+  // Gold Star, MVP, and Matchroom are scraperType=tapology but unreliable
+  // live → they need this fallback.
   try {
     const candidateEvents = await prisma.event.findMany({
       where: {
@@ -335,6 +342,7 @@ export async function runEventLifecycleCheck(): Promise<{
         name: true,
         date: true,
         scraperType: true,
+        promotion: true,
         mainStartTime: true,
         prelimStartTime: true,
         earlyPrelimStartTime: true,
@@ -345,7 +353,7 @@ export async function runEventLifecycleCheck(): Promise<{
     });
 
     for (const event of candidateEvents) {
-      if (isProductionScraper(event.scraperType)) continue;
+      if (hasReliableLiveTracker(event.scraperType, event.promotion)) continue;
       if (event.fights.length === 0) continue;
 
       // Bucket fights by normalized cardType. Unknown/null cardType bundles
