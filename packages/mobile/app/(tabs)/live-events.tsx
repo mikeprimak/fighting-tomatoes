@@ -151,7 +151,10 @@ export default function LiveEventsScreen() {
 
   const handleFightPress = useCallback((fight: Fight, event?: Event) => {
     if (!fight.fightStatus || fight.fightStatus === 'UPCOMING') {
-      setModalFight(fight);
+      // Attach the parent event so the modal's toast can branch on
+      // event.hasLiveTracking (the events endpoint nests fights without
+      // back-pointing to the event).
+      setModalFight(event ? ({ ...fight, event } as Fight) : fight);
       setModalShowBell(event?.notificationsAllowed === true);
     } else {
       router.push(`/fight/${fight.id}`);
