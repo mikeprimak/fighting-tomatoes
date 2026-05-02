@@ -153,6 +153,7 @@ export default function FollowedFightersScreen() {
                   fighterId={item.fighter.id}
                   isFollowing={item.isFollowing}
                   style={styles.followBadge}
+                  suppressToast
                 />
               </View>
               <Text

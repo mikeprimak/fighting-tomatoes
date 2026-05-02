@@ -18,12 +18,13 @@ interface FollowFighterButtonProps {
   isFollowing: boolean;
   style?: ViewStyle;
   onFollowed?: () => void;
+  suppressToast?: boolean;
 }
 
 const SIZE = 22;
 const ICON_SIZE = 11;
 
-export default function FollowFighterButton({ fighterId, isFollowing, style, onFollowed }: FollowFighterButtonProps) {
+export default function FollowFighterButton({ fighterId, isFollowing, style, onFollowed, suppressToast }: FollowFighterButtonProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
@@ -64,14 +65,16 @@ export default function FollowFighterButton({ fighterId, isFollowing, style, onF
       intentRef.current = willFollow;
       setOptimistic(willFollow);
       if (willFollow) {
-        setShowToast(true);
-        toastOpacity.setValue(1);
-        Animated.timing(toastOpacity, {
-          toValue: 0,
-          duration: 500,
-          delay: 2500,
-          useNativeDriver: true,
-        }).start(() => setShowToast(false));
+        if (!suppressToast) {
+          setShowToast(true);
+          toastOpacity.setValue(1);
+          Animated.timing(toastOpacity, {
+            toValue: 0,
+            duration: 500,
+            delay: 2500,
+            useNativeDriver: true,
+          }).start(() => setShowToast(false));
+        }
         onFollowed?.();
       }
     },
