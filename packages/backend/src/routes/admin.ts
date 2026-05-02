@@ -13,6 +13,7 @@ import {
   getProductionScrapers,
   ALL_SCRAPER_TYPES,
 } from '../config/liveTrackerConfig';
+import { PROMOTION_REGISTRY } from '../config/promotionRegistry';
 import { syncFighterFollowMatchesForFight } from '../services/notificationRuleEngine';
 import {
   triggerDailyUFCScraper,
@@ -1730,6 +1731,25 @@ export async function adminRoutes(fastify: FastifyInstance) {
       console.error('[Admin] Failed to get notify promotions:', error);
       return reply.code(500).send({ error: 'Failed to get config' });
     }
+  });
+
+  // GET /admin/config/promotions — full registry for admin UI
+  fastify.get('/admin/config/promotions', {
+    preHandler: [fastify.authenticate, requireAdmin],
+  }, async (_request, reply) => {
+    return reply.send({
+      promotions: PROMOTION_REGISTRY.map(e => ({
+        code: e.code,
+        canonicalPromotion: e.canonicalPromotion,
+        shortLabel: e.shortLabel,
+        fullLabel: e.fullLabel,
+        scraperType: e.scraperType,
+        hasReliableLiveTracker: e.hasReliableLiveTracker,
+        logoKey: e.logoKey,
+        userVisible: e.userVisible,
+        notificationEligible: e.notificationEligible,
+      })),
+    });
   });
 
   // ============================================

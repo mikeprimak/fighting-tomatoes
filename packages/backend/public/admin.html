@@ -3854,31 +3854,25 @@
       ]);
     }
 
-    // All promotions that could potentially allow notifications
-    // Values must match the exact promotion strings in the DB
-    const ALL_PROMOTIONS_FOR_NOTIFY = [
-      { value: 'UFC', label: 'UFC', scraper: 'ufc' },
-      { value: 'BKFC', label: 'BKFC', scraper: 'bkfc' },
-      { value: 'ONE', label: 'ONE Championship', scraper: 'onefc' },
-      { value: 'PFL', label: 'PFL', scraper: 'tapology' },
-      { value: 'OKTAGON', label: 'Oktagon MMA', scraper: 'oktagon' },
-      { value: 'Rizin', label: 'RIZIN', scraper: 'tapology' },
-      { value: 'Karate Combat', label: 'Karate Combat', scraper: 'tapology' },
-      { value: 'Dirty Boxing', label: 'Dirty Boxing', scraper: 'tapology' },
-      { value: 'Zuffa Boxing', label: 'Zuffa Boxing', scraper: 'tapology' },
-      { value: 'Matchroom Boxing', label: 'Matchroom Boxing', scraper: 'matchroom' },
-      { value: 'Golden Boy', label: 'Golden Boy', scraper: 'tapology' },
-      { value: 'TOP_RANK', label: 'Top Rank', scraper: 'tapology' },
-      { value: 'Gold Star', label: 'Gold Star', scraper: 'tapology' },
-      { value: 'MVP', label: 'MVP', scraper: 'tapology' },
-      { value: 'RAF', label: 'RAF Wrestling', scraper: 'raf' },
-    ];
-
+    // Promotion registry — fetched from /admin/config/promotions on first use.
+    // Source of truth lives in packages/backend/src/config/promotionRegistry.ts.
+    let ALL_PROMOTIONS_FOR_NOTIFY = [];
     let currentNotifyPromotions = [];
+
+    async function loadPromotionRegistry() {
+      if (ALL_PROMOTIONS_FOR_NOTIFY.length > 0) return ALL_PROMOTIONS_FOR_NOTIFY;
+      const res = await authFetch(`${API_BASE}/admin/config/promotions`);
+      const data = await res.json();
+      ALL_PROMOTIONS_FOR_NOTIFY = (data.promotions || [])
+        .filter(p => p.notificationEligible)
+        .map(p => ({ value: p.canonicalPromotion, label: p.fullLabel, scraper: p.scraperType }));
+      return ALL_PROMOTIONS_FOR_NOTIFY;
+    }
 
     async function loadNotifyPromotions() {
       const grid = document.getElementById('notifyPromotionsGrid');
       try {
+        await loadPromotionRegistry();
         const res = await authFetch(`${API_BASE}/admin/config/notify-promotions`);
         const data = await res.json();
         currentNotifyPromotions = data.promotions || [];
