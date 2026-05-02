@@ -739,10 +739,14 @@ const styles = StyleSheet.create({
   },
   notifyToast: {
     fontSize: 13,
+    lineHeight: 18,
     fontWeight: '500',
     marginTop: 12,
     textAlign: 'center',
     paddingHorizontal: 16,
+    // Reserve fixed 2-line height so the modal doesn't jump when the toast
+    // wraps from empty → 1 line → 2 lines.
+    minHeight: 36,
   },
   commentSection: {
     width: '100%',
