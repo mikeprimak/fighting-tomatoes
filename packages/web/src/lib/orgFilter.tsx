@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 
-export const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'ZUFFA BOXING', 'TOP RANK', 'GOLDEN BOY', 'MVP', 'RAF'] as const;
+export const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'ZUFFA BOXING', 'TOP RANK', 'GOLDEN BOY', 'GOLD STAR', 'MVP', 'RAF'] as const;
 export type Organization = typeof ORGANIZATIONS[number];
 
 const ORG_GROUPS: Partial<Record<Organization, { exact?: string[]; contains?: string[]; excludes?: string[] }>> = {
