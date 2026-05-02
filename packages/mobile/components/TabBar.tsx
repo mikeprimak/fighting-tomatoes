@@ -209,16 +209,29 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
           tabBarActiveTintColor: colors.primary,
           headerTitle: () => <HeaderLogo title="Live Events" />,
           headerRight: () => (
-            <TouchableOpacity
-              onPress={toggleSearch}
-              style={{ marginRight: 16, padding: 8, marginTop: -16 }}
-            >
-              <FontAwesome
-                name="search"
-                size={20}
-                color={isSearchVisible ? colors.tint : colors.text}
-              />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8, marginTop: -16 }}>
+              <TouchableOpacity
+                onPress={() => setSpoilerFreeMode(!spoilerFreeMode)}
+                style={{ padding: 8, marginRight: 8 }}
+                accessibilityLabel={spoilerFreeMode ? 'Show fight results' : 'Hide fight results'}
+              >
+                <FontAwesome
+                  name={spoilerFreeMode ? 'eye-slash' : 'eye'}
+                  size={20}
+                  color={spoilerFreeMode ? colors.primary : colors.text}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={toggleSearch}
+                style={{ padding: 8, marginRight: 8 }}
+              >
+                <FontAwesome
+                  name="search"
+                  size={20}
+                  color={isSearchVisible ? colors.tint : colors.text}
+                />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
