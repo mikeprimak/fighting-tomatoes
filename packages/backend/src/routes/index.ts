@@ -20,6 +20,7 @@ import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 import { isProductionScraper, getNotifyPromotions, hasReliableLiveTracker } from '../config/liveTrackerConfig';
+import { PROMOTION_REGISTRY } from '../config/promotionRegistry';
 
 // Organization filter groups - maps filter buttons to actual promotions
 // BOXING is an aggregate that includes multiple boxing promoters
@@ -95,6 +96,22 @@ export async function registerRoutes(fastify: FastifyInstance) {
       console.error('Failed to get notify promotions config:', error);
       return reply.send({ promotions: [] });
     }
+  });
+
+  // Public endpoint: user-visible promotion registry for mobile/web filters
+  fastify.get('/api/promotions', async (_request, reply) => {
+    return reply.send({
+      promotions: PROMOTION_REGISTRY
+        .filter(e => e.userVisible)
+        .map(e => ({
+          code: e.code,
+          canonicalPromotion: e.canonicalPromotion,
+          shortLabel: e.shortLabel,
+          fullLabel: e.fullLabel,
+          logoKey: e.logoKey,
+          aliases: e.aliases,
+        })),
+    });
   });
 
   // API status endpoint
