@@ -298,7 +298,8 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     notifyMutation.mutate(newValue);
 
     // Show toast message — text branches on whether this org has a reliable
-    // live tracker. Non-tracker orgs fire at section start, not at walkout.
+    // live tracker. Non-tracker orgs fire ~15 min before section start, not
+    // at the actual walkout.
     if (newValue) {
       if (fight.event?.hasLiveTracking === false) {
         const ct = ((fight as any).cardType as string | null | undefined)?.trim().toLowerCase();
@@ -311,7 +312,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               : ct.includes('main')
                 ? 'the main card starts'
                 : 'the card starts';
-        setNotifyMessage(`You'll be notified when ${phrase}.`);
+        setNotifyMessage(`You'll be notified ~15 min before ${phrase}.`);
       } else {
         setNotifyMessage("You'll be notified when this fight is up next.");
       }
@@ -567,26 +568,6 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             </TouchableOpacity>
           </View>
 
-          {/* Honest delivery promise for non-tracker orgs — sets expectation
-              that the ping fires at section start, not at the actual walkout. */}
-          {showNotificationBell && fight?.event?.hasLiveTracking === false && (() => {
-            const ct = ((fight as any)?.cardType as string | null | undefined)?.trim().toLowerCase();
-            const section = !ct
-              ? 'the card'
-              : ct.includes('early prelim')
-                ? 'early prelims'
-                : ct.includes('prelim')
-                  ? 'prelims'
-                  : ct.includes('main')
-                    ? 'main card'
-                    : 'the card';
-            return (
-              <Text style={[styles.fallbackCaption, { color: colors.textSecondary }]}>
-                ~15 min before {section}. (No live tracker for this org.)
-              </Text>
-            );
-          })()}
-
           {/* Notify toast message — always rendered to reserve height and avoid layout jump */}
           <Animated.Text
             style={[styles.notifyToast, { color: colors.textSecondary, opacity: notifyMsgOpacity }]}
@@ -759,13 +740,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 12,
     textAlign: 'center',
-  },
-  fallbackCaption: {
-    fontSize: 12,
-    fontStyle: 'italic',
-    marginTop: 8,
-    textAlign: 'center',
-    paddingHorizontal: 12,
   },
   commentSection: {
     width: '100%',
