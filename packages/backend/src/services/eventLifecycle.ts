@@ -15,6 +15,7 @@
 import { PrismaClient } from '@prisma/client';
 import { isProductionScraper } from '../config/liveTrackerConfig';
 import { startLiveTracking, getLiveTrackingStatus } from './liveEventTracker';
+import { notifyEventSectionStart } from './notificationService';
 
 const prisma = new PrismaClient();
 
@@ -22,6 +23,10 @@ const LIFECYCLE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const HARD_CAP_HOURS = 10;
 const MINUTES_PER_FIGHT = 30;
 const BUFFER_HOURS = 1;
+// Lead time for section-start notifications on non-tracker events. Matches
+// the manual-fight-follow notifyMinutesBefore so the user-facing promise is
+// consistent across orgs.
+const SECTION_NOTIF_LEAD_MS = 15 * 60 * 1000;
 // Events without a production live tracker get a fixed live window so users
 // can still rate the fights during/after the broadcast, even though we can't
 // follow the card in real time.
@@ -313,6 +318,82 @@ export async function runEventLifecycleCheck(): Promise<{
     }
   } catch (error: any) {
     console.error('[Lifecycle] Step 1.5 (GitHub dispatch) error:', error.message);
+  }
+
+  // === STEP 1.7: Section-start notifications for non-tracker events ===
+  // Tracker-backed events get walkout warnings via notifyFightStartViaRules
+  // from the live parser. Non-tracker events have no per-fight signal, so we
+  // fire one notification per (user, event-section) ~15 min before each
+  // section's start time. notificationSent prevents re-fires.
+  try {
+    const candidateEvents = await prisma.event.findMany({
+      where: {
+        eventStatus: { in: ['UPCOMING', 'LIVE'] },
+      },
+      select: {
+        id: true,
+        name: true,
+        date: true,
+        scraperType: true,
+        mainStartTime: true,
+        prelimStartTime: true,
+        earlyPrelimStartTime: true,
+        fights: {
+          select: { id: true, cardType: true },
+        },
+      },
+    });
+
+    for (const event of candidateEvents) {
+      if (isProductionScraper(event.scraperType)) continue;
+      if (event.fights.length === 0) continue;
+
+      // Bucket fights by normalized cardType. Unknown/null cardType bundles
+      // into the main-card bucket (best-effort fallback for orgs whose
+      // scrapers don't populate cardType reliably).
+      const buckets: Record<'early' | 'prelim' | 'main', string[]> = {
+        early: [],
+        prelim: [],
+        main: [],
+      };
+      for (const f of event.fights) {
+        const n = normalizeCardType(f.cardType);
+        if (n && n.includes('early prelim')) buckets.early.push(f.id);
+        else if (n && n.includes('prelim')) buckets.prelim.push(f.id);
+        else buckets.main.push(f.id);
+      }
+
+      type Section = { label: string | null; startTime: Date; fightIds: string[] };
+      const sections: Section[] = [];
+
+      if (event.earlyPrelimStartTime && buckets.early.length > 0) {
+        sections.push({ label: 'early prelims', startTime: event.earlyPrelimStartTime, fightIds: buckets.early });
+      }
+      if (event.prelimStartTime && buckets.prelim.length > 0) {
+        sections.push({ label: 'prelims', startTime: event.prelimStartTime, fightIds: buckets.prelim });
+      }
+      if (event.mainStartTime && buckets.main.length > 0) {
+        sections.push({ label: 'main card', startTime: event.mainStartTime, fightIds: buckets.main });
+      }
+
+      // Fallback: no usable section start times. Fire one notification at
+      // the earliest known event time for the entire card.
+      if (sections.length === 0) {
+        sections.push({
+          label: null,
+          startTime: getStartTime(event),
+          fightIds: event.fights.map((f) => f.id),
+        });
+      }
+
+      for (const section of sections) {
+        const triggerAt = new Date(section.startTime.getTime() - SECTION_NOTIF_LEAD_MS);
+        if (now < triggerAt) continue;
+        await notifyEventSectionStart(event.id, section.fightIds, event.name, section.label);
+      }
+    }
+  } catch (error: any) {
+    console.error('[Lifecycle] Step 1.7 (section-start notif) error:', error.message);
   }
 
   // === STEP 2: Section-based fight completion ===

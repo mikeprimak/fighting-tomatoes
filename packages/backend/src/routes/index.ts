@@ -690,7 +690,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         return {
           ...event,
           hasLiveTracking,
-          notificationsAllowed: hasLiveTracking && notifyPromotionsUpper.includes((event.promotion || '').toUpperCase()),
+          notificationsAllowed: notifyPromotionsUpper.includes((event.promotion || '').toUpperCase()),
         };
       });
 
