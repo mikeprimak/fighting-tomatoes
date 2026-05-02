@@ -1,11 +1,25 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { API_BASE_URL } from './api';
 
+// Bundled fallback list. The runtime list is hydrated from /api/promotions
+// and falls back to this when offline or before the first fetch returns.
+// Source of truth lives in packages/backend/src/config/promotionRegistry.ts.
 export const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'ZUFFA BOXING', 'TOP RANK', 'GOLDEN BOY', 'GOLD STAR', 'MVP', 'RAF'] as const;
-export type Organization = typeof ORGANIZATIONS[number];
+export type Organization = string;
 
-const ORG_GROUPS: Partial<Record<Organization, { exact?: string[]; contains?: string[]; excludes?: string[] }>> = {
+interface PromotionRegistryEntry {
+  code: string;
+  canonicalPromotion: string;
+  shortLabel: string;
+  fullLabel: string;
+  logoKey: string;
+  aliases: string[];
+}
+
+const ORG_GROUPS: Record<string, { exact?: string[]; contains?: string[]; excludes?: string[] }> = {
   'DIRTY BOXING': { contains: ['DIRTY BOXING'] },
   'TOP RANK': { contains: ['TOP RANK', 'TOP_RANK'] },
   'GOLDEN BOY': { contains: ['GOLDEN BOY', 'GOLDEN_BOY'] },
@@ -20,12 +34,31 @@ interface OrgFilterContextType {
   isAllSelected: boolean;
   filterByPromotion: (promotion: string | undefined) => boolean;
   filterEventsByOrg: <T extends { promotion?: string }>(events: T[]) => T[];
+  /** Orgs to render as filter pills. Hydrated from /api/promotions, falls
+   *  back to bundled ORGANIZATIONS until the fetch returns. */
+  availableOrgs: readonly Organization[];
 }
 
 const OrgFilterContext = createContext<OrgFilterContextType | undefined>(undefined);
 
 export function OrgFilterProvider({ children }: { children: ReactNode }) {
   const [selectedOrgs, setSelectedOrgs] = useState<Set<Organization>>(new Set());
+
+  const { data: registryData } = useQuery({
+    queryKey: ['promotions-registry'],
+    queryFn: async (): Promise<{ promotions: PromotionRegistryEntry[] }> => {
+      const res = await fetch(`${API_BASE_URL}/promotions`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    },
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    retry: 1,
+  });
+
+  const availableOrgs: readonly Organization[] = registryData?.promotions
+    ? registryData.promotions.map(p => p.shortLabel)
+    : ORGANIZATIONS;
 
   const handleOrgPress = useCallback((org: Organization | 'ALL') => {
     if (org === 'ALL') {
@@ -69,7 +102,7 @@ export function OrgFilterProvider({ children }: { children: ReactNode }) {
   }, [filterByPromotion]);
 
   return (
-    <OrgFilterContext.Provider value={{ selectedOrgs, handleOrgPress, isAllSelected, filterByPromotion, filterEventsByOrg }}>
+    <OrgFilterContext.Provider value={{ selectedOrgs, handleOrgPress, isAllSelected, filterByPromotion, filterEventsByOrg, availableOrgs }}>
       {children}
     </OrgFilterContext.Provider>
   );

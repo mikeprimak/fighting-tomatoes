@@ -1,9 +1,22 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useQuery } from '@tanstack/react-query';
+import { API_BASE_URL } from '../services/api';
 
-// Available organizations for filtering
+// Bundled fallback list. The runtime list is hydrated from /api/promotions
+// and falls back to this when offline or before the first fetch returns.
+// Source of truth lives in packages/backend/src/config/promotionRegistry.ts.
 export const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'ZUFFA BOXING', 'TOP RANK', 'GOLDEN BOY', 'GOLD STAR', 'MVP', 'RAF'] as const;
-export type Organization = typeof ORGANIZATIONS[number];
+export type Organization = string;
+
+interface PromotionRegistryEntry {
+  code: string;
+  canonicalPromotion: string;
+  shortLabel: string;
+  fullLabel: string;
+  logoKey: string;
+  aliases: string[];
+}
 
 // Organization matching rules
 // - exact: promotion must equal one of these exactly
@@ -37,6 +50,9 @@ interface OrgFilterContextType {
   isAllSelected: boolean;
   filterEventsByOrg: <T extends { promotion?: string }>(events: T[]) => T[];
   filterByPromotion: (promotion: string | undefined) => boolean;
+  /** Orgs to render as filter pills. Hydrated from /api/promotions, falls
+   *  back to bundled ORGANIZATIONS until the fetch returns. */
+  availableOrgs: readonly Organization[];
 }
 
 const OrgFilterContext = createContext<OrgFilterContextType | undefined>(undefined);
@@ -44,6 +60,24 @@ const OrgFilterContext = createContext<OrgFilterContextType | undefined>(undefin
 export function OrgFilterProvider({ children }: { children: ReactNode }) {
   // Organization filter state - empty set means "ALL" (show everything)
   const [selectedOrgs, setSelectedOrgs] = useState<Set<Organization>>(new Set());
+
+  // Hydrate the available org pills from the backend registry. 24h stale
+  // tolerance — the list rarely changes; on miss we fall back to bundled.
+  const { data: registryData } = useQuery({
+    queryKey: ['promotions-registry'],
+    queryFn: async (): Promise<{ promotions: PromotionRegistryEntry[] }> => {
+      const res = await fetch(`${API_BASE_URL}/promotions`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    },
+    staleTime: 24 * 60 * 60 * 1000,
+    cacheTime: 24 * 60 * 60 * 1000,
+    retry: 1,
+  });
+
+  const availableOrgs: readonly Organization[] = registryData?.promotions
+    ? registryData.promotions.map(p => p.shortLabel)
+    : ORGANIZATIONS;
 
   // Load saved organization filter on mount
   useEffect(() => {
@@ -139,6 +173,7 @@ export function OrgFilterProvider({ children }: { children: ReactNode }) {
         isAllSelected,
         filterEventsByOrg,
         filterByPromotion,
+        availableOrgs,
       }}
     >
       {children}

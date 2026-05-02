@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-nati
 import { LinearGradient } from 'expo-linear-gradient';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
-import { useOrgFilter, ORGANIZATIONS, Organization } from '../store/OrgFilterContext';
+import { useOrgFilter, Organization } from '../store/OrgFilterContext';
 
 interface OrgFilterTabsProps {
   onFilterChange?: () => void;
@@ -12,7 +12,7 @@ interface OrgFilterTabsProps {
 export default function OrgFilterTabs({ onFilterChange }: OrgFilterTabsProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { selectedOrgs, handleOrgPress, isAllSelected } = useOrgFilter();
+  const { selectedOrgs, handleOrgPress, isAllSelected, availableOrgs } = useOrgFilter();
 
   const styles = createStyles(colors);
 
@@ -39,7 +39,7 @@ export default function OrgFilterTabs({ onFilterChange }: OrgFilterTabsProps) {
         </TouchableOpacity>
 
         {/* Organization Tabs */}
-        {ORGANIZATIONS.map(org => {
+        {availableOrgs.map(org => {
           const isSelected = selectedOrgs.has(org);
           return (
             <TouchableOpacity
