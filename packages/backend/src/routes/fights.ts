@@ -6,7 +6,7 @@ import { notificationRuleEngine } from '../services/notificationRuleEngine';
 import { maybeNotifyReviewLike, maybeNotifyPreFightCommentLike } from '../services/commentLikeNotifications';
 import { calculateQualityThreadScore } from '../utils/commentSorting';
 import { TBA_FIGHTER_ID, isTBAFighter, fightHasTBA } from '../constants/tba';
-import { isProductionScraper, getNotifyPromotions } from '../config/liveTrackerConfig';
+import { isProductionScraper, getNotifyPromotions, hasReliableLiveTracker } from '../config/liveTrackerConfig';
 
 // Request/Response schemas using Zod for validation
 const CreateFightSchema = z.object({
@@ -328,7 +328,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
         // Add hasLiveTracking + notificationsAllowed to event
         if (transformed.event) {
-          const hasLiveTracking = isProductionScraper(transformed.event.scraperType);
+          const hasLiveTracking = hasReliableLiveTracker(transformed.event.scraperType, transformed.event.promotion);
           transformed.event = {
             ...transformed.event,
             hasLiveTracking,
@@ -560,7 +560,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Add hasLiveTracking + notificationsAllowed to event
       if (transformedFight.event) {
-        const hasLiveTracking = isProductionScraper(transformedFight.event.scraperType);
+        const hasLiveTracking = hasReliableLiveTracker(transformedFight.event.scraperType, transformedFight.event.promotion);
         const notifyPromos = await getNotifyPromotions(fastify.prisma);
         transformedFight.event = {
           ...transformedFight.event,
@@ -3772,7 +3772,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
         // Add hasLiveTracking + notificationsAllowed to event
         if (transformed.event) {
-          const hasLiveTracking = isProductionScraper(transformed.event.scraperType);
+          const hasLiveTracking = hasReliableLiveTracker(transformed.event.scraperType, transformed.event.promotion);
           transformed.event = {
             ...transformed.event,
             hasLiveTracking,

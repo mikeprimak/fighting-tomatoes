@@ -297,9 +297,24 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     setLocalNotified(newValue);
     notifyMutation.mutate(newValue);
 
-    // Show toast message
+    // Show toast message — text branches on whether this org has a reliable
+    // live tracker. Non-tracker orgs fire at section start, not at walkout.
     if (newValue) {
-      setNotifyMessage("You'll be notified when this fight is up next.");
+      if (fight.event?.hasLiveTracking === false) {
+        const ct = ((fight as any).cardType as string | null | undefined)?.trim().toLowerCase();
+        const phrase = !ct
+          ? 'the card starts'
+          : ct.includes('early prelim')
+            ? 'early prelims start'
+            : ct.includes('prelim')
+              ? 'prelims start'
+              : ct.includes('main')
+                ? 'the main card starts'
+                : 'the card starts';
+        setNotifyMessage(`You'll be notified when ${phrase}.`);
+      } else {
+        setNotifyMessage("You'll be notified when this fight is up next.");
+      }
     } else {
       setNotifyMessage('Notification removed.');
     }

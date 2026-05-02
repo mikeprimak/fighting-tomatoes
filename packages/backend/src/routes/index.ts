@@ -19,7 +19,7 @@ import { authenticateUser, requireEmailVerification } from '../middleware/auth';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
-import { isProductionScraper, getNotifyPromotions } from '../config/liveTrackerConfig';
+import { isProductionScraper, getNotifyPromotions, hasReliableLiveTracker } from '../config/liveTrackerConfig';
 
 // Organization filter groups - maps filter buttons to actual promotions
 // BOXING is an aggregate that includes multiple boxing promoters
@@ -646,7 +646,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
           // Transform events to add averageHype, commentCount, and user data to fights
           transformedEvents = events.map((event: any) => ({
             ...event,
-            hasLiveTracking: isProductionScraper(event.scraperType),
+            hasLiveTracking: hasReliableLiveTracker(event.scraperType, event.promotion),
             fights: event.fights?.map((fight: any) => {
               const hypeData = hypeByFight.get(fight.id);
               const userRating = userRatingsByFight.get(fight.id);
@@ -686,7 +686,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       const notifyPromotions = await getNotifyPromotions(fastify.prisma);
       const notifyPromotionsUpper = notifyPromotions.map(p => p.toUpperCase());
       const finalEvents = transformedEvents.map((event: any) => {
-        const hasLiveTracking = event.hasLiveTracking ?? isProductionScraper(event.scraperType);
+        const hasLiveTracking = event.hasLiveTracking ?? hasReliableLiveTracker(event.scraperType, event.promotion);
         return {
           ...event,
           hasLiveTracking,
