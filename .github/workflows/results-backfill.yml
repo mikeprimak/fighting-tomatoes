@@ -1,8 +1,8 @@
 name: Results Backfill (Phase 2 orchestrator)
 # Daily orchestrator that fills in missing fight results on already-completed
-# events the live tracker missed. Currently dispatches: ufc.
+# events the live tracker missed. Dispatches: ufc, bkfc, onefc, oktagon,
+# matchroom, pfl.
 # Tapology family is handled by tapology-backfill.yml (older Phase 1 job).
-# BKFC, ONE FC, Oktagon, and Matchroom-native wrappers will land later.
 
 on:
   schedule:
