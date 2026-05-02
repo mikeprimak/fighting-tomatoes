@@ -1203,5 +1203,63 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       });
     }
   });
+
+  // Get fighters most-followed across the platform (for discovery)
+  fastify.get('/top-followed-fighters', {
+    preHandler: optionalAuthenticateMiddleware,
+  }, async (request, reply) => {
+    try {
+      const userId = (request as any).user?.id as string | undefined;
+      const limit = Math.min(Number((request.query as any)?.limit) || 20, 50);
+
+      // Aggregate follow counts grouped by fighterId
+      const grouped = await fastify.prisma.userFighterFollow.groupBy({
+        by: ['fighterId'],
+        _count: { fighterId: true },
+        orderBy: { _count: { fighterId: 'desc' } },
+        take: limit,
+      });
+
+      const fighterIds = grouped.map((g) => g.fighterId);
+
+      // Fetch fighter records in one query
+      const fighters = fighterIds.length === 0
+        ? []
+        : await fastify.prisma.fighter.findMany({
+            where: { id: { in: fighterIds } },
+          });
+      const fighterMap = new Map(fighters.map((f) => [f.id, f]));
+
+      // Determine which of these the requesting user already follows
+      let followedSet = new Set<string>();
+      if (userId && fighterIds.length > 0) {
+        const userFollows = await fastify.prisma.userFighterFollow.findMany({
+          where: { userId, fighterId: { in: fighterIds } },
+          select: { fighterId: true },
+        });
+        followedSet = new Set(userFollows.map((f) => f.fighterId));
+      }
+
+      const data = grouped
+        .map((g) => {
+          const fighter = fighterMap.get(g.fighterId);
+          if (!fighter) return null;
+          return {
+            fighter,
+            followerCount: g._count.fighterId,
+            isFollowing: followedSet.has(g.fighterId),
+          };
+        })
+        .filter((x): x is { fighter: any; followerCount: number; isFollowing: boolean } => x !== null);
+
+      return reply.send({ data });
+    } catch (error) {
+      console.error('Error fetching top-followed fighters:', error);
+      return reply.status(500).send({
+        error: 'Failed to fetch top-followed fighters',
+        code: 'FETCH_ERROR',
+      });
+    }
+  });
 }
 
