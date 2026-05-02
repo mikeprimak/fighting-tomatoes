@@ -430,35 +430,70 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         }
       }
 
-      // Extract prelim start time
+      // Extract section start times from `.card-date` headers (the actual
+      // source of truth on pflmma.com). Falls back to body-text regex if
+      // the headers aren't present.
+      //
+      // PFL labels their sections "Main Card" and "Early Card". "Early Card"
+      // is PFL's name for what the rest of the world calls "Prelims" — it
+      // maps to prelimStartTime, NOT earlyPrelimStartTime. Reserve
+      // earlyPrelimStartTime for the rare case where PFL splits into three
+      // tiers (e.g. "Early Prelims" on Fight Pass).
       let prelimStartTime = null;
-      const prelimPageText = document.body.innerText || '';
-      const prelimPatterns = [
-        /PRELIM(?:S|INARY)?\s*(?:CARD)?\s*[^|\n]*\|\s*(\d{1,2}:\d{2}\s*(?:am|pm))/i,
-        /PRELIM(?:S|INARY)?\s*(?:CARD)?\s*.*?(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT)/i,
-      ];
-      for (const pattern of prelimPatterns) {
-        const match = prelimPageText.match(pattern);
-        if (match) {
-          prelimStartTime = match[1].trim().toUpperCase();
-          break;
+      let earlyPrelimStartTime = null;
+      let mainStartTimeFromHeader = null;
+
+      const cardDateNodes = Array.from(document.querySelectorAll('.card-date'));
+      const extractTime = (text) => {
+        if (!text) return null;
+        const m = text.match(/(\d{1,2}:\d{2}\s*(?:AM|PM|am|pm))/);
+        return m ? m[1].trim().toUpperCase() : null;
+      };
+      for (const node of cardDateNodes) {
+        const text = (node.textContent || '').trim();
+        const time = extractTime(text);
+        if (!time) continue;
+        const lower = text.toLowerCase();
+        // Order matters: match more specific labels first.
+        if (lower.includes('early prelim')) {
+          if (!earlyPrelimStartTime) earlyPrelimStartTime = time;
+        } else if (lower.includes('early card')) {
+          // PFL's "Early Card" === Prelims.
+          if (!prelimStartTime) prelimStartTime = time;
+        } else if (lower.includes('prelim')) {
+          if (!prelimStartTime) prelimStartTime = time;
+        } else if (lower.includes('main')) {
+          if (!mainStartTimeFromHeader) mainStartTimeFromHeader = time;
         }
       }
 
-      // Extract early card / early prelim start time (pflmma.com lists this
-      // separately when applicable, e.g. ESPN+ early card before the main
-      // prelim broadcast).
-      let earlyPrelimStartTime = null;
-      const earlyPatterns = [
-        /EARLY\s*(?:PRELIM(?:S|INARY)?|CARD)\s*[^|\n]*\|\s*(\d{1,2}:\d{2}\s*(?:am|pm))/i,
-        /EARLY\s*(?:PRELIM(?:S|INARY)?|CARD)\s*.*?(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:ET|EST|EDT)/i,
-      ];
-      for (const pattern of earlyPatterns) {
-        const match = prelimPageText.match(pattern);
-        if (match) {
-          earlyPrelimStartTime = match[1].trim().toUpperCase();
-          break;
+      // Fallback: body-text regex (legacy path for pages without .card-date)
+      const prelimPageText = document.body.innerText || '';
+      if (!prelimStartTime) {
+        const prelimPatterns = [
+          /(?:^|[^Y])\bPRELIM(?:S|INARY)?\s*(?:CARD)?\s*[^|\n]*\|\s*(\d{1,2}:\d{2}\s*(?:am|pm))/i,
+          /\bEARLY\s*CARD\s*[^|\n]*\|\s*(\d{1,2}:\d{2}\s*(?:am|pm))/i,
+        ];
+        for (const pattern of prelimPatterns) {
+          const match = prelimPageText.match(pattern);
+          if (match) {
+            prelimStartTime = match[1].trim().toUpperCase();
+            break;
+          }
         }
+      }
+      if (!earlyPrelimStartTime) {
+        const earlyPattern = /\bEARLY\s*PRELIM(?:S|INARY)?\s*[^|\n]*\|\s*(\d{1,2}:\d{2}\s*(?:am|pm))/i;
+        const match = prelimPageText.match(earlyPattern);
+        if (match) earlyPrelimStartTime = match[1].trim().toUpperCase();
+      }
+
+      // If we got a main-card time directly from a header, prefer it over
+      // the site-wide countdown timer (DateTime.fromISO from the next-event
+      // banner).
+      if (mainStartTimeFromHeader) {
+        eventStartTime = mainStartTimeFromHeader;
+        eventStartTimeISO = null;
       }
 
       // Helper function to check if a string is a valid fighter name
@@ -530,12 +565,42 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       const processedPairs = new Set();  // Track processed fight pairs to avoid duplicates
 
       if (fightCardContainer) {
+        // Build wrapperId → cardType map by walking .card-date headers and
+        // fightCardWrapper elements in document order. PFL labels sections
+        // via .card-date spans (e.g. "Main Card: 10:00 PM ET",
+        // "Early Card: 7:00 PM ET"). "Early Card" is PFL's name for Prelims.
+        //
+        // We search the ENTIRE document for these nodes (not just inside
+        // #fight_card_component) because the section header sometimes lives
+        // outside the AJAX-loaded fight card component as a sibling above
+        // it. querySelectorAll returns nodes in document order, so the walk
+        // correctly tracks the most recent header.
+        const wrapperToCardType = new Map();
+        {
+          const sectionNodes = Array.from(
+            document.querySelectorAll('.card-date, [id^="fightCardWrapper"]')
+          );
+          let currentSection = 'Main Card'; // default if no header precedes first wrapper
+          for (const node of sectionNodes) {
+            if (node.classList && node.classList.contains('card-date')) {
+              const text = (node.textContent || '').toLowerCase();
+              if (text.includes('early prelim')) currentSection = 'Early Prelims';
+              else if (text.includes('early card')) currentSection = 'Prelims'; // PFL "Early Card" = Prelims
+              else if (text.includes('prelim')) currentSection = 'Prelims';
+              else if (text.includes('main')) currentSection = 'Main Card';
+            } else if (node.id && node.id.indexOf('fightCardWrapper') === 0) {
+              wrapperToCardType.set(node.id, currentSection);
+            }
+          }
+        }
+
         // Strategy 1: Look for fight containers/rows that contain fighter links
         // Each fight row should have 2 unique fighters
         const fighterLinks = fightCardContainer.querySelectorAll('a[href*="/fighter"], a[href*="/athlete"]');
 
         // Build a map of unique fighters with their data
         const fighterMap = new Map();
+        const fighterToWrapperId = new Map();
 
         fighterLinks.forEach(link => {
           const href = link.href || '';
@@ -650,6 +715,13 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
             url: href,
             imageUrl
           });
+
+          // Record which fightCardWrapper this fighter sits inside, so we
+          // can resolve cardType per fight when pairing below.
+          const wrapperEl = link.closest('[id^="fightCardWrapper"]');
+          if (wrapperEl && wrapperEl.id && !fighterToWrapperId.has(cleanedName)) {
+            fighterToWrapperId.set(cleanedName, wrapperEl.id);
+          }
         });
 
         // Convert to array for pairing
@@ -669,10 +741,20 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
           if (processedPairs.has(pairKey)) continue;
           processedPairs.add(pairKey);
 
+          // Resolve cardType from whichever fighter's wrapper we tracked.
+          // Both fighters in a fight share the same wrapper, but only the
+          // first occurrence of each fighter is recorded in fighterToWrapperId.
+          const wrapperIdA = fighterToWrapperId.get(fighterA.name);
+          const wrapperIdB = fighterToWrapperId.get(fighterB.name);
+          const cardType =
+            wrapperToCardType.get(wrapperIdA) ||
+            wrapperToCardType.get(wrapperIdB) ||
+            'Main Card';
+
           allFights.push({
             fightId: `pfl-fight-${globalOrder}`,
             order: globalOrder++,
-            cardType: 'Main Card',
+            cardType,
             weightClass: '',
             isTitle: false,
             fighterA: {

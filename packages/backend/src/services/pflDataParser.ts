@@ -355,6 +355,12 @@ async function importPFLEvents(
       // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it),
       // except un-cancel events that reappear on the source site.
       const wasCancelled = event.eventStatus === 'CANCELLED';
+      // Section start times: pass through null so a scrape that no longer
+      // sees a section header (e.g. PFL drops "Early Prelims" from a card,
+      // or we previously misinterpreted "Early Card" as Early Prelims) will
+      // clear the stale DB value. Only main is conservative — never clear it
+      // because parsePFLEventStartTime returns null when both ISO and string
+      // are missing, and we don't want a transient AJAX hiccup to wipe it.
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -365,8 +371,8 @@ async function importPFLEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
-          prelimStartTime: prelimStartTime || undefined,
-          earlyPrelimStartTime: earlyPrelimStartTime || undefined,
+          prelimStartTime: prelimStartTime,
+          earlyPrelimStartTime: earlyPrelimStartTime,
           scraperType: 'pfl',
           ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
         }
