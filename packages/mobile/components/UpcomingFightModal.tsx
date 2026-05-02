@@ -24,6 +24,7 @@ import { apiService } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import { getFighterImage } from './fight-cards/shared/utils';
 import { getHypeHeatmapColor } from '../utils/heatmap';
+import FollowFighterButton from './FollowFighterButton';
 
 const DEFAULT_FIGHTER_IMAGE = require('../assets/fighters/fighter-default-alpha.png');
 const FLAME_HOLLOW = require('../assets/flame-hollow-alpha-thicker-truealpha.png');
@@ -51,6 +52,8 @@ interface Fight {
   userPredictedMethod?: string | null;
   notificationReasons?: any;
   event?: any;
+  isFollowingFighter1?: boolean;
+  isFollowingFighter2?: boolean;
 }
 
 interface UpcomingFightModalProps {
@@ -357,11 +360,17 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
 
           {/* Compact fighter row */}
           <View style={styles.fightersRow}>
-            <Image
-              source={fighter1Img}
-              style={styles.fighterImage}
-              onError={() => setFighter1ImgError(true)}
-            />
+            <View style={styles.fighterColumn}>
+              <Image
+                source={fighter1Img}
+                style={styles.fighterImage}
+                onError={() => setFighter1ImgError(true)}
+              />
+              <FollowFighterButton
+                fighterId={fight.fighter1.id}
+                isFollowing={fight.isFollowingFighter1 ?? false}
+              />
+            </View>
             <View style={styles.fighterNamesBlock}>
               <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
                 {fight.fighter1.lastName}
@@ -371,11 +380,17 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
                 {fight.fighter2.lastName}
               </Text>
             </View>
-            <Image
-              source={fighter2Img}
-              style={styles.fighterImage}
-              onError={() => setFighter2ImgError(true)}
-            />
+            <View style={styles.fighterColumn}>
+              <Image
+                source={fighter2Img}
+                style={styles.fighterImage}
+                onError={() => setFighter2ImgError(true)}
+              />
+              <FollowFighterButton
+                fighterId={fight.fighter2.id}
+                isFollowing={fight.isFollowingFighter2 ?? false}
+              />
+            </View>
           </View>
 
           {/* Large flame wheel display */}
@@ -585,6 +600,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 14,
     marginBottom: 12,
+  },
+  fighterColumn: {
+    alignItems: 'center',
+    gap: 8,
   },
   fighterNamesBlock: {
     alignItems: 'center',

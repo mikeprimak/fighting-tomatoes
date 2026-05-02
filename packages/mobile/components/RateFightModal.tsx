@@ -24,6 +24,7 @@ import { useAuth } from '../store/AuthContext';
 import { AnalyticsService } from '../services/analytics';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
+import FollowFighterButton from './FollowFighterButton';
 
 interface Fight {
   id: string;
@@ -46,6 +47,8 @@ interface Fight {
   userRating?: any;
   userReview?: any;
   userTags?: any[];
+  isFollowingFighter1?: boolean;
+  isFollowingFighter2?: boolean;
 }
 
 interface RateFightModalProps {
@@ -623,6 +626,11 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
                 <Text style={[styles.fighterName, { color: colors.text }]}>
                   {getFighterName(fight.fighter1)}
                 </Text>
+                <FollowFighterButton
+                  fighterId={fight.fighter1.id}
+                  isFollowing={fight.isFollowingFighter1 ?? false}
+                  style={{ marginTop: 6 }}
+                />
               </View>
 
               <View style={styles.vsContainer}>
@@ -638,6 +646,11 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
                 <Text style={[styles.fighterName, { color: colors.text }]}>
                   {getFighterName(fight.fighter2)}
                 </Text>
+                <FollowFighterButton
+                  fighterId={fight.fighter2.id}
+                  isFollowing={fight.isFollowingFighter2 ?? false}
+                  style={{ marginTop: 6 }}
+                />
               </View>
             </View>
           </View>
