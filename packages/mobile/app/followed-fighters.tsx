@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,16 +7,17 @@ import {
   Switch,
   ActivityIndicator,
   Image,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
+import { FontAwesome } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../services/api';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from '../components/CustomAlert';
-import FollowFighterButton from '../components/FollowFighterButton';
 
 interface FollowedFighter {
   id: string;
@@ -59,6 +60,7 @@ export default function FollowedFightersScreen() {
   const { alertState, showError, hideAlert } = useCustomAlert();
   const queryClient = useQueryClient();
   const [localUnfollows, setLocalUnfollows] = useState<Set<string>>(new Set());
+  const [justFollowed, setJustFollowed] = useState<Map<string, TopFollowedFighter>>(new Map());
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['followedFighters'],
@@ -123,7 +125,40 @@ export default function FollowedFightersScreen() {
   };
 
   const styles = createStyles(colors);
-  const fighters: FollowedFighter[] = data?.fighters || [];
+  const serverFighters: FollowedFighter[] = data?.fighters || [];
+
+  // Once the server returns the fighter, drop the optimistic entry.
+  useEffect(() => {
+    if (justFollowed.size === 0) return;
+    const serverIds = new Set(serverFighters.map((f) => f.id));
+    let changed = false;
+    const next = new Map(justFollowed);
+    for (const id of Array.from(next.keys())) {
+      if (serverIds.has(id)) {
+        next.delete(id);
+        changed = true;
+      }
+    }
+    if (changed) setJustFollowed(next);
+  }, [serverFighters, justFollowed]);
+
+  const optimisticEntries: FollowedFighter[] = Array.from(justFollowed.values()).map((item) => ({
+    id: item.fighter.id,
+    firstName: item.fighter.firstName,
+    lastName: item.fighter.lastName,
+    profileImage: item.fighter.profileImage ?? undefined,
+    wins: 0,
+    losses: 0,
+    draws: 0,
+    followerCount: item.followerCount + 1,
+    startOfFightNotification: false,
+    dayBeforeNotification: false,
+  }));
+  const optimisticIds = new Set(optimisticEntries.map((e) => e.id));
+  const fighters: FollowedFighter[] = [
+    ...optimisticEntries,
+    ...serverFighters.filter((f) => !optimisticIds.has(f.id)),
+  ];
   const followedIdSet = new Set<string>(
     fighters
       .filter((f: FollowedFighter) => !localUnfollows.has(f.id))
@@ -132,6 +167,15 @@ export default function FollowedFightersScreen() {
   const topFollowed: TopFollowedFighter[] = (topFollowedData?.data || []).filter(
     (item: TopFollowedFighter) => !item.isFollowing && !followedIdSet.has(item.fighter.id)
   );
+
+  const handleCarouselFollow = (item: TopFollowedFighter) => {
+    setJustFollowed((prev) => {
+      const next = new Map(prev);
+      next.set(item.fighter.id, item);
+      return next;
+    });
+    followMutation.mutate(item.fighter.id);
+  };
 
   const renderTopFollowedSection = () => {
     if (topFollowed.length === 0) return null;
@@ -149,12 +193,17 @@ export default function FollowedFightersScreen() {
             <View key={item.fighter.id} style={styles.topCard}>
               <View style={styles.topImageWrap}>
                 <Image source={getFighterImageFor(item.fighter)} style={styles.topImage} />
-                <FollowFighterButton
-                  fighterId={item.fighter.id}
-                  isFollowing={item.isFollowing}
-                  style={styles.followBadge}
-                  suppressToast
-                />
+                <TouchableOpacity
+                  onPress={() => handleCarouselFollow(item)}
+                  hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+                  style={[
+                    styles.followBadge,
+                    styles.plusBadge,
+                    { backgroundColor: colors.background, borderColor: colors.textSecondary },
+                  ]}
+                >
+                  <FontAwesome name="plus" size={11} color={colors.textSecondary} />
+                </TouchableOpacity>
               </View>
               <Text
                 style={[styles.topName, { color: colors.text }]}
@@ -315,6 +364,14 @@ const createStyles = (colors: any) =>
       position: 'absolute',
       bottom: -2,
       right: -2,
+    },
+    plusBadge: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 1.5,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     topName: {
       fontSize: 12,
