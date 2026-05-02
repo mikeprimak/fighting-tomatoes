@@ -28,6 +28,7 @@ interface FollowedFighter {
   draws: number;
   weightClass?: string;
   profileImage?: string;
+  followerCount?: number;
   startOfFightNotification: boolean;
   dayBeforeNotification: boolean;
 }
@@ -81,6 +82,7 @@ export default function FollowedFightersScreen() {
     mutationFn: (fighterId: string) => apiService.followFighter(fighterId),
     onSuccess: () => {
       refetch();
+      refetchTopFollowed();
       queryClient.invalidateQueries({ queryKey: ['fighters'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
     },
@@ -92,6 +94,7 @@ export default function FollowedFightersScreen() {
   const unfollowMutation = useMutation({
     mutationFn: (fighterId: string) => apiService.unfollowFighter(fighterId),
     onSuccess: () => {
+      refetchTopFollowed();
       queryClient.invalidateQueries({ queryKey: ['fighters'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
     },
@@ -121,7 +124,14 @@ export default function FollowedFightersScreen() {
 
   const styles = createStyles(colors);
   const fighters = data?.fighters || [];
-  const topFollowed: TopFollowedFighter[] = topFollowedData?.data || [];
+  const followedIdSet = new Set<string>(
+    fighters
+      .filter((f: FollowedFighter) => !localUnfollows.has(f.id))
+      .map((f: FollowedFighter) => f.id)
+  );
+  const topFollowed: TopFollowedFighter[] = (topFollowedData?.data || []).filter(
+    (item: TopFollowedFighter) => !item.isFollowing && !followedIdSet.has(item.fighter.id)
+  );
 
   const renderTopFollowedSection = () => {
     if (topFollowed.length === 0) return null;
@@ -208,6 +218,11 @@ export default function FollowedFightersScreen() {
                 <Text style={[styles.fighterName, { color: colors.text }]}>
                   {fighter.firstName} {fighter.lastName}
                 </Text>
+                {typeof fighter.followerCount === 'number' && (
+                  <Text style={[styles.followerCount, { color: colors.textSecondary }]}>
+                    {fighter.followerCount} {fighter.followerCount === 1 ? 'follower' : 'followers'}
+                  </Text>
+                )}
               </View>
               <Switch
                 value={isFollowing}
@@ -333,6 +348,9 @@ const createStyles = (colors: any) =>
       fontSize: 16,
       fontWeight: '700',
       marginBottom: 2,
+    },
+    followerCount: {
+      fontSize: 12,
     },
 
     // States

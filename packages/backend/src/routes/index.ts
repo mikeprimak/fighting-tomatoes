@@ -1615,6 +1615,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   draws: { type: 'integer' },
                   weightClass: { type: 'string' },
                   profileImage: { type: 'string' },
+                  followerCount: { type: 'integer' },
                 },
               },
             },
@@ -1655,10 +1656,21 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       });
 
+      const fighterIds = followedFighters.map((f: any) => f.fighter.id);
+      const counts = fighterIds.length === 0
+        ? []
+        : await fastify.prisma.userFighterFollow.groupBy({
+            by: ['fighterId'],
+            where: { fighterId: { in: fighterIds } },
+            _count: { fighterId: true },
+          });
+      const countMap = new Map(counts.map((c: any) => [c.fighterId, c._count.fighterId]));
+
       // Map and sort by fighter's last name
       const fighters = followedFighters
         .map((follow: any) => ({
           ...follow.fighter,
+          followerCount: countMap.get(follow.fighter.id) ?? 0,
           // Notification preferences removed - now managed via notification rules
         }))
         .sort((a: any, b: any) => a.lastName.localeCompare(b.lastName));
