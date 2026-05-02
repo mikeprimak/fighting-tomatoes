@@ -80,20 +80,26 @@ function normalizeMethod(method: string): string {
 }
 
 /**
- * Parse round info from text like "Round 3" or "R3"
+ * Parse round info from result-row text like "Round 7/12" or "Round 2 of 8".
+ * Word boundary on "round" prevents matching the trailing r in unrelated
+ * words ("Champion 55 kg" used to match as r→55).
  */
 function parseRound(text: string): number | undefined {
-  const match = text.match(/(?:round|r)\s*(\d+)/i);
+  const match = text.match(/\bround\s+(\d+)/i);
   return match ? parseInt(match[1], 10) : undefined;
 }
 
 /**
- * Parse time from text like "2:34" or "at 2:34"
+ * Parse round-end time. Boxing/MMA rounds cap at 5 minutes, so a real
+ * stoppage time is M:SS with M = 0-5. This excludes scheduled-distance
+ * totals like "36:00 Total".
  */
 function parseTime(text: string): string | undefined {
-  const match = text.match(/(\d{1,2}:\d{2})/);
+  const match = text.match(/\b([0-5]:[0-5]\d)\b/);
   return match ? match[1] : undefined;
 }
+
+const DECISION_METHODS = new Set(['DEC', 'UD', 'SD', 'MD', 'DRAW', 'NC']);
 
 // ============== SCRAPER CLASS ==============
 
@@ -245,6 +251,7 @@ export class TapologyLiveScraper {
           let method: string | undefined;
           let round: number | undefined;
           let time: string | undefined;
+          let methodEl: any;
 
           $li.find('span.uppercase, span[class*="uppercase"]').each((_, el) => {
             const text = $(el).text().trim();
@@ -261,14 +268,32 @@ export class TapologyLiveScraper {
               text.includes('RTD') || text.includes('Retirement')
             )) {
               method = normalizeMethod(text);
+              methodEl = el;
               return false; // break
             }
           });
 
-          // Extract round and time from the full <li> text
-          if (method) {
-            round = parseRound(liText);
-            time = parseTime(liText);
+          // Extract round/time from the result row only (the method span's
+          // parent), not the entire <li>. The full <li> text contains
+          // fighter weight classes ("Champion 55 kg") and scheduled-distance
+          // totals ("12 Rounds, 36:00 Total") that the loose old regexes
+          // were misinterpreting as fight-end round/time.
+          // Decisions/draws/NC went the distance — leave round/time empty.
+          if (method && methodEl && !DECISION_METHODS.has(method)) {
+            const resultText = $(methodEl).parent().text();
+            // Stoppage rows on Tapology read like:
+            //   "KO/TKO 1:47 Round 7/12, 19:47 Total"
+            //   "KO/TKO, Body Shots 1:58 Round 4/10, 10:58 Total"
+            // Pull end-time and ended-round from the leading "M:SS Round X"
+            // pair to avoid grabbing the trailing total elapsed.
+            const stoppageMatch = resultText.match(/([0-5]:[0-5]\d)\s*Round\s+(\d+)/i);
+            if (stoppageMatch) {
+              time = stoppageMatch[1];
+              round = parseInt(stoppageMatch[2], 10);
+            } else {
+              round = parseRound(resultText);
+              time = parseTime(resultText);
+            }
           }
 
           // Check for cancellation
