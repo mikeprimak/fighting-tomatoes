@@ -314,7 +314,9 @@ export default function FighterDetailScreen() {
               Record: {fighter.wins}-{fighter.losses}-{fighter.draws}
             </Text>
 
-            {isAuthenticated && (
+            {/* Follow button — hidden because fighter detail screen has no UI entry point yet.
+                When fighter detail becomes reachable, remove the `false &&` to re-enable. */}
+            {false && isAuthenticated && (
               <Button
                 onPress={handleFollowPress}
                 disabled={followMutation.isPending}

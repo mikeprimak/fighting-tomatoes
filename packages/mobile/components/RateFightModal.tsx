@@ -618,19 +618,21 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
           <View style={styles.fightInfo}>
             <View style={styles.fightHeader}>
               <View style={styles.fighterContainer}>
-                <Image
-                  source={getFighterImage(fight.fighter1)}
-                  style={styles.fighterImage}
-                  resizeMode="cover"
-                />
+                <View style={styles.fighterImageWrap}>
+                  <Image
+                    source={getFighterImage(fight.fighter1)}
+                    style={styles.fighterImage}
+                    resizeMode="cover"
+                  />
+                  <FollowFighterButton
+                    fighterId={fight.fighter1.id}
+                    isFollowing={fight.isFollowingFighter1 ?? false}
+                    style={styles.followBadge}
+                  />
+                </View>
                 <Text style={[styles.fighterName, { color: colors.text }]}>
                   {getFighterName(fight.fighter1)}
                 </Text>
-                <FollowFighterButton
-                  fighterId={fight.fighter1.id}
-                  isFollowing={fight.isFollowingFighter1 ?? false}
-                  style={{ marginTop: 6 }}
-                />
               </View>
 
               <View style={styles.vsContainer}>
@@ -638,19 +640,21 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
               </View>
 
               <View style={styles.fighterContainer}>
-                <Image
-                  source={getFighterImage(fight.fighter2)}
-                  style={styles.fighterImage}
-                  resizeMode="cover"
-                />
+                <View style={styles.fighterImageWrap}>
+                  <Image
+                    source={getFighterImage(fight.fighter2)}
+                    style={styles.fighterImage}
+                    resizeMode="cover"
+                  />
+                  <FollowFighterButton
+                    fighterId={fight.fighter2.id}
+                    isFollowing={fight.isFollowingFighter2 ?? false}
+                    style={styles.followBadge}
+                  />
+                </View>
                 <Text style={[styles.fighterName, { color: colors.text }]}>
                   {getFighterName(fight.fighter2)}
                 </Text>
-                <FollowFighterButton
-                  fighterId={fight.fighter2.id}
-                  isFollowing={fight.isFollowingFighter2 ?? false}
-                  style={{ marginTop: 6 }}
-                />
               </View>
             </View>
           </View>
@@ -863,11 +867,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  fighterImageWrap: {
+    width: 80,
+    height: 80,
+    position: 'relative',
+    marginBottom: 8,
+  },
+  followBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+  },
   fighterImage: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginBottom: 8,
     borderWidth: 3,
     borderColor: '#ddd',
   },

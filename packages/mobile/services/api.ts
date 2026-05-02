@@ -523,6 +523,10 @@ class ApiService {
     return this.makeRequest('/fighters/followed');
   }
 
+  async getTopFollowedFighters(limit: number = 20): Promise<{ data: { fighter: any; followerCount: number; isFollowing: boolean }[] }> {
+    return this.makeRequest(`/community/top-followed-fighters?limit=${limit}`);
+  }
+
   // Crew-related API methods
   async getCrews(): Promise<{ crews: any[] }> {
     return this.makeRequest('/crews');

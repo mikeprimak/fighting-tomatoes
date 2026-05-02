@@ -360,7 +360,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
 
           {/* Compact fighter row */}
           <View style={styles.fightersRow}>
-            <View style={styles.fighterColumn}>
+            <View style={styles.fighterImageWrap}>
               <Image
                 source={fighter1Img}
                 style={styles.fighterImage}
@@ -369,6 +369,8 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               <FollowFighterButton
                 fighterId={fight.fighter1.id}
                 isFollowing={fight.isFollowingFighter1 ?? false}
+                style={styles.followBadge}
+                onFollowed={() => { if (!localNotified) handleNotifyPress(); }}
               />
             </View>
             <View style={styles.fighterNamesBlock}>
@@ -380,7 +382,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
                 {fight.fighter2.lastName}
               </Text>
             </View>
-            <View style={styles.fighterColumn}>
+            <View style={styles.fighterImageWrap}>
               <Image
                 source={fighter2Img}
                 style={styles.fighterImage}
@@ -389,6 +391,8 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               <FollowFighterButton
                 fighterId={fight.fighter2.id}
                 isFollowing={fight.isFollowingFighter2 ?? false}
+                style={styles.followBadge}
+                onFollowed={() => { if (!localNotified) handleNotifyPress(); }}
               />
             </View>
           </View>
@@ -548,12 +552,13 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             </TouchableOpacity>
           </View>
 
-          {/* Notify toast message */}
-          {notifyMessage && (
-            <Animated.Text style={[styles.notifyToast, { color: colors.textSecondary, opacity: notifyMsgOpacity }]}>
-              {notifyMessage}
-            </Animated.Text>
-          )}
+          {/* Notify toast message — always rendered to reserve height and avoid layout jump */}
+          <Animated.Text
+            style={[styles.notifyToast, { color: colors.textSecondary, opacity: notifyMsgOpacity }]}
+            numberOfLines={1}
+          >
+            {notifyMessage || ' '}
+          </Animated.Text>
 
             </ScrollView>
           </TouchableOpacity>
@@ -583,7 +588,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingTop: 28,
-    paddingBottom: 24,
+    paddingBottom: 16,
     alignItems: 'center',
   },
   mainTitle: {
@@ -601,9 +606,15 @@ const styles = StyleSheet.create({
     gap: 14,
     marginBottom: 12,
   },
-  fighterColumn: {
-    alignItems: 'center',
-    gap: 8,
+  fighterImageWrap: {
+    width: 72,
+    height: 72,
+    position: 'relative',
+  },
+  followBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
   },
   fighterNamesBlock: {
     alignItems: 'center',
