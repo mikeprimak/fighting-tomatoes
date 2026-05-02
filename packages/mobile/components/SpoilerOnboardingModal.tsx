@@ -24,7 +24,7 @@ export const SpoilerOnboardingModal: React.FC<SpoilerOnboardingModalProps> = ({
           </Text>
 
           <Text style={[styles.message, { color: colors.textSecondary }]}>
-            Good Fights can hide winners, methods, and ratings until after you've watched a fight.
+            Good Fights can hide winners and methods until after you've watched a fight.
           </Text>
 
           <TouchableOpacity

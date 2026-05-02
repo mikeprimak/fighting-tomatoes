@@ -20,7 +20,6 @@ import { useSearch } from '../../../store/SearchContext';
 import { useOrgFilter } from '../../../store/OrgFilterContext';
 import CompletedFightCard from '../../../components/fight-cards/CompletedFightCard';
 import OrgFilterTabs from '../../../components/OrgFilterTabs';
-import SpoilerToggleButton from '../../../components/SpoilerToggleButton';
 import { SearchBar } from '../../../components';
 
 type TimePeriod = 'week' | 'month' | '3months' | 'year' | 'all';
@@ -148,14 +147,7 @@ export default function TopFightsScreen() {
       <StatusBar barStyle="light-content" />
 
       {/* Organization Filter Tabs - Hidden when search is visible */}
-      {!isSearchVisible && (
-        <View style={{ flexDirection: 'row' }}>
-          <View style={{ flex: 1 }}>
-            <OrgFilterTabs onFilterChange={handleFilterChange} />
-          </View>
-          <SpoilerToggleButton />
-        </View>
-      )}
+      {!isSearchVisible && <OrgFilterTabs onFilterChange={handleFilterChange} />}
 
       {/* Search Bar - Shown when search is visible */}
       <SearchBar />

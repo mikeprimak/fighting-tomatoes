@@ -7,6 +7,7 @@ import { Colors } from '../constants/Colors';
 import { useAuth } from '../store/AuthContext';
 import { useAnyLiveEvent } from '../hooks/useHasLiveEvent';
 import { useSearch } from '../store/SearchContext';
+import { useSpoilerFree } from '../store/SpoilerFreeContext';
 
 /**
  * Tab Bar Icon Component
@@ -120,6 +121,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
   const { user } = useAuth();
   const anyLiveEvent = useAnyLiveEvent();
   const { toggleSearch, isSearchVisible } = useSearch();
+  const { spoilerFreeMode, setSpoilerFreeMode } = useSpoilerFree();
 
   return (
     <Tabs
@@ -264,16 +266,29 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
           tabBarIcon: ({ color }) => <FontAwesome name="star" size={24} style={{ marginBottom: -3 }} color={color} />,
           headerTitle: () => <HeaderLogo title="Past Events" />,
           headerRight: () => (
-            <TouchableOpacity
-              onPress={toggleSearch}
-              style={{ marginRight: 16, padding: 8, marginTop: -16 }}
-            >
-              <FontAwesome
-                name="search"
-                size={20}
-                color={isSearchVisible ? colors.tint : colors.text}
-              />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8, marginTop: -16 }}>
+              <TouchableOpacity
+                onPress={() => setSpoilerFreeMode(!spoilerFreeMode)}
+                style={{ padding: 8, marginRight: 8 }}
+                accessibilityLabel={spoilerFreeMode ? 'Show fight results' : 'Hide fight results'}
+              >
+                <FontAwesome
+                  name={spoilerFreeMode ? 'eye-slash' : 'eye'}
+                  size={20}
+                  color={spoilerFreeMode ? colors.primary : colors.text}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={toggleSearch}
+                style={{ padding: 8, marginRight: 8 }}
+              >
+                <FontAwesome
+                  name="search"
+                  size={20}
+                  color={isSearchVisible ? colors.tint : colors.text}
+                />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
@@ -295,16 +310,29 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
           ),
           headerTitle: () => <HeaderLogo title="Good Fights" />,
           headerRight: () => (
-            <TouchableOpacity
-              onPress={toggleSearch}
-              style={{ marginRight: 16, padding: 8, marginTop: -16 }}
-            >
-              <FontAwesome
-                name="search"
-                size={20}
-                color={isSearchVisible ? colors.tint : colors.text}
-              />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8, marginTop: -16 }}>
+              <TouchableOpacity
+                onPress={() => setSpoilerFreeMode(!spoilerFreeMode)}
+                style={{ padding: 8, marginRight: 8 }}
+                accessibilityLabel={spoilerFreeMode ? 'Show fight results' : 'Hide fight results'}
+              >
+                <FontAwesome
+                  name={spoilerFreeMode ? 'eye-slash' : 'eye'}
+                  size={20}
+                  color={spoilerFreeMode ? colors.primary : colors.text}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={toggleSearch}
+                style={{ padding: 8, marginRight: 8 }}
+              >
+                <FontAwesome
+                  name="search"
+                  size={20}
+                  color={isSearchVisible ? colors.tint : colors.text}
+                />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />
