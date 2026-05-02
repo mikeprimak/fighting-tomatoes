@@ -5,6 +5,7 @@ import * as path from 'path';
 import { uploadFighterImage, uploadFighterImageFromFile, uploadEventImage } from './imageStorage';
 import { TBA_FIGHTER_ID, TBA_FIGHTER_NAME, isTBAFighter } from '../constants/tba';
 import { stripDiacritics } from '../utils/fighterMatcher';
+import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 
 const prisma = new PrismaClient();
 
@@ -563,7 +564,7 @@ async function importOktagonEvents(
       }
 
       try {
-        await prisma.fight.upsert({
+        const upsertedFight = await prisma.fight.upsert({
           where: {
             eventId_fighter1Id_fighter2Id: {
               eventId: event.id,
@@ -592,6 +593,10 @@ async function importOktagonEvents(
             fightStatus: 'UPCOMING',
           }
         });
+
+        await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
+          console.warn('[FollowSync]', err)
+        );
 
         fightsImported++;
       } catch (error) {

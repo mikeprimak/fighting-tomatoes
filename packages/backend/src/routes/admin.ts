@@ -13,6 +13,7 @@ import {
   getProductionScrapers,
   ALL_SCRAPER_TYPES,
 } from '../config/liveTrackerConfig';
+import { syncFighterFollowMatchesForFight } from '../services/notificationRuleEngine';
 import {
   triggerDailyUFCScraper,
   triggerEventLifecycleCheck,
@@ -975,6 +976,10 @@ export async function adminRoutes(fastify: FastifyInstance) {
           fighter2: { select: { id: true, firstName: true, lastName: true, nickname: true } },
         },
       });
+
+      await syncFighterFollowMatchesForFight(fight.id).catch(err =>
+        console.warn('[FollowSync]', err)
+      );
 
       return reply.code(201).send({ fight });
     } catch (error: any) {

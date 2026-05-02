@@ -26,6 +26,7 @@ import { useVerification } from '../store/VerificationContext';
 import { getFighterImage } from './fight-cards/shared/utils';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 import { usePredictionAnimation } from '../store/PredictionAnimationContext';
+import FollowFighterButton from './FollowFighterButton';
 
 const DEFAULT_FIGHTER_IMAGE = require('../assets/fighters/fighter-default-alpha.png');
 
@@ -48,6 +49,8 @@ interface Fight {
   userReview?: { content?: string; rating?: number } | null;
   totalReviews?: number;
   reviewCount?: number;
+  isFollowingFighter1?: boolean;
+  isFollowingFighter2?: boolean;
   event?: any;
 }
 
@@ -278,11 +281,18 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
 
           {/* Compact fighter row */}
           <View style={styles.fightersRow}>
-            <Image
-              source={fighter1Img}
-              style={styles.fighterImage}
-              onError={() => setFighter1ImgError(true)}
-            />
+            <View style={styles.fighterImageWrap}>
+              <Image
+                source={fighter1Img}
+                style={styles.fighterImage}
+                onError={() => setFighter1ImgError(true)}
+              />
+              <FollowFighterButton
+                fighterId={fight.fighter1.id}
+                isFollowing={fight.isFollowingFighter1 ?? false}
+                style={styles.followBadge}
+              />
+            </View>
             <View style={styles.fighterNamesBlock}>
               <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
                 {fight.fighter1.lastName}
@@ -292,11 +302,18 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
                 {fight.fighter2.lastName}
               </Text>
             </View>
-            <Image
-              source={fighter2Img}
-              style={styles.fighterImage}
-              onError={() => setFighter2ImgError(true)}
-            />
+            <View style={styles.fighterImageWrap}>
+              <Image
+                source={fighter2Img}
+                style={styles.fighterImage}
+                onError={() => setFighter2ImgError(true)}
+              />
+              <FollowFighterButton
+                fighterId={fight.fighter2.id}
+                isFollowing={fight.isFollowingFighter2 ?? false}
+                style={styles.followBadge}
+              />
+            </View>
           </View>
 
           {/* Large star wheel display */}
@@ -470,6 +487,16 @@ const styles = StyleSheet.create({
   fighterNamesBlock: {
     alignItems: 'center',
     gap: 2,
+  },
+  fighterImageWrap: {
+    width: 72,
+    height: 72,
+    position: 'relative',
+  },
+  followBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
   },
   fighterImage: {
     width: 72,

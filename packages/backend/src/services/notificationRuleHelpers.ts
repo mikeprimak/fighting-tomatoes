@@ -121,10 +121,14 @@ export async function manageFighterNotificationRule(
     });
 
     if (enabled) {
-      // If enabled, sync matches
-      notificationRuleEngine.syncRuleMatches(existingRule.id).catch(err => {
+      // If enabled, sync matches. Awaited (was fire-and-forget) so the live
+      // tracker's notification check can see this user's match rows on its
+      // very next pass — same contract as manual fight follows above.
+      try {
+        await notificationRuleEngine.syncRuleMatches(existingRule.id);
+      } catch (err) {
         console.error('Error syncing fighter notification rule matches:', err);
-      });
+      }
     } else {
       // If disabled, deactivate all matches for this rule
       await prisma.fightNotificationMatch.updateMany({
@@ -150,9 +154,11 @@ export async function manageFighterNotificationRule(
     });
 
     // Sync matches for new rule
-    notificationRuleEngine.syncRuleMatches(newRule.id).catch(err => {
+    try {
+      await notificationRuleEngine.syncRuleMatches(newRule.id);
+    } catch (err) {
       console.error('Error syncing fighter notification rule matches:', err);
-    });
+    }
   }
 }
 

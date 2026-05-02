@@ -253,6 +253,87 @@ export async function syncRuleMatches(ruleId: string): Promise<number> {
 }
 
 /**
+ * Sync fighter-follow matches for a single fight.
+ *
+ * Called after a scraper inserts/upserts a Fight row. Looks up active
+ * fighter-follow rules whose `fighterIds` contain either fighter on this
+ * fight, and upserts a `fightNotificationMatch` row per (user, fight, rule).
+ *
+ * Without this hook, a rule created before the fight existed never gets a
+ * match row — and the live tracker's `notifyFightStartViaRules(fightId)`
+ * would silently skip those users.
+ *
+ * Idempotent: safe to call repeatedly with the same fightId. Skips fights
+ * that don't exist or aren't UPCOMING.
+ */
+export async function syncFighterFollowMatchesForFight(fightId: string): Promise<number> {
+  const fight = await prisma.fight.findUnique({
+    where: { id: fightId },
+    select: {
+      id: true,
+      fighter1Id: true,
+      fighter2Id: true,
+      fightStatus: true,
+    },
+  });
+
+  if (!fight || fight.fightStatus !== 'UPCOMING') {
+    return 0;
+  }
+
+  // Find every active fighter-follow rule that names either fighter on this fight.
+  // Matching the rule name prefix avoids scanning unrelated rules (manual fight
+  // follows, pre-event reports, hype rules, etc.).
+  const candidateRules = await prisma.userNotificationRule.findMany({
+    where: {
+      isActive: true,
+      name: { startsWith: 'Fighter Follow:' },
+    },
+    select: {
+      id: true,
+      userId: true,
+      conditions: true,
+    },
+  });
+
+  let createdCount = 0;
+  for (const rule of candidateRules) {
+    const conditions = rule.conditions as NotificationRuleConditions;
+    const fighterIds = conditions.fighterIds || [];
+    if (
+      !fighterIds.includes(fight.fighter1Id) &&
+      !fighterIds.includes(fight.fighter2Id)
+    ) {
+      continue;
+    }
+
+    await prisma.fightNotificationMatch.upsert({
+      where: {
+        userId_fightId_ruleId: {
+          userId: rule.userId,
+          fightId: fight.id,
+          ruleId: rule.id,
+        },
+      },
+      create: {
+        userId: rule.userId,
+        fightId: fight.id,
+        ruleId: rule.id,
+        isActive: true,
+        notificationSent: false,
+      },
+      update: {
+        isActive: true,
+        matchedAt: new Date(),
+      },
+    });
+    createdCount++;
+  }
+
+  return createdCount;
+}
+
+/**
  * Syncs all matches for a specific user
  * Useful when user data changes significantly
  */
@@ -342,5 +423,6 @@ export const notificationRuleEngine = {
   evaluateRuleAgainstUpcomingFights,
   syncRuleMatches,
   syncAllUserRuleMatches,
+  syncFighterFollowMatchesForFight,
   getNotificationReasonsForFight,
 };

@@ -5,6 +5,7 @@ import * as path from 'path';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { eventTimeToUTC } from '../utils/timezone';
 import { uploadEventImage } from './imageStorage';
+import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 
 const prisma = new PrismaClient();
 
@@ -370,7 +371,7 @@ async function importRAFEvents(
       const fightStatus = fightData.winner ? 'COMPLETED' : 'UPCOMING';
 
       try {
-        await prisma.fight.upsert({
+        const upsertedFight = await prisma.fight.upsert({
           where: {
             eventId_fighter1Id_fighter2Id: {
               eventId: event.id,
@@ -404,6 +405,9 @@ async function importRAFEvents(
             method,
           },
         });
+        await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
+          console.warn('[FollowSync]', err)
+        );
         fightsImported++;
       } catch (error) {
         console.warn(`    ⚠ Failed to upsert fight:`, error);
