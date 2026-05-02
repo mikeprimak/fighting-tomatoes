@@ -3,6 +3,8 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { notificationService } from '../services/notificationService';
 import { useNotification } from '../store/NotificationContext';
+import { useReviewPrompt } from '../store/ReviewPromptContext';
+import { recordNotificationTap } from '../services/reviewPrompt';
 
 /**
  * Component that handles notification responses and sets up deep linking
@@ -11,6 +13,7 @@ import { useNotification } from '../store/NotificationContext';
 export function NotificationHandler() {
   const router = useRouter();
   const { setPreEventMessage } = useNotification();
+  const { requestPrompt } = useReviewPrompt();
 
   useEffect(() => {
     console.log('[NotificationHandler] Setting up notification listener');
@@ -77,13 +80,24 @@ export function NotificationHandler() {
         // Unscoped fallback — go to live events.
         router.push('/(tabs)/live-events');
       }
+
+      try {
+        const ready = await recordNotificationTap();
+        if (ready) {
+          setTimeout(() => {
+            requestPrompt().catch(() => {});
+          }, 5000);
+        }
+      } catch (err) {
+        console.warn('[NotificationHandler] reviewPrompt error:', err);
+      }
     });
 
     return () => {
       console.log('[NotificationHandler] Removing notification listener');
       subscription.remove();
     };
-  }, [router, setPreEventMessage]);
+  }, [router, setPreEventMessage, requestPrompt]);
 
   // This component doesn't render anything
   return null;
