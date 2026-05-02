@@ -23,62 +23,12 @@
 import { PrismaClient } from '@prisma/client';
 import { TapologyLiveScraper } from '../services/tapologyLiveScraper';
 import { parseTapologyData } from '../services/tapologyLiveParser';
+import { TAPOLOGY_PROMOTION_HUBS } from '../config/promotionRegistry';
 
 const prisma = new PrismaClient();
 
 const DEFAULT_WINDOW_DAYS = 7;
 const TAPOLOGY_BASE_URL = 'https://www.tapology.com';
-
-const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[]; scopeSelector?: string }> = {
-  'Zuffa Boxing': {
-    url: 'https://www.tapology.com/fightcenter/promotions/6299-zuffa-boxing-zb',
-    slugFilter: ['zuffa'],
-  },
-  'PFL': {
-    url: 'https://www.tapology.com/fightcenter/promotions/1969-professional-fighters-league-pfl',
-    slugFilter: ['pfl'],
-  },
-  'RIZIN': {
-    url: 'https://www.tapology.com/fightcenter/promotions/1561-rizin-fighting-federation-rff',
-    slugFilter: ['rizin'],
-  },
-  'Dirty Boxing': {
-    url: 'https://www.tapology.com/fightcenter/promotions/5649-dirty-boxing-championship-dbc',
-    slugFilter: ['dirty-boxing', 'dbx-', 'dbc-'],
-  },
-  'Karate Combat': {
-    url: 'https://www.tapology.com/fightcenter/promotions/3637-karate-combat-kc',
-    slugFilter: ['karate-combat', 'kc-'],
-  },
-  'TOP_RANK': {
-    url: 'https://www.tapology.com/fightcenter/promotions/2487-top-rank-tr',
-    slugFilter: [],
-    scopeSelector: '#content',
-  },
-  'Golden Boy': {
-    url: 'https://www.tapology.com/fightcenter/promotions/1979-golden-boy-promotions-gbp',
-    slugFilter: [],
-    scopeSelector: '#content',
-  },
-  'Gold Star': {
-    url: 'https://www.tapology.com/fightcenter/promotions/6908-gold-star-promotions-gsp',
-    slugFilter: [],
-    scopeSelector: '#content',
-  },
-  'The Ring': {
-    url: 'https://www.tapology.com/fightcenter/promotions/6908-gold-star-promotions-gsp',
-    slugFilter: [],
-    scopeSelector: '#content',
-  },
-  'Matchroom Boxing': {
-    url: 'https://www.tapology.com/fightcenter/promotions/2484-matchroom-boxing-mb',
-    slugFilter: ['matchroom'],
-  },
-  'MVP': {
-    url: 'https://www.tapology.com/fightcenter/promotions/4040-most-valuable-promotions-mvp',
-    slugFilter: ['mvp', 'most-valuable'],
-  },
-};
 
 async function discoverTapologyUrl(event: any, promotion: string): Promise<string | null> {
   const hubConfig = TAPOLOGY_PROMOTION_HUBS[promotion];
