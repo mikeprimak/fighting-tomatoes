@@ -285,6 +285,9 @@ export default function FollowedFightersScreen() {
     }
     return (
       <>
+        <Text style={[styles.headerText, { color: colors.textSecondary }]}>
+          You will receive a notification before they fight.
+        </Text>
         {myFollowsList.map((fighter: FollowedFighter) => {
           const isFollowing = !localUnfollows.has(fighter.id);
           return (
