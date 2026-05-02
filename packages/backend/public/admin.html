@@ -1819,10 +1819,27 @@
         </div>
       </div>
 
-      <!-- Live Trackers Section -->
+      <!-- Production Scrapers (controls lifecycle auto-publish) -->
       <div class="ops-section">
         <div class="ops-section-header">
-          <span class="ops-section-title">Live Event Trackers</span>
+          <span class="ops-section-title">Production Live Trackers</span>
+          <span id="productionScrapersStatus" style="font-size: 0.75rem; color: var(--text-secondary);"></span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 0.75rem 0;">
+          Toggle which scrapers are trusted to auto-publish results during a live event. When OFF, the lifecycle treats those events as "no tracker" — fights auto-complete at start time and the event closes 8h later.
+        </p>
+        <div id="productionScrapersGrid" class="scraper-grid">
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <div class="empty-state-text" style="margin-top: 0.5rem;">Loading production scrapers...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OKTAGON Live Tracker Controls -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">OKTAGON Live Tracker (manual start/stop)</span>
         </div>
         <div id="trackerList">
           <div class="empty-state">
@@ -3829,6 +3846,7 @@
     async function loadOperationsData() {
       await Promise.all([
         loadNotifyPromotions(),
+        loadProductionScrapers(),
         loadScraperStatus(),
         loadTrackerStatus(),
         loadBackupStatus(),
@@ -3884,6 +3902,80 @@
           </div>
         `;
       }).join('');
+    }
+
+    // ── Production scrapers (controls lifecycle auto-publish) ──
+    const SCRAPER_LABELS = {
+      ufc: 'UFC',
+      matchroom: 'Matchroom Boxing',
+      oktagon: 'OKTAGON MMA',
+      onefc: 'ONE Championship',
+      tapology: 'Tapology (PFL/RIZIN/KC/DBX/Zuffa)',
+      bkfc: 'BKFC',
+      raf: 'RAF Wrestling',
+    };
+    let currentProductionScrapers = [];
+    let allScraperTypes = [];
+
+    async function loadProductionScrapers() {
+      const grid = document.getElementById('productionScrapersGrid');
+      try {
+        const res = await authFetch(`${API_BASE}/admin/config/production-scrapers`);
+        const data = await res.json();
+        currentProductionScrapers = data.scrapers || [];
+        allScraperTypes = data.all || [];
+        renderProductionScrapersGrid();
+      } catch (err) {
+        grid.innerHTML = '<div class="empty-state"><div class="empty-state-text">Failed to load production scrapers</div></div>';
+      }
+    }
+
+    function renderProductionScrapersGrid() {
+      const grid = document.getElementById('productionScrapersGrid');
+      grid.innerHTML = allScraperTypes.map(scraper => {
+        const enabled = currentProductionScrapers.includes(scraper);
+        const label = SCRAPER_LABELS[scraper] || scraper;
+        return `
+          <div class="notify-card">
+            <div>
+              <div class="notify-card-label">${label}</div>
+              <div class="notify-card-sub">scraperType: ${scraper}</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleProductionScraper('${scraper}', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function toggleProductionScraper(scraper, enabled) {
+      const statusEl = document.getElementById('productionScrapersStatus');
+      statusEl.textContent = 'Saving...';
+
+      if (enabled && !currentProductionScrapers.includes(scraper)) {
+        currentProductionScrapers.push(scraper);
+      } else if (!enabled) {
+        currentProductionScrapers = currentProductionScrapers.filter(s => s !== scraper);
+      }
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/config/production-scrapers`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scrapers: currentProductionScrapers }),
+        });
+        if (!res.ok) throw new Error('Save failed');
+        const data = await res.json();
+        currentProductionScrapers = data.scrapers;
+        statusEl.textContent = 'Saved';
+        setTimeout(() => { statusEl.textContent = ''; }, 2000);
+      } catch (err) {
+        statusEl.textContent = 'Error saving!';
+        renderProductionScrapersGrid();
+        setTimeout(() => { statusEl.textContent = ''; }, 3000);
+      }
     }
 
     async function toggleNotifyPromotion(promotion, enabled) {

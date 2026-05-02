@@ -40,20 +40,59 @@ export interface BackfillOptions {
 }
 
 /**
- * Scrapers that are production-ready and trusted to auto-publish results.
- * When a scraper is in this list, the lifecycle service skips that event
- * (the scraper handles fight completion directly).
- *
- * Add a scraper here only after thorough testing.
+ * All scraper types that can be toggled "production" via the admin panel.
+ * The actual production-ready set is read from SystemConfig at runtime
+ * (key: 'production_scrapers').
  */
-export const PRODUCTION_SCRAPERS: ScraperType[] = ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc', 'raf'];
+export const ALL_SCRAPER_TYPES: ScraperType[] = ['ufc', 'matchroom', 'oktagon', 'onefc', 'tapology', 'bkfc', 'raf'];
+
+/**
+ * Default production scrapers — used when SystemConfig has no entry yet
+ * (first boot before admin has saved any toggles). Matches the historical
+ * hardcoded list minus tapology and raf, which the admin opted out of.
+ */
+const DEFAULT_PRODUCTION_SCRAPERS: ScraperType[] = ['ufc', 'oktagon', 'bkfc', 'onefc'];
+
+/**
+ * In-memory cache. Read synchronously by isProductionScraper() across the
+ * codebase. Populated from SystemConfig on boot and refreshed every 60s
+ * (or immediately when the admin toggles a scraper).
+ */
+let _productionScrapersCache: ScraperType[] = [...DEFAULT_PRODUCTION_SCRAPERS];
+
+/**
+ * Refresh the production-scrapers cache from SystemConfig. Call on boot,
+ * periodically, and right after the admin endpoint writes a new value.
+ * Falls back to the existing cache on error so we never go to "no scrapers."
+ */
+export async function refreshProductionScrapersCache(prisma: any): Promise<ScraperType[]> {
+  try {
+    const config = await prisma.systemConfig.findUnique({ where: { key: 'production_scrapers' } });
+    if (config?.value && Array.isArray(config.value)) {
+      _productionScrapersCache = (config.value as string[]).filter(
+        (s): s is ScraperType => (ALL_SCRAPER_TYPES as string[]).includes(s),
+      );
+    }
+    return _productionScrapersCache;
+  } catch (err) {
+    console.error('[liveTrackerConfig] Failed to refresh production scrapers cache:', err);
+    return _productionScrapersCache;
+  }
+}
+
+/**
+ * Synchronous accessor for callers that need the current list (e.g. admin GET).
+ */
+export function getProductionScrapers(): ScraperType[] {
+  return [..._productionScrapersCache];
+}
 
 /**
  * Check if a scraper type is production-ready (trusted to auto-publish).
  */
 export function isProductionScraper(scraperType: string | null | undefined): boolean {
   if (!scraperType) return false;
-  return (PRODUCTION_SCRAPERS as string[]).includes(scraperType);
+  return (_productionScrapersCache as string[]).includes(scraperType);
 }
 
 /**

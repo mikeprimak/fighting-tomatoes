@@ -7,7 +7,12 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requireAdmin } from '../middleware/auth';
-import { invalidateNotifyPromotionsCache } from '../config/liveTrackerConfig';
+import {
+  invalidateNotifyPromotionsCache,
+  refreshProductionScrapersCache,
+  getProductionScrapers,
+  ALL_SCRAPER_TYPES,
+} from '../config/liveTrackerConfig';
 import {
   triggerDailyUFCScraper,
   triggerEventLifecycleCheck,
@@ -1948,6 +1953,53 @@ export async function adminRoutes(fastify: FastifyInstance) {
       return reply.send({ promotions: config.value as string[] });
     } catch (error: any) {
       console.error('[Admin] Failed to update notify promotions:', error);
+      return reply.code(500).send({ error: 'Failed to update config' });
+    }
+  });
+
+  // ── Production Scrapers (which orgs the lifecycle trusts to auto-publish) ──
+
+  // GET /admin/config/production-scrapers
+  fastify.get('/admin/config/production-scrapers', {
+    preHandler: [fastify.authenticate, requireAdmin],
+  }, async (_request, reply) => {
+    try {
+      // Refresh from DB so the response reflects the latest stored value
+      // (not just whatever was cached at boot).
+      await refreshProductionScrapersCache(prisma);
+      return reply.send({
+        scrapers: getProductionScrapers(),
+        all: ALL_SCRAPER_TYPES,
+      });
+    } catch (error: any) {
+      console.error('[Admin] Failed to get production scrapers:', error);
+      return reply.code(500).send({ error: 'Failed to get config' });
+    }
+  });
+
+  // PUT /admin/config/production-scrapers
+  fastify.put('/admin/config/production-scrapers', {
+    preHandler: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    try {
+      const { scrapers } = request.body as { scrapers: string[] };
+      if (!Array.isArray(scrapers) || !scrapers.every(s => typeof s === 'string')) {
+        return reply.code(400).send({ error: 'scrapers must be an array of strings' });
+      }
+      const invalid = scrapers.filter(s => !(ALL_SCRAPER_TYPES as string[]).includes(s));
+      if (invalid.length > 0) {
+        return reply.code(400).send({ error: `Unknown scraper types: ${invalid.join(', ')}` });
+      }
+      await prisma.systemConfig.upsert({
+        where: { key: 'production_scrapers' },
+        create: { key: 'production_scrapers', value: scrapers },
+        update: { value: scrapers },
+      });
+      const fresh = await refreshProductionScrapersCache(prisma);
+      console.log(`[Admin] Updated production scrapers: ${JSON.stringify(fresh)}`);
+      return reply.send({ scrapers: fresh, all: ALL_SCRAPER_TYPES });
+    } catch (error: any) {
+      console.error('[Admin] Failed to update production scrapers:', error);
       return reply.code(500).send({ error: 'Failed to update config' });
     }
   });

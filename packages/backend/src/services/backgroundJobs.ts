@@ -4,6 +4,7 @@
 import * as cron from 'node-cron';
 import { MMANewsScraper } from './mmaNewsScraper';
 import { startEventLifecycle, stopEventLifecycle, runEventLifecycleCheck } from './eventLifecycle';
+import { refreshProductionScrapersCache } from '../config/liveTrackerConfig';
 import { runDailyUFCScraper, DailyScraperResults } from './dailyUFCScraper';
 import {
   runDailyBKFCScraper,
@@ -35,6 +36,16 @@ let dailyScraperJob: cron.ScheduledTask | null = null;
  */
 export function startBackgroundJobs(): void {
   console.log('[Background Jobs] Starting background jobs...');
+
+  // Hydrate production scrapers cache from SystemConfig before the lifecycle
+  // runs, and re-hydrate every 60s as a safety net in case the admin saves
+  // from a different process and we miss the in-process invalidation.
+  refreshProductionScrapersCache(prisma)
+    .then(list => console.log(`[Background Jobs] Production scrapers: ${JSON.stringify(list)}`))
+    .catch(err => console.error('[Background Jobs] Initial scraper cache refresh failed:', err));
+  setInterval(() => {
+    refreshProductionScrapersCache(prisma).catch(() => {});
+  }, 60_000);
 
   // ENABLED: Event lifecycle checker (replaces old event scheduler + failsafe + time-based updater)
   // Runs every 5 minutes: UPCOMING→LIVE, section-based fight completion, LIVE→COMPLETED
