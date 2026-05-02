@@ -568,10 +568,12 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             </TouchableOpacity>
           </View>
 
-          {/* Notify toast message — always rendered to reserve height and avoid layout jump */}
+          {/* Notify toast message — always rendered to reserve a min line of
+              height to avoid layout jump; wraps to 2 lines for the longer
+              non-tracker variants. */}
           <Animated.Text
             style={[styles.notifyToast, { color: colors.textSecondary, opacity: notifyMsgOpacity }]}
-            numberOfLines={1}
+            numberOfLines={2}
           >
             {notifyMessage || ' '}
           </Animated.Text>
@@ -740,6 +742,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 12,
     textAlign: 'center',
+    paddingHorizontal: 16,
   },
   commentSection: {
     width: '100%',
