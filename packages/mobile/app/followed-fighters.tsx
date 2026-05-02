@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Switch,
   ActivityIndicator,
   Image,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect } from 'expo-router';
@@ -59,6 +60,18 @@ export default function FollowedFightersScreen() {
   const { alertState, showError, hideAlert } = useCustomAlert();
   const queryClient = useQueryClient();
   const [localUnfollows, setLocalUnfollows] = useState<Set<string>>(new Set());
+  const [carouselHiddenIds, setCarouselHiddenIds] = useState<Set<string>>(new Set());
+  const [optimisticFollows, setOptimisticFollows] = useState<Map<string, TopFollowedFighter>>(new Map());
+  const cardOpacityRef = useRef<Map<string, Animated.Value>>(new Map());
+
+  const getCardOpacity = (id: string) => {
+    let v = cardOpacityRef.current.get(id);
+    if (!v) {
+      v = new Animated.Value(1);
+      cardOpacityRef.current.set(id, v);
+    }
+    return v;
+  };
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['followedFighters'],
@@ -75,6 +88,9 @@ export default function FollowedFightersScreen() {
       refetch();
       refetchTopFollowed();
       setLocalUnfollows(new Set());
+      setCarouselHiddenIds(new Set());
+      setOptimisticFollows(new Map());
+      cardOpacityRef.current.clear();
     }, [refetch, refetchTopFollowed])
   );
 
@@ -123,15 +139,76 @@ export default function FollowedFightersScreen() {
   };
 
   const styles = createStyles(colors);
-  const fighters = data?.fighters || [];
+  const fighters: FollowedFighter[] = data?.fighters || [];
+
+  // Drop optimistic entries once the server includes them in the followed list.
+  useEffect(() => {
+    if (optimisticFollows.size === 0) return;
+    const serverIds = new Set(fighters.map((f) => f.id));
+    let changed = false;
+    const next = new Map(optimisticFollows);
+    for (const id of Array.from(next.keys())) {
+      if (serverIds.has(id)) {
+        next.delete(id);
+        changed = true;
+      }
+    }
+    if (changed) setOptimisticFollows(next);
+  }, [fighters, optimisticFollows]);
+
   const followedIdSet = new Set<string>(
     fighters
       .filter((f: FollowedFighter) => !localUnfollows.has(f.id))
       .map((f: FollowedFighter) => f.id)
   );
   const topFollowed: TopFollowedFighter[] = (topFollowedData?.data || []).filter(
-    (item: TopFollowedFighter) => !item.isFollowing && !followedIdSet.has(item.fighter.id)
+    (item: TopFollowedFighter) => {
+      if (carouselHiddenIds.has(item.fighter.id)) return false;
+      if (item.isFollowing) return false;
+      if (followedIdSet.has(item.fighter.id)) return false;
+      return true;
+    }
   );
+
+  // My followed list: optimistic entries (just-tapped from carousel) at the top,
+  // then server-side followed fighters (deduped).
+  const optimisticEntries: FollowedFighter[] = Array.from(optimisticFollows.values()).map((item) => ({
+    id: item.fighter.id,
+    firstName: item.fighter.firstName,
+    lastName: item.fighter.lastName,
+    profileImage: item.fighter.profileImage ?? undefined,
+    wins: 0,
+    losses: 0,
+    draws: 0,
+    followerCount: item.followerCount + 1,
+    startOfFightNotification: false,
+    dayBeforeNotification: false,
+  }));
+  const optimisticIdSet = new Set(optimisticEntries.map((e) => e.id));
+  const myFollowsList: FollowedFighter[] = [
+    ...optimisticEntries,
+    ...fighters.filter((f) => !optimisticIdSet.has(f.id)),
+  ];
+
+  const handleCarouselFollowed = (item: TopFollowedFighter) => {
+    setOptimisticFollows((prev) => {
+      const next = new Map(prev);
+      next.set(item.fighter.id, item);
+      return next;
+    });
+    const opacity = getCardOpacity(item.fighter.id);
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: 350,
+      useNativeDriver: true,
+    }).start(() => {
+      setCarouselHiddenIds((prev) => {
+        const next = new Set(prev);
+        next.add(item.fighter.id);
+        return next;
+      });
+    });
+  };
 
   const renderTopFollowedSection = () => {
     if (topFollowed.length === 0) return null;
@@ -146,7 +223,10 @@ export default function FollowedFightersScreen() {
           contentContainerStyle={styles.topRow}
         >
           {topFollowed.map((item) => (
-            <View key={item.fighter.id} style={styles.topCard}>
+            <Animated.View
+              key={item.fighter.id}
+              style={[styles.topCard, { opacity: getCardOpacity(item.fighter.id) }]}
+            >
               <View style={styles.topImageWrap}>
                 <Image source={getFighterImageFor(item.fighter)} style={styles.topImage} />
                 <FollowFighterButton
@@ -154,6 +234,7 @@ export default function FollowedFightersScreen() {
                   isFollowing={item.isFollowing}
                   style={styles.followBadge}
                   suppressToast
+                  onFollowed={() => handleCarouselFollowed(item)}
                 />
               </View>
               <Text
@@ -168,7 +249,7 @@ export default function FollowedFightersScreen() {
               >
                 {item.followerCount} {item.followerCount === 1 ? 'follower' : 'followers'}
               </Text>
-            </View>
+            </Animated.View>
           ))}
         </ScrollView>
       </View>
@@ -190,7 +271,7 @@ export default function FollowedFightersScreen() {
         </Text>
       );
     }
-    if (fighters.length === 0) {
+    if (myFollowsList.length === 0) {
       return (
         <View style={styles.emptyInline}>
           <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
@@ -204,10 +285,7 @@ export default function FollowedFightersScreen() {
     }
     return (
       <>
-        <Text style={[styles.headerText, { color: colors.textSecondary }]}>
-          You will receive a notification 15 minutes before they fight.
-        </Text>
-        {fighters.map((fighter: FollowedFighter) => {
+        {myFollowsList.map((fighter: FollowedFighter) => {
           const isFollowing = !localUnfollows.has(fighter.id);
           return (
             <View
