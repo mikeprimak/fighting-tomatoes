@@ -88,9 +88,10 @@ export default function FollowedFightersScreen() {
       refetch();
       refetchTopFollowed();
       setLocalUnfollows(new Set());
-      setCarouselHiddenIds(new Set());
-      setOptimisticFollows(new Map());
-      cardOpacityRef.current.clear();
+      // Don't clear `optimisticFollows` or `carouselHiddenIds` here — the
+      // useEffect below removes optimistic entries naturally once the server
+      // refetch confirms them, and `carouselHiddenIds` keeps faded cards from
+      // popping back in during the brief window before topFollowed refetches.
     }, [refetch, refetchTopFollowed])
   );
 
@@ -257,14 +258,14 @@ export default function FollowedFightersScreen() {
   };
 
   const renderMyFollowsSection = () => {
-    if (isLoading) {
+    if (isLoading && myFollowsList.length === 0) {
       return (
         <View style={styles.inlineLoading}>
           <ActivityIndicator size="small" color={colors.primary} />
         </View>
       );
     }
-    if (error) {
+    if (error && myFollowsList.length === 0) {
       return (
         <Text style={[styles.errorText, { color: colors.danger }]}>
           Failed to load followed fighters
