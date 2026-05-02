@@ -27,6 +27,7 @@
 import { PrismaClient } from '@prisma/client';
 import { TapologyLiveScraper } from '../services/tapologyLiveScraper';
 import { parseTapologyData } from '../services/tapologyLiveParser';
+import { TAPOLOGY_PROMOTION_HUBS } from '../config/promotionRegistry';
 
 const prisma = new PrismaClient();
 
@@ -34,58 +35,6 @@ const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
 const TAPOLOGY_BASE_URL = 'https://www.tapology.com';
-
-// Promotion-to-Tapology-hub mapping for auto-discovery
-const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[]; scopeSelector?: string }> = {
-  'Zuffa Boxing': {
-    url: 'https://www.tapology.com/fightcenter/promotions/6299-zuffa-boxing-zb',
-    slugFilter: ['zuffa'],
-  },
-  'PFL': {
-    url: 'https://www.tapology.com/fightcenter/promotions/1969-professional-fighters-league-pfl',
-    slugFilter: ['pfl'],
-  },
-  'RIZIN': {
-    url: 'https://www.tapology.com/fightcenter/promotions/1561-rizin-fighting-federation-rff',
-    slugFilter: ['rizin'],
-  },
-  'Dirty Boxing': {
-    url: 'https://www.tapology.com/fightcenter/promotions/5649-dirty-boxing-championship-dbc',
-    slugFilter: ['dirty-boxing', 'dbx-', 'dbc-'],
-  },
-  'Karate Combat': {
-    url: 'https://www.tapology.com/fightcenter/promotions/3637-karate-combat-kc',
-    slugFilter: ['karate-combat', 'kc-'],
-  },
-  'TOP_RANK': {
-    // Top Rank event URLs on Tapology are named by headliners (no "top-rank"
-    // prefix), so a slug filter misses most cards. Use DOM scoping instead.
-    url: 'https://www.tapology.com/fightcenter/promotions/2487-top-rank-tr',
-    slugFilter: [],
-    scopeSelector: '#content',
-  },
-  'Golden Boy': {
-    // Same pattern as Top Rank — event URLs use headliners, not the org slug.
-    url: 'https://www.tapology.com/fightcenter/promotions/1979-golden-boy-promotions-gbp',
-    slugFilter: [],
-    scopeSelector: '#content',
-  },
-  'Gold Star': {
-    url: 'https://www.tapology.com/fightcenter/promotions/6908-gold-star-promotions-gsp',
-    // Gold Star events use fighter-vs-fighter slugs with no org marker.
-    // Scope to #content to exclude sidebar events from other promotions.
-    slugFilter: [],
-    scopeSelector: '#content',
-  },
-  'Matchroom Boxing': {
-    url: 'https://www.tapology.com/fightcenter/promotions/2484-matchroom-boxing-mb',
-    slugFilter: ['matchroom'],
-  },
-  'MVP': {
-    url: 'https://www.tapology.com/fightcenter/promotions/4040-most-valuable-promotions-mvp',
-    slugFilter: ['mvp', 'most-valuable'],
-  },
-};
 
 /**
  * Find an active Tapology event that should be tracked.
