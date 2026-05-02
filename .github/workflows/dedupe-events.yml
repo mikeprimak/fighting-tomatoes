@@ -1,0 +1,34 @@
+name: Dedupe Co-Promo Events
+
+on:
+  schedule:
+    - cron: "0 21 * * *"
+  workflow_dispatch:
+
+jobs:
+  dedupe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - name: Install
+        run: |
+          cd packages/backend
+          pnpm install
+          npx prisma generate
+      - name: Run merge pass
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          cd packages/backend
+          pnpm tsx scripts/merge-duplicate-promo-events.ts
+      - name: Report failure
+        if: failure()
+        run: |
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=scraper&org=DEDUPE_EVENTS" || true
