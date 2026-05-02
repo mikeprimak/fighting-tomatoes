@@ -235,7 +235,7 @@ export async function runEventLifecycleCheck(): Promise<{
         console.log(`[Lifecycle] UPCOMING → LIVE: ${event.name}`);
 
         // Trigger live tracker: try VPS first, fall back to GitHub Actions
-        if (event.scraperType && ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc', 'raf'].includes(event.scraperType)) {
+        if (event.scraperType && ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc', 'raf', 'pfl'].includes(event.scraperType)) {
           const vpsOk = await triggerVPSLiveTracker(event.id, event.scraperType, event.name);
           if (!vpsOk) {
             // Fallback to GitHub Actions
@@ -246,6 +246,7 @@ export async function runEventLifecycleCheck(): Promise<{
               bkfc: 'bkfc-live-tracker.yml',
               onefc: 'onefc-live-tracker.yml',
               raf: 'raf-live-tracker.yml',
+              pfl: 'pfl-live-tracker.yml',
             };
             const workflow = workflowMap[event.scraperType];
             if (workflow) await triggerGitHubLiveTracker(workflow, { event_id: event.id });
@@ -263,7 +264,7 @@ export async function runEventLifecycleCheck(): Promise<{
     const liveScraperEvents = await prisma.event.findMany({
       where: {
         eventStatus: 'LIVE',
-        scraperType: { in: ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc', 'raf'] },
+        scraperType: { in: ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc', 'raf', 'pfl'] },
       },
       select: { id: true, name: true, scraperType: true },
     });
@@ -291,6 +292,7 @@ export async function runEventLifecycleCheck(): Promise<{
             ufc: 'ufc-live-tracker.yml', oktagon: 'oktagon-live-tracker.yml',
             tapology: 'tapology-live-tracker.yml', bkfc: 'bkfc-live-tracker.yml',
             onefc: 'onefc-live-tracker.yml', raf: 'raf-live-tracker.yml',
+            pfl: 'pfl-live-tracker.yml',
           };
           const workflow = workflowMap[liveScraperEvent.scraperType || ''] || 'tapology-live-tracker.yml';
           await triggerGitHubLiveTracker(workflow, { event_id: liveScraperEvent.id });
@@ -303,6 +305,7 @@ export async function runEventLifecycleCheck(): Promise<{
           ufc: 'ufc-live-tracker.yml', oktagon: 'oktagon-live-tracker.yml',
           tapology: 'tapology-live-tracker.yml', bkfc: 'bkfc-live-tracker.yml',
           onefc: 'onefc-live-tracker.yml',
+          pfl: 'pfl-live-tracker.yml',
         };
         const workflow = workflowMap[liveScraperEvent.scraperType || ''] || 'tapology-live-tracker.yml';
         await triggerGitHubLiveTracker(workflow, { event_id: liveScraperEvent.id });

@@ -366,7 +366,7 @@ async function importPFLEvents(
           mainStartTime: mainStartTime || undefined,
           prelimStartTime: prelimStartTime || undefined,
           earlyPrelimStartTime: earlyPrelimStartTime || undefined,
-          scraperType: 'tapology',
+          scraperType: 'pfl',
           ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
         }
       });
@@ -393,7 +393,7 @@ async function importPFLEvents(
           mainStartTime: mainStartTime || undefined,
           prelimStartTime: prelimStartTime || undefined,
           earlyPrelimStartTime: earlyPrelimStartTime || undefined,
-          scraperType: 'tapology',
+          scraperType: 'pfl',
           eventStatus: initialStatus,
         }
       });

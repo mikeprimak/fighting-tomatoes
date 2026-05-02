@@ -5,7 +5,7 @@
  * The lifecycle service handles all time-based status transitions.
  */
 
-export type ScraperType = 'ufc' | 'matchroom' | 'oktagon' | 'onefc' | 'tapology' | 'bkfc' | 'raf';
+export type ScraperType = 'ufc' | 'matchroom' | 'oktagon' | 'onefc' | 'tapology' | 'bkfc' | 'raf' | 'pfl';
 
 /**
  * Opt-in flags passed by the retroactive backfill (`backfillResults.ts`) to
@@ -44,14 +44,14 @@ export interface BackfillOptions {
  * The actual production-ready set is read from SystemConfig at runtime
  * (key: 'production_scrapers').
  */
-export const ALL_SCRAPER_TYPES: ScraperType[] = ['ufc', 'matchroom', 'oktagon', 'onefc', 'tapology', 'bkfc', 'raf'];
+export const ALL_SCRAPER_TYPES: ScraperType[] = ['ufc', 'matchroom', 'oktagon', 'onefc', 'tapology', 'bkfc', 'raf', 'pfl'];
 
 /**
  * Default production scrapers — used when SystemConfig has no entry yet
  * (first boot before admin has saved any toggles). Matches the historical
  * hardcoded list minus tapology and raf, which the admin opted out of.
  */
-const DEFAULT_PRODUCTION_SCRAPERS: ScraperType[] = ['ufc', 'oktagon', 'bkfc', 'onefc'];
+const DEFAULT_PRODUCTION_SCRAPERS: ScraperType[] = ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl'];
 
 /**
  * In-memory cache. Read synchronously by isProductionScraper() across the
