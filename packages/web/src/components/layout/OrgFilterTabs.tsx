@@ -1,9 +1,9 @@
 'use client';
 
-import { useOrgFilter, ORGANIZATIONS, type Organization } from '@/lib/orgFilter';
+import { useOrgFilter } from '@/lib/orgFilter';
 
 export function OrgFilterTabs() {
-  const { selectedOrgs, handleOrgPress, isAllSelected } = useOrgFilter();
+  const { selectedOrgs, handleOrgPress, isAllSelected, availableOrgs } = useOrgFilter();
 
   return (
     <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-none">
@@ -17,7 +17,7 @@ export function OrgFilterTabs() {
       >
         ALL
       </button>
-      {ORGANIZATIONS.map(org => (
+      {availableOrgs.map(org => (
         <button
           key={org}
           onClick={() => handleOrgPress(org)}
