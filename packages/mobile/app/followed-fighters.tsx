@@ -96,6 +96,7 @@ export default function FollowedFightersScreen() {
   const unfollowMutation = useMutation({
     mutationFn: (fighterId: string) => apiService.unfollowFighter(fighterId),
     onSuccess: () => {
+      refetch();
       refetchTopFollowed();
       queryClient.invalidateQueries({ queryKey: ['fighters'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
@@ -113,6 +114,12 @@ export default function FollowedFightersScreen() {
   const handleToggleFollow = (fighterId: string, isCurrentlyFollowing: boolean) => {
     if (isCurrentlyFollowing) {
       setLocalUnfollows(prev => new Set(prev).add(fighterId));
+      setJustFollowed(prev => {
+        if (!prev.has(fighterId)) return prev;
+        const next = new Map(prev);
+        next.delete(fighterId);
+        return next;
+      });
       unfollowMutation.mutate(fighterId);
     } else {
       setLocalUnfollows(prev => {
@@ -280,7 +287,6 @@ export default function FollowedFightersScreen() {
                 trackColor={{ false: colors.textSecondary, true: colors.tint }}
                 thumbColor="#B0B5BA"
                 style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
-                disabled={unfollowMutation.isPending || followMutation.isPending}
               />
             </View>
           );
