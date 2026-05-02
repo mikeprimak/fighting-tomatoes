@@ -32,9 +32,24 @@ export default function FollowFighterButton({ fighterId, isFollowing, style, onF
   const [optimistic, setOptimistic] = useState<boolean>(isFollowing);
   const [showToast, setShowToast] = useState(false);
   const toastOpacity = useRef(new Animated.Value(0)).current;
+  // Tracks the user's last intent so a stale parent refetch can't overwrite it.
+  // null = no pending intent; sync the prop freely.
+  const intentRef = useRef<boolean | null>(null);
+  const lastFighterIdRef = useRef(fighterId);
 
   useEffect(() => {
-    setOptimistic(isFollowing);
+    // Always reset when the rendered fighter changes.
+    if (lastFighterIdRef.current !== fighterId) {
+      lastFighterIdRef.current = fighterId;
+      intentRef.current = null;
+      setOptimistic(isFollowing);
+      return;
+    }
+    // Only adopt the prop once it agrees with our intent (or we have none).
+    if (intentRef.current === null || intentRef.current === isFollowing) {
+      intentRef.current = null;
+      setOptimistic(isFollowing);
+    }
   }, [isFollowing, fighterId]);
 
   const mutation = useMutation({
@@ -46,6 +61,7 @@ export default function FollowFighterButton({ fighterId, isFollowing, style, onF
     },
     onMutate: (currentlyFollowing) => {
       const willFollow = !currentlyFollowing;
+      intentRef.current = willFollow;
       setOptimistic(willFollow);
       if (willFollow) {
         setShowToast(true);
@@ -60,6 +76,7 @@ export default function FollowFighterButton({ fighterId, isFollowing, style, onF
       }
     },
     onError: (_err, currentlyFollowing) => {
+      intentRef.current = null;
       setOptimistic(currentlyFollowing);
     },
     onSuccess: () => {
@@ -73,7 +90,9 @@ export default function FollowFighterButton({ fighterId, isFollowing, style, onF
   const handlePress = () => {
     if (!isAuthenticated) return;
     if (!requireVerification('follow this fighter')) return;
-    mutation.mutate(optimistic);
+    // Use the latest intent if a mutation is mid-flight, otherwise the displayed state.
+    const current = intentRef.current ?? optimistic;
+    mutation.mutate(current);
   };
 
   if (!isAuthenticated) return null;
@@ -87,9 +106,8 @@ export default function FollowFighterButton({ fighterId, isFollowing, style, onF
     <>
       <TouchableOpacity
         onPress={handlePress}
-        disabled={mutation.isPending}
         activeOpacity={0.7}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
         style={[
           styles.badge,
           { backgroundColor: bg, borderColor },
