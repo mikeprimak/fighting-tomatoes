@@ -527,10 +527,13 @@ async function autoDiscoverEvents(): Promise<{ started: string[]; stopped: strin
   const twelveHoursAgo = new Date(now.getTime() - TWELVE_HOURS_MS);
   const sixHoursFromNow = new Date(now.getTime() + SIX_HOURS_MS);
 
+  // Tapology is excluded — its tracker overwrites lifecycle no-tracker
+  // completions back to UPCOMING when Tapology hasn't yet posted results,
+  // so all tapology orgs run via the lifecycle no-tracker path instead.
   const liveEvents = await prisma.event.findMany({
     where: {
       eventStatus: 'LIVE',
-      scraperType: { in: ['ufc', 'oktagon', 'tapology', 'bkfc', 'onefc'] },
+      scraperType: { in: ['ufc', 'oktagon', 'bkfc', 'onefc'] },
     },
     select: {
       id: true,
