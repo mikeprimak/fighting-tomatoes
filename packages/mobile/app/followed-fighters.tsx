@@ -176,6 +176,12 @@ export default function FollowedFightersScreen() {
   );
 
   const handleCarouselFollow = (item: TopFollowedFighter) => {
+    setLocalUnfollows((prev) => {
+      if (!prev.has(item.fighter.id)) return prev;
+      const next = new Set(prev);
+      next.delete(item.fighter.id);
+      return next;
+    });
     setJustFollowed((prev) => {
       const next = new Map(prev);
       next.set(item.fighter.id, item);
