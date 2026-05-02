@@ -401,13 +401,24 @@ export async function parseTapologyData(
           updateData.method = scrapedFight.result.method;
           changed = true;
         }
-        if (scrapedFight.result?.round && dbFight.round !== scrapedFight.result.round) {
-          updateData.round = scrapedFight.result.round;
-          changed = true;
-        }
-        if (scrapedFight.result?.time && dbFight.time !== scrapedFight.result.time) {
-          updateData.time = scrapedFight.result.time;
-          changed = true;
+        // For decisions/draws/NC the fight went the distance, so there is no
+        // ended-in round or end-time. Clear any stale values left behind by
+        // an earlier buggy scrape that pulled bogus numbers from the <li>.
+        const scrapedMethod = scrapedFight.result?.method;
+        const wentTheDistance = scrapedMethod &&
+          ['DEC', 'UD', 'SD', 'MD', 'DRAW', 'NC'].includes(scrapedMethod);
+        if (wentTheDistance) {
+          if (dbFight.round !== null) { updateData.round = null; changed = true; }
+          if (dbFight.time !== null) { updateData.time = null; changed = true; }
+        } else {
+          if (scrapedFight.result?.round && dbFight.round !== scrapedFight.result.round) {
+            updateData.round = scrapedFight.result.round;
+            changed = true;
+          }
+          if (scrapedFight.result?.time && dbFight.time !== scrapedFight.result.time) {
+            updateData.time = scrapedFight.result.time;
+            changed = true;
+          }
         }
 
         if (changed) {
