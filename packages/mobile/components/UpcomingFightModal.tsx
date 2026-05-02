@@ -299,22 +299,23 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
 
     // Show toast message — text branches on whether this org has a reliable
     // live tracker. Non-tracker orgs fire ~15 min before section start, not
-    // at the actual walkout.
+    // at the actual walkout. Kept short to fit in the 1-line toast slot
+    // without growing the modal.
     if (newValue) {
       if (fight.event?.hasLiveTracking === false) {
         const ct = ((fight as any).cardType as string | null | undefined)?.trim().toLowerCase();
-        const phrase = !ct
-          ? 'the card starts'
+        const section = !ct
+          ? 'the card'
           : ct.includes('early prelim')
-            ? 'early prelims start'
+            ? 'early prelims'
             : ct.includes('prelim')
-              ? 'prelims start'
+              ? 'prelims'
               : ct.includes('main')
-                ? 'the main card starts'
-                : 'the card starts';
-        setNotifyMessage(`You'll be notified ~15 min before ${phrase}.`);
+                ? 'main card'
+                : 'the card';
+        setNotifyMessage(`Notified ~15 min before ${section}.`);
       } else {
-        setNotifyMessage("You'll be notified when this fight is up next.");
+        setNotifyMessage("Notified when this fight is up next.");
       }
     } else {
       setNotifyMessage('Notification removed.');
@@ -568,12 +569,12 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             </TouchableOpacity>
           </View>
 
-          {/* Notify toast message — always rendered to reserve a min line of
-              height to avoid layout jump; wraps to 2 lines for the longer
-              non-tracker variants. */}
+          {/* Notify toast message — always rendered (with ' ' placeholder)
+              to reserve a single line of height. Modal must NOT grow when
+              toast appears, so all variants must fit on one line. */}
           <Animated.Text
             style={[styles.notifyToast, { color: colors.textSecondary, opacity: notifyMsgOpacity }]}
-            numberOfLines={2}
+            numberOfLines={1}
           >
             {notifyMessage || ' '}
           </Animated.Text>
@@ -739,14 +740,10 @@ const styles = StyleSheet.create({
   },
   notifyToast: {
     fontSize: 13,
-    lineHeight: 18,
     fontWeight: '500',
     marginTop: 12,
     textAlign: 'center',
     paddingHorizontal: 16,
-    // Reserve fixed 2-line height so the modal doesn't jump when the toast
-    // wraps from empty → 1 line → 2 lines.
-    minHeight: 36,
   },
   commentSection: {
     width: '100%',
