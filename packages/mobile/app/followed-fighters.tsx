@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../services/api';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from '../components/CustomAlert';
+import FollowFighterButton from '../components/FollowFighterButton';
 
 interface FollowedFighter {
   id: string;
@@ -31,10 +32,30 @@ interface FollowedFighter {
   dayBeforeNotification: boolean;
 }
 
+interface TopFollowedFighter {
+  fighter: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    profileImage?: string | null;
+  };
+  followerCount: number;
+  isFollowing: boolean;
+}
+
+const DEFAULT_FIGHTER_IMAGE = require('../assets/fighters/fighter-default-alpha.png');
+
+const getFighterImageFor = (fighter: { profileImage?: string | null }) => {
+  if (fighter.profileImage) {
+    return { uri: fighter.profileImage };
+  }
+  return DEFAULT_FIGHTER_IMAGE;
+};
+
 export default function FollowedFightersScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
+  const { alertState, showError, hideAlert } = useCustomAlert();
   const queryClient = useQueryClient();
   const [localUnfollows, setLocalUnfollows] = useState<Set<string>>(new Set());
 
@@ -43,18 +64,22 @@ export default function FollowedFightersScreen() {
     queryFn: () => apiService.getFollowedFighters(),
   });
 
-  // Refetch followed fighters when screen comes into focus and clear local unfollows
+  const { data: topFollowedData, refetch: refetchTopFollowed } = useQuery({
+    queryKey: ['topFollowedFighters'],
+    queryFn: () => apiService.getTopFollowedFighters(20),
+  });
+
   useFocusEffect(
     React.useCallback(() => {
       refetch();
+      refetchTopFollowed();
       setLocalUnfollows(new Set());
-    }, [refetch])
+    }, [refetch, refetchTopFollowed])
   );
 
   const followMutation = useMutation({
     mutationFn: (fighterId: string) => apiService.followFighter(fighterId),
     onSuccess: () => {
-      // Refetch to show newly followed fighter immediately
       refetch();
       queryClient.invalidateQueries({ queryKey: ['fighters'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
@@ -67,12 +92,10 @@ export default function FollowedFightersScreen() {
   const unfollowMutation = useMutation({
     mutationFn: (fighterId: string) => apiService.unfollowFighter(fighterId),
     onSuccess: () => {
-      // Don't refetch here - let local state handle visibility until navigation away
       queryClient.invalidateQueries({ queryKey: ['fighters'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
     },
-    onError: (error, fighterId) => {
-      // Remove from local unfollows on error
+    onError: (_err, fighterId) => {
       setLocalUnfollows(prev => {
         const newSet = new Set(prev);
         newSet.delete(fighterId);
@@ -84,11 +107,9 @@ export default function FollowedFightersScreen() {
 
   const handleToggleFollow = (fighterId: string, isCurrentlyFollowing: boolean) => {
     if (isCurrentlyFollowing) {
-      // Toggle OFF - add to local unfollows and call API
       setLocalUnfollows(prev => new Set(prev).add(fighterId));
       unfollowMutation.mutate(fighterId);
     } else {
-      // Toggle ON - remove from local unfollows and re-follow
       setLocalUnfollows(prev => {
         const newSet = new Set(prev);
         newSet.delete(fighterId);
@@ -98,54 +119,110 @@ export default function FollowedFightersScreen() {
     }
   };
 
-  const getFighterImage = (fighter: FollowedFighter) => {
-    if (fighter.profileImage) {
-      return { uri: fighter.profileImage };
-    }
-    return require('../assets/fighters/fighter-default-alpha.png');
+  const styles = createStyles(colors);
+  const fighters = data?.fighters || [];
+  const topFollowed: TopFollowedFighter[] = topFollowedData?.data || [];
+
+  const renderTopFollowedSection = () => {
+    if (topFollowed.length === 0) return null;
+    return (
+      <View style={styles.topSection}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Most Followed on Good Fights
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.topRow}
+        >
+          {topFollowed.map((item) => (
+            <View key={item.fighter.id} style={styles.topCard}>
+              <View style={styles.topImageWrap}>
+                <Image source={getFighterImageFor(item.fighter)} style={styles.topImage} />
+                <FollowFighterButton
+                  fighterId={item.fighter.id}
+                  isFollowing={item.isFollowing}
+                  style={styles.followBadge}
+                />
+              </View>
+              <Text
+                style={[styles.topName, { color: colors.text }]}
+                numberOfLines={1}
+              >
+                {item.fighter.firstName} {item.fighter.lastName}
+              </Text>
+              <Text
+                style={[styles.topCount, { color: colors.textSecondary }]}
+                numberOfLines={1}
+              >
+                {item.followerCount} {item.followerCount === 1 ? 'follower' : 'followers'}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    );
   };
 
-  const styles = createStyles(colors);
-
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Stack.Screen
-          options={{
-            title: 'Followed Fighters',
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.text,
-            headerShadowVisible: false,
-          }}
-        />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+  const renderMyFollowsSection = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.inlineLoading}>
+          <ActivityIndicator size="small" color={colors.primary} />
         </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Stack.Screen
-          options={{
-            title: 'Followed Fighters',
-            headerStyle: { backgroundColor: colors.card },
-            headerTintColor: colors.text,
-            headerShadowVisible: false,
-          }}
-        />
-        <View style={styles.errorContainer}>
-          <Text style={[styles.errorText, { color: colors.error }]}>
-            Failed to load followed fighters
+      );
+    }
+    if (error) {
+      return (
+        <Text style={[styles.errorText, { color: colors.danger }]}>
+          Failed to load followed fighters
+        </Text>
+      );
+    }
+    if (fighters.length === 0) {
+      return (
+        <View style={styles.emptyInline}>
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            You're not following anyone yet.
+          </Text>
+          <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+            Tap the "+" badge above to follow someone, or do it from the hype / rating modals.
           </Text>
         </View>
-      </SafeAreaView>
+      );
+    }
+    return (
+      <>
+        <Text style={[styles.headerText, { color: colors.textSecondary }]}>
+          You will receive a notification 15 minutes before they fight.
+        </Text>
+        {fighters.map((fighter: FollowedFighter) => {
+          const isFollowing = !localUnfollows.has(fighter.id);
+          return (
+            <View
+              key={fighter.id}
+              style={[styles.fighterRow, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
+            >
+              <Image source={getFighterImageFor(fighter)} style={styles.fighterImage} />
+              <View style={styles.fighterInfo}>
+                <Text style={[styles.fighterName, { color: colors.text }]}>
+                  {fighter.firstName} {fighter.lastName}
+                </Text>
+              </View>
+              <Switch
+                value={isFollowing}
+                onValueChange={() => handleToggleFollow(fighter.id, isFollowing)}
+                trackColor={{ false: colors.textSecondary, true: colors.tint }}
+                thumbColor="#B0B5BA"
+                style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
+                disabled={unfollowMutation.isPending || followMutation.isPending}
+              />
+            </View>
+          );
+        })}
+      </>
     );
-  }
-
-  const fighters = data?.fighters || [];
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -158,53 +235,15 @@ export default function FollowedFightersScreen() {
         }}
       />
 
-      {fighters.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-            No fighters with notifications enabled.
-          </Text>
-          <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-            Follow fighters from their profile pages to get notified when they fight!
-          </Text>
-        </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <Text style={[styles.headerText, { color: colors.textSecondary }]}>
-            Fighters you follow. You will receive a notification 15 minutes before they fight.
-          </Text>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {renderTopFollowedSection()}
 
-          {fighters.map((fighter: FollowedFighter) => {
-            const isFollowing = !localUnfollows.has(fighter.id);
+        <Text style={[styles.sectionTitle, { color: colors.text, marginTop: topFollowed.length > 0 ? 24 : 0 }]}>
+          My Followed Fighters
+        </Text>
+        {renderMyFollowsSection()}
+      </ScrollView>
 
-            return (
-              <View
-                key={fighter.id}
-                style={[styles.fighterRow, { backgroundColor: colors.card, borderBottomColor: colors.border }]}
-              >
-                <Image
-                  source={getFighterImage(fighter)}
-                  style={styles.fighterImage}
-                />
-                <View style={styles.fighterInfo}>
-                  <Text style={[styles.fighterName, { color: colors.text }]}>
-                    {fighter.firstName} {fighter.lastName}
-                  </Text>
-                </View>
-                <Switch
-                  value={isFollowing}
-                  onValueChange={() => handleToggleFollow(fighter.id, isFollowing)}
-                  trackColor={{ false: colors.textSecondary, true: colors.tint }}
-                  thumbColor="#B0B5BA"
-                  style={{ transform: [{ scaleX: 1.2 }, { scaleY: 1.2 }] }}
-                  disabled={unfollowMutation.isPending || followMutation.isPending}
-                />
-              </View>
-            );
-          })}
-        </ScrollView>
-      )}
-
-      {/* Custom Alert */}
       <CustomAlert {...alertState} onDismiss={hideAlert} />
     </SafeAreaView>
   );
@@ -216,46 +255,63 @@ const createStyles = (colors: any) =>
       flex: 1,
       backgroundColor: colors.background,
     },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    errorContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 20,
-    },
-    errorText: {
-      fontSize: 16,
-      textAlign: 'center',
-    },
-    emptyContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 32,
-    },
-    emptyText: {
-      fontSize: 18,
-      fontWeight: '600',
-      textAlign: 'center',
-      marginBottom: 8,
-    },
-    emptySubtext: {
-      fontSize: 14,
-      textAlign: 'center',
-    },
     scrollContainer: {
       padding: 16,
       paddingBottom: 32,
     },
-    headerText: {
-      fontSize: 14,
-      marginBottom: 16,
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      marginBottom: 10,
       paddingHorizontal: 4,
     },
+    headerText: {
+      fontSize: 13,
+      marginBottom: 12,
+      paddingHorizontal: 4,
+    },
+
+    // Top "Most Followed" horizontal scroll
+    topSection: {
+      marginBottom: 4,
+    },
+    topRow: {
+      paddingHorizontal: 4,
+      paddingVertical: 4,
+      gap: 14,
+    },
+    topCard: {
+      width: 84,
+      alignItems: 'center',
+    },
+    topImageWrap: {
+      width: 64,
+      height: 64,
+      position: 'relative',
+      marginBottom: 6,
+    },
+    topImage: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+    },
+    followBadge: {
+      position: 'absolute',
+      bottom: -2,
+      right: -2,
+    },
+    topName: {
+      fontSize: 12,
+      fontWeight: '600',
+      textAlign: 'center',
+    },
+    topCount: {
+      fontSize: 10,
+      textAlign: 'center',
+      marginTop: 2,
+    },
+
+    // My follows list
     fighterRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -278,12 +334,28 @@ const createStyles = (colors: any) =>
       fontWeight: '700',
       marginBottom: 2,
     },
-    fighterNickname: {
-      fontSize: 13,
-      fontStyle: 'italic',
+
+    // States
+    inlineLoading: {
+      paddingVertical: 24,
+      alignItems: 'center',
+    },
+    errorText: {
+      fontSize: 14,
+      textAlign: 'center',
+      paddingVertical: 16,
+    },
+    emptyInline: {
+      paddingVertical: 16,
+      paddingHorizontal: 4,
+    },
+    emptyText: {
+      fontSize: 15,
+      fontWeight: '600',
       marginBottom: 4,
     },
-    fighterRecord: {
+    emptySubtext: {
       fontSize: 13,
+      lineHeight: 18,
     },
   });

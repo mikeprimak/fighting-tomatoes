@@ -778,6 +778,20 @@ export default function ProfileScreen() {
             </View>
           </View>
 
+          {/* Following */}
+          <Text style={[styles.settingsGroupLabel, { color: colors.textSecondary }]}>FOLLOWING</Text>
+          <View style={[styles.settingsGroup, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+            <TouchableOpacity
+              style={[styles.settingsRow, { borderBottomWidth: 0 }]}
+              onPress={() => router.push('/followed-fighters' as any)}
+            >
+              <View style={styles.settingsRowLeft}>
+                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>My Followed Fighters</Text>
+              </View>
+              <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
           {/* Notifications */}
           <Text style={[styles.settingsGroupLabel, { color: colors.textSecondary }]}>NOTIFICATIONS</Text>
           {permissionStatus !== 'granted' && (
