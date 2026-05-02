@@ -7,7 +7,7 @@ import { API_BASE_URL } from './api';
 // Bundled fallback list. The runtime list is hydrated from /api/promotions
 // and falls back to this when offline or before the first fetch returns.
 // Source of truth lives in packages/backend/src/config/promotionRegistry.ts.
-export const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'ZUFFA BOXING', 'TOP RANK', 'GOLDEN BOY', 'GOLD STAR', 'MVP', 'RAF'] as const;
+export const ORGANIZATIONS = ['UFC', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'ZUFFA BOXING', 'TOP RANK', 'GOLDEN BOY', 'GOLD STAR', 'MVP', 'RAF', 'GAMEBRED'] as const;
 export type Organization = string;
 
 interface PromotionRegistryEntry {

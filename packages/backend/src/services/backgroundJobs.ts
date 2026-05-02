@@ -20,6 +20,7 @@ import {
   runDailyDirtyBoxingScraper,
   runDailyKarateCombatScraper,
   runDailyMVPScraper,
+  runDailyGamebredScraper,
   runAllOrganizationScrapers,
   OrganizationScraperResults,
 } from './dailyAllScrapers';

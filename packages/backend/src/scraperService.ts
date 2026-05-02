@@ -430,6 +430,10 @@ const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[
     url: 'https://www.tapology.com/fightcenter/promotions/4040-most-valuable-promotions-mvp',
     slugFilter: ['mvp', 'most-valuable'],
   },
+  'Gamebred': {
+    url: 'https://www.tapology.com/fightcenter/promotions/3931-gamebred-fighting-championship-gbfc',
+    slugFilter: ['gamebred', 'gbfc'],
+  },
 };
 
 async function discoverTapologyUrl(event: any): Promise<string | null> {

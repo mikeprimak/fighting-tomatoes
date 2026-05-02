@@ -1251,6 +1251,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
     'dirty-boxing': 'dirty-boxing-scraper.yml',
     'karate-combat': 'karate-combat-scraper.yml',
     'mvp': 'mvp-scraper.yml',
+    'gamebred': 'gamebred-scraper.yml',
   };
 
   async function dispatchGitHubWorkflow(workflow: string): Promise<void> {

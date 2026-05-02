@@ -30,6 +30,7 @@ export type PromotionCode =
   | 'GOLD_STAR'
   | 'MVP'
   | 'RAF'
+  | 'GAMEBRED'
   | 'MATCHROOM';
 
 export interface TapologyHub {
@@ -294,6 +295,26 @@ export const PROMOTION_REGISTRY: PromotionRegistryEntry[] = [
     userVisible: true,
     notificationEligible: true,
     aliases: [],
+  },
+  {
+    code: 'GAMEBRED',
+    canonicalPromotion: 'Gamebred',
+    shortLabel: 'GAMEBRED',
+    fullLabel: 'Gamebred Fighting Championship',
+    scraperType: 'tapology',
+    // Conservative until we verify the hub event-page layout. With this false
+    // the bell-toggle still works and delivers the section-start fallback ping.
+    // Flip to true once the generic Tapology live tracker is confirmed against
+    // a real Gamebred event hub.
+    hasReliableLiveTracker: false,
+    logoKey: 'gamebred',
+    userVisible: true,
+    notificationEligible: true,
+    tapologyHub: {
+      url: 'https://www.tapology.com/fightcenter/promotions/3931-gamebred-fighting-championship-gbfc',
+      slugFilter: ['gamebred', 'gbfc'],
+    },
+    aliases: ['GAMEBRED', 'GBFC', 'Gamebred Fighting Championship'],
   },
   {
     code: 'MATCHROOM',
