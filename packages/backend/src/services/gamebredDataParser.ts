@@ -180,13 +180,12 @@ async function importEvents(
 
     const bannerImage = eventData.eventImageUrl || undefined;
 
+    // Look up by ufcUrl ONLY. Tapology event ID is the unique stable identifier.
+    // Falling back to (promotion + name) collides when two upcoming events share
+    // a generic title (e.g. "Gamebred Bareknuckle MMA" before headliners are
+    // announced) and merges their fights into one row.
     let event = await prisma.event.findFirst({
-      where: {
-        OR: [
-          { ufcUrl: eventData.eventUrl },
-          { promotion: PROMOTION_NAME, name: eventData.eventName },
-        ],
-      },
+      where: { ufcUrl: eventData.eventUrl },
     });
 
     const updateData = {
