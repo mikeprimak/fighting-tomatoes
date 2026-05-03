@@ -1361,12 +1361,12 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // ============================================
   // BACKFILL HEALTH
   // ============================================
-  // Sentinel for the daily results-backfill job. Surfaces events past 48h
-  // that are COMPLETED but still have fights with winner=NULL, grouped by
-  // scraperType. Use to spot:
+  // Sentinel for the daily results-backfill job (cron 10:00 UTC). Surfaces
+  // events past 48h that are COMPLETED but still have fights with
+  // winner=NULL, grouped by scraperType. Use to spot:
   //   - Backfill is silently broken (numbers stay high day after day)
   //   - We have an org without a wrapper (its scraperType appears in
-  //     `uncoveredOrgs` because nothing dispatches it)
+  //     `uncoveredOrgs` because nothing dispatches it in backfillResults.ts)
   fastify.get('/admin/health/backfill', {
     preValidation: [fastify.authenticate, requireAdmin],
   }, async (request, reply) => {
