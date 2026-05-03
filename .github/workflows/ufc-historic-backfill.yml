@@ -1,0 +1,107 @@
+name: UFC Historic Backfill (results + headshots)
+# Manual-dispatch only. One-shot historic sweep that:
+#   1. Fills missing winner/method/round/time on existing UFC fights from
+#      ufcstats.com (every event back to UFC 2 / 1994).
+#   2. Backfills profileImage on UFC fighters from ufc.com athlete pages
+#      (canonical og:image headshot).
+#
+# Not on a cron — this is a deep sweep. The daily results-backfill.yml
+# (window 14d) keeps recent events fresh; this workflow handles the long tail.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'What to run'
+        required: true
+        type: choice
+        default: 'results'
+        options:
+          - results
+          - headshots
+          - both
+      years:
+        description: 'CSV of years for results sweep, e.g. "2023,2024,2025". Empty = all.'
+        required: false
+        type: string
+      event_limit:
+        description: 'Cap events processed (results mode). Empty = no cap.'
+        required: false
+        type: string
+      headshot_limit:
+        description: 'Cap fighters processed (headshots mode). Empty = no cap.'
+        required: false
+        type: string
+      dry_run:
+        description: 'Log writes without persisting.'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6 hours — full historic sweep
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd packages/backend
+          pnpm install
+
+      - name: Generate Prisma client
+        run: |
+          cd packages/backend
+          npx prisma generate
+
+      - name: Build TypeScript
+        run: |
+          cd packages/backend
+          pnpm build
+
+      - name: Run historic results backfill (ufcstats.com)
+        if: ${{ inputs.mode == 'results' || inputs.mode == 'both' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKFILL_UFC_YEARS: ${{ inputs.years }}
+          BACKFILL_UFC_LIMIT: ${{ inputs.event_limit }}
+          BACKFILL_UFC_DRY_RUN: ${{ inputs.dry_run }}
+          NODE_ENV: production
+        run: |
+          cd packages/backend
+          node dist/scripts/backfillUFCHistoric.js
+
+      - name: Run headshot backfill (ufc.com athlete pages)
+        if: ${{ inputs.mode == 'headshots' || inputs.mode == 'both' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
+          R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          BACKFILL_HEADSHOT_LIMIT: ${{ inputs.headshot_limit }}
+          BACKFILL_HEADSHOT_DRY_RUN: ${{ inputs.dry_run }}
+          NODE_ENV: production
+        run: |
+          cd packages/backend
+          node dist/scripts/backfillUFCHeadshots.js
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "UFC Historic Backfill workflow FAILED at $(date)"
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=backfill&org=UFC_HISTORIC" || echo "Failed to send alert"
