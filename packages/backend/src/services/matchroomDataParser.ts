@@ -393,15 +393,13 @@ async function importMatchroomEvents(
       }
     }
 
-    // Try to find existing event by name pattern or date
+    // Look up by ufcUrl ONLY. The Tapology event ID is the unique stable identifier;
+    // a name/date fallback merges sibling events whose generic titles collide before
+    // headliners are announced (see Gamebred fix 2026-05-03). The previous
+    // `name contains "Matchroom"` branch was particularly greedy and could
+    // cross-match unrelated rows.
     let event = await prisma.event.findFirst({
-      where: {
-        OR: [
-          { name: { contains: 'Matchroom' }, date: eventDate },
-          { name: primaryEvent.eventName, date: eventDate },
-          { ufcUrl: primaryEvent.eventUrl }
-        ]
-      }
+      where: { ufcUrl: primaryEvent.eventUrl },
     });
 
     if (event) {

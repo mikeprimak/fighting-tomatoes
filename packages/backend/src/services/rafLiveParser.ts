@@ -6,7 +6,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { stripDiacritics } from '../utils/fighterMatcher';
-import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
+import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 
 const prisma = new PrismaClient();
 
@@ -103,8 +103,16 @@ async function notifyNextFight(eventId: string, completedFightOrder: number): Pr
 export async function parseRAFLiveData(
   liveData: RAFLiveEventData,
   eventId: string,
+  options: BackfillOptions = {},
 ): Promise<{ fightsUpdated: number; eventUpdated: boolean; cancelledCount: number; unCancelledCount: number }> {
-  console.log(`\n[RAF PARSER] Processing: ${liveData.eventName}`);
+  const isBackfill = !!(
+    options.nullOnlyResults ||
+    options.skipCancellationCheck ||
+    options.skipNotifications ||
+    options.skipStaleLiveReset ||
+    options.completionMethodOverride
+  );
+  console.log(`\n[${isBackfill ? 'RAF BACKFILL' : 'RAF PARSER'}] Processing: ${liveData.eventName}`);
 
   let fightsUpdated = 0;
   let eventUpdated = false;
@@ -211,8 +219,10 @@ export async function parseRAFLiveData(
       const publishedData: any = {};
       let changed = false;
 
-      // Reset lifecycle-premature completions
-      if (!fightUpdate.isComplete && !fightUpdate.hasStarted &&
+      // Reset lifecycle-premature completions. Backfill skips this — past
+      // events shouldn't be downgraded based on a stale source page.
+      if (!options.skipStaleLiveReset &&
+          !fightUpdate.isComplete && !fightUpdate.hasStarted &&
           dbFight.fightStatus === 'COMPLETED' && !dbFight.winner) {
         publishedData.fightStatus = 'UPCOMING';
         changed = true;
@@ -224,7 +234,9 @@ export async function parseRAFLiveData(
         publishedData.fightStatus = 'COMPLETED';
         changed = true;
         console.log(`    -> COMPLETED`);
-        notifyNextFight(dbFight.eventId, dbFight.orderOnCard);
+        if (!options.skipNotifications) {
+          notifyNextFight(dbFight.eventId, dbFight.orderOnCard);
+        }
       }
 
       // Winner
@@ -246,6 +258,15 @@ export async function parseRAFLiveData(
 
       if (changed) {
         const updateData = buildTrackerUpdateData(publishedData, scraperType);
+        // Backfill: stamp audit trail on fights flipping to COMPLETED on this run.
+        if (
+          options.completionMethodOverride &&
+          publishedData.fightStatus === 'COMPLETED' &&
+          dbFight.fightStatus !== 'COMPLETED'
+        ) {
+          updateData.completionMethod = options.completionMethodOverride;
+          updateData.completedAt = new Date();
+        }
         await prisma.fight.update({
           where: { id: dbFight.id },
           data: updateData,
@@ -254,31 +275,36 @@ export async function parseRAFLiveData(
       }
     }
 
-    // Cancellation detection
+    // Cancellation detection. Backfill skips this entire pass — we don't
+    // want to retroactively cancel real fights based on a shifted source page.
     let cancelledCount = 0;
     let unCancelledCount = 0;
 
-    for (const dbFight of event.fights) {
-      if (dbFight.fightStatus === 'COMPLETED') continue;
+    if (!options.skipCancellationCheck) {
+      for (const dbFight of event.fights) {
+        if (dbFight.fightStatus === 'COMPLETED') continue;
 
-      const dbSig = [
-        stripDiacritics(dbFight.fighter1.lastName).toLowerCase().trim(),
-        stripDiacritics(dbFight.fighter2.lastName).toLowerCase().trim(),
-      ].sort().join('|');
+        const dbSig = [
+          stripDiacritics(dbFight.fighter1.lastName).toLowerCase().trim(),
+          stripDiacritics(dbFight.fighter2.lastName).toLowerCase().trim(),
+        ].sort().join('|');
 
-      const inScraped = scrapedFightSignatures.has(dbSig);
+        const inScraped = scrapedFightSignatures.has(dbSig);
 
-      if (dbFight.fightStatus === 'CANCELLED' && inScraped) {
-        await prisma.fight.update({ where: { id: dbFight.id }, data: { fightStatus: 'UPCOMING' } });
-        unCancelledCount++;
-      } else if (dbFight.fightStatus !== 'CANCELLED' && !inScraped) {
-        await prisma.fight.update({ where: { id: dbFight.id }, data: { fightStatus: 'CANCELLED' } });
-        cancelledCount++;
+        if (dbFight.fightStatus === 'CANCELLED' && inScraped) {
+          await prisma.fight.update({ where: { id: dbFight.id }, data: { fightStatus: 'UPCOMING' } });
+          unCancelledCount++;
+        } else if (dbFight.fightStatus !== 'CANCELLED' && !inScraped) {
+          await prisma.fight.update({ where: { id: dbFight.id }, data: { fightStatus: 'CANCELLED' } });
+          cancelledCount++;
+        }
       }
-    }
 
-    if (cancelledCount > 0) console.log(`  Cancelled ${cancelledCount} fights`);
-    if (unCancelledCount > 0) console.log(`  Un-cancelled ${unCancelledCount} fights`);
+      if (cancelledCount > 0) console.log(`  Cancelled ${cancelledCount} fights`);
+      if (unCancelledCount > 0) console.log(`  Un-cancelled ${unCancelledCount} fights`);
+    } else {
+      console.log(`  [backfill] Skipping cancellation check`);
+    }
 
     return { fightsUpdated, eventUpdated, cancelledCount, unCancelledCount };
   } catch (error) {

@@ -15,9 +15,9 @@
  *                                 Matchroom-via-Tapology is on the older
  *                                 tapology-backfill.yml path)
  *   - scraperType = 'pfl'       → backfillPFLResults  (pflmma.com-native)
+ *   - scraperType = 'raf'       → backfillRAFResults  (realamericanfreestyle.com-native)
  *   - scraperType = 'tapology'  → handled by tapology-backfill.yml; logged
  *                                 here for visibility, not invoked.
- *   - others                    → logged as not-yet-covered (e.g. 'raf').
  *
  * Candidates:
  *   - eventStatus = COMPLETED
@@ -37,6 +37,7 @@ import { backfillOneFCResults } from '../services/backfillOneFCResults';
 import { backfillOktagonResults } from '../services/backfillOktagonResults';
 import { backfillMatchroomResults } from '../services/backfillMatchroomResults';
 import { backfillPFLResults } from '../services/backfillPFLResults';
+import { backfillRAFResults } from '../services/backfillRAFResults';
 
 const prisma = new PrismaClient();
 
@@ -175,6 +176,18 @@ async function main() {
           tally(org).succeeded++;
           tally(org).filledWinners += r.filledWinners;
           console.log(`  [backfill] pfl: filled ${r.filledWinners} winner(s)`);
+          break;
+        }
+
+        case 'raf': {
+          const r = await backfillRAFResults(prisma, {
+            id: event.id,
+            name: event.name,
+            ufcUrl: event.ufcUrl,
+          });
+          tally(org).succeeded++;
+          tally(org).filledWinners += r.filledWinners;
+          console.log(`  [backfill] raf: filled ${r.filledWinners} winner(s)`);
           break;
         }
 
