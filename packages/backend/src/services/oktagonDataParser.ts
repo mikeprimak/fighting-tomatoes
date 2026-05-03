@@ -6,6 +6,7 @@ import { uploadFighterImage, uploadFighterImageFromFile, uploadEventImage } from
 import { TBA_FIGHTER_ID, TBA_FIGHTER_NAME, isTBAFighter } from '../constants/tba';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
+import { upsertFightSwapAware } from '../utils/fightUpsert';
 
 const prisma = new PrismaClient();
 
@@ -564,15 +565,10 @@ async function importOktagonEvents(
       }
 
       try {
-        const upsertedFight = await prisma.fight.upsert({
-          where: {
-            eventId_fighter1Id_fighter2Id: {
-              eventId: event.id,
-              fighter1Id,
-              fighter2Id,
-            }
-          },
-          update: {
+        const upsertedFight = await upsertFightSwapAware(
+          prisma,
+          { eventId: event.id, fighter1Id, fighter2Id },
+          {
             weightClass,
             isTitle: fightData.isTitle,
             titleName,
@@ -580,7 +576,7 @@ async function importOktagonEvents(
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
           },
-          create: {
+          {
             eventId: event.id,
             fighter1Id,
             fighter2Id,
@@ -591,8 +587,8 @@ async function importOktagonEvents(
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
             fightStatus: 'UPCOMING',
-          }
-        });
+          },
+        );
 
         await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
           console.warn('[FollowSync]', err)

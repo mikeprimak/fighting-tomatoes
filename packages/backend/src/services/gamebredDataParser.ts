@@ -6,6 +6,7 @@ import { stripDiacritics } from '../utils/fighterMatcher';
 import { eventTimeToUTC } from '../utils/timezone';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 import { getPromotionByCode } from '../config/promotionRegistry';
+import { upsertFightSwapAware } from '../utils/fightUpsert';
 
 const prisma = new PrismaClient();
 
@@ -323,15 +324,10 @@ async function importEvents(
       const titleName = fightData.isTitle ? `${fightData.weightClass} Championship` : undefined;
 
       try {
-        const upsertedFight = await prisma.fight.upsert({
-          where: {
-            eventId_fighter1Id_fighter2Id: {
-              eventId: event.id,
-              fighter1Id,
-              fighter2Id,
-            },
-          },
-          update: {
+        const upsertedFight = await upsertFightSwapAware(
+          prisma,
+          { eventId: event.id, fighter1Id, fighter2Id },
+          {
             weightClass,
             isTitle: fightData.isTitle,
             titleName,
@@ -339,7 +335,7 @@ async function importEvents(
             orderOnCard: fightData.order,
             cardType: fightData.cardType,
           },
-          create: {
+          {
             eventId: event.id,
             fighter1Id,
             fighter2Id,
@@ -351,7 +347,7 @@ async function importEvents(
             cardType: fightData.cardType,
             fightStatus: 'UPCOMING',
           },
-        });
+        );
         await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
           console.warn('[FollowSync]', err)
         );

@@ -6,6 +6,7 @@ import { uploadFighterImage, uploadEventImage } from './imageStorage';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { localTimeToUTC, parseTime12h } from '../utils/timezone';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
+import { upsertFightSwapAware } from '../utils/fightUpsert';
 
 const prisma = new PrismaClient();
 
@@ -637,15 +638,10 @@ async function importEvents(
       // Upsert fight using eventId + fighter1Id + fighter2Id unique constraint
       const titleName = fightData.isTitle ? `UFC ${fightData.weightClass} Championship` : undefined;
 
-      const upsertedFight = await prisma.fight.upsert({
-        where: {
-          eventId_fighter1Id_fighter2Id: {
-            eventId: event.id,
-            fighter1Id,
-            fighter2Id,
-          }
-        },
-        update: {
+      const upsertedFight = await upsertFightSwapAware(
+        prisma,
+        { eventId: event.id, fighter1Id, fighter2Id },
+        {
           weightClass,
           isTitle: fightData.isTitle,
           titleName,
@@ -655,7 +651,7 @@ async function importEvents(
           startTime: fightData.startTime,
           ufcFightId: fightData.fightId,  // UFC's data-fmid for reliable live tracking
         },
-        create: {
+        {
           eventId: event.id,
           fighter1Id,
           fighter2Id,
@@ -668,8 +664,8 @@ async function importEvents(
           ufcFightId: fightData.fightId,  // UFC's data-fmid for reliable live tracking
           startTime: fightData.startTime,
           fightStatus: 'UPCOMING',
-        }
-      });
+        },
+      );
 
       await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
         console.warn('[FollowSync]', err)

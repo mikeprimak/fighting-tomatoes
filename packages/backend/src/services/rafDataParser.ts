@@ -6,6 +6,7 @@ import { stripDiacritics } from '../utils/fighterMatcher';
 import { eventTimeToUTC } from '../utils/timezone';
 import { uploadEventImage } from './imageStorage';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
+import { upsertFightSwapAware } from '../utils/fightUpsert';
 
 const prisma = new PrismaClient();
 
@@ -371,15 +372,10 @@ async function importRAFEvents(
       const fightStatus = fightData.winner ? 'COMPLETED' : 'UPCOMING';
 
       try {
-        const upsertedFight = await prisma.fight.upsert({
-          where: {
-            eventId_fighter1Id_fighter2Id: {
-              eventId: event.id,
-              fighter1Id,
-              fighter2Id,
-            },
-          },
-          update: {
+        const upsertedFight = await upsertFightSwapAware(
+          prisma,
+          { eventId: event.id, fighter1Id, fighter2Id },
+          {
             weightClass,
             isTitle: fightData.isTitle,
             scheduledRounds: 3, // RAF matches are 3 rounds
@@ -391,7 +387,7 @@ async function importRAFEvents(
               method,
             } : {}),
           },
-          create: {
+          {
             eventId: event.id,
             fighter1Id,
             fighter2Id,
@@ -404,7 +400,7 @@ async function importRAFEvents(
             winner: winnerId,
             method,
           },
-        });
+        );
         await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
           console.warn('[FollowSync]', err)
         );
