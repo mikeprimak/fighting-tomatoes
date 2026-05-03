@@ -323,14 +323,11 @@ async function importGoldenBoyEvents(
       console.warn(`[GoldenBoy] ⚠️ No start time found for "${eventData.eventName}" (date: ${eventData.dateText}). Event will NOT auto-transition to LIVE.`);
     }
 
-    // Try to find existing event by URL first, then by name+date
+    // Look up by ufcUrl ONLY. The Tapology event ID is the unique stable identifier;
+    // a name fallback merges sibling events whose generic titles collide before
+    // headliners are announced (see Gamebred fix 2026-05-03).
     let event = await prisma.event.findFirst({
-      where: {
-        OR: [
-          { ufcUrl: eventUrl },
-          { name: eventData.eventName, date: eventDate }
-        ]
-      }
+      where: { ufcUrl: eventUrl },
     });
 
     if (event) {

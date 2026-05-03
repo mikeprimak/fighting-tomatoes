@@ -417,14 +417,12 @@ async function importRizinEvents(
       }
     }
 
-    // Find or create event
+    // Find or create event. Look up by ufcUrl ONLY — the source event ID is the
+    // unique stable identifier; a name fallback merges sibling events whose
+    // generic titles collide before headliners are announced (see Gamebred fix
+    // 2026-05-03).
     let event = await prisma.event.findFirst({
-      where: {
-        OR: [
-          { ufcUrl: eventUrl },
-          { name: eventData.eventName, date: eventDate }
-        ]
-      }
+      where: { ufcUrl: eventUrl },
     });
 
     if (event) {

@@ -262,17 +262,11 @@ async function importDirtyEvents(
     // Use event-specific image if available, otherwise use default banner
     const bannerImage = eventData.eventImageUrl || DIRTY_BOXING_DEFAULT_BANNER;
 
-    // Try to find existing event by URL first, then by (name, date) within this promotion.
-    // NOTE: do NOT match by `name contains "Dirty Boxing"` — it's way too greedy and
-    // cross-matches unrelated rows, producing P2002 conflicts when the update overwrites
-    // ufcUrl on the wrong row.
+    // Look up by ufcUrl ONLY. The Tapology event ID is the unique stable identifier;
+    // a name fallback merges sibling events whose generic titles collide before
+    // headliners are announced (see Gamebred fix 2026-05-03).
     let event = await prisma.event.findFirst({
-      where: {
-        OR: [
-          { ufcUrl: eventData.eventUrl },
-          { promotion: 'Dirty Boxing', name: eventData.eventName },
-        ],
-      },
+      where: { ufcUrl: eventData.eventUrl },
     });
 
     const updateData = {

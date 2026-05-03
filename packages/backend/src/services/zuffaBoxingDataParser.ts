@@ -293,14 +293,11 @@ async function importZuffaEvents(
       bannerImage = defaultBannerUrl || undefined;
     }
 
-    // Try to find existing event by URL or exact name
+    // Look up by ufcUrl ONLY. The Tapology event ID is the unique stable identifier;
+    // a name fallback merges sibling events whose generic titles collide before
+    // headliners are announced (see Gamebred fix 2026-05-03).
     let event = await prisma.event.findFirst({
-      where: {
-        OR: [
-          { ufcUrl: eventData.eventUrl },
-          { name: eventData.eventName, promotion: 'Zuffa Boxing' },
-        ]
-      }
+      where: { ufcUrl: eventData.eventUrl },
     });
 
     if (event) {
