@@ -1837,6 +1837,23 @@
         </div>
       </div>
 
+      <!-- Backfill Health -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Backfill Health</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadBackfillHealth()">Refresh</button>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 0.75rem 0;">
+          Events past 48h that are COMPLETED but still have fights with no winner, grouped by scraperType. Daily results-backfill job (10:00 UTC) should keep these numbers near zero. If a row stays high for several days, the backfill for that org is broken — or the org has no wrapper at all (flagged below).
+        </p>
+        <div id="backfillHealthBody">
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <div class="empty-state-text" style="margin-top: 0.5rem;">Loading backfill health...</div>
+          </div>
+        </div>
+      </div>
+
       <!-- OKTAGON Live Tracker Controls -->
       <div class="ops-section">
         <div class="ops-section-header">
@@ -3853,11 +3870,88 @@
       await Promise.all([
         loadNotifyPromotions(),
         loadProductionScrapers(),
+        loadBackfillHealth(),
         loadScraperStatus(),
         loadTrackerStatus(),
         loadBackupStatus(),
         loadRecentActivity(),
       ]);
+    }
+
+    // ── Backfill health ──
+    async function loadBackfillHealth() {
+      const body = document.getElementById('backfillHealthBody');
+      try {
+        const res = await authFetch(`${API_BASE}/admin/health/backfill`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        renderBackfillHealth(json.data);
+      } catch (err) {
+        body.innerHTML = '<div class="empty-state"><div class="empty-state-text">Failed to load backfill health</div></div>';
+      }
+    }
+
+    function renderBackfillHealth(data) {
+      const body = document.getElementById('backfillHealthBody');
+      const fmtDate = (iso) => {
+        const d = new Date(iso);
+        const days = Math.floor((Date.now() - d.getTime()) / (24 * 3600 * 1000));
+        return `${d.toISOString().slice(0, 10)} (${days}d ago)`;
+      };
+
+      if (!data.rows || data.rows.length === 0) {
+        body.innerHTML = `
+          <div style="padding: 0.75rem; background: rgba(0, 200, 83, 0.08); border: 1px solid rgba(0, 200, 83, 0.3); border-radius: 6px;">
+            <div style="font-weight: 600; color: #00c853;">All caught up</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">No completed events older than 48h have missing winners.</div>
+          </div>
+        `;
+        return;
+      }
+
+      const uncoveredBanner = data.uncoveredOrgs && data.uncoveredOrgs.length > 0
+        ? `
+          <div style="padding: 0.75rem; background: rgba(255, 152, 0, 0.1); border: 1px solid rgba(255, 152, 0, 0.4); border-radius: 6px; margin-bottom: 0.75rem;">
+            <div style="font-weight: 600; color: #ff9800;">⚠ Org without wrapper: ${data.uncoveredOrgs.join(', ')}</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">These scraperTypes have stale events but no entry in the results-backfill orchestrator. Add a wrapper or the events stay broken.</div>
+          </div>
+        `
+        : '';
+
+      const totals = `Total: <strong>${data.totals.missingWinners}</strong> missing winner(s) across <strong>${data.totals.events}</strong> event(s).`;
+
+      const rowsHtml = data.rows.map(r => {
+        const status = r.covered
+          ? '<span style="color: #00c853;">covered</span>'
+          : '<span style="color: #ff9800;">uncovered</span>';
+        return `
+          <tr>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);"><strong>${r.scraperType}</strong> ${status}</td>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">${r.missingWinners}</td>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">${r.events}</td>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">
+              <div style="font-size: 0.85rem;">${fmtDate(r.oldestEventDate)}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">${r.oldestEventName}</div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      body.innerHTML = `
+        ${uncoveredBanner}
+        <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">${totals}</div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+          <thead>
+            <tr style="text-align: left; color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border);">Scraper</th>
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">Missing</th>
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">Events</th>
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border);">Oldest stale event</th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      `;
     }
 
     // Promotion registry — fetched from /admin/config/promotions on first use.

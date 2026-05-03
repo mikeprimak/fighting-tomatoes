@@ -1359,6 +1359,114 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // ============================================
+  // BACKFILL HEALTH
+  // ============================================
+  // Sentinel for the daily results-backfill job. Surfaces events past 48h
+  // that are COMPLETED but still have fights with winner=NULL, grouped by
+  // scraperType. Use to spot:
+  //   - Backfill is silently broken (numbers stay high day after day)
+  //   - We have an org without a wrapper (its scraperType appears in
+  //     `uncoveredOrgs` because nothing dispatches it)
+  fastify.get('/admin/health/backfill', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    try {
+      // Wrappers wired in src/scripts/backfillResults.ts. Update this list
+      // when a new per-org wrapper is added so the "uncovered" sentinel stays
+      // accurate. 'tapology' is covered by the older tapology-backfill.yml.
+      const COVERED_SCRAPER_TYPES = new Set([
+        'ufc', 'bkfc', 'onefc', 'oktagon', 'matchroom', 'pfl', 'raf', 'tapology',
+      ]);
+
+      const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
+      const events = await prisma.event.findMany({
+        where: {
+          eventStatus: 'COMPLETED',
+          date: { lt: cutoff },
+          fights: {
+            some: {
+              winner: null,
+              fightStatus: { in: ['COMPLETED', 'UPCOMING', 'LIVE'] },
+            },
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          date: true,
+          scraperType: true,
+          fights: {
+            where: {
+              winner: null,
+              fightStatus: { in: ['COMPLETED', 'UPCOMING', 'LIVE'] },
+            },
+            select: { id: true },
+          },
+        },
+        orderBy: { date: 'asc' },
+      });
+
+      type OrgStats = {
+        scraperType: string;
+        missingWinners: number;
+        events: number;
+        oldestEventDate: Date;
+        oldestEventName: string;
+        oldestEventId: string;
+        covered: boolean;
+      };
+
+      const byOrg = new Map<string, OrgStats>();
+      for (const e of events) {
+        const org = e.scraperType || '(none)';
+        const existing = byOrg.get(org);
+        if (!existing) {
+          byOrg.set(org, {
+            scraperType: org,
+            missingWinners: e.fights.length,
+            events: 1,
+            oldestEventDate: e.date,
+            oldestEventName: e.name,
+            oldestEventId: e.id,
+            covered: COVERED_SCRAPER_TYPES.has(org),
+          });
+        } else {
+          existing.missingWinners += e.fights.length;
+          existing.events += 1;
+          if (e.date < existing.oldestEventDate) {
+            existing.oldestEventDate = e.date;
+            existing.oldestEventName = e.name;
+            existing.oldestEventId = e.id;
+          }
+        }
+      }
+
+      const rows = Array.from(byOrg.values()).sort((a, b) => b.missingWinners - a.missingWinners);
+      const uncoveredOrgs = rows.filter(r => !r.covered).map(r => r.scraperType);
+      const totalMissing = rows.reduce((acc, r) => acc + r.missingWinners, 0);
+      const totalEvents = rows.reduce((acc, r) => acc + r.events, 0);
+
+      return reply.send({
+        success: true,
+        data: {
+          asOf: new Date().toISOString(),
+          cutoffOlderThan: cutoff.toISOString(),
+          totals: { missingWinners: totalMissing, events: totalEvents },
+          rows,
+          uncoveredOrgs,
+        },
+      });
+    } catch (error: any) {
+      console.error('[Admin] Backfill health check failed:', error);
+      return reply.code(500).send({
+        error: 'Backfill health check failed',
+        message: error.message,
+      });
+    }
+  });
+
+  // ============================================
   // TEST EMAIL ALERTS
   // ============================================
 
