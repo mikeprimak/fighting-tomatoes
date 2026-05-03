@@ -36,6 +36,9 @@ import { PrismaClient } from '@prisma/client';
 import {
   fetchUFCAthleteHeadshot,
   deriveUFCAthleteSlug,
+  launchAthleteBrowser,
+  closeAthleteBrowser,
+  AthleteBrowserHandle,
 } from '../services/scrapeUFCAthleteHeadshot';
 import { uploadFighterImage } from '../services/imageStorage';
 
@@ -88,6 +91,7 @@ async function findCandidates() {
 async function processFighter(
   fighter: { id: string; firstName: string; lastName: string; ufcAthleteSlug: string | null },
   stats: RunStats,
+  handle: AthleteBrowserHandle,
 ): Promise<void> {
   stats.considered++;
   const fullName = `${fighter.firstName} ${fighter.lastName}`.trim();
@@ -109,7 +113,7 @@ async function processFighter(
   let lastError: string | undefined;
 
   for (const slug of slugCandidates) {
-    const r = await fetchUFCAthleteHeadshot(slug);
+    const r = await fetchUFCAthleteHeadshot(slug, handle);
     if (r.status === 'ok' && r.imageUrl) {
       imageUrl = r.imageUrl;
       usedSlug = slug;
@@ -199,13 +203,19 @@ async function main() {
     noPage: 0, noImage: 0, errors: 0, uploaded: 0, skipped: 0,
   };
 
-  for (let i = 0; i < subset.length; i++) {
-    const fighter = subset[i];
-    if (i % 25 === 0) {
-      console.log(`\n[ufc-headshots] Progress: ${i}/${subset.length}`);
+  console.log('\n[ufc-headshots] Launching headless Chrome…');
+  const handle = await launchAthleteBrowser();
+  try {
+    for (let i = 0; i < subset.length; i++) {
+      const fighter = subset[i];
+      if (i % 25 === 0) {
+        console.log(`\n[ufc-headshots] Progress: ${i}/${subset.length}`);
+      }
+      await processFighter(fighter, stats, handle);
+      if (i < subset.length - 1) await sleep(RATE_LIMIT_MS);
     }
-    await processFighter(fighter, stats);
-    if (i < subset.length - 1) await sleep(RATE_LIMIT_MS);
+  } finally {
+    await closeAthleteBrowser(handle);
   }
 
   console.log('\n========================================');
