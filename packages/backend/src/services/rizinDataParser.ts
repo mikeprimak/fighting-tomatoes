@@ -6,6 +6,7 @@ import { uploadFighterImage, uploadEventImage, uploadLocalFileToR2 } from './ima
 import { TBA_FIGHTER_ID, TBA_FIGHTER_NAME, isTBAFighter } from '../constants/tba';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
+import { upsertFightSwapAware } from '../utils/fightUpsert';
 
 const prisma = new PrismaClient();
 
@@ -661,15 +662,10 @@ async function importRizinEvents(
       }
 
       try {
-        const upsertedFight = await prisma.fight.upsert({
-          where: {
-            eventId_fighter1Id_fighter2Id: {
-              eventId: event.id,
-              fighter1Id,
-              fighter2Id,
-            }
-          },
-          update: {
+        const upsertedFight = await upsertFightSwapAware(
+          prisma,
+          { eventId: event.id, fighter1Id, fighter2Id },
+          {
             weightClass,
             isTitle: fightData.isTitle,
             titleName,
@@ -685,7 +681,7 @@ async function importRizinEvents(
               winner: winnerId || undefined,
             } : {}),
           },
-          create: {
+          {
             eventId: event.id,
             fighter1Id,
             fighter2Id,
@@ -700,8 +696,8 @@ async function importRizinEvents(
             round: hasResult && result.round ? parseInt(result.round, 10) : undefined,
             time: hasResult ? result.time || undefined : undefined,
             winner: winnerId || undefined,
-          }
-        });
+          },
+        );
 
         await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
           console.warn('[FollowSync]', err)
