@@ -1,35 +1,86 @@
 /**
- * UFC.com Athlete Headshot Scraper
+ * UFC.com Athlete Headshot Scraper (Puppeteer)
  *
- * Fetches https://www.ufc.com/athlete/<slug> and extracts the athlete's
- * canonical headshot URL from the page's <meta property="og:image"> tag.
+ * Fetches https://www.ufc.com/athlete/<slug> and extracts the canonical
+ * headshot URL from the page's <meta property="og:image"> tag.
  *
- * og:image is the right selector because:
- *   - it's set on every athlete page that exists (current and retired)
- *   - it's a single canonical value (no DOM ambiguity vs sidebar widgets)
- *   - it points at the same headshot the user-facing page header displays
+ * Why Puppeteer (not axios/curl):
+ *   ufc.com sits behind anti-bot protection that JA3-fingerprints the TLS
+ *   handshake. Node's OpenSSL stack and Linux curl's OpenSSL both 403.
+ *   Windows curl (Schannel) happens to pass, which masked the issue during
+ *   local dev. Puppeteer with the stealth plugin uses a real Chrome TLS
+ *   handshake and is the same pattern the existing daily UFC scraper
+ *   (`scrapeAllUFCData.js`) uses to access the same site on GH Actions.
  *
- * Implementation note — why curl instead of axios/fetch:
- *   ufc.com sits behind anti-bot protection that TLS-fingerprints (JA3) the
- *   client. Node.js's OpenSSL stack produces a fingerprint that returns 403,
- *   regardless of headers. Real browsers and curl pass. Shelling out to curl
- *   is the most reliable path; cross-platform; already required for other
- *   dev tooling so no new dep.
+ * Design — browser/page reuse:
+ *   Launching Puppeteer is expensive (~2s) and consumes ~150MB. A 1,470-
+ *   fighter sweep that launches once per fighter would take 50+ minutes and
+ *   thrash memory. Callers should call `launchAthleteBrowser()` once,
+ *   reuse the returned `{ browser, page }`, and call `closeAthleteBrowser()`
+ *   at the end. Each `fetchUFCAthleteHeadshot()` call only navigates the
+ *   shared page — order of magnitude faster.
  */
 
-import { execFile } from 'child_process';
-import { promisify } from 'util';
-import * as cheerio from 'cheerio';
+// puppeteer-extra and stealth plugin lack TypeScript types in this repo,
+// but the .js call surface is well-understood and matches puppeteer's.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const puppeteer = require('puppeteer-extra');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
 
-const execFileAsync = promisify(execFile);
+import type { Browser, Page } from 'puppeteer';
 
-const REQUEST_TIMEOUT_MS = 20_000;
+const PAGE_TIMEOUT_MS = 25_000;
 
-const BROWSER_HEADERS = [
-  'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'Accept-Language: en-US,en;q=0.9',
-];
+export interface AthleteBrowserHandle {
+  browser: Browser;
+  page: Page;
+}
+
+export async function launchAthleteBrowser(): Promise<AthleteBrowserHandle> {
+  const browser = await puppeteer.launch({
+    headless: 'new',
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--disable-gpu',
+      '--window-size=1920,1080',
+      '--disable-blink-features=AutomationControlled',
+      '--lang=en-US,en',
+    ],
+  });
+  const page = await browser.newPage();
+  await page.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  );
+  await page.setExtraHTTPHeaders({
+    'Accept-Language': 'en-US,en;q=0.9',
+  });
+  // Block heavy assets we don't need for the meta-tag read — speeds each
+  // page load substantially and reduces bandwidth.
+  await page.setRequestInterception(true);
+  page.on('request', (req) => {
+    const type = req.resourceType();
+    if (type === 'image' || type === 'stylesheet' || type === 'font' || type === 'media') {
+      req.abort();
+    } else {
+      req.continue();
+    }
+  });
+  return { browser, page };
+}
+
+export async function closeAthleteBrowser(handle: AthleteBrowserHandle): Promise<void> {
+  try {
+    await handle.page.close();
+  } catch { /* noop */ }
+  try {
+    await handle.browser.close();
+  } catch { /* noop */ }
+}
 
 export interface UFCHeadshotResult {
   status: 'ok' | 'no-page' | 'no-image' | 'error';
@@ -38,55 +89,41 @@ export interface UFCHeadshotResult {
   errorMessage?: string;
 }
 
-export async function fetchUFCAthleteHeadshot(slug: string): Promise<UFCHeadshotResult> {
+export async function fetchUFCAthleteHeadshot(
+  slug: string,
+  handle: AthleteBrowserHandle,
+): Promise<UFCHeadshotResult> {
   const url = `https://www.ufc.com/athlete/${encodeURIComponent(slug)}`;
-
-  // -s: silent, -L: follow redirects, -o -: stdout, -w: write status code last
-  // We append a delimited HTTP code suffix so we can split it off cleanly.
-  const args = [
-    '-sSL',
-    '--max-time', String(REQUEST_TIMEOUT_MS / 1000),
-    '-w', '\n__HTTP_STATUS__:%{http_code}',
-  ];
-  for (const h of BROWSER_HEADERS) {
-    args.push('-H', h);
-  }
-  args.push(url);
-
-  let stdout: string;
+  let response;
   try {
-    const result = await execFileAsync('curl', args, {
-      timeout: REQUEST_TIMEOUT_MS + 2000,
-      maxBuffer: 10 * 1024 * 1024,
+    response = await handle.page.goto(url, {
+      waitUntil: 'domcontentloaded',
+      timeout: PAGE_TIMEOUT_MS,
     });
-    stdout = result.stdout;
   } catch (err: any) {
     return { status: 'error', errorMessage: err.message, finalUrl: url };
   }
 
-  // Split off the trailing status marker
-  const marker = '\n__HTTP_STATUS__:';
-  const idx = stdout.lastIndexOf(marker);
-  if (idx < 0) {
-    return { status: 'error', errorMessage: 'curl output missing status marker', finalUrl: url };
-  }
-  const body = stdout.slice(0, idx);
-  const statusCode = parseInt(stdout.slice(idx + marker.length).trim(), 10);
+  const statusCode = response?.status() ?? 0;
+  const finalUrl = handle.page.url();
 
   if (statusCode === 404 || statusCode === 410) {
-    return { status: 'no-page', finalUrl: url };
+    return { status: 'no-page', finalUrl };
   }
-  if (statusCode >= 400 || !Number.isFinite(statusCode)) {
-    return { status: 'error', errorMessage: `HTTP ${statusCode}`, finalUrl: url };
+  if (statusCode >= 400) {
+    return { status: 'error', errorMessage: `HTTP ${statusCode}`, finalUrl };
   }
 
-  const $ = cheerio.load(body);
-  const ogImage = $('meta[property="og:image"]').attr('content')?.trim();
+  // Read og:image directly off the document; cheaper than serializing HTML.
+  const ogImage = await handle.page.evaluate(() => {
+    const m = document.querySelector('meta[property="og:image"]');
+    return m ? m.getAttribute('content') : null;
+  });
+
   if (!ogImage) {
-    return { status: 'no-image', finalUrl: url };
+    return { status: 'no-image', finalUrl };
   }
-
-  return { status: 'ok', imageUrl: ogImage, finalUrl: url };
+  return { status: 'ok', imageUrl: ogImage.trim(), finalUrl };
 }
 
 /**
