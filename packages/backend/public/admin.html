@@ -1705,6 +1705,7 @@
       <div class="tab-nav">
         <button class="tab-btn active" onclick="switchTab('events')">Events</button>
         <button class="tab-btn" onclick="switchTab('operations')">Operations</button>
+        <button class="tab-btn" onclick="switchTab('broadcasts')">Broadcasts<span id="discoveryBadge" class="badge-unread" style="display: none;"></span></button>
         <button class="tab-btn" onclick="switchTab('feedback')">Feedback<span id="feedbackBadge" class="badge-unread" style="display: none;"></span></button>
       </div>
       <div id="userInfo" class="user-info" style="display: none;">
@@ -1897,6 +1898,184 @@
   </div>
 
   <!-- Feedback Tab -->
+  <!-- Broadcasts Tab -->
+  <div id="broadcastsTab" class="tab-content">
+    <div class="ops-container">
+      <!-- Discovery Inbox -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Broadcast Discovery Inbox <span id="discoveryStatusCounts" style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 8px;"></span></span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="discoveryStatusFilter" class="form-select" style="width: 130px;" onchange="loadDiscoveryInbox()">
+              <option value="PENDING" selected>Pending</option>
+              <option value="APPLIED">Applied</option>
+              <option value="REJECTED">Rejected</option>
+              <option value="DUPLICATE">Duplicate</option>
+              <option value="ALL">All</option>
+            </select>
+            <button class="btn btn-sm btn-primary" onclick="runDiscoveryNow()">▶ Run Discovery</button>
+            <button class="btn btn-sm" onclick="loadDiscoveryInbox()">↻</button>
+          </div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 0.75rem 0;">
+          Findings from the weekly cron + manual runs. Pending items awaiting review. Applying writes a row into Promotion Defaults; rejecting suppresses re-suggestion for 90 days.
+        </p>
+        <div id="discoveryList"><div class="empty-state"><div class="spinner"></div></div></div>
+      </div>
+
+      <!-- Promotion Defaults -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Promotion Defaults</span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="defaultsPromotionFilter" class="form-select" style="width: 200px;" onchange="loadPromotionDefaults()">
+              <option value="">All promotions</option>
+            </select>
+            <button class="btn btn-sm btn-primary" onclick="openDefaultModal()">+ New Default</button>
+            <button class="btn btn-sm" onclick="loadPromotionDefaults()">↻</button>
+          </div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 0.75rem 0;">
+          Per-promotion × region broadcaster fallbacks. Used when no explicit per-event broadcast exists for a region.
+        </p>
+        <div id="defaultsList"><div class="empty-state"><div class="spinner"></div></div></div>
+      </div>
+
+      <!-- Channels -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Broadcast Channels</span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="btn btn-sm btn-primary" onclick="openChannelModal()">+ New Channel</button>
+            <button class="btn btn-sm" onclick="loadBroadcastChannels()">↻</button>
+          </div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 0.75rem 0;">
+          The streaming/cable/PPV channels that broadcasters use. Keep slugs stable — defaults reference them.
+        </p>
+        <div id="channelsList"><div class="empty-state"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Discovery Apply Modal -->
+  <div id="discoveryApplyModal" class="modal-overlay" onclick="if (event.target === this) closeDiscoveryApplyModal()">
+    <div class="modal" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3>Apply Discovery</h3>
+        <button class="modal-close" onclick="closeDiscoveryApplyModal()">×</button>
+      </div>
+      <div>
+        <div id="discoveryApplyContext" style="background: var(--bg-input); padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.85rem;"></div>
+        <div class="form-group">
+          <label>Channel</label>
+          <select id="discoveryApplyChannel" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label>Tier</label>
+          <select id="discoveryApplyTier" class="form-select">
+            <option value="FREE">Free</option>
+            <option value="SUBSCRIPTION">Subscription</option>
+            <option value="PPV">PPV</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Note (optional, shown on the live card)</label>
+          <textarea id="discoveryApplyNote" class="form-input" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeDiscoveryApplyModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmDiscoveryApply()">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Default Edit Modal -->
+  <div id="defaultEditModal" class="modal-overlay" onclick="if (event.target === this) closeDefaultEditModal()">
+    <div class="modal" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3 id="defaultEditTitle">New Default</h3>
+        <button class="modal-close" onclick="closeDefaultEditModal()">×</button>
+      </div>
+      <div>
+        <div class="form-group">
+          <label>Promotion</label>
+          <input type="text" id="defaultEditPromotion" class="form-input" placeholder="e.g. UFC, ONE, BKFC">
+        </div>
+        <div class="form-group">
+          <label>Region</label>
+          <select id="defaultEditRegion" class="form-select">
+            <option value="US">🇺🇸 US</option>
+            <option value="CA">🇨🇦 CA</option>
+            <option value="GB">🇬🇧 GB</option>
+            <option value="AU">🇦🇺 AU</option>
+            <option value="NZ">🇳🇿 NZ</option>
+            <option value="EU">🇪🇺 EU</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Channel</label>
+          <select id="defaultEditChannel" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label>Tier</label>
+          <select id="defaultEditTier" class="form-select">
+            <option value="FREE">Free</option>
+            <option value="SUBSCRIPTION" selected>Subscription</option>
+            <option value="PPV">PPV</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Note (optional)</label>
+          <textarea id="defaultEditNote" class="form-input" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger" id="defaultEditDeleteBtn" onclick="deleteCurrentDefault()" style="display: none; margin-right: auto;">Delete</button>
+        <button class="btn btn-secondary" onclick="closeDefaultEditModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveDefaultEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Channel Edit Modal -->
+  <div id="channelEditModal" class="modal-overlay" onclick="if (event.target === this) closeChannelEditModal()">
+    <div class="modal" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3 id="channelEditTitle">New Channel</h3>
+        <button class="modal-close" onclick="closeChannelEditModal()">×</button>
+      </div>
+      <div>
+        <div class="form-group">
+          <label>Slug (lowercase-with-dashes, immutable identifier)</label>
+          <input type="text" id="channelEditSlug" class="form-input" placeholder="e.g. paramount-plus, sky-sports">
+        </div>
+        <div class="form-group">
+          <label>Display name</label>
+          <input type="text" id="channelEditName" class="form-input" placeholder="e.g. Paramount+">
+        </div>
+        <div class="form-group">
+          <label>Homepage URL</label>
+          <input type="text" id="channelEditHomepage" class="form-input" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label>Logo URL (optional)</label>
+          <input type="text" id="channelEditLogo" class="form-input" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" id="channelEditActive" checked> Active
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeChannelEditModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveChannelEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+
   <div id="feedbackTab" class="tab-content">
     <div class="feedback-container">
       <div class="feedback-header">
@@ -3843,6 +4022,8 @@
         loadOperationsData();
       } else if (tabName === 'feedback') {
         loadFeedback();
+      } else if (tabName === 'broadcasts') {
+        loadBroadcastsData();
       }
     }
 
@@ -4414,6 +4595,467 @@
       if (diffMins < 60) return `${diffMins}m ago`;
       if (diffHours < 24) return `${diffHours}h ago`;
       return `${diffDays}d ago`;
+    }
+
+    // ============================================
+    // BROADCASTS TAB
+    // ============================================
+    let broadcastChannelsCache = [];
+    let currentDiscoveryId = null;
+    let currentDefaultId = null;
+    let currentChannelSlug = null;
+
+    async function loadBroadcastsData() {
+      // Channels first — defaults & discovery rendering depends on the cache.
+      await loadBroadcastChannels();
+      await Promise.all([
+        loadDiscoveryInbox(),
+        loadPromotionDefaults(),
+      ]);
+    }
+
+    function tierBadgeStyle(tier) {
+      const colors = {
+        FREE: '#16a34a',
+        SUBSCRIPTION: '#3b82f6',
+        PPV: '#dc2626',
+      };
+      const bg = colors[tier] || '#6b7280';
+      return `background: ${bg}; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.3px;`;
+    }
+
+    function confidenceBadge(c) {
+      const conf = Math.round(c * 100);
+      const color = c >= 0.9 ? '#16a34a' : c >= 0.7 ? '#eab308' : '#f97316';
+      return `<span style="background: ${color}; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700;">${conf}%</span>`;
+    }
+
+    function changeTypeBadge(t) {
+      const colors = { NEW: '#3b82f6', CHANGED: '#f97316', CONFIRMED: '#10b981' };
+      const bg = colors[t] || '#6b7280';
+      return `<span style="background: ${bg}; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: 700;">${t}</span>`;
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return '';
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function relativeDate(iso) {
+      if (!iso) return 'never';
+      const d = new Date(iso);
+      const days = Math.floor((Date.now() - d.getTime()) / (24 * 3600 * 1000));
+      if (days < 1) return 'today';
+      if (days === 1) return 'yesterday';
+      if (days < 30) return `${days}d ago`;
+      const months = Math.floor(days / 30);
+      return `${months}mo ago`;
+    }
+
+    // ── Channels ──
+    async function loadBroadcastChannels() {
+      try {
+        const res = await authFetch(`${API_BASE}/admin/broadcast-channels`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        broadcastChannelsCache = data.channels || [];
+        renderBroadcastChannels();
+      } catch (err) {
+        document.getElementById('channelsList').innerHTML = '<div class="empty-state"><div class="empty-state-text">Failed to load channels</div></div>';
+      }
+    }
+
+    function renderBroadcastChannels() {
+      const container = document.getElementById('channelsList');
+      if (broadcastChannelsCache.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">No channels yet</div></div>';
+        return;
+      }
+      const sorted = [...broadcastChannelsCache].sort((a, b) => a.name.localeCompare(b.name));
+      const rows = sorted.map(c => `
+        <tr style="border-bottom: 1px solid var(--border-color);">
+          <td style="padding: 8px;"><code style="background: var(--bg-input); padding: 2px 6px; border-radius: 3px;">${escapeHtml(c.slug)}</code></td>
+          <td style="padding: 8px;">${escapeHtml(c.name)}</td>
+          <td style="padding: 8px;">${c.homepageUrl ? `<a href="${escapeHtml(c.homepageUrl)}" target="_blank" style="color: var(--accent-blue); font-size: 0.8rem;">${escapeHtml(c.homepageUrl.replace(/^https?:\/\//, '').slice(0, 32))}…</a>` : '—'}</td>
+          <td style="padding: 8px; color: ${c.isActive ? '#10b981' : '#6b7280'};">${c.isActive ? 'Active' : 'Inactive'}</td>
+          <td style="padding: 8px; text-align: right;"><button class="btn btn-sm" onclick="editChannel('${escapeHtml(c.slug)}')">Edit</button></td>
+        </tr>
+      `).join('');
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+          <thead><tr style="border-bottom: 2px solid var(--border-color); text-align: left; color: var(--text-secondary); font-size: 0.75rem;">
+            <th style="padding: 8px;">Slug</th><th style="padding: 8px;">Name</th><th style="padding: 8px;">Homepage</th><th style="padding: 8px;">Status</th><th></th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    function openChannelModal() {
+      currentChannelSlug = null;
+      document.getElementById('channelEditTitle').textContent = 'New Channel';
+      document.getElementById('channelEditSlug').value = '';
+      document.getElementById('channelEditSlug').disabled = false;
+      document.getElementById('channelEditName').value = '';
+      document.getElementById('channelEditHomepage').value = '';
+      document.getElementById('channelEditLogo').value = '';
+      document.getElementById('channelEditActive').checked = true;
+      document.getElementById('channelEditModal').classList.add('active');
+    }
+
+    function editChannel(slug) {
+      const c = broadcastChannelsCache.find(x => x.slug === slug);
+      if (!c) return;
+      currentChannelSlug = slug;
+      document.getElementById('channelEditTitle').textContent = `Edit ${c.name}`;
+      document.getElementById('channelEditSlug').value = c.slug;
+      document.getElementById('channelEditSlug').disabled = true;
+      document.getElementById('channelEditName').value = c.name;
+      document.getElementById('channelEditHomepage').value = c.homepageUrl || '';
+      document.getElementById('channelEditLogo').value = c.logoUrl || '';
+      document.getElementById('channelEditActive').checked = c.isActive;
+      document.getElementById('channelEditModal').classList.add('active');
+    }
+
+    function closeChannelEditModal() {
+      document.getElementById('channelEditModal').classList.remove('active');
+      currentChannelSlug = null;
+    }
+
+    async function saveChannelEdit() {
+      const body = {
+        name: document.getElementById('channelEditName').value.trim(),
+        homepageUrl: document.getElementById('channelEditHomepage').value.trim() || null,
+        logoUrl: document.getElementById('channelEditLogo').value.trim() || null,
+        isActive: document.getElementById('channelEditActive').checked,
+      };
+      try {
+        if (currentChannelSlug) {
+          // Update by id — need to find the channel first.
+          const c = broadcastChannelsCache.find(x => x.slug === currentChannelSlug);
+          const res = await authFetch(`${API_BASE}/admin/broadcast-channels/${c.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        } else {
+          const slug = document.getElementById('channelEditSlug').value.trim();
+          if (!slug || !body.name) { alert('Slug and name required.'); return; }
+          const res = await authFetch(`${API_BASE}/admin/broadcast-channels`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug, ...body }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(`Save failed: ${err.error || res.status}`);
+            return;
+          }
+        }
+        closeChannelEditModal();
+        await loadBroadcastChannels();
+      } catch (err) {
+        alert(`Save failed: ${err.message}`);
+      }
+    }
+
+    // ── Promotion Defaults ──
+    async function loadPromotionDefaults() {
+      const promo = document.getElementById('defaultsPromotionFilter').value;
+      const url = promo
+        ? `${API_BASE}/admin/broadcast-defaults?promotion=${encodeURIComponent(promo)}`
+        : `${API_BASE}/admin/broadcast-defaults`;
+      try {
+        const res = await authFetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        renderPromotionDefaults(data.defaults || []);
+        // Populate the promo filter on first load (idempotent).
+        const select = document.getElementById('defaultsPromotionFilter');
+        if (select.options.length <= 1) {
+          const promos = [...new Set((data.defaults || []).map(d => d.promotion))].sort();
+          for (const p of promos) {
+            const opt = document.createElement('option');
+            opt.value = p; opt.textContent = p;
+            select.appendChild(opt);
+          }
+        }
+      } catch (err) {
+        document.getElementById('defaultsList').innerHTML = '<div class="empty-state"><div class="empty-state-text">Failed to load defaults</div></div>';
+      }
+    }
+
+    function renderPromotionDefaults(rows) {
+      const container = document.getElementById('defaultsList');
+      if (rows.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">No defaults found</div></div>';
+        return;
+      }
+      const html = rows.map(r => `
+        <tr style="border-bottom: 1px solid var(--border-color); ${r.isActive ? '' : 'opacity: 0.5;'}">
+          <td style="padding: 8px;">${escapeHtml(r.promotion)}</td>
+          <td style="padding: 8px;"><span style="background: var(--bg-input); padding: 2px 6px; border-radius: 3px; font-size: 0.7rem;">${r.region}</span></td>
+          <td style="padding: 8px;">${escapeHtml(r.channel.name)}</td>
+          <td style="padding: 8px;"><span style="${tierBadgeStyle(r.tier)}">${r.tier}</span></td>
+          <td style="padding: 8px; font-size: 0.75rem; color: var(--text-secondary);">${relativeDate(r.lastDiscoveryAt)}</td>
+          <td style="padding: 8px; font-size: 0.75rem; color: var(--text-muted); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(r.note || '')}">${escapeHtml(r.note || '')}</td>
+          <td style="padding: 8px; text-align: right;"><button class="btn btn-sm" onclick='editDefault(${JSON.stringify(r).replace(/'/g, "&#39;")})'>Edit</button></td>
+        </tr>
+      `).join('');
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+          <thead><tr style="border-bottom: 2px solid var(--border-color); text-align: left; color: var(--text-secondary); font-size: 0.75rem;">
+            <th style="padding: 8px;">Promotion</th><th style="padding: 8px;">Region</th><th style="padding: 8px;">Channel</th><th style="padding: 8px;">Tier</th><th style="padding: 8px;">Verified</th><th style="padding: 8px;">Note</th><th></th>
+          </tr></thead>
+          <tbody>${html}</tbody>
+        </table>`;
+    }
+
+    function populateChannelSelect(selectEl, currentSlug) {
+      selectEl.innerHTML = '';
+      const sorted = [...broadcastChannelsCache].filter(c => c.isActive).sort((a, b) => a.name.localeCompare(b.name));
+      for (const c of sorted) {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.dataset.slug = c.slug;
+        opt.textContent = `${c.name}  (${c.slug})`;
+        if (currentSlug && c.slug === currentSlug) opt.selected = true;
+        selectEl.appendChild(opt);
+      }
+    }
+
+    function openDefaultModal() {
+      currentDefaultId = null;
+      document.getElementById('defaultEditTitle').textContent = 'New Default';
+      document.getElementById('defaultEditPromotion').value = '';
+      document.getElementById('defaultEditPromotion').disabled = false;
+      document.getElementById('defaultEditRegion').value = 'US';
+      document.getElementById('defaultEditRegion').disabled = false;
+      populateChannelSelect(document.getElementById('defaultEditChannel'), null);
+      document.getElementById('defaultEditTier').value = 'SUBSCRIPTION';
+      document.getElementById('defaultEditNote').value = '';
+      document.getElementById('defaultEditDeleteBtn').style.display = 'none';
+      document.getElementById('defaultEditModal').classList.add('active');
+    }
+
+    function editDefault(row) {
+      currentDefaultId = row.id;
+      document.getElementById('defaultEditTitle').textContent = `${row.promotion} / ${row.region}`;
+      document.getElementById('defaultEditPromotion').value = row.promotion;
+      document.getElementById('defaultEditPromotion').disabled = true;
+      document.getElementById('defaultEditRegion').value = row.region;
+      document.getElementById('defaultEditRegion').disabled = true;
+      populateChannelSelect(document.getElementById('defaultEditChannel'), row.channel.slug);
+      document.getElementById('defaultEditTier').value = row.tier;
+      document.getElementById('defaultEditNote').value = row.note || '';
+      document.getElementById('defaultEditDeleteBtn').style.display = 'inline-block';
+      document.getElementById('defaultEditModal').classList.add('active');
+    }
+
+    function closeDefaultEditModal() {
+      document.getElementById('defaultEditModal').classList.remove('active');
+      currentDefaultId = null;
+    }
+
+    async function saveDefaultEdit() {
+      const channelSelect = document.getElementById('defaultEditChannel');
+      const channelId = channelSelect.value;
+      const tier = document.getElementById('defaultEditTier').value;
+      const note = document.getElementById('defaultEditNote').value.trim() || null;
+      try {
+        if (currentDefaultId) {
+          const res = await authFetch(`${API_BASE}/admin/broadcast-defaults/${currentDefaultId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channelId, tier, note }),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        } else {
+          const promotion = document.getElementById('defaultEditPromotion').value.trim();
+          const region = document.getElementById('defaultEditRegion').value;
+          if (!promotion) { alert('Promotion required.'); return; }
+          const res = await authFetch(`${API_BASE}/admin/broadcast-defaults`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ promotion, region, channelId, tier, note }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(`Save failed: ${err.error || res.status}`);
+            return;
+          }
+        }
+        closeDefaultEditModal();
+        await loadPromotionDefaults();
+      } catch (err) {
+        alert(`Save failed: ${err.message}`);
+      }
+    }
+
+    async function deleteCurrentDefault() {
+      if (!currentDefaultId) return;
+      if (!confirm('Delete this default? Cannot be undone.')) return;
+      try {
+        const res = await authFetch(`${API_BASE}/admin/broadcast-defaults/${currentDefaultId}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        closeDefaultEditModal();
+        await loadPromotionDefaults();
+      } catch (err) {
+        alert(`Delete failed: ${err.message}`);
+      }
+    }
+
+    // ── Discovery Inbox ──
+    async function loadDiscoveryInbox() {
+      const status = document.getElementById('discoveryStatusFilter').value;
+      const url = status === 'ALL'
+        ? `${API_BASE}/admin/broadcast-discoveries?status=ALL`
+        : `${API_BASE}/admin/broadcast-discoveries?status=${status}`;
+      try {
+        const res = await authFetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        renderDiscoveryInbox(data.discoveries || [], data.counts || {});
+      } catch (err) {
+        document.getElementById('discoveryList').innerHTML = '<div class="empty-state"><div class="empty-state-text">Failed to load inbox</div></div>';
+      }
+    }
+
+    function renderDiscoveryInbox(rows, counts) {
+      // Header counts
+      const c = counts || {};
+      const total = Object.values(c).reduce((a, b) => a + b, 0);
+      document.getElementById('discoveryStatusCounts').textContent =
+        total === 0 ? '' : `(${c.PENDING || 0} pending · ${c.APPLIED || 0} applied · ${c.REJECTED || 0} rejected · ${c.DUPLICATE || 0} dupe)`;
+      const badge = document.getElementById('discoveryBadge');
+      const pending = c.PENDING || 0;
+      if (pending > 0) {
+        badge.textContent = pending;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+
+      const container = document.getElementById('discoveryList');
+      if (rows.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">Nothing in this bucket.</div></div>';
+        return;
+      }
+      const cards = rows.map(r => {
+        const isPending = r.status === 'PENDING';
+        const slugInfo = r.channelSlug
+          ? `<code style="background: var(--bg-input); padding: 1px 5px; border-radius: 3px; font-size: 0.75rem;">${escapeHtml(r.channelSlug)}</code>`
+          : `<span style="color: var(--accent-orange); font-size: 0.75rem;">⚠ no matching channel</span>`;
+        const actions = isPending ? `
+          <button class="btn btn-sm btn-success" onclick='openDiscoveryApply(${JSON.stringify(r).replace(/'/g, "&#39;")})'>Apply</button>
+          <button class="btn btn-sm btn-secondary" onclick="markDiscoveryDuplicate('${r.id}')">Duplicate</button>
+          <button class="btn btn-sm btn-danger" onclick="rejectDiscovery('${r.id}')">Reject</button>
+        ` : `
+          <span style="color: var(--text-secondary); font-size: 0.75rem;">${escapeHtml(r.status)} · ${escapeHtml(r.reviewNote || '')}</span>
+        `;
+        return `
+          <div style="background: var(--bg-input); padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid ${r.confidence >= 0.9 ? '#16a34a' : r.confidence >= 0.7 ? '#eab308' : '#f97316'};">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap;">
+              ${changeTypeBadge(r.changeType)}
+              ${confidenceBadge(r.confidence)}
+              <strong>${escapeHtml(r.promotion)}</strong>
+              <span style="background: var(--bg-card); padding: 2px 6px; border-radius: 3px; font-size: 0.75rem;">${r.region}</span>
+              <span>→</span>
+              <strong>${escapeHtml(r.channelNameRaw)}</strong>
+              ${slugInfo}
+              ${r.tier ? `<span style="${tierBadgeStyle(r.tier)}">${r.tier}</span>` : ''}
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px; line-height: 1.4;">"${escapeHtml(r.snippet)}"</div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+              <a href="${escapeHtml(r.sourceUrl)}" target="_blank" style="color: var(--accent-blue); font-size: 0.75rem; word-break: break-all;">${escapeHtml(r.sourceUrl.slice(0, 80))}${r.sourceUrl.length > 80 ? '…' : ''}</a>
+              <div style="display: flex; gap: 6px;">${actions}</div>
+            </div>
+          </div>`;
+      }).join('');
+      container.innerHTML = cards;
+    }
+
+    function openDiscoveryApply(row) {
+      currentDiscoveryId = row.id;
+      document.getElementById('discoveryApplyContext').innerHTML = `
+        <div><strong>${escapeHtml(row.promotion)}</strong> · ${row.region} · raw: "${escapeHtml(row.channelNameRaw)}"</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">"${escapeHtml(row.snippet)}"</div>
+        <div style="font-size: 0.75rem; margin-top: 4px;"><a href="${escapeHtml(row.sourceUrl)}" target="_blank" style="color: var(--accent-blue);">${escapeHtml(row.sourceUrl.slice(0, 60))}…</a></div>
+      `;
+      populateChannelSelect(document.getElementById('discoveryApplyChannel'), row.channelSlug);
+      document.getElementById('discoveryApplyTier').value = row.tier || 'SUBSCRIPTION';
+      document.getElementById('discoveryApplyNote').value = '';
+      document.getElementById('discoveryApplyModal').classList.add('active');
+    }
+
+    function closeDiscoveryApplyModal() {
+      document.getElementById('discoveryApplyModal').classList.remove('active');
+      currentDiscoveryId = null;
+    }
+
+    async function confirmDiscoveryApply() {
+      if (!currentDiscoveryId) return;
+      const channelSelect = document.getElementById('discoveryApplyChannel');
+      const channelSlug = channelSelect.options[channelSelect.selectedIndex]?.dataset.slug;
+      const tier = document.getElementById('discoveryApplyTier').value;
+      const reviewNote = document.getElementById('discoveryApplyNote').value.trim() || undefined;
+      try {
+        const res = await authFetch(`${API_BASE}/admin/broadcast-discoveries/${currentDiscoveryId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'APPLY', channelSlug, tier, reviewNote }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          alert(`Apply failed: ${err.error || res.status}`);
+          return;
+        }
+        closeDiscoveryApplyModal();
+        await loadDiscoveryInbox();
+        await loadPromotionDefaults();
+      } catch (err) {
+        alert(`Apply failed: ${err.message}`);
+      }
+    }
+
+    async function rejectDiscovery(id) {
+      const note = prompt('Reason for rejecting (optional):') || undefined;
+      try {
+        await authFetch(`${API_BASE}/admin/broadcast-discoveries/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'REJECT', reviewNote: note }),
+        });
+        await loadDiscoveryInbox();
+      } catch (err) { alert(`Reject failed: ${err.message}`); }
+    }
+
+    async function markDiscoveryDuplicate(id) {
+      try {
+        await authFetch(`${API_BASE}/admin/broadcast-discoveries/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'DUPLICATE' }),
+        });
+        await loadDiscoveryInbox();
+      } catch (err) { alert(`Mark dup failed: ${err.message}`); }
+    }
+
+    async function runDiscoveryNow() {
+      if (!confirm('Trigger a discovery run now? Uses Brave + Claude API budget.')) return;
+      try {
+        const res = await authFetch(`${API_BASE}/admin/broadcast-discoveries/run`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        alert('Discovery run started in the background. Refresh in 1-2 min to see new findings.');
+      } catch (err) {
+        alert(`Run failed: ${err.message}`);
+      }
     }
 
     // ============================================
