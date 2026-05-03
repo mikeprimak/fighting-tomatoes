@@ -38,6 +38,10 @@ model User {
   isEmailVerified   Boolean   @default(false)
   wantsEmails       Boolean   @default(true)
 
+  // How-to-watch region preference (null = use IP detection)
+  // "US" | "CA" | "GB" | "AU" | "NZ" | "EU"
+  broadcastRegion   String?
+
   // Push Notifications
   pushToken                    String?
   notificationsEnabled         Boolean   @default(true)
@@ -292,10 +296,160 @@ model Event {
   // Relations
   fights            Fight[]
   sentPreEventNotifications SentPreEventNotification[]
+  broadcasts        EventBroadcast[]
 
   @@unique([name, date])
   @@unique([ufcUrl])
   @@map("events")
+}
+
+// ============== BROADCASTS / HOW-TO-WATCH ==============
+model BroadcastChannel {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+  name            String
+  logoUrl         String?
+  homepageUrl     String?
+  iosDeepLink     String?
+  androidDeepLink String?
+  webDeepLink     String?
+  affiliateUrl    String?
+  isActive        Boolean  @default(true)
+
+  broadcasts      EventBroadcast[]
+  defaults        PromotionBroadcastDefault[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("broadcast_channels")
+}
+
+model EventBroadcast {
+  id             String   @id @default(uuid())
+
+  eventId        String
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  channelId      String
+  channel        BroadcastChannel @relation(fields: [channelId], references: [id])
+
+  // ISO 3166-1 alpha-2 OR special "EU" bucket: US | CA | GB | AU | NZ | EU
+  region         String
+
+  tier           BroadcastTier
+  eventDeepLink  String?
+  language       String?
+  note           String?
+
+  source         BroadcastSource @default(MANUAL)
+  lastVerifiedAt DateTime?
+
+  // null = whole event. Otherwise: "EARLY_PRELIMS" | "PRELIMS" | "MAIN_CARD".
+  // Used for events where different parts of the card are on different platforms.
+  cardSection    String?
+
+  isActive       Boolean  @default(true)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([eventId, channelId, region])
+  @@index([eventId])
+  @@index([region])
+  @@map("event_broadcasts")
+}
+
+enum BroadcastTier {
+  FREE
+  SUBSCRIPTION
+  PPV
+}
+
+enum BroadcastSource {
+  MANUAL
+  SCRAPED
+  DEFAULT
+}
+
+model PromotionBroadcastDefault {
+  id        String   @id @default(uuid())
+  promotion String
+  region    String
+  channelId String
+  channel   BroadcastChannel @relation(fields: [channelId], references: [id])
+  tier      BroadcastTier
+  note      String?
+  isActive  Boolean  @default(true)
+
+  // Last time the discovery job confirmed this entry against a public source.
+  // null means never auto-verified (pure manual seed).
+  lastDiscoveryAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([promotion, region, channelId])
+  @@index([promotion, region])
+  @@map("promotion_broadcast_defaults")
+}
+
+// One row per broadcaster claim found by the discovery job.
+// Admin reviews via the discoveries inbox and either applies (writes to
+// PromotionBroadcastDefault) or rejects (suppresses re-suggestion).
+model BroadcastDiscovery {
+  id             String   @id @default(uuid())
+
+  // Groups all rows from one job invocation.
+  runId          String
+
+  promotion      String
+  region         String
+  channelSlug    String?  // null when the LLM couldn't map to a known BroadcastChannel
+  channelNameRaw String   // raw text from the source ("Paramount+", "ESPN+", etc.)
+  tier           String?  // FREE | SUBSCRIPTION | PPV — null when unclear
+
+  sourceUrl      String
+  snippet        String   // ~200 char excerpt that grounded the claim
+  confidence     Float    // 0.0–1.0
+
+  changeType     String   // NEW | CONFIRMED | CHANGED
+  status         String   @default("PENDING") // PENDING | APPLIED | REJECTED | DUPLICATE
+
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  reviewNote     String?
+
+  createdAt      DateTime @default(now())
+
+  @@index([status])
+  @@index([promotion, region])
+  @@index([runId])
+  @@map("broadcast_discoveries")
+}
+
+model BroadcastReport {
+  id          String   @id @default(uuid())
+  broadcastId String?
+  eventId     String
+  region      String
+  reportedBy  String?
+  reason      String
+  status      BroadcastReportStatus @default(OPEN)
+  resolution  String?
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+
+  @@index([status])
+  @@index([eventId])
+  @@map("broadcast_reports")
+}
+
+enum BroadcastReportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
 }
 
 // ============== FIGHTS ==============

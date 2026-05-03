@@ -15,6 +15,8 @@ import feedbackRoutes from './feedback';
 import { uploadRoutes } from './upload';
 import { adminRoutes } from './admin';
 import giphyRoutes from './giphy';
+import broadcastsRoutes from './broadcasts';
+import adminBroadcastsRoutes from './adminBroadcasts';
 import { authenticateUser, requireEmailVerification } from '../middleware/auth';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
@@ -2073,6 +2075,10 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Register Giphy proxy routes under /api/giphy prefix
   await fastify.register(giphyRoutes, { prefix: '/api/giphy' });
+
+  // Register broadcasts (how-to-watch) routes under /api prefix
+  await fastify.register(broadcastsRoutes, { prefix: '/api' });
+  await fastify.register(adminBroadcastsRoutes, { prefix: '/api' });
 
   // Register analytics routes under /api prefix - TEMPORARILY DISABLED
   // await fastify.register(async function(fastify) {

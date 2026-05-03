@@ -43,6 +43,7 @@ interface User {
   methodAccuracy?: number;
   points?: number;
   level?: number;
+  broadcastRegion?: 'US' | 'CA' | 'GB' | 'AU' | 'NZ' | 'EU' | null;
 }
 
 interface AuthContextType {

@@ -27,6 +27,7 @@ import { NotificationProvider } from '../store/NotificationContext';
 import { SearchProvider } from '../store/SearchContext';
 import { OrgFilterProvider } from '../store/OrgFilterContext';
 import { SpoilerFreeProvider } from '../store/SpoilerFreeContext';
+import { BroadcastRegionProvider } from '../store/BroadcastRegionContext';
 import { ReviewPromptProvider } from '../store/ReviewPromptContext';
 import { Colors } from '../constants/Colors';
 import { NotificationHandler } from '../components/NotificationHandler';
@@ -109,6 +110,7 @@ function RootLayoutNav() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <BroadcastRegionProvider>
         <SpoilerFreeProvider>
         <VerificationProvider>
           <PredictionAnimationProvider>
@@ -156,6 +158,7 @@ function RootLayoutNav() {
           </PredictionAnimationProvider>
         </VerificationProvider>
         </SpoilerFreeProvider>
+        </BroadcastRegionProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

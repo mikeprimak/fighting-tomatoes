@@ -9,7 +9,7 @@ let refreshPromise: Promise<boolean> | null = null;
 const getApiBaseUrl = () => {
   // TEMPORARY: Use production API for pre-launch testing
   // This ensures email verification links work correctly
-  const USE_PRODUCTION_FOR_TESTING = true;
+  const USE_PRODUCTION_FOR_TESTING = false;
 
   // __DEV__ is true in Expo Go and development builds, false in production/TestFlight builds
   const isDevBuild = typeof __DEV__ !== 'undefined' && __DEV__ === true;
@@ -1634,6 +1634,59 @@ class ApiService {
       body: JSON.stringify({ email }),
     });
   }
+
+  // ==================== HOW-TO-WATCH (BROADCASTS) ====================
+
+  async getEventBroadcasts(eventId: string, region?: string | null): Promise<HowToWatchResponse> {
+    const qs = region ? `?region=${encodeURIComponent(region)}` : '';
+    return this.makeRequest(`/events/${eventId}/broadcasts${qs}`);
+  }
+
+  async setBroadcastRegion(region: BroadcastRegion | null): Promise<{ broadcastRegion: string | null }> {
+    return this.makeRequest('/users/me/broadcast-region', {
+      method: 'PATCH',
+      body: JSON.stringify({ region }),
+    });
+  }
+
+  async reportBroadcast(eventId: string, body: { region: BroadcastRegion; reason: string; broadcastId?: string }): Promise<{ reportId: string }> {
+    return this.makeRequest(`/events/${eventId}/broadcasts/report`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+  }
+}
+
+export type BroadcastRegion = 'US' | 'CA' | 'GB' | 'AU' | 'NZ' | 'EU';
+export type BroadcastTier = 'FREE' | 'SUBSCRIPTION' | 'PPV';
+
+export interface BroadcastChannelLite {
+  slug: string;
+  name: string;
+  logoUrl: string | null;
+  homepageUrl: string | null;
+  affiliateUrl: string | null;
+}
+
+export type CardSection = 'EARLY_PRELIMS' | 'PRELIMS' | 'MAIN_CARD';
+
+export interface BroadcastEntry {
+  id: string;
+  channel: BroadcastChannelLite;
+  tier: BroadcastTier;
+  deepLink: string | null;
+  note: string | null;
+  language: string | null;
+  source: 'MANUAL' | 'SCRAPED' | 'DEFAULT';
+  cardSection: CardSection | null;
+}
+
+export interface HowToWatchResponse {
+  eventId: string;
+  region: BroadcastRegion;
+  detectedFrom: 'query-param' | 'user-pref' | 'ip' | 'fallback';
+  availableRegions: BroadcastRegion[];
+  broadcasts: BroadcastEntry[];
 }
 
 export const apiService = new ApiService();
