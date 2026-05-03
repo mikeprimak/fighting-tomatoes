@@ -701,6 +701,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                 methodAccuracy: { type: 'number' },
                 points: { type: 'integer' },
                 level: { type: 'integer' },
+                broadcastRegion: { type: ['string', 'null'] },
               },
             },
           },
@@ -751,6 +752,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           totalReviews: true,
           points: true,
           level: true,
+          broadcastRegion: true,
           ratings: {
             select: {
               rating: true,

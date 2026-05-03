@@ -1,0 +1,58 @@
+name: Broadcast Discovery
+
+# Weekly job that searches the web for broadcaster updates per active
+# promotion × region and writes findings to the BroadcastDiscovery inbox.
+# Admin reviews via the admin panel and applies/rejects each finding —
+# nothing is auto-applied.
+
+on:
+  schedule:
+    # Mondays 09:00 UTC (off-peak; well after weekend events finish).
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      promotions:
+        description: "Optional comma-separated promotion list (e.g. 'UFC,ONE'). Empty = all active."
+        required: false
+        default: ""
+      regions:
+        description: "Optional comma-separated region list (US,CA,GB,AU,NZ,EU). Empty = all six."
+        required: false
+        default: ""
+      skip_fresh_days:
+        description: "Skip a region if its default was verified within N days (default 14)."
+        required: false
+        default: "14"
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - name: Install
+        run: |
+          pnpm install --frozen-lockfile=false
+          cd packages/backend
+          npx prisma generate
+      - name: Run discovery
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DISCOVERY_PROMOTIONS: ${{ github.event.inputs.promotions }}
+          DISCOVERY_REGIONS: ${{ github.event.inputs.regions }}
+          DISCOVERY_SKIP_FRESH_DAYS: ${{ github.event.inputs.skip_fresh_days }}
+        run: |
+          cd packages/backend
+          npx ts-node --transpile-only scripts/run-broadcast-discovery.ts
+      - name: Report failure
+        if: failure()
+        run: |
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=discovery&org=broadcasts" || true

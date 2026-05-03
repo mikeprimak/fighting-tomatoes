@@ -15,7 +15,7 @@ import { useColorScheme } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
-import { FightDisplayCard, EventBannerCard } from '../../components';
+import { FightDisplayCard, EventBannerCard, HowToWatch } from '../../components';
 import UpcomingFightModal from '../../components/UpcomingFightModal';
 import OrgFilterTabs from '../../components/OrgFilterTabs';
 import { useAuth } from '../../store/AuthContext';
@@ -481,15 +481,34 @@ const LiveEventSection = memo(function LiveEventSection({
         }}
       />
 
+      <View style={styles.howToWatchWrapper}>
+        <HowToWatch eventId={event.id} />
+      </View>
+
       <View style={styles.fightsContainer}>
-        {mainCard.length > 0 && renderCardSection(
-          mainCard, 'MAIN CARD', event.mainStartTime, false, 0
+        {mainCard.length > 0 && (
+          <>
+            <View style={styles.howToWatchWrapper}>
+              <HowToWatch eventId={event.id} section="MAIN_CARD" />
+            </View>
+            {renderCardSection(mainCard, 'MAIN CARD', event.mainStartTime, false, 0)}
+          </>
         )}
-        {prelimCard.length > 0 && renderCardSection(
-          prelimCard, 'PRELIMS', event.prelimStartTime, true, mainCard.length
+        {prelimCard.length > 0 && (
+          <>
+            <View style={styles.howToWatchWrapper}>
+              <HowToWatch eventId={event.id} section="PRELIMS" />
+            </View>
+            {renderCardSection(prelimCard, 'PRELIMS', event.prelimStartTime, true, mainCard.length)}
+          </>
         )}
-        {earlyPrelims.length > 0 && renderCardSection(
-          earlyPrelims, 'EARLY PRELIMS', event.earlyPrelimStartTime, true, mainCard.length + prelimCard.length
+        {earlyPrelims.length > 0 && (
+          <>
+            <View style={styles.howToWatchWrapper}>
+              <HowToWatch eventId={event.id} section="EARLY_PRELIMS" />
+            </View>
+            {renderCardSection(earlyPrelims, 'EARLY PRELIMS', event.earlyPrelimStartTime, true, mainCard.length + prelimCard.length)}
+          </>
         )}
       </View>
     </View>
@@ -523,6 +542,9 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   eventSection: {
     marginBottom: 32,
+  },
+  howToWatchWrapper: {
+    paddingHorizontal: 12,
   },
   fightsContainer: {
     marginTop: 0,

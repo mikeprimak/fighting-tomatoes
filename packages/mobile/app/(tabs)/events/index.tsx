@@ -17,7 +17,8 @@ import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
-import { FightDisplayCard, EventBannerCard, SearchBar } from '../../../components';
+import { FightDisplayCard, EventBannerCard, SearchBar, HowToWatch } from '../../../components';
+import { useEventBroadcasts } from '../../../components/HowToWatch';
 import OrgFilterTabs from '../../../components/OrgFilterTabs';
 import UpcomingFightModal from '../../../components/UpcomingFightModal';
 import { useAuth } from '../../../store/AuthContext';
@@ -474,6 +475,13 @@ const EventSection = memo(function EventSection({
 
   const styles = createStyles(colors);
 
+  // Pull broadcasts cache so we know which sections will get an absorbed-title
+  // HowToWatch card (per-section data) vs which need the title rendered in the
+  // section header.
+  const { data: broadcastsData } = useEventBroadcasts(event.id);
+  const sectionHasBroadcast = (s: 'MAIN_CARD' | 'PRELIMS' | 'EARLY_PRELIMS') =>
+    !!broadcastsData?.broadcasts.some((b: any) => b.cardSection === s);
+
   // Determine earliest start time for countdown
   const getEarliestStartTime = () => {
     if (event.earlyPrelimStartTime) return event.earlyPrelimStartTime;
@@ -517,11 +525,24 @@ const EventSection = memo(function EventSection({
         }}
       />
 
+      {/* How to Watch */}
+      <View style={styles.howToWatchWrapper}>
+        <HowToWatch eventId={event.id} collapsedByDefault />
+      </View>
+
       {/* Fights List */}
       <View style={styles.fightsContainer}>
           {/* Main Card */}
           {mainCard.length > 0 && (
             <View style={styles.cardSection}>
+              <View style={styles.howToWatchWrapper}>
+                <HowToWatch
+                  eventId={event.id}
+                  section="MAIN_CARD"
+                  label="MAIN CARD"
+                  time={event.mainStartTime ? formatTime(event.mainStartTime) : undefined}
+                />
+              </View>
               <View style={styles.sectionHeader}>
                 {/* Left Column Header - HYPE */}
                 <View style={styles.columnHeaders}>
@@ -529,19 +550,20 @@ const EventSection = memo(function EventSection({
                     HYPE
                   </Text>
                 </View>
-
-                {/* Center - Title and Time */}
-                <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
-                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                    MAIN CARD
-                  </Text>
-                  {event.mainStartTime && (
-                    <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
-                      {formatTime(event.mainStartTime)}
+                {sectionHasBroadcast('MAIN_CARD') ? (
+                  <View style={styles.sectionHeaderCenter} />
+                ) : (
+                  <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                      MAIN CARD
                     </Text>
-                  )}
-                </View>
-
+                    {event.mainStartTime && (
+                      <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
+                        {formatTime(event.mainStartTime)}
+                      </Text>
+                    )}
+                  </View>
+                )}
                 {/* Right Column Header - MY HYPE */}
                 <View style={styles.columnHeadersRight}>
                   <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>
@@ -572,19 +594,28 @@ const EventSection = memo(function EventSection({
           {/* Preliminary Card */}
           {prelimCard.length > 0 && (
             <View style={styles.cardSection}>
-              <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
-                {/* Center - Title and Time on same line */}
-                <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
-                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                    PRELIMS
-                  </Text>
-                  {event.prelimStartTime && (
-                    <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
-                      {formatTime(event.prelimStartTime)}
-                    </Text>
-                  )}
-                </View>
+              <View style={styles.howToWatchWrapper}>
+                <HowToWatch
+                  eventId={event.id}
+                  section="PRELIMS"
+                  label="PRELIMS"
+                  time={event.prelimStartTime ? formatTime(event.prelimStartTime) : undefined}
+                />
               </View>
+              {!sectionHasBroadcast('PRELIMS') && (
+                <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
+                  <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                      PRELIMS
+                    </Text>
+                    {event.prelimStartTime && (
+                      <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
+                        {formatTime(event.prelimStartTime)}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              )}
               {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                 <FightDisplayCard
                   key={fight.id}
@@ -605,19 +636,28 @@ const EventSection = memo(function EventSection({
           {/* Early Prelims */}
           {earlyPrelims.length > 0 && (
             <View style={styles.cardSection}>
-              <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
-                {/* Center - Title and Time on same line */}
-                <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
-                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                    EARLY PRELIMS
-                  </Text>
-                  {event.earlyPrelimStartTime && (
-                    <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
-                      {formatTime(event.earlyPrelimStartTime)}
-                    </Text>
-                  )}
-                </View>
+              <View style={styles.howToWatchWrapper}>
+                <HowToWatch
+                  eventId={event.id}
+                  section="EARLY_PRELIMS"
+                  label="EARLY PRELIMS"
+                  time={event.earlyPrelimStartTime ? formatTime(event.earlyPrelimStartTime) : undefined}
+                />
               </View>
+              {!sectionHasBroadcast('EARLY_PRELIMS') && (
+                <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
+                  <View style={[styles.sectionHeaderCenter, { flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center' }]}>
+                    <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
+                      EARLY PRELIMS
+                    </Text>
+                    {event.earlyPrelimStartTime && (
+                      <Text style={[styles.sectionTime, { color: colors.textSecondary }]}>
+                        {formatTime(event.earlyPrelimStartTime)}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              )}
               {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
                 <FightDisplayCard
                   key={fight.id}
@@ -758,6 +798,9 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   fightsContainer: {
     marginTop: 0,
+  },
+  howToWatchWrapper: {
+    paddingHorizontal: 12,
   },
   cardSection: {
     marginTop: 0,

@@ -20,8 +20,10 @@ import { useAuth } from '../store/AuthContext';
 import { useSpoilerFree } from '../store/SpoilerFreeContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from '../components/CustomAlert';
-import { api } from '../services/api';
+import { api, type BroadcastRegion } from '../services/api';
 import { FontAwesome } from '@expo/vector-icons';
+import { RegionPickerSheet, REGION_FLAGS, REGION_LABELS } from '../components/RegionPickerSheet';
+import { useBroadcastRegion } from '../store/BroadcastRegionContext';
 
 export default function EditProfileScreen() {
   const { user, refreshUserData, logout } = useAuth();
@@ -33,6 +35,8 @@ export default function EditProfileScreen() {
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
+  const { region: broadcastRegion, setRegion: setBroadcastRegion } = useBroadcastRegion();
+  const [regionPickerOpen, setRegionPickerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingDisplayName, setIsCheckingDisplayName] = useState(false);
   const [displayNameAvailable, setDisplayNameAvailable] = useState<boolean | null>(null);
@@ -337,7 +341,41 @@ export default function EditProfileScreen() {
               thumbColor={spoilerFreeMode ? '#FFFFFF' : '#f4f3f4'}
             />
           </View>
+
+          <TouchableOpacity
+            style={styles.toggleRow}
+            onPress={() => setRegionPickerOpen(true)}
+            accessibilityRole="button"
+          >
+            <View style={{ flex: 1, marginRight: 12 }}>
+              <Text style={[styles.toggleLabel, { color: colors.text }]}>Watch Region</Text>
+              <Text style={[styles.helperText, { color: colors.textSecondary, marginTop: 2 }]}>
+                Used to pick the right broadcaster on event pages.
+              </Text>
+            </View>
+            <Text style={{ color: colors.text, fontSize: 15, fontWeight: '600' }}>
+              {broadcastRegion
+                ? `${REGION_FLAGS[broadcastRegion]} ${broadcastRegion}`
+                : 'Auto-detect'}
+            </Text>
+          </TouchableOpacity>
         </View>
+
+        <RegionPickerSheet
+          visible={regionPickerOpen}
+          currentRegion={broadcastRegion ?? 'US'}
+          showAutoDetect
+          onClose={() => setRegionPickerOpen(false)}
+          onSelect={async (r) => {
+            setRegionPickerOpen(false);
+            try {
+              await setBroadcastRegion(r);
+            } catch (e) {
+              console.warn('[EditProfile] failed to save region:', e);
+              showError('Could not save region. Try again.');
+            }
+          }}
+        />
 
         {/* Danger Zone */}
         <View style={[styles.section, styles.dangerSection]}>

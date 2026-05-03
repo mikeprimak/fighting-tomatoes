@@ -26,3 +26,5 @@ export { default as RatingDistributionChart } from './RatingDistributionChart';
 export { default as PredictionBarChart } from './PredictionBarChart';
 export { default as SectionContainer } from './SectionContainer';
 export { default as SearchBar } from './SearchBar';
+export { default as HowToWatch } from './HowToWatch';
+export { RegionPickerSheet, REGION_FLAGS, REGION_LABELS } from './RegionPickerSheet';
