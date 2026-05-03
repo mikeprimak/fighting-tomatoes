@@ -41,9 +41,9 @@ const VPS_SCRAPER_URL = process.env.VPS_SCRAPER_URL || ''; // e.g. http://178.15
 const VPS_SCRAPER_API_KEY = process.env.VPS_SCRAPER_API_KEY || '';
 
 // Scraper types that have a VPS handler in scraperService.ts scrapeOnce().
-// Anything not in this list (e.g. pfl, raf) must dispatch via GitHub Actions
+// Anything not in this list (e.g. raf) must dispatch via GitHub Actions
 // even when the VPS is configured — VPS would silently no-op them otherwise.
-const VPS_SUPPORTED_SCRAPERS = ['ufc', 'oktagon', 'bkfc', 'onefc'];
+const VPS_SUPPORTED_SCRAPERS = ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl'];
 
 /**
  * Trigger the VPS scraper service to start tracking an event.
