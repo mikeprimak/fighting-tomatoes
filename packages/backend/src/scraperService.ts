@@ -33,6 +33,7 @@ import * as fs from 'fs/promises';
 import OneFCLiveScraper from './services/oneFCLiveScraper';
 import OktagonLiveScraper from './services/oktagonLiveScraper';
 import { TapologyLiveScraper } from './services/tapologyLiveScraper';
+import { PFLLiveScraper } from './services/pflLiveScraper';
 
 // Parser imports
 import { parseLiveEventData, getEventStatus, autoCompleteEvent } from './services/ufcLiveParser';
@@ -40,6 +41,7 @@ import { parseBKFCLiveData, autoCompleteBKFCEvent } from './services/bkfcLivePar
 import { parseOneFCLiveData, autoCompleteOneFCEvent } from './services/oneFCLiveParser';
 import { parseOktagonLiveData, autoCompleteOktagonEvent } from './services/oktagonLiveParser';
 import { parseTapologyData } from './services/tapologyLiveParser';
+import { parsePFLLiveData, autoCompletePFLEvent } from './services/pflLiveParser';
 import type { BKFCEventData } from './services/bkfcLiveScraper';
 
 const execAsync = promisify(exec);
@@ -258,6 +260,29 @@ async function scrapeOktagonOnce(tracker: ActiveTracker): Promise<void> {
 }
 
 /**
+ * Run one PFL scrape iteration.
+ * Uses PFLLiveScraper (Puppeteer against pflmma.com).
+ */
+async function scrapePFLOnce(tracker: ActiveTracker): Promise<void> {
+  const scraper = new PFLLiveScraper(tracker.url);
+  try {
+    const scrapedData = await scraper.scrape();
+    console.log(`[PFL] ${scrapedData.fights.length} fights, status: ${scrapedData.status}`);
+
+    const result = await parsePFLLiveData(scrapedData, tracker.eventId);
+    console.log(`[PFL] Updated: ${result.fightsUpdated}, cancelled: ${result.cancelledCount}`);
+
+    const completed = await autoCompletePFLEvent(tracker.eventId);
+    if (completed) {
+      console.log('[PFL] Event auto-completed');
+      stopTracker(tracker.eventId);
+    }
+  } finally {
+    await scraper.stop();
+  }
+}
+
+/**
  * Run one Tapology scrape iteration.
  * Uses TapologyLiveScraper (cheerio/HTTP, no browser).
  */
@@ -310,6 +335,7 @@ async function scrapeOnce(tracker: ActiveTracker): Promise<void> {
       case 'bkfc': await scrapeBKFCOnce(tracker); break;
       case 'onefc': await scrapeOneFCOnce(tracker); break;
       case 'oktagon': await scrapeOktagonOnce(tracker); break;
+      case 'pfl': await scrapePFLOnce(tracker); break;
       case 'tapology': await scrapeTapologyOnce(tracker); break;
       default:
         console.warn(`[SCRAPER] Unknown scraper type: ${tracker.scraperType}`);
@@ -533,7 +559,7 @@ async function autoDiscoverEvents(): Promise<{ started: string[]; stopped: strin
   const liveEvents = await prisma.event.findMany({
     where: {
       eventStatus: 'LIVE',
-      scraperType: { in: ['ufc', 'oktagon', 'bkfc', 'onefc'] },
+      scraperType: { in: ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl'] },
     },
     select: {
       id: true,
