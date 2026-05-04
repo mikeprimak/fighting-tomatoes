@@ -436,12 +436,22 @@ async function main() {
 
       const eventData = await scrapeEventPage(browser, discovered.eventUrl);
 
-      // Parse the date
-      if (eventData.dateText) {
-        const parsedDate = parseTapologyDate(eventData.dateText);
+      // Parse the date — try the event page first, then fall back to the
+      // listing page's date text. The listing regex permits a missing year,
+      // so prefer it last (parseTapologyDate requires a 4-digit year and
+      // returns null otherwise, leaving eventDate null for the parser to
+      // skip).
+      const candidateDateTexts = [eventData.dateText, discovered.dateText].filter(Boolean);
+      for (const candidate of candidateDateTexts) {
+        const parsedDate = parseTapologyDate(candidate);
         if (parsedDate) {
           eventData.eventDate = parsedDate.toISOString();
+          if (!eventData.dateText) eventData.dateText = candidate;
+          break;
         }
+      }
+      if (!eventData.eventDate) {
+        console.warn(`   ⚠ Could not parse date for ${discovered.eventName} (event-page="${eventData.dateText}", listing="${discovered.dateText}"). Parser will skip this event.`);
       }
 
       // Build event slug from URL
