@@ -167,13 +167,15 @@ function parseRecord(record: string | null | undefined): { wins: number; losses:
 }
 
 /**
- * Parse ISO date string to Date object
+ * Parse ISO date string to Date object. Returns null if the string is missing
+ * or unparseable — callers must skip the event rather than fabricate a date.
+ * (Previously fell back to 2099-01-01, which silently corrupted records when
+ * Tapology's date extraction failed.)
  */
-function parseZuffaDate(dateStr: string | null): Date {
-  if (!dateStr) {
-    return new Date('2099-01-01');
-  }
-  return new Date(dateStr);
+function parseZuffaDate(dateStr: string | null): Date | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 // ============== PARSER FUNCTIONS ==============
@@ -270,6 +272,10 @@ async function importZuffaEvents(
 
   for (const eventData of eventsData.events) {
     const eventDate = parseZuffaDate(eventData.eventDate);
+    if (!eventDate) {
+      console.warn(`[ZuffaBoxing] ⚠️ Skipping "${eventData.eventName}" — no valid date scraped (eventDate=${eventData.eventDate}, dateText="${eventData.dateText}", url=${eventData.eventUrl}). Investigate the Tapology page and re-run the scraper.`);
+      continue;
+    }
     // Parse event start time (Tapology defaults to ET)
     const mainStartTime = eventTimeToUTC(eventDate, eventData.eventStartTime, 'America/New_York');
     if (!mainStartTime) {
