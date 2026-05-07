@@ -66,7 +66,7 @@ async function scrapeEventsList(browser) {
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
 
   try {
-    await page.goto(TAPOLOGY_PROMOTION_URL, { waitUntil: 'networkidle2', timeout: 60000 });
+    await page.goto(TAPOLOGY_PROMOTION_URL, { waitUntil: 'networkidle2', timeout: 120000 });
     await page.waitForSelector('a[href*="/fightcenter/events/"]', { timeout: 15000 });
 
     const events = await page.evaluate(() => {

@@ -96,7 +96,7 @@ async function scrapeEventsList(browser) {
   try {
     await page.goto(TAPOLOGY_PROMOTION_URL, {
       waitUntil: 'networkidle2',
-      timeout: 60000
+      timeout: 120000
     });
 
     // Wait for any event link to appear on the page
