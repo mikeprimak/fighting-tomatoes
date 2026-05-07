@@ -414,9 +414,13 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       // the earliest start (prelims/free fights).
       let eventStartTime = null;
 
-      // Try 1: Get time from visible date display elements (most reliable — shows event start/prelims)
-      // BKFC uses div.text-color-gold and <p> elements with "Month DD, YYYY H:MM PM TZ"
+      // Try 1: Get time from visible date display elements (most reliable — shows event start/prelims).
+      // The canonical "Month DD, YYYY H:MM PM" string lives in the textContent of
+      // [data-event-date-est] — the EST/EDT-rendered display BKFC uses on every event page.
+      // (The attribute itself is empty; the value is in the inner text.) Other selectors
+      // are kept as legacy fallbacks for older page layouts.
       const dateDisplaySelectors = [
+        '[data-event-date-est]',
         'div.text-color-gold',
         'p',
         '.event-date',

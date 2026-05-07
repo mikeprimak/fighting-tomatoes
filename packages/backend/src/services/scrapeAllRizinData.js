@@ -59,7 +59,7 @@ async function scrapeEventsList(browser) {
 
   await page.goto(RIZIN_ORG_URL, {
     waitUntil: 'networkidle2',
-    timeout: 60000
+    timeout: 120000
   });
 
   // Wait for event content to load
