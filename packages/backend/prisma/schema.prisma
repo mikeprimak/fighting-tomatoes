@@ -359,7 +359,7 @@ model EventBroadcast {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  @@unique([eventId, channelId, region])
+  @@unique([eventId, channelId, region, cardSection], map: "event_broadcasts_event_channel_region_section_key")
   @@index([eventId])
   @@index([region])
   @@map("event_broadcasts")
