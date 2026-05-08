@@ -7,6 +7,11 @@ import { stripDiacritics } from '../utils/fighterMatcher';
 import { eventTimeToUTC } from '../utils/timezone';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 import { upsertFightSwapAware } from '../utils/fightUpsert';
+import {
+  CANCELLATION_STRIKE_THRESHOLD,
+  MIN_SCRAPED_EVENTS_FOR_CANCEL,
+  decideStrike,
+} from './cancellationGuards';
 
 const prisma = new PrismaClient();
 
@@ -311,6 +316,12 @@ async function importPFLEvents(
   }
   console.log(`  📋 ${uniqueEvents.size} unique events (${eventsData.events.length - uniqueEvents.size} duplicates removed)`);
 
+  // Global cancellation sanity gate: skip ALL cancellation passes if scrape returned almost nothing.
+  const scrapeIsSane = uniqueEvents.size >= MIN_SCRAPED_EVENTS_FOR_CANCEL;
+  if (!scrapeIsSane) {
+    console.log(`  ⚠️  Scrape returned only ${uniqueEvents.size} events (< ${MIN_SCRAPED_EVENTS_FOR_CANCEL}). Skipping ALL cancellation passes — treating scrape as broken.`);
+  }
+
   for (const [eventUrl, eventData] of Array.from(uniqueEvents.entries())) {
     // Parse date
     const eventDate = parsePFLDate(eventData.eventDate);
@@ -372,6 +383,7 @@ async function importPFLEvents(
           prelimStartTime: prelimStartTime,
           earlyPrelimStartTime: earlyPrelimStartTime,
           scraperType: 'pfl',
+          missingScrapeCount: 0, // event present in this scrape — clear strike counter
           ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
         }
       });
@@ -379,7 +391,7 @@ async function importPFLEvents(
         console.log(`    ✅ Un-cancelled event (reappeared on source): ${eventData.eventName}`);
         await prisma.fight.updateMany({
           where: { eventId: event.id, fightStatus: 'CANCELLED' },
-          data: { fightStatus: 'UPCOMING' },
+          data: { fightStatus: 'UPCOMING', missingScrapeCount: 0 },
         });
       }
     } else {
@@ -527,6 +539,7 @@ async function importPFLEvents(
 
       let cancelledCount = 0;
       let unCancelledCount = 0;
+      let strikeCount = 0;
 
       // Cancellation guards. Once an event has gone LIVE/COMPLETED the live
       // tracker owns the fight list — daily scrapers must not cancel.
@@ -536,7 +549,7 @@ async function importPFLEvents(
       const cancellationSafetyFloor = Math.max(2, Math.floor(existingDbFights.length * 0.75));
       const scrapeLooksComplete = fights.length >= cancellationSafetyFloor;
       const shouldCancelMissing =
-        !eventInProgress && (existingDbFights.length === 0 || scrapeLooksComplete);
+        scrapeIsSane && !eventInProgress && (existingDbFights.length === 0 || scrapeLooksComplete);
 
       if (eventInProgress) {
         console.log(`    ⏭️  Skipping cancellation (event is ${event.eventStatus} — live tracker owns this).`);
@@ -554,30 +567,29 @@ async function importPFLEvents(
 
         // Check if this exact matchup still exists in scraped data
         if (!scrapedFightPairs.has(dbFightPairKey)) {
-          // Matchup no longer exists - check if either fighter was rebooked
+          // Two-strike rule: must be missing on consecutive scrapes before cancel.
+          const { newCount, shouldCancel } = decideStrike(dbFight.missingScrapeCount);
           const fighter1Rebooked = scrapedFighterNames.has(fighter1Name);
           const fighter2Rebooked = scrapedFighterNames.has(fighter2Name);
+          const reason = (fighter1Rebooked || fighter2Rebooked)
+            ? 'fighter rebooked'
+            : 'not in scraped data';
+          const matchupLabel = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`;
 
-          if (fighter1Rebooked || fighter2Rebooked) {
-            // At least one fighter appears in a different fight - this was a rebooking
-            console.log(`    ❌ Cancelling fight (fighter rebooked): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
-
+          if (shouldCancel) {
+            console.log(`    ❌ Cancelling fight (${reason}, strike ${newCount}/${CANCELLATION_STRIKE_THRESHOLD}): ${matchupLabel}`);
             await prisma.fight.update({
               where: { id: dbFight.id },
-              data: { fightStatus: 'CANCELLED' }
+              data: { fightStatus: 'CANCELLED', missingScrapeCount: newCount }
             });
-
             cancelledCount++;
           } else {
-            // Neither fighter appears in scraped data - fight was fully cancelled
-            console.log(`    ❌ Cancelling fight (not in scraped data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
-
+            console.log(`    ⚠️  Strike ${newCount}/${CANCELLATION_STRIKE_THRESHOLD} on missing fight (${reason}): ${matchupLabel}. Won't cancel until next consecutive miss.`);
             await prisma.fight.update({
               where: { id: dbFight.id },
-              data: { fightStatus: 'CANCELLED' }
+              data: { missingScrapeCount: newCount }
             });
-
-            cancelledCount++;
+            strikeCount++;
           }
         }
        }
@@ -606,7 +618,7 @@ async function importPFLEvents(
 
           await prisma.fight.update({
             where: { id: dbFight.id },
-            data: { fightStatus: 'UPCOMING' }
+            data: { fightStatus: 'UPCOMING', missingScrapeCount: 0 }
           });
 
           unCancelledCount++;
@@ -615,6 +627,9 @@ async function importPFLEvents(
 
       if (cancelledCount > 0) {
         console.log(`    ⚠ Cancelled ${cancelledCount} fights due to rebooking/cancellation`);
+      }
+      if (strikeCount > 0) {
+        console.log(`    ⚠ Struck ${strikeCount} missing fights (will cancel after another consecutive miss)`);
       }
       if (unCancelledCount > 0) {
         console.log(`    ✅ Un-cancelled ${unCancelledCount} fights (reappeared in data)`);
@@ -630,27 +645,47 @@ async function importPFLEvents(
 
   const existingUpcomingEvents = await prisma.event.findMany({
     where: { promotion: 'PFL', eventStatus: 'UPCOMING' },
-    select: { id: true, name: true, ufcUrl: true },
+    select: { id: true, name: true, ufcUrl: true, missingScrapeCount: true },
   });
 
   let eventsCancelled = 0;
-  for (const dbEvent of existingUpcomingEvents) {
-    const isStillOnSite = dbEvent.ufcUrl
-      ? scrapedEventUrls.has(dbEvent.ufcUrl)
-      : scrapedEventNames.has(dbEvent.name.toLowerCase().trim());
+  let eventsStruck = 0;
+  if (!scrapeIsSane) {
+    console.log(`  ⏭️  Skipping event-level cancellation: scrape returned ${uniqueEvents.size} events (< ${MIN_SCRAPED_EVENTS_FOR_CANCEL}). Treating as broken scrape.`);
+  } else {
+    for (const dbEvent of existingUpcomingEvents) {
+      const isStillOnSite = dbEvent.ufcUrl
+        ? scrapedEventUrls.has(dbEvent.ufcUrl)
+        : scrapedEventNames.has(dbEvent.name.toLowerCase().trim());
 
-    if (!isStillOnSite) {
-      await prisma.event.update({ where: { id: dbEvent.id }, data: { eventStatus: 'CANCELLED' } });
-      console.log(`  ❌ Cancelling event (no longer on Tapology): ${dbEvent.name}`);
-      const cancelledFights = await prisma.fight.updateMany({
-        where: { eventId: dbEvent.id, fightStatus: 'UPCOMING' },
-        data: { fightStatus: 'CANCELLED' },
-      });
-      if (cancelledFights.count > 0) console.log(`    ❌ Cancelled ${cancelledFights.count} fights`);
-      eventsCancelled++;
+      if (!isStillOnSite) {
+        // Two-strike rule: a single missing scrape can be a transient site glitch.
+        const { newCount, shouldCancel } = decideStrike(dbEvent.missingScrapeCount);
+        if (shouldCancel) {
+          await prisma.event.update({
+            where: { id: dbEvent.id },
+            data: { eventStatus: 'CANCELLED', missingScrapeCount: newCount },
+          });
+          console.log(`  ❌ Cancelling event (no longer on Tapology, strike ${newCount}/${CANCELLATION_STRIKE_THRESHOLD}): ${dbEvent.name}`);
+          const cancelledFights = await prisma.fight.updateMany({
+            where: { eventId: dbEvent.id, fightStatus: 'UPCOMING' },
+            data: { fightStatus: 'CANCELLED' },
+          });
+          if (cancelledFights.count > 0) console.log(`    ❌ Cancelled ${cancelledFights.count} fights`);
+          eventsCancelled++;
+        } else {
+          await prisma.event.update({
+            where: { id: dbEvent.id },
+            data: { missingScrapeCount: newCount },
+          });
+          console.log(`  ⚠️  Strike ${newCount}/${CANCELLATION_STRIKE_THRESHOLD} on missing event: ${dbEvent.name}. Won't cancel until next consecutive miss.`);
+          eventsStruck++;
+        }
+      }
     }
   }
   if (eventsCancelled > 0) console.log(`  ⚠ Cancelled ${eventsCancelled} PFL events no longer on Tapology`);
+  if (eventsStruck > 0) console.log(`  ⚠ Struck ${eventsStruck} missing events (will cancel after another consecutive miss)`);
 
   console.log(`✅ Imported all PFL events\n`);
 }
@@ -700,6 +735,7 @@ async function createFight(
         scheduledRounds: fightData.isTitle ? 5 : 3,
         orderOnCard: fightData.order,
         cardType: fightData.cardType,
+        missingScrapeCount: 0, // fight present in this scrape — clear strike counter
       },
       {
         eventId,
