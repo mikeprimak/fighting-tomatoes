@@ -7,6 +7,11 @@ import { stripDiacritics } from '../utils/fighterMatcher';
 import { localTimeToUTC, parseTime12h } from '../utils/timezone';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 import { upsertFightSwapAware } from '../utils/fightUpsert';
+import {
+  CANCELLATION_STRIKE_THRESHOLD,
+  MIN_SCRAPED_EVENTS_FOR_CANCEL,
+  decideStrike,
+} from './cancellationGuards';
 
 const prisma = new PrismaClient();
 
@@ -72,19 +77,6 @@ interface ScrapedEventsData {
 interface ScrapedAthletesData {
   athletes: ScrapedFighter[];
 }
-
-// ============== CANCELLATION GUARDS ==============
-// Two-strike rule: a fight or event must be missing from the source on this many
-// CONSECUTIVE scrapes before we mark it CANCELLED. Daily UFC scraper runs ~1×/day,
-// so 2 strikes ≈ 24h+ of confirmed absence. Protects against transient UFC.com
-// renders that drop a marquee fight (or whole event) for a single scrape.
-const CANCELLATION_STRIKE_THRESHOLD = 2;
-
-// Global sanity gate: if the upcoming-events scrape returns fewer events than this,
-// skip ALL cancellation passes. UFC always has multiple upcoming events scheduled —
-// a tiny scrape almost certainly means UFC.com was broken, not that the calendar
-// emptied out.
-const MIN_SCRAPED_EVENTS_FOR_CANCEL = 3;
 
 // ============== UTILITY FUNCTIONS ==============
 
@@ -772,7 +764,7 @@ async function importEvents(
           // Two-strike rule: increment the strike counter; only cancel after the
           // fight has been missing on CANCELLATION_STRIKE_THRESHOLD consecutive
           // scrapes. Protects against UFC.com transient render glitches.
-          const newCount = (dbFight.missingScrapeCount ?? 0) + 1;
+          const { newCount, shouldCancel } = decideStrike(dbFight.missingScrapeCount);
           const fighter1Rebooked = scrapedFighterNames.has(fighter1Name);
           const fighter2Rebooked = scrapedFighterNames.has(fighter2Name);
           const reason = (fighter1Rebooked || fighter2Rebooked)
@@ -780,7 +772,7 @@ async function importEvents(
             : 'not in scraped data';
           const matchupLabel = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`;
 
-          if (newCount >= CANCELLATION_STRIKE_THRESHOLD) {
+          if (shouldCancel) {
             console.log(`    ❌ Cancelling fight (${reason}, strike ${newCount}/${CANCELLATION_STRIKE_THRESHOLD}): ${matchupLabel}`);
             await prisma.fight.update({
               where: { id: dbFight.id },
@@ -866,8 +858,8 @@ async function importEvents(
         // Two-strike rule: a single missing scrape can be a transient UFC.com glitch
         // (entire event temporarily disappears from upcoming-events page). Only
         // cascade-cancel after the event has been missing on consecutive scrapes.
-        const newCount = (dbEvent.missingScrapeCount ?? 0) + 1;
-        if (newCount >= CANCELLATION_STRIKE_THRESHOLD) {
+        const { newCount, shouldCancel } = decideStrike(dbEvent.missingScrapeCount);
+        if (shouldCancel) {
           await prisma.event.update({
             where: { id: dbEvent.id },
             data: { eventStatus: 'CANCELLED', missingScrapeCount: newCount },
