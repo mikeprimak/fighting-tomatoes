@@ -1,7 +1,7 @@
 # HANDOFF — Two-strike scraper cancellation guard rollout
 
 **Date**: 2026-05-07
-**Status**: UFC + BKFC shipped. 14 other parsers pending.
+**Status**: ✅ COMPLETE — all 16 parsers shipped. Pushed in commits 7489100 (5 parsers) and e230e3b (9 parsers).
 **Trigger**: Strickland vs Chimaev (UFC 328 main event) was wrongly marked CANCELLED when UFC.com briefly dropped the event from its upcoming-events page. User had to manually flip event status back to UPCOMING.
 
 ## What's done (shipped to main)
