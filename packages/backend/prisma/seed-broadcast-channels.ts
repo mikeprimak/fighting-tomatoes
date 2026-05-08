@@ -23,7 +23,7 @@ const channels = [
   { slug: 'sky-sports',         name: 'Sky Sports',            homepageUrl: 'https://www.skysports.com/' },
 
   // Canada
-  { slug: 'sportsnet',          name: 'Sportsnet',             homepageUrl: 'https://www.sportsnet.ca/' },
+  { slug: 'sportsnet',          name: 'Sportsnet+',            homepageUrl: 'https://www.sportsnetplus.ca/' },
   { slug: 'tva-sports',         name: 'TVA Sports',            homepageUrl: 'https://www.tvasports.ca/' },
   { slug: 'tsn-plus',           name: 'TSN+',                  homepageUrl: 'https://www.tsn.ca/plus' },
 
