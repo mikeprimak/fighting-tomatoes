@@ -214,3 +214,212 @@ Commit message: `feat(analytics): wire PostHog across mobile, web, and backend`
 - Live event system (where concurrency data lives): `packages/backend/src/services/eventLifecycle.ts`
 - Coverage breadth (for dataset moat metrics): `packages/backend/src/config/liveTrackerConfig.ts`
 - Backfill orchestrator (proves data freshness): `packages/backend/src/scripts/backfillResults.ts`
+
+---
+
+# Addendum — Same session, later (2026-05-09)
+
+After the initial handoff, Mike and Claude continued the conversation and made additional decisions. The sections below extend (do not replace) what's above.
+
+## Mike's stated targets and dataset facts
+
+**Personal sale-price target:** $7M USD minimum. Open to higher; this is the floor he feels he needs personally. Not a wishful figure — a real anchor for decision-making.
+
+**Legacy dataset (canonical numbers — use these, not estimates):**
+
+- 13,000+ fights tracked
+- 66,000+ community ratings
+- 1,400+ events covered
+- 10-year continuity across legacy platforms → Good Fights mobile
+
+Per-fight rating density averages ~5. The strength is **continuity + breadth**, not raw rating count. Lead with: *"10 years of continuous fan-rating data across 1,400+ events and 11+ promotions, with the rate of new ratings now accelerating as the mobile product matures."* Pull the actual current rating-rate trend (legacy vs. last 90 days vs. last 30 days) when running the metrics dashboard — that slope is the most important pitch number.
+
+## $7M target — what it requires
+
+The $7M figure sits at the **Scenario B / Scenario C boundary** in the broader valuation framework. Three plausible paths:
+
+1. **Strategic buyer at lower-mid range** ($5–8M). Most likely. Requires 100K+ MAU, peak concurrency proof on a major UFC PPV, dataset narrative quantified, and a buyer in the building who already wants what we have.
+2. **Asset deal + dataset licensing combo.** Company sells for $3–4M to a media/sports buyer, dataset licensed for $2–3M to a sports-data buyer in a parallel transaction. Adds to $7M but doubles the deal complexity.
+3. **Competitive process.** $5M offer becomes $7M because a second buyer surfaces. Requires deliberate buyer-pipeline work starting now, not at month 11.
+
+All three paths require the buyer pipeline workstream below. Path #1 is the most likely; design toward it.
+
+---
+
+## TASK 4 — Add Twitter Hype-Index posts to active marketing plan
+
+**Approved by Mike on 2026-05-09.** Once the marketing plan file is located in TASK 1, add a new recurring tactic.
+
+**What to add to the plan:**
+
+A weekly Twitter post cadence — every fight week (Tuesday or Wednesday is the right slot, before media-day coverage peaks) — featuring the Good Fights Hype Index for that weekend's card. Format options:
+
+- Top 5 most-anticipated fights by hype score
+- Biggest hype risers (fights gaining hype across the week)
+- Fighter-vs-fighter hype matchup graphics
+- "Hype score gap warning" — fights where pre-fight hype was high but the matchup looks lopsided
+
+**Why:** Mike has confirmed he is effectively the only operator in the space quantifying **pre-fight hype**. Post-fight ratings have a few entrants. Pre-fight hype has none. This is a defensible content niche that:
+
+- Requires no new product work — uses data Good Fights already collects
+- Generates organic Twitter shares (MMA Twitter loves quantified hot takes)
+- Self-markets the app on the platform where MMA fans aggregate
+- Builds the press hook for "Good Fights Hype Index" as a recognizable phrase
+- Costs ~30 minutes per week to produce
+
+**Cadence:** Start this week. Don't wait. UFC 328 is too late, but post a retrospective hype-vs-actual graphic *after* tonight's main card to prove the model. Then start prospective hype posts for UFC Fight Night 2026-05-16 (MVP Netflix card week) onward.
+
+**Plan integration:** The marketing plan probably has a weekly tactics section organized by phase or week. Insert a "Twitter Hype Index" recurring item into every fight-week column from this point forward. Don't replace existing tactics — add to them.
+
+**Hype Index positioning note:** This is currently an **informal positioning we are strongly considering**, not a committed brand strategy. Do NOT yet rewrite Good Fights' core positioning, App Store description, or landing page around "the hype index of combat sports." That decision is pending. The Twitter posts are a low-risk experiment to see if the format gets traction; full positioning shift happens only if the experiment succeeds.
+
+Commit message: `docs(marketing): add Twitter Hype Index weekly cadence to plan`
+
+---
+
+## New workstream — Buyer pipeline (separate from 90-day plan)
+
+**Approved by Mike on 2026-05-09.** This runs **in parallel** to the 90-day marketing plan, not inside it. The 90-day plan is about momentum + audience; this workstream is about generating the offer that hits $7M.
+
+The single biggest mistake at Mike's stage would be waiting until month 11 to start buyer conversations. By then it's too late — buyer relationships take months to warm, and a competitive process needs at least 2 active conversations running in parallel. **Start now, low-key, even when the metrics aren't where they need to be yet.**
+
+### Sub-task 4a — Build buyer landscape map
+
+A simple structured document — could live as `docs/marketing/buyer-pipeline.md` — listing potential acquirers in tiers:
+
+**Tier 1 (most likely strategic buyers):**
+- DAZN — combat sports streaming, history of niche acquisitions, plausible primary fit
+- TKO Group / UFC — Fight Pass needs a fan-engagement layer, but they prefer building over buying
+- Endeavor (TKO parent) — broader portfolio fit
+- PrizePicks — DFS-adjacent, MMA vertical is underdeveloped
+- DraftKings — MMA betting product would benefit from fan data
+- FanDuel — same logic as DraftKings
+
+**Tier 2 (asset/data buyers):**
+- FloSports — combat sports media rollup pattern
+- Stats Perform — sports data licensing
+- Genius Sports — sports data + betting infrastructure
+- Sportradar — global sports data
+- Vox Media (SB Nation parent) — owned MMA Fighting historically
+
+**Tier 3 (long-shot or wildcard):**
+- ESPN / Disney — has UFC rights, unlikely to buy small but possible
+- Comcast / NBC Sports — boxing rights holder
+- Liberty Media — F1 + Atlanta Braves owner, sports M&A appetite
+- Saudi-backed combat sports vehicles (Riyadh Season, etc.) — emerging buyer pool
+
+Each row should capture: company name, why they fit, decision-makers (if known), warm-intro path (if any), last contact (initially blank).
+
+### Sub-task 4b — Prep core artifacts
+
+A buyer pipeline needs deliverables ready *before* the conversation, not during. Prep these over the next 60 days:
+
+1. **One-pager** — single-page PDF with: dataset numbers, coverage breadth, MAU + growth, the 10-year continuity story, the Hype Index angle (if positioning solidifies), screenshots, contact info. Mike's job to write; Claude can draft.
+2. **Demo deck** — 8–12 slides expanding the one-pager: market context, problem/solution, dataset moat, audience growth, fight-night demo metrics, financial summary, the team (Mike), the ask. Used for warmer conversations after initial interest.
+3. **Live demo flow** — a scripted 5-minute product walkthrough optimized for buyers, not users. Different beats than the App Store preview video. Highlights the things a buyer cares about: data depth, live event system, push notification engagement, multi-org coverage.
+4. **Financial summary** — revenue (if any), costs, runway. Even at $0 revenue, the cost side matters: "monthly burn $X, primarily Render/Vercel/AWS." Buyer wants to see operational discipline.
+5. **Dataset query pack** — pre-canned SQL that produces the exact numbers a buyer's diligence team will ask for. Total ratings by year, ratings density distribution, retention cohorts, top-rated fights all-time, etc. When the buyer asks "can you get us X?" Mike answers in 4 hours, not 4 days.
+
+### Sub-task 4c — Outreach cadence
+
+Start with **passive signaling** — building visibility so buyers find Mike — before active outreach.
+
+**Months 0–3 (now through July 2026):**
+- Don't pitch anyone yet. Build proof.
+- Twitter Hype Index posts (TASK 4) — by their nature, this gets the app on industry radar
+- Press hits during marquee fight weeks — even one piece in The Athletic / Bloody Elbow / Cageside Press signals to buyers that Good Fights "is a thing"
+- Soft mentions in podcasts (MMA Hour, Heavy Hands, etc.) — not paid, just organic outreach to hosts with the dataset angle
+
+**Months 3–6 (July–October 2026):**
+- First deliberate buyer touches. Warm intros only — no cold outreach yet.
+- Goal: 5–10 informational conversations with corp-dev or strategy-side people at Tier 1 + Tier 2 companies
+- Frame as "I'd love to learn how you think about fan-engagement products in MMA" — informational, not sales
+- These are *relationship-building* meetings. No deck needed yet, just the one-pager.
+
+**Months 6–12 (October 2026 – April 2027):**
+- Convert relationships into real conversations.
+- If metrics are where they need to be (100K+ MAU, fight-night concurrency proof), start running a quiet process with 2–3 most-interested parties
+- This is the point at which engaging an M&A advisor becomes a real consideration (see 4d)
+
+### Sub-task 4d — Advisor question
+
+At a $7M target, Mike is in a band where boutique M&A advisors / sell-side bankers will take the engagement. Typical fee 5–8% of deal value (so ~$350–560K on a $7M deal). The trade is: they bring buyer relationships and run the process, you focus on building the company.
+
+This is **not a decision for now** — too early. But by month 9 of the pipeline, the question becomes: is Mike going to run this himself, or engage a boutique? Honest answer for most solo founders without M&A experience: **engaging an advisor at the right moment usually pays for itself**. The advisor's relationships compress 6 months of warming into 6 weeks. Worth a real evaluation when the moment arrives.
+
+Names to research when the time comes (not endorsements — starting points): Drake Star, Bowery Capital, AGC Partners (consumer/media boutiques with sports-tech experience). Also founder-friendly options like Fairmount Partners.
+
+### What to do with this workstream now
+
+**The next session does not need to do all of this at once.** The minimum viable next step is:
+
+1. Create `docs/marketing/buyer-pipeline.md` with the buyer landscape map (Tier 1/2/3 companies, blank fields for relationships and contacts)
+2. Add a stub for each prep artifact (one-pager, deck, demo flow, financials, query pack) — even if empty, having the slot reserved means it gets filled
+3. Set a quarterly cadence to review the pipeline doc and update relationships
+
+The artifacts get drafted across multiple future sessions, not all today.
+
+Commit message: `docs(marketing): buyer pipeline workstream and landscape map`
+
+---
+
+## Future product surfaces (strategic optionality)
+
+Mike confirmed on 2026-05-09 that he is **open to future product features**, with the explicit framing: **optimize new features for highest payoff toward maximizing sale value**, not for product-purity reasons.
+
+This is the right framing. Concretely it means:
+
+### Features that likely *do* multiply sale value
+
+- **Hype Index as a productized surface** — dedicated landing page, public-facing fighter/event hype scores, embeddable widgets. Reinforces the "category-defining" pitch.
+- **Predictions market** (round/method/winner predictions, no money) — generates more first-party data per fight, more daily-use behavior, better fight-night concurrency
+- **Co-watching chat** — see "Deliberate shelf" below
+- **Fighter pages with historical hype + rating trends** — turns the 10-year dataset into a *visible, marketable surface* rather than a backend stat
+- **Hype Index public API / widget program** — distribution layer that gets the brand on third-party sites and broadcasts; low maintenance, high signaling
+- **Subscription tier** ($4.99/mo or similar) — even modest ARR (e.g., $5K MRR) unlocks revenue-multiple math for buyers, which can change the deal valuation framework entirely
+
+### Features that likely *don't* multiply sale value
+
+- General-purpose social network expansion (timelines, follows-of-follows, etc.) — dilutes the rating-app identity, doesn't add to the dataset moat
+- Cross-vertical expansion (boxing-only or martial-arts-only spinoffs) before the core combat-sports product is dominant
+- Heavy editorial/content production — capital-intensive, doesn't compound the dataset
+- Marketplace / e-commerce features — unrelated to the moat
+
+### Deliberate shelf — Co-watching chat feature
+
+Mike started building a co-watching chat feature in Good Fights with: synced round scoring, fight-themed reactions/gifts, emoji fight ratings. He shelved it deliberately for v1 to keep Good Fights laser-focused on rating fights.
+
+**This call was correct and should hold through 2026-07-13.** Reasons:
+
+1. Focus is the v1 product's edge. "Good Fights = rate fights" is a 3-second elevator pitch. Adding chat dilutes it.
+2. Real-time chat infrastructure is the most maintenance-heavy code a solo dev can ship. One bad PPV night and the chat is offline at the worst possible moment.
+3. Beating WhatsApp on general chat is impossible. The feature only works if it's *complementary* — i.e., in-app reactions tied to fight events, synced round scoring, prediction markets within the group. That's a different, more ambitious product than v1.
+
+**But the unbuilt feature is itself a deal asset.** When pitching buyers: *"We have a co-watching social layer prototyped, with strong viral mechanics observed in early testing"* is a slide that adds 10–20% to offers. It signals upside without committing to the build.
+
+Two paths post-July 13:
+
+- **Path A — Build it ourselves as v2 launch** if metrics suggest the core product is plateauing and chat is the unlock. Frame it as a major v2 product moment.
+- **Path B — Hold it for the buyer** if a strategic acquirer surfaces who would want to ship it post-acquisition with their resources. This becomes part of the "what we'd do with your company" pitch.
+
+Don't decide which path until the 90-day campaign concludes and we can see how the metrics moved.
+
+---
+
+## Updated decisions log (cumulative through 2026-05-09)
+
+- ✅ Acquisition narrative becomes a standing lens for marketing decisions
+- ✅ Build admin-panel acquisition-metrics dashboard (TASK 2)
+- ✅ Adopt PostHog for product analytics (TASK 3)
+- ✅ Add Twitter Hype Index weekly cadence to marketing plan (TASK 4)
+- ✅ Hype Index positioning treated as informal strategy, not yet a committed rebrand
+- ✅ Stand up buyer pipeline as a parallel workstream — not inside the 90-day plan
+- ✅ Future product features evaluated against sale-value impact, not product-purity
+- ✅ Co-watching chat shelf decision holds through 2026-07-13; revisit post-campaign
+- ✅ $7M USD is Mike's stated minimum sale-price target; design toward this anchor
+
+## Updated open questions
+
+5. Marketing plan file format — what does its weekly cadence section look like? (Required to know how to insert the Twitter Hype Index item correctly in TASK 4.)
+6. Does Mike already have buyer-side relationships from the legacy platforms / 10-year combat sports operating history? Any warm-intro paths into Tier 1 companies?
+7. Should `docs/marketing/` be created as a new top-level marketing docs directory, or do we keep marketing files at the root / under `docs/plans/`?
