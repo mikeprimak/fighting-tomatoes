@@ -198,6 +198,41 @@ Build a short post template you can fill in and publish every Friday or Saturday
 
 ---
 
+### TASK 8 — Twitter Hype Index weekly cadence
+**Start: 2026-05-09 (added mid-campaign — retrospective post after UFC 328 tonight is the first execution); ongoing every fight week**
+**Time required: 30 min per week**
+
+The Hype Index is a defensible content niche — Good Fights is effectively the only operator quantifying *pre-fight* hype across promotions. Post-fight ratings have a few entrants. Pre-fight hype has none. Twitter is where MMA fans aggregate, so a weekly Hype Index post is low-cost positioning that markets the app and seeds a press hook ("Good Fights Hype Index") that compounds over time.
+
+**Cadence:**
+- One post per fight week, **Tuesday or Wednesday** (before media-day coverage peaks)
+- Retrospective hype-vs-actual post within 24 hours of every major card
+
+**Format options (rotate weekly):**
+- Top 5 most-anticipated fights by hype score
+- Biggest hype risers across the week
+- Fighter-vs-fighter hype matchup graphic
+- "Hype score gap warning" — fights with high hype but lopsided matchups
+- Post-card retrospective: hype score vs actual community rating
+
+**Production steps:**
+1. Pull current hype scores from Good Fights for the upcoming card
+2. Build a single graphic in Canva (one template, swap data each week)
+3. Post to X/Twitter with copy leading "Good Fights Hype Index — [Card name]"
+4. Include `goodfights.app` in the post or burn it into the graphic
+5. Reuse the graphic in Instagram Stories and inside the post-fight Reddit verdict thread (TASK 6)
+
+**Rules:**
+- Lead with the data, then the source — never lead with the app
+- Don't editorialize the picks; let the numbers do the talking
+- Same graphic template every week so the visual identity hardens
+
+**Acquisition lens (Pillars 1 & 3 — dataset moat + founder story):** "Good Fights Hype Index" is the dataset doing brand work for free. Every week the phrase gets reinforced in front of MMA Twitter; over months it becomes a recognizable label that earns press lifts. The *phrase itself* is a deal asset — when an acquirer asks "what's defensible here?", *"we own the hype-index category in combat sports"* is a sharper answer than "we have ratings."
+
+**Positioning guardrail — DO NOT SKIP:** the Hype Index is an *informal positioning we are strongly considering*, not a committed brand strategy. The Twitter cadence is a low-risk experiment. **Do NOT yet rewrite Good Fights' core positioning, App Store description, or landing page around "the hype index of combat sports."** That decision is pending the experiment's results — revisit at the May 31 reassessment.
+
+---
+
 ## PHASE 2 — FIRST CAMPAIGNS
 ### May 2 to May 31
 
@@ -222,6 +257,7 @@ Two back to back fight weeks. Your first real paid campaigns. Execute the plan, 
 **Organic:**
 - Post your community verdict data within 24 hours of the event
 - Title it around the most interesting data point, not around your app
+- **Twitter Hype Index retrospective (TASK 8)** — within 24 hours, post a hype-vs-actual graphic for the main card. This is the proof-of-concept post for the Hype Index cadence; the prospective Tuesday slot for this card has already passed.
 
 **Total spend this week: ~$80**
 
@@ -239,6 +275,8 @@ Smaller budget week because you already spent heavily on UFC 328.
 
 **Organic:**
 - Post community verdict data after the event
+- **Twitter Hype Index prospective post (TASK 8)** — Tuesday May 12, ahead of media day. Top-5-most-anticipated format for the MVP Netflix card.
+- **Twitter Hype Index retrospective (TASK 8)** — within 24 hours of the event, hype-vs-actual graphic.
 
 **Total spend this week: ~$20**
 
@@ -283,6 +321,8 @@ By this point you have real data. You know which platform converts better for yo
 - This card has cultural crossover appeal beyond hardcore fans — the White House angle makes it a mainstream news story
 - Your post-fight data has potential to travel further than a normal card
 - Post community verdict data, consider also posting to r/sports not just r/MMA
+- **Twitter Hype Index prospective post (TASK 8)** — Tuesday June 9, ahead of media day. Use the highest-engagement format the experiment has surfaced by this point (rotating from top-5 to fight-vs-fight if data supports it).
+- **Twitter Hype Index retrospective (TASK 8)** — within 24 hours of the event. This is the most-watched card in the 90-day window; the retrospective post should be the most polished iteration of the format yet.
 
 **Total spend this week: ~$70**
 
@@ -410,11 +450,12 @@ Either outcome is useful. Neither outcome is failure.
 | Situation | Action |
 |---|---|
 | Fight week (major card) | Activate Meta and/or Reddit campaign Tuesday |
+| Tuesday/Wednesday of fight week | Post Twitter Hype Index prospective graphic (Task 8) |
 | Friday/Saturday of fight week | Post Sleeper Fight template (Task 7) 4-8hrs before prelims |
 | Night of major card | Monitor notification delivery, fix any issues immediately |
-| Morning after major card | Pull community rating data, write Reddit post, publish |
+| Morning after major card | Pull community rating data, write Reddit post, publish Hype Index retrospective (Task 8) |
 | Non-fight week | Nothing. Google campaign runs itself. |
-| Every two weeks | Check metrics dashboard, record numbers |
+| Every two weeks | Check both dashboards (Momentum + Acquisition-Readiness), record numbers |
 | May 31 | Full reassessment |
 | July 13 | Full reassessment |
 
