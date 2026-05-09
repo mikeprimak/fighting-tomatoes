@@ -3,6 +3,34 @@
 
 ---
 
+## LONG-TERM GOAL & STANDING LENS
+
+The 12–18 month horizon for Good Fights is an acquisition conversation. This 90-day plan is about generating **momentum** an acquirer can see. Whenever evaluating a tactic, channel, or message, ask: *does this strengthen the acquisition narrative?* Three pillars hold the narrative up.
+
+### Pillar 1 — The dataset moat (10 years deep, multi-org wide)
+
+- **Depth:** ~10 years of continuous fan-rating data across legacy platforms → Good Fights. The dataset itself is the asset; the app is the harvest mechanism.
+- **Breadth:** 11+ promotions actively scraped (UFC, ONE FC, Matchroom, BKFC, RAF, Oktagon, PFL, Karate Combat, Dirty Boxing, Zuffa Boxing, RIZIN).
+- **Freshness:** automated daily scrapers + live trackers + results-backfill orchestrator.
+- **Strategic framing:** Letterboxd's value is its ratings DB. Good Fights is that, in a vertical where nobody else has it.
+
+### Pillar 2 — The fight-night moment (live concurrency on PPV cards)
+
+- Push notifications + live ratings + hype UI fire during the only moments fans are emotionally engaged.
+- Peak concurrency on a UFC PPV main event is the demo metric for any combat sports buyer.
+- Every marquee card is a chance to generate a "during UFC X, N concurrent users rated M fights" data point.
+
+### Pillar 3 — The founder/asset story (one person, AI-leveraged, mature stack)
+
+- Solo dev, 7-month build, monorepo with mobile + web + landing + backend.
+- Live event lifecycle, results backfill, broadcast discovery — all autonomous.
+- AI-leveraged build = capacity to ship features competitors can't match on cost.
+- Acquirer's calculus: cheaper to buy than to rebuild + collect 10 years of data.
+
+The campaign tactics, dates, and cadences in this plan don't change because of this reframe — but the *why* behind each one does. Read every section below in this light.
+
+---
+
 ## GUIDING PRINCIPLES
 
 - Budget is small so precision beats volume. Every dollar spent during a fight week is worth 5x a dollar spent on a random Tuesday.
@@ -54,6 +82,8 @@ Record a screen capture video showing this exact sequence:
 
 **Output:** One video file that will be used as your App Store preview AND your ad creative on Meta and Reddit. You make it once. It works everywhere.
 
+**Acquisition lens (Pillar 1 — dataset moat):** the preview should hint at dataset *depth*, not just upcoming cards. Flash a fighter page with rating history, or a fight page showing dozens of community ratings. A buyer watching this video should see "this app has years of data" — not "this app shows the schedule."
+
 ---
 
 ### TASK 2 — App Store Page Audit
@@ -69,6 +99,8 @@ Before spending a dollar on ads, make sure your store page converts. Go through 
 - **Keywords** on iOS include: UFC schedule, MMA fights, boxing schedule, fight notifications, combat sports
 
 Upload your preview video once it's complete.
+
+**Acquisition lens (Pillars 1 & 3 — dataset moat + founder story):** the long description is also positioning copy for any buyer skim. After the conversion-focused opener, work in moat language — e.g. "Backed by years of fan ratings across 11+ promotions" — so press and acquirers can lift it verbatim. Don't sacrifice the opening hook for it; this goes lower in the description.
 
 ---
 
@@ -132,6 +164,8 @@ Build a simple template you can fill in and post to Reddit after every major car
 
 This post is data, not promotion. It earns its place in the community. Post it to r/MMA and r/boxing where relevant within 24 hours of each major card.
 
+**Acquisition lens (Pillars 1 & 2 — dataset moat + fight-night moment):** every card's data post is a public artifact tying Good Fights to that event. Save the post URL plus a screenshot of the in-app aggregate ratings — over time these become your "during UFC X, Y users rated Z fights" reel for the acquisition deck. The Y number going up is the line that matters.
+
 ---
 
 ### TASK 7 — Create Your Friday/Saturday "Sleeper Fight" Post Template
@@ -159,6 +193,8 @@ Build a short post template you can fill in and publish every Friday or Saturday
 - r/MMA, r/MMA_TV, r/boxing (per relevance)
 - X/Twitter as a quote-post over the official card poster
 - Instagram Stories with a screenshot of the hype screen
+
+**Acquisition lens (Pillar 1 — dataset moat):** the line "hype score across Y users on Good Fights" is the dataset doing positioning work for free. The Y is the proof point — when small, the moat is implied; as it grows over the campaign, the moat is shown. Treat rising Y as a public KPI, not an internal one.
 
 ---
 
@@ -250,6 +286,8 @@ By this point you have real data. You know which platform converts better for yo
 
 **Total spend this week: ~$70**
 
+**Acquisition lens (Pillar 2 — fight-night moment):** White House is the largest concurrency opportunity in this 90-day window. Capture peak concurrent users, total ratings submitted, and notification deliveries during the card — these are the highest-value data points for the acquisition deck. PostHog must be live before this card; if it isn't, the card's biggest narrative number is unmeasured.
+
 ---
 
 ### June Baseline
@@ -257,7 +295,7 @@ Remaining $30 of June budget stays on Google App Campaign at $3/day for the non-
 
 ---
 
-## METRICS DASHBOARD
+## MOMENTUM DASHBOARD
 ### Check these numbers every two weeks
 
 | Metric | Starting Baseline | 30 Day Target | 90 Day Target |
@@ -268,7 +306,61 @@ Remaining $30 of June budget stays on Google App Campaign at $3/day for the non-
 | Cost per install | Unknown | Establish baseline | Reduce by 20% |
 | Reddit post upvotes | 0 | First post live | Consistent engagement |
 
-Fill in your starting baseline numbers today before anything else.
+Fill in your starting baseline numbers today before anything else. These five answer *is the curve pointing up?* for this 90-day window. They are the operating dashboard — fast feedback for tactical decisions.
+
+---
+
+## ACQUISITION-READINESS DASHBOARD
+### The longer-horizon view — review at each two-week reassessment
+
+The momentum dashboard above answers *is the curve up?*. This dashboard answers *what would an acquirer ask, and can I show them?*. It is the artifact-version of the story — what you screenshot for an investor or buyer conversation. Source of truth once shipped: `GET /admin/metrics/acquisition-snapshot` (see the acquisition handoff). Until then, fill in by hand.
+
+### Audience
+
+| Metric | Why it matters |
+|---|---|
+| Total users (all-time) | Headline scale |
+| MAU (active in last 30d) | Real engagement, not vanity |
+| DAU (active in last 1d) | Daily-habit signal |
+| DAU/MAU ratio | Stickiness — acquirers benchmark this |
+| New users last 30d | Acquisition velocity |
+| 90-day MAU growth rate | The slope of the line |
+
+### Dataset (Pillar 1 — the moat)
+
+| Metric | Why it matters |
+|---|---|
+| Total ratings (all time) | The headline asset — number gets big, story gets stronger |
+| Total reviews | Qualitative depth |
+| Unique fights rated | Coverage of the catalog |
+| Fights with 10+ ratings | The "useful dataset" subset — what matters for averages |
+| Promotions covered | Breadth — proof of multi-org reach |
+| Oldest rating date | **Proves the 10-year claim** |
+| Avg ratings per active fight | Density |
+
+### Engagement
+
+| Metric | Why it matters |
+|---|---|
+| Ratings per active user (30d) | Power-user behavior |
+| % MAU with a recent rating | How many actually use the core action |
+| Notification opt-in % | Push reach for fight-night moments |
+| Avg followed fighters per active user | Personalization depth |
+
+### Live events (Pillar 2 — fight-night moment, PostHog-instrumented)
+
+| Metric | Why it matters |
+|---|---|
+| Last event name | Anchors the snapshot to a real card |
+| Peak concurrent users during last event | **The demo number for any combat sports buyer** |
+| Ratings submitted during last event | Live engagement under load |
+
+### Operational
+
+| Metric | Why it matters |
+|---|---|
+| Crash-free session rate | Quality signal (PostHog) |
+| Backend uptime % | Reliability (Render, manual until automated) |
 
 ---
 
