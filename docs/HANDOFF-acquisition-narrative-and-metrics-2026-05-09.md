@@ -417,9 +417,14 @@ Don't decide which path until the 90-day campaign concludes and we can see how t
 - ✅ Future product features evaluated against sale-value impact, not product-purity
 - ✅ Co-watching chat shelf decision holds through 2026-07-13; revisit post-campaign
 - ✅ $7M USD is Mike's stated minimum sale-price target; design toward this anchor
+- ✅ Pro tier "Hype Insider" at $4.99/mo or $39.99/yr to be built JUNE/JULY 2026 (highest single-task valuation lever — see Mike's weekly playbook)
+- ✅ Media path: written first (Bloody Elbow, MMA Fighting, Cageside Press), small podcasts second, big edited podcasts third — Mike has anxiety around live formats; lane rule applies
+- ✅ Mike's personal weekly playbook documented at `docs/marketing/mikes-weekly-playbook.md` — pinnable, Sunday review cadence
 
 ## Updated open questions
 
 5. Marketing plan file format — what does its weekly cadence section look like? (Required to know how to insert the Twitter Hype Index item correctly in TASK 4.)
 6. Does Mike already have buyer-side relationships from the legacy platforms / 10-year combat sports operating history? Any warm-intro paths into Tier 1 companies?
-7. Should `docs/marketing/` be created as a new top-level marketing docs directory, or do we keep marketing files at the root / under `docs/plans/`?
+7. Should `docs/marketing/` be created as a new top-level marketing docs directory, or do we keep marketing files at the root / under `docs/plans/`? (Resolved 2026-05-09: laptop session created `docs/marketing/`, accepted convention.)
+8. Pro tier build — payment provider choice (RevenueCat for mobile + Stripe for web is the recommendation, but confirm with Mike).
+9. Does Mike want to hire a brand ambassador for podcast appearances if he doesn't enjoy doing them himself? Decision deferable to month 7+.
