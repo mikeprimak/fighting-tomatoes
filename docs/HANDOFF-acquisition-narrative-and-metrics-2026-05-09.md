@@ -417,7 +417,7 @@ Don't decide which path until the 90-day campaign concludes and we can see how t
 - ✅ Future product features evaluated against sale-value impact, not product-purity
 - ✅ Co-watching chat shelf decision holds through 2026-07-13; revisit post-campaign
 - ✅ $7M USD is Mike's stated minimum sale-price target; design toward this anchor
-- ✅ Pro tier "Hype Insider" at $4.99/mo or $39.99/yr to be built JUNE/JULY 2026 (highest single-task valuation lever — see Mike's weekly playbook)
+- ✅ Revenue strategy revised (2026-05-09 late session): NOT a $4.99/mo Pro tier. Mike's audience is already maxed out on combat-sports subs (ESPN+, UFC Fight Pass, DAZN, PPVs). Replaced with B2B-first revenue stack: (1) sponsored Hype Index posts targeting betting/DFS/gear brands at $500–1,500/post — pitch August/September 2026 after engagement track record exists; (2) affiliate IDs wired into existing broadcast deeplinks; (3) optional "Supporter" tier at $9.99/year as Patreon-style gesture, not a product; (4) Year 2 — Hype Index API licensing to media/broadcasters. See `docs/marketing/mikes-weekly-playbook.md` § Revenue Stack for full numbers.
 - ✅ Media path: written first (Bloody Elbow, MMA Fighting, Cageside Press), small podcasts second, big edited podcasts third — Mike has anxiety around live formats; lane rule applies
 - ✅ Mike's personal weekly playbook documented at `docs/marketing/mikes-weekly-playbook.md` — pinnable, Sunday review cadence
 

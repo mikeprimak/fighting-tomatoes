@@ -94,11 +94,17 @@ This doc is organized by cadence — what to do **every week**, **every month**,
 - Get baseline numbers captured before UFC White House (June 15)
 - These exist so you can prove the story. Without them, every conversation is hand-wave.
 
-### JUNE/JULY 2026 — Ship "Hype Insider" paid tier ($4.99/mo or $39.99/yr)
-- The single highest-leverage move in your year. $1–3M of valuation lift for ~3 weeks of work.
-- See "Pro tier spec" below for what goes behind the paywall.
-- Even at 1% conversion of 50K MAU = 500 users × $5 = $2,500 MRR. Toward $5K target.
-- Get this live before fall fight cards so conversion math has 3+ months to compound.
+### JUNE 2026 — Wire affiliate IDs into broadcast deeplinks
+- You've built broadcast deeplinks (DAZN, Sportsnet+, Paramount+, etc.). Most have affiliate programs.
+- Apply for affiliate accounts, wire the IDs into the deeplinks. ~1 week of work.
+- Realistic revenue: $500–1,500/month at 50K MAU. Pure pass-through, no user friction.
+
+### AUGUST/SEPTEMBER 2026 — Pitch first Hype Index sponsor
+- After 8+ weeks of weekly Hype Index posts, you'll have engagement data (impressions, retweets, replies)
+- Target sponsors: PrizePicks, Underdog Fantasy, Stake.us, Bet365, DraftKings, MMA gear brands (Onnit, Hayabusa, Venum)
+- Pitch: "Weekly Good Fights Hype Index, presented by [brand]"
+- Realistic: $500–1,500 per sponsored post × 4 posts/month = $2,000–6,000/month
+- **This is the revenue path that hits the $5K MRR target.** See "Revenue stack" below.
 
 ### AUGUST 2026 — Build the buyer one-pager
 - Single PDF, 1 page, that captures: dataset facts, audience, growth, Hype Index, founder story, contact
@@ -128,46 +134,81 @@ This doc is organized by cadence — what to do **every week**, **every month**,
 
 ---
 
-## The Pro Tier Spec — "Hype Insider"
+## The Revenue Stack — How $5K MRR actually happens
 
-**Price:** $4.99/month or $39.99/year (~30% buy annual)
-**Target conversion rate:** 1–3% of MAU
-**Target MRR by year-end:** $5,000+
+**Original premise was wrong:** A $4.99/mo Pro tier doesn't fit the audience. MMA fans are already paying for ESPN+ ($11), UFC Fight Pass ($10), DAZN ($25), PPVs ($80+), Paramount+ ($8). They're maxed out on combat-sports subs. Asking for another monthly fee is a bad ask.
 
-**What's behind the paywall:**
+**Buyers don't care if revenue comes from users or businesses.** $5K MRR from sponsorship looks identical to $5K MRR from subscriptions on a cap table — and arguably *better*, because B2B revenue signals partner relationships that strategic buyers value.
 
-1. **Full historical hype data access**
-   - Fighter pages show hype trend across their career (your 10-year archive)
-   - Event detail pages show hype-vs-actual outcome comparisons
-   - Search/browse the legacy data as a personal "fight historian" tool
-   - **This is your unique unlock — nobody else can offer this.**
+### Primary revenue line: Sponsored Hype Index posts
 
-2. **Weekly Hype Insider newsletter**
-   - 600 words, deeper than the Twitter post
-   - Risers, fallers, surprise picks, historical comparisons
-   - Doubles as a lead magnet ("subscribe for Hype Insider")
+The Twitter Hype Index posts will become content. Content gets sponsored. The MMA-adjacent betting and gear space is desperate to reach hardcore fans.
 
-3. **Advanced notification rules**
-   - Free: basic notifications
-   - Paid: unlimited custom rules, fight-specific alerts, scheduled timing, follow-fighter deep alerts
+**Target sponsors:**
+- PrizePicks — DFS, MMA is a focus vertical
+- Underdog Fantasy — same
+- Stake.us — sweepstakes betting, heavy MMA spend
+- Bet365 / DraftKings / FanDuel sportsbooks
+- Combat-sports gear brands — Onnit, Hayabusa, Venum (smaller money but easier yes)
 
-4. **Predictions tracking + leaderboards**
-   - Log predictions before fights, see accuracy over time
-   - Compare with friends, leaderboards within follow circles
-   - Sticky daily-use feature that keeps power users engaged year-round
+**Pitch frame:** *"Weekly Good Fights Hype Index, presented by [brand]. Top 5 most-anticipated UFC X fights, ranked by quantified fan hype."* You include their logo + a CTA in the post.
 
-**What stays free** (do not paywall these — the free product must remain great):
-- Core fight ratings
-- Browsing events and fights
-- Push notifications for upcoming cards
-- Basic fighter pages
-- Hype scores for *upcoming* events (not historical)
+**Pricing:** $500–1,500 per sponsored post. 4 posts/month = $2,000–6,000/month.
 
-**Why this design works:**
-- Leverages your unique assets (the dataset, the hype data, the rules system you already built)
-- Doesn't cripple the free product (App Store reviews stay positive)
-- Gives buyers a "we have ARR + here's the funnel" story
-- Build estimate: 2–3 weeks (RevenueCat for mobile + Stripe for web + entitlement gating + the four features)
+**When to pitch:** After 8+ weeks of consistent Hype Index posts have built an engagement track record. Targeting **August/September 2026** for first sponsor.
+
+**Single largest revenue line. Hits the $5K target alone.**
+
+### Secondary revenue line: Affiliate broadcast revenue
+
+You've already built broadcast deeplinks (DAZN, Sportsnet+, Paramount+, ESPN+, etc.). Most of these have affiliate programs.
+
+- Apply for affiliate accounts
+- Wire the affiliate IDs into the existing deeplink URLs
+- Every "Watch on DAZN" tap that converts pays you a commission
+
+**Build estimate:** 1 week.
+**Realistic revenue at 50K MAU:** $500–1,500/month.
+**User friction:** zero — they were going to click the link anyway.
+
+### Tertiary revenue line (optional): Supporter tier — $9.99/year
+
+If you want a consumer revenue line at all, make it tiny, annual, and Patreon-style. Not Pro. Not unlock-features. Just *support the dev*.
+
+- **$9.99/year** (~$0.83/mo)
+- Framed as "support Good Fights" — a gesture, not a product
+- What they get: a "Supporter" badge on their profile, custom themes, maybe early access to new features
+- Not designed to compete with streaming subs because it isn't comparable
+
+**Realistic numbers:** 50K MAU × 7% conversion × $10 / 12 months = ~$290/month MRR. Tiny dollars. The value is *consumer ARR exists on the cap table* — buyers like seeing both B2B and consumer revenue lines.
+
+**Build estimate:** 1 week (RevenueCat for mobile + Stripe for web + a profile badge).
+
+**Optional.** If it feels off-brand, skip it — sponsorship + affiliate alone is enough.
+
+### Future revenue line (Year 2): Hype Index API licensing
+
+The Hype Index isn't valuable to consumers (they have it free). It's valuable to **media and broadcasters** who want a "Good Fights Hype Score: 8.4/10" graphic on their fight previews.
+
+**Targets:**
+- MMA Fighting / Bloody Elbow / The Athletic — license for fight preview articles
+- DAZN / ESPN+ broadcast graphics — pre-fight coverage overlay
+- Betting platforms' content arms — quote Hype Index in their picks content
+
+**Pricing:** $200–500/month per outlet. Five outlets = $1–2.5K/month.
+
+This is a Year 2 build (need a public API + a sales motion). But it's also a hell of a brand-building lever — every "Good Fights Hype Score" badge on a third-party site is a free advertisement and a buyer-pipeline signal.
+
+### Year 1 revenue stack — the math
+
+| Source | Realistic monthly | Effort |
+|---|---|---|
+| Sponsored Hype Index posts | $2,000–6,000 | Twitter posts + 1 sponsor pitch |
+| Affiliate broadcast revenue | $500–1,500 | 1 week wiring |
+| Supporter tier ($9.99/yr) — optional | $200–500 | 1 week build |
+| **Total** | **$2,700–8,000/mo** | |
+
+This hits $5K MRR comfortably without asking users to pay another monthly fee. And the work to get there is mostly stuff you're already doing (Hype Index posts) — you're just monetizing it once it has traction.
 
 ---
 
@@ -231,7 +272,7 @@ You won't do all of this perfectly. Nobody does.
 The minimum viable version of this entire year is:
 
 1. **Twitter Hype Index, every fight week. Never skip.**
-2. **Ship the paid tier by August.**
+2. **Land your first Hype Index sponsor by September.** ($2K+/month from one yes.)
 3. **Add one buyer to your relationship map every month.**
 
 If you do nothing else from this doc for an entire year except those three things, you'll still hit the $7M target band — maybe at the lower end ($5–6M), but in range. Those are your three irreducible commitments. Everything else multiplies them.
