@@ -426,9 +426,16 @@ export async function parseLiveEventData(
     for (const fightUpdate of liveData.fights) {
       console.log(`  🔎 Looking for fight: ${fightUpdate.fighterAName} vs ${fightUpdate.fighterBName} (ufcFightId: ${fightUpdate.ufcFightId}, fightStatus: ${fightUpdate.fightStatus})`);
 
-      // Track by ufcFightId (preferred) and name signature (fallback)
+      // Track by ufcFightId (preferred) and name signature (fallback). Diacritics are
+      // stripped here and on the DB side so the cancellation pass below treats e.g.
+      // UFC.com's "Mateusz Rębecki" and the DB's "Mateusz Rebecki" as the same fight.
+      // Without this, the ufcFightId match succeeds (numbers don't have diacritics) but
+      // the signature equality check fails, the fight is treated as missing, and the
+      // strike→cancel→un-cancel loop flaps it out of the app every scrape cycle. Both
+      // affected fights on UFC 328 (Alvarez/Amosov, Dawson/Rebecki) had non-ASCII
+      // letters in their UFC.com-rendered names.
       const fightSignature = [fightUpdate.fighterAName, fightUpdate.fighterBName]
-        .map(n => n.toLowerCase().trim())
+        .map(n => stripDiacritics(n).toLowerCase().trim())
         .sort()
         .join('|');
       scrapedFightSignatures.add(fightSignature);
@@ -744,8 +751,8 @@ export async function parseLiveEventData(
       // with the real fight must NOT count as "in scraped data" or it would get
       // un-cancelled on every live tracker tick (see Davey Grant vs Juan Martinetti
       // dup, 2026-04-25).
-      const fighter1FullName = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
-      const fighter2FullName = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+      const fighter1FullName = stripDiacritics(`${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`).toLowerCase().trim();
+      const fighter2FullName = stripDiacritics(`${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`).toLowerCase().trim();
       const dbFightSignature = [fighter1FullName, fighter2FullName].sort().join('|');
 
       let fightIsInScrapedData = false;
