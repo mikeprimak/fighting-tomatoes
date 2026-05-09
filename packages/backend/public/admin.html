@@ -1151,6 +1151,48 @@
       margin-top: 0.25rem;
     }
 
+    /* Acquisition snapshot cards */
+    .acq-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .acq-card {
+      background: var(--bg-input);
+      border-radius: 6px;
+      padding: 1rem;
+    }
+
+    .acq-card-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-secondary);
+      margin-bottom: 0.4rem;
+    }
+
+    .acq-card-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary, #fff);
+      line-height: 1.1;
+    }
+
+    .acq-card-value.muted {
+      color: var(--text-muted);
+      font-size: 1rem;
+      font-style: italic;
+      font-weight: 500;
+    }
+
+    .acq-card-sub {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+
     .tracker-card {
       background: var(--bg-input);
       border-radius: 6px;
@@ -1707,6 +1749,7 @@
         <button class="tab-btn" onclick="switchTab('operations')">Operations</button>
         <button class="tab-btn" onclick="switchTab('broadcasts')">Broadcasts<span id="discoveryBadge" class="badge-unread" style="display: none;"></span></button>
         <button class="tab-btn" onclick="switchTab('feedback')">Feedback<span id="feedbackBadge" class="badge-unread" style="display: none;"></span></button>
+        <button class="tab-btn" onclick="switchTab('acquisition')">Acquisition</button>
       </div>
       <div id="userInfo" class="user-info" style="display: none;">
         <span id="userEmail"></span>
@@ -2097,6 +2140,83 @@
           <div class="empty-state-text" style="margin-top: 0.5rem;">Loading feedback...</div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Acquisition Tab -->
+  <div id="acquisitionTab" class="tab-content">
+    <div class="ops-container">
+
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Acquisition Snapshot</span>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span id="acquisitionCapturedAt" style="font-size: 0.75rem; color: var(--text-muted);"></span>
+            <button class="btn btn-secondary btn-sm" onclick="loadAcquisitionData()">Refresh</button>
+          </div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0;">
+          The numbers an acquirer would ask about — see <code>docs/marketing/buyer-pipeline.md</code>.
+          Live-events peak concurrency and crash-free rate fill in once PostHog is wired up.
+          Manual refresh only; queries can be expensive.
+        </p>
+      </div>
+
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Audience</span>
+        </div>
+        <div id="acqAudience" class="acq-grid">
+          <div class="empty-state">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Dataset (the moat)</span>
+        </div>
+        <div id="acqDataset" class="acq-grid">
+          <div class="empty-state">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Engagement</span>
+        </div>
+        <div id="acqEngagement" class="acq-grid">
+          <div class="empty-state">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Live events (last completed card)</span>
+        </div>
+        <div id="acqLiveEvents" class="acq-grid">
+          <div class="empty-state">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Operational</span>
+        </div>
+        <div id="acqOperational" class="acq-grid">
+          <div class="empty-state">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -4024,6 +4144,133 @@
         loadFeedback();
       } else if (tabName === 'broadcasts') {
         loadBroadcastsData();
+      } else if (tabName === 'acquisition') {
+        loadAcquisitionData();
+      }
+    }
+
+    // ============================================
+    // ACQUISITION TAB
+    // ============================================
+    function fmtNum(n) {
+      if (n === null || n === undefined) return '—';
+      if (typeof n !== 'number') return String(n);
+      return n.toLocaleString('en-US');
+    }
+
+    function fmtPct(n) {
+      if (n === null || n === undefined) return '—';
+      return (n * 100).toFixed(1) + '%';
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+
+    function acqCard(label, value, sub) {
+      const isMuted = value === '—' || value === null || value === undefined;
+      const valClass = isMuted ? 'acq-card-value muted' : 'acq-card-value';
+      const safeValue = isMuted ? (value || '—') : value;
+      const subHtml = sub ? `<div class="acq-card-sub">${sub}</div>` : '';
+      return `
+        <div class="acq-card">
+          <div class="acq-card-label">${label}</div>
+          <div class="${valClass}">${safeValue}</div>
+          ${subHtml}
+        </div>
+      `;
+    }
+
+    function acqMutedCard(label, note) {
+      return `
+        <div class="acq-card">
+          <div class="acq-card-label">${label}</div>
+          <div class="acq-card-value muted">${note}</div>
+        </div>
+      `;
+    }
+
+    async function loadAcquisitionData() {
+      const containers = ['acqAudience', 'acqDataset', 'acqEngagement', 'acqLiveEvents', 'acqOperational'];
+      containers.forEach(id => {
+        document.getElementById(id).innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+      });
+      document.getElementById('acquisitionCapturedAt').textContent = '';
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/metrics/acquisition-snapshot`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        document.getElementById('acquisitionCapturedAt').textContent =
+          'Captured ' + new Date(data.capturedAt).toLocaleString();
+
+        // Audience
+        const a = data.audience;
+        document.getElementById('acqAudience').innerHTML = [
+          acqCard('Total users', fmtNum(a.totalUsers)),
+          acqCard('MAU (last 30d)', fmtNum(a.activeUsers30d)),
+          acqCard('DAU (last 1d)', fmtNum(a.activeUsers1d)),
+          acqCard('DAU/MAU ratio', fmtPct(a.dauMauRatio), 'Stickiness benchmark'),
+          acqCard('New users (30d)', fmtNum(a.newUsersLast30d)),
+          acqCard(
+            '90-day growth',
+            a.growthRate90d === null ? '—' : fmtPct(a.growthRate90d),
+            a.growthRate90d === null ? 'Needs DailyMetrics snapshot from ~90d ago' : 'Total user delta'
+          ),
+        ].join('');
+
+        // Dataset
+        const d = data.dataset;
+        document.getElementById('acqDataset').innerHTML = [
+          acqCard('Total ratings', fmtNum(d.totalRatings)),
+          acqCard('Total reviews', fmtNum(d.totalReviews)),
+          acqCard('Unique fights rated', fmtNum(d.uniqueFightsRated)),
+          acqCard('Fights with 10+ ratings', fmtNum(d.uniqueFightsWith10PlusRatings), 'Useful-dataset subset'),
+          acqCard('Promotions covered', fmtNum(d.coveragePromotions)),
+          acqCard('Oldest rating in DB', fmtDate(d.oldestRatingDate), 'Legacy ratings imported with import-time stamps; full 10-year history needs external evidence'),
+          acqCard('Avg ratings / rated fight', d.avgRatingsPerActiveFight),
+        ].join('');
+
+        // Engagement
+        const e = data.engagement;
+        document.getElementById('acqEngagement').innerHTML = [
+          acqCard('Ratings / active user (30d)', e.ratingsPerActiveUser30d),
+          acqCard('% MAU with recent rating', fmtPct(e.pctMauWithRecentRating)),
+          acqCard('Notification opt-in (active)', fmtPct(e.notificationOptInPct)),
+          acqCard('Avg followed fighters / active user', e.avgFollowedFightersPerActiveUser),
+        ].join('');
+
+        // Live events
+        const le = data.liveEvents;
+        document.getElementById('acqLiveEvents').innerHTML = [
+          acqCard('Last completed event', le.lastEventName || '—', le.lastEventDate ? fmtDate(le.lastEventDate) : ''),
+          acqCard('Promotion', le.lastEventPromotion || '—'),
+          acqCard('Ratings on that event', fmtNum(le.lastEventRatingsSubmitted)),
+          le.lastEventPeakConcurrentUsers === null
+            ? acqMutedCard('Peak concurrent users', 'PostHog (TASK 3)')
+            : acqCard('Peak concurrent users', fmtNum(le.lastEventPeakConcurrentUsers)),
+        ].join('');
+
+        // Operational
+        const op = data.operational;
+        document.getElementById('acqOperational').innerHTML = [
+          op.crashFreeSessionRate === null
+            ? acqMutedCard('Crash-free session rate', 'PostHog (TASK 3)')
+            : acqCard('Crash-free session rate', fmtPct(op.crashFreeSessionRate)),
+          op.backendUptimePct === null
+            ? acqMutedCard('Backend uptime', 'Render (manual)')
+            : acqCard('Backend uptime', fmtPct(op.backendUptimePct)),
+        ].join('');
+      } catch (err) {
+        console.error('Failed to load acquisition snapshot:', err);
+        const errMsg = `<div class="empty-state"><div class="empty-state-text">Failed to load — ${err.message}</div></div>`;
+        containers.forEach(id => {
+          document.getElementById(id).innerHTML = errMsg;
+        });
       }
     }
 

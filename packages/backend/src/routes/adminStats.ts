@@ -255,6 +255,178 @@ const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
   });
 
   /**
+   * Acquisition-readiness snapshot — the numbers a buyer would ask about.
+   * Live-events and operational fields wait on PostHog (TASK 3); they return null for now.
+   * GET /api/admin/metrics/acquisition-snapshot
+   */
+  fastify.get('/metrics/acquisition-snapshot', async (request, reply) => {
+    try {
+      const now = new Date();
+      const day = 24 * 60 * 60 * 1000;
+      const oneDayAgo = new Date(now.getTime() - 1 * day);
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * day);
+      const ninetyDaysAgo = new Date(now.getTime() - 90 * day);
+
+      // ============= AUDIENCE =============
+      const [
+        totalUsers,
+        activeUsers30d,
+        activeUsers1d,
+        newUsersLast30d,
+      ] = await Promise.all([
+        prisma.user.count(),
+        prisma.user.count({ where: { lastLoginAt: { gte: thirtyDaysAgo } } }),
+        prisma.user.count({ where: { lastLoginAt: { gte: oneDayAgo } } }),
+        prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+      ]);
+
+      const dauMauRatio = activeUsers30d > 0 ? activeUsers1d / activeUsers30d : 0;
+
+      // 90-day growth rate via DailyMetrics snapshot. Falls back to null if we don't have
+      // a snapshot from ~90 days ago — early in the project this will often be null.
+      let growthRate90d: number | null = null;
+      const ninetyDayWindowStart = new Date(ninetyDaysAgo);
+      ninetyDayWindowStart.setHours(0, 0, 0, 0);
+      const ninetyDayWindowEnd = new Date(ninetyDaysAgo);
+      ninetyDayWindowEnd.setDate(ninetyDayWindowEnd.getDate() + 7);
+      ninetyDayWindowEnd.setHours(23, 59, 59, 999);
+      const ninetyDayBack = await prisma.dailyMetrics.findFirst({
+        where: { date: { gte: ninetyDayWindowStart, lte: ninetyDayWindowEnd } },
+        orderBy: { date: 'asc' },
+      });
+      if (ninetyDayBack && ninetyDayBack.totalUsers > 0) {
+        growthRate90d = (totalUsers - ninetyDayBack.totalUsers) / ninetyDayBack.totalUsers;
+      }
+
+      // ============= DATASET =============
+      const [
+        totalRatings,
+        totalReviews,
+        uniqueFightsRated,
+        uniqueFightsWith10PlusRatings,
+        promotionGroups,
+        oldestRating,
+      ] = await Promise.all([
+        prisma.fightRating.count(),
+        prisma.fightReview.count(),
+        prisma.fight.count({ where: { totalRatings: { gt: 0 } } }),
+        prisma.fight.count({ where: { totalRatings: { gte: 10 } } }),
+        prisma.event.groupBy({ by: ['promotion'] }),
+        prisma.fightRating.findFirst({
+          orderBy: { createdAt: 'asc' },
+          select: { createdAt: true },
+        }),
+      ]);
+
+      const coveragePromotions = promotionGroups.length;
+      const oldestRatingDate = oldestRating?.createdAt?.toISOString() ?? null;
+      const avgRatingsPerActiveFight = uniqueFightsRated > 0 ? totalRatings / uniqueFightsRated : 0;
+
+      // ============= ENGAGEMENT =============
+      // Distinct users who rated in the last 30 days — pulled via raw SQL to avoid
+      // hydrating all rating rows just to count distinct user IDs.
+      const distinctRatingUsersResult = await prisma.$queryRaw<{ count: bigint }[]>`
+        SELECT COUNT(DISTINCT "userId") AS count
+        FROM fight_ratings
+        WHERE "createdAt" >= ${thirtyDaysAgo}
+      `;
+      const usersWithRecentRating = Number(distinctRatingUsersResult[0]?.count ?? 0n);
+
+      const [
+        ratingsLast30d,
+        activeUsersWithPushToken,
+        followedByActiveUsers,
+      ] = await Promise.all([
+        prisma.fightRating.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+        prisma.user.count({
+          where: {
+            lastLoginAt: { gte: thirtyDaysAgo },
+            pushToken: { not: null },
+          },
+        }),
+        prisma.userFighterFollow.count({
+          where: { user: { lastLoginAt: { gte: thirtyDaysAgo } } },
+        }),
+      ]);
+
+      const ratingsPerActiveUser30d = activeUsers30d > 0 ? ratingsLast30d / activeUsers30d : 0;
+      const pctMauWithRecentRating = activeUsers30d > 0 ? usersWithRecentRating / activeUsers30d : 0;
+      const notificationOptInPct = activeUsers30d > 0 ? activeUsersWithPushToken / activeUsers30d : 0;
+      const avgFollowedFightersPerActiveUser = activeUsers30d > 0
+        ? followedByActiveUsers / activeUsers30d
+        : 0;
+
+      // ============= LIVE EVENTS =============
+      // Event.totalRatings is denormalized and not kept in sync, so compute the
+      // most recent COMPLETED event with at least one community rating via a
+      // raw join. ORDER BY date DESC for the rating-recency story; the buyer
+      // wants "the last card we ran," not "the card with the most ratings."
+      const lastEventRows = await prisma.$queryRaw<{
+        name: string;
+        promotion: string;
+        date: Date;
+        rating_count: bigint;
+      }[]>`
+        SELECT e.name, e.promotion, e.date, COUNT(fr.id) AS rating_count
+        FROM events e
+        JOIN fights f ON f."eventId" = e.id
+        JOIN fight_ratings fr ON fr."fightId" = f.id
+        WHERE e."eventStatus" = 'COMPLETED'
+          AND e.date <= NOW()
+        GROUP BY e.id, e.name, e.promotion, e.date
+        ORDER BY e.date DESC
+        LIMIT 1
+      `;
+      const lastEvent = lastEventRows[0] ?? null;
+
+      // ============= RESPONSE =============
+      return reply.send({
+        capturedAt: now.toISOString(),
+        audience: {
+          totalUsers,
+          activeUsers30d,
+          activeUsers1d,
+          dauMauRatio: Number(dauMauRatio.toFixed(4)),
+          newUsersLast30d,
+          growthRate90d: growthRate90d !== null ? Number(growthRate90d.toFixed(4)) : null,
+        },
+        dataset: {
+          totalRatings,
+          totalReviews,
+          uniqueFightsRated,
+          uniqueFightsWith10PlusRatings,
+          coveragePromotions,
+          oldestRatingDate,
+          avgRatingsPerActiveFight: Number(avgRatingsPerActiveFight.toFixed(2)),
+        },
+        engagement: {
+          ratingsPerActiveUser30d: Number(ratingsPerActiveUser30d.toFixed(2)),
+          pctMauWithRecentRating: Number(pctMauWithRecentRating.toFixed(4)),
+          notificationOptInPct: Number(notificationOptInPct.toFixed(4)),
+          avgFollowedFightersPerActiveUser: Number(avgFollowedFightersPerActiveUser.toFixed(2)),
+        },
+        liveEvents: {
+          lastEventName: lastEvent?.name ?? null,
+          lastEventPromotion: lastEvent?.promotion ?? null,
+          lastEventDate: lastEvent?.date?.toISOString() ?? null,
+          lastEventPeakConcurrentUsers: null,
+          lastEventRatingsSubmitted: lastEvent ? Number(lastEvent.rating_count) : 0,
+        },
+        operational: {
+          crashFreeSessionRate: null,
+          backendUptimePct: null,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching acquisition snapshot:', error);
+      return reply.status(500).send({
+        error: 'Failed to fetch acquisition snapshot',
+        code: 'ACQUISITION_SNAPSHOT_ERROR',
+      });
+    }
+  });
+
+  /**
    * Get historical metrics
    * GET /api/admin/metrics/history
    */
