@@ -13,6 +13,7 @@ import { PrismaClient, WeightClass, Gender, FightStatus } from '@prisma/client';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
+import { decideStrike, CANCELLATION_STRIKE_THRESHOLD } from './cancellationGuards';
 
 const prisma = new PrismaClient();
 
@@ -513,6 +514,13 @@ export async function parseLiveEventData(
       const updateData: any = {};
       let changed = false;
 
+      // Fight reappeared in scrape — clear any prior consecutive-miss strikes.
+      if ((dbFight as any).missingScrapeCount && (dbFight as any).missingScrapeCount > 0) {
+        console.log(`    🟢 Clearing strike counter for ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (was ${(dbFight as any).missingScrapeCount})`);
+        updateData.missingScrapeCount = 0;
+        changed = true;
+      }
+
       // Check status changes — never downgrade from COMPLETED or LIVE.
       // - COMPLETED downgrade protects manual fixes & draws.
       // - LIVE→UPCOMING protects against UFC.com momentarily hiding the live banner
@@ -707,6 +715,23 @@ export async function parseLiveEventData(
     console.log(`  📋 Scraped fight signatures: ${Array.from(scrapedFightSignatures).join(', ')}`);
     let cancelledCount = 0;
     let unCancelledCount = 0;
+    let strikeCount = 0;
+
+    // Scrape-sanity floor: if the live scrape returned implausibly few fights
+    // for the size of the card, the page probably failed to render fully. Skip
+    // cancellation on that tick — the two-strike rule alone isn't enough when
+    // multiple fights vanish at once. UFC 328 (May 9 2026) lost Alvarez/Amosov
+    // and Dawson/Rebecki to exactly this failure mode.
+    const dbNonCancelledCount = event.fights.filter(f =>
+      f.fightStatus !== 'CANCELLED' && f.fightStatus !== 'COMPLETED'
+    ).length;
+    const cancellationSafetyFloor = Math.max(2, Math.floor(dbNonCancelledCount * 0.75));
+    const scrapeLooksComplete = scrapedFightSignatures.size >= cancellationSafetyFloor;
+    const canCancelMissing = dbNonCancelledCount === 0 || scrapeLooksComplete;
+
+    if (!canCancelMissing) {
+      console.log(`  ⚠️  Skipping cancellation pass: scrape returned ${scrapedFightSignatures.size} fights, DB has ${dbNonCancelledCount} non-final fights (need ≥${cancellationSafetyFloor}). Treating as partial render.`);
+    }
 
     for (const dbFight of event.fights) {
       // Skip fights that are already complete
@@ -746,29 +771,43 @@ export async function parseLiveEventData(
           where: { id: dbFight.id },
           data: {
             fightStatus: 'UPCOMING',
+            missingScrapeCount: 0,
           }
         });
 
         unCancelledCount++;
       }
-      // Case 2: Fight is NOT cancelled and missing from scraped data -> CANCEL it
+      // Case 2: Fight is NOT cancelled and missing from scraped data -> strike or CANCEL
       else if (dbFight.fightStatus !== 'CANCELLED' && !fightIsInScrapedData) {
         console.log(`  ⚠️  Fight missing from scraped data: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
 
-        // Only mark as cancelled if event has started (to avoid false positives before event begins)
-        if (event.eventStatus !== 'UPCOMING') {
-          console.log(`  ❌ Marking fight as CANCELLED: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
+        if (event.eventStatus === 'UPCOMING') {
+          console.log(`  ℹ️  Event hasn't started yet, not striking (might be missing from preliminary data)`);
+          continue;
+        }
 
+        if (!canCancelMissing) {
+          // Sanity floor tripped — don't even strike. The whole scrape is suspect.
+          continue;
+        }
+
+        // Two-strike rule: cancel only after consecutive misses.
+        const { newCount, shouldCancel } = decideStrike((dbFight as any).missingScrapeCount);
+        const matchupLabel = `${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`;
+        if (shouldCancel) {
+          console.log(`  ❌ Cancelling fight (strike ${newCount}/${CANCELLATION_STRIKE_THRESHOLD}): ${matchupLabel}`);
           await prisma.fight.update({
             where: { id: dbFight.id },
-            data: {
-              fightStatus: 'CANCELLED',
-            }
+            data: { fightStatus: 'CANCELLED', missingScrapeCount: newCount }
           });
-
           cancelledCount++;
         } else {
-          console.log(`  ℹ️  Event hasn't started yet, not marking as cancelled (might be missing from preliminary data)`);
+          console.log(`  ⚠️  Strike ${newCount}/${CANCELLATION_STRIKE_THRESHOLD} on missing fight: ${matchupLabel}. Won't cancel until next consecutive miss.`);
+          await prisma.fight.update({
+            where: { id: dbFight.id },
+            data: { missingScrapeCount: newCount }
+          });
+          strikeCount++;
         }
       }
     }
@@ -776,11 +815,14 @@ export async function parseLiveEventData(
     if (cancelledCount > 0) {
       console.log(`  ⚠️  Marked ${cancelledCount} fights as cancelled`);
     }
+    if (strikeCount > 0) {
+      console.log(`  ⚠ Struck ${strikeCount} missing fights (will cancel after another consecutive miss)`);
+    }
     if (unCancelledCount > 0) {
       console.log(`  ✅ Un-cancelled ${unCancelledCount} fights (reappeared in scraped data)`);
     }
 
-    console.log(`  ✅ Parser complete: ${fightsUpdated} fights updated, ${cancelledCount} fights cancelled, ${unCancelledCount} fights un-cancelled\n`);
+    console.log(`  ✅ Parser complete: ${fightsUpdated} fights updated, ${cancelledCount} fights cancelled, ${strikeCount} struck, ${unCancelledCount} fights un-cancelled\n`);
 
   } catch (error) {
     console.error('  ❌ Parser error:', error);
