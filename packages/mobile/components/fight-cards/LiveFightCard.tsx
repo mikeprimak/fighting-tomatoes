@@ -464,22 +464,44 @@ function LiveFightCard({
             ]}>
               {(predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0) ? (
                 <>
-                  <FontAwesome6
-                    name="fire-flame-curved"
-                    size={14}
-                    color="rgba(0,0,0,0.45)"
-                  />
                   <Text style={styles.hypeSquareNumber}>
-                    {predictionStats.averageHype.toFixed(1)}
+                    {predictionStats.averageHype === 10 ? '10' : predictionStats.averageHype.toFixed(1)}
                   </Text>
+                  {(fight as any).hypeCount > 0 || (fight as any).commentCount > 0 ? (
+                    <View style={styles.hypeSquareCountRow}>
+                      {(fight as any).hypeCount > 0 && (
+                        <Text style={styles.hypeSquareCount}>
+                          ({(fight as any).hypeCount})
+                        </Text>
+                      )}
+                      {(fight as any).commentCount > 0 && (
+                        <View style={styles.commentCountRow}>
+                          <FontAwesome name="comment" size={7} color="rgba(0,0,0,0.5)" />
+                          <Text style={styles.commentCountText}>
+                            {(fight as any).commentCount}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  ) : null}
                 </>
               ) : (
-                <FontAwesome6
-                  name="fire-flame-curved"
-                  size={16}
-                  color={colors.textSecondary}
-                  style={{ opacity: 0.5 }}
-                />
+                <>
+                  <FontAwesome6
+                    name="fire-flame-curved"
+                    size={16}
+                    color={colors.textSecondary}
+                    style={{ opacity: 0.5 }}
+                  />
+                  {(fight as any).commentCount > 0 && (
+                    <View style={styles.commentCountRow}>
+                      <FontAwesome name="comment" size={7} color="rgba(255,255,255,0.5)" />
+                      <Text style={[styles.commentCountText, { color: 'rgba(255,255,255,0.5)' }]}>
+                        {(fight as any).commentCount}
+                      </Text>
+                    </View>
+                  )}
+                </>
               )}
             </View>
 
@@ -1052,6 +1074,27 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.7)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+  },
+  hypeSquareCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  hypeSquareCount: {
+    color: 'rgba(0,0,0,0.6)',
+    fontSize: 9,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  commentCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  commentCountText: {
+    color: 'rgba(0,0,0,0.5)',
+    fontSize: 8,
+    fontWeight: '600',
   },
   fighterLastName: {
     fontSize: 16,
