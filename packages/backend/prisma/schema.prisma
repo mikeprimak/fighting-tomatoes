@@ -294,6 +294,11 @@ model Event {
   // Reset to 0 when the event reappears.
   missingScrapeCount Int       @default(0)
 
+  // Manual live tracking: admin advances the card by setting fights COMPLETED.
+  // Suppresses the Step 1.7 section-start fallback; fires per-fight notifs on
+  // event LIVE (first fight) and on each fight COMPLETED (next-up fight).
+  useManualLiveTracker Boolean @default(false)
+
   // Timestamps
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt

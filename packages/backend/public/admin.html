@@ -2342,6 +2342,16 @@
           </div>
         </div>
 
+        <div class="form-group">
+          <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="eventUseManualLiveTracker" style="width: 1rem; height: 1rem;">
+            <span>Manual live tracking</span>
+          </label>
+          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Suppresses the section-start ping. On event LIVE, fires per-fight notif for fight #1. On each fight marked COMPLETED, fires per-fight notif for the next-up fight. Use for non-tracker events you'll advance manually.
+          </div>
+        </div>
+
         <!-- Banner Image Section -->
         <div class="form-group" id="bannerImageSection" style="display: none;">
           <label class="form-label">Event Banner Image</label>
@@ -3182,6 +3192,7 @@
         document.getElementById('eventLocation').value = selectedEvent.location || '';
         document.getElementById('eventMainChannel').value = selectedEvent.mainChannel || '';
         document.getElementById('eventScraperType').value = selectedEvent.scraperType || '';
+        document.getElementById('eventUseManualLiveTracker').checked = !!selectedEvent.useManualLiveTracker;
 
         // Populate time fields (convert UTC to Eastern Time for display)
         const extractTimeET = (dateStr) => {
@@ -3211,6 +3222,7 @@
         document.getElementById('eventPrelimTime').value = '';
         document.getElementById('eventEarlyPrelimTime').value = '';
         document.getElementById('eventScraperType').value = '';
+        document.getElementById('eventUseManualLiveTracker').checked = false;
         // Copy promotion from global filter if set
         const globalPromo = document.getElementById('globalPromotion').value;
         if (globalPromo) {
@@ -3270,6 +3282,7 @@
         prelimStartTime: prelimTime ? etToUTC(date, prelimTime) : undefined,
         earlyPrelimStartTime: earlyPrelimTime ? etToUTC(date, earlyPrelimTime) : undefined,
         scraperType: scraperType || null,
+        useManualLiveTracker: document.getElementById('eventUseManualLiveTracker').checked,
       };
 
       try {
