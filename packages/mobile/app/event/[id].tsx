@@ -17,7 +17,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
-import { FightDisplayCard, ScreenHeader } from '../../components';
+import { FightDisplayCard, ScreenHeader, HowToWatch } from '../../components';
 import { useAuth } from '../../store/AuthContext';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useLiveEventPolling } from '../../hooks/useLiveEventPolling';
@@ -347,9 +347,26 @@ export default function EventDetailScreen() {
           )
         )}
 
+        {/* How to Watch — whole event */}
+        {event?.id && (
+          <View style={styles.howToWatchWrapper}>
+            <HowToWatch eventId={event.id} />
+          </View>
+        )}
+
         {/* Main Card */}
         {mainCard.length > 0 && (
           <View style={styles.cardSection}>
+            {event?.id && (
+              <View style={styles.howToWatchWrapper}>
+                <HowToWatch
+                  eventId={event.id}
+                  section="MAIN_CARD"
+                  label="MAIN CARD"
+                  time={event.mainStartTime ? formatTime(event.mainStartTime) : undefined}
+                />
+              </View>
+            )}
             {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
               <FightDisplayCard
                 key={fight.id}
@@ -368,6 +385,16 @@ export default function EventDetailScreen() {
         {/* Preliminary Card */}
         {prelimCard.length > 0 && (
           <View style={styles.cardSection}>
+            {event?.id && (
+              <View style={styles.howToWatchWrapper}>
+                <HowToWatch
+                  eventId={event.id}
+                  section="PRELIMS"
+                  label="PRELIMS"
+                  time={event.prelimStartTime ? formatTime(event.prelimStartTime) : undefined}
+                />
+              </View>
+            )}
             {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
               <FightDisplayCard
                 key={fight.id}
@@ -386,6 +413,16 @@ export default function EventDetailScreen() {
         {/* Early Prelims */}
         {earlyPrelims.length > 0 && (
           <View style={styles.cardSection}>
+            {event?.id && (
+              <View style={styles.howToWatchWrapper}>
+                <HowToWatch
+                  eventId={event.id}
+                  section="EARLY_PRELIMS"
+                  label="EARLY PRELIMS"
+                  time={event.earlyPrelimStartTime ? formatTime(event.earlyPrelimStartTime) : undefined}
+                />
+              </View>
+            )}
             {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
               <FightDisplayCard
                 key={fight.id}
@@ -514,6 +551,9 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  howToWatchWrapper: {
+    paddingHorizontal: 12,
   },
   cardSection: {
     marginTop: 0,
