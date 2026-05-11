@@ -15,7 +15,7 @@
 import { PrismaClient } from '@prisma/client';
 import { isProductionScraper, hasReliableLiveTracker } from '../config/liveTrackerConfig';
 import { startLiveTracking, getLiveTrackingStatus } from './liveEventTracker';
-import { notifyEventSectionStart } from './notificationService';
+import { notifyEventSectionStart, notifyFightStartViaRules } from './notificationService';
 
 const prisma = new PrismaClient();
 
@@ -218,6 +218,7 @@ export async function runEventLifecycleCheck(): Promise<{
         earlyPrelimStartTime: true,
         scraperType: true,
         ufcUrl: true,
+        useManualLiveTracker: true,
       },
     });
 
@@ -243,6 +244,32 @@ export async function runEventLifecycleCheck(): Promise<{
         });
         results.eventsStarted++;
         console.log(`[Lifecycle] UPCOMING → LIVE: ${event.name}`);
+
+        // Manual-tracker events: fire the first-fight ping now. Subsequent
+        // pings fire when admin marks each fight COMPLETED (admin.ts).
+        if (event.useManualLiveTracker) {
+          try {
+            const firstFight = await prisma.fight.findFirst({
+              where: { eventId: event.id, fightStatus: 'UPCOMING' },
+              orderBy: { orderOnCard: 'asc' },
+              include: {
+                fighter1: { select: { firstName: true, lastName: true } },
+                fighter2: { select: { firstName: true, lastName: true } },
+              },
+            });
+            if (firstFight) {
+              const fmt = (f: { firstName: string; lastName: string }) =>
+                f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : (f.lastName || f.firstName);
+              await notifyFightStartViaRules(
+                firstFight.id,
+                fmt(firstFight.fighter1),
+                fmt(firstFight.fighter2),
+              );
+            }
+          } catch (err: any) {
+            console.error(`[Lifecycle] Manual-tracker first-fight notif failed for ${event.name}: ${err.message}`);
+          }
+        }
 
         // Trigger live tracker. VPS handles ufc/oktagon/bkfc/onefc; pfl and raf
         // have no VPS scraper handler so they go straight to GitHub Actions.
@@ -358,6 +385,7 @@ export async function runEventLifecycleCheck(): Promise<{
         mainStartTime: true,
         prelimStartTime: true,
         earlyPrelimStartTime: true,
+        useManualLiveTracker: true,
         fights: {
           select: { id: true, cardType: true },
         },
@@ -366,6 +394,10 @@ export async function runEventLifecycleCheck(): Promise<{
 
     for (const event of candidateEvents) {
       if (hasReliableLiveTracker(event.scraperType, event.promotion)) continue;
+      // Manual-tracker events drive their own per-fight pings (Step 1 first
+      // fight + admin set-status COMPLETED → next fight). Section ping would
+      // duplicate.
+      if (event.useManualLiveTracker) continue;
       if (event.fights.length === 0) continue;
 
       // Bucket fights by normalized cardType. Unknown/null cardType bundles

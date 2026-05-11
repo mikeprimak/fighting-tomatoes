@@ -50,6 +50,8 @@ const CreateEventSchema = z.object({
   mainStartTime: z.string().transform((val) => new Date(val)).optional(),
   // Scraper type: null = no scraper, or a specific scraper name
   scraperType: z.enum(['ufc', 'matchroom', 'oktagon', 'onefc', 'tapology', 'bkfc']).nullable().optional(),
+  // Manual live tracking: admin advances the card by marking fights COMPLETED
+  useManualLiveTracker: z.boolean().optional(),
 });
 
 const UpdateEventSchema = CreateEventSchema.partial();
@@ -1086,10 +1088,44 @@ export async function adminRoutes(fastify: FastifyInstance) {
       include: {
         fighter1: { select: { id: true, firstName: true, lastName: true } },
         fighter2: { select: { id: true, firstName: true, lastName: true } },
+        event: { select: { id: true, useManualLiveTracker: true, name: true } },
       },
     });
 
     console.log(`[Admin] Fight ${fight.fighter1.lastName} vs ${fight.fighter2.lastName} set to ${status}`);
+
+    // Manual-tracker events: on COMPLETED, fire the next-up fight notif.
+    // Mirrors what live parsers do via notifyFightStartViaRules.
+    if (status === 'completed' && fight.event?.useManualLiveTracker && fight.orderOnCard !== null) {
+      try {
+        const { notifyFightStartViaRules } = await import('../services/notificationService');
+        const nextFight = await prisma.fight.findFirst({
+          where: {
+            eventId: fight.eventId,
+            orderOnCard: { gt: fight.orderOnCard },
+            fightStatus: 'UPCOMING',
+          },
+          orderBy: { orderOnCard: 'asc' },
+          include: {
+            fighter1: { select: { firstName: true, lastName: true } },
+            fighter2: { select: { firstName: true, lastName: true } },
+          },
+        });
+        if (nextFight) {
+          const fmt = (f: { firstName: string; lastName: string }) =>
+            f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : (f.lastName || f.firstName);
+          await notifyFightStartViaRules(
+            nextFight.id,
+            fmt(nextFight.fighter1),
+            fmt(nextFight.fighter2),
+          );
+          console.log(`[Admin] Manual-tracker next-fight notif fired for ${fight.event.name}`);
+        }
+      } catch (err: any) {
+        console.error(`[Admin] Manual-tracker next-fight notif failed: ${err.message}`);
+      }
+    }
+
     return reply.send({ fight });
   });
 
