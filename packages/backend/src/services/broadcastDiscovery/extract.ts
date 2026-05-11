@@ -98,7 +98,23 @@ export async function extractFindings(input: ExtractionInput): Promise<Extracted
       messages: [{ role: 'user', content: userBlocks }],
     });
   } catch (e: any) {
-    console.warn('[discovery] Anthropic call failed:', e?.message);
+    const msg = String(e?.message ?? e);
+    const status = e?.status ?? e?.response?.status;
+    // Auth / billing / quota errors are not transient — every subsequent call will
+    // fail the same way. Throw so the orchestrator records an error and the
+    // workflow exits non-zero. Previously this was swallowed as "no findings",
+    // which meant exhausted credits silently produced an empty inbox.
+    const isFatal =
+      status === 401 ||
+      status === 403 ||
+      /credit balance/i.test(msg) ||
+      /invalid.*api.?key/i.test(msg) ||
+      /unauthor/i.test(msg);
+    if (isFatal) {
+      console.error('[discovery] Anthropic fatal auth/billing error:', msg);
+      throw new Error(`Anthropic ${status ?? ''} ${msg}`);
+    }
+    console.warn('[discovery] Anthropic call failed (treated as transient):', msg);
     return [];
   }
 
