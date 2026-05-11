@@ -2083,6 +2083,10 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
       if (!user) {
+        const tokenPrefix = token.slice(0, 8);
+        const ip = request.ip;
+        const ua = request.headers['user-agent'] ?? 'unknown';
+        request.log.warn(`[Email] TOKEN_INVALID verify-email attempt token=${tokenPrefix}… ip=${ip} ua="${ua}"`);
         return reply.code(400).send({
           error: 'Invalid or expired verification token',
           code: 'TOKEN_INVALID',
