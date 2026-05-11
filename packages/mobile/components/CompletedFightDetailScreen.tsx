@@ -1424,7 +1424,11 @@ export default function CompletedFightDetailScreen({
 
         {/* Fighter Images */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16, marginBottom: 12, gap: 0 }}>
-          <View style={{ alignItems: 'center' }}>
+          <TouchableOpacity
+            style={{ alignItems: 'center' }}
+            onPress={() => router.push(`/fighter/${fight.fighter1.id}` as any)}
+            activeOpacity={0.7}
+          >
             <View style={[
               { width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 8, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
               isOutcomeRevealed && fight.winner === fight.fighter1.id ? { borderWidth: 3, borderColor: '#166534' } : {}
@@ -1450,11 +1454,15 @@ export default function CompletedFightDetailScreen({
                 </Text>
               )}
             </View>
-          </View>
+          </TouchableOpacity>
           <Text style={{ fontSize: 16, fontWeight: '600', color: colors.textSecondary, marginHorizontal: 24, marginBottom: 40 }}>
             vs
           </Text>
-          <View style={{ alignItems: 'center' }}>
+          <TouchableOpacity
+            style={{ alignItems: 'center' }}
+            onPress={() => router.push(`/fighter/${fight.fighter2.id}` as any)}
+            activeOpacity={0.7}
+          >
             <View style={[
               { width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 8, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' },
               isOutcomeRevealed && fight.winner === fight.fighter2.id ? { borderWidth: 3, borderColor: '#166534' } : {}
@@ -1480,7 +1488,7 @@ export default function CompletedFightDetailScreen({
                 </Text>
               )}
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Spoiler-free prompt or Reveal Button */}

@@ -17,6 +17,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useQueryClient, useQuery, useMutation } from '@tanstack/react-query';
 import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
@@ -118,6 +119,7 @@ export default function UpcomingFightDetailScreen({
 }: UpcomingFightDetailScreenProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter();
   const queryClient = useQueryClient();
   const { isAuthenticated, user } = useAuth();
   const { setPendingAnimation } = usePredictionAnimation();
@@ -1160,7 +1162,11 @@ export default function UpcomingFightDetailScreen({
 
       {/* Fighter Images */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16, marginBottom: 12, gap: 0 }}>
-        <View style={{ alignItems: 'center' }}>
+        <TouchableOpacity
+          style={{ alignItems: 'center' }}
+          onPress={() => router.push(`/fighter/${fight.fighter1.id}` as any)}
+          activeOpacity={0.7}
+        >
           <View style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 8, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
             <Image
               source={
@@ -1174,11 +1180,15 @@ export default function UpcomingFightDetailScreen({
           <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', textAlign: 'center', color: colors.text }}>
             {getFighterDisplayName(fight.fighter1)}
           </Text>
-        </View>
+        </TouchableOpacity>
         <Text style={{ fontSize: 16, fontWeight: '600', color: colors.textSecondary, marginHorizontal: 24, marginBottom: 24 }}>
           vs
         </Text>
-        <View style={{ alignItems: 'center' }}>
+        <TouchableOpacity
+          style={{ alignItems: 'center' }}
+          onPress={() => router.push(`/fighter/${fight.fighter2.id}` as any)}
+          activeOpacity={0.7}
+        >
           <View style={{ width: 120, height: 120, borderRadius: 60, overflow: 'hidden', marginBottom: 8, backgroundColor: '#333', justifyContent: 'center', alignItems: 'center' }}>
             <Image
               source={
@@ -1192,7 +1202,7 @@ export default function UpcomingFightDetailScreen({
           <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '600', textAlign: 'center', color: colors.text }}>
             {getFighterDisplayName(fight.fighter2)}
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       {/* Event Info */}
