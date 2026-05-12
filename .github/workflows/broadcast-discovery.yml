@@ -52,6 +52,13 @@ jobs:
         run: |
           cd packages/backend
           npx ts-node --transpile-only scripts/run-broadcast-discovery.ts
+      - name: Auto-apply high-confidence findings
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          AUTO_APPLY_MIN_CONFIDENCE: "0.90"
+        run: |
+          cd packages/backend
+          npx tsx scripts/auto-apply-discoveries.ts
       - name: Report failure
         if: failure()
         run: |
