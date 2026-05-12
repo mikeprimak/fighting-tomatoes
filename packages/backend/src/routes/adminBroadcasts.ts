@@ -54,7 +54,30 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
           isActive: body.isActive ?? true,
         },
       });
-      return reply.code(201).send({ channel: created });
+
+      // Resolve any PENDING discoveries whose raw channel text matches this
+      // new channel (case-insensitive equality or substring match). Without
+      // this, admin would have to either re-run discovery or manually edit
+      // each discovery to apply it. This mirrors resolveChannelSlug() in diff.ts.
+      const nameLc = created.name.toLowerCase();
+      const orphans = await fastify.prisma.broadcastDiscovery.findMany({
+        where: { status: 'PENDING', channelSlug: null },
+        select: { id: true, channelNameRaw: true },
+      });
+      const matchedIds = orphans
+        .filter(o => {
+          const raw = (o.channelNameRaw || '').toLowerCase();
+          return raw === nameLc || raw.includes(nameLc) || nameLc.includes(raw);
+        })
+        .map(o => o.id);
+      if (matchedIds.length > 0) {
+        await fastify.prisma.broadcastDiscovery.updateMany({
+          where: { id: { in: matchedIds } },
+          data: { channelSlug: created.slug },
+        });
+      }
+
+      return reply.code(201).send({ channel: created, resolvedDiscoveries: matchedIds.length });
     } catch (e: any) {
       if (e?.code === 'P2002') return reply.code(409).send({ error: 'slug already exists' });
       throw e;

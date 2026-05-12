@@ -5001,6 +5001,31 @@
       document.getElementById('channelEditModal').classList.add('active');
     }
 
+    function slugifyChannelName(name) {
+      return String(name || '')
+        .toLowerCase()
+        .replace(/\+/g, '-plus')
+        .replace(/&/g, '-and-')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .replace(/-+/g, '-');
+    }
+
+    // Open the channel modal pre-filled from a discovery row whose suggested
+    // channel doesn't yet exist in our DB. After save, the inbox re-renders
+    // so the resolved channel now shows the Add button.
+    function openCreateChannelForDiscovery(row) {
+      currentChannelSlug = null;
+      document.getElementById('channelEditTitle').textContent = `New channel from suggestion`;
+      document.getElementById('channelEditSlug').value = slugifyChannelName(row.channelNameRaw);
+      document.getElementById('channelEditSlug').disabled = false;
+      document.getElementById('channelEditName').value = row.channelNameRaw || '';
+      document.getElementById('channelEditHomepage').value = '';
+      document.getElementById('channelEditLogo').value = '';
+      document.getElementById('channelEditActive').checked = true;
+      document.getElementById('channelEditModal').classList.add('active');
+    }
+
     function editChannel(slug) {
       const c = broadcastChannelsCache.find(x => x.slug === slug);
       if (!c) return;
@@ -5053,6 +5078,9 @@
         }
         closeChannelEditModal();
         await loadBroadcastChannels();
+        // Discovery cards may have been waiting on this channel — re-render so
+        // those rows pick up the resolved slug and gain Add buttons.
+        await loadDiscoveryInbox();
       } catch (err) {
         alert(`Save failed: ${err.message}`);
       }
@@ -5288,16 +5316,16 @@
         ? `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; padding-left: 4px;">↳ Other sections on file: ${otherSectionDefaults.map(d => `${escapeHtml(d.channelName)} on ${formatCardSection(d.cardSection ?? null)}`).join(', ')}</div>`
         : '';
 
-      const newDiscoveryDisplay = `${channelName}${tierWord ? ` <span style="color: var(--text-secondary); font-size: 0.85em;">(${tierWord})</span>` : ''}` +
-        (newChannel ? ' <span style="color: var(--accent-orange); font-size: 0.85em;">⚠ not in DB yet</span>' : '');
+      const newDiscoveryDisplay = `${channelName}${tierWord ? ` <span style="color: var(--text-secondary); font-size: 0.85em;">(${tierWord})</span>` : ''}`;
 
       // Action buttons
       let actions;
       if (!isPending) {
         actions = `<span style="color: var(--text-secondary); font-size: 0.75rem;">${escapeHtml(r.status)}${r.reviewNote ? ' · ' + escapeHtml(r.reviewNote) : ''}</span>`;
       } else if (newChannel) {
+        const rowEnc = JSON.stringify(r).replace(/'/g, '&#39;');
         actions = `
-          <span style="color: var(--accent-orange); font-size: 0.75rem; align-self: center;">Create channel first via "+ New Channel"</span>
+          <button class="btn btn-sm btn-success" onclick='openCreateChannelForDiscovery(${rowEnc})'>Create channel</button>
           <button class="btn btn-sm btn-danger" onclick="rejectDiscovery('${r.id}')">Reject</button>
           <button class="btn btn-sm btn-secondary" onclick="markDiscoveryDuplicate('${r.id}')">Duplicate</button>
         `;
@@ -5325,12 +5353,10 @@
           <div style="font-size: 0.9rem; line-height: 1.75;">
             <div><strong>Org:</strong> ${promo}</div>
             <div><strong>Card Section:</strong> ${escapeHtml(sectionLabel)}</div>
-            <div style="display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-              <div><strong>Country:</strong> ${escapeHtml(country)}</div>
-              <div><strong>Current:</strong> ${currentDisplay}</div>
-            </div>
+            <div><strong>Country:</strong> ${escapeHtml(country)}</div>
+            <div><strong>Current:</strong> ${currentDisplay}</div>
             ${otherSectionsNote}
-            <div><strong>New Discovery:</strong> ${newDiscoveryDisplay}</div>
+            <div><strong>Suggested:</strong> ${newDiscoveryDisplay}</div>
             <div style="margin-top: 6px;"><strong>Why?</strong> <a href="${escapeHtml(r.sourceUrl || '#')}" target="_blank" style="color: var(--accent-blue);">${escapeHtml(sourceDomain)}</a> says: <em style="color: var(--text-secondary);">"${escapeHtml(r.snippet || '')}"</em></div>
           </div>
           <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; justify-content: flex-end; align-items: center;">${actions}</div>
