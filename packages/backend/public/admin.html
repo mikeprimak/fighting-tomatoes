@@ -4863,15 +4863,24 @@
     let broadcastChannelsCache = [];
     let currentDiscoveryId = null;
     let currentDiscoveryReplaceOthers = false;
-    const REGION_LABELS = {
-      US: '🇺🇸 the US',
-      CA: '🇨🇦 Canada',
-      GB: '🇬🇧 the UK',
-      AU: '🇦🇺 Australia',
-      NZ: '🇳🇿 New Zealand',
-      EU: '🇪🇺 Europe',
+    const COUNTRY_NAMES = {
+      US: 'United States',
+      CA: 'Canada',
+      GB: 'United Kingdom',
+      AU: 'Australia',
+      NZ: 'New Zealand',
+      EU: 'Europe',
     };
+    const REGION_LABELS = COUNTRY_NAMES;
     const EU_COUNTRY_SPECIFIC = ['rmc', 'nova ', 'bild', 'rtl', 'hbo max', 'discovery+', 'sky deutschland', 'sky italia', 'movistar', 'orange sport', 'canal+'];
+
+    function extractSourceDomain(url) {
+      try {
+        return new URL(url).hostname.replace(/^www\./, '');
+      } catch (e) {
+        return url || '';
+      }
+    }
     let currentDefaultId = null;
     let currentChannelSlug = null;
 
@@ -5232,29 +5241,21 @@
 
     function renderDiscoveryCard(r) {
       const isPending = r.status === 'PENDING';
-      const region = REGION_LABELS[r.region] || r.region;
-      const tierWord = r.tier === 'FREE' ? 'free' : r.tier === 'PPV' ? 'PPV' : r.tier === 'SUBSCRIPTION' ? 'subscription' : '';
+      const country = COUNTRY_NAMES[r.region] || r.region;
+      const tierWord = r.tier === 'FREE' ? 'Free' : r.tier === 'PPV' ? 'PPV' : r.tier === 'SUBSCRIPTION' ? 'Subscription' : '';
       const newChannel = !r.channelSlug;
       const currentDefaults = r.currentDefaults || [];
       const hasCurrent = currentDefaults.length > 0;
       const channelName = escapeHtml(r.channelNameRaw || 'unknown channel');
       const promo = escapeHtml(r.promotion);
+      const sourceDomain = extractSourceDomain(r.sourceUrl);
 
-      // Plain-English headline
-      let headline;
-      if (newChannel) {
-        headline = `Suggests adding <strong>${channelName}</strong> as a new ${tierWord} broadcaster for <strong>${promo}</strong> in ${region}. ` +
-          `<span style="color: var(--accent-orange);">⚠ This channel isn't in your database yet — create it first.</span>`;
-      } else if (r.changeType === 'CHANGED' && hasCurrent) {
-        headline = `Suggests using <strong>${channelName}</strong> (${tierWord}) for <strong>${promo}</strong> in ${region}.`;
-      } else {
-        headline = `Suggests adding <strong>${channelName}</strong> as a ${tierWord} broadcaster for <strong>${promo}</strong> in ${region}.`;
-      }
+      const currentDisplay = hasCurrent
+        ? currentDefaults.map(d => `${escapeHtml(d.channelName)} <span style="color: var(--text-secondary); font-size: 0.85em;">(${d.tier})</span>`).join(', ')
+        : '<em style="color: var(--text-secondary);">nothing</em>';
 
-      // Currently-on-file line
-      const currentLine = hasCurrent
-        ? `<div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;">📺 <strong>Currently on file:</strong> ${currentDefaults.map(d => `${escapeHtml(d.channelName)} (${d.tier})`).join(' · ')}</div>`
-        : `<div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;">📺 <strong>Currently on file:</strong> <em>nothing</em> for ${promo} in ${region}</div>`;
+      const newDiscoveryDisplay = `${channelName}${tierWord ? ` <span style="color: var(--text-secondary); font-size: 0.85em;">(${tierWord})</span>` : ''}` +
+        (newChannel ? ' <span style="color: var(--accent-orange); font-size: 0.85em;">⚠ not in DB yet</span>' : '');
 
       // Action buttons
       let actions;
@@ -5262,6 +5263,7 @@
         actions = `<span style="color: var(--text-secondary); font-size: 0.75rem;">${escapeHtml(r.status)}${r.reviewNote ? ' · ' + escapeHtml(r.reviewNote) : ''}</span>`;
       } else if (newChannel) {
         actions = `
+          <span style="color: var(--accent-orange); font-size: 0.75rem; align-self: center;">Create channel first via "+ New Channel"</span>
           <button class="btn btn-sm btn-danger" onclick="rejectDiscovery('${r.id}')">Reject</button>
           <button class="btn btn-sm btn-secondary" onclick="markDiscoveryDuplicate('${r.id}')">Duplicate</button>
         `;
@@ -5285,19 +5287,18 @@
       const borderColor = r.confidence >= 0.9 ? '#16a34a' : r.confidence >= 0.7 ? '#eab308' : '#f97316';
 
       return `
-        <div style="background: var(--bg-input); padding: 14px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${borderColor};">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
-            ${confidenceBadge(r.confidence)}
-            ${r.tier ? `<span style="${tierBadgeStyle(r.tier)}">${r.tier}</span>` : ''}
-            ${changeTypeBadge(r.changeType)}
+        <div style="background: var(--bg-input); padding: 14px 16px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${borderColor};">
+          <div style="font-size: 0.9rem; line-height: 1.75;">
+            <div><strong>Org:</strong> ${promo}</div>
+            <div><strong>Card Section:</strong> Whole Event <span style="color: var(--text-secondary); font-size: 0.75rem; margin-left: 4px;">(discovery operates at the promotion level — per-section detail is handled per-event)</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+              <div><strong>Country:</strong> ${escapeHtml(country)}</div>
+              <div><strong>Current:</strong> ${currentDisplay}</div>
+            </div>
+            <div><strong>New Discovery:</strong> ${newDiscoveryDisplay}</div>
+            <div style="margin-top: 6px;"><strong>Why?</strong> <a href="${escapeHtml(r.sourceUrl || '#')}" target="_blank" style="color: var(--accent-blue);">${escapeHtml(sourceDomain)}</a> says: <em style="color: var(--text-secondary);">"${escapeHtml(r.snippet || '')}"</em></div>
           </div>
-          <div style="font-size: 0.95rem; line-height: 1.45;">${headline}</div>
-          ${currentLine}
-          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 10px; padding: 8px 10px; background: var(--bg-card); border-radius: 4px; line-height: 1.4; border-left: 2px solid var(--border);">"${escapeHtml(r.snippet || '')}"</div>
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
-            <a href="${escapeHtml(r.sourceUrl || '#')}" target="_blank" style="color: var(--accent-blue); font-size: 0.75rem; word-break: break-all;">🔗 ${escapeHtml((r.sourceUrl || '').slice(0, 70))}${(r.sourceUrl || '').length > 70 ? '…' : ''}</a>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">${actions}</div>
-          </div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; justify-content: flex-end; align-items: center;">${actions}</div>
         </div>`;
     }
 
