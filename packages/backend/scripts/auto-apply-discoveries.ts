@@ -68,13 +68,17 @@ const DRY_RUN = process.env.AUTO_APPLY_DRY_RUN === '1';
       continue;
     }
     const tier = d.tier!;
+    const cardSection = (d as any).cardSection ?? null;
 
-    // Idempotent upsert: if the (promotion, region, channel) default exists, bump
-    // tier + lastDiscoveryAt. Otherwise create.
-    const existing = await prisma.promotionBroadcastDefault.findUnique({
-      where: { promotion_region_channelId: {
-        promotion: d.promotion, region: d.region, channelId: channel.id,
-      } },
+    // Idempotent upsert: if (promotion, region, channel, cardSection) row
+    // exists, bump tier + lastDiscoveryAt. Otherwise create.
+    const existing = await prisma.promotionBroadcastDefault.findFirst({
+      where: {
+        promotion: d.promotion,
+        region: d.region,
+        channelId: channel.id,
+        cardSection: cardSection,
+      },
     });
 
     const action = existing
@@ -84,7 +88,7 @@ const DRY_RUN = process.env.AUTO_APPLY_DRY_RUN === '1';
     log.push(
       `  ${DRY_RUN ? 'would ' : ''}${action.padEnd(28)} ` +
       `conf=${d.confidence.toFixed(2)}  ${d.changeType.padEnd(7)}  ` +
-      `${d.promotion.padEnd(18)} ${d.region.padEnd(3)} → ${channel.name} [${tier}]`,
+      `${d.promotion.padEnd(8)} ${d.region.padEnd(3)} ${(cardSection ?? 'WHOLE').padEnd(13)} → ${channel.name} [${tier}]`,
     );
 
     if (DRY_RUN) {
@@ -103,6 +107,7 @@ const DRY_RUN = process.env.AUTO_APPLY_DRY_RUN === '1';
           promotion: d.promotion,
           region: d.region,
           channelId: channel.id,
+          cardSection: cardSection,
           tier: tier as any,
           isActive: true,
           lastDiscoveryAt: new Date(),
