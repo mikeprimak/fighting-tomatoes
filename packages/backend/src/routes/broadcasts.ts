@@ -99,7 +99,7 @@ export default async function broadcastsRoutes(fastify: FastifyInstance) {
         note: d.note,
         language: null,
         source: 'DEFAULT' as const,
-        cardSection: null,
+        cardSection: (d as any).cardSection ?? null,
       }));
     }
 

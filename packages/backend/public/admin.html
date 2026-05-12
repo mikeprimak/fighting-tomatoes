@@ -2015,6 +2015,15 @@
           <select id="discoveryApplyChannel" class="form-select"></select>
         </div>
         <div class="form-group">
+          <label>Card Section</label>
+          <select id="discoveryApplySection" class="form-select">
+            <option value="">Whole Event (fallback)</option>
+            <option value="EARLY_PRELIMS">Early Prelims</option>
+            <option value="PRELIMS">Prelims</option>
+            <option value="MAIN_CARD">Main Card</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label>Tier</label>
           <select id="discoveryApplyTier" class="form-select">
             <option value="FREE">Free</option>
@@ -2060,6 +2069,15 @@
         <div class="form-group">
           <label>Channel</label>
           <select id="defaultEditChannel" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label>Card Section</label>
+          <select id="defaultEditSection" class="form-select">
+            <option value="">Whole Event (fallback)</option>
+            <option value="EARLY_PRELIMS">Early Prelims</option>
+            <option value="PRELIMS">Prelims</option>
+            <option value="MAIN_CARD">Main Card</option>
+          </select>
         </div>
         <div class="form-group">
           <label>Tier</label>
@@ -5076,17 +5094,18 @@
         <tr style="border-bottom: 1px solid var(--border-color); ${r.isActive ? '' : 'opacity: 0.5;'}">
           <td style="padding: 8px;">${escapeHtml(r.promotion)}</td>
           <td style="padding: 8px;"><span style="background: var(--bg-input); padding: 2px 6px; border-radius: 3px; font-size: 0.7rem;">${r.region}</span></td>
+          <td style="padding: 8px; font-size: 0.8rem;">${escapeHtml(formatCardSection(r.cardSection))}</td>
           <td style="padding: 8px;">${escapeHtml(r.channel.name)}</td>
           <td style="padding: 8px;"><span style="${tierBadgeStyle(r.tier)}">${r.tier}</span></td>
           <td style="padding: 8px; font-size: 0.75rem; color: var(--text-secondary);">${relativeDate(r.lastDiscoveryAt)}</td>
-          <td style="padding: 8px; font-size: 0.75rem; color: var(--text-muted); max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(r.note || '')}">${escapeHtml(r.note || '')}</td>
+          <td style="padding: 8px; font-size: 0.75rem; color: var(--text-muted); max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(r.note || '')}">${escapeHtml(r.note || '')}</td>
           <td style="padding: 8px; text-align: right;"><button class="btn btn-sm" onclick='editDefault(${JSON.stringify(r).replace(/'/g, "&#39;")})'>Edit</button></td>
         </tr>
       `).join('');
       container.innerHTML = `
         <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
           <thead><tr style="border-bottom: 2px solid var(--border-color); text-align: left; color: var(--text-secondary); font-size: 0.75rem;">
-            <th style="padding: 8px;">Promotion</th><th style="padding: 8px;">Region</th><th style="padding: 8px;">Channel</th><th style="padding: 8px;">Tier</th><th style="padding: 8px;">Verified</th><th style="padding: 8px;">Note</th><th></th>
+            <th style="padding: 8px;">Promotion</th><th style="padding: 8px;">Region</th><th style="padding: 8px;">Section</th><th style="padding: 8px;">Channel</th><th style="padding: 8px;">Tier</th><th style="padding: 8px;">Verified</th><th style="padding: 8px;">Note</th><th></th>
           </tr></thead>
           <tbody>${html}</tbody>
         </table>`;
@@ -5113,6 +5132,7 @@
       document.getElementById('defaultEditRegion').value = 'US';
       document.getElementById('defaultEditRegion').disabled = false;
       populateChannelSelect(document.getElementById('defaultEditChannel'), null);
+      document.getElementById('defaultEditSection').value = '';
       document.getElementById('defaultEditTier').value = 'SUBSCRIPTION';
       document.getElementById('defaultEditNote').value = '';
       document.getElementById('defaultEditDeleteBtn').style.display = 'none';
@@ -5121,12 +5141,13 @@
 
     function editDefault(row) {
       currentDefaultId = row.id;
-      document.getElementById('defaultEditTitle').textContent = `${row.promotion} / ${row.region}`;
+      document.getElementById('defaultEditTitle').textContent = `${row.promotion} / ${row.region} / ${formatCardSection(row.cardSection)}`;
       document.getElementById('defaultEditPromotion').value = row.promotion;
       document.getElementById('defaultEditPromotion').disabled = true;
       document.getElementById('defaultEditRegion').value = row.region;
       document.getElementById('defaultEditRegion').disabled = true;
       populateChannelSelect(document.getElementById('defaultEditChannel'), row.channel.slug);
+      document.getElementById('defaultEditSection').value = row.cardSection || '';
       document.getElementById('defaultEditTier').value = row.tier;
       document.getElementById('defaultEditNote').value = row.note || '';
       document.getElementById('defaultEditDeleteBtn').style.display = 'inline-block';
@@ -5142,13 +5163,14 @@
       const channelSelect = document.getElementById('defaultEditChannel');
       const channelId = channelSelect.value;
       const tier = document.getElementById('defaultEditTier').value;
+      const cardSection = document.getElementById('defaultEditSection').value || null;
       const note = document.getElementById('defaultEditNote').value.trim() || null;
       try {
         if (currentDefaultId) {
           const res = await authFetch(`${API_BASE}/admin/broadcast-defaults/${currentDefaultId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ channelId, tier, note }),
+            body: JSON.stringify({ channelId, tier, cardSection, note }),
           });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
         } else {
@@ -5158,7 +5180,7 @@
           const res = await authFetch(`${API_BASE}/admin/broadcast-defaults`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ promotion, region, channelId, tier, note }),
+            body: JSON.stringify({ promotion, region, channelId, tier, cardSection, note }),
           });
           if (!res.ok) {
             const err = await res.json().catch(() => ({}));
@@ -5245,14 +5267,26 @@
       const tierWord = r.tier === 'FREE' ? 'Free' : r.tier === 'PPV' ? 'PPV' : r.tier === 'SUBSCRIPTION' ? 'Subscription' : '';
       const newChannel = !r.channelSlug;
       const currentDefaults = r.currentDefaults || [];
-      const hasCurrent = currentDefaults.length > 0;
+      const findingSection = r.cardSection || null; // EARLY_PRELIMS | PRELIMS | MAIN_CARD | null
+      const sectionLabel = formatCardSection(findingSection);
       const channelName = escapeHtml(r.channelNameRaw || 'unknown channel');
       const promo = escapeHtml(r.promotion);
       const sourceDomain = extractSourceDomain(r.sourceUrl);
 
+      // "Current" for the FINDING'S section only — that's what determines if
+      // this is an add/replace decision. We also show cross-section context
+      // below as a smaller note.
+      const sameSectionDefaults = currentDefaults.filter(d => (d.cardSection ?? null) === findingSection);
+      const otherSectionDefaults = currentDefaults.filter(d => (d.cardSection ?? null) !== findingSection);
+      const hasCurrent = sameSectionDefaults.length > 0;
+
       const currentDisplay = hasCurrent
-        ? currentDefaults.map(d => `${escapeHtml(d.channelName)} <span style="color: var(--text-secondary); font-size: 0.85em;">(${d.tier})</span>`).join(', ')
-        : '<em style="color: var(--text-secondary);">nothing</em>';
+        ? sameSectionDefaults.map(d => `${escapeHtml(d.channelName)} <span style="color: var(--text-secondary); font-size: 0.85em;">(${d.tier})</span>`).join(', ')
+        : '<em style="color: var(--text-secondary);">nothing for this section</em>';
+
+      const otherSectionsNote = otherSectionDefaults.length > 0
+        ? `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; padding-left: 4px;">↳ Other sections on file: ${otherSectionDefaults.map(d => `${escapeHtml(d.channelName)} on ${formatCardSection(d.cardSection ?? null)}`).join(', ')}</div>`
+        : '';
 
       const newDiscoveryDisplay = `${channelName}${tierWord ? ` <span style="color: var(--text-secondary); font-size: 0.85em;">(${tierWord})</span>` : ''}` +
         (newChannel ? ' <span style="color: var(--accent-orange); font-size: 0.85em;">⚠ not in DB yet</span>' : '');
@@ -5290,16 +5324,25 @@
         <div style="background: var(--bg-input); padding: 14px 16px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${borderColor};">
           <div style="font-size: 0.9rem; line-height: 1.75;">
             <div><strong>Org:</strong> ${promo}</div>
-            <div><strong>Card Section:</strong> Whole Event <span style="color: var(--text-secondary); font-size: 0.75rem; margin-left: 4px;">(discovery operates at the promotion level — per-section detail is handled per-event)</span></div>
+            <div><strong>Card Section:</strong> ${escapeHtml(sectionLabel)}</div>
             <div style="display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
               <div><strong>Country:</strong> ${escapeHtml(country)}</div>
               <div><strong>Current:</strong> ${currentDisplay}</div>
             </div>
+            ${otherSectionsNote}
             <div><strong>New Discovery:</strong> ${newDiscoveryDisplay}</div>
             <div style="margin-top: 6px;"><strong>Why?</strong> <a href="${escapeHtml(r.sourceUrl || '#')}" target="_blank" style="color: var(--accent-blue);">${escapeHtml(sourceDomain)}</a> says: <em style="color: var(--text-secondary);">"${escapeHtml(r.snippet || '')}"</em></div>
           </div>
           <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; justify-content: flex-end; align-items: center;">${actions}</div>
         </div>`;
+    }
+
+    function formatCardSection(s) {
+      if (!s) return 'Whole Event';
+      if (s === 'EARLY_PRELIMS') return 'Early Prelims';
+      if (s === 'PRELIMS') return 'Prelims';
+      if (s === 'MAIN_CARD') return 'Main Card';
+      return s;
     }
 
     function openDiscoveryApply(row, replaceOthers) {
@@ -5332,6 +5375,7 @@
         <div style="font-size: 0.75rem; margin-top: 4px;"><a href="${escapeHtml(row.sourceUrl || '#')}" target="_blank" style="color: var(--accent-blue);">${escapeHtml((row.sourceUrl || '').slice(0, 60))}…</a></div>
       `;
       populateChannelSelect(document.getElementById('discoveryApplyChannel'), row.channelSlug);
+      document.getElementById('discoveryApplySection').value = row.cardSection || '';
       document.getElementById('discoveryApplyTier').value = row.tier || 'SUBSCRIPTION';
       document.getElementById('discoveryApplyNote').value = '';
       document.getElementById('discoveryApplyModal').classList.add('active');
@@ -5348,12 +5392,13 @@
       const channelSelect = document.getElementById('discoveryApplyChannel');
       const channelSlug = channelSelect.options[channelSelect.selectedIndex]?.dataset.slug;
       const tier = document.getElementById('discoveryApplyTier').value;
+      const cardSection = document.getElementById('discoveryApplySection').value || null;
       const reviewNote = document.getElementById('discoveryApplyNote').value.trim() || undefined;
       try {
         const res = await authFetch(`${API_BASE}/admin/broadcast-discoveries/${currentDiscoveryId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'APPLY', channelSlug, tier, reviewNote, replaceOthers: currentDiscoveryReplaceOthers }),
+          body: JSON.stringify({ action: 'APPLY', channelSlug, tier, cardSection, reviewNote, replaceOthers: currentDiscoveryReplaceOthers }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));

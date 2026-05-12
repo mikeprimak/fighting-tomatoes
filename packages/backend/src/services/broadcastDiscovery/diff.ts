@@ -46,17 +46,28 @@ export async function classifyFindings(
     where: { promotion, region, isActive: true },
     include: { channel: { select: { slug: true } } },
   });
-  const existingSlugs = new Set(existing.map(e => e.channel.slug));
+
+  // Group existing defaults by section so the same channel can validly exist
+  // in multiple sections (e.g. Paramount+ on Prelims AND Main Card). The key
+  // is channelSlug + cardSection (null = whole event).
+  const existingKeys = new Set(existing.map(e => `${e.channel.slug}|${(e as any).cardSection ?? 'NULL'}`));
+  const existingSlugsAnySection = new Set(existing.map(e => e.channel.slug));
 
   const result: ClassifiedFinding[] = [];
   for (const f of findings) {
     const channelSlug = await resolveChannelSlug(prisma, f.channelName);
+    const sectionKey = `${channelSlug}|${f.cardSection ?? 'NULL'}`;
     let changeType: ChangeType;
     if (!channelSlug) {
       // We can't resolve it to a known channel — treat as NEW; admin will create.
       changeType = 'NEW';
-    } else if (existingSlugs.has(channelSlug)) {
+    } else if (existingKeys.has(sectionKey)) {
+      // Same channel + same section already on file → CONFIRMED.
       changeType = 'CONFIRMED';
+    } else if (existingSlugsAnySection.has(channelSlug)) {
+      // We have this channel in a different section. Treat as CHANGED so the
+      // admin sees a section-shift suggestion.
+      changeType = 'CHANGED';
     } else if (existing.length > 0) {
       // We had something on file for this region but not this channel.
       changeType = 'CHANGED';
