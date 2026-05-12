@@ -5301,17 +5301,48 @@
       const promo = escapeHtml(r.promotion);
       const sourceDomain = extractSourceDomain(r.sourceUrl);
 
-      // "Current" filtered to the same section as the suggestion — that's what
-      // matters for the Add vs Replace decision. Cross-section context is
-      // intentionally hidden to keep the card focused on the one decision.
-      const sameSectionDefaults = currentDefaults.filter(d => (d.cardSection ?? null) === findingSection);
+      // Build a section-organized view of all current defaults for the same
+      // (promotion, country) so the admin sees the full structure, with the
+      // suggested channel highlighted in its target section.
+      const SECTION_ORDER = ['MAIN_CARD', 'PRELIMS', 'EARLY_PRELIMS', 'WHOLE_EVENT'];
+      const byCardSection = {};
+      for (const d of currentDefaults) {
+        const k = d.cardSection || 'WHOLE_EVENT';
+        (byCardSection[k] ||= []).push(d);
+      }
+      const targetSectionKey = findingSection || 'WHOLE_EVENT';
+      const sectionsToShow = SECTION_ORDER.filter(s => byCardSection[s] || s === targetSectionKey);
+
+      // For the section that contains the suggestion, check if the same
+      // channelSlug is already present (Add would create a duplicate).
+      const sameSectionDefaults = byCardSection[targetSectionKey] || [];
       const hasCurrent = sameSectionDefaults.length > 0;
 
-      const currentDisplay = hasCurrent
-        ? sameSectionDefaults.map(d => `${escapeHtml(d.channelName)} <span style="color: var(--text-secondary); font-size: 0.85em;">(${d.tier})</span>`).join(', ')
-        : '<em style="color: var(--text-secondary);">nothing for this section</em>';
+      const suggestionInline = newChannel
+        ? `${channelName}${tierWord ? ` (${tierWord})` : ''}`
+        : `${channelName}${tierWord ? ` (${tierWord})` : ''}`;
 
-      const newDiscoveryDisplay = `${channelName}${tierWord ? ` <span style="color: var(--text-secondary); font-size: 0.85em;">(${tierWord})</span>` : ''}`;
+      const sectionLinesHtml = sectionsToShow.map(s => {
+        const label = formatCardSection(s === 'WHOLE_EVENT' ? null : s);
+        const existing = byCardSection[s] || [];
+        const isTarget = s === targetSectionKey;
+        const existingDisplay = existing.length > 0
+          ? existing.map(d => `${escapeHtml(d.channelName)} <span style="color: var(--text-secondary); font-size: 0.85em;">(${d.tier})</span>`).join(', ')
+          : '<em style="color: var(--text-secondary);">none</em>';
+
+        let body;
+        if (isTarget) {
+          const suggestedHtml = `<span style="color: #22d3ee; font-weight: 600;">+ ${escapeHtml(suggestionInline)} ${newChannel ? '<span style="font-size: 0.75em; color: var(--accent-orange);">(new channel)</span>' : ''}</span>`;
+          if (existing.length > 0) {
+            body = `${existingDisplay} &nbsp;&nbsp; ${suggestedHtml}`;
+          } else {
+            body = `<em style="color: var(--text-secondary);">none</em> &nbsp;&nbsp; ${suggestedHtml}`;
+          }
+        } else {
+          body = existingDisplay;
+        }
+        return `<div style="padding: 2px 0;"><strong>${label}:</strong> ${body}</div>`;
+      }).join('');
 
       // Action buttons
       let actions;
@@ -5345,13 +5376,12 @@
 
       return `
         <div style="background: var(--bg-input); padding: 14px 16px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${borderColor};">
-          <div style="font-size: 0.9rem; line-height: 1.75;">
-            <div><strong>Org:</strong> ${promo}</div>
-            <div><strong>Card Section:</strong> ${escapeHtml(sectionLabel)}</div>
-            <div><strong>Country:</strong> ${escapeHtml(country)}</div>
-            <div><strong>Current:</strong> ${currentDisplay}</div>
-            <div><strong>Suggested:</strong> ${newDiscoveryDisplay}</div>
-            <div style="margin-top: 6px;"><strong>Why?</strong> <a href="${escapeHtml(r.sourceUrl || '#')}" target="_blank" style="color: var(--accent-blue);">${escapeHtml(sourceDomain)}</a> says: <em style="color: var(--text-secondary);">"${escapeHtml(r.snippet || '')}"</em></div>
+          <div style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 8px;">
+            <div style="margin-bottom: 4px;"><strong>${promo}</strong> in <strong>${escapeHtml(country)}</strong></div>
+            <div style="background: var(--bg-card); padding: 8px 12px; border-radius: 6px; margin-top: 6px;">
+              ${sectionLinesHtml}
+            </div>
+            <div style="margin-top: 10px; font-size: 0.85rem;"><strong>Why?</strong> <a href="${escapeHtml(r.sourceUrl || '#')}" target="_blank" style="color: var(--accent-blue);">${escapeHtml(sourceDomain)}</a> says: <em style="color: var(--text-secondary);">"${escapeHtml(r.snippet || '')}"</em></div>
           </div>
           <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; justify-content: flex-end; align-items: center;">${actions}</div>
         </div>`;
