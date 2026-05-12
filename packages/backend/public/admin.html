@@ -2017,7 +2017,7 @@
         <div class="form-group">
           <label>Card Section</label>
           <select id="discoveryApplySection" class="form-select">
-            <option value="">Whole Event (fallback)</option>
+            <option value="">Fallback (no specific section)</option>
             <option value="EARLY_PRELIMS">Early Prelims</option>
             <option value="PRELIMS">Prelims</option>
             <option value="MAIN_CARD">Main Card</option>
@@ -2073,7 +2073,7 @@
         <div class="form-group">
           <label>Card Section</label>
           <select id="defaultEditSection" class="form-select">
-            <option value="">Whole Event (fallback)</option>
+            <option value="">Fallback (no specific section)</option>
             <option value="EARLY_PRELIMS">Early Prelims</option>
             <option value="PRELIMS">Prelims</option>
             <option value="MAIN_CARD">Main Card</option>
@@ -5388,7 +5388,7 @@
     }
 
     function formatCardSection(s) {
-      if (!s) return 'Whole Event';
+      if (!s) return 'Fallback';
       if (s === 'EARLY_PRELIMS') return 'Early Prelims';
       if (s === 'PRELIMS') return 'Prelims';
       if (s === 'MAIN_CARD') return 'Main Card';
