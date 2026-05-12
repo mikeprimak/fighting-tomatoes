@@ -294,11 +294,41 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
       orderBy: [{ createdAt: 'desc' }],
       take: Math.min(500, parseInt(limit, 10) || 100),
     });
+
+    // Enrich each row with the current PromotionBroadcastDefault rows for the
+    // same (promotion, region). The admin UI uses this to render a plain-English
+    // "ADD X" vs "REPLACE Y with X" description per finding, so the admin can
+    // see at a glance what applying the suggestion would change.
+    const uniqueKeys = Array.from(new Set(rows.map(r => `${r.promotion}|${r.region}`)));
+    const defaultsByKey: Record<string, Array<{ channelSlug: string; channelName: string; tier: string }>> = {};
+    if (uniqueKeys.length > 0) {
+      const defaultsRows = await fastify.prisma.promotionBroadcastDefault.findMany({
+        where: {
+          isActive: true,
+          OR: uniqueKeys.map(k => {
+            const [promotion, region] = k.split('|');
+            return { promotion, region };
+          }),
+        },
+        include: { channel: { select: { slug: true, name: true } } },
+      });
+      for (const d of defaultsRows) {
+        const k = `${d.promotion}|${d.region}`;
+        if (!defaultsByKey[k]) defaultsByKey[k] = [];
+        defaultsByKey[k].push({ channelSlug: d.channel.slug, channelName: d.channel.name, tier: d.tier });
+      }
+    }
+
+    const enriched = rows.map(r => ({
+      ...r,
+      currentDefaults: defaultsByKey[`${r.promotion}|${r.region}`] ?? [],
+    }));
+
     const counts = await fastify.prisma.broadcastDiscovery.groupBy({
       by: ['status'], _count: { _all: true },
     });
     return reply.send({
-      discoveries: rows,
+      discoveries: enriched,
       counts: Object.fromEntries(counts.map(c => [c.status, c._count._all])),
     });
   });
@@ -310,7 +340,7 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
     preValidation: [fastify.authenticate, requireAdmin],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const body = request.body as { action: 'APPLY' | 'REJECT' | 'DUPLICATE'; tier?: string; channelSlug?: string; reviewNote?: string };
+    const body = request.body as { action: 'APPLY' | 'REJECT' | 'DUPLICATE'; tier?: string; channelSlug?: string; reviewNote?: string; replaceOthers?: boolean };
     const user = (request as any).user;
 
     const discovery = await fastify.prisma.broadcastDiscovery.findUnique({ where: { id } });
@@ -363,8 +393,13 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // For CHANGED: deactivate the previous default(s) for this region/promotion (other channels)
-      if (discovery.changeType === 'CHANGED') {
+      // Sibling deactivation is now opt-in: the admin clicks "Replace" in the UI
+      // (which sends replaceOthers=true) when they want to retire the previous
+      // default(s). The default "Add" path is purely additive — both
+      // broadcasters stay active. Previously CHANGED auto-deactivated siblings
+      // which was unexpectedly destructive (a Paramount+ confirmation would
+      // turn off CBS, etc.).
+      if (body.replaceOthers === true) {
         await fastify.prisma.promotionBroadcastDefault.updateMany({
           where: {
             promotion: discovery.promotion,
