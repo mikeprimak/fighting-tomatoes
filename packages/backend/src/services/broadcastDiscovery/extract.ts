@@ -16,9 +16,19 @@ You will be given:
   - A combat-sports promotion (e.g. "UFC", "ONE", "BKFC")
   - A target region: one of US | CA | GB | AU | NZ | EU
   - Search snippets and (sometimes) text from an official "how to watch" page
-  - The current default broadcaster on file for that promotion+region (may be empty)
+  - The current default broadcaster(s) on file for that promotion+region (may be empty)
 
-Your job: identify which broadcaster(s) currently carry that promotion in that region, in 2026.
+Your job: identify which broadcaster(s) currently carry that promotion in that region, in 2026, and which CARD SECTION each carries.
+
+CARD SECTIONS:
+  - "EARLY_PRELIMS" — the earliest portion of an event (often Fight Pass / niche streaming)
+  - "PRELIMS" — preliminary fights (often free TV simulcast or different sub channel)
+  - "MAIN_CARD" — the headline portion (often PPV or premium tier)
+  - null — when the source doesn't distinguish sections, or the broadcaster carries the whole event
+
+Many promotions (especially UFC) split the card across multiple platforms. Always check whether the source spells out per-section coverage. Example from ufc.com/how-to-watch:
+  "United States — Early Prelims: Paramount+ + UFC Fight Pass | Prelims: Paramount+ | Main Card: Paramount+"
+  → emit 3 findings (one per section), or 4 if both Paramount+ and Fight Pass appear in Early Prelims.
 
 Output STRICT JSON in this shape (no prose, no markdown, no fences):
 {
@@ -26,6 +36,7 @@ Output STRICT JSON in this shape (no prose, no markdown, no fences):
     {
       "channelName": "Paramount+",         // human-readable, what's actually shown
       "tier": "SUBSCRIPTION",              // FREE | SUBSCRIPTION | PPV — null if unclear
+      "cardSection": "PRELIMS",            // EARLY_PRELIMS | PRELIMS | MAIN_CARD | null (whole event)
       "sourceUrl": "https://...",          // the URL that supports this claim
       "snippet": "<= 200 chars excerpt",   // grounding evidence — direct quote
       "confidence": 0.85                   // 0.0–1.0 — see scoring rules below
@@ -34,14 +45,16 @@ Output STRICT JSON in this shape (no prose, no markdown, no fences):
 }
 
 Confidence rules:
-  - 0.90+ : Official press release on the promotion's site or the broadcaster's site
+  - 0.90+ : Official press release on the promotion's site or the broadcaster's site (e.g. ufc.com/how-to-watch)
   - 0.70-0.89 : Reputable sports-news outlet (ESPN, SportsPro, Sportcal, BoxingScene, MMA Fighting)
   - 0.40-0.69 : Aggregator pages, secondary tier outlets
   - <0.40 : Forums, blogs, fan sites — DO NOT EMIT (drop the finding entirely)
 
 Hard rules:
   - Only emit findings for the exact requested region. If a source mentions UK but you were asked about AU, drop it.
-  - If two broadcasters cover the same region (e.g. Paramount+ and CBS for UFC US), emit BOTH as separate findings.
+  - If two broadcasters cover the same section (e.g. Paramount+ AND CBS on UFC US Prelims), emit BOTH as separate findings with the same cardSection.
+  - If one broadcaster covers multiple sections (e.g. Paramount+ on both Prelims AND Main Card), emit ONE finding per section — do NOT emit one finding with cardSection=null when section-level detail is available.
+  - When the source clearly differentiates sections, NEVER emit cardSection=null. Only use null when the source genuinely doesn't break it down (e.g. "DAZN carries UFC in DACH" with no section info).
   - Do NOT invent broadcasters. If sources don't say, return {"findings": []}.
   - For "EU", treat any EEA/EFTA country deal as relevant; mention which countries in the snippet.
   - Tier classification: FREE means free to anyone with internet (YouTube, OTA TV); SUBSCRIPTION means included in a paid sub (Paramount+, DAZN, Netflix); PPV means extra one-time payment on top of any sub.`;
@@ -54,9 +67,12 @@ export interface ExtractionInput {
   howToWatchPage?: { url: string; text: string };
 }
 
+export type CardSection = 'EARLY_PRELIMS' | 'PRELIMS' | 'MAIN_CARD' | null;
+
 export interface ExtractedFinding {
   channelName: string;
   tier: 'FREE' | 'SUBSCRIPTION' | 'PPV' | null;
+  cardSection: CardSection;
   sourceUrl: string;
   snippet: string;
   confidence: number;
@@ -167,12 +183,14 @@ function parseFindings(raw: string): ExtractedFinding[] {
     return [];
   }
   const findings: any[] = parsed?.findings ?? [];
+  const SECTIONS = ['EARLY_PRELIMS', 'PRELIMS', 'MAIN_CARD'];
   return findings
     .filter(f => f && typeof f.channelName === 'string' && typeof f.confidence === 'number')
     .filter(f => f.confidence >= 0.4)
     .map(f => ({
       channelName: String(f.channelName).trim(),
       tier: ['FREE', 'SUBSCRIPTION', 'PPV'].includes(f.tier) ? f.tier : null,
+      cardSection: SECTIONS.includes(f.cardSection) ? (f.cardSection as 'EARLY_PRELIMS' | 'PRELIMS' | 'MAIN_CARD') : null,
       sourceUrl: String(f.sourceUrl ?? '').trim(),
       snippet: String(f.snippet ?? '').slice(0, 280),
       confidence: Math.max(0, Math.min(1, Number(f.confidence))),

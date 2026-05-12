@@ -189,6 +189,7 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
     }
     if (!isValidRegion(b.region)) return reply.code(400).send({ error: 'invalid region' });
     if (!isTier(b.tier)) return reply.code(400).send({ error: 'invalid tier' });
+    if (!isCardSection(b.cardSection)) return reply.code(400).send({ error: 'invalid cardSection' });
     try {
       const row = await fastify.prisma.promotionBroadcastDefault.create({
         data: {
@@ -196,6 +197,7 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
           channelId: b.channelId,
           region: b.region,
           tier: b.tier,
+          cardSection: b.cardSection ?? null,
           note: b.note ?? null,
           isActive: b.isActive ?? true,
         },
@@ -204,7 +206,7 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
       return reply.code(201).send({ default: row });
     } catch (e: any) {
       if (e?.code === 'P2002') {
-        return reply.code(409).send({ error: 'default for this promotion/region/channel already exists' });
+        return reply.code(409).send({ error: 'default for this promotion/region/channel/section already exists' });
       }
       throw e;
     }
@@ -223,6 +225,10 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
     if ('tier' in body) {
       if (!isTier(body.tier)) return reply.code(400).send({ error: 'invalid tier' });
       data.tier = body.tier;
+    }
+    if ('cardSection' in body) {
+      if (!isCardSection(body.cardSection)) return reply.code(400).send({ error: 'invalid cardSection' });
+      data.cardSection = body.cardSection ?? null;
     }
     for (const k of ['promotion','channelId','note','isActive']) {
       if (k in body) data[k] = body[k];
@@ -300,7 +306,7 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
     // "ADD X" vs "REPLACE Y with X" description per finding, so the admin can
     // see at a glance what applying the suggestion would change.
     const uniqueKeys = Array.from(new Set(rows.map(r => `${r.promotion}|${r.region}`)));
-    const defaultsByKey: Record<string, Array<{ channelSlug: string; channelName: string; tier: string }>> = {};
+    const defaultsByKey: Record<string, Array<{ channelSlug: string; channelName: string; tier: string; cardSection: string | null }>> = {};
     if (uniqueKeys.length > 0) {
       const defaultsRows = await fastify.prisma.promotionBroadcastDefault.findMany({
         where: {
@@ -315,7 +321,12 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
       for (const d of defaultsRows) {
         const k = `${d.promotion}|${d.region}`;
         if (!defaultsByKey[k]) defaultsByKey[k] = [];
-        defaultsByKey[k].push({ channelSlug: d.channel.slug, channelName: d.channel.name, tier: d.tier });
+        defaultsByKey[k].push({
+          channelSlug: d.channel.slug,
+          channelName: d.channel.name,
+          tier: d.tier,
+          cardSection: (d as any).cardSection ?? null,
+        });
       }
     }
 
@@ -340,7 +351,7 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
     preValidation: [fastify.authenticate, requireAdmin],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
-    const body = request.body as { action: 'APPLY' | 'REJECT' | 'DUPLICATE'; tier?: string; channelSlug?: string; reviewNote?: string; replaceOthers?: boolean };
+    const body = request.body as { action: 'APPLY' | 'REJECT' | 'DUPLICATE'; tier?: string; channelSlug?: string; cardSection?: string | null; reviewNote?: string; replaceOthers?: boolean };
     const user = (request as any).user;
 
     const discovery = await fastify.prisma.broadcastDiscovery.findUnique({ where: { id } });
@@ -370,9 +381,24 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
       const channel = await fastify.prisma.broadcastChannel.findUnique({ where: { slug }, select: { id: true } });
       if (!channel) return reply.code(404).send({ error: `channel "${slug}" not found` });
 
-      // Upsert default
-      const existing = await fastify.prisma.promotionBroadcastDefault.findUnique({
-        where: { promotion_region_channelId: { promotion: discovery.promotion, region: discovery.region, channelId: channel.id } },
+      // Card section: prefer the body override (admin can shift in the modal),
+      // fall back to whatever the discovery row stored. null = whole event.
+      const cardSection = body.cardSection !== undefined
+        ? (body.cardSection || null)
+        : ((discovery as any).cardSection ?? null);
+      const SECTIONS = ['EARLY_PRELIMS', 'PRELIMS', 'MAIN_CARD'];
+      if (cardSection !== null && !SECTIONS.includes(cardSection)) {
+        return reply.code(400).send({ error: 'invalid cardSection' });
+      }
+
+      // Upsert the (promotion, region, channel, cardSection) row.
+      const existing = await fastify.prisma.promotionBroadcastDefault.findFirst({
+        where: {
+          promotion: discovery.promotion,
+          region: discovery.region,
+          channelId: channel.id,
+          cardSection: cardSection,
+        },
       });
       if (existing) {
         await fastify.prisma.promotionBroadcastDefault.update({
@@ -385,6 +411,7 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
             promotion: discovery.promotion,
             region: discovery.region,
             channelId: channel.id,
+            cardSection: cardSection,
             tier: tier as any,
             isActive: true,
             lastDiscoveryAt: new Date(),
@@ -393,17 +420,17 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Sibling deactivation is now opt-in: the admin clicks "Replace" in the UI
+      // Sibling deactivation is opt-in: the admin clicks "Replace" in the UI
       // (which sends replaceOthers=true) when they want to retire the previous
-      // default(s). The default "Add" path is purely additive — both
-      // broadcasters stay active. Previously CHANGED auto-deactivated siblings
-      // which was unexpectedly destructive (a Paramount+ confirmation would
-      // turn off CBS, etc.).
+      // default(s) for the SAME card section. Cross-section defaults are never
+      // auto-touched — replacing the Main Card broadcaster shouldn't disturb
+      // who carries the Prelims.
       if (body.replaceOthers === true) {
         await fastify.prisma.promotionBroadcastDefault.updateMany({
           where: {
             promotion: discovery.promotion,
             region: discovery.region,
+            cardSection: cardSection,
             channelId: { not: channel.id },
             isActive: true,
           },

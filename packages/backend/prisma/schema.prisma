@@ -392,6 +392,10 @@ model PromotionBroadcastDefault {
   note      String?
   isActive  Boolean  @default(true)
 
+  // null = whole event (legacy fallback). Otherwise: EARLY_PRELIMS | PRELIMS | MAIN_CARD.
+  // Same channel can appear in multiple sections (e.g. Paramount+ on Prelims AND Main).
+  cardSection String?
+
   // Last time the discovery job confirmed this entry against a public source.
   // null means never auto-verified (pure manual seed).
   lastDiscoveryAt DateTime?
@@ -399,7 +403,7 @@ model PromotionBroadcastDefault {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([promotion, region, channelId])
+  @@unique([promotion, region, channelId, cardSection], map: "pbd_promotion_region_channel_section_key")
   @@index([promotion, region])
   @@map("promotion_broadcast_defaults")
 }
@@ -418,6 +422,7 @@ model BroadcastDiscovery {
   channelSlug    String?  // null when the LLM couldn't map to a known BroadcastChannel
   channelNameRaw String   // raw text from the source ("Paramount+", "ESPN+", etc.)
   tier           String?  // FREE | SUBSCRIPTION | PPV — null when unclear
+  cardSection    String?  // null = whole event. Otherwise: EARLY_PRELIMS | PRELIMS | MAIN_CARD.
 
   sourceUrl      String
   snippet        String   // ~200 char excerpt that grounded the claim

@@ -29,29 +29,37 @@ export async function persistFindings(
       status: { in: ['REJECTED', 'DUPLICATE'] },
       reviewedAt: { gte: cutoff },
     },
-    select: { channelSlug: true, channelNameRaw: true },
+    select: { channelSlug: true, channelNameRaw: true, cardSection: true },
   });
   const suppressedKeys = new Set(
-    suppressedRows.map(r => `${r.channelSlug ?? ''}|${r.channelNameRaw.toLowerCase()}`),
+    suppressedRows.map(r => `${r.channelSlug ?? ''}|${r.channelNameRaw.toLowerCase()}|${(r as any).cardSection ?? 'NULL'}`),
   );
 
   let inserted = 0, suppressed = 0, bumpedConfirmed = 0;
 
   for (const f of findings) {
-    const key = `${f.channelSlug ?? ''}|${f.channelName.toLowerCase()}`;
+    // Dedupe key now includes cardSection so rejecting "Paramount+ on Prelims"
+    // doesn't accidentally suppress a future "Paramount+ on Main Card" finding.
+    const key = `${f.channelSlug ?? ''}|${f.channelName.toLowerCase()}|${f.cardSection ?? 'NULL'}`;
     if (suppressedKeys.has(key)) {
       suppressed++;
       continue;
     }
 
-    // For CONFIRMED findings, only bump lastDiscoveryAt — don't pile up rows.
+    // For CONFIRMED findings (same channel + same section already a default),
+    // only bump lastDiscoveryAt on the matching section row.
     if (f.changeType === 'CONFIRMED' && f.channelSlug) {
       const channel = await prisma.broadcastChannel.findUnique({
         where: { slug: f.channelSlug }, select: { id: true },
       });
       if (channel) {
         await prisma.promotionBroadcastDefault.updateMany({
-          where: { promotion, region, channelId: channel.id },
+          where: {
+            promotion,
+            region,
+            channelId: channel.id,
+            cardSection: f.cardSection ?? null,
+          },
           data: { lastDiscoveryAt: new Date() },
         });
         bumpedConfirmed++;
@@ -67,6 +75,7 @@ export async function persistFindings(
         channelSlug: f.channelSlug,
         channelNameRaw: f.channelName,
         tier: f.tier,
+        cardSection: f.cardSection ?? null,
         sourceUrl: f.sourceUrl,
         snippet: f.snippet,
         confidence: f.confidence,
