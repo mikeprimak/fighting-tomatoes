@@ -14,6 +14,7 @@ const p = new PrismaClient();
     select: {
       promotion: true,
       region: true,
+      cardSection: true,
       channelNameRaw: true,
       channelSlug: true,
       tier: true,
@@ -25,8 +26,9 @@ const p = new PrismaClient();
   for (const f of pending) {
     const conf = f.confidence.toFixed(2);
     const slug = f.channelSlug ? `[${f.channelSlug}]` : '[NEW CHANNEL]';
+    const sec = (f.cardSection || 'WHOLE_EVENT').padEnd(13);
     console.log(
-      `  ${conf}  ${f.changeType.padEnd(9)}  ${f.promotion.padEnd(20)}  ${f.region.padEnd(3)}  ${f.channelNameRaw.padEnd(28)} ${slug}  tier=${f.tier ?? '?'}`,
+      `  ${conf}  ${f.changeType.padEnd(9)}  ${f.promotion.padEnd(8)}  ${f.region.padEnd(3)}  ${sec}  ${f.channelNameRaw.padEnd(28)} ${slug}  tier=${f.tier ?? '?'}`,
     );
   }
   await p.$disconnect();
