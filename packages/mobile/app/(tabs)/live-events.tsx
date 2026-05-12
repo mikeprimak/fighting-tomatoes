@@ -16,12 +16,13 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
 import { FightDisplayCard, EventBannerCard, HowToWatch } from '../../components';
+import { useEventBroadcasts } from '../../components/HowToWatch';
 import UpcomingFightModal from '../../components/UpcomingFightModal';
 import OrgFilterTabs from '../../components/OrgFilterTabs';
 import { useAuth } from '../../store/AuthContext';
 import { useOrgFilter } from '../../store/OrgFilterContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { formatEventDate, formatEventTimeCompact } from '../../utils/dateFormatters';
+import { formatEventDate, formatEventTimeCompact, getTimezoneAbbreviation } from '../../utils/dateFormatters';
 
 const EVENTS_PER_PAGE = 5;
 
@@ -45,7 +46,8 @@ interface Event {
 type Fight = any;
 
 const formatDate = (dateString: string) => formatEventDate(dateString);
-const formatTime = (dateString: string) => formatEventTimeCompact(dateString);
+const formatTime = (dateString: string) =>
+  `${formatEventTimeCompact(dateString)} ${getTimezoneAbbreviation(new Date(dateString))}`;
 
 // Treat an event as live if the backend has flagged it LIVE *or* its earliest
 // start time has passed and it isn't COMPLETED. Mirrors the fallback on the
@@ -310,6 +312,10 @@ const LiveEventSection = memo(function LiveEventSection({
 
   const hasLiveFight = fights.some((f: Fight) => f.fightStatus === 'LIVE');
 
+  const { data: broadcastsData } = useEventBroadcasts(event.id);
+  const sectionHasBroadcast = (s: 'MAIN_CARD' | 'PRELIMS' | 'EARLY_PRELIMS') =>
+    !!broadcastsData?.broadcasts.some((b: any) => b.cardSection === s);
+
   const styles = createStyles(colors);
 
   const isUpNext = (fight: Fight) =>
@@ -321,6 +327,7 @@ const LiveEventSection = memo(function LiveEventSection({
     startTime: string | null | undefined,
     isPrelimSection: boolean,
     indexOffset: number,
+    hasBroadcast: boolean,
   ) => {
     const sorted = [...sectionFights].sort((a, b) => a.orderOnCard - b.orderOnCard);
     const upcoming = sorted.filter((f: Fight) => f.fightStatus === 'UPCOMING' && !isUpNext(f));
@@ -346,9 +353,11 @@ const LiveEventSection = memo(function LiveEventSection({
         {upcoming.length > 0 && (
           <>
             {isPrelimSection ? (
-              <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
-                {sectionTitleElement}
-              </View>
+              !hasBroadcast && (
+                <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
+                  {sectionTitleElement}
+                </View>
+              )
             ) : (
               <View style={styles.sectionHeader}>
                 <View style={styles.columnHeaders}>
@@ -389,8 +398,9 @@ const LiveEventSection = memo(function LiveEventSection({
         )}
 
         {/* Standalone card section title when no upcoming fights but live/up-next exist.
-            Skip entirely if section is all completed — the BOUTS header suffices. */}
-        {upcoming.length === 0 && (live.length > 0 || completed.length === 0) && (
+            Skip entirely if section is all completed — the BOUTS header suffices.
+            Also skip if HowToWatch already shows the section title for this card. */}
+        {upcoming.length === 0 && (live.length > 0 || completed.length === 0) && !hasBroadcast && (
           isPrelimSection ? (
             <View style={[styles.sectionHeader, styles.sectionHeaderPrelims]}>
               {sectionTitleElement}
@@ -489,25 +499,40 @@ const LiveEventSection = memo(function LiveEventSection({
         {mainCard.length > 0 && (
           <>
             <View style={styles.howToWatchWrapper}>
-              <HowToWatch eventId={event.id} section="MAIN_CARD" />
+              <HowToWatch
+                eventId={event.id}
+                section="MAIN_CARD"
+                label="MAIN CARD"
+                time={event.mainStartTime ? formatTime(event.mainStartTime) : undefined}
+              />
             </View>
-            {renderCardSection(mainCard, 'MAIN CARD', event.mainStartTime, false, 0)}
+            {renderCardSection(mainCard, 'MAIN CARD', event.mainStartTime, false, 0, sectionHasBroadcast('MAIN_CARD'))}
           </>
         )}
         {prelimCard.length > 0 && (
           <>
             <View style={styles.howToWatchWrapper}>
-              <HowToWatch eventId={event.id} section="PRELIMS" />
+              <HowToWatch
+                eventId={event.id}
+                section="PRELIMS"
+                label="PRELIMS"
+                time={event.prelimStartTime ? formatTime(event.prelimStartTime) : undefined}
+              />
             </View>
-            {renderCardSection(prelimCard, 'PRELIMS', event.prelimStartTime, true, mainCard.length)}
+            {renderCardSection(prelimCard, 'PRELIMS', event.prelimStartTime, true, mainCard.length, sectionHasBroadcast('PRELIMS'))}
           </>
         )}
         {earlyPrelims.length > 0 && (
           <>
             <View style={styles.howToWatchWrapper}>
-              <HowToWatch eventId={event.id} section="EARLY_PRELIMS" />
+              <HowToWatch
+                eventId={event.id}
+                section="EARLY_PRELIMS"
+                label="EARLY PRELIMS"
+                time={event.earlyPrelimStartTime ? formatTime(event.earlyPrelimStartTime) : undefined}
+              />
             </View>
-            {renderCardSection(earlyPrelims, 'EARLY PRELIMS', event.earlyPrelimStartTime, true, mainCard.length + prelimCard.length)}
+            {renderCardSection(earlyPrelims, 'EARLY PRELIMS', event.earlyPrelimStartTime, true, mainCard.length + prelimCard.length, sectionHasBroadcast('EARLY_PRELIMS'))}
           </>
         )}
       </View>
