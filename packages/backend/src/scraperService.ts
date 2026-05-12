@@ -417,10 +417,6 @@ const TAPOLOGY_PROMOTION_HUBS: Record<string, { url: string; slugFilter: string[
     url: 'https://www.tapology.com/fightcenter/promotions/6299-zuffa-boxing-zb',
     slugFilter: ['zuffa'],
   },
-  'PFL': {
-    url: 'https://www.tapology.com/fightcenter/promotions/1969-professional-fighters-league-pfl',
-    slugFilter: ['pfl'],
-  },
   'RIZIN': {
     url: 'https://www.tapology.com/fightcenter/promotions/1561-rizin-fighting-federation-rff',
     slugFilter: ['rizin'],
