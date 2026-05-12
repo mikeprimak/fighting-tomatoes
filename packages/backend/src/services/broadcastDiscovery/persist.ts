@@ -17,26 +17,29 @@ export async function persistFindings(
 ): Promise<{ inserted: number; suppressed: number; bumpedConfirmed: number }> {
   if (findings.length === 0) return { inserted: 0, suppressed: 0, bumpedConfirmed: 0 };
 
-  // Pull recently-rejected entries to filter against.
+  // Pull entries the admin already triaged (rejected OR marked duplicate) within
+  // the dedupe window, so we don't keep re-suggesting the same thing every
+  // Monday. Without this, Duplicate would only mark the row but not suppress
+  // future suggestions — defeating the point of the button.
   const cutoff = new Date(Date.now() - REJECT_DEDUPE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
-  const rejected = await prisma.broadcastDiscovery.findMany({
+  const suppressedRows = await prisma.broadcastDiscovery.findMany({
     where: {
       promotion,
       region,
-      status: 'REJECTED',
+      status: { in: ['REJECTED', 'DUPLICATE'] },
       reviewedAt: { gte: cutoff },
     },
     select: { channelSlug: true, channelNameRaw: true },
   });
-  const rejectedKeys = new Set(
-    rejected.map(r => `${r.channelSlug ?? ''}|${r.channelNameRaw.toLowerCase()}`),
+  const suppressedKeys = new Set(
+    suppressedRows.map(r => `${r.channelSlug ?? ''}|${r.channelNameRaw.toLowerCase()}`),
   );
 
   let inserted = 0, suppressed = 0, bumpedConfirmed = 0;
 
   for (const f of findings) {
     const key = `${f.channelSlug ?? ''}|${f.channelName.toLowerCase()}`;
-    if (rejectedKeys.has(key)) {
+    if (suppressedKeys.has(key)) {
       suppressed++;
       continue;
     }
