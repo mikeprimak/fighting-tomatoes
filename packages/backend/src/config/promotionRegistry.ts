@@ -104,10 +104,6 @@ export const PROMOTION_REGISTRY: PromotionRegistryEntry[] = [
     logoKey: 'pfl',
     userVisible: true,
     notificationEligible: true,
-    tapologyHub: {
-      url: 'https://www.tapology.com/fightcenter/promotions/1969-professional-fighters-league-pfl',
-      slugFilter: ['pfl'],
-    },
     aliases: [],
   },
   {
