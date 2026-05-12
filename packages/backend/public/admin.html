@@ -4862,6 +4862,16 @@
     // ============================================
     let broadcastChannelsCache = [];
     let currentDiscoveryId = null;
+    let currentDiscoveryReplaceOthers = false;
+    const REGION_LABELS = {
+      US: '🇺🇸 the US',
+      CA: '🇨🇦 Canada',
+      GB: '🇬🇧 the UK',
+      AU: '🇦🇺 Australia',
+      NZ: '🇳🇿 New Zealand',
+      EU: '🇪🇺 Europe',
+    };
+    const EU_COUNTRY_SPECIFIC = ['rmc', 'nova ', 'bild', 'rtl', 'hbo max', 'discovery+', 'sky deutschland', 'sky italia', 'movistar', 'orange sport', 'canal+'];
     let currentDefaultId = null;
     let currentChannelSlug = null;
 
@@ -5203,46 +5213,122 @@
         container.innerHTML = '<div class="empty-state"><div class="empty-state-text">Nothing in this bucket.</div></div>';
         return;
       }
-      const cards = rows.map(r => {
-        const isPending = r.status === 'PENDING';
-        const slugInfo = r.channelSlug
-          ? `<code style="background: var(--bg-input); padding: 1px 5px; border-radius: 3px; font-size: 0.75rem;">${escapeHtml(r.channelSlug)}</code>`
-          : `<span style="color: var(--accent-orange); font-size: 0.75rem;">⚠ no matching channel</span>`;
-        const actions = isPending ? `
-          <button class="btn btn-sm btn-success" onclick='openDiscoveryApply(${JSON.stringify(r).replace(/'/g, "&#39;")})'>Apply</button>
-          <button class="btn btn-sm btn-secondary" onclick="markDiscoveryDuplicate('${r.id}')">Duplicate</button>
-          <button class="btn btn-sm btn-danger" onclick="rejectDiscovery('${r.id}')">Reject</button>
-        ` : `
-          <span style="color: var(--text-secondary); font-size: 0.75rem;">${escapeHtml(r.status)} · ${escapeHtml(r.reviewNote || '')}</span>
-        `;
-        return `
-          <div style="background: var(--bg-input); padding: 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid ${r.confidence >= 0.9 ? '#16a34a' : r.confidence >= 0.7 ? '#eab308' : '#f97316'};">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap;">
-              ${changeTypeBadge(r.changeType)}
-              ${confidenceBadge(r.confidence)}
-              <strong>${escapeHtml(r.promotion)}</strong>
-              <span style="background: var(--bg-card); padding: 2px 6px; border-radius: 3px; font-size: 0.75rem;">${r.region}</span>
-              <span>→</span>
-              <strong>${escapeHtml(r.channelNameRaw)}</strong>
-              ${slugInfo}
-              ${r.tier ? `<span style="${tierBadgeStyle(r.tier)}">${r.tier}</span>` : ''}
-            </div>
-            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px; line-height: 1.4;">"${escapeHtml(r.snippet)}"</div>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
-              <a href="${escapeHtml(r.sourceUrl)}" target="_blank" style="color: var(--accent-blue); font-size: 0.75rem; word-break: break-all;">${escapeHtml(r.sourceUrl.slice(0, 80))}${r.sourceUrl.length > 80 ? '…' : ''}</a>
-              <div style="display: flex; gap: 6px;">${actions}</div>
-            </div>
-          </div>`;
-      }).join('');
-      container.innerHTML = cards;
+
+      // EU heads-up banner — Europe is one region for now, country-specific
+      // channels (RMC, Nova, Bild, etc.) should be rejected.
+      const euCountrySpecific = rows.filter(r =>
+        r.status === 'PENDING' && r.region === 'EU' &&
+        EU_COUNTRY_SPECIFIC.some(p => (r.channelNameRaw || '').toLowerCase().includes(p))
+      );
+      const euBanner = euCountrySpecific.length > 0
+        ? `<div style="background: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.4); padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; font-size: 0.85rem; line-height: 1.5;">
+             <strong>🇪🇺 EU heads-up:</strong> Europe is treated as one region for now — we only support a single pan-European channel per promotion. ${euCountrySpecific.length} country-specific suggestion(s) detected (RMC, Nova, Bild, RTL+, etc.) — safe to <strong>Reject</strong>. Keep pan-European channels (DAZN, Eurosport).
+           </div>`
+        : '';
+
+      const cards = rows.map(r => renderDiscoveryCard(r)).join('');
+      container.innerHTML = euBanner + cards;
     }
 
-    function openDiscoveryApply(row) {
+    function renderDiscoveryCard(r) {
+      const isPending = r.status === 'PENDING';
+      const region = REGION_LABELS[r.region] || r.region;
+      const tierWord = r.tier === 'FREE' ? 'free' : r.tier === 'PPV' ? 'PPV' : r.tier === 'SUBSCRIPTION' ? 'subscription' : '';
+      const newChannel = !r.channelSlug;
+      const currentDefaults = r.currentDefaults || [];
+      const hasCurrent = currentDefaults.length > 0;
+      const channelName = escapeHtml(r.channelNameRaw || 'unknown channel');
+      const promo = escapeHtml(r.promotion);
+
+      // Plain-English headline
+      let headline;
+      if (newChannel) {
+        headline = `Suggests adding <strong>${channelName}</strong> as a new ${tierWord} broadcaster for <strong>${promo}</strong> in ${region}. ` +
+          `<span style="color: var(--accent-orange);">⚠ This channel isn't in your database yet — create it first.</span>`;
+      } else if (r.changeType === 'CHANGED' && hasCurrent) {
+        headline = `Suggests using <strong>${channelName}</strong> (${tierWord}) for <strong>${promo}</strong> in ${region}.`;
+      } else {
+        headline = `Suggests adding <strong>${channelName}</strong> as a ${tierWord} broadcaster for <strong>${promo}</strong> in ${region}.`;
+      }
+
+      // Currently-on-file line
+      const currentLine = hasCurrent
+        ? `<div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;">📺 <strong>Currently on file:</strong> ${currentDefaults.map(d => `${escapeHtml(d.channelName)} (${d.tier})`).join(' · ')}</div>`
+        : `<div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 6px;">📺 <strong>Currently on file:</strong> <em>nothing</em> for ${promo} in ${region}</div>`;
+
+      // Action buttons
+      let actions;
+      if (!isPending) {
+        actions = `<span style="color: var(--text-secondary); font-size: 0.75rem;">${escapeHtml(r.status)}${r.reviewNote ? ' · ' + escapeHtml(r.reviewNote) : ''}</span>`;
+      } else if (newChannel) {
+        actions = `
+          <button class="btn btn-sm btn-danger" onclick="rejectDiscovery('${r.id}')">Reject</button>
+          <button class="btn btn-sm btn-secondary" onclick="markDiscoveryDuplicate('${r.id}')">Duplicate</button>
+        `;
+      } else if (r.changeType === 'CHANGED' && hasCurrent) {
+        const rowEnc = JSON.stringify(r).replace(/'/g, '&#39;');
+        actions = `
+          <button class="btn btn-sm btn-success" onclick='openDiscoveryApply(${rowEnc}, false)' title="Adds this broadcaster. Existing ones stay active.">Add (keep existing)</button>
+          <button class="btn btn-sm" style="background: #f97316; color: white; border: none;" onclick='openDiscoveryApply(${rowEnc}, true)' title="Adds this broadcaster AND deactivates the existing ones.">Replace existing</button>
+          <button class="btn btn-sm btn-danger" onclick="rejectDiscovery('${r.id}')">Reject</button>
+          <button class="btn btn-sm btn-secondary" onclick="markDiscoveryDuplicate('${r.id}')">Duplicate</button>
+        `;
+      } else {
+        const rowEnc = JSON.stringify(r).replace(/'/g, '&#39;');
+        actions = `
+          <button class="btn btn-sm btn-success" onclick='openDiscoveryApply(${rowEnc}, false)'>Add this broadcaster</button>
+          <button class="btn btn-sm btn-danger" onclick="rejectDiscovery('${r.id}')">Reject</button>
+          <button class="btn btn-sm btn-secondary" onclick="markDiscoveryDuplicate('${r.id}')">Duplicate</button>
+        `;
+      }
+
+      const borderColor = r.confidence >= 0.9 ? '#16a34a' : r.confidence >= 0.7 ? '#eab308' : '#f97316';
+
+      return `
+        <div style="background: var(--bg-input); padding: 14px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid ${borderColor};">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+            ${confidenceBadge(r.confidence)}
+            ${r.tier ? `<span style="${tierBadgeStyle(r.tier)}">${r.tier}</span>` : ''}
+            ${changeTypeBadge(r.changeType)}
+          </div>
+          <div style="font-size: 0.95rem; line-height: 1.45;">${headline}</div>
+          ${currentLine}
+          <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 10px; padding: 8px 10px; background: var(--bg-card); border-radius: 4px; line-height: 1.4; border-left: 2px solid var(--border);">"${escapeHtml(r.snippet || '')}"</div>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+            <a href="${escapeHtml(r.sourceUrl || '#')}" target="_blank" style="color: var(--accent-blue); font-size: 0.75rem; word-break: break-all;">🔗 ${escapeHtml((r.sourceUrl || '').slice(0, 70))}${(r.sourceUrl || '').length > 70 ? '…' : ''}</a>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">${actions}</div>
+          </div>
+        </div>`;
+    }
+
+    function openDiscoveryApply(row, replaceOthers) {
       currentDiscoveryId = row.id;
+      currentDiscoveryReplaceOthers = replaceOthers === true;
+      const region = REGION_LABELS[row.region] || row.region;
+      const currentDefaults = row.currentDefaults || [];
+      const currentList = currentDefaults.map(d => escapeHtml(d.channelName)).join(', ') || 'none';
+
+      // Modal title reflects the chosen action
+      const modalTitle = document.querySelector('#discoveryApplyModal .modal-header h3');
+      if (modalTitle) {
+        modalTitle.textContent = replaceOthers ? 'Replace existing broadcaster(s)' : 'Add broadcaster';
+      }
+
+      const summary = replaceOthers
+        ? `<div style="background: rgba(249, 115, 22, 0.15); border: 1px solid rgba(249, 115, 22, 0.4); padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+             <div style="font-weight: 600; color: #f97316; margin-bottom: 4px;">⚠ This will REPLACE the existing broadcaster(s).</div>
+             <div style="font-size: 0.85rem;">Currently active: ${currentList}. After this, only <strong>${escapeHtml(row.channelNameRaw)}</strong> will be the default for ${escapeHtml(row.promotion)} in ${region}.</div>
+           </div>`
+        : `<div style="background: rgba(22, 163, 74, 0.12); border: 1px solid rgba(22, 163, 74, 0.4); padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+             <div style="font-weight: 600; color: #16a34a; margin-bottom: 4px;">✓ Additive — existing broadcasters stay active.</div>
+             <div style="font-size: 0.85rem;">Adds <strong>${escapeHtml(row.channelNameRaw)}</strong> alongside ${currentDefaults.length ? `current default(s): ${currentList}` : '(nothing currently on file)'}.</div>
+           </div>`;
+
       document.getElementById('discoveryApplyContext').innerHTML = `
-        <div><strong>${escapeHtml(row.promotion)}</strong> · ${row.region} · raw: "${escapeHtml(row.channelNameRaw)}"</div>
-        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">"${escapeHtml(row.snippet)}"</div>
-        <div style="font-size: 0.75rem; margin-top: 4px;"><a href="${escapeHtml(row.sourceUrl)}" target="_blank" style="color: var(--accent-blue);">${escapeHtml(row.sourceUrl.slice(0, 60))}…</a></div>
+        ${summary}
+        <div style="font-size: 0.8rem;"><strong>${escapeHtml(row.promotion)}</strong> · ${region}</div>
+        <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px;">"${escapeHtml(row.snippet || '')}"</div>
+        <div style="font-size: 0.75rem; margin-top: 4px;"><a href="${escapeHtml(row.sourceUrl || '#')}" target="_blank" style="color: var(--accent-blue);">${escapeHtml((row.sourceUrl || '').slice(0, 60))}…</a></div>
       `;
       populateChannelSelect(document.getElementById('discoveryApplyChannel'), row.channelSlug);
       document.getElementById('discoveryApplyTier').value = row.tier || 'SUBSCRIPTION';
@@ -5253,6 +5339,7 @@
     function closeDiscoveryApplyModal() {
       document.getElementById('discoveryApplyModal').classList.remove('active');
       currentDiscoveryId = null;
+      currentDiscoveryReplaceOthers = false;
     }
 
     async function confirmDiscoveryApply() {
@@ -5265,7 +5352,7 @@
         const res = await authFetch(`${API_BASE}/admin/broadcast-discoveries/${currentDiscoveryId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'APPLY', channelSlug, tier, reviewNote }),
+          body: JSON.stringify({ action: 'APPLY', channelSlug, tier, reviewNote, replaceOthers: currentDiscoveryReplaceOthers }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
