@@ -80,11 +80,19 @@ export default async function broadcastsRoutes(fastify: FastifyInstance) {
 
     // 2. Fall back to promotion defaults if no explicit rows
     if (broadcasts.length === 0) {
-      const defaults = await fastify.prisma.promotionBroadcastDefault.findMany({
+      const allDefaults = await fastify.prisma.promotionBroadcastDefault.findMany({
         where: { promotion: event.promotion, region, isActive: true },
         include: { channel: true },
         orderBy: [{ tier: 'asc' }, { createdAt: 'asc' }],
       });
+      // If any defaults specify a card section, drop the cardSection=null
+      // ("Fallback") rows — they're legacy whole-event entries from before
+      // section support existed and would otherwise render as a duplicate
+      // top-level How-to-Watch card in the mobile app.
+      const hasSectionSpecific = allDefaults.some(d => (d as any).cardSection !== null);
+      const defaults = hasSectionSpecific
+        ? allDefaults.filter(d => (d as any).cardSection !== null)
+        : allDefaults;
       broadcasts = defaults.map(d => ({
         id: `default-${d.id}`,
         channel: {
