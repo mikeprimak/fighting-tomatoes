@@ -5301,20 +5301,15 @@
       const promo = escapeHtml(r.promotion);
       const sourceDomain = extractSourceDomain(r.sourceUrl);
 
-      // "Current" for the FINDING'S section only — that's what determines if
-      // this is an add/replace decision. We also show cross-section context
-      // below as a smaller note.
+      // "Current" filtered to the same section as the suggestion — that's what
+      // matters for the Add vs Replace decision. Cross-section context is
+      // intentionally hidden to keep the card focused on the one decision.
       const sameSectionDefaults = currentDefaults.filter(d => (d.cardSection ?? null) === findingSection);
-      const otherSectionDefaults = currentDefaults.filter(d => (d.cardSection ?? null) !== findingSection);
       const hasCurrent = sameSectionDefaults.length > 0;
 
       const currentDisplay = hasCurrent
         ? sameSectionDefaults.map(d => `${escapeHtml(d.channelName)} <span style="color: var(--text-secondary); font-size: 0.85em;">(${d.tier})</span>`).join(', ')
         : '<em style="color: var(--text-secondary);">nothing for this section</em>';
-
-      const otherSectionsNote = otherSectionDefaults.length > 0
-        ? `<div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; padding-left: 4px;">↳ Other sections on file: ${otherSectionDefaults.map(d => `${escapeHtml(d.channelName)} on ${formatCardSection(d.cardSection ?? null)}`).join(', ')}</div>`
-        : '';
 
       const newDiscoveryDisplay = `${channelName}${tierWord ? ` <span style="color: var(--text-secondary); font-size: 0.85em;">(${tierWord})</span>` : ''}`;
 
@@ -5355,7 +5350,6 @@
             <div><strong>Card Section:</strong> ${escapeHtml(sectionLabel)}</div>
             <div><strong>Country:</strong> ${escapeHtml(country)}</div>
             <div><strong>Current:</strong> ${currentDisplay}</div>
-            ${otherSectionsNote}
             <div><strong>Suggested:</strong> ${newDiscoveryDisplay}</div>
             <div style="margin-top: 6px;"><strong>Why?</strong> <a href="${escapeHtml(r.sourceUrl || '#')}" target="_blank" style="color: var(--accent-blue);">${escapeHtml(sourceDomain)}</a> says: <em style="color: var(--text-secondary);">"${escapeHtml(r.snippet || '')}"</em></div>
           </div>
