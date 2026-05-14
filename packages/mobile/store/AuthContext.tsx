@@ -7,6 +7,7 @@ import { AnalyticsService } from '../services/analytics';
 import { notificationService } from '../services/notificationService';
 import type { Notification, NotificationResponse } from 'expo-notifications';
 import * as Sentry from '@sentry/react-native';
+import { posthog } from '../services/posthog';
 import { queryClient } from '../app/_layout';
 
 const tagSentryUser = (user: { id: string; email: string; displayName?: string | null } | null) => {
@@ -14,6 +15,18 @@ const tagSentryUser = (user: { id: string; email: string; displayName?: string |
     Sentry.setUser({ id: user.id, email: user.email, username: user.displayName ?? undefined });
   } else {
     Sentry.setUser(null);
+  }
+};
+
+const identifyPosthog = (user: { id: string; email: string; displayName?: string | null } | null) => {
+  if (!posthog) return;
+  if (user) {
+    posthog.identify(user.id, {
+      email: user.email,
+      displayName: user.displayName ?? undefined,
+    });
+  } else {
+    posthog.reset();
   }
 };
 
@@ -100,6 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     tagSentryUser(user);
+    identifyPosthog(user);
   }, [user?.id]);
   const [isGuest, setIsGuest] = useState(false);
   const appState = useRef(AppState.currentState);

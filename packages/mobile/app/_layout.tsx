@@ -10,6 +10,7 @@ import * as Sentry from '@sentry/react-native';
 import { PostHogProvider } from 'posthog-react-native';
 import Constants from 'expo-constants';
 import { AuthProvider } from '../store/AuthContext';
+import { posthog } from '../services/posthog';
 
 const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
 if (sentryDsn) {
@@ -23,8 +24,6 @@ if (sentryDsn) {
   });
 }
 
-const posthogKey = process.env.EXPO_PUBLIC_POSTHOG_KEY;
-const posthogHost = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
 import { VerificationProvider } from '../store/VerificationContext';
 import { PredictionAnimationProvider } from '../store/PredictionAnimationContext';
 import { NotificationProvider } from '../store/NotificationContext';
@@ -167,18 +166,10 @@ function RootLayoutNav() {
     </QueryClientProvider>
   );
 
-  if (!posthogKey) return tree;
+  if (!posthog) return tree;
 
   return (
-    <PostHogProvider
-      apiKey={posthogKey}
-      options={{
-        host: posthogHost,
-        enableSessionReplay: false,
-        captureAppLifecycleEvents: true,
-      }}
-      autocapture={true}
-    >
+    <PostHogProvider client={posthog} autocapture={true}>
       {tree}
     </PostHogProvider>
   );
