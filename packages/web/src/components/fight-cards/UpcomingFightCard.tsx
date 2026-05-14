@@ -32,75 +32,114 @@ interface UpcomingFightCardProps {
   };
 }
 
-function FighterImage({ fighter }: { fighter: Fighter }) {
-  const imgSrc = fighter.profileImage || '';
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="h-16 w-16 overflow-hidden rounded-full bg-card sm:h-20 sm:w-20">
-        {imgSrc ? (
-          <img src={imgSrc} alt={`${fighter.firstName} ${fighter.lastName}`} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-lg font-bold text-text-secondary">
-            {fighter.firstName[0]}{fighter.lastName[0]}
-          </div>
-        )}
-      </div>
-      <span className="max-w-[90px] truncate text-center text-xs font-medium text-foreground sm:max-w-[120px] sm:text-sm">
+function FighterSide({ fighter, side }: { fighter: Fighter; side: 'left' | 'right' }) {
+  const img = fighter.profileImage || '';
+  const placeholder = `${fighter.firstName?.[0] ?? ''}${fighter.lastName?.[0] ?? ''}`.toUpperCase();
+
+  const headshot = (
+    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-background">
+      {img ? (
+        <img
+          src={img}
+          alt={`${fighter.firstName} ${fighter.lastName}`}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-xs font-bold text-text-secondary">
+          {placeholder}
+        </div>
+      )}
+    </div>
+  );
+
+  const names = (
+    <div className={`flex min-w-0 flex-col ${side === 'left' ? 'items-end text-right' : 'items-start text-left'}`}>
+      <span className="max-w-full truncate text-[11px] font-normal leading-tight text-text-secondary">
+        {fighter.firstName}
+      </span>
+      <span className="max-w-full truncate text-sm font-bold leading-tight text-foreground">
         {fighter.lastName}
       </span>
-      <span className="text-[10px] text-text-secondary sm:text-xs">
-        {fighter.wins}-{fighter.losses}-{fighter.draws}
-      </span>
+    </div>
+  );
+
+  return side === 'left' ? (
+    <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+      {names}
+      {headshot}
+    </div>
+  ) : (
+    <div className="flex min-w-0 flex-1 items-center justify-start gap-2">
+      {headshot}
+      {names}
     </div>
   );
 }
 
 export function UpcomingFightCard({ fight }: UpcomingFightCardProps) {
-  const hypeColor = fight.averageHype ? getHypeHeatmapColor(fight.averageHype) : undefined;
+  const hypeScore = fight.averageHype ?? 0;
+  const userHype = fight.userHypeScore ?? 0;
+  const hasHype = hypeScore > 0;
+  const hasUserHype = userHype > 0;
+
+  const hypeColor = hasHype ? getHypeHeatmapColor(hypeScore) : undefined;
+  const userHypeColor = hasUserHype ? getHypeHeatmapColor(userHype) : undefined;
 
   return (
     <Link href={`/fights/${fight.id}`} className="block">
-      <div className="group rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/30 sm:p-4">
-        {/* Title badge */}
-        {fight.isTitle && (
-          <div className="mb-2 text-center">
-            <span className="rounded bg-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary">
-              {fight.titleName || 'TITLE FIGHT'}
-            </span>
-          </div>
-        )}
-
-        {/* Fighters row */}
-        <div className="flex items-center justify-between">
-          <FighterImage fighter={fight.fighter1} />
-
-          {/* Center info */}
-          <div className="flex flex-col items-center gap-1 px-2">
-            {fight.weightClass && (
-              <span className="text-[10px] text-text-secondary">{fight.weightClass}</span>
-            )}
-            <span className="text-xs font-bold text-text-secondary">VS</span>
-
-            {/* Hype score */}
-            {fight.averageHype != null && fight.averageHype > 0 && (
-              <div className="flex items-center gap-1">
-                <Flame size={12} style={{ color: hypeColor }} />
-                <span className="text-sm font-bold" style={{ color: hypeColor }}>
-                  {fight.averageHype.toFixed(1)}
+      <div className="group flex min-h-[64px] items-stretch transition-colors hover:bg-background/40">
+        {/* Left: community hype square */}
+        <div
+          className="flex w-12 shrink-0 flex-col items-center justify-center gap-0.5"
+          style={{
+            backgroundColor: hasHype ? hypeColor : 'transparent',
+            border: hasHype ? 'none' : '1px solid var(--color-border, #2a2a2a)',
+          }}
+        >
+          {hasHype ? (
+            <>
+              <span className="text-base font-bold leading-none text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
+                {hypeScore === 10 ? '10' : hypeScore.toFixed(1)}
+              </span>
+              {fight.totalHypePredictions ? (
+                <span className="text-[9px] font-semibold leading-none text-black/55">
+                  ({fight.totalHypePredictions})
                 </span>
-              </div>
-            )}
+              ) : (
+                <Flame size={11} className="text-black/40" />
+              )}
+            </>
+          ) : (
+            <Flame size={16} className="text-text-secondary/50" />
+          )}
+        </div>
 
-            {/* Odds */}
-            {(fight.fighter1Odds || fight.fighter2Odds) && (
-              <div className="flex gap-2 text-[10px] text-text-secondary">
-                {fight.fighter1Odds && <span>{fight.fighter1Odds}</span>}
-                {fight.fighter2Odds && <span>{fight.fighter2Odds}</span>}
-              </div>
-            )}
+        {/* Center: fighters */}
+        <div className="flex min-w-0 flex-1 items-center px-2 py-2">
+          <FighterSide fighter={fight.fighter1} side="left" />
+          <div className="px-2 text-[10px] font-semibold tracking-wider text-text-secondary">
+            vs
           </div>
+          <FighterSide fighter={fight.fighter2} side="right" />
+        </div>
 
-          <FighterImage fighter={fight.fighter2} />
+        {/* Right: user hype flame */}
+        <div className="relative flex w-12 shrink-0 items-center justify-center">
+          {hasUserHype ? (
+            <>
+              <Flame
+                size={42}
+                fill={userHypeColor}
+                color={userHypeColor}
+                strokeWidth={1.5}
+              />
+              <span className="absolute inset-0 flex items-center justify-center pt-1.5 text-base font-bold text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_70%)]">
+                {Math.round(userHype)}
+              </span>
+            </>
+          ) : (
+            <Flame size={30} className="text-text-secondary/30" />
+          )}
         </div>
       </div>
     </Link>

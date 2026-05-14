@@ -108,7 +108,7 @@ export function EventCard({ event, mode }: EventCardProps) {
               <div className="h-px flex-1 bg-border" />
             </div>
           )}
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
             {sections[section].map((fight: any) => {
               if (mode === 'live') {
                 return <LiveFightCard key={fight.id} fight={fight} isLiveNow={fight.fightStatus === 'LIVE'} isUpNext={fight.fightStatus === 'UP_NEXT'} />;
