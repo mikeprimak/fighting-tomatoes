@@ -309,9 +309,9 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
   const f2Img = proxyImageUrl(fighter2ImageOverride || fight.fighter2.profileImage);
   const hasAnyImage = !!(f1Img || f2Img);
 
-  const imgSize = isIg ? 80 : 64;
-  const fontSize = isIg ? 26 : 22;
-  const promoFontSize = isIg ? 16 : 15;
+  const imgSize = isIg ? 80 : 80;
+  const fontSize = isIg ? 26 : 28;
+  const promoFontSize = isIg ? 16 : 18;
 
   return (
     <div
@@ -325,37 +325,37 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
       }}
     >
       {/* Left: Rank + HYPE score */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isIg ? 14 : 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: isIg ? 14 : 14, flexShrink: 0 }}>
         <div
           style={{
-            fontSize: isIg ? 20 : 17,
+            fontSize: isIg ? 20 : 22,
             fontWeight: 700,
             color: '#6b7280',
-            minWidth: isIg ? 24 : 20,
+            minWidth: isIg ? 24 : 26,
             textAlign: 'center',
           }}
         >
           {rank}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: isIg ? 70 : 58 }}>
-          <div style={{ fontSize: isIg ? 14 : 13, color: '#6b7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: isIg ? 70 : 78 }}>
+          <div style={{ fontSize: isIg ? 14 : 15, color: '#6b7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 2 }}>
             HYPE
           </div>
-          <div style={{ fontSize: isIg ? 44 : 36, fontWeight: 800, color: hypeColor, lineHeight: 1 }}>
+          <div style={{ fontSize: isIg ? 44 : 46, fontWeight: 800, color: hypeColor, lineHeight: 1 }}>
             {hype > 0 ? hype.toFixed(1) : '—'}
           </div>
           {votes > 0 && (
-            <div style={{ fontSize: isIg ? 11 : 11, color: '#6b7280', fontWeight: 600, marginTop: 3, letterSpacing: '0.02em' }}>
-              n={votes}
+            <div style={{ fontSize: isIg ? 11 : 13, color: '#6b7280', fontWeight: 600, marginTop: 4, letterSpacing: '0.02em' }}>
+              {votes} fans
             </div>
           )}
         </div>
       </div>
 
-      {/* Center: F1 avatar + Fight info + F2 avatar */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: isIg ? 14 : 10, padding: isIg ? '0 16px' : '0 12px' }}>
+      {/* Center: F1 avatar + Fight info + F2 avatar, clustered */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isIg ? 16 : 18, padding: isIg ? '0 16px' : '0 16px' }}>
         <FighterAvatar src={f1Img} fighter={fight.fighter1} size={imgSize} />
-        <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
+        <div style={{ minWidth: 0, textAlign: 'center', flexShrink: 1 }}>
           <div
             style={{
               fontSize,
@@ -372,13 +372,13 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
             {fight.isTitle && (
               <span
                 style={{
-                  marginLeft: isIg ? 10 : 8,
+                  marginLeft: isIg ? 10 : 10,
                   display: 'inline-block',
-                  padding: isIg ? '2px 8px' : '2px 7px',
+                  padding: isIg ? '2px 8px' : '3px 9px',
                   background: 'rgba(245,197,24,0.15)',
                   border: '1px solid rgba(245,197,24,0.4)',
                   borderRadius: 4,
-                  fontSize: isIg ? 13 : 12,
+                  fontSize: isIg ? 13 : 14,
                   fontWeight: 700,
                   color: '#F5C518',
                   letterSpacing: '0.1em',
@@ -409,7 +409,7 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
       </div>
 
       {/* Right: Promo logo (far right) */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexShrink: 0 }}>
         {(() => {
           const logoUrl = getPromoLogoUrl(fight.event?.promotion || '');
           return logoUrl ? (
@@ -417,10 +417,10 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
             <img
               src={logoUrl}
               alt={formatPromotion(fight.event?.promotion || '')}
-              style={{ height: isIg ? 32 : 28, width: isIg ? 72 : 64, objectFit: 'contain', opacity: 0.9 }}
+              style={{ height: isIg ? 32 : 36, width: isIg ? 72 : 80, objectFit: 'contain', opacity: 0.9 }}
             />
           ) : (
-            <div style={{ width: isIg ? 72 : 64 }} />
+            <div style={{ width: isIg ? 72 : 80 }} />
           );
         })()}
       </div>
