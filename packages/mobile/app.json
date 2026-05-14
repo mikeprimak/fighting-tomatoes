@@ -126,7 +126,8 @@
       "expo-web-browser",
       "@react-native-google-signin/google-signin",
       "expo-apple-authentication",
-      "@sentry/react-native"
+      "@sentry/react-native",
+      "expo-localization"
     ],
     "scheme": "goodfights",
     "extra": {
