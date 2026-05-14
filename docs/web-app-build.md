@@ -212,3 +212,10 @@ Search intent lives at the intersection. "How to watch PFL in Spain" = clear com
 - Decided: no web push notifications
 - Decided: production-URL QA pass before any new feature work
 - Created this tracker
+
+### 2026-05-14 (session 2) — Fight card parity
+- **LiveFightCard + CompletedFightCard rebuilt** to mirror mobile (commit `63d404b`). Hype/rating square left, headshots facing inward with names below, user flame/star right. Completed card adds: hype-color square offset behind rating, winner green ring, method R# label, NC/DRAW badge, spoiler-free awareness, user-pick check/×.
+- **Good Fights / Activity / Search switched** from 3-col grid to single-column divided-list wrapper (commit `0d37b9a`) — the new borderless cards needed visual grouping.
+- **Vercel auto-deploy is stuck** — pushes to main since `aslln2bux` (2h+ ago) have not auto-built. Dashboard "Redeploy" rebuilds the original commit's SHA (not latest main), so it didn't help. `vercel --prod --yes --archive=tgz` from `packages/web` works. Investigate Git integration in next session.
+- **Couldn't QA Live tab** — no fights live during the session.
+- **Spoiler-Free UI toggle for web** added to backlog — context already exists, no UI/persistence yet.
