@@ -68,11 +68,13 @@ export default function TopFightsPage() {
         </div>
       )}
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-        {fights.map((fight: any, index: number) => (
-          <CompletedFightCard key={fight.id} fight={fight} showRank={index + 1} />
-        ))}
-      </div>
+      {fights.length > 0 && (
+        <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+          {fights.map((fight: any, index: number) => (
+            <CompletedFightCard key={fight.id} fight={fight} showRank={index + 1} />
+          ))}
+        </div>
+      )}
 
       {!isLoading && fights.length === 0 && !error && (
         <p className="py-12 text-center text-sm text-text-secondary">
