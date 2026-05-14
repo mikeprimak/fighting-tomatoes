@@ -27,7 +27,7 @@ interface Fight {
   isTitle: boolean;
   titleName?: string;
   averageHype?: number;
-  totalHypePredictions?: number;
+  hypeCount?: number;
   event?: {
     id: string;
     name: string;
@@ -303,15 +303,15 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
   const hype = fight.averageHype || 0;
   const hypeColor = hype > 0 ? getHypeHeatmapColor(hype) : '#808080';
   const promo = formatPromotion(fight.event?.promotion || '');
-  const votes = fight.totalHypePredictions || 0;
+  const votes = fight.hypeCount || 0;
 
   const f1Img = proxyImageUrl(fighter1ImageOverride || fight.fighter1.profileImage);
   const f2Img = proxyImageUrl(fighter2ImageOverride || fight.fighter2.profileImage);
   const hasAnyImage = !!(f1Img || f2Img);
 
-  const imgSize = isIg ? 80 : 56;
-  const fontSize = isIg ? 26 : 19;
-  const promoFontSize = isIg ? 16 : 13;
+  const imgSize = isIg ? 80 : 64;
+  const fontSize = isIg ? 26 : 22;
+  const promoFontSize = isIg ? 16 : 15;
 
   return (
     <div
@@ -324,90 +324,92 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
         border: '1px solid rgba(255,255,255,0.06)',
       }}
     >
-      {/* Left: Rank + HYPE score + Fighter 1 image */}
+      {/* Left: Rank + HYPE score */}
       <div style={{ display: 'flex', alignItems: 'center', gap: isIg ? 14 : 10 }}>
         <div
           style={{
-            fontSize: isIg ? 20 : 16,
+            fontSize: isIg ? 20 : 17,
             fontWeight: 700,
             color: '#6b7280',
-            minWidth: isIg ? 24 : 18,
+            minWidth: isIg ? 24 : 20,
             textAlign: 'center',
           }}
         >
           {rank}
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: isIg ? 70 : 52 }}>
-          <div style={{ fontSize: isIg ? 14 : 11, color: '#6b7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: isIg ? 70 : 58 }}>
+          <div style={{ fontSize: isIg ? 14 : 13, color: '#6b7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 2 }}>
             HYPE
           </div>
-          <div style={{ fontSize: isIg ? 44 : 32, fontWeight: 800, color: hypeColor, lineHeight: 1 }}>
+          <div style={{ fontSize: isIg ? 44 : 36, fontWeight: 800, color: hypeColor, lineHeight: 1 }}>
             {hype > 0 ? hype.toFixed(1) : '—'}
           </div>
           {votes > 0 && (
-            <div style={{ fontSize: isIg ? 11 : 9, color: '#6b7280', fontWeight: 600, marginTop: 3, letterSpacing: '0.02em' }}>
+            <div style={{ fontSize: isIg ? 11 : 11, color: '#6b7280', fontWeight: 600, marginTop: 3, letterSpacing: '0.02em' }}>
               n={votes}
             </div>
           )}
         </div>
+      </div>
+
+      {/* Center: F1 avatar + Fight info + F2 avatar */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: isIg ? 14 : 10, padding: isIg ? '0 16px' : '0 12px' }}>
         <FighterAvatar src={f1Img} fighter={fight.fighter1} size={imgSize} />
-      </div>
-
-      {/* Center: Fight info */}
-      <div style={{ flex: 1, minWidth: 0, textAlign: 'center', padding: isIg ? '0 12px' : '0 8px' }}>
-        <div
-          style={{
-            fontSize,
-            fontWeight: 700,
-            color: '#ffffff',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {fighterName(fight.fighter1)}{' '}
-          <span style={{ color: '#6b7280', fontWeight: 400 }}>vs</span>{' '}
-          {fighterName(fight.fighter2)}
-          {fight.isTitle && (
-            <span
-              style={{
-                marginLeft: isIg ? 10 : 7,
-                display: 'inline-block',
-                padding: isIg ? '2px 8px' : '1px 6px',
-                background: 'rgba(245,197,24,0.15)',
-                border: '1px solid rgba(245,197,24,0.4)',
-                borderRadius: 4,
-                fontSize: isIg ? 13 : 10,
-                fontWeight: 700,
-                color: '#F5C518',
-                letterSpacing: '0.1em',
-                verticalAlign: 'middle',
-              }}
-            >
-              TITLE
-            </span>
-          )}
+        <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
+          <div
+            style={{
+              fontSize,
+              fontWeight: 700,
+              color: '#ffffff',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {fighterName(fight.fighter1)}{' '}
+            <span style={{ color: '#6b7280', fontWeight: 400 }}>vs</span>{' '}
+            {fighterName(fight.fighter2)}
+            {fight.isTitle && (
+              <span
+                style={{
+                  marginLeft: isIg ? 10 : 8,
+                  display: 'inline-block',
+                  padding: isIg ? '2px 8px' : '2px 7px',
+                  background: 'rgba(245,197,24,0.15)',
+                  border: '1px solid rgba(245,197,24,0.4)',
+                  borderRadius: 4,
+                  fontSize: isIg ? 13 : 12,
+                  fontWeight: 700,
+                  color: '#F5C518',
+                  letterSpacing: '0.1em',
+                  verticalAlign: 'middle',
+                }}
+              >
+                TITLE
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+            {(fight.event?.name || formatEventTime(fight.event)) && (
+              <span
+                style={{
+                  fontSize: promoFontSize - 1,
+                  color: '#6b7280',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {[fight.event?.name, formatEventTime(fight.event)].filter(Boolean).join(' • ')}
+              </span>
+            )}
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
-          {(fight.event?.name || formatEventTime(fight.event)) && (
-            <span
-              style={{
-                fontSize: promoFontSize - 1,
-                color: '#6b7280',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {[fight.event?.name, formatEventTime(fight.event)].filter(Boolean).join(' • ')}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Right: Fighter 2 image + Promo logo (far right) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isIg ? 14 : 10, justifyContent: 'flex-end' }}>
         <FighterAvatar src={f2Img} fighter={fight.fighter2} size={imgSize} />
+      </div>
+
+      {/* Right: Promo logo (far right) */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
         {(() => {
           const logoUrl = getPromoLogoUrl(fight.event?.promotion || '');
           return logoUrl ? (
@@ -415,10 +417,10 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
             <img
               src={logoUrl}
               alt={formatPromotion(fight.event?.promotion || '')}
-              style={{ height: isIg ? 32 : 24, width: isIg ? 72 : 56, objectFit: 'contain', opacity: 0.9 }}
+              style={{ height: isIg ? 32 : 28, width: isIg ? 72 : 64, objectFit: 'contain', opacity: 0.9 }}
             />
           ) : (
-            <div style={{ width: isIg ? 72 : 56 }} />
+            <div style={{ width: isIg ? 72 : 64 }} />
           );
         })()}
       </div>
