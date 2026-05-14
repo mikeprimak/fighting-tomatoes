@@ -69,30 +69,34 @@ export function EventCard({ event, mode }: EventCardProps) {
               className="h-full w-full object-cover"
             />
             {/* Overlay with date badge and event name */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between p-3">
-              <div>
-                <h2 className="text-sm font-bold text-white sm:text-base drop-shadow-lg">{event.name}</h2>
-                <div className="flex items-center gap-2 text-xs text-gray-300">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-3 p-4 sm:p-5">
+              <div className="min-w-0 flex-1">
+                <h2 className="text-xl font-extrabold leading-tight text-white drop-shadow-lg sm:text-3xl">
+                  {event.name}
+                </h2>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-gray-200 sm:text-base">
                   <span>{formatEventDate(event.date)}</span>
                   {event.venue && <span>- {event.venue}</span>}
                 </div>
               </div>
-              <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-semibold ${timeBadgeColor}`}>
+              <span className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-bold uppercase tracking-wide sm:text-base ${timeBadgeColor}`}>
                 {timeBadge}
               </span>
             </div>
           </div>
         ) : (
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-bold text-foreground sm:text-base">{event.name}</h2>
-              <div className="flex items-center gap-2 text-xs text-text-secondary">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-xl font-extrabold leading-tight text-foreground sm:text-3xl">
+                {event.name}
+              </h2>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-text-secondary sm:text-base">
                 <span>{formatEventDate(event.date)}</span>
                 {event.venue && <span>- {event.venue}</span>}
               </div>
             </div>
-            <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-semibold ${timeBadgeColor}`}>
+            <span className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-bold uppercase tracking-wide sm:text-base ${timeBadgeColor}`}>
               {timeBadge}
             </span>
           </div>

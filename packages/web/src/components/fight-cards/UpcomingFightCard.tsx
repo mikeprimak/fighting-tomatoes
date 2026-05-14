@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Flame } from 'lucide-react';
+import { Flame, MessageCircle } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 
 interface Fighter {
@@ -101,16 +101,32 @@ export function UpcomingFightCard({ fight }: UpcomingFightCardProps) {
               <span className="text-base font-bold leading-none text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
                 {hypeScore === 10 ? '10' : hypeScore.toFixed(1)}
               </span>
-              {fight.totalHypePredictions ? (
-                <span className="text-[9px] font-semibold leading-none text-black/55">
-                  ({fight.totalHypePredictions})
-                </span>
+              {(fight.totalHypePredictions || fight.totalPreFightComments) ? (
+                <div className="flex items-center gap-1 text-[9px] font-semibold leading-none text-black/60">
+                  {fight.totalHypePredictions ? (
+                    <span>({fight.totalHypePredictions})</span>
+                  ) : null}
+                  {fight.totalPreFightComments ? (
+                    <span className="flex items-center gap-0.5">
+                      <MessageCircle size={8} strokeWidth={2.5} />
+                      {fight.totalPreFightComments}
+                    </span>
+                  ) : null}
+                </div>
               ) : (
                 <Flame size={11} className="text-black/40" />
               )}
             </>
           ) : (
-            <Flame size={16} className="text-text-secondary/50" />
+            <div className="flex flex-col items-center gap-0.5">
+              <Flame size={16} className="text-text-secondary/50" />
+              {fight.totalPreFightComments ? (
+                <span className="flex items-center gap-0.5 text-[9px] font-semibold leading-none text-text-secondary/70">
+                  <MessageCircle size={8} strokeWidth={2.5} />
+                  {fight.totalPreFightComments}
+                </span>
+              ) : null}
+            </div>
           )}
         </div>
 
