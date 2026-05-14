@@ -109,7 +109,7 @@ function SearchResults() {
           <h2 className="mb-2 text-sm font-semibold text-text-secondary">
             UPCOMING FIGHTS ({upcomingFights.length})
           </h2>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
             {upcomingFights.map((fight: any) => (
               <UpcomingFightCard key={fight.id} fight={fight} />
             ))}
@@ -123,7 +123,7 @@ function SearchResults() {
           <h2 className="mb-2 text-sm font-semibold text-text-secondary">
             COMPLETED FIGHTS ({completedFights.length})
           </h2>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
             {completedFights.map((fight: any) => (
               <CompletedFightCard key={fight.id} fight={fight} />
             ))}
