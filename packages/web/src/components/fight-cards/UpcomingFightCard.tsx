@@ -26,9 +26,10 @@ interface UpcomingFightCardProps {
     fighter1Odds?: string;
     fighter2Odds?: string;
     averageHype?: number;
-    totalHypePredictions?: number;
-    userHypeScore?: number;
-    totalPreFightComments?: number;
+    hypeCount?: number;
+    userHypePrediction?: number;
+    commentCount?: number;
+    userCommentCount?: number;
   };
 }
 
@@ -78,7 +79,9 @@ function FighterSide({ fighter, side }: { fighter: Fighter; side: 'left' | 'righ
 
 export function UpcomingFightCard({ fight }: UpcomingFightCardProps) {
   const hypeScore = fight.averageHype ?? 0;
-  const userHype = fight.userHypeScore ?? 0;
+  const userHype = fight.userHypePrediction ?? 0;
+  const hypeCount = fight.hypeCount ?? 0;
+  const commentCount = fight.commentCount ?? 0;
   const hasHype = hypeScore > 0;
   const hasUserHype = userHype > 0;
 
@@ -101,15 +104,13 @@ export function UpcomingFightCard({ fight }: UpcomingFightCardProps) {
               <span className="text-base font-bold leading-none text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
                 {hypeScore === 10 ? '10' : hypeScore.toFixed(1)}
               </span>
-              {(fight.totalHypePredictions || fight.totalPreFightComments) ? (
+              {(hypeCount > 0 || commentCount > 0) ? (
                 <div className="flex items-center gap-1 text-[9px] font-semibold leading-none text-black/60">
-                  {fight.totalHypePredictions ? (
-                    <span>({fight.totalHypePredictions})</span>
-                  ) : null}
-                  {fight.totalPreFightComments ? (
+                  {hypeCount > 0 ? <span>({hypeCount})</span> : null}
+                  {commentCount > 0 ? (
                     <span className="flex items-center gap-0.5">
                       <MessageCircle size={8} strokeWidth={2.5} />
-                      {fight.totalPreFightComments}
+                      {commentCount}
                     </span>
                   ) : null}
                 </div>
@@ -120,10 +121,10 @@ export function UpcomingFightCard({ fight }: UpcomingFightCardProps) {
           ) : (
             <div className="flex flex-col items-center gap-0.5">
               <Flame size={16} className="text-text-secondary/50" />
-              {fight.totalPreFightComments ? (
+              {commentCount > 0 ? (
                 <span className="flex items-center gap-0.5 text-[9px] font-semibold leading-none text-text-secondary/70">
                   <MessageCircle size={8} strokeWidth={2.5} />
-                  {fight.totalPreFightComments}
+                  {commentCount}
                 </span>
               ) : null}
             </div>
@@ -149,7 +150,7 @@ export function UpcomingFightCard({ fight }: UpcomingFightCardProps) {
                 color={userHypeColor}
                 strokeWidth={1.5}
               />
-              <span className="absolute inset-0 flex items-center justify-center pt-1.5 text-base font-bold text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_70%)]">
+              <span className="absolute inset-0 flex items-center justify-center pt-1 text-base font-bold text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_70%)]">
                 {Math.round(userHype)}
               </span>
             </>
