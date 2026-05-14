@@ -6,7 +6,7 @@ export function OrgFilterTabs() {
   const { selectedOrgs, handleOrgPress, isAllSelected, availableOrgs } = useOrgFilter();
 
   return (
-    <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-none">
+    <div className="flex flex-wrap gap-1.5 pb-2">
       <button
         onClick={() => handleOrgPress('ALL')}
         className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition-colors ${

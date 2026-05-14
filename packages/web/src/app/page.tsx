@@ -20,7 +20,7 @@ export default function UpcomingEventsPage() {
   } = useInfiniteQuery({
     queryKey: ['events', 'upcoming'],
     queryFn: ({ pageParam = 1 }) =>
-      getEvents({ page: pageParam, limit: 2, type: 'upcoming', includeFights: true }),
+      getEvents({ page: pageParam, limit: 5, type: 'upcoming', includeFights: true }),
     getNextPageParam: (lastPage) => {
       const { page, totalPages } = lastPage.pagination;
       return page < totalPages ? page + 1 : undefined;

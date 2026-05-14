@@ -20,7 +20,7 @@ export default function PastEventsPage() {
   } = useInfiniteQuery({
     queryKey: ['events', 'past'],
     queryFn: ({ pageParam = 1 }) =>
-      getEvents({ page: pageParam, limit: 2, type: 'past', includeFights: true }),
+      getEvents({ page: pageParam, limit: 5, type: 'past', includeFights: true }),
     getNextPageParam: (lastPage) => {
       const { page, totalPages } = lastPage.pagination;
       return page < totalPages ? page + 1 : undefined;

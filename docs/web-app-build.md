@@ -140,14 +140,66 @@ Updated 2026-05-14 from code inspection, not yet from runtime QA.
 Ordered by SEO leverage + user-impact:
 
 1. **Custom domain: `goodfights.app` → Vercel web project**, retire `packages/landing` (unlocks SEO; kills the privacy/delete-account 404s)
-2. **JSON-LD structured data** on event, fight, fighter pages
-3. **Wire Google Sign-In button** on `/login` (finish the half-built feature)
-4. **Port "How to Watch"** from mobile to event + fight pages (uses existing `/api/broadcasts`)
-5. **Add fighters to sitemap**
-6. **OG image fallback** (Good Fights branded card for events without banners)
-7. **Canonical URLs** + per-page Twitter image
-8. **Upgrade `<img>` → `next/image`**
-9. **Lighthouse-driven perf pass**
+2. **"How to Watch" SEO content engine** — see "How to Watch hub" section below
+3. **JSON-LD structured data** on event, fight, fighter pages
+4. **Wire Google Sign-In button** on `/login` (finish the half-built feature)
+5. **Port "How to Watch"** widget from mobile to event + fight pages (uses existing `/api/broadcasts`)
+6. **Add fighters to sitemap**
+7. **OG image fallback** (Good Fights branded card for events without banners)
+8. **Canonical URLs** + per-page Twitter image
+9. **Upgrade `<img>` → `next/image`**
+10. **Lighthouse-driven perf pass**
+
+---
+
+## "How to Watch" Hub — SEO Content Engine
+
+**Premise:** The broadcast discovery system already aggregates per-event, per-card-section, per-country broadcast data. Surface it as auto-generated SEO landing pages targeting long-tail queries like "How to watch PFL in Spain".
+
+### Page tiers (all auto-generated from `/api/broadcasts`)
+
+| Tier | URL pattern | Count | Example |
+|---|---|---|---|
+| **Leaf** (promo × country) | `/how-to-watch/[promotion]/[country]` | ~168 | "How to Watch PFL in Spain" |
+| **Promotion hub** | `/how-to-watch/[promotion]` | ~14 | "How to Watch UFC — Every Country" |
+| **Country hub** | `/how-to-watch/from/[country]` | ~12 | "How to Watch Combat Sports from Canada" |
+
+Total: ~194 pages, all generated. Leaf is the SEO workhorse — hubs exist to capture broader queries and provide internal linking.
+
+### Why promo × country at the leaf
+
+Search intent lives at the intersection. "How to watch PFL in Spain" = clear commercial intent, fresh-answer query, low high-quality competition. "How to watch combat sports from Canada" is too broad and over-competed.
+
+### Moat properties
+
+- **UFC.com / PFL.com** show their own promotion only, defaults to their region
+- **Reddit / blogs** go stale within 2 weeks of any broadcast deal change
+- **Good Fights** has section-aware per-country defaults + per-event discoveries, auto-refreshed
+- Every new event = another freshness signal on every relevant leaf page
+
+### Page content recipe (leaf)
+
+- H1: "How to Watch [Promotion] in [Country]" + last-updated date
+- Default broadcaster(s) for whole-event card (logo + Watch link)
+- Card-section overrides (main / prelims) if they air separately
+- Next 3 upcoming events for that promotion with their specific broadcaster — drives traffic to event pages
+- FAQ section with `FAQPage` + `BroadcastEvent` JSON-LD schemas
+
+### Critical guardrail
+
+**Do not generate pages for (promo, country) pairs with no data.** Thin content tanks SEO. Generate only where `BroadcastRegion` data exists. Pages appear as data fills in.
+
+### Dependencies
+
+- Custom domain on `goodfights.app` (these pages MUST be on the real domain to do SEO work)
+- Country list aligned to actual `BroadcastRegion` codes in production data
+- Sitemap updated to include all generated leaf + hub pages
+
+### Open design questions
+
+- URL slug: `/how-to-watch/pfl/spain` vs `/how-to-watch/pfl-in-spain`? Likely the former (hierarchical) for cleaner crumbs and internal linking.
+- Last-updated freshness signal: pulled from latest broadcast-discovery write timestamp for that (promo, country)?
+- Internal linking: every event detail page should link to its (promo × country) leaf page for the user's region.
 
 ---
 
