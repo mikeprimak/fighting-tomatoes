@@ -303,6 +303,7 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
   const hype = fight.averageHype || 0;
   const hypeColor = hype > 0 ? getHypeHeatmapColor(hype) : '#808080';
   const promo = formatPromotion(fight.event?.promotion || '');
+  const votes = fight.totalHypePredictions || 0;
 
   const f1Img = proxyImageUrl(fighter1ImageOverride || fight.fighter1.profileImage);
   const f2Img = proxyImageUrl(fighter2ImageOverride || fight.fighter2.profileImage);
@@ -323,8 +324,8 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
         border: '1px solid rgba(255,255,255,0.06)',
       }}
     >
-      {/* Left: Rank + Promo logo + Fighter 1 image */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isIg ? 10 : 6 }}>
+      {/* Left: Rank + HYPE score + Fighter 1 image */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: isIg ? 14 : 10 }}>
         <div
           style={{
             fontSize: isIg ? 20 : 16,
@@ -336,17 +337,19 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
         >
           {rank}
         </div>
-        {(() => {
-          const logoUrl = getPromoLogoUrl(fight.event?.promotion || '');
-          return logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={logoUrl}
-              alt={formatPromotion(fight.event?.promotion || '')}
-              style={{ height: isIg ? 24 : 18, width: isIg ? 60 : 44, objectFit: 'contain', opacity: 0.85 }}
-            />
-          ) : null;
-        })()}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: isIg ? 70 : 52 }}>
+          <div style={{ fontSize: isIg ? 14 : 11, color: '#6b7280', fontWeight: 700, letterSpacing: '0.08em', marginBottom: 2 }}>
+            HYPE
+          </div>
+          <div style={{ fontSize: isIg ? 44 : 32, fontWeight: 800, color: hypeColor, lineHeight: 1 }}>
+            {hype > 0 ? hype.toFixed(1) : '—'}
+          </div>
+          {votes > 0 && (
+            <div style={{ fontSize: isIg ? 11 : 9, color: '#6b7280', fontWeight: 600, marginTop: 3, letterSpacing: '0.02em' }}>
+              n={votes}
+            </div>
+          )}
+        </div>
         <FighterAvatar src={f1Img} fighter={fight.fighter1} size={imgSize} />
       </div>
 
@@ -365,6 +368,25 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
           {fighterName(fight.fighter1)}{' '}
           <span style={{ color: '#6b7280', fontWeight: 400 }}>vs</span>{' '}
           {fighterName(fight.fighter2)}
+          {fight.isTitle && (
+            <span
+              style={{
+                marginLeft: isIg ? 10 : 7,
+                display: 'inline-block',
+                padding: isIg ? '2px 8px' : '1px 6px',
+                background: 'rgba(245,197,24,0.15)',
+                border: '1px solid rgba(245,197,24,0.4)',
+                borderRadius: 4,
+                fontSize: isIg ? 13 : 10,
+                fontWeight: 700,
+                color: '#F5C518',
+                letterSpacing: '0.1em',
+                verticalAlign: 'middle',
+              }}
+            >
+              TITLE
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
           {(fight.event?.name || formatEventTime(fight.event)) && (
@@ -383,17 +405,22 @@ function FightRow({ sf, rank, isIg }: { sf: SelectedFight; rank: number; isIg: b
         </div>
       </div>
 
-      {/* Right: Fighter 2 image + Hype score */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isIg ? 12 : 8, width: isIg ? 120 : 90, justifyContent: 'flex-end' }}>
+      {/* Right: Fighter 2 image + Promo logo (far right) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: isIg ? 14 : 10, justifyContent: 'flex-end' }}>
         <FighterAvatar src={f2Img} fighter={fight.fighter2} size={imgSize} />
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: isIg ? 50 : 38 }}>
-          <div style={{ fontSize: isIg ? 12 : 9, color: '#6b7280', fontWeight: 600, marginBottom: 1 }}>
-            HYPE
-          </div>
-          <div style={{ fontSize: isIg ? 26 : 20, fontWeight: 800, color: hypeColor, lineHeight: 1 }}>
-            {hype > 0 ? hype.toFixed(1) : '—'}
-          </div>
-        </div>
+        {(() => {
+          const logoUrl = getPromoLogoUrl(fight.event?.promotion || '');
+          return logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt={formatPromotion(fight.event?.promotion || '')}
+              style={{ height: isIg ? 32 : 24, width: isIg ? 72 : 56, objectFit: 'contain', opacity: 0.9 }}
+            />
+          ) : (
+            <div style={{ width: isIg ? 72 : 56 }} />
+          );
+        })()}
       </div>
     </div>
   );
