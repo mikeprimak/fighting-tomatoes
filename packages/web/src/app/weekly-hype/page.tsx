@@ -257,7 +257,7 @@ function SocialCard({
               flex: 1,
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'center',
+              justifyContent: 'space-evenly',
               gap: isIg ? 20 : 12,
             }}
           >
