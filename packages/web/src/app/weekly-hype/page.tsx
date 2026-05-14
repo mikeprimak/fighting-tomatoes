@@ -59,7 +59,7 @@ function formatWeekendDates(start: Date, end: Date): string {
   }
   const fri = `${days[start.getDay()]} ${months[start.getMonth()]} ${ordinal(start.getDate())}`;
   const sun = `${days[end.getDay()]} ${months[end.getMonth()]} ${ordinal(end.getDate())}`;
-  return `THIS WEEKEND - ${fri} - ${sun}`;
+  return `Most hyped fights — ${fri} – ${sun}`;
 }
 
 function getThisWeekendRange(): { start: Date; end: Date } {
@@ -239,14 +239,14 @@ function SocialCard({
               </div>
               <div
                 style={{
-                  fontSize: isIg ? 40 : 30,
+                  fontSize: isIg ? 38 : 32,
                   fontWeight: 800,
                   color: '#F5C518',
                   letterSpacing: '0.02em',
                   lineHeight: 1.1,
                 }}
               >
-                MOST HYPED FIGHTS
+                GOOD FIGHTS HYPE INDEX
               </div>
             </div>
           </div>
@@ -277,15 +277,20 @@ function SocialCard({
               marginTop: isIg ? 20 : 10,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: isIg ? 12 : 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: isIg ? 12 : 10 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/good-fights-hand.png"
                 alt=""
-                style={{ width: isIg ? 36 : 26, height: isIg ? 36 : 26, objectFit: 'contain' }}
+                style={{ width: isIg ? 36 : 30, height: isIg ? 36 : 30, objectFit: 'contain' }}
               />
-              <div style={{ fontSize: isIg ? 24 : 18, fontWeight: 800, color: '#F5C518' }}>
-                GOOD FIGHTS
+              <div>
+                <div style={{ fontSize: isIg ? 24 : 20, fontWeight: 800, color: '#F5C518', lineHeight: 1.1 }}>
+                  GOOD FIGHTS
+                </div>
+                <div style={{ fontSize: isIg ? 14 : 13, color: '#9ca3af', fontStyle: 'italic', marginTop: 2, letterSpacing: '0.01em' }}>
+                  Never miss a Good Fight.
+                </div>
               </div>
             </div>
             <div style={{ fontSize: isIg ? 18 : 14, color: '#9ca3af' }}>
