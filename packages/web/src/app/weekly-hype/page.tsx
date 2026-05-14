@@ -616,7 +616,7 @@ export default function WeeklyHypePage() {
       const dataUrl = await toPng(ref.current, {
         width: w,
         height: h,
-        pixelRatio: 1,
+        pixelRatio: 2,
         style: { transform: 'scale(1)', transformOrigin: 'top left' },
       });
       const today = new Date();
