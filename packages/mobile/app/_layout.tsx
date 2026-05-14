@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react-native';
+import { PostHogProvider } from 'posthog-react-native';
 import Constants from 'expo-constants';
 import { AuthProvider } from '../store/AuthContext';
 
@@ -21,6 +22,9 @@ if (sentryDsn) {
     release: `${Constants.expoConfig?.version ?? 'unknown'}+${Constants.expoConfig?.ios?.buildNumber ?? Constants.expoConfig?.android?.versionCode ?? 'unknown'}`,
   });
 }
+
+const posthogKey = process.env.EXPO_PUBLIC_POSTHOG_KEY;
+const posthogHost = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com';
 import { VerificationProvider } from '../store/VerificationContext';
 import { PredictionAnimationProvider } from '../store/PredictionAnimationContext';
 import { NotificationProvider } from '../store/NotificationContext';
@@ -107,7 +111,7 @@ function RootLayoutNav() {
     },
   };
 
-  return (
+  const tree = (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BroadcastRegionProvider>
@@ -161,5 +165,21 @@ function RootLayoutNav() {
         </BroadcastRegionProvider>
       </AuthProvider>
     </QueryClientProvider>
+  );
+
+  if (!posthogKey) return tree;
+
+  return (
+    <PostHogProvider
+      apiKey={posthogKey}
+      options={{
+        host: posthogHost,
+        enableSessionReplay: false,
+        captureAppLifecycleEvents: true,
+      }}
+      autocapture={true}
+    >
+      {tree}
+    </PostHogProvider>
   );
 }
