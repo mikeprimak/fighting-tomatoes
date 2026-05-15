@@ -106,11 +106,11 @@ export async function login(email: string, password: string) {
 }
 
 export async function loginWithGoogle(idToken: string) {
-  const res = await fetch('/api/auth/login', {
+  const res = await fetch('/api/auth/google', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ provider: 'google', idToken }),
+    body: JSON.stringify({ idToken }),
   });
   const data = await res.json();
   if (!res.ok) throw data;
