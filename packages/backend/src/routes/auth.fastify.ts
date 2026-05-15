@@ -1775,11 +1775,18 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Verify the Apple identity token
+      // Verify the Apple identity token.
+      // Accepts multiple audiences so iOS app + web Services ID share one endpoint.
+      // Set APPLE_CLIENT_ID (iOS bundle) and APPLE_WEB_CLIENT_ID (web Services ID).
+      const appleAudiences = [
+        process.env.APPLE_CLIENT_ID || 'com.fightcrewapp.mobile',
+        process.env.APPLE_WEB_CLIENT_ID,
+      ].filter((v): v is string => !!v);
+
       let applePayload;
       try {
         applePayload = await appleSignIn.verifyIdToken(identityToken, {
-          audience: process.env.APPLE_CLIENT_ID || 'com.fightcrewapp.mobile',
+          audience: appleAudiences,
           ignoreExpiration: false,
         });
       } catch (verifyError: any) {
