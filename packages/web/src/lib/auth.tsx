@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { setAccessToken, getAccessToken, refreshSession, logout as apiLogout, login as apiLogin, register as apiRegister, loginWithGoogle as apiLoginWithGoogle } from './api';
+import { setAccessToken, getAccessToken, refreshSession, logout as apiLogout, login as apiLogin, register as apiRegister, loginWithGoogle as apiLoginWithGoogle, loginWithApple as apiLoginWithApple } from './api';
 
 interface User {
   id: string;
@@ -30,6 +30,7 @@ interface AuthContextType {
   isGuest: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
+  loginWithApple: (payload: { identityToken: string; email?: string; firstName?: string; lastName?: string }) => Promise<void>;
   register: (data: { email: string; password: string; firstName?: string; lastName?: string; displayName?: string }) => Promise<void>;
   logout: () => Promise<void>;
   continueAsGuest: () => void;
@@ -79,6 +80,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsGuest(false);
   }, []);
 
+  const loginWithApple = useCallback(async (payload: { identityToken: string; email?: string; firstName?: string; lastName?: string }) => {
+    const data = await apiLoginWithApple(payload);
+    setUser(data.user);
+    setIsGuest(false);
+  }, []);
+
   const register = useCallback(async (userData: { email: string; password: string; firstName?: string; lastName?: string; displayName?: string }) => {
     const data = await apiRegister(userData);
     setUser(data.user);
@@ -99,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated, isGuest, login, loginWithGoogle, register, logout, continueAsGuest, setUser }}>
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticated, isGuest, login, loginWithGoogle, loginWithApple, register, logout, continueAsGuest, setUser }}>
       {children}
     </AuthContext.Provider>
   );

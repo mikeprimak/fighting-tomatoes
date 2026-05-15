@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { AppleSignInButton } from '@/components/auth/AppleSignInButton';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -33,8 +34,9 @@ export default function LoginPage() {
       <h1 className="mb-6 text-2xl font-bold text-primary">GOOD FIGHTS</h1>
       <h2 className="mb-6 text-lg font-semibold">Sign In</h2>
 
-      <div className="mb-4 w-full">
+      <div className="mb-3 flex w-full flex-col items-center gap-3">
         <GoogleSignInButton mode="signin" />
+        <AppleSignInButton mode="signin" />
       </div>
 
       <div className="mb-4 flex w-full items-center gap-3 text-xs uppercase tracking-wider text-text-secondary">

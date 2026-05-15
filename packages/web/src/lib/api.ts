@@ -118,6 +118,24 @@ export async function loginWithGoogle(idToken: string) {
   return data;
 }
 
+export async function loginWithApple(payload: {
+  identityToken: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+}) {
+  const res = await fetch('/api/auth/apple', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw data;
+  accessToken = data.accessToken;
+  return data;
+}
+
 export async function register(userData: {
   email: string;
   password: string;
