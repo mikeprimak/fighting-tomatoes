@@ -170,13 +170,13 @@ export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps)
           {/* Hype square (behind, offset down+right) */}
           {hasHype && (
             <div
-              className="absolute left-1 top-1 h-12 w-12 rounded-md"
+              className="absolute left-3 top-4 h-12 w-12 rounded-md"
               style={{ backgroundColor: hypeColor, zIndex: 0 }}
             />
           )}
           {/* Rating square (front) */}
           <div
-            className="absolute left-0 top-0 z-[1] flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-md"
+            className="absolute left-2 top-3 z-[1] flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-md"
             style={{
               backgroundColor: hasRating ? ratingColor : '#202020',
               border: hasRating ? 'none' : '1px solid var(--color-border, #2a2a2a)',
