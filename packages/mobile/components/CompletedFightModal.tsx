@@ -27,6 +27,7 @@ import { getFighterImage } from './fight-cards/shared/utils';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 import { usePredictionAnimation } from '../store/PredictionAnimationContext';
 import FollowFighterButton from './FollowFighterButton';
+import RatingRevealModal from './RatingRevealModal';
 
 const DEFAULT_FIGHTER_IMAGE = require('../assets/fighters/fighter-default-alpha.png');
 
@@ -75,6 +76,20 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [fighter1ImgError, setFighter1ImgError] = useState(false);
   const [fighter2ImgError, setFighter2ImgError] = useState(false);
+
+  // Community-reveal modal state — mirrors UpcomingFightModal's hype reveal.
+  // The reveal fires on Done iff the user tapped a rating during this open,
+  // gated by sessionTappedRatingRef. Distribution prefetched via useQuery on
+  // open so the reveal renders instantly via prefetched data + a local delta.
+  const [revealVisible, setRevealVisible] = useState(false);
+  const [revealDistribution, setRevealDistribution] = useState<Record<number, number>>({});
+  const [revealAvgRating, setRevealAvgRating] = useState<number>(0);
+  const [revealTotal, setRevealTotal] = useState<number>(0);
+  const sessionTappedRatingRef = useRef<boolean>(false);
+  const sessionLastRatingRef = useRef<number | null>(null);
+  // Snapshot of the user's rating at modal-open time — load-bearing for the
+  // delta computation (we decrement this bucket if the rating changed).
+  const previousRatingRef = useRef<number | null>(null);
 
   // Keyboard visibility
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -142,6 +157,13 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
         // Set wheel position immediately (no animation on open)
         const pos = rating ? (10 - rating) * STAR_SLOT_HEIGHT : BLANK_POSITION;
         wheelAnimation.setValue(pos);
+        // Reset reveal session tracking — reveal only fires for taps this open.
+        sessionTappedRatingRef.current = false;
+        sessionLastRatingRef.current = null;
+        previousRatingRef.current = rating;
+        setRevealDistribution({});
+        setRevealAvgRating(0);
+        setRevealTotal(0);
       }
       // Populate with existing user review once loaded from API
       const fetchedReview = fightDetailData?.fight?.userReview?.content;
@@ -152,6 +174,15 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
       }
     }
   }, [fight?.id, visible, fightDetailData?.fight?.userReview?.content]);
+
+  // Prefetch the community rating distribution silently on modal open so the
+  // reveal can render instantly with prefetched data + the user's vote delta.
+  const { data: prefetchedAggregateStats } = useQuery({
+    queryKey: ['ratingStats', fight?.id],
+    queryFn: () => apiService.getFightAggregateStats(fight!.id),
+    enabled: !!fight?.id && visible,
+    staleTime: 30_000,
+  });
 
   // Helper to optimistically update events cache
   const updateEventsCache = useCallback((updates: Record<string, any>) => {
@@ -218,8 +249,10 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
     },
   });
 
-  const handleDone = useCallback(async () => {
-    // Save review comment if it changed (use refs to avoid stale closure)
+  const handleDone = useCallback(async (opts?: { skipReveal?: boolean }) => {
+    // Save review comment if it changed (use refs to avoid stale closure).
+    // Rating itself was already persisted on tap by handleRatingSelection,
+    // so we only need to fire the mutation here for comment-only changes.
     if (isAuthenticated && fight) {
       const fightId = fight.id;
       const trimmed = reviewCommentRef.current.trim();
@@ -233,8 +266,52 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
         }
       }
     }
+    // If user tapped a rating this session, render the reveal instantly using
+    // the prefetched aggregate stats + a local delta. Matches the hype reveal.
+    // Skipped when caller is navigating away (e.g. See Comments link).
+    if (
+      !opts?.skipReveal &&
+      sessionTappedRatingRef.current &&
+      sessionLastRatingRef.current != null &&
+      prefetchedAggregateStats?.ratingDistribution
+    ) {
+      const baseDist = prefetchedAggregateStats.ratingDistribution || {};
+      const baseTotal = prefetchedAggregateStats.totalRatings || 0;
+      const newRating = sessionLastRatingRef.current;
+      const prevRating = previousRatingRef.current;
+
+      const liveDist: Record<number, number> = { ...baseDist };
+      let liveTotal = baseTotal;
+      if (prevRating != null && prevRating !== newRating) {
+        liveDist[prevRating] = Math.max(0, (liveDist[prevRating] || 0) - 1);
+      }
+      if (prevRating !== newRating) {
+        liveDist[newRating] = (liveDist[newRating] || 0) + 1;
+        if (prevRating == null) liveTotal += 1;
+      }
+
+      let sum = 0;
+      let count = 0;
+      for (let r = 1; r <= 10; r++) {
+        const c = liveDist[r] || 0;
+        sum += r * c;
+        count += c;
+      }
+      const liveAvg = count > 0 ? Math.round((sum / count) * 10) / 10 : 0;
+
+      setRevealDistribution(liveDist);
+      setRevealAvgRating(liveAvg);
+      setRevealTotal(liveTotal);
+      setRevealVisible(true);
+      return;
+    }
     onClose();
-  }, [isAuthenticated, fight, selectedRating, ratingMutation, onClose]);
+  }, [isAuthenticated, fight, selectedRating, ratingMutation, onClose, prefetchedAggregateStats]);
+
+  const handleRevealClose = useCallback(() => {
+    setRevealVisible(false);
+    onClose();
+  }, [onClose]);
 
   const handleRatingSelection = useCallback((level: number) => {
     if (!requireVerification('rate this fight')) return;
@@ -242,6 +319,13 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
     const newRating = selectedRating === level ? null : level;
     setSelectedRating(newRating);
     animateToNumber(newRating || 0);
+    // Track tap for reveal gating. Deselect-to-null doesn't qualify.
+    if (newRating != null) {
+      sessionTappedRatingRef.current = true;
+      sessionLastRatingRef.current = newRating;
+    } else {
+      sessionLastRatingRef.current = null;
+    }
     if (isAuthenticated && fight) {
       ratingMutation.mutate({ fightId: fight.id, rating: newRating, review: reviewCommentRef.current.trim() || null });
     }
@@ -415,7 +499,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
             )}
             <TouchableOpacity
               style={styles.seeDetailsLink}
-              onPress={async () => { const fightId = fight.id; await handleDone(); router.push(`/fight/${fightId}?mode=completed` as any); }}
+              onPress={async () => { const fightId = fight.id; await handleDone({ skipReveal: true }); router.push(`/fight/${fightId}?mode=completed` as any); }}
             >
               <Text style={[styles.seeDetailsText, { color: colors.textSecondary }]}>
                 {(() => {
@@ -432,7 +516,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
           <View style={styles.bottomRow}>
             <TouchableOpacity
               style={[styles.doneButton, { backgroundColor: colors.primary }]}
-              onPress={handleDone}
+              onPress={() => handleDone()}
             >
               <Text style={styles.doneButtonText}>Done</Text>
             </TouchableOpacity>
@@ -441,6 +525,17 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
             </ScrollView>
           </TouchableOpacity>
         </KeyboardAvoidingView>
+        {/* Reveal renders INSIDE the same Modal so both modalContainers share
+            the exact same parent View — `width: '88%'` resolves to identical
+            pixels. Mirrors UpcomingFightModal. */}
+        <RatingRevealModal
+          visible={revealVisible}
+          onClose={handleRevealClose}
+          distribution={revealDistribution}
+          totalRatings={revealTotal}
+          averageRating={revealAvgRating}
+          userRating={sessionLastRatingRef.current ?? 0}
+        />
       </View>
     </Modal>
   );
@@ -457,6 +552,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
   },
   modalContainer: {
     width: '88%',

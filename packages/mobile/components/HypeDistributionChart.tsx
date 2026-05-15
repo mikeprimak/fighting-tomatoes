@@ -4,8 +4,9 @@ import { getHypeHeatmapColor } from '../utils/heatmap';
 
 // Approximation of a Gaussian-blur box-shadow: 14 stacked translucent white
 // layers, each 1px further out, with exponential opacity decay. Cross-platform
-// (works the same on Android where shadowColor is ignored).
-const GLOW_LAYERS = Array.from({ length: 14 }, (_, i) => {
+// (works the same on Android where shadowColor is ignored). Exported so the
+// rating distribution chart can use the identical halo.
+export const GLOW_LAYERS = Array.from({ length: 14 }, (_, i) => {
   const inset = i + 1;
   // Peak ~0.32 at the innermost layer, decays to ~0.01 at the outer edge.
   const opacity = 0.32 * Math.exp(-i / 4.2);
