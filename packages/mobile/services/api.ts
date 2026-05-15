@@ -696,7 +696,7 @@ class ApiService {
     predictedWinner?: string; // fighter1Id or fighter2Id
     predictedMethod?: 'DECISION' | 'KO_TKO' | 'SUBMISSION';
     predictedRound?: number;
-  }): Promise<{ prediction: any; averageHype: number; totalHypePredictions: number; message: string }> {
+  }): Promise<{ prediction: any; averageHype: number; totalHypePredictions: number; hypeDistribution: Record<number, number>; message: string }> {
     return this.makeRequest(`/fights/${fightId}/prediction`, {
       method: 'POST',
       body: JSON.stringify(data),
