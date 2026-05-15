@@ -62,11 +62,11 @@ export function EventCard({ event, mode }: EventCardProps) {
       {/* Event banner + header */}
       <Link href={`/events/${event.id}`} className="block">
         {event.bannerImage ? (
-          <div className="relative mb-2 aspect-video w-full overflow-hidden rounded-lg">
+          <div className="relative mb-2 w-full overflow-hidden rounded-lg">
             <img
               src={event.bannerImage}
               alt={event.name}
-              className="h-full w-full object-cover"
+              className="block h-auto w-full"
             />
             {/* Overlay with date badge and event name */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
