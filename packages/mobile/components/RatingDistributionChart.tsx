@@ -1,11 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { getHypeHeatmapColor } from '../utils/heatmap';
+import { GLOW_LAYERS } from './HypeDistributionChart';
 
 interface RatingDistributionChartProps {
   // Distribution of rating scores 1-10
   distribution: Record<number, number>;
   totalRatings: number;
+  // When set, that bar gets a soft glow halo and its legend number is white/bold.
+  userRating?: number | null;
+  // Optional override; falls back to the legacy 281px chart width.
+  width?: number;
+  // Optional shared fade animation for the reveal modal use-case.
+  fadeAnim?: Animated.Value;
 }
 
 /**
@@ -16,71 +23,96 @@ interface RatingDistributionChartProps {
 export default function RatingDistributionChart({
   distribution,
   totalRatings,
+  userRating,
+  width,
+  fadeAnim,
 }: RatingDistributionChartProps) {
-  // Chart dimensions - horizontal layout
-  const chartWidth = 281; // Width for 10 bars - narrower to fit screen
-  const chartHeight = 50; // Height for bars area
-  const barWidth = 24; // Wider bars that almost touch
-  const barGap = 1;
+  const chartWidth = width ?? 281;
+  const chartHeight = 50;
+  // Flex columns mirror HypeDistributionChart so caller-provided widths don't
+  // overflow the chart area.
+  const barWidth = Math.min(24, Math.max(12, Math.floor((chartWidth - 20) / 10) - 2));
 
-  // Find max count for scaling
   const maxCount = Math.max(...Object.values(distribution), 1);
 
-  // Create bars for rating scores 1-10 (left to right)
   const bars = [];
   for (let rating = 1; rating <= 10; rating++) {
     const count = distribution[rating] || 0;
     const barHeight = maxCount > 0 ? (count / maxCount) * (chartHeight - 10) : 0;
-    const color = getHypeHeatmapColor(rating); // Use correct heatmap colors
+    const color = getHypeHeatmapColor(rating);
+    const isUserBar = userRating != null && rating === userRating;
 
     bars.push(
       <View
         key={rating}
         style={{
+          flex: 1,
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'flex-end',
-          width: (chartWidth - 20) / 10, // Divide width by 10 scores
-          marginRight: rating < 10 ? barGap : 0,
           position: 'relative',
           height: chartHeight - 10,
         }}
       >
-        {/* Colored bar - grows upward (always visible for completed fights) */}
         {count > 0 && (
-          <View
-            style={{
-              width: barWidth,
-              height: barHeight,
-              backgroundColor: color,
-              borderRadius: 1,
-            }}
-          />
+          <View style={{ width: barWidth, height: barHeight, position: 'relative' }}>
+            {isUserBar && GLOW_LAYERS.map((layer, i) => (
+              <View
+                key={i}
+                style={{
+                  position: 'absolute',
+                  top: -layer.inset,
+                  left: -layer.inset,
+                  right: -layer.inset,
+                  bottom: -layer.inset,
+                  borderRadius: layer.inset + 1,
+                  backgroundColor: `rgba(255,255,255,${layer.opacity})`,
+                }}
+              />
+            ))}
+            <Animated.View
+              style={{
+                width: barWidth,
+                height: barHeight,
+                backgroundColor: color,
+                borderRadius: 1,
+                ...(fadeAnim ? { opacity: fadeAnim } : {}),
+                ...(isUserBar
+                  ? {
+                      shadowColor: '#FFFFFF',
+                      shadowOpacity: 1,
+                      shadowRadius: 10,
+                      shadowOffset: { width: 0, height: 0 },
+                    }
+                  : {}),
+              }}
+            />
+          </View>
         )}
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Chart area - bars from left (1) to right (10) */}
+    <View style={[styles.container, { width: chartWidth }]}>
       <View style={styles.chartArea}>
         {bars}
       </View>
-      {/* Legend - numbers 1-10 */}
       <View style={styles.legendArea}>
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-          <View
-            key={num}
-            style={{
-              width: (chartWidth - 20) / 10,
-              marginRight: num < 10 ? barGap : 0,
-              alignItems: 'center',
-            }}
-          >
-            <Text style={styles.legendText}>{num}</Text>
-          </View>
-        ))}
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
+          const isUserBar = userRating != null && num === userRating;
+          return (
+            <View
+              key={num}
+              style={{
+                flex: 1,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={[styles.legendText, isUserBar && styles.legendTextUser]}>{num}</Text>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
@@ -108,5 +140,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#808080',
     textAlign: 'center',
+  },
+  legendTextUser: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 });
