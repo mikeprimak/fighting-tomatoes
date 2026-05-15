@@ -35,7 +35,8 @@ Updated 2026-05-14 from code inspection, not yet from runtime QA.
 | Register | ✅ | ❌ | `/register` |
 | Forgot / reset password | ✅ | ❌ | `/forgot-password`, `/reset-password` |
 | Verify email | ✅ | ❌ | `/verify-email` |
-| **Google Sign-In** | 🟡 half | ❌ | `loginWithGoogle` plumbed in `lib/api.ts` + `lib/auth.tsx`; **no Google button on `/login` page, no GIS script** |
+| **Google Sign-In** | ✅ | ✅ | Wired via Google Identity Services. Button on `/login` + `/register`. Tested in prod 2026-05-14. |
+| **Apple Sign-In** | ✅ | ✅ | Wired via Sign in with Apple JS, popup mode. Services ID `app.goodfights.web`. Button on `/login` + `/register`. Backend `verifyIdToken` now accepts iOS bundle + web Services ID via new `APPLE_WEB_CLIENT_ID` env var on Render. Tested in prod with Hide My Email path 2026-05-14. |
 | Pre-fight hype rating (1-10) | ✅ | ❌ | `HypeFightModal.tsx` |
 | Pre-fight comments | ✅ | ❌ | `CommentForm` + `createPreFightComment`, upvotes |
 | Post-fight rating (1-10) | ✅ | ❌ | `RateFightModal.tsx` with tags + review text |
@@ -139,10 +140,10 @@ Updated 2026-05-14 from code inspection, not yet from runtime QA.
 
 Ordered by SEO leverage + user-impact:
 
-1. **Custom domain: `goodfights.app` → Vercel web project**, retire `packages/landing` (unlocks SEO; kills the privacy/delete-account 404s)
+1. **Custom domain: `goodfights.app` → Vercel web project**, retire `packages/landing` (unlocks SEO; kills the privacy/delete-account 404s). **After this lands**: revisit Apple Dev Console → add `goodfights.app` to Domains + `https://goodfights.app/login` to Return URLs on the `app.goodfights.web` Services ID.
 2. **"How to Watch" SEO content engine** — see "How to Watch hub" section below
 3. **JSON-LD structured data** on event, fight, fighter pages
-4. **Wire Google Sign-In button** on `/login` (finish the half-built feature)
+4. ~~**Wire Google Sign-In button** on `/login`~~ — done 2026-05-14
 5. **Port "How to Watch"** widget from mobile to event + fight pages (uses existing `/api/broadcasts`)
 6. **Add fighters to sitemap**
 7. **OG image fallback** (Good Fights branded card for events without banners)
