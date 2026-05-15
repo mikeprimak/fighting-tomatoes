@@ -35,7 +35,7 @@ Users keep coming back not because we nag them, but because the app **remembers 
 ### Immediate gratification (the dopamine hit)
 
 - [x] **#4 Hype community modal** — when user taps hype, show community distribution histogram with their tick lit, "you're 2 above the room", 1 top comment from same-hype users. **SHIPPED 2026-05-15** as a post-Done "Hype submitted!" reveal modal with a glowing bar for the user's tick + plain-English comparison line. See `HypeRevealModal.tsx`.
-- [ ] **Rating community modal** — same pattern for completed-fight ratings.
+- [x] **Rating community modal** — same pattern for completed-fight ratings. **SHIPPED 2026-05-15** as the "Rating submitted!" reveal modal. See `RatingRevealModal.tsx`.
 - [ ] **Haptic + sound polish** — satisfying micro-feedback on rating tap.
 - [ ] **One-tap rating from notification** — push lets you rate without opening app.
 
@@ -89,6 +89,7 @@ Users keep coming back not because we nag them, but because the app **remembers 
 **Wave 1 — immediate dopamine (complete)**
 - ✅ Plan drafted in this doc.
 - ✅ #4 hype community modal — shipped 2026-05-15.
+- ✅ Rating community modal — shipped 2026-05-15.
 
 **Wave 2 — the moat (closure loop)**
 - Hype accuracy backend (Phase C of [[project-ai-enrichment-workstream]] roadmap).
@@ -136,17 +137,22 @@ Removes the incentive to pad your own rating to match your hype.
 **3. Hype DNA depends on AI tags, not fighter style records (2026-05-14)**
 See [[project-ai-enrichment-workstream]] decisions log §1.
 
-## Status (2026-05-15, end of session 2)
+## Status (2026-05-15, end of session 3)
 
 - ✅ Workspace established (this doc + CLAUDE.md session protocol + memory entry).
 - ✅ **#4 Hype community modal — SHIPPED 2026-05-15.** "Hype submitted!" reveal modal opens after Done, instant render via prefetched community stats + local vote delta. User's bar gets a smooth Gaussian-style glow (14 stacked translucent layers + iOS shadow). Plain-English comparison copy. Close button width matches the hype modal's Done button.
   - Files: `HypeRevealModal.tsx` (new), `UpcomingFightModal.tsx`, `HypeDistributionChart.tsx`, `services/api.ts`.
+- ✅ **Rating community modal — SHIPPED 2026-05-15.** "Rating submitted!" reveal modal, twin of the hype reveal, fires after Done on the completed-fight rating flow. Same prefetch + local-delta architecture, same glow on the user's bar (`GLOW_LAYERS` exported from HypeDistributionChart and reused). Comparison copy: "You rated this (much higher / higher / about the same / lower / much lower) than the average fan."
+  - Files: `RatingRevealModal.tsx` (new), `RatingDistributionChart.tsx` (extended with userRating/width/fadeAnim props + glow), `CompletedFightModal.tsx` (prefetch + session tracking + inline reveal + width-parity fix), `HypeDistributionChart.tsx` (exported GLOW_LAYERS).
 - 📋 Closure-loop backend (Wave 2) — planned, depends on AI enrichment Phase 1.
 
 ### Pick up here next session
 
-1. Decision ahead before Wave 2 build: ship AI enrichment Phase 1 first to unlock tag-aware accuracy stats, or build a simpler hype-accuracy engine against community avg now and layer AI tags later?
-2. Rating community modal (mirror #4 for completed-fight ratings) is the next quick win in the Wave 1 spirit if we want to keep stacking dopamine moments before moving to the moat.
+Wave 1 is closed (both immediate-dopamine reveals shipped). Decision ahead before Wave 2:
+1. Ship AI enrichment Phase 1 first to unlock tag-aware accuracy stats, or
+2. Build a simpler hype-accuracy engine against community avg now and layer AI tags later.
+
+Alternatively, stack one more lightweight Wave 1 win from the inventory (haptic + sound polish on rating tap, one-tap rate from notification, first-rating callback) before stepping into the moat.
 
 ## Session protocol
 
