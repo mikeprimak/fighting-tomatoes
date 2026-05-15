@@ -68,8 +68,8 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
     <div className="mx-auto max-w-4xl">
       {/* Banner */}
       {event.bannerImage && (
-        <div className="mb-4 aspect-video overflow-hidden rounded-lg">
-          <img src={event.bannerImage} alt={event.name} className="h-full w-full object-cover" />
+        <div className="mb-4 overflow-hidden rounded-lg">
+          <img src={event.bannerImage} alt={event.name} className="block h-auto w-full" />
         </div>
       )}
 
