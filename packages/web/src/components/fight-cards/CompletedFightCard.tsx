@@ -178,7 +178,7 @@ export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps)
           <div
             className="absolute left-0 top-0 z-[1] flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-md"
             style={{
-              backgroundColor: hasRating ? ratingColor : 'transparent',
+              backgroundColor: hasRating ? ratingColor : '#202020',
               border: hasRating ? 'none' : '1px solid var(--color-border, #2a2a2a)',
             }}
           >
