@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -32,6 +33,16 @@ export default function RegisterPage() {
     <div className="mx-auto flex max-w-sm flex-col items-center pt-12">
       <h1 className="mb-6 text-2xl font-bold text-primary">GOOD FIGHTS</h1>
       <h2 className="mb-6 text-lg font-semibold">Create Account</h2>
+
+      <div className="mb-4 w-full">
+        <GoogleSignInButton mode="signup" />
+      </div>
+
+      <div className="mb-4 flex w-full items-center gap-3 text-xs uppercase tracking-wider text-text-secondary">
+        <div className="h-px flex-1 bg-border" />
+        <span>or</span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
 
       <form onSubmit={handleSubmit} className="w-full space-y-4">
         {error && (
