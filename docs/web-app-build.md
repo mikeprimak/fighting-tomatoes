@@ -219,3 +219,9 @@ Search intent lives at the intersection. "How to watch PFL in Spain" = clear com
 - **Vercel auto-deploy is stuck** — pushes to main since `aslln2bux` (2h+ ago) have not auto-built. Dashboard "Redeploy" rebuilds the original commit's SHA (not latest main), so it didn't help. `vercel --prod --yes --archive=tgz` from `packages/web` works. Investigate Git integration in next session.
 - **Couldn't QA Live tab** — no fights live during the session.
 - **Spoiler-Free UI toggle for web** added to backlog — context already exists, no UI/persistence yet.
+
+### 2026-05-14 (session 6) — Vercel auto-deploy fixed
+- Root cause: Vercel `web` project had **no Git repository connected** (`link` field absent from API response). Every deploy in project history came from CLI; auto-deploy never had a webhook to fire.
+- Fix: `vercel git connect github.com/mikeprimak/fighting-tomatoes`, then `PATCH /v9/projects/{id}` with `rootDirectory: "packages/web"` (was `null`).
+- Verified end-to-end: deploy from GitHub source at SHA `af3a1b8` built in ~30s, promoted to production. Git alias `web-git-main-michael-primaks-projects.vercel.app` now exists.
+- Tarball workaround retired. Dashboard "Redeploy" will now pull latest `main`.
