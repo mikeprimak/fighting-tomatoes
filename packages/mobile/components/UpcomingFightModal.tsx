@@ -25,6 +25,7 @@ import { useAuth } from '../store/AuthContext';
 import { getFighterImage } from './fight-cards/shared/utils';
 import { getHypeHeatmapColor } from '../utils/heatmap';
 import FollowFighterButton from './FollowFighterButton';
+import HypeRevealModal from './HypeRevealModal';
 
 const DEFAULT_FIGHTER_IMAGE = require('../assets/fighters/fighter-default-alpha.png');
 const FLAME_HOLLOW = require('../assets/flame-hollow-alpha-thicker-truealpha.png');
@@ -80,6 +81,21 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
   const [notifyMessage, setNotifyMessage] = useState<string | null>(null);
   const notifyScaleAnim = useRef(new Animated.Value(1)).current;
   const notifyMsgOpacity = useRef(new Animated.Value(0)).current;
+
+  // Community-reveal modal state. The reveal fires on Done iff the user
+  // tapped a hype during this open of the modal — gated by sessionTappedHype.
+  // Distribution is prefetched silently when the hype modal opens so the
+  // reveal can render instantly on Done (no spinner, no freeze). The user's
+  // own vote is folded into the prefetched data via local delta at Done time.
+  const [revealVisible, setRevealVisible] = useState(false);
+  const [revealDistribution, setRevealDistribution] = useState<Record<number, number>>({});
+  const [revealAvgHype, setRevealAvgHype] = useState<number>(0);
+  const [revealTotal, setRevealTotal] = useState<number>(0);
+  const sessionTappedHypeRef = useRef<boolean>(false);
+  const sessionLastHypeRef = useRef<number | null>(null);
+  // The user's hype value at modal-open time — load-bearing for the delta
+  // computation in handleDone (we need to know what to decrement, if any).
+  const previousHypeRef = useRef<number | null>(null);
 
   // Keyboard visibility
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -144,8 +160,30 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
       // Set wheel position immediately (no animation on open)
       const pos = hype ? (10 - hype) * FLAME_SLOT_HEIGHT : BLANK_POSITION;
       wheelAnimation.setValue(pos);
+      // Reset session tap tracking — reveal only fires for taps in this open.
+      sessionTappedHypeRef.current = false;
+      sessionLastHypeRef.current = null;
+      // Snapshot what the user had voted before this session so handleDone
+      // can decrement the right bucket in the local delta computation.
+      previousHypeRef.current = hype;
+      // Drop any reveal data captured for a previous fight so the reveal modal
+      // never paints stale distribution / avg / total on first frame.
+      setRevealDistribution({});
+      setRevealAvgHype(0);
+      setRevealTotal(0);
     }
   }, [fight?.id, visible]);
+
+  // Prefetch the community distribution silently as soon as the hype modal
+  // opens. The result isn't displayed here — it's used to render the reveal
+  // modal instantly on Done (no awaiting the mutation, no spinner). We pull
+  // both authenticated and unauthenticated cases via the same GET endpoint.
+  const { data: prefetchedStats } = useQuery({
+    queryKey: ['hypeStats', fight?.id],
+    queryFn: () => apiService.getFightPredictionStats(fight!.id),
+    enabled: !!fight?.id && visible,
+    staleTime: 30_000,
+  });
 
   // Populate comment from existing user comment, or reset when modal opens
   const prevFightIdRef = useRef<string | null>(null);
@@ -237,6 +275,9 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
           hypeCount: data.totalHypePredictions,
         });
       }
+      // Note: reveal modal data is computed locally at handleDone time from
+      // prefetchedStats + the user's vote delta, so we deliberately do NOT
+      // touch reveal state here — avoids late mutations stomping the snapshot.
       queryClient.invalidateQueries({ queryKey: ['fight', fight?.id] });
     },
   });
@@ -277,15 +318,71 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
         }
       }
     }
+    // If user tapped a hype this session, render the reveal instantly using
+    // the prefetched community distribution + a local delta for the user's
+    // own vote. This avoids the 1.5s freeze that waiting on the mutation
+    // would cause. The mutation still fires in the background to persist.
+    if (
+      sessionTappedHypeRef.current &&
+      sessionLastHypeRef.current != null &&
+      prefetchedStats?.distribution
+    ) {
+      const baseDist = prefetchedStats.distribution || {};
+      const baseTotal = prefetchedStats.totalPredictions || 0;
+      const newHype = sessionLastHypeRef.current;
+      const prevHype = previousHypeRef.current;
+
+      // Apply delta: decrement prior bucket if user is editing, increment new.
+      const liveDist: Record<number, number> = { ...baseDist };
+      let liveTotal = baseTotal;
+      if (prevHype != null && prevHype !== newHype) {
+        liveDist[prevHype] = Math.max(0, (liveDist[prevHype] || 0) - 1);
+      }
+      if (prevHype !== newHype) {
+        liveDist[newHype] = (liveDist[newHype] || 0) + 1;
+        if (prevHype == null) liveTotal += 1;
+      }
+
+      // Recompute average from the live distribution.
+      let sum = 0;
+      let count = 0;
+      for (let h = 1; h <= 10; h++) {
+        const c = liveDist[h] || 0;
+        sum += h * c;
+        count += c;
+      }
+      const liveAvg = count > 0 ? Math.round((sum / count) * 10) / 10 : 0;
+
+      setRevealDistribution(liveDist);
+      setRevealAvgHype(liveAvg);
+      setRevealTotal(liveTotal);
+      setRevealVisible(true);
+      return;
+    }
     onClose();
-  }, [isAuthenticated, fight, saveCommentMutation, onClose]);
+  }, [isAuthenticated, fight, saveCommentMutation, onClose, prefetchedStats]);
+
+  const handleRevealClose = useCallback(() => {
+    setRevealVisible(false);
+    onClose();
+  }, [onClose]);
 
   const handleHypeSelection = useCallback((level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const newHype = selectedHype === level ? null : level;
     setSelectedHype(newHype);
     animateToNumber(newHype || 0);
+    // Track tap for reveal gating. Reveal fires only when there's a non-null
+    // hype set this session (deselect-to-null doesn't qualify).
+    if (newHype != null) {
+      sessionTappedHypeRef.current = true;
+      sessionLastHypeRef.current = newHype;
+    } else {
+      sessionLastHypeRef.current = null;
+    }
     if (isAuthenticated) {
+      // Fire-and-forget — handleDone uses prefetched stats + a local delta to
+      // render the reveal instantly, so we don't await the mutation here.
       hypeMutation.mutate(newHype);
     }
   }, [isAuthenticated, selectedHype, animateToNumber, hypeMutation]);
@@ -582,6 +679,17 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             </ScrollView>
           </TouchableOpacity>
         </KeyboardAvoidingView>
+        {/* Reveal renders INSIDE the same Modal as the hype content so both
+            modalContainers share the exact same parent View. That makes
+            their `width: '88%'` resolve to identical pixels. */}
+        <HypeRevealModal
+          visible={revealVisible}
+          onClose={handleRevealClose}
+          distribution={revealDistribution}
+          totalPredictions={revealTotal}
+          averageHype={revealAvgHype}
+          userHype={sessionLastHypeRef.current ?? 0}
+        />
       </View>
     </Modal>
   );
@@ -598,6 +706,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
   },
   modalContainer: {
     width: '88%',
