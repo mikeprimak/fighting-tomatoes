@@ -14,7 +14,14 @@ export interface BraveResult {
   description: string; // raw HTML — strip with regex on consumer side
 }
 
-export async function braveSearch(query: string, count = 5): Promise<BraveResult[]> {
+/** Brave freshness filter: pd (past day), pw (past week), pm (past month), py (past year). */
+export type BraveFreshness = 'pd' | 'pw' | 'pm' | 'py';
+
+export async function braveSearch(
+  query: string,
+  count = 5,
+  opts: { freshness?: BraveFreshness } = {},
+): Promise<BraveResult[]> {
   const apiKey = process.env.BRAVE_API_KEY;
   if (!apiKey) {
     console.warn('[discovery] BRAVE_API_KEY missing — returning empty results');
@@ -27,6 +34,7 @@ export async function braveSearch(query: string, count = 5): Promise<BraveResult
     text_decorations: 'false',
     spellcheck: '0',
   });
+  if (opts.freshness) params.set('freshness', opts.freshness);
   const res = await fetch(`${BRAVE_ENDPOINT}?${params}`, {
     headers: {
       'Accept': 'application/json',

@@ -548,11 +548,19 @@ model Fight {
   // Watch info
   watchPlatform   String?
   watchUrl        String?
-  
+
+  // AI enrichment (see docs/areas/ai-enrichment.md)
+  aiTags          Json?      // { stakes, storylines, styleTags, pace, riskTier, rankings, odds, isMainEvent, cardSection }
+  aiPreviewShort  String?    // 1-line "why care" snippet for in-app surfacing
+  aiPreview       String?    // longer editorial blurb (reserved for future SEO/web)
+  aiEnrichedAt    DateTime?
+  aiSourceUrls    String[]   // grounding URLs used for the extraction
+  aiConfidence    Float?     // 0-1, drop renders below threshold
+
   // Timestamps
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  
+
   // Relations
   ratings         FightRating[]
   reviews         FightReview[]
