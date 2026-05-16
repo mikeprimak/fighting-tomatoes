@@ -1096,16 +1096,20 @@ export async function adminRoutes(fastify: FastifyInstance) {
 
     // Manual-tracker events: on COMPLETED, fire the next-up fight notif.
     // Mirrors what live parsers do via notifyFightStartViaRules.
+    // Order convention: tapology/UFC/matchroom scrapers set orderOnCard=1 to
+    // the main event (chronologically last) and the highest orderOnCard to the
+    // opener (chronologically first). "Next" therefore means strictly less
+    // than the just-completed fight's orderOnCard, sorted descending.
     if (status === 'completed' && fight.event?.useManualLiveTracker && fight.orderOnCard !== null) {
       try {
         const { notifyFightStartViaRules } = await import('../services/notificationService');
         const nextFight = await prisma.fight.findFirst({
           where: {
             eventId: fight.eventId,
-            orderOnCard: { gt: fight.orderOnCard },
+            orderOnCard: { lt: fight.orderOnCard },
             fightStatus: 'UPCOMING',
           },
-          orderBy: { orderOnCard: 'asc' },
+          orderBy: { orderOnCard: 'desc' },
           include: {
             fighter1: { select: { firstName: true, lastName: true } },
             fighter2: { select: { firstName: true, lastName: true } },
