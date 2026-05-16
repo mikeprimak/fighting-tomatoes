@@ -98,9 +98,12 @@ Users keep coming back not because we nag them, but because the app **remembers 
 - 📋 Post-fight closure line on fight cards — **deferred**. Iterated through ~5 on-card variants; all violated the user's clarity rule (every on-card variant required parsing). Revisit only if a way emerges that doesn't compromise card clarity.
 - 📋 AI-tag-aware row copy — depends on AI enrichment Phase 1.
 
-**Wave 3 — identity**
-- Fan DNA personality engine (needs AI tags from [[project-ai-enrichment-workstream]] Phase 1).
-- Fan resume profile page.
+**Wave 3 — Fan DNA personality engine**
+- ✅ **Phase 1 architectural slice — shipped 2026-05-16** (commit `9e14040`). File-per-trait registry, event-mode + batch-mode engine, 30-day per-line cooldown, toggle-storm META/EXIT contingency, trait isolation. Worms-tone copy. First trait: `hype-accuracy` closure-loop, wired into `HypeRevealModal` + `RatingRevealModal` as an italic third beat. Non-blocking.
+- 🟡 **Phase 1 completion** — add traits #2 (`org-affinity`) + #3 (`rating-bias`); LLM-layer (Layer 2) is Phase 2.
+- 📋 **Phase 3** — profile section (`Fan DNA` SectionContainer replaces the standalone `Hype vs Outcome`) + full-screen Fan DNA page + Layer 3 fun-fact scanner + 5 more traits.
+- 📋 **Phase 4** — recommendation engine ("Fights you might love" / "Fighters you might love" / cross-promo lanes) + Tier 2 traits (depends on AI enrichment cron being live).
+- 📋 Fan resume profile page — folds into Phase 3 Fan DNA full-screen.
 
 **Wave 4 — retrospection & social**
 - Weekly recap.
