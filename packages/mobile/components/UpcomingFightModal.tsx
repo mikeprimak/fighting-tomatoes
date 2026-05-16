@@ -404,12 +404,17 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     setLocalNotified(newValue);
     notifyMutation.mutate(newValue);
 
-    // Show toast message — text branches on whether this org has a reliable
-    // live tracker. Non-tracker orgs fire ~15 min before section start, not
-    // at the actual walkout. Kept short to fit in the 1-line toast slot
-    // without growing the modal.
+    // Show toast message — text branches on whether the event delivers
+    // per-fight pings. Reliable-tracker orgs and events the admin has
+    // toggled to manual mode both fire on actual walkout; everything else
+    // fires ~15 min before section start. Kept short to fit in the 1-line
+    // toast slot without growing the modal.
     if (newValue) {
-      if (fight.event?.hasLiveTracking === false) {
+      const perFightPings =
+        fight.event?.hasLiveTracking !== false || fight.event?.useManualLiveTracker === true;
+      if (perFightPings) {
+        setNotifyMessage("Notified when this fight is up next.");
+      } else {
         const ct = ((fight as any).cardType as string | null | undefined)?.trim().toLowerCase();
         const section = !ct
           ? 'the card'
@@ -421,8 +426,6 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
                 ? 'main card'
                 : 'the card';
         setNotifyMessage(`Notified ~15 min before ${section}.`);
-      } else {
-        setNotifyMessage("Notified when this fight is up next.");
       }
     } else {
       setNotifyMessage('Notification removed.');

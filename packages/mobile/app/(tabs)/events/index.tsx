@@ -44,6 +44,7 @@ interface Event {
   prelimStartTime?: string | null;
   mainStartTime?: string | null;
   hasLiveTracking?: boolean;
+  useManualLiveTracker?: boolean;
   notificationsAllowed?: boolean;
   fights?: Fight[];
 }

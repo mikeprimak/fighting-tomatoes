@@ -365,6 +365,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         prelimStartTime: true,
         mainStartTime: true,
         scraperType: true,
+        useManualLiveTracker: true,
       };
 
       // Include fights if requested
