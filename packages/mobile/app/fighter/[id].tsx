@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Colors } from '../../constants/Colors';
 import { apiService, Fight } from '../../services/api';
+import { ensurePushPermissionAfterAction } from '../../services/notificationService';
 import { DetailScreenHeader, FightDisplayCard, Button } from '../../components';
 import { useAuth } from '../../store/AuthContext';
 import { useVerification } from '../../store/VerificationContext';
@@ -157,6 +158,10 @@ export default function FighterDetailScreen() {
       if (data.isFollowing && fighter) {
         animateBellRing();
         showToast(`You will be notified before ${fighter.lastName} fights.`);
+        ensurePushPermissionAfterAction({
+          context: 'fighter-follow',
+          subject: `${fighter.firstName ?? ''} ${fighter.lastName ?? ''}`.trim() || undefined,
+        }).catch(() => {});
       }
 
       // Refetch fighter data and invalidate all fight queries to update bell icons

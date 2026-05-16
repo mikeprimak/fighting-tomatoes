@@ -5,6 +5,7 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
+import { ensurePushPermissionAfterAction } from '../../services/notificationService';
 import { router } from 'expo-router';
 import { useAuth } from '../../store/AuthContext';
 import { usePredictionAnimation } from '../../store/PredictionAnimationContext';
@@ -264,6 +265,10 @@ function LiveFightCard({
       animateBellRing();
       if (data.isFollowing) {
         showToast('You will be notified before this fight.');
+        const f1 = getLastName(getFighterName(fight.fighter1));
+        const f2 = getLastName(getFighterName(fight.fighter2));
+        const subject = f1 && f2 ? `${f1} vs ${f2}` : undefined;
+        ensurePushPermissionAfterAction({ context: 'fight-follow', subject }).catch(() => {});
       }
       await queryClient.invalidateQueries({ queryKey: ['fights'] });
       await queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
