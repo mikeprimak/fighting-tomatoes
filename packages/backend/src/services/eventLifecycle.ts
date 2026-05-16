@@ -461,6 +461,7 @@ export async function runEventLifecycleCheck(): Promise<{
         prelimStartTime: true,
         earlyPrelimStartTime: true,
         scraperType: true,
+        useManualLiveTracker: true,
         fights: {
           where: { fightStatus: 'UPCOMING' },
           select: {
@@ -475,6 +476,11 @@ export async function runEventLifecycleCheck(): Promise<{
       // Skip events handled by a production scraper — their live tracker
       // handles fight-by-fight completion with accurate timestamps.
       if (isProductionScraper(event.scraperType)) continue;
+
+      // Skip manual-tracker events — admin advances fights one at a time
+      // via admin set-status. The no-tracker bulk-flip below would defeat
+      // the whole point of the manual mode.
+      if (event.useManualLiveTracker) continue;
 
       // Skip events with no upcoming fights to complete
       if (event.fights.length === 0) continue;
