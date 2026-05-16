@@ -276,14 +276,16 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
     // If user tapped a rating this session, render the reveal instantly using
     // the prefetched aggregate stats + a local delta. Matches the hype reveal.
     // Skipped when caller is navigating away (e.g. See Comments link).
+    // No longer gated on prefetch having returned — if it hasn't, we fall back
+    // to an empty community distribution so first-rater / race-conditions show
+    // the reveal with just the user's own rating instead of silently closing.
     if (
       !opts?.skipReveal &&
       sessionTappedRatingRef.current &&
-      sessionLastRatingRef.current != null &&
-      prefetchedAggregateStats?.ratingDistribution
+      sessionLastRatingRef.current != null
     ) {
-      const baseDist = prefetchedAggregateStats.ratingDistribution || {};
-      const baseTotal = prefetchedAggregateStats.totalRatings || 0;
+      const baseDist = prefetchedAggregateStats?.ratingDistribution || {};
+      const baseTotal = prefetchedAggregateStats?.totalRatings || 0;
       const newRating = sessionLastRatingRef.current;
       const prevRating = previousRatingRef.current;
 
@@ -353,6 +355,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
     >
       <View style={styles.overlay}>
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+        {!revealVisible && (
         <KeyboardAvoidingView
           behavior="padding"
           style={styles.kavContainer}
@@ -532,6 +535,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
             </ScrollView>
           </TouchableOpacity>
         </KeyboardAvoidingView>
+        )}
         {/* Reveal renders INSIDE the same Modal so both modalContainers share
             the exact same parent View — `width: '88%'` resolves to identical
             pixels. Mirrors UpcomingFightModal. */}
