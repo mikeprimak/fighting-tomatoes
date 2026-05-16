@@ -26,8 +26,12 @@ interface RatingRevealOverlayProps {
   dnaLine?: string | null;
 }
 
-function getComparisonText(userRating: number, avgRating: number): string {
-  if (!avgRating) return '';
+function getComparisonText(userRating: number, avgRating: number, totalRatings: number): string {
+  // First rater (or only rater): no community baseline yet — calling them "the
+  // average fan" is nonsense. Trailblazer language only.
+  if (totalRatings <= 1 || !avgRating) {
+    return 'First to rate this fight';
+  }
   const delta = userRating - avgRating;
   if (delta >= 2.5) return 'You rated this much higher than the average fan';
   if (delta >= 1) return 'You rated this higher than the average fan';
@@ -106,7 +110,7 @@ export default function RatingRevealModal({
             />
 
             <Text style={[styles.comparison, { color: colors.text }]}>
-              {getComparisonText(userRating, averageRating)}
+              {getComparisonText(userRating, averageRating, totalRatings)}
             </Text>
 
             {dnaLine ? (

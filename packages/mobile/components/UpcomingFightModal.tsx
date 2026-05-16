@@ -330,13 +330,15 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     // the prefetched community distribution + a local delta for the user's
     // own vote. This avoids the 1.5s freeze that waiting on the mutation
     // would cause. The mutation still fires in the background to persist.
+    // No longer gated on prefetch having returned — if it hasn't, fall back to
+    // an empty distribution so first-hyper / race-conditions show the reveal
+    // with just the user's own hype instead of silently closing.
     if (
       sessionTappedHypeRef.current &&
-      sessionLastHypeRef.current != null &&
-      prefetchedStats?.distribution
+      sessionLastHypeRef.current != null
     ) {
-      const baseDist = prefetchedStats.distribution || {};
-      const baseTotal = prefetchedStats.totalPredictions || 0;
+      const baseDist = prefetchedStats?.distribution || {};
+      const baseTotal = prefetchedStats?.totalPredictions || 0;
       const newHype = sessionLastHypeRef.current;
       const prevHype = previousHypeRef.current;
 
@@ -463,6 +465,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     >
       <View style={styles.overlay}>
         <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+        {!revealVisible && (
         <KeyboardAvoidingView
           behavior="padding"
           style={styles.kavContainer}
@@ -687,6 +690,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             </ScrollView>
           </TouchableOpacity>
         </KeyboardAvoidingView>
+        )}
         {/* Reveal renders INSIDE the same Modal as the hype content so both
             modalContainers share the exact same parent View. That makes
             their `width: '88%'` resolve to identical pixels. */}

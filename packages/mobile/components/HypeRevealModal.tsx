@@ -29,8 +29,12 @@ interface HypeRevealOverlayProps {
   dnaLine?: string | null;
 }
 
-function getComparisonText(userHype: number, avgHype: number): string {
-  if (!avgHype) return '';
+function getComparisonText(userHype: number, avgHype: number, totalPredictions: number): string {
+  // First hyper (or only hyper): no community baseline — comparing them to an
+  // imaginary "average fan" is misleading. Trailblazer language only.
+  if (totalPredictions <= 1 || !avgHype) {
+    return 'First to hype this fight';
+  }
   const delta = userHype - avgHype;
   if (delta >= 2.5) return "You're much more hyped than the average fan";
   if (delta >= 1) return "You're more hyped than the average fan";
@@ -113,7 +117,7 @@ export default function HypeRevealModal({
             />
 
             <Text style={[styles.comparison, { color: colors.text }]}>
-              {getComparisonText(userHype, averageHype)}
+              {getComparisonText(userHype, averageHype, totalPredictions)}
             </Text>
 
             {dnaLine ? (
