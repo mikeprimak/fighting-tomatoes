@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { Colors } from '../constants/Colors';
 import RatingDistributionChart from './RatingDistributionChart';
-import { apiService } from '../services/api';
 
 // Rendered INSIDE CompletedFightModal's <Modal> tree (not as its own <Modal>)
 // so both modalContainers share the same parent overlay View — `width: '88%'`
@@ -22,9 +21,9 @@ interface RatingRevealOverlayProps {
   totalRatings: number;
   averageRating: number;
   userRating: number;
-  // Fan DNA context — when provided, the modal fetches a personality beat
-  // from POST /api/fan-dna/event. Optional + non-blocking.
-  fightId?: string;
+  // Prefetched Fan DNA beat from the rate mutation response (same roundtrip
+  // as the commit). Null = engine had nothing to say.
+  dnaLine?: string | null;
 }
 
 function getComparisonText(userRating: number, avgRating: number): string {
@@ -44,7 +43,7 @@ export default function RatingRevealModal({
   totalRatings,
   averageRating,
   userRating,
-  fightId,
+  dnaLine,
 }: RatingRevealOverlayProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -52,14 +51,12 @@ export default function RatingRevealModal({
   const chartFadeAnim = useRef(new Animated.Value(0)).current;
   const overlayFadeAnim = useRef(new Animated.Value(0)).current;
   const dnaFadeAnim = useRef(new Animated.Value(0)).current;
-  const [dnaLine, setDnaLine] = useState<string | null>(null);
 
   useEffect(() => {
     if (visible) {
       chartFadeAnim.setValue(0);
       overlayFadeAnim.setValue(0);
       dnaFadeAnim.setValue(0);
-      setDnaLine(null);
       Animated.parallel([
         Animated.timing(overlayFadeAnim, {
           toValue: 1,
@@ -74,36 +71,18 @@ export default function RatingRevealModal({
         }),
       ]).start();
 
-      // Fan DNA beat — non-blocking. The closure-loop trait fires when the
-      // user had previously hyped this fight; otherwise the engine returns
-      // null and we render the modal without a third beat.
-      let cancelled = false;
-      apiService
-        .fanDNAEvent({
-          action: 'rate',
-          surface: 'rate-reveal-modal',
-          fightId,
-          value: userRating,
-        })
-        .then((res) => {
-          if (cancelled) return;
-          if (!res.line) return;
-          setDnaLine(res.line);
-          Animated.timing(dnaFadeAnim, {
-            toValue: 1,
-            duration: 420,
-            delay: 80,
-            useNativeDriver: true,
-          }).start();
-        })
-        .catch(() => {
-          /* silent — modal renders without DNA beat */
-        });
-      return () => {
-        cancelled = true;
-      };
+      // Line arrives prefetched from the rate mutation response, so this
+      // fires alongside the chart animation instead of after a roundtrip.
+      if (dnaLine) {
+        Animated.timing(dnaFadeAnim, {
+          toValue: 1,
+          duration: 420,
+          delay: 280,
+          useNativeDriver: true,
+        }).start();
+      }
     }
-  }, [visible, chartFadeAnim, overlayFadeAnim, dnaFadeAnim, fightId, userRating]);
+  }, [visible, chartFadeAnim, overlayFadeAnim, dnaFadeAnim, dnaLine]);
 
   if (!visible) return null;
 

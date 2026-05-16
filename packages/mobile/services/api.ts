@@ -431,6 +431,19 @@ class ApiService {
       rating?: number;
       review?: string;
       tags?: string[];
+      aggregateStats?: {
+        averageRating: number;
+        totalRatings: number;
+        ratingDistribution: Record<number, number>;
+      };
+      fanDNA?: {
+        line: string | null;
+        traitId: string | null;
+        copyKey: string | null;
+        lineKey: string | null;
+        variant: string | null;
+        isMeta: boolean;
+      };
     };
   }> {
     return this.makeRequest(`/fights/${fightId}/user-data`, {
@@ -696,7 +709,21 @@ class ApiService {
     predictedWinner?: string; // fighter1Id or fighter2Id
     predictedMethod?: 'DECISION' | 'KO_TKO' | 'SUBMISSION';
     predictedRound?: number;
-  }): Promise<{ prediction: any; averageHype: number; totalHypePredictions: number; hypeDistribution: Record<number, number>; message: string }> {
+  }): Promise<{
+    prediction: any;
+    averageHype: number;
+    totalHypePredictions: number;
+    hypeDistribution: Record<number, number>;
+    message: string;
+    fanDNA?: {
+      line: string | null;
+      traitId: string | null;
+      copyKey: string | null;
+      lineKey: string | null;
+      variant: string | null;
+      isMeta: boolean;
+    } | null;
+  }> {
     return this.makeRequest(`/fights/${fightId}/prediction`, {
       method: 'POST',
       body: JSON.stringify(data),

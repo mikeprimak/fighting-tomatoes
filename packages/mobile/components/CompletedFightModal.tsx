@@ -85,6 +85,9 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
   const [revealDistribution, setRevealDistribution] = useState<Record<number, number>>({});
   const [revealAvgRating, setRevealAvgRating] = useState<number>(0);
   const [revealTotal, setRevealTotal] = useState<number>(0);
+  // Fan DNA line returned inline with the rate mutation response. Captured
+  // in onSuccess so it's already in state by the time the modal opens.
+  const [revealDnaLine, setRevealDnaLine] = useState<string | null>(null);
   const sessionTappedRatingRef = useRef<boolean>(false);
   const sessionLastRatingRef = useRef<number | null>(null);
   // Snapshot of the user's rating at modal-open time — load-bearing for the
@@ -164,6 +167,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
         setRevealDistribution({});
         setRevealAvgRating(0);
         setRevealTotal(0);
+        setRevealDnaLine(null);
       }
       // Populate with existing user review once loaded from API
       const fetchedReview = fightDetailData?.fight?.userReview?.content;
@@ -240,12 +244,15 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
       queryClient.invalidateQueries({ queryKey: ['pastEvents'] });
       queryClient.invalidateQueries({ queryKey: ['topFights'] });
     },
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['fight', variables.fightId] });
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
       queryClient.invalidateQueries({ queryKey: ['pastEvents'] });
       queryClient.invalidateQueries({ queryKey: ['topFights'] });
       setPendingRatingAnimation(variables.fightId);
+      // Capture the Fan DNA beat that came back with the commit.
+      const line = data?.data?.fanDNA?.line ?? null;
+      setRevealDnaLine(line);
     },
   });
 
@@ -535,7 +542,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
           totalRatings={revealTotal}
           averageRating={revealAvgRating}
           userRating={sessionLastRatingRef.current ?? 0}
-          fightId={fight.id}
+          dnaLine={revealDnaLine}
         />
       </View>
     </Modal>

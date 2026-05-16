@@ -76,10 +76,13 @@ const trait: Trait = {
     const totalAfter = total + 1;
     const orgShare = orgCount / totalAfter;
 
-    const vars = {
+    // "rated" / "hyped" for natural copy.
+    const verb = ctx.action === 'hype' ? 'hyped' : 'rated';
+    const vars: Record<string, string | number> = {
       org: prettyOrg(org),
       count: orgCount,
       total: totalAfter,
+      verb,
     };
 
     // Highest-value moment: first-ever signal for this org.
@@ -103,16 +106,22 @@ const trait: Trait = {
       };
     }
 
-    // Pile-on observation on the dominant org — milestone-y counts feel best.
-    if (org === dominantOrg && (orgCount % 25 === 0 || orgCount === 10 || orgCount === 50 || orgCount === 100)) {
-      return { copyKey: 'dominant-pile-on', score: 60, vars };
+    // Milestones on the dominant org — round numbers feel like punchlines.
+    if (org === dominantOrg && isMilestone(orgCount)) {
+      return { copyKey: 'dominant-milestone', score: 60, vars };
     }
-    if (org === dominantOrg && orgShare > 0.6) {
-      return { copyKey: 'dominant-pile-on', score: 40, vars };
-    }
+    // Otherwise: don't fire. Generic "Nth UFC rating" on every UFC rate is
+    // wallpaper. Better to stay silent and let other traits speak.
     return null;
   },
 };
+
+function isMilestone(n: number): boolean {
+  if (n <= 0) return false;
+  if (n === 10 || n === 25 || n === 50) return true;
+  if (n % 100 === 0) return true;
+  return false;
+}
 
 export default trait;
 
