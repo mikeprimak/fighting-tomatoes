@@ -535,6 +535,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
           totalRatings={revealTotal}
           averageRating={revealAvgRating}
           userRating={sessionLastRatingRef.current ?? 0}
+          fightId={fight.id}
         />
       </View>
     </Modal>

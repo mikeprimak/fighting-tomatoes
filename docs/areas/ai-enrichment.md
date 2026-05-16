@@ -24,16 +24,16 @@ Pattern: **search → fetch → LLM-extract with structured output → diff agai
 1. **Source scraping** — gather raw text from per-feature sources (fight previews, fighter bios, event articles). Reuse existing scrapers + Brave Search where possible.
 2. **LLM enrichment** — Claude Haiku 4.5 with prompt caching; structured output schemas; confidence scores.
 3. **Storage** — persist as JSON column on the target row (e.g. `Fight.aiTags`, `Fighter.aiProfile`). Include `aiEnrichedAt`, `aiSourceUrls`, `aiConfidence`.
-4. **Multi-surface rendering** — mobile cards, web app, push notifications, SEO pages, Hype DNA math.
+4. **Multi-surface rendering** — mobile cards, web app, push notifications, SEO pages, Fan DNA math.
 
 Default model: **Claude Haiku 4.5** (cheap, structured output reliable, prompt caching). Step up to Sonnet only when quality warrants.
 
 ## Use case inventory
 
 ### Tier 1 — Direct user context (highest leverage)
-- [ ] **A. Fight card "Why care" snippet** — one-line context on every upcoming fight card. Closes the "I don't know these prelim fighters" gap.
-- [ ] **B. Pre-fight stakes box** — editorial context on the rating screen. Better data going in = better Hype DNA + accuracy coming out.
-- [ ] **C. Hype DNA fuel** — feeds the personality engine. Replaces the failed fighter-style-from-records approach (see Decisions §1).
+- [x] **A. Fight card "Why care" snippet** — one-line context on every upcoming fight card. Shipped 2026-05-15 on `UpcomingFightCard` (single-line, ellipsized, confidence floor 0.5). Backend select fixed on `/api/events?includeFights=true`.
+- [~] **B. Pre-fight stakes box** — editorial context on the rating screen. Hype modal variant (full one-liner under fighter row) wired 2026-05-15, **uncommitted**. Stakes-bullets card from `aiTags.stakes[]` still TODO.
+- [ ] **C. Fan DNA fuel** — feeds the personality engine. Replaces the failed fighter-style-from-records approach (see Decisions §1).
 
 ### Tier 2 — Engagement
 - [ ] **D. Smart push notifications** — fight-specific copy. "Tonight: rematch of last year's FOTY" beats "UFC 328 is live."
@@ -58,16 +58,16 @@ Default model: **Claude Haiku 4.5** (cheap, structured output reliable, prompt c
 - CLI: `scripts/enrich-event.ts --event-id <id> [--persist]` (default dry-run).
 - Trigger: **not yet wired**. Plan: T-10d, T-5d, T-2d passes per event (see Decisions §3).
 
-**Phase 2 — Multi-surface render**
-- Mobile fight cards: "Why care" line.
-- Mobile rating screen: stakes box.
-- Web fight pages: full preview section (SEO).
+**Phase 2 — Multi-surface render** — 🟡 IN PROGRESS
+- ✅ Mobile fight cards: "Why care" line — shipped 2026-05-15 (`UpcomingFightCard`, single-line, ellipsized).
+- 🟡 Mobile hype/rating modal: full one-liner under fighter row — wired 2026-05-15, **uncommitted**. Stakes-bullets card still TODO.
+- 📋 Web fight pages: full preview section (SEO) — uses `aiPreview` (currently null; Phase 1 only ships `aiPreviewShort`).
 
 **Phase 3 — Engagement layers**
 - Push notification copywriter (uses `aiPreview` + `aiTags`).
 - Weekly digest email assembler.
 
-**Phase 4 — Hype DNA**
+**Phase 4 — Fan DNA**
 - Personality engine using `aiTags` + base metadata (weight class, org, title flag, card position, rematch flag).
 - Profile UI gated behind N ratings.
 
@@ -112,7 +112,7 @@ Total AI ceiling target: **< $300/year**. Phase 1 actuals well under estimate (r
 **1. Don't derive fighter style from historical fight records (2026-05-14)**
 Data check showed only 9% of fighters on upcoming cards have ≥5 historical fights with method recorded in the DB. AI preview enrichment delivers richer signal (narrative > average) with near-100% coverage on cards that matter. Method-record-based style derivation deferred indefinitely.
 
-**2. Hype DNA shifts to metadata + AI tags, not fighter style (2026-05-14)**
+**2. Fan DNA shifts to metadata + AI tags, not fighter style (2026-05-14)** *(originally "Hype DNA"; renamed 2026-05-16)*
 Personality engine inputs: weight class, org, title flag, main vs prelim, rematch, gender, ranking gap — plus `aiTags` once Phase 1 ships. Fighter style returns as a *bonus dimension* only if we backfill ufcstats methods later.
 
 **3. Three enrichment passes per event: T-10d, T-5d, T-2d (2026-05-15)**
@@ -127,13 +127,20 @@ Stale CANCELLED rows are a real footgun. Rousey vs. Carano had 49 DB rows / 38 C
 **6. Promotion-aware source dispatch (2026-05-15)**
 UFC events → `fetchUFCEventPreview` (Puppeteer, JA3-protected host) + `fetchEditorialPreviews` (Brave). Everything else → `fetchTapologyEventPreview` (plain fetch) + `fetchEditorialPreviews`. Single code path through `extractFightEnrichment`. Editorial allowlist: mmafighting, mmajunkie, bloodyelbow, sherdog, espn, mmamania, mmaweekly, cbssports, bjpenn. One article per domain, top N.
 
+**7. Hype square + flame stretch with card body when preview is present (2026-05-15)**
+On `UpcomingFightCard`, the left aggregate-hype square and the right user-hype flame are absolutely positioned. To keep the AI preview from visually extruding below them when the card grows, the squares' positioned ancestor was moved to a new outer wrapper and their fixed `height: 50` was replaced with `top: 6/20, bottom: 6` so they stretch with the full card body. Names + images stay put because the inner View's `minHeight: 62` + `justifyContent: 'center'` is untouched (preview is a sibling outside it). Side effect: when a preview is present, the colored heatmap fill on the left square becomes a taller vertical pill rather than a 48×50 square. Mike accepted this on review.
+
+**8. Card variant uses single-line ellipsized preview; modal variant uses full multi-line (2026-05-15)**
+The card is dense and lives in a scrolling list — long previews truncate at the line. The hype modal has more room and is the moment the user is *deciding* about the fight, so they get the full one-liner. Two distinct visual contracts for the same field. If a third surface needs different treatment, follow this pattern.
+
 ## Status (2026-05-15)
 
 - ✅ Broadcast discovery shipped (precedent).
 - ✅ Phase 1 fight enrichment pipeline shipped: fetch (3 sources) → extract (Haiku 4.5) → match → persist. End-to-end run against MVP Rousey vs. Carano wrote 9/11 UPCOMING fights at $0.023.
-- 📋 Phase 2 (multi-surface render) — schema is in place, render surface TBD. Likely first surface: "Why care" snippet on the Hype/Rating modal.
+- ✅ Phase 2.A shipped (`UpcomingFightCard` one-liner) — committed locally `f050c64`, **not pushed to prod**. Backend `/api/events?includeFights=true` Prisma select updated to include the 6 `ai*` fields.
+- 🟡 Phase 2.B partial (`UpcomingFightModal` full one-liner) — wired, **uncommitted**.
 - 📋 Cron trigger — three-pass cadence (T-10/T-5/T-2) decided but not implemented.
-- 📋 Use cases A/B/G are the first three render targets.
+- 📋 Use cases B (stakes-bullets), G (web SEO) are the next two render targets.
 
 ## Open questions
 

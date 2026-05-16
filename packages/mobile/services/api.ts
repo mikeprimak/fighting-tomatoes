@@ -1473,6 +1473,73 @@ class ApiService {
   }
 
   /**
+   * Hype-vs-Outcome closure data — for each fight the user hyped that the
+   * community has since rated (≥5 community ratings excluding self), returns
+   * userHype, communityAvg, delta, and a bucket.
+   */
+  async getHypeAccuracy(limit: number = 100): Promise<{
+    totalHypedFights: number;
+    accurateCount: number;
+    accuracyPct: number;
+    hotTakeCount: number;
+    fights: Array<{
+      fightId: string;
+      fighter1Name: string;
+      fighter2Name: string;
+      eventId: string;
+      eventName: string;
+      eventDate: string;
+      promotion: string | null;
+      userHype: number;
+      userRating: number | null;
+      communityAvg: number;
+      communityCount: number;
+      delta: number;
+      bucket: 'spot_on' | 'close' | 'off' | 'way_off';
+      isHotTake: boolean;
+    }>;
+  }> {
+    return this.makeRequest(`/auth/profile/hype-accuracy?limit=${limit}`);
+  }
+
+  /**
+   * Fan DNA — fire one user action through the personality engine.
+   * Returns one rendered line (or null) for surfacing on reveal modals etc.
+   * Failures resolve to a null line so callers can render the modal without
+   * the third beat — never throws into the UI flow.
+   */
+  async fanDNAEvent(input: {
+    action: 'hype' | 'rate' | 'follow' | 'unfollow' | 'comment' | 'unlock';
+    surface: 'hype-reveal-modal' | 'rate-reveal-modal' | 'profile-card' | 'profile-fullscreen' | 'weekly-recap';
+    fightId?: string;
+    value?: number;
+  }): Promise<{
+    line: string | null;
+    traitId: string | null;
+    copyKey: string | null;
+    lineKey: string | null;
+    variant: string | null;
+    isMeta: boolean;
+  }> {
+    try {
+      return await this.makeRequest('/fan-dna/event', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      });
+    } catch (err) {
+      console.log('[API] fanDNAEvent failed, rendering without DNA beat:', err);
+      return {
+        line: null,
+        traitId: null,
+        copyKey: null,
+        lineKey: null,
+        variant: null,
+        isMeta: false,
+      };
+    }
+  }
+
+  /**
    * Get user's global standing/ranking based on prediction accuracy
    * @param timeFilter - 'lastEvent' | 'month' | '3months' | 'year' | 'allTime'
    */

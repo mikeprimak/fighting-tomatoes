@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Colors } from '../constants/Colors';
 import RatingDistributionChart from './RatingDistributionChart';
+import { apiService } from '../services/api';
 
 // Rendered INSIDE CompletedFightModal's <Modal> tree (not as its own <Modal>)
 // so both modalContainers share the same parent overlay View — `width: '88%'`
@@ -21,6 +22,9 @@ interface RatingRevealOverlayProps {
   totalRatings: number;
   averageRating: number;
   userRating: number;
+  // Fan DNA context — when provided, the modal fetches a personality beat
+  // from POST /api/fan-dna/event. Optional + non-blocking.
+  fightId?: string;
 }
 
 function getComparisonText(userRating: number, avgRating: number): string {
@@ -40,17 +44,22 @@ export default function RatingRevealModal({
   totalRatings,
   averageRating,
   userRating,
+  fightId,
 }: RatingRevealOverlayProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
   const chartFadeAnim = useRef(new Animated.Value(0)).current;
   const overlayFadeAnim = useRef(new Animated.Value(0)).current;
+  const dnaFadeAnim = useRef(new Animated.Value(0)).current;
+  const [dnaLine, setDnaLine] = useState<string | null>(null);
 
   useEffect(() => {
     if (visible) {
       chartFadeAnim.setValue(0);
       overlayFadeAnim.setValue(0);
+      dnaFadeAnim.setValue(0);
+      setDnaLine(null);
       Animated.parallel([
         Animated.timing(overlayFadeAnim, {
           toValue: 1,
@@ -64,8 +73,37 @@ export default function RatingRevealModal({
           useNativeDriver: true,
         }),
       ]).start();
+
+      // Fan DNA beat — non-blocking. The closure-loop trait fires when the
+      // user had previously hyped this fight; otherwise the engine returns
+      // null and we render the modal without a third beat.
+      let cancelled = false;
+      apiService
+        .fanDNAEvent({
+          action: 'rate',
+          surface: 'rate-reveal-modal',
+          fightId,
+          value: userRating,
+        })
+        .then((res) => {
+          if (cancelled) return;
+          if (!res.line) return;
+          setDnaLine(res.line);
+          Animated.timing(dnaFadeAnim, {
+            toValue: 1,
+            duration: 420,
+            delay: 80,
+            useNativeDriver: true,
+          }).start();
+        })
+        .catch(() => {
+          /* silent — modal renders without DNA beat */
+        });
+      return () => {
+        cancelled = true;
+      };
     }
-  }, [visible, chartFadeAnim, overlayFadeAnim]);
+  }, [visible, chartFadeAnim, overlayFadeAnim, dnaFadeAnim, fightId, userRating]);
 
   if (!visible) return null;
 
@@ -91,6 +129,14 @@ export default function RatingRevealModal({
             <Text style={[styles.comparison, { color: colors.text }]}>
               {getComparisonText(userRating, averageRating)}
             </Text>
+
+            {dnaLine ? (
+              <Animated.Text
+                style={[styles.dnaLine, { color: colors.text, opacity: dnaFadeAnim }]}
+              >
+                {dnaLine}
+              </Animated.Text>
+            ) : null}
 
             <TouchableOpacity
               style={[styles.closeButton, { backgroundColor: colors.primary }]}
@@ -143,6 +189,19 @@ const styles = StyleSheet.create({
     marginTop: 18,
     textAlign: 'center',
     letterSpacing: 0.2,
+  },
+  // Fan DNA third beat — italicized + dimmed so it reads as personal
+  // observation under the bolder community-comparison line.
+  dnaLine: {
+    fontSize: 13.5,
+    fontStyle: 'italic',
+    fontWeight: '500',
+    marginTop: 12,
+    paddingHorizontal: 8,
+    textAlign: 'center',
+    opacity: 0.78,
+    letterSpacing: 0.15,
+    lineHeight: 19,
   },
   // Matches Done button width on the rating modal: bottomRow has 8pt padding
   // each side, so marginHorizontal: (8) here. There's no notify bell on the
