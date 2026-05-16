@@ -16,6 +16,7 @@ import { Colors } from '../constants/Colors';
 import { FontAwesome } from '@expo/vector-icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiService } from '../services/api';
+import { ensurePushPermissionAfterAction } from '../services/notificationService';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from '../components/CustomAlert';
 
@@ -87,6 +88,7 @@ export default function FollowedFightersScreen() {
       refetchTopFollowed();
       queryClient.invalidateQueries({ queryKey: ['fighters'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
+      ensurePushPermissionAfterAction({ context: 'fighter-follow' }).catch(() => {});
     },
     onError: () => {
       showError('Failed to follow fighter');

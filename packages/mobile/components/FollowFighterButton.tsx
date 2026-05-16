@@ -10,12 +10,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { apiService } from '../services/api';
+import { ensurePushPermissionAfterAction } from '../services/notificationService';
 import { useAuth } from '../store/AuthContext';
 import { useVerification } from '../store/VerificationContext';
 
 interface FollowFighterButtonProps {
   fighterId: string;
   isFollowing: boolean;
+  fighterName?: string;
   style?: ViewStyle;
   onFollowed?: () => void;
   suppressToast?: boolean;
@@ -24,7 +26,7 @@ interface FollowFighterButtonProps {
 const SIZE = 22;
 const ICON_SIZE = 11;
 
-export default function FollowFighterButton({ fighterId, isFollowing, style, onFollowed, suppressToast }: FollowFighterButtonProps) {
+export default function FollowFighterButton({ fighterId, isFollowing, fighterName, style, onFollowed, suppressToast }: FollowFighterButtonProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
@@ -82,11 +84,17 @@ export default function FollowFighterButton({ fighterId, isFollowing, style, onF
       intentRef.current = null;
       setOptimistic(currentlyFollowing);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['fighter', fighterId] });
       queryClient.invalidateQueries({ queryKey: ['fight'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
       queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
+      if (data?.isFollowing) {
+        ensurePushPermissionAfterAction({
+          context: 'fighter-follow',
+          subject: fighterName,
+        }).catch(() => {});
+      }
     },
   });
 
