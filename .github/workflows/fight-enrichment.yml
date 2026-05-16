@@ -1,0 +1,74 @@
+name: Fight Enrichment
+
+# Daily job that scans UPCOMING events for the three pass windows
+# (T-10 / T-5 / T-2 days), fetches sources, runs the LLM extract, and
+# writes ai* fields on the matching UPCOMING fights. No admin review
+# inbox — confidence floor + grounding URLs are the audit trail.
+#
+# See docs/areas/ai-enrichment.md (Decisions §3) for the cadence rationale.
+
+on:
+  schedule:
+    # 14:00 UTC daily — clear of UFC/MVP/PFL fight-night live trackers
+    # and after the morning scrape window.
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Compute matches but do not write (1 to enable)."
+        required: false
+        default: ""
+      only_event_id:
+        description: "Restrict to a single event id (manual ad-hoc)."
+        required: false
+        default: ""
+      ignore_window:
+        description: "Enrich even if outside the T-10/T-5/T-2 windows (1 to enable)."
+        required: false
+        default: ""
+      max_events:
+        description: "Safety cap on events per run (default 50)."
+        required: false
+        default: ""
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install deps
+        run: |
+          cd packages/backend
+          pnpm install
+          npx prisma generate
+
+      - name: Install Chromium for Puppeteer (UFC.com fetch)
+        run: |
+          cd packages/backend
+          npx puppeteer browsers install chrome
+
+      - name: Run fight enrichment
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+          AI_ENRICHMENT_DRY_RUN: ${{ github.event.inputs.dry_run }}
+          AI_ENRICHMENT_ONLY_EVENT_ID: ${{ github.event.inputs.only_event_id }}
+          AI_ENRICHMENT_IGNORE_WINDOW: ${{ github.event.inputs.ignore_window }}
+          AI_ENRICHMENT_MAX_EVENTS: ${{ github.event.inputs.max_events }}
+        run: |
+          cd packages/backend
+          npx ts-node --transpile-only scripts/run-fight-enrichment.ts
+
+      - name: Report failure
+        if: failure()
+        run: |
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=enrichment&org=fights" || true
