@@ -20,7 +20,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
-import { apiService } from '../services/api';
+import { apiService, type FanDNACommittedLine } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import { getFighterImage } from './fight-cards/shared/utils';
 import { getHypeHeatmapColor } from '../utils/heatmap';
@@ -99,6 +99,15 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
   // The user's hype value at modal-open time — load-bearing for the delta
   // computation in handleDone (we need to know what to decrement, if any).
   const previousHypeRef = useRef<number | null>(null);
+  // Authoritative post-commit hype stats from the mutation response. Preferred
+  // over prefetch+delta in handleDone — the prefetch races with the mutation
+  // and can pick up the user's just-saved hype, which makes the delta math
+  // double-count (first-hyper would show totalPredictions=2 instead of 1).
+  const committedHypeStatsRef = useRef<{
+    averageHype: number;
+    totalHypePredictions: number;
+    hypeDistribution: Record<number, number>;
+  } | null>(null);
 
   // Keyboard visibility
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -175,6 +184,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
       setRevealAvgHype(0);
       setRevealTotal(0);
       setRevealDnaLine(null);
+      committedHypeStatsRef.current = null;
     }
   }, [fight?.id, visible]);
 
@@ -187,6 +197,21 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     queryFn: () => apiService.getFightPredictionStats(fight!.id),
     enabled: !!fight?.id && visible,
     staleTime: 30_000,
+  });
+
+  // Pre-compute the Fan DNA line for every possible hype value while the user
+  // is choosing. On Done we look up lines[value-1] and the reveal modal renders
+  // instantly without waiting on the commit mutation to come back.
+  const { data: peekedDna } = useQuery({
+    queryKey: ['fanDNAPeek', 'hype', fight?.id],
+    queryFn: () =>
+      apiService.getFanDNAPeek({
+        action: 'hype',
+        surface: 'hype-reveal-modal',
+        fightId: fight!.id,
+      }),
+    enabled: !!fight?.id && isAuthenticated && visible,
+    staleTime: 60_000,
   });
 
   // Populate comment from existing user comment, or reset when modal opens
@@ -257,21 +282,22 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
 
   // Save hype prediction
   const hypeMutation = useMutation({
-    mutationFn: (hypeLevel: number | null) => {
+    mutationFn: (args: { hypeLevel: number | null; dnaCommittedLine?: FanDNACommittedLine }) => {
       return apiService.createFightPrediction(fight!.id, {
-        predictedRating: hypeLevel ?? undefined,
+        predictedRating: args.hypeLevel ?? undefined,
         predictedWinner: fight!.userPredictedWinner || undefined,
         predictedMethod: (fight!.userPredictedMethod as any) || undefined,
+        dnaCommittedLine: args.dnaCommittedLine,
       });
     },
-    onMutate: async (hypeLevel) => {
+    onMutate: async (args) => {
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
-      updateEventsCache({ userHypePrediction: hypeLevel });
+      updateEventsCache({ userHypePrediction: args.hypeLevel });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
     },
-    onSuccess: (data) => {
+    onSuccess: (data, vars) => {
       // Update cache with server-calculated aggregate hype and count
       if (data?.averageHype !== undefined) {
         updateEventsCache({
@@ -279,13 +305,22 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
           hypeCount: data.totalHypePredictions,
         });
       }
-      // Capture the Fan DNA beat that came back with the commit so the reveal
-      // modal renders the line in the same frame it opens.
-      const line = data?.fanDNA?.line ?? null;
-      setRevealDnaLine(line);
-      // Note: reveal modal data is computed locally at handleDone time from
-      // prefetchedStats + the user's vote delta, so we deliberately do NOT
-      // touch reveal state here — avoids late mutations stomping the snapshot.
+      // If we pre-peeked, revealDnaLine was set at tap time — leave it.
+      // If we didn't (peek hadn't returned), fall back to the server's inline
+      // evaluation echoed in fanDNA.
+      if (!vars.dnaCommittedLine) {
+        const line = data?.fanDNA?.line ?? null;
+        setRevealDnaLine(line);
+      }
+      // Capture server-authoritative hype stats so handleDone can skip the
+      // racy prefetch+delta math (see committedHypeStatsRef comment above).
+      if (data?.averageHype !== undefined && data?.hypeDistribution) {
+        committedHypeStatsRef.current = {
+          averageHype: data.averageHype,
+          totalHypePredictions: data.totalHypePredictions,
+          hypeDistribution: data.hypeDistribution,
+        };
+      }
       queryClient.invalidateQueries({ queryKey: ['fight', fight?.id] });
     },
   });
@@ -337,6 +372,20 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
       sessionTappedHypeRef.current &&
       sessionLastHypeRef.current != null
     ) {
+      // Prefer server-authoritative stats from the hype mutation response when
+      // available. The prefetch races with the mutation — if it lands after,
+      // the user's hype is already counted server-side and the delta below
+      // double-counts (first-hyper reads as totalPredictions=2 / "about
+      // average" instead of 1 / "first to hype").
+      const committed = committedHypeStatsRef.current;
+      if (committed) {
+        setRevealDistribution(committed.hypeDistribution || {});
+        setRevealAvgHype(committed.averageHype || 0);
+        setRevealTotal(committed.totalHypePredictions || 0);
+        setRevealVisible(true);
+        return;
+      }
+
       const baseDist = prefetchedStats?.distribution || {};
       const baseTotal = prefetchedStats?.totalPredictions || 0;
       const newHype = sessionLastHypeRef.current;
@@ -390,12 +439,27 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     } else {
       sessionLastHypeRef.current = null;
     }
+    // Pull the pre-peeked DNA line for this value (1-10) and stash it in
+    // reveal state immediately. The reveal modal will render it the moment
+    // Done is pressed — no network wait, no spinner.
+    let preLine: FanDNACommittedLine | null = null;
+    if (newHype != null && peekedDna?.lines) {
+      preLine = peekedDna.lines[newHype - 1] ?? null;
+      setRevealDnaLine(preLine?.line ?? null);
+    } else if (newHype == null) {
+      setRevealDnaLine(null);
+    }
     if (isAuthenticated) {
       // Fire-and-forget — handleDone uses prefetched stats + a local delta to
       // render the reveal instantly, so we don't await the mutation here.
-      hypeMutation.mutate(newHype);
+      // Pass the pre-peeked line so the backend records the impression for
+      // the exact line we showed.
+      hypeMutation.mutate({
+        hypeLevel: newHype,
+        dnaCommittedLine: preLine ?? undefined,
+      });
     }
-  }, [isAuthenticated, selectedHype, animateToNumber, hypeMutation]);
+  }, [isAuthenticated, selectedHype, animateToNumber, hypeMutation, peekedDna]);
 
   const handleNotifyPress = useCallback(() => {
     if (!isAuthenticated || !fight) return;
@@ -524,6 +588,18 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               />
             </View>
           </View>
+
+          {/* AI preview one-liner — full text under the fighter row */}
+          {(() => {
+            const aiPreviewShort = (fight as any).aiPreviewShort as string | null | undefined;
+            const aiConfidence = (fight as any).aiConfidence as number | null | undefined;
+            if (!aiPreviewShort || aiConfidence == null || aiConfidence < 0.5) return null;
+            return (
+              <Text style={[styles.aiPreviewShort, { color: colors.textSecondary }]}>
+                {aiPreviewShort}
+              </Text>
+            );
+          })()}
 
           {/* Large flame wheel display */}
           <View style={styles.flameWheelContainer}>
@@ -705,7 +781,9 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
           averageHype={revealAvgHype}
           userHype={sessionLastHypeRef.current ?? 0}
           dnaLine={revealDnaLine}
-          dnaLoading={hypeMutation.isPending && !revealDnaLine}
+          // Spinner only when we couldn't pre-peek (no peek data yet) and the
+          // mutation is still in flight. With peek loaded this is always false.
+          dnaLoading={hypeMutation.isPending && !revealDnaLine && !peekedDna}
         />
       </View>
     </Modal>
@@ -779,6 +857,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 1,
+  },
+  aiPreviewShort: {
+    fontSize: 13,
+    fontStyle: 'italic',
+    lineHeight: 17,
+    textAlign: 'center',
+    paddingHorizontal: 24,
+    marginTop: 12,
   },
   flameWheelContainer: {
     alignItems: 'center',

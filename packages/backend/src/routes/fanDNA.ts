@@ -116,6 +116,76 @@ export default async function fanDNARoutes(fastify: FastifyInstance) {
     }
   });
 
+  fastify.get('/peek', {
+    schema: {
+      description:
+        'Pre-compute the DNA line for every possible value (1-10) of an upcoming user action. Lets the reveal modal render instantly on Done without a network round trip. Does NOT record impressions — the commit path passes the chosen line back.',
+      tags: ['fan-dna'],
+      querystring: {
+        type: 'object',
+        required: ['action', 'surface'],
+        properties: {
+          action: { type: 'string', enum: ACTIONS },
+          surface: { type: 'string', enum: SURFACES },
+          fightId: { type: 'string' },
+        },
+      },
+    },
+    preHandler: authenticateUser,
+  }, async (request, reply) => {
+    const user = (request as any).user;
+    const query = request.query as {
+      action: FanDNAAction;
+      surface: FanDNASurface;
+      fightId?: string;
+    };
+
+    try {
+      const values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      const results = await Promise.all(
+        values.map(async (value) => {
+          try {
+            return await eventEvaluate({
+              prisma: fastify.prisma,
+              userId: user.id,
+              action: query.action,
+              surface: query.surface,
+              fightId: query.fightId,
+              value,
+              peek: true,
+            });
+          } catch (err) {
+            request.log.warn(
+              { err, value },
+              '[fanDNA] peek eval failed for one value',
+            );
+            return null;
+          }
+        }),
+      );
+
+      const lines = results.map((r) =>
+        r
+          ? {
+              line: r.text,
+              traitId: r.traitId,
+              copyKey: r.copyKey,
+              lineKey: r.lineKey,
+              variant: r.variant,
+              isMeta: r.isMeta ?? false,
+            }
+          : null,
+      );
+
+      return reply.code(200).send({ lines });
+    } catch (err) {
+      request.log.error(err, '[fanDNA] /peek handler failed');
+      return reply
+        .code(200)
+        .send({ lines: [null, null, null, null, null, null, null, null, null, null] });
+    }
+  });
+
   fastify.get('/health', {
     schema: {
       description: 'Health snapshot of the Fan DNA registry.',
