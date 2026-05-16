@@ -56,6 +56,10 @@ export default function RatingRevealModal({
   const overlayFadeAnim = useRef(new Animated.Value(0)).current;
   const dnaFadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Open animation — overlay + chart. dnaLine is NOT a dep: if the line
+  // arrives after the modal opens (mutation hadn't resolved yet), we don't
+  // want everything to fade in a second time. That looked like the modal
+  // was opening twice.
   useEffect(() => {
     if (visible) {
       chartFadeAnim.setValue(0);
@@ -74,19 +78,21 @@ export default function RatingRevealModal({
           useNativeDriver: true,
         }),
       ]).start();
-
-      // Line arrives prefetched from the rate mutation response, so this
-      // fires alongside the chart animation instead of after a roundtrip.
-      if (dnaLine) {
-        Animated.timing(dnaFadeAnim, {
-          toValue: 1,
-          duration: 420,
-          delay: 280,
-          useNativeDriver: true,
-        }).start();
-      }
     }
-  }, [visible, chartFadeAnim, overlayFadeAnim, dnaFadeAnim, dnaLine]);
+  }, [visible, chartFadeAnim, overlayFadeAnim, dnaFadeAnim]);
+
+  // DNA fade-in — independent of the open animation. Fires whenever the line
+  // arrives (prefetched inline, or async after a fire-and-forget mutation).
+  useEffect(() => {
+    if (visible && dnaLine) {
+      Animated.timing(dnaFadeAnim, {
+        toValue: 1,
+        duration: 420,
+        delay: 280,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, dnaLine, dnaFadeAnim]);
 
   if (!visible) return null;
 
