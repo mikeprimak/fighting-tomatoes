@@ -59,6 +59,11 @@ export default function HypeRevealModal({
   const overlayFadeAnim = useRef(new Animated.Value(0)).current;
   const dnaFadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Open animation — overlay + chart. Runs exactly once per visible→true
+  // transition. Critically, dnaLine is NOT a dep here: if the hype mutation
+  // resolves after the modal opens (fire-and-forget tap path), we don't want
+  // the whole modal to re-animate when the line arrives. That looked like the
+  // reveal modal was opening twice.
   useEffect(() => {
     if (visible) {
       chartFadeAnim.setValue(0);
@@ -77,20 +82,22 @@ export default function HypeRevealModal({
           useNativeDriver: true,
         }),
       ]).start();
-
-      // Animate the DNA beat in just after the chart starts. Because the line
-      // arrives prefetched (inline with the rate/hype commit response), this
-      // fires alongside the chart rather than after a separate roundtrip.
-      if (dnaLine) {
-        Animated.timing(dnaFadeAnim, {
-          toValue: 1,
-          duration: 420,
-          delay: 280,
-          useNativeDriver: true,
-        }).start();
-      }
     }
-  }, [visible, chartFadeAnim, overlayFadeAnim, dnaFadeAnim, dnaLine]);
+  }, [visible, chartFadeAnim, overlayFadeAnim, dnaFadeAnim]);
+
+  // DNA fade-in — separate effect so it can fire whenever the line arrives,
+  // whether that's at open-time (inline response) or a moment later
+  // (mutation-not-yet-settled).
+  useEffect(() => {
+    if (visible && dnaLine) {
+      Animated.timing(dnaFadeAnim, {
+        toValue: 1,
+        duration: 420,
+        delay: 280,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, dnaLine, dnaFadeAnim]);
 
   if (!visible) return null;
 
