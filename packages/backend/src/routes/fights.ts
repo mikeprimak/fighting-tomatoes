@@ -2865,7 +2865,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
             'rate-reveal-modal',
             fightId,
             rating,
-            dnaCommittedLine,
+            dnaCommittedLine as PrePeekedDNALine,
           );
         } else {
           resultData.fanDNA = await evaluateFanDNAInline(
@@ -3097,7 +3097,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
               'hype-reveal-modal',
               fightId,
               predictedRating,
-              dnaCommittedLine,
+              dnaCommittedLine as PrePeekedDNALine,
             )
           : await evaluateFanDNAInline(
               fastify.prisma,
@@ -4591,6 +4591,20 @@ async function evaluateFanDNAInline(
  * response handling is uniform whether the line came from peek or inline eval.
  * Non-blocking: telemetry failure still returns the line.
  */
+// Shape of a pre-peeked DNA line passed back to the commit path. Declared
+// once so the type used by the call-site cast can't drift from the function
+// signature. The `as` cast at the call sites is load-bearing under
+// tsconfig.production.json (`strictNullChecks: false`), which makes zod
+// widen every schema field to optional and breaks structural assignment.
+export type PrePeekedDNALine = {
+  line: string;
+  traitId: string;
+  copyKey: string;
+  lineKey: string;
+  variant: 'soft' | 'humor';
+  isMeta?: boolean;
+};
+
 async function commitPrePeekedDNA(
   prisma: any,
   userId: string,
@@ -4598,14 +4612,7 @@ async function commitPrePeekedDNA(
   surface: FanDNASurface,
   fightId: string,
   value: number,
-  pre: {
-    line: string;
-    traitId: string;
-    copyKey: string;
-    lineKey: string;
-    variant: 'soft' | 'humor';
-    isMeta?: boolean;
-  },
+  pre: PrePeekedDNALine,
 ): Promise<{
   line: string | null;
   traitId: string | null;
