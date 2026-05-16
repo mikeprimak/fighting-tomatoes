@@ -17,6 +17,7 @@ import { adminRoutes } from './admin';
 import giphyRoutes from './giphy';
 import broadcastsRoutes from './broadcasts';
 import adminBroadcastsRoutes from './adminBroadcasts';
+import fanDNARoutes from './fanDNA';
 import { authenticateUser, requireEmailVerification } from '../middleware/auth';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
@@ -2085,6 +2086,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
   // Register broadcasts (how-to-watch) routes under /api prefix
   await fastify.register(broadcastsRoutes, { prefix: '/api' });
   await fastify.register(adminBroadcastsRoutes, { prefix: '/api' });
+
+  // Register Fan DNA routes under /api/fan-dna prefix
+  await fastify.register(fanDNARoutes, { prefix: '/api/fan-dna' });
 
   // Register analytics routes under /api prefix - TEMPORARILY DISABLED
   // await fastify.register(async function(fastify) {

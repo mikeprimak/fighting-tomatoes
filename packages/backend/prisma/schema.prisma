@@ -97,6 +97,10 @@ model User {
   // Feedback relations
   feedback          UserFeedback[]
 
+  // Fan DNA relations
+  fanDNATraitValues TraitValue[]
+  fanDNAImpressions DNALineImpression[]
+
   @@map("users")
 }
 
@@ -1503,4 +1507,78 @@ model SystemConfig {
   updatedAt DateTime @updatedAt
 
   @@map("system_config")
+}
+
+// ============== FAN DNA ==============
+// Personality engine — surfaces observational + humorous lines about the user
+// after key actions (rate, hype, follow). See docs/areas/rewarding-users.md
+// "Fan DNA" and the architectural commit in
+// docs/HANDOFF-next-session-2026-05-16.md.
+//
+// Two tables, both additive:
+//   • TraitValue          — batch-computed trait value per (user, trait).
+//                           Versioned; bumping a trait's version invalidates
+//                           rows and the nightly cron recomputes.
+//   • DNALineImpression   — every fired line. Drives 30-day cooldown,
+//                           toggle-storm detection, and trait health metrics.
+
+model TraitValue {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Stable trait id — matches `Trait.id` in services/fanDNA/traits/.
+  traitId    String
+
+  /// Trait code version at compute time. Bumping the trait's version
+  /// invalidates this row.
+  version    Int      @default(1)
+
+  /// Trait-specific JSON payload.
+  value      Json
+
+  /// 0-1. Engine may withhold low-confidence values from surfacing.
+  confidence Float    @default(0)
+
+  /// True iff trait had enough data when computed.
+  hasFloor   Boolean  @default(false)
+
+  computedAt DateTime @default(now())
+
+  @@unique([userId, traitId])
+  @@index([traitId])
+  @@map("fan_dna_trait_values")
+}
+
+model DNALineImpression {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Which trait produced the line. Null for engine-level META/EXIT lines.
+  traitId   String?
+  /// Lookup key inside the trait's copy.json.
+  copyKey   String?
+  /// Unique key for THIS exact line text — drives 30-day cooldown.
+  lineKey   String
+
+  /// Where it rendered (e.g. "hype-reveal-modal").
+  surface   String
+  /// User action that triggered it ("hype" | "rate" | ...).
+  action    String
+  /// Fight context, if any.
+  fightId   String?
+  /// User's value at the moment (hype score, rating, etc.).
+  value     Float?
+
+  /// "soft" | "humor" | "meta" | "exit"
+  variant   String
+
+  firedAt   DateTime @default(now())
+
+  @@index([userId, firedAt])
+  @@index([userId, lineKey, firedAt])
+  @@index([userId, fightId, action, firedAt])
+  @@index([traitId, firedAt])
+  @@map("fan_dna_line_impressions")
 }

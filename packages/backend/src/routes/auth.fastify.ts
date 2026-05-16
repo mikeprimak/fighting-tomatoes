@@ -1275,6 +1275,163 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // GET /api/auth/profile/hype-accuracy - Hype-vs-Outcome closure data
+  // For every fight the user hyped that has since been rated by ≥5 other users,
+  // returns user's hype number, the community rating excluding self, and a delta.
+  fastify.get('/profile/hype-accuracy', async (request, reply) => {
+    try {
+      const authorization = request.headers.authorization;
+
+      if (!authorization || !authorization.startsWith('Bearer ')) {
+        return reply.code(401).send({
+          error: 'Authorization token required',
+          code: 'MISSING_TOKEN',
+        });
+      }
+
+      const token = authorization.substring(7);
+      const JWT_SECRET = process.env.JWT_SECRET;
+      if (!JWT_SECRET) throw new Error('JWT_SECRET not configured');
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      const userId = decoded.userId;
+
+      const { limit: limitParam } = request.query as { limit?: string };
+      const limit = Math.min(Math.max(parseInt(limitParam || '100', 10) || 100, 1), 500);
+
+      // Floor: at least N community ratings (excluding self) to be eligible
+      const COMMUNITY_FLOOR = 5;
+
+      // Pull every hype prediction the user made on a completed fight,
+      // including the user's own rating row (if any) so we can subtract it.
+      const predictions = await fastify.prisma.fightPrediction.findMany({
+        where: {
+          userId,
+          predictedRating: { not: null },
+          fight: { winner: { not: null } },
+        },
+        select: {
+          predictedRating: true,
+          fight: {
+            select: {
+              id: true,
+              fighter1: { select: { firstName: true, lastName: true } },
+              fighter2: { select: { firstName: true, lastName: true } },
+              averageRating: true,
+              totalRatings: true,
+              event: {
+                select: { id: true, name: true, date: true, promotion: true },
+              },
+              ratings: {
+                where: { userId },
+                select: { rating: true },
+                take: 1,
+              },
+            },
+          },
+        },
+        orderBy: { fight: { event: { date: 'desc' } } },
+      });
+
+      type Row = {
+        fightId: string;
+        fighter1Name: string;
+        fighter2Name: string;
+        eventId: string;
+        eventName: string;
+        eventDate: Date;
+        promotion: string | null;
+        userHype: number;
+        userRating: number | null;
+        communityAvg: number;
+        communityCount: number;
+        delta: number;
+        bucket: 'spot_on' | 'close' | 'off' | 'way_off';
+        isHotTake: boolean;
+      };
+
+      const rows: Row[] = [];
+
+      for (const p of predictions) {
+        const userHype = p.predictedRating;
+        if (userHype == null) continue;
+
+        const fight = p.fight;
+        const totalRatings = fight.totalRatings;
+        const avgRating = fight.averageRating;
+        const userRating = fight.ratings[0]?.rating ?? null;
+
+        // Community avg excluding self
+        let communityCount = totalRatings;
+        let communityAvg = avgRating;
+        if (userRating != null && totalRatings > 0) {
+          const sum = avgRating * totalRatings;
+          communityCount = totalRatings - 1;
+          communityAvg = communityCount > 0 ? (sum - userRating) / communityCount : 0;
+        }
+
+        if (communityCount < COMMUNITY_FLOOR) continue;
+
+        const delta = Math.abs(userHype - communityAvg);
+
+        let bucket: Row['bucket'];
+        if (delta < 1) bucket = 'spot_on';
+        else if (delta < 2) bucket = 'close';
+        else if (delta < 3) bucket = 'off';
+        else bucket = 'way_off';
+
+        // Hot take: nailed an extreme call (user hyped 8+ or 3-, community agreed within 1.5)
+        const isExtreme = userHype >= 8 || userHype <= 3;
+        const isHotTake = isExtreme && delta < 1.5;
+
+        rows.push({
+          fightId: fight.id,
+          fighter1Name: `${fight.fighter1.firstName} ${fight.fighter1.lastName}`.trim(),
+          fighter2Name: `${fight.fighter2.firstName} ${fight.fighter2.lastName}`.trim(),
+          eventId: fight.event.id,
+          eventName: fight.event.name,
+          eventDate: fight.event.date,
+          promotion: fight.event.promotion,
+          userHype,
+          userRating,
+          communityAvg: Math.round(communityAvg * 10) / 10,
+          communityCount,
+          delta: Math.round(delta * 10) / 10,
+          bucket,
+          isHotTake,
+        });
+      }
+
+      const totalHypedFights = rows.length;
+      const accurateCount = rows.filter(r => r.bucket === 'spot_on' || r.bucket === 'close').length;
+      const accuracyPct = totalHypedFights > 0
+        ? Math.round((accurateCount / totalHypedFights) * 100)
+        : 0;
+      const hotTakeCount = rows.filter(r => r.isHotTake).length;
+
+      const fights = rows.slice(0, limit);
+
+      return reply.code(200).send({
+        totalHypedFights,
+        accurateCount,
+        accuracyPct,
+        hotTakeCount,
+        fights,
+      });
+    } catch (error: any) {
+      request.log.error(error, 'Get hype accuracy error:');
+      if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+        return reply.code(401).send({
+          error: 'Invalid token',
+          code: 'INVALID_TOKEN',
+        });
+      }
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'HYPE_ACCURACY_FETCH_FAILED',
+      });
+    }
+  });
+
   // GET /api/auth/profile/global-standing - Get user's global ranking based on prediction accuracy
   fastify.get('/profile/global-standing', async (request, reply) => {
     try {

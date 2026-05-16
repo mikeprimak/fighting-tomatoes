@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Colors } from '../constants/Colors';
 import HypeDistributionChart from './HypeDistributionChart';
+import { apiService } from '../services/api';
 
 // NOTE: this component is rendered INSIDE UpcomingFightModal's <Modal> tree,
 // not as its own <Modal>. That guarantees both the hype container and the
@@ -23,6 +24,10 @@ interface HypeRevealOverlayProps {
   totalPredictions: number;
   averageHype: number;
   userHype: number;
+  // Fan DNA context — when provided, the modal fetches a personality beat
+  // from POST /api/fan-dna/event and renders it under the comparison line.
+  // Optional: if missing or the call fails, the modal renders without the beat.
+  fightId?: string;
 }
 
 function getComparisonText(userHype: number, avgHype: number): string {
@@ -42,17 +47,22 @@ export default function HypeRevealModal({
   totalPredictions,
   averageHype,
   userHype,
+  fightId,
 }: HypeRevealOverlayProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
   const chartFadeAnim = useRef(new Animated.Value(0)).current;
   const overlayFadeAnim = useRef(new Animated.Value(0)).current;
+  const dnaFadeAnim = useRef(new Animated.Value(0)).current;
+  const [dnaLine, setDnaLine] = useState<string | null>(null);
 
   useEffect(() => {
     if (visible) {
       chartFadeAnim.setValue(0);
       overlayFadeAnim.setValue(0);
+      dnaFadeAnim.setValue(0);
+      setDnaLine(null);
       Animated.parallel([
         Animated.timing(overlayFadeAnim, {
           toValue: 1,
@@ -66,8 +76,37 @@ export default function HypeRevealModal({
           useNativeDriver: true,
         }),
       ]).start();
+
+      // Fan DNA beat — fire the engine async after the chart starts animating.
+      // Non-blocking: if it returns null or errors, the modal renders without
+      // the third beat (no breakage).
+      let cancelled = false;
+      apiService
+        .fanDNAEvent({
+          action: 'hype',
+          surface: 'hype-reveal-modal',
+          fightId,
+          value: userHype,
+        })
+        .then((res) => {
+          if (cancelled) return;
+          if (!res.line) return;
+          setDnaLine(res.line);
+          Animated.timing(dnaFadeAnim, {
+            toValue: 1,
+            duration: 420,
+            delay: 80,
+            useNativeDriver: true,
+          }).start();
+        })
+        .catch(() => {
+          /* silent — modal renders without DNA beat */
+        });
+      return () => {
+        cancelled = true;
+      };
     }
-  }, [visible, chartFadeAnim, overlayFadeAnim]);
+  }, [visible, chartFadeAnim, overlayFadeAnim, dnaFadeAnim, fightId, userHype]);
 
   if (!visible) return null;
 
@@ -96,6 +135,14 @@ export default function HypeRevealModal({
             <Text style={[styles.comparison, { color: colors.text }]}>
               {getComparisonText(userHype, averageHype)}
             </Text>
+
+            {dnaLine ? (
+              <Animated.Text
+                style={[styles.dnaLine, { color: colors.text, opacity: dnaFadeAnim }]}
+              >
+                {dnaLine}
+              </Animated.Text>
+            ) : null}
 
             <TouchableOpacity
               style={[styles.closeButton, { backgroundColor: colors.primary }]}
@@ -151,6 +198,19 @@ const styles = StyleSheet.create({
     marginTop: 18,
     textAlign: 'center',
     letterSpacing: 0.2,
+  },
+  // Fan DNA third beat — quieter than the community-comparison line above so
+  // the eye reads: bold community fact → softer personal observation.
+  dnaLine: {
+    fontSize: 13.5,
+    fontStyle: 'italic',
+    fontWeight: '500',
+    marginTop: 12,
+    paddingHorizontal: 8,
+    textAlign: 'center',
+    opacity: 0.78,
+    letterSpacing: 0.15,
+    lineHeight: 19,
   },
   // Match Done button's pill shape and primary color; sized via paddingHorizontal
   // rather than alignSelf:stretch so it can't compete with the chart for the

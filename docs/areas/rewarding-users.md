@@ -41,7 +41,7 @@ Users keep coming back not because we nag them, but because the app **remembers 
 
 ### Identity / self-understanding
 
-- [ ] **Hype DNA personality engine** — "You over-hype rematches by 1.4. Most accurate on PFL cards. Love bantamweight wars." Built on metadata + AI tags. Gated behind N ratings (~25). See [[project-ai-enrichment-workstream]].
+- [ ] **Fan DNA personality engine** — "You over-hype rematches by 1.4. Most accurate on PFL cards. Love bantamweight wars." Built on metadata + AI tags. Gated behind N ratings (~25). Hype accuracy folds in as one trait inside Fan DNA, not a separate engine. See [[project-ai-enrichment-workstream]].
 - [ ] **Predicted favorite fighter** — *"Based on your ratings, your favorite is X."* Inferred from rating patterns, hype scores, follows.
 - [ ] **Style match recommendations** — *"If you loved fight X, you'll probably love fight Y."*
 - [ ] **Fan resume page** — Strava-style athlete profile but for fight fans: total fights rated, average rating given, hottest take, etc.
@@ -49,7 +49,7 @@ Users keep coming back not because we nag them, but because the app **remembers 
 ### Discovery / utility (rewards through usefulness)
 
 - [ ] **"Your card" sort order** — day-of-card, surface fights sorted by user's own hype. Reminders aligned to walkouts.
-- [ ] **"Your kind of fight" filter** — discover upcoming cards filtered to user's Hype DNA.
+- [ ] **"Your kind of fight" filter** — discover upcoming cards filtered to user's Fan DNA.
 - [ ] **Recommendations feed** — "fights you'll probably love this week" based on past ratings + AI tags.
 - [ ] **Skip-if-hype-under-X filter** — prelim-skipping for users who only want main cards.
 
@@ -82,7 +82,7 @@ Users keep coming back not because we nag them, but because the app **remembers 
 ### Onboarding hooks
 
 - [ ] **First-rating callback** — *"Welcome — your first rating just joined the data. Watch for it after fight night."* Sets expectation for closure-loop payoff.
-- [ ] **Sample Hype DNA** — show what their DNA *will* look like after N ratings, to motivate the climb.
+- [ ] **Sample Fan DNA** — show what their DNA *will* look like after N ratings, to motivate the climb.
 
 ## Sequencing (current plan)
 
@@ -92,13 +92,14 @@ Users keep coming back not because we nag them, but because the app **remembers 
 - ✅ Rating community modal — shipped 2026-05-15.
 
 **Wave 2 — the moat (closure loop)**
-- Hype accuracy backend (Phase C of [[project-ai-enrichment-workstream]] roadmap).
-- Post-fight closure line on fight cards.
-- Profile accuracy stat.
-- Hot takes list.
+- ✅ Hype accuracy backend — shipped 2026-05-15 (community-avg-excluding-self, floor 5 ratings, buckets `spot_on` / `close` / `off` / `way_off`, hot-take = extreme + small delta).
+- ✅ Profile accuracy stat — shipped 2026-05-15 (`Hype vs Outcome` SectionContainer on profile).
+- ✅ Full-screen hot takes list — shipped 2026-05-15 as part of `hype-accuracy` screen.
+- 📋 Post-fight closure line on fight cards — **deferred**. Iterated through ~5 on-card variants; all violated the user's clarity rule (every on-card variant required parsing). Revisit only if a way emerges that doesn't compromise card clarity.
+- 📋 AI-tag-aware row copy — depends on AI enrichment Phase 1.
 
 **Wave 3 — identity**
-- Hype DNA personality engine (needs AI tags from [[project-ai-enrichment-workstream]] Phase 1).
+- Fan DNA personality engine (needs AI tags from [[project-ai-enrichment-workstream]] Phase 1).
 - Fan resume profile page.
 
 **Wave 4 — retrospection & social**
@@ -123,8 +124,8 @@ Users keep coming back not because we nag them, but because the app **remembers 
 
 - How do we handle hype editing? Lock at walkouts? Allow until first round? (Lean: lock at walkouts — gives closure-loop a clean snapshot.)
 - Should "hot take" require a confidence margin (≥3 points above/below community) or only require being right? (Lean: both — only count outliers that turned out right.)
-- Do we show Hype DNA to other users (social) or keep it private? (Lean: private by default, optional share.)
-- At what N ratings does Hype DNA unlock? (Lean: 25.)
+- Do we show Fan DNA to other users (social) or keep it private? (Lean: private by default, optional share.)
+- At what N ratings does Fan DNA unlock? (Lean: 25 for Tier 2 traits; Tier 1 traits surface from the first rating.)
 
 ## Decisions log
 
@@ -134,25 +135,29 @@ Gaming-resistance principle. Recognition is private stats only. This is load-bea
 **2. Hype accuracy computed against community-minus-self (2026-05-14)**
 Removes the incentive to pad your own rating to match your hype.
 
-**3. Hype DNA depends on AI tags, not fighter style records (2026-05-14)**
+**3. Fan DNA depends on AI tags, not fighter style records (2026-05-14)** *(feature renamed from "Hype DNA" 2026-05-16)*
 See [[project-ai-enrichment-workstream]] decisions log §1.
 
-## Status (2026-05-15, end of session 3)
+## Status (2026-05-15, end of session 4)
 
 - ✅ Workspace established (this doc + CLAUDE.md session protocol + memory entry).
-- ✅ **#4 Hype community modal — SHIPPED 2026-05-15.** "Hype submitted!" reveal modal opens after Done, instant render via prefetched community stats + local vote delta. User's bar gets a smooth Gaussian-style glow (14 stacked translucent layers + iOS shadow). Plain-English comparison copy. Close button width matches the hype modal's Done button.
-  - Files: `HypeRevealModal.tsx` (new), `UpcomingFightModal.tsx`, `HypeDistributionChart.tsx`, `services/api.ts`.
-- ✅ **Rating community modal — SHIPPED 2026-05-15.** "Rating submitted!" reveal modal, twin of the hype reveal, fires after Done on the completed-fight rating flow. Same prefetch + local-delta architecture, same glow on the user's bar (`GLOW_LAYERS` exported from HypeDistributionChart and reused). Comparison copy: "You rated this (much higher / higher / about the same / lower / much lower) than the average fan."
-  - Files: `RatingRevealModal.tsx` (new), `RatingDistributionChart.tsx` (extended with userRating/width/fadeAnim props + glow), `CompletedFightModal.tsx` (prefetch + session tracking + inline reveal + width-parity fix), `HypeDistributionChart.tsx` (exported GLOW_LAYERS).
-- 📋 Closure-loop backend (Wave 2) — planned, depends on AI enrichment Phase 1.
+- ✅ **#4 Hype community modal — SHIPPED 2026-05-15.** "Hype submitted!" reveal modal opens after Done, instant render via prefetched community stats + local vote delta.
+- ✅ **Rating community modal — SHIPPED 2026-05-15.** "Rating submitted!" reveal modal, twin of the hype reveal, fires after Done on the completed-fight rating flow.
+- ✅ **Hype vs Outcome (closure-loop, v1) — SHIPPED 2026-05-15.** Wave 2 opens.
+  - Backend: `GET /api/auth/profile/hype-accuracy` (auth.fastify.ts). Per-user closure data: every fight the user hyped that the community has since rated (≥5 ratings excluding self). Returns headline `accuracyPct`, `totalHypedFights`, `accurateCount`, `hotTakeCount` + per-fight rows. Community avg excluding self computed by subtracting user's own rating from precomputed `Fight.averageRating × totalRatings`. Buckets: `spot_on` (<1), `close` (<2), `off` (<3), `way_off` (≥3). Hot take = userHype extreme (≥8 or ≤3) AND delta < 1.5.
+  - Mobile screen: `app/activity/hype-accuracy.tsx`. Header `Hype vs Outcome`. Headline percentage + plain-English tagline. Per-fight rows labeled `You hyped 8 · Community rated 7.4` with a bucket chip (`Spot on` / `Close` / `Off` / `Way off`) and italic `hot take` tag on outlier-correct calls. Tap → fight detail.
+  - Profile entry: new `Hype vs Outcome` SectionContainer on profile (`app/(tabs)/profile.tsx`) styled like `My Hype` (yellow header, flame icon). Summary card with the headline number is itself tappable, routes to the full screen.
+  - Surface decision: card stays untouched. Iterated through 5+ on-card variants — all required parsing, which violated the user's clarity rule. Dedicated stats screen wins.
+- 📋 Card-level closure line — deferred indefinitely unless a clarity-preserving design emerges.
 
 ### Pick up here next session
 
-Wave 1 is closed (both immediate-dopamine reveals shipped). Decision ahead before Wave 2:
-1. Ship AI enrichment Phase 1 first to unlock tag-aware accuracy stats, or
-2. Build a simpler hype-accuracy engine against community avg now and layer AI tags later.
+Wave 2 v1 is shipped. Three forward paths:
+1. AI enrichment Phase 1 → unlocks tag-aware row copy on `Hype vs Outcome` (`Spot on a tactical chess match.`).
+2. Wave 3 prep — Fan DNA personality engine (depends on AI tags from #1).
+3. Stack one more lightweight Wave 1 win (haptic + sound on rating tap, one-tap rate from notification, first-rating callback for onboarding).
 
-Alternatively, stack one more lightweight Wave 1 win from the inventory (haptic + sound polish on rating tap, one-tap rate from notification, first-rating callback) before stepping into the moat.
+Live data check after shipping: confirm the endpoint returns non-empty data for `avocadomike@hotmail.com` (1234 ratings, 72 reviews — lots of historical hype to close).
 
 ## Session protocol
 
