@@ -7,6 +7,8 @@ import { maybeNotifyReviewLike, maybeNotifyPreFightCommentLike } from '../servic
 import { calculateQualityThreadScore } from '../utils/commentSorting';
 import { TBA_FIGHTER_ID, isTBAFighter, fightHasTBA } from '../constants/tba';
 import { isProductionScraper, getNotifyPromotions, hasReliableLiveTracker } from '../config/liveTrackerConfig';
+import { eventEvaluate as fanDNAEventEvaluate } from '../services/fanDNA/engine';
+import type { FanDNAAction, FanDNASurface } from '../services/fanDNA/types';
 
 // Request/Response schemas using Zod for validation
 const CreateFightSchema = z.object({
@@ -2832,6 +2834,21 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Fan DNA — inline evaluate so the line lands in the same response as
+      // the rating commit. Mobile renders the reveal modal with the line
+      // already in state, no second roundtrip. Non-blocking: any failure
+      // resolves to { line: null }.
+      if (rating !== undefined && rating !== null) {
+        resultData.fanDNA = await evaluateFanDNAInline(
+          fastify.prisma,
+          currentUserId,
+          'rate',
+          'rate-reveal-modal',
+          fightId,
+          rating,
+        );
+      }
+
       return reply.code(200).send({
         message: 'User data updated successfully',
         data: resultData,
@@ -3039,6 +3056,18 @@ export async function fightRoutes(fastify: FastifyInstance) {
         hypeDistribution[hype] = hypePredictions.filter(p => p.predictedRating === hype).length;
       }
 
+      // Fan DNA — inline evaluate so the line lands in the same response.
+      const fanDNA = predictedRating != null
+        ? await evaluateFanDNAInline(
+            fastify.prisma,
+            currentUserId,
+            'hype',
+            'hype-reveal-modal',
+            fightId,
+            predictedRating,
+          )
+        : null;
+
       return reply.send({
         prediction: {
           id: prediction.id,
@@ -3053,6 +3082,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
             name: (prediction as any).user.displayName || `${(prediction as any).user.firstName} ${(prediction as any).user.lastName}`,
           },
         },
+        fanDNA,
         // Return updated aggregate for instant frontend cache update
         averageHype,
         totalHypePredictions: aggregateResult._count,
@@ -4466,4 +4496,50 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
     }
   });
+}
+
+/**
+ * Run the Fan DNA engine inline as part of a commit endpoint, so the line
+ * comes back in the same response as the rating/hype write. Non-blocking:
+ * any error resolves to `{ line: null }` and the response still goes through.
+ */
+async function evaluateFanDNAInline(
+  prisma: any,
+  userId: string,
+  action: FanDNAAction,
+  surface: FanDNASurface,
+  fightId: string,
+  value: number,
+): Promise<{
+  line: string | null;
+  traitId: string | null;
+  copyKey: string | null;
+  lineKey: string | null;
+  variant: string | null;
+  isMeta: boolean;
+}> {
+  try {
+    const result = await fanDNAEventEvaluate({
+      prisma,
+      userId,
+      action,
+      surface,
+      fightId,
+      value,
+    });
+    if (!result) {
+      return { line: null, traitId: null, copyKey: null, lineKey: null, variant: null, isMeta: false };
+    }
+    return {
+      line: result.text,
+      traitId: result.traitId,
+      copyKey: result.copyKey,
+      lineKey: result.lineKey,
+      variant: result.variant,
+      isMeta: result.isMeta ?? false,
+    };
+  } catch (err) {
+    console.warn('[fanDNA] inline evaluate failed:', err);
+    return { line: null, traitId: null, copyKey: null, lineKey: null, variant: null, isMeta: false };
+  }
 }

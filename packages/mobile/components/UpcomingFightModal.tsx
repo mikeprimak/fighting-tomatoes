@@ -91,6 +91,9 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
   const [revealDistribution, setRevealDistribution] = useState<Record<number, number>>({});
   const [revealAvgHype, setRevealAvgHype] = useState<number>(0);
   const [revealTotal, setRevealTotal] = useState<number>(0);
+  // Fan DNA line returned inline with the hype mutation response. Captured
+  // in onSuccess so it's already in state by the time the modal opens.
+  const [revealDnaLine, setRevealDnaLine] = useState<string | null>(null);
   const sessionTappedHypeRef = useRef<boolean>(false);
   const sessionLastHypeRef = useRef<number | null>(null);
   // The user's hype value at modal-open time — load-bearing for the delta
@@ -171,6 +174,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
       setRevealDistribution({});
       setRevealAvgHype(0);
       setRevealTotal(0);
+      setRevealDnaLine(null);
     }
   }, [fight?.id, visible]);
 
@@ -275,6 +279,10 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
           hypeCount: data.totalHypePredictions,
         });
       }
+      // Capture the Fan DNA beat that came back with the commit so the reveal
+      // modal renders the line in the same frame it opens.
+      const line = data?.fanDNA?.line ?? null;
+      setRevealDnaLine(line);
       // Note: reveal modal data is computed locally at handleDone time from
       // prefetchedStats + the user's vote delta, so we deliberately do NOT
       // touch reveal state here — avoids late mutations stomping the snapshot.
@@ -689,6 +697,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
           totalPredictions={revealTotal}
           averageHype={revealAvgHype}
           userHype={sessionLastHypeRef.current ?? 0}
+          dnaLine={revealDnaLine}
         />
       </View>
     </Modal>
