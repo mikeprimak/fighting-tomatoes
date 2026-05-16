@@ -189,9 +189,10 @@ const styles = StyleSheet.create({
     marginTop: 18,
     textAlign: 'center',
     letterSpacing: 0.2,
+    opacity: 0.7,
   },
-  // Fan DNA third beat — quieter than the community-comparison line above so
-  // the eye reads: bold community fact → softer personal observation.
+  // Fan DNA third beat — italic + same title-grey so it reads as a quieter
+  // personal observation under the comparison line.
   dnaLine: {
     fontSize: 13.5,
     fontStyle: 'italic',
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 8,
     textAlign: 'center',
-    opacity: 0.78,
+    opacity: 0.7,
     letterSpacing: 0.15,
     lineHeight: 19,
   },
