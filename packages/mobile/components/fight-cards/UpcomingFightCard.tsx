@@ -278,8 +278,8 @@ function UpcomingFightCard({
       activeOpacity={0.7}
       style={isAnimating ? { zIndex: 9999, elevation: 9999 } : undefined}
     >
+      <View style={{ backgroundColor: cardBgColor, position: 'relative', overflow: 'visible' }}>
       <View style={[sharedStyles.container, {
-        position: 'relative',
         overflow: 'visible',
         paddingLeft: 64, // 48px square + 16px padding
         paddingVertical: 0, // No vertical padding
@@ -488,6 +488,23 @@ function UpcomingFightCard({
             </View>
 
           </View>
+
+      </View>
+
+      {/* AI preview one-liner — sibling of the card body so it doesn't recenter the existing layout */}
+      {(() => {
+        const aiPreviewShort = (fight as any).aiPreviewShort as string | null | undefined;
+        const aiConfidence = (fight as any).aiConfidence as number | null | undefined;
+        if (!aiPreviewShort || aiConfidence == null || aiConfidence < 0.5) return null;
+        return (
+          <Text
+            style={[styles.aiPreviewShort, { color: colors.textSecondary }]}
+            numberOfLines={3}
+          >
+            {aiPreviewShort}
+          </Text>
+        );
+      })()}
 
       </View>
     </TouchableOpacity>
@@ -839,9 +856,9 @@ const styles = StyleSheet.create({
   hypeSquare: {
     position: 'absolute',
     top: 6,
+    bottom: 6,
     left: 0,
     width: 48,
-    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
@@ -876,9 +893,9 @@ const styles = StyleSheet.create({
   userHypeFlameContainer: {
     position: 'absolute',
     top: 6,
+    bottom: 6,
     right: 0,
     width: 48,
-    height: 50,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
@@ -1028,6 +1045,15 @@ const styles = StyleSheet.create({
     bottom: -2,
     right: 6,
     zIndex: 1001,
+  },
+  aiPreviewShort: {
+    fontSize: 11,
+    fontStyle: 'italic',
+    lineHeight: 14,
+    paddingTop: 8,
+    paddingBottom: 12,
+    paddingHorizontal: 64,
+    textAlign: 'center',
   },
 });
 

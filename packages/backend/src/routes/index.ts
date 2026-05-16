@@ -385,6 +385,12 @@ export async function registerRoutes(fastify: FastifyInstance) {
             time: true,
             averageRating: true,
             totalRatings: true,
+            aiTags: true,
+            aiPreviewShort: true,
+            aiPreview: true,
+            aiEnrichedAt: true,
+            aiSourceUrls: true,
+            aiConfidence: true,
             fighter1: {
               select: {
                 id: true,
