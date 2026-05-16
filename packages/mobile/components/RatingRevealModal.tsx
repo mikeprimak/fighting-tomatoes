@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
+  ActivityIndicator,
   useColorScheme,
 } from 'react-native';
 import { Colors } from '../constants/Colors';
@@ -24,6 +25,10 @@ interface RatingRevealOverlayProps {
   // Prefetched Fan DNA beat from the rate mutation response (same roundtrip
   // as the commit). Null = engine had nothing to say.
   dnaLine?: string | null;
+  // True iff the rate mutation is still in flight. When set we render a
+  // spinner placeholder in the dna slot so the modal opens fully composed
+  // instead of fading a new line in mid-conversation.
+  dnaLoading?: boolean;
 }
 
 function getComparisonText(userRating: number, avgRating: number, totalRatings: number): string {
@@ -48,6 +53,7 @@ export default function RatingRevealModal({
   averageRating,
   userRating,
   dnaLine,
+  dnaLoading,
 }: RatingRevealOverlayProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -121,10 +127,16 @@ export default function RatingRevealModal({
 
             {dnaLine ? (
               <Animated.Text
-                style={[styles.dnaLine, { color: colors.text, opacity: dnaFadeAnim }]}
+                style={[styles.dnaLine, { color: colors.textSecondary, opacity: dnaFadeAnim }]}
               >
                 {dnaLine}
               </Animated.Text>
+            ) : dnaLoading ? (
+              <ActivityIndicator
+                size="small"
+                color={colors.textSecondary}
+                style={styles.dnaLoading}
+              />
             ) : null}
 
             <TouchableOpacity
@@ -180,8 +192,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     opacity: 0.7,
   },
-  // Fan DNA third beat — italic + same title-grey, reads as a quieter
-  // personal observation under the comparison line.
+  // Fan DNA third beat — italic + textSecondary grey. The animated opacity
+  // overrides any opacity here while the fade plays, so use color (not
+  // opacity) to convey "greyness."
   dnaLine: {
     fontSize: 13.5,
     fontStyle: 'italic',
@@ -189,9 +202,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 8,
     textAlign: 'center',
-    opacity: 0.7,
     letterSpacing: 0.15,
     lineHeight: 19,
+  },
+  // Spinner placeholder occupies roughly one line of dnaLine height so the
+  // modal doesn't reflow when the line lands.
+  dnaLoading: {
+    marginTop: 14,
+    height: 19,
   },
   // Matches Done button width on the rating modal: bottomRow has 8pt padding
   // each side, so marginHorizontal: (8) here. There's no notify bell on the

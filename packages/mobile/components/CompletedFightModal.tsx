@@ -144,11 +144,18 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
     });
   }, [wheelAnimation]);
 
-  // Reset state when fight changes or modal opens
+  // Reset state when fight changes OR when the modal reopens for the same
+  // fight. Tracking just fight.id meant `previousRatingRef` went stale across
+  // close/reopen cycles — if a user rated 7 then reopened and changed to 8,
+  // the delta math used the stale "I had nothing yet" snapshot and the chart
+  // showed both 7 AND 8.
   const prevFightIdRef = useRef<string | null>(null);
+  const wasVisibleRef = useRef<boolean>(false);
   useEffect(() => {
     if (fight && visible) {
-      if (prevFightIdRef.current !== fight.id) {
+      const isNewFight = prevFightIdRef.current !== fight.id;
+      const isFreshOpen = !wasVisibleRef.current;
+      if (isNewFight || isFreshOpen) {
         prevFightIdRef.current = fight.id;
         const rating = fight.userRating ?? (fight.userReview?.rating ? Number(fight.userReview.rating) : null);
         setSelectedRating(rating);
@@ -169,6 +176,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
         setRevealTotal(0);
         setRevealDnaLine(null);
       }
+      wasVisibleRef.current = true;
       // Populate with existing user review once loaded from API
       const fetchedReview = fightDetailData?.fight?.userReview?.content;
       if (fetchedReview) {
@@ -176,6 +184,8 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
         reviewCommentRef.current = fetchedReview;
         initialCommentRef.current = fetchedReview;
       }
+    } else if (!visible) {
+      wasVisibleRef.current = false;
     }
   }, [fight?.id, visible, fightDetailData?.fight?.userReview?.content]);
 
@@ -547,6 +557,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
           averageRating={revealAvgRating}
           userRating={sessionLastRatingRef.current ?? 0}
           dnaLine={revealDnaLine}
+          dnaLoading={ratingMutation.isPending && !revealDnaLine}
         />
       </View>
     </Modal>

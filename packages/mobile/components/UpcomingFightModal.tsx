@@ -702,6 +702,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
           averageHype={revealAvgHype}
           userHype={sessionLastHypeRef.current ?? 0}
           dnaLine={revealDnaLine}
+          dnaLoading={hypeMutation.isPending && !revealDnaLine}
         />
       </View>
     </Modal>
