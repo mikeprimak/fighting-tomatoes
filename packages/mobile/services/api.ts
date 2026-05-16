@@ -36,6 +36,20 @@ console.log(`[API] __DEV__=${typeof __DEV__ !== 'undefined' ? __DEV__ : 'undefin
 // Export for use in auth screens
 export { API_BASE_URL };
 
+/**
+ * A pre-peeked Fan DNA line. Returned by getFanDNAPeek (one entry per value
+ * 1-10), passed back to createFightPrediction / updateFightUserData on commit
+ * so the backend records an impression for the exact line the user saw.
+ */
+export interface FanDNACommittedLine {
+  line: string;
+  traitId: string;
+  copyKey: string;
+  lineKey: string;
+  variant: 'soft' | 'humor';
+  isMeta?: boolean;
+}
+
 interface Fight {
   id: string;
   orderOnCard: number;
@@ -425,6 +439,13 @@ class ApiService {
     rating?: number | null;
     review?: string | null;
     tags?: string[];
+    /**
+     * The DNA line pre-fetched via getFanDNAPeek while the user was choosing
+     * their rating. If provided, the backend records an impression for this
+     * exact line instead of re-running the engine. Echoed back as `fanDNA`
+     * in the response.
+     */
+    dnaCommittedLine?: FanDNACommittedLine;
   }): Promise<{
     message: string;
     data: {
@@ -709,6 +730,8 @@ class ApiService {
     predictedWinner?: string; // fighter1Id or fighter2Id
     predictedMethod?: 'DECISION' | 'KO_TKO' | 'SUBMISSION';
     predictedRound?: number;
+    /** Pre-peeked DNA line (see updateFightUserData docs). */
+    dnaCommittedLine?: FanDNACommittedLine;
   }): Promise<{
     prediction: any;
     averageHype: number;
@@ -732,6 +755,27 @@ class ApiService {
 
   async getFightPrediction(fightId: string): Promise<{ prediction: any }> {
     return this.makeRequest(`/fights/${fightId}/prediction`);
+  }
+
+  /**
+   * Pre-compute the Fan DNA line for every possible rating/hype value (1-10)
+   * for an upcoming action. The reveal modal pulls the line out of this cache
+   * on Done so it renders instantly without waiting on the mutation.
+   *
+   * The `lines` array is always length 10, indexed by `value - 1`. Entries may
+   * be null when the engine has nothing to say for that value.
+   */
+  async getFanDNAPeek(params: {
+    action: 'hype' | 'rate';
+    surface: 'hype-reveal-modal' | 'rate-reveal-modal';
+    fightId: string;
+  }): Promise<{ lines: Array<FanDNACommittedLine | null> }> {
+    const qs = new URLSearchParams({
+      action: params.action,
+      surface: params.surface,
+      fightId: params.fightId,
+    }).toString();
+    return this.makeRequest(`/fan-dna/peek?${qs}`);
   }
 
   async getFightPredictionStats(fightId: string): Promise<{

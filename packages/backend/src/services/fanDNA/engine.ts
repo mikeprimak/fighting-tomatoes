@@ -45,12 +45,20 @@ export interface EventEvaluateArgs {
   surface: FanDNASurface;
   fightId?: string;
   value?: number;
+  /**
+   * Peek mode: run the full evaluation (toggle-storm, scoring, line pick) but
+   * DON'T write impressions. Used by the peek endpoint to prefetch one line
+   * per possible value so the reveal modal can render instantly on Done.
+   * The actual impression is recorded later via `recordCommittedDNALine`
+   * when the user commits a rating/hype.
+   */
+  peek?: boolean;
 }
 
 export async function eventEvaluate(
   args: EventEvaluateArgs,
 ): Promise<EventEvaluateResult> {
-  const { prisma, userId, action, surface, fightId, value } = args;
+  const { prisma, userId, action, surface, fightId, value, peek } = args;
 
   // 1. If we already fired an EXIT line for this (user, fight) within the
   //    quiet window, stay silent. The user has seen our best material.
@@ -66,15 +74,17 @@ export async function eventEvaluate(
       orderBy: { firedAt: 'desc' },
     });
     if (exit) {
-      await recordImpression(prisma, {
-        userId,
-        surface,
-        action,
-        fightId,
-        value,
-        lineKey: '__quiet__',
-        variant: 'none',
-      });
+      if (!peek) {
+        await recordImpression(prisma, {
+          userId,
+          surface,
+          action,
+          fightId,
+          value,
+          lineKey: '__quiet__',
+          variant: 'none',
+        });
+      }
       return null;
     }
   }
@@ -99,15 +109,17 @@ export async function eventEvaluate(
     const seed = `${userId}|${fightId ?? ''}|${action}|exit`;
     const text = pickExitLine(seed);
     const lineKey = `__exit__:${hash(text)}`;
-    await recordImpression(prisma, {
-      userId,
-      surface,
-      action,
-      fightId,
-      value,
-      lineKey,
-      variant: 'exit',
-    });
+    if (!peek) {
+      await recordImpression(prisma, {
+        userId,
+        surface,
+        action,
+        fightId,
+        value,
+        lineKey,
+        variant: 'exit',
+      });
+    }
     return {
       text,
       traitId: '__engine__',
@@ -122,15 +134,17 @@ export async function eventEvaluate(
     const seed = `${userId}|${fightId ?? ''}|${action}|${totalActions}`;
     const text = pickMetaLine(seed);
     const lineKey = `__meta__:${hash(text)}`;
-    await recordImpression(prisma, {
-      userId,
-      surface,
-      action,
-      fightId,
-      value,
-      lineKey,
-      variant: 'meta',
-    });
+    if (!peek) {
+      await recordImpression(prisma, {
+        userId,
+        surface,
+        action,
+        fightId,
+        value,
+        lineKey,
+        variant: 'meta',
+      });
+    }
     return {
       text,
       traitId: '__engine__',
@@ -167,15 +181,17 @@ export async function eventEvaluate(
   }
 
   if (results.length === 0) {
-    await recordImpression(prisma, {
-      userId,
-      surface,
-      action,
-      fightId,
-      value,
-      lineKey: '__none__',
-      variant: 'none',
-    });
+    if (!peek) {
+      await recordImpression(prisma, {
+        userId,
+        surface,
+        action,
+        fightId,
+        value,
+        lineKey: '__none__',
+        variant: 'none',
+      });
+    }
     return null;
   }
 
@@ -189,31 +205,35 @@ export async function eventEvaluate(
   for (const { trait, result } of results) {
     const line = await pickLine(prisma, userId, trait, result);
     if (line) {
-      await recordImpression(prisma, {
-        userId,
-        surface,
-        action,
-        fightId,
-        value,
-        lineKey: line.lineKey,
-        variant: line.variant,
-        traitId: trait.id,
-        copyKey: result.copyKey,
-      });
+      if (!peek) {
+        await recordImpression(prisma, {
+          userId,
+          surface,
+          action,
+          fightId,
+          value,
+          lineKey: line.lineKey,
+          variant: line.variant,
+          traitId: trait.id,
+          copyKey: result.copyKey,
+        });
+      }
       return line;
     }
   }
 
   // Everyone's copy was on cooldown. Stay silent rather than re-fire.
-  await recordImpression(prisma, {
-    userId,
-    surface,
-    action,
-    fightId,
-    value,
-    lineKey: '__cooldown_all__',
-    variant: 'none',
-  });
+  if (!peek) {
+    await recordImpression(prisma, {
+      userId,
+      surface,
+      action,
+      fightId,
+      value,
+      lineKey: '__cooldown_all__',
+      variant: 'none',
+    });
+  }
   return null;
 }
 
@@ -277,6 +297,41 @@ export async function batchCompute(
   }
 
   return { computed, errors };
+}
+
+// ─────────────────────────── commit pre-peeked line ───────────────────────────
+
+export interface RecordCommittedLineArgs {
+  prisma: PrismaClient;
+  userId: string;
+  action: FanDNAAction;
+  surface: FanDNASurface;
+  fightId?: string;
+  value?: number;
+  line: DNALine;
+}
+
+/**
+ * Record the impression for a line that was previously chosen by the peek
+ * endpoint. Used by the rate/hype commit path so the cooldown ledger reflects
+ * the exact line the user saw, not whatever a fresh eventEvaluate would pick.
+ *
+ * Failure is swallowed — telemetry must never break the user flow.
+ */
+export async function recordCommittedDNALine(
+  args: RecordCommittedLineArgs,
+): Promise<void> {
+  await recordImpression(args.prisma, {
+    userId: args.userId,
+    surface: args.surface,
+    action: args.action,
+    fightId: args.fightId,
+    value: args.value,
+    lineKey: args.line.lineKey,
+    variant: args.line.variant,
+    traitId: args.line.traitId,
+    copyKey: args.line.copyKey,
+  });
 }
 
 // ─────────────────────────── helpers ───────────────────────────

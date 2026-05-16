@@ -7,7 +7,10 @@ import { maybeNotifyReviewLike, maybeNotifyPreFightCommentLike } from '../servic
 import { calculateQualityThreadScore } from '../utils/commentSorting';
 import { TBA_FIGHTER_ID, isTBAFighter, fightHasTBA } from '../constants/tba';
 import { isProductionScraper, getNotifyPromotions, hasReliableLiveTracker } from '../config/liveTrackerConfig';
-import { eventEvaluate as fanDNAEventEvaluate } from '../services/fanDNA/engine';
+import {
+  eventEvaluate as fanDNAEventEvaluate,
+  recordCommittedDNALine,
+} from '../services/fanDNA/engine';
 import type { FanDNAAction, FanDNASurface } from '../services/fanDNA/types';
 
 // Request/Response schemas using Zod for validation
@@ -78,10 +81,24 @@ const FightTagsSchema = z.object({
   tagNames: z.array(z.string()).min(1).max(20),
 });
 
+// A DNA line that was pre-computed by the /api/fan-dna/peek endpoint while the
+// user was choosing their value. The commit endpoint records the impression for
+// this exact line instead of re-running the engine (which would pick something
+// random and diverge from what the user actually saw).
+const DNACommittedLineSchema = z.object({
+  line: z.string(),
+  traitId: z.string(),
+  copyKey: z.string(),
+  lineKey: z.string(),
+  variant: z.enum(['soft', 'humor']),
+  isMeta: z.boolean().optional(),
+});
+
 const UpdateUserDataSchema = z.object({
   rating: z.number().int().min(1).max(10).nullable().optional(),
   review: z.string().min(1).max(5000).nullable().optional(),
   tags: z.array(z.string()).max(20).optional(),
+  dnaCommittedLine: DNACommittedLineSchema.optional(),
 });
 
 const SearchQuerySchema = z.object({
@@ -95,6 +112,7 @@ const CreatePredictionSchema = z.object({
   predictedWinner: z.string().uuid().optional(), // fighter1Id or fighter2Id
   predictedMethod: z.nativeEnum(PredictionMethod).optional(),
   predictedRound: z.number().int().min(1).max(12).optional(), // up to 12 rounds for boxing
+  dnaCommittedLine: DNACommittedLineSchema.optional(),
 });
 
 // Strip tracker shadow fields from fight objects for non-admin users
@@ -2564,7 +2582,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const { id: fightId } = request.params as { id: string };
-      const { rating, review, tags } = UpdateUserDataSchema.parse(request.body);
+      const { rating, review, tags, dnaCommittedLine } = UpdateUserDataSchema.parse(request.body);
       const currentUserId = (request as any).user.id;
 
       // Check if fight exists
@@ -2834,19 +2852,31 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Fan DNA — inline evaluate so the line lands in the same response as
-      // the rating commit. Mobile renders the reveal modal with the line
-      // already in state, no second roundtrip. Non-blocking: any failure
-      // resolves to { line: null }.
+      // Fan DNA — if mobile pre-peeked a line (via /api/fan-dna/peek while the
+      // user was choosing their value), record the impression for that exact
+      // line and echo it back. Otherwise fall through to inline evaluation.
+      // Non-blocking: any failure resolves to { line: null }.
       if (rating !== undefined && rating !== null) {
-        resultData.fanDNA = await evaluateFanDNAInline(
-          fastify.prisma,
-          currentUserId,
-          'rate',
-          'rate-reveal-modal',
-          fightId,
-          rating,
-        );
+        if (dnaCommittedLine) {
+          resultData.fanDNA = await commitPrePeekedDNA(
+            fastify.prisma,
+            currentUserId,
+            'rate',
+            'rate-reveal-modal',
+            fightId,
+            rating,
+            dnaCommittedLine,
+          );
+        } else {
+          resultData.fanDNA = await evaluateFanDNAInline(
+            fastify.prisma,
+            currentUserId,
+            'rate',
+            'rate-reveal-modal',
+            fightId,
+            rating,
+          );
+        }
       }
 
       return reply.code(200).send({
@@ -2896,8 +2926,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { predictedRating, predictedWinner, predictedMethod, predictedRound } = validation.data;
-      console.log('🔴 Validated data:', { predictedRating, predictedWinner, predictedMethod, predictedRound });
+      const { predictedRating, predictedWinner, predictedMethod, predictedRound, dnaCommittedLine } = validation.data;
+      console.log('🔴 Validated data:', { predictedRating, predictedWinner, predictedMethod, predictedRound, hasDnaCommittedLine: !!dnaCommittedLine });
 
       // Check if fight exists
       const fight = await fastify.prisma.fight.findUnique({
@@ -3056,16 +3086,27 @@ export async function fightRoutes(fastify: FastifyInstance) {
         hypeDistribution[hype] = hypePredictions.filter(p => p.predictedRating === hype).length;
       }
 
-      // Fan DNA — inline evaluate so the line lands in the same response.
+      // Fan DNA — if mobile pre-peeked a line (via /api/fan-dna/peek), record
+      // the impression for that exact line. Otherwise inline-evaluate.
       const fanDNA = predictedRating != null
-        ? await evaluateFanDNAInline(
-            fastify.prisma,
-            currentUserId,
-            'hype',
-            'hype-reveal-modal',
-            fightId,
-            predictedRating,
-          )
+        ? dnaCommittedLine
+          ? await commitPrePeekedDNA(
+              fastify.prisma,
+              currentUserId,
+              'hype',
+              'hype-reveal-modal',
+              fightId,
+              predictedRating,
+              dnaCommittedLine,
+            )
+          : await evaluateFanDNAInline(
+              fastify.prisma,
+              currentUserId,
+              'hype',
+              'hype-reveal-modal',
+              fightId,
+              predictedRating,
+            )
         : null;
 
       return reply.send({
@@ -4542,4 +4583,63 @@ async function evaluateFanDNAInline(
     console.warn('[fanDNA] inline evaluate failed:', err);
     return { line: null, traitId: null, copyKey: null, lineKey: null, variant: null, isMeta: false };
   }
+}
+
+/**
+ * Record the impression for a DNA line that the mobile client pre-fetched via
+ * /api/fan-dna/peek. Echoes the same shape back as `fanDNA` so the mobile
+ * response handling is uniform whether the line came from peek or inline eval.
+ * Non-blocking: telemetry failure still returns the line.
+ */
+async function commitPrePeekedDNA(
+  prisma: any,
+  userId: string,
+  action: FanDNAAction,
+  surface: FanDNASurface,
+  fightId: string,
+  value: number,
+  pre: {
+    line: string;
+    traitId: string;
+    copyKey: string;
+    lineKey: string;
+    variant: 'soft' | 'humor';
+    isMeta?: boolean;
+  },
+): Promise<{
+  line: string | null;
+  traitId: string | null;
+  copyKey: string | null;
+  lineKey: string | null;
+  variant: string | null;
+  isMeta: boolean;
+}> {
+  try {
+    await recordCommittedDNALine({
+      prisma,
+      userId,
+      action,
+      surface,
+      fightId,
+      value,
+      line: {
+        text: pre.line,
+        traitId: pre.traitId,
+        copyKey: pre.copyKey,
+        lineKey: pre.lineKey,
+        variant: pre.variant,
+        isMeta: pre.isMeta ?? false,
+      },
+    });
+  } catch (err) {
+    console.warn('[fanDNA] commit pre-peeked line failed:', err);
+  }
+  return {
+    line: pre.line,
+    traitId: pre.traitId,
+    copyKey: pre.copyKey,
+    lineKey: pre.lineKey,
+    variant: pre.variant,
+    isMeta: pre.isMeta ?? false,
+  };
 }

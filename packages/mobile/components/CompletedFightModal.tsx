@@ -20,7 +20,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FontAwesome } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
-import { apiService } from '../services/api';
+import { apiService, type FanDNACommittedLine } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import { useVerification } from '../store/VerificationContext';
 import { getFighterImage } from './fight-cards/shared/utils';
@@ -93,6 +93,17 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
   // Snapshot of the user's rating at modal-open time — load-bearing for the
   // delta computation (we decrement this bucket if the rating changed).
   const previousRatingRef = useRef<number | null>(null);
+  // Authoritative post-commit stats from the rate mutation response. Server
+  // already incorporated the user's rating — no delta math needed. Preferred
+  // over prefetch+delta in handleDone because the prefetch races with the
+  // mutation: if the prefetch returns AFTER the mutation commits, it picks up
+  // the user's rating, then the delta double-counts. First-raters then read as
+  // totalRatings=2 and trip the "about average" branch instead of "first".
+  const committedStatsRef = useRef<{
+    averageRating: number;
+    totalRatings: number;
+    ratingDistribution: Record<number, number>;
+  } | null>(null);
 
   // Keyboard visibility
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -175,6 +186,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
         setRevealAvgRating(0);
         setRevealTotal(0);
         setRevealDnaLine(null);
+        committedStatsRef.current = null;
       }
       wasVisibleRef.current = true;
       // Populate with existing user review once loaded from API
@@ -196,6 +208,21 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
     queryFn: () => apiService.getFightAggregateStats(fight!.id),
     enabled: !!fight?.id && visible,
     staleTime: 30_000,
+  });
+
+  // Pre-compute the Fan DNA line for every possible rating (1-10) while the
+  // user is choosing. On tap we look up lines[rating-1] and stash it so the
+  // reveal modal renders instantly with no spinner.
+  const { data: peekedDna } = useQuery({
+    queryKey: ['fanDNAPeek', 'rate', fight?.id],
+    queryFn: () =>
+      apiService.getFanDNAPeek({
+        action: 'rate',
+        surface: 'rate-reveal-modal',
+        fightId: fight!.id,
+      }),
+    enabled: !!fight?.id && isAuthenticated && visible,
+    staleTime: 60_000,
   });
 
   // Helper to optimistically update events cache
@@ -239,10 +266,11 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
 
   // Save rating
   const ratingMutation = useMutation({
-    mutationFn: ({ fightId, rating, review }: { fightId: string; rating: number | null; review: string | null }) => {
+    mutationFn: ({ fightId, rating, review, dnaCommittedLine }: { fightId: string; rating: number | null; review: string | null; dnaCommittedLine?: FanDNACommittedLine }) => {
       return apiService.updateFightUserData(fightId, {
         rating,
         review,
+        dnaCommittedLine,
       });
     },
     onMutate: async ({ rating }) => {
@@ -260,9 +288,19 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
       queryClient.invalidateQueries({ queryKey: ['pastEvents'] });
       queryClient.invalidateQueries({ queryKey: ['topFights'] });
       setPendingRatingAnimation(variables.fightId);
-      // Capture the Fan DNA beat that came back with the commit.
-      const line = data?.data?.fanDNA?.line ?? null;
-      setRevealDnaLine(line);
+      // If we pre-peeked, revealDnaLine was set at tap time — don't overwrite.
+      // Otherwise fall back to whatever the server's inline eval produced.
+      if (!variables.dnaCommittedLine) {
+        const line = data?.data?.fanDNA?.line ?? null;
+        setRevealDnaLine(line);
+      }
+      // Capture server-authoritative aggregate stats so handleDone can skip
+      // the racy prefetch+delta math. The backend computed totalRatings as the
+      // post-commit FightRating row count — there's no double-count to worry
+      // about.
+      if (data?.data?.aggregateStats) {
+        committedStatsRef.current = data.data.aggregateStats;
+      }
     },
   });
 
@@ -276,8 +314,15 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
       const hasCommentChange = trimmed !== initialCommentRef.current;
       const hasRatingChange = selectedRating !== (fight.userRating ?? null);
       if (hasCommentChange || hasRatingChange) {
+        // If a rating is selected, attach the matching pre-peeked DNA line so
+        // the backend records the impression for the line the user actually
+        // saw (not a fresh random pick).
+        const dnaCommittedLine =
+          selectedRating != null && peekedDna?.lines
+            ? peekedDna.lines[selectedRating - 1] ?? undefined
+            : undefined;
         try {
-          await ratingMutation.mutateAsync({ fightId, rating: selectedRating, review: trimmed || null });
+          await ratingMutation.mutateAsync({ fightId, rating: selectedRating, review: trimmed || null, dnaCommittedLine: dnaCommittedLine ?? undefined });
         } catch (e) {
           // Mutation error handled by onError callback
         }
@@ -294,6 +339,21 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
       sessionTappedRatingRef.current &&
       sessionLastRatingRef.current != null
     ) {
+      // Prefer the authoritative post-commit stats from the mutation response
+      // when the rate mutation has already finished. The prefetch races with
+      // the mutation — if the prefetch lands AFTER the mutation, it picks up
+      // the user's just-saved rating, and the delta math below double-counts.
+      // First-raters then read as totalRatings=2 / "about average" instead of
+      // totalRatings=1 / "first to rate."
+      const committed = committedStatsRef.current;
+      if (committed) {
+        setRevealDistribution(committed.ratingDistribution || {});
+        setRevealAvgRating(committed.averageRating || 0);
+        setRevealTotal(committed.totalRatings || 0);
+        setRevealVisible(true);
+        return;
+      }
+
       const baseDist = prefetchedAggregateStats?.ratingDistribution || {};
       const baseTotal = prefetchedAggregateStats?.totalRatings || 0;
       const newRating = sessionLastRatingRef.current;
@@ -325,7 +385,7 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
       return;
     }
     onClose();
-  }, [isAuthenticated, fight, selectedRating, ratingMutation, onClose, prefetchedAggregateStats]);
+  }, [isAuthenticated, fight, selectedRating, ratingMutation, onClose, prefetchedAggregateStats, peekedDna]);
 
   const handleRevealClose = useCallback(() => {
     setRevealVisible(false);
@@ -345,10 +405,24 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
     } else {
       sessionLastRatingRef.current = null;
     }
-    if (isAuthenticated && fight) {
-      ratingMutation.mutate({ fightId: fight.id, rating: newRating, review: reviewCommentRef.current.trim() || null });
+    // Pull the pre-peeked DNA line for this value into reveal state right
+    // now — the reveal modal renders it the moment Done is pressed.
+    let preLine: FanDNACommittedLine | null = null;
+    if (newRating != null && peekedDna?.lines) {
+      preLine = peekedDna.lines[newRating - 1] ?? null;
+      setRevealDnaLine(preLine?.line ?? null);
+    } else if (newRating == null) {
+      setRevealDnaLine(null);
     }
-  }, [isAuthenticated, requireVerification, fight, selectedRating, animateToNumber, ratingMutation]);
+    if (isAuthenticated && fight) {
+      ratingMutation.mutate({
+        fightId: fight.id,
+        rating: newRating,
+        review: reviewCommentRef.current.trim() || null,
+        dnaCommittedLine: preLine ?? undefined,
+      });
+    }
+  }, [isAuthenticated, requireVerification, fight, selectedRating, animateToNumber, ratingMutation, peekedDna]);
 
   if (!fight) return null;
 
@@ -557,7 +631,9 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
           averageRating={revealAvgRating}
           userRating={sessionLastRatingRef.current ?? 0}
           dnaLine={revealDnaLine}
-          dnaLoading={ratingMutation.isPending && !revealDnaLine}
+          // Spinner only when peek hadn't returned and the mutation is still
+          // in flight. With peek loaded this is always false.
+          dnaLoading={ratingMutation.isPending && !revealDnaLine && !peekedDna}
         />
       </View>
     </Modal>
