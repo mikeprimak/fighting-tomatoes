@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
+  ActivityIndicator,
   useColorScheme,
 } from 'react-native';
 import { Colors } from '../constants/Colors';
@@ -25,8 +26,13 @@ interface HypeRevealOverlayProps {
   userHype: number;
   // Prefetched Fan DNA beat — the rate/hype mutation endpoint includes the
   // evaluated line in its response (same roundtrip as the commit), so by the
-  // time the modal opens this is in state. Null = engine had nothing to say.
+  // time the modal opens this is usually in state. Null = engine had nothing
+  // to say.
   dnaLine?: string | null;
+  // True iff the mutation that produces dnaLine is still in flight. When set
+  // we render a spinner placeholder in the dna slot so the modal opens fully
+  // composed instead of fading a new line in mid-conversation.
+  dnaLoading?: boolean;
 }
 
 function getComparisonText(userHype: number, avgHype: number, totalPredictions: number): string {
@@ -51,6 +57,7 @@ export default function HypeRevealModal({
   averageHype,
   userHype,
   dnaLine,
+  dnaLoading,
 }: HypeRevealOverlayProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -129,10 +136,16 @@ export default function HypeRevealModal({
 
             {dnaLine ? (
               <Animated.Text
-                style={[styles.dnaLine, { color: colors.text, opacity: dnaFadeAnim }]}
+                style={[styles.dnaLine, { color: colors.textSecondary, opacity: dnaFadeAnim }]}
               >
                 {dnaLine}
               </Animated.Text>
+            ) : dnaLoading ? (
+              <ActivityIndicator
+                size="small"
+                color={colors.textSecondary}
+                style={styles.dnaLoading}
+              />
             ) : null}
 
             <TouchableOpacity
@@ -191,8 +204,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     opacity: 0.7,
   },
-  // Fan DNA third beat — italic + same title-grey so it reads as a quieter
-  // personal observation under the comparison line.
+  // Fan DNA third beat — italic + textSecondary grey so it reads as a quieter
+  // personal observation under the comparison line. The animated opacity
+  // (dnaFadeAnim) overrides any opacity here while the fade plays, so use
+  // color, not opacity, to convey "greyness."
   dnaLine: {
     fontSize: 13.5,
     fontStyle: 'italic',
@@ -200,9 +215,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 8,
     textAlign: 'center',
-    opacity: 0.7,
     letterSpacing: 0.15,
     lineHeight: 19,
+  },
+  // Spinner placeholder occupies roughly the same vertical space as a single
+  // line of dnaLine so the modal doesn't reflow when the line lands.
+  dnaLoading: {
+    marginTop: 14,
+    height: 19,
   },
   // Match Done button's pill shape and primary color; sized via paddingHorizontal
   // rather than alignSelf:stretch so it can't compete with the chart for the
