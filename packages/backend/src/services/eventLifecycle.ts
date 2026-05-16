@@ -247,11 +247,14 @@ export async function runEventLifecycleCheck(): Promise<{
 
         // Manual-tracker events: fire the first-fight ping now. Subsequent
         // pings fire when admin marks each fight COMPLETED (admin.ts).
+        // Order convention: orderOnCard=1 is the main event (last fight on
+        // the broadcast); the opener has the highest orderOnCard. The first
+        // fight chronologically is therefore the row with MAX(orderOnCard).
         if (event.useManualLiveTracker) {
           try {
             const firstFight = await prisma.fight.findFirst({
               where: { eventId: event.id, fightStatus: 'UPCOMING' },
-              orderBy: { orderOnCard: 'asc' },
+              orderBy: { orderOnCard: 'desc' },
               include: {
                 fighter1: { select: { firstName: true, lastName: true } },
                 fighter2: { select: { firstName: true, lastName: true } },
