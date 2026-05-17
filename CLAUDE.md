@@ -12,7 +12,7 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
-**→ `docs/HANDOFF-next-session-2026-05-18.md`** — read first. Fan DNA peek endpoint built this session to kill the spinner-then-load on the reveal modal. All edits in working tree, uncommitted, untested. Mike rebooted before testing. Pick up by starting backend+mobile and walking the test plan in the handoff doc. Prior handoff at `docs/HANDOFF-next-session-2026-05-17.md` has the pre-peek context.
+**→ `docs/HANDOFF-tag-aware-personality-2026-05-17.md`** — read first. Phase 1 Fan DNA is shipped + verified in prod (5 traits firing, peek endpoint, reveal modals stable). Next session builds the tag-aware copy layer — traits that read `Fight.aiTags` (populated by the AI enrichment pipeline) so lines can quote the fight's character: style clashes, rematches, stakes, pace. Start with `style-clash` as the pattern-validating trait. Prior peek-endpoint handoff at `docs/HANDOFF-next-session-2026-05-18.md` is done.
 
 ## Workstream Sessions
 
