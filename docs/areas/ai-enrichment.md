@@ -11,7 +11,7 @@ Good Fights becomes the app that doesn't just rate fights — it tells you *why 
 | Job | Files | Cost | Status |
 |-----|-------|------|--------|
 | Broadcast discovery | `packages/backend/src/services/broadcastDiscovery/` | ~$1/weekly run (Brave + Claude Haiku 4.5) | Shipped — admin review inbox |
-| Fight enrichment (Phase 1) | `packages/backend/src/services/aiEnrichment/` | ~$0.023/event × 3 passes/event ≈ $21/year | Shipped to DB — no review inbox; cron not yet wired |
+| Fight enrichment (Phase 1) | `packages/backend/src/services/aiEnrichment/` | ~$0.023/event × 3 passes/event ≈ $21/year | Shipped to DB — no review inbox; cron live (`.github/workflows/fight-enrichment.yml`, daily 14:00 UTC) |
 
 Pattern: **search → fetch → LLM-extract with structured output → diff against current state → persist for review → admin applies.** This is the template all future enrichment jobs follow.
 
@@ -56,7 +56,7 @@ Default model: **Claude Haiku 4.5** (cheap, structured output reliable, prompt c
 - `persist.ts` — pair-agnostic surname-anchored matching against UPCOMING-only DB fights; upserts straight to DB (no review inbox).
 - Migration `20260516000000_add_ai_fight_enrichment_fields` — added 6 nullable columns to `fights`.
 - CLI: `scripts/enrich-event.ts --event-id <id> [--persist]` (default dry-run).
-- Trigger: **not yet wired**. Plan: T-10d, T-5d, T-2d passes per event (see Decisions §3).
+- Trigger: ✅ wired. Daily GitHub Actions cron at 14:00 UTC (`.github/workflows/fight-enrichment.yml` → `scripts/run-fight-enrichment.ts` → `services/aiEnrichment/run.ts`). Per-event T-10/T-5/T-2 window logic + 36h dedup live in `run.ts`.
 
 **Phase 2 — Multi-surface render** — 🟡 IN PROGRESS
 - ✅ Mobile fight cards: "Why care" line — shipped 2026-05-15 (`UpcomingFightCard`, single-line, ellipsized).
@@ -139,7 +139,7 @@ The card is dense and lives in a scrolling list — long previews truncate at th
 - ✅ Phase 1 fight enrichment pipeline shipped: fetch (3 sources) → extract (Haiku 4.5) → match → persist. End-to-end run against MVP Rousey vs. Carano wrote 9/11 UPCOMING fights at $0.023.
 - ✅ Phase 2.A shipped (`UpcomingFightCard` one-liner) — committed locally `f050c64`, **not pushed to prod**. Backend `/api/events?includeFights=true` Prisma select updated to include the 6 `ai*` fields.
 - 🟡 Phase 2.B partial (`UpcomingFightModal` full one-liner) — wired, **uncommitted**.
-- 📋 Cron trigger — three-pass cadence (T-10/T-5/T-2) decided but not implemented.
+- ✅ Cron trigger — three-pass cadence (T-10/T-5/T-2) shipped via daily GH Actions workflow.
 - 📋 Use cases B (stakes-bullets), G (web SEO) are the next two render targets.
 
 ## Open questions

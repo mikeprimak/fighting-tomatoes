@@ -80,23 +80,21 @@ function parseArgs(argv: string[]): {
       console.error(`[enrich] aborted: ${result.abortedReason}`);
     } else {
       console.error(
-        `[enrich] ${result.fightsExtracted} fights, ${result.elapsedMs}ms, ~$${result.costUsd.toFixed(4)}`,
+        `[enrich] card=${result.cardSize}, LLM enriched ${result.fightsEnriched}, ` +
+          `${result.elapsedMs}ms, ~$${result.costUsd.toFixed(4)}`,
       );
       console.error(
-        `[enrich] coverage: ${result.fightsWithNarrative}/${result.fightsExtracted} fights got narrative fields`,
+        `[enrich] coverage: ${result.fightsWithNarrative}/${result.fightsEnriched} got narrative, ` +
+          `${result.uncoveredFightIds.length} card fights uncovered by editorial`,
       );
-      console.error(
-        `[enrich] match: ${result.matched} matched, ${result.unmatched} unmatched (LLM had no DB row), ` +
-          `${result.uncoveredDbFightIds.length} uncovered (UPCOMING DB rows with no LLM coverage)`,
-      );
-      for (const m of result.persistResult.matched) {
-        console.error(
-          `  ✓ ${m.llmRed} vs ${m.llmBlue}  →  ${m.dbRed} vs ${m.dbBlue}  ` +
-            `(score=${m.score.toFixed(2)}${m.flipped ? ', flipped' : ''})`,
-        );
+      if (result.ghostFightIds.length) {
+        console.error(`[enrich] ghost fightIds emitted by LLM (dropped): ${result.ghostFightIds.join(', ')}`);
       }
-      for (const u of result.persistResult.unmatchedRecords) {
-        console.error(`  ✗ no DB row for: ${u.redFighter} vs ${u.blueFighter}`);
+      for (const id of result.persistResult.writtenFightIds) {
+        console.error(`  ✓ wrote ${id}`);
+      }
+      for (const id of result.uncoveredFightIds) {
+        console.error(`  · no editorial: ${id}`);
       }
       if (args.persist) {
         console.error(`[enrich] wrote ${result.wroteCount} rows`);
