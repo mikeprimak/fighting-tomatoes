@@ -386,8 +386,18 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
         return;
       }
 
+      // Two data sources to seed from, in priority order:
+      //   1. Prefetched aggregate stats (per-hype distribution available)
+      //   2. The fight prop's hypeCount/averageHype (always loaded)
+      // Falling back to (2) when prefetch hasn't returned prevents the modal
+      // from defaulting to baseTotal=0, which would make a brand-new hype
+      // read as totalPredictions=1 and trigger "First to hype this fight"
+      // copy on fights that already have plenty of hypes.
       const baseDist = prefetchedStats?.distribution || {};
-      const baseTotal = prefetchedStats?.totalPredictions || 0;
+      const prefetchTotal = prefetchedStats?.totalPredictions;
+      const fightTotal = (fight as any)?.hypeCount ?? (fight as any)?.totalHypePredictions ?? 0;
+      const fightAvg = (fight as any)?.averageHype ?? 0;
+      const baseTotal = prefetchTotal != null ? prefetchTotal : fightTotal;
       const newHype = sessionLastHypeRef.current;
       const prevHype = previousHypeRef.current;
 
@@ -402,15 +412,31 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
         if (prevHype == null) liveTotal += 1;
       }
 
-      // Recompute average from the live distribution.
-      let sum = 0;
-      let count = 0;
-      for (let h = 1; h <= 10; h++) {
-        const c = liveDist[h] || 0;
-        sum += h * c;
-        count += c;
+      // If we have a distribution (from prefetch), compute avg from it.
+      // Otherwise blend the fight prop's pre-hype average with the new hype.
+      let liveAvg: number;
+      if (Object.keys(baseDist).length > 0) {
+        let sum = 0;
+        let count = 0;
+        for (let h = 1; h <= 10; h++) {
+          const c = liveDist[h] || 0;
+          sum += h * c;
+          count += c;
+        }
+        liveAvg = count > 0 ? Math.round((sum / count) * 10) / 10 : 0;
+      } else if (fightTotal > 0 && newHype != null) {
+        let weightedSum = fightAvg * fightTotal;
+        let denom = fightTotal;
+        if (prevHype != null) {
+          weightedSum -= prevHype;
+        } else {
+          denom += 1;
+        }
+        weightedSum += newHype;
+        liveAvg = denom > 0 ? Math.round((weightedSum / denom) * 10) / 10 : 0;
+      } else {
+        liveAvg = newHype != null ? newHype : 0;
       }
-      const liveAvg = count > 0 ? Math.round((sum / count) * 10) / 10 : 0;
 
       setRevealDistribution(liveDist);
       setRevealAvgHype(liveAvg);
