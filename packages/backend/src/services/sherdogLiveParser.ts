@@ -30,6 +30,31 @@ import { BackfillOptions } from '../config/liveTrackerConfig';
 
 const prisma = new PrismaClient();
 
+/**
+ * "Up Next" buffer for Sherdog.
+ *
+ * Sherdog flips its Live NOW marker to a fight at *walkout-start* — typically
+ * 3-5 min before round 1 bell. That's earlier than UFC.com's Live NOW (which
+ * fires after round 1 has started), and earlier than the previous fight's
+ * Official Result block being written on Sherdog.
+ *
+ * Our walkout notification needs to fire AT walkout-start so users have time
+ * to get to a TV. So we treat Sherdog's Live NOW flip as our "Up Next"
+ * signal:
+ *
+ *   - shadow `trackerFightStatus = LIVE` immediately + fire walkout notif
+ *   - published `fightStatus` stays UPCOMING for UP_NEXT_BUFFER_MS
+ *   - after the buffer elapses, published `fightStatus` flips to LIVE
+ *
+ * The UI can detect "in Up Next window" by checking `trackerFightStatus =
+ * LIVE AND fightStatus = UPCOMING`.
+ *
+ * Other trackers (UFC native, etc.) don't have this concept because their
+ * Live NOW signal is too late — they trigger walkout notifs from the
+ * previous fight's COMPLETED transition cascade instead.
+ */
+const UP_NEXT_BUFFER_MS = 5 * 60 * 1000;
+
 // ============== HELPERS ==============
 
 const normalize = (s: string) => stripDiacritics(s).toLowerCase().trim();
@@ -100,26 +125,6 @@ function resolveWinnerId(winnerLast: string, fighter1: any, fighter2: any): stri
   if (f1.includes(w) || w.includes(f1)) return fighter1.id;
   if (f2.includes(w) || w.includes(f2)) return fighter2.id;
   return null;
-}
-
-async function notifyNextFight(eventId: string, completedFightOrder: number): Promise<void> {
-  try {
-    const nextFight = await prisma.fight.findFirst({
-      where: { eventId, orderOnCard: { lt: completedFightOrder }, fightStatus: 'UPCOMING' },
-      orderBy: { orderOnCard: 'desc' },
-      include: { fighter1: { select: { firstName: true, lastName: true } }, fighter2: { select: { firstName: true, lastName: true } } },
-    });
-    if (!nextFight) return;
-    const formatName = (f: { firstName: string; lastName: string }) =>
-      f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : (f.lastName || f.firstName);
-    const a = formatName(nextFight.fighter1);
-    const b = formatName(nextFight.fighter2);
-    console.log(`    🔔 Next fight notification: ${a} vs ${b}`);
-    const { notifyFightStartViaRules } = await import('./notificationService');
-    await notifyFightStartViaRules(nextFight.id, a, b);
-  } catch (err) {
-    console.error(`    ❌ Notify-next-fight failed:`, err);
-  }
 }
 
 // ============== MAIN PARSER ==============
@@ -198,21 +203,15 @@ export async function parseSherdogLiveData(
     const updateData: any = {};
     let changed = false;
     let isNewlyComplete = false;
+    let isNewlyUpNext = false;
 
     // --- Status transitions ---
-    // UPCOMING → LIVE
-    if (sf.hasStarted && !sf.isComplete && dbFight.fightStatus === 'UPCOMING') {
-      updateData.fightStatus = 'LIVE';
-      changed = true;
-      result.fightsStarted++;
-      console.log(`  🥊 START: ${dbLabel}`);
-    }
 
     // (LIVE or UPCOMING) → COMPLETED when Sherdog has a result.
-    // We never reverse COMPLETED → anything. We DO upgrade from a manual /
-    // lifecycle "completed-with-no-winner" by writing the winner+method+
-    // round+time onto the existing COMPLETED row (handled below in the
-    // result-backfill block).
+    // Checked first so a super-fast finish detected in the same poll cycle as
+    // the Live NOW flip goes straight to COMPLETED without the Up Next dance.
+    // Never reverses COMPLETED. Backfills winner/method/round/time onto an
+    // already-COMPLETED row via the result-backfill block below.
     if (sf.isComplete && dbFight.fightStatus !== 'COMPLETED') {
       updateData.fightStatus = 'COMPLETED';
       updateData.completionMethod = options.completionMethodOverride || 'sherdog-tracker';
@@ -221,6 +220,29 @@ export async function parseSherdogLiveData(
       isNewlyComplete = true;
       result.fightsCompleted++;
       console.log(`  ✅ COMPLETE: ${dbLabel}`);
+    }
+    // UPCOMING → Up Next (Sherdog's Live NOW marker is on this fight).
+    // Up Next state = trackerFightStatus=LIVE AND fightStatus=UPCOMING.
+    // Walkout notification fires here. Published LIVE flip is deferred
+    // UP_NEXT_BUFFER_MS so users get a real heads-up before the broadcast.
+    else if (sf.isLive && dbFight.fightStatus === 'UPCOMING') {
+      if (dbFight.trackerFightStatus !== 'LIVE') {
+        // First detection: enter Up Next, fire walkout notif this cycle.
+        updateData.trackerFightStatus = 'LIVE';
+        changed = true;
+        isNewlyUpNext = true;
+        result.fightsStarted++;
+        console.log(`  ⏰ UP NEXT (walkout notif): ${dbLabel}`);
+      } else if (
+        dbFight.trackerUpdatedAt &&
+        Date.now() - dbFight.trackerUpdatedAt.getTime() >= UP_NEXT_BUFFER_MS
+      ) {
+        // Buffer elapsed: promote to published LIVE.
+        updateData.fightStatus = 'LIVE';
+        changed = true;
+        console.log(`  🥊 LIVE (after ${Math.round(UP_NEXT_BUFFER_MS / 60000)}m up-next buffer): ${dbLabel}`);
+      }
+      // else: still inside Up Next window, no DB change this cycle.
     }
 
     // --- Result backfill ---
@@ -287,9 +309,24 @@ export async function parseSherdogLiveData(
       }
       result.fightsUpdated++;
 
-      // Fire next-fight notification on first-time COMPLETED transitions.
-      if (!options.dryRun && isNewlyComplete && !options.skipNotifications) {
-        notifyNextFight(dbFight.eventId, dbFight.orderOnCard);
+      // Walkout notification fires when a fight enters Up Next, not when the
+      // previous fight goes COMPLETED. Reason: on Sherdog, the Live NOW flip
+      // is the earliest signal and arrives BEFORE the previous fight's
+      // Official Result block. Cascading off COMPLETED would miss this window
+      // (the next fight is already LIVE-in-tracker by then) or fire for the
+      // wrong fight. See UP_NEXT_BUFFER_MS docs above.
+      if (!options.dryRun && isNewlyUpNext && !options.skipNotifications) {
+        try {
+          const { notifyFightStartViaRules } = await import('./notificationService');
+          const fmt = (f: { firstName: string; lastName: string }) =>
+            f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : (f.lastName || f.firstName);
+          notifyFightStartViaRules(dbFight.id, fmt(dbFight.fighter1), fmt(dbFight.fighter2)).catch((err) => {
+            console.error(`     ❌ Walkout notif failed: ${err.message}`);
+          });
+          console.log(`     🔔 Walkout notif fired for ${dbLabel}`);
+        } catch (err: any) {
+          console.error(`     ❌ Walkout notif setup failed: ${err.message}`);
+        }
       }
     }
   }
