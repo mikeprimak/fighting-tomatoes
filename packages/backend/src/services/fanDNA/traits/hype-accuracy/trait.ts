@@ -148,19 +148,24 @@ const trait: Trait = {
       delta: round1(delta),
     };
 
+    // Scoring: hype-accuracy is a SECONDARY trait on the rate path. It only
+    // out-scores rating-bias when the closure moment is actually dramatic —
+    // a hot-take landed or the hype was way-off. Boring closure cases (close,
+    // spot-on, off) score below rating-bias so the natural rating-vs-room
+    // comparison wins by default.
     if (isHotTake) {
       return { copyKey: 'closure-hot-take', score: 95, vars };
     }
+    if (delta >= 3) {
+      return { copyKey: 'closure-way-off', score: 90, vars };
+    }
     if (delta < 1) {
-      return { copyKey: 'closure-spot-on', score: 80, vars };
+      return { copyKey: 'closure-spot-on', score: 40, vars };
     }
     if (delta < 2) {
-      return { copyKey: 'closure-close', score: 70, vars };
+      return { copyKey: 'closure-close', score: 30, vars };
     }
-    if (delta >= 3) {
-      return { copyKey: 'closure-way-off', score: 75, vars };
-    }
-    return { copyKey: 'closure-off', score: 60, vars };
+    return { copyKey: 'closure-off', score: 35, vars };
   },
 };
 
