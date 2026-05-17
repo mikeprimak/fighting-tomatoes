@@ -354,8 +354,18 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
         return;
       }
 
+      // Two data sources to seed from, in priority order:
+      //   1. Prefetched aggregate stats (per-rating distribution available)
+      //   2. The fight prop's totalRatings/averageRating (always loaded)
+      // Falling back to (2) when prefetch hasn't returned prevents the modal
+      // from defaulting to baseTotal=0, which would make a brand-new rating
+      // read as totalRatings=1 and trigger "First to rate this fight" copy
+      // on fights that already have plenty of ratings.
       const baseDist = prefetchedAggregateStats?.ratingDistribution || {};
-      const baseTotal = prefetchedAggregateStats?.totalRatings || 0;
+      const prefetchTotal = prefetchedAggregateStats?.totalRatings;
+      const fightTotal = (fight as any)?.totalRatings ?? 0;
+      const fightAvg = (fight as any)?.averageRating ?? 0;
+      const baseTotal = prefetchTotal != null ? prefetchTotal : fightTotal;
       const newRating = sessionLastRatingRef.current;
       const prevRating = previousRatingRef.current;
 
@@ -369,14 +379,34 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
         if (prevRating == null) liveTotal += 1;
       }
 
-      let sum = 0;
-      let count = 0;
-      for (let r = 1; r <= 10; r++) {
-        const c = liveDist[r] || 0;
-        sum += r * c;
-        count += c;
+      // If we have a distribution (from prefetch), compute avg from it.
+      // Otherwise blend the fight prop's pre-rating average with the new
+      // rating: weighted avg over (oldTotal + 1).
+      let liveAvg: number;
+      if (Object.keys(baseDist).length > 0) {
+        let sum = 0;
+        let count = 0;
+        for (let r = 1; r <= 10; r++) {
+          const c = liveDist[r] || 0;
+          sum += r * c;
+          count += c;
+        }
+        liveAvg = count > 0 ? Math.round((sum / count) * 10) / 10 : 0;
+      } else if (fightTotal > 0 && newRating != null) {
+        // Weighted blend. If user is updating, subtract old contribution.
+        let weightedSum = fightAvg * fightTotal;
+        let denom = fightTotal;
+        if (prevRating != null) {
+          weightedSum -= prevRating;
+          // denom unchanged — they were already counted
+        } else {
+          denom += 1;
+        }
+        weightedSum += newRating;
+        liveAvg = denom > 0 ? Math.round((weightedSum / denom) * 10) / 10 : 0;
+      } else {
+        liveAvg = newRating != null ? newRating : 0;
       }
-      const liveAvg = count > 0 ? Math.round((sum / count) * 10) / 10 : 0;
 
       setRevealDistribution(liveDist);
       setRevealAvgRating(liveAvg);
