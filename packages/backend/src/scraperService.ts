@@ -34,6 +34,7 @@ import OneFCLiveScraper from './services/oneFCLiveScraper';
 import OktagonLiveScraper from './services/oktagonLiveScraper';
 import { TapologyLiveScraper } from './services/tapologyLiveScraper';
 import { PFLLiveScraper } from './services/pflLiveScraper';
+import { SherdogLiveScraper } from './services/sherdogLiveScraper';
 
 // Parser imports
 import { parseLiveEventData, getEventStatus, autoCompleteEvent } from './services/ufcLiveParser';
@@ -42,6 +43,7 @@ import { parseOneFCLiveData, autoCompleteOneFCEvent } from './services/oneFCLive
 import { parseOktagonLiveData, autoCompleteOktagonEvent } from './services/oktagonLiveParser';
 import { parseTapologyData } from './services/tapologyLiveParser';
 import { parsePFLLiveData, autoCompletePFLEvent } from './services/pflLiveParser';
+import { parseSherdogLiveData } from './services/sherdogLiveParser';
 import type { BKFCEventData } from './services/bkfcLiveScraper';
 
 const execAsync = promisify(exec);
@@ -286,6 +288,37 @@ async function scrapePFLOnce(tracker: ActiveTracker): Promise<void> {
  * Run one Tapology scrape iteration.
  * Uses TapologyLiveScraper (cheerio/HTTP, no browser).
  */
+async function scrapeSherdogOnce(tracker: ActiveTracker): Promise<void> {
+  const scraper = new SherdogLiveScraper(tracker.url);
+  const scrapedData = await scraper.scrape();
+  if (!scrapedData) {
+    console.warn('[SHERDOG] No PBP page resolved (404 or empty), skipping cycle');
+    return;
+  }
+  console.log(`[SHERDOG] ${scrapedData.fights.length} fights, complete=${scrapedData.isComplete}`);
+
+  const result = await parseSherdogLiveData(scrapedData, tracker.eventId);
+  console.log(`[SHERDOG] Updated ${result.fightsUpdated} (${result.fightsStarted} started, ${result.fightsCompleted} completed, ${result.resultsBackfilled} backfilled)`);
+
+  // Auto-complete the event once every non-cancelled fight is done.
+  if (scrapedData.isComplete) {
+    const remaining = await prisma.fight.count({
+      where: {
+        eventId: tracker.eventId,
+        fightStatus: { notIn: ['COMPLETED', 'CANCELLED'] },
+      },
+    });
+    if (remaining === 0) {
+      await prisma.event.update({
+        where: { id: tracker.eventId },
+        data: { eventStatus: 'COMPLETED', completionMethod: 'sherdog-tracker-auto' },
+      });
+      console.log('[SHERDOG] Event auto-completed');
+      stopTracker(tracker.eventId);
+    }
+  }
+}
+
 async function scrapeTapologyOnce(tracker: ActiveTracker): Promise<void> {
   const scraper = new TapologyLiveScraper(tracker.url);
   const scrapedData = await scraper.scrape();
@@ -337,6 +370,7 @@ async function scrapeOnce(tracker: ActiveTracker): Promise<void> {
       case 'oktagon': await scrapeOktagonOnce(tracker); break;
       case 'pfl': await scrapePFLOnce(tracker); break;
       case 'tapology': await scrapeTapologyOnce(tracker); break;
+      case 'sherdog': await scrapeSherdogOnce(tracker); break;
       default:
         console.warn(`[SCRAPER] Unknown scraper type: ${tracker.scraperType}`);
         return;
@@ -556,16 +590,23 @@ async function autoDiscoverEvents(): Promise<{ started: string[]; stopped: strin
   // Tapology is excluded — its tracker overwrites lifecycle no-tracker
   // completions back to UPCOMING when Tapology hasn't yet posted results,
   // so all tapology orgs run via the lifecycle no-tracker path instead.
+  // Sherdog is layered on top — events keep their native scraperType (often
+  // 'tapology') for daily data scraping but get tracked via Sherdog live
+  // when Event.sherdogPbpUrl is set.
   const liveEvents = await prisma.event.findMany({
     where: {
       eventStatus: 'LIVE',
-      scraperType: { in: ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl'] },
+      OR: [
+        { scraperType: { in: ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl'] } },
+        { sherdogPbpUrl: { not: null } },
+      ],
     },
     select: {
       id: true,
       name: true,
       scraperType: true,
       ufcUrl: true,
+      sherdogPbpUrl: true,
       promotion: true,
     },
   });
@@ -576,6 +617,15 @@ async function autoDiscoverEvents(): Promise<{ started: string[]; stopped: strin
   // Start trackers for LIVE events that aren't being tracked yet
   for (const event of liveEvents) {
     if (activeTrackers.has(event.id)) continue;
+
+    // Sherdog wins over scraperType when sherdogPbpUrl is set — the native
+    // scraper for these orgs (typically tapology) isn't reliable live; the
+    // whole point of setting sherdogPbpUrl is to opt into Sherdog tracking.
+    if (event.sherdogPbpUrl) {
+      startTracker(event.id, event.name, 'sherdog', event.sherdogPbpUrl);
+      started.push(`${event.name} (sherdog)`);
+      continue;
+    }
 
     let url = event.ufcUrl;
 
