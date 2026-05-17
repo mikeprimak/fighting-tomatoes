@@ -1611,6 +1611,28 @@ class ApiService {
   }
 
   /**
+   * Fan DNA — surfaced trait cards for the current user, ordered by weight.
+   * Lazy-recomputes any trait whose value is stale (>24h). Returns only traits
+   * whose `profileSummary` fired (floor met + something worth saying).
+   */
+  async getFanDNAProfile(): Promise<{
+    cards: Array<{
+      traitId: string;
+      family: 'affinity' | 'behaviour' | 'prediction' | 'identity';
+      headline: string;
+      body?: string;
+      primaryStat?: string;
+      secondaryStat?: string;
+      weight: number;
+      confidence: number;
+      computedAt: string;
+    }>;
+    count: number;
+  }> {
+    return this.makeRequest('/fan-dna/profile');
+  }
+
+  /**
    * Get user's global standing/ranking based on prediction accuracy
    * @param timeFilter - 'lastEvent' | 'month' | '3months' | 'year' | 'allTime'
    */

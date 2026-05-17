@@ -26,6 +26,7 @@ import type {
   EventContext,
   TraitEventResult,
   TraitComputeResult,
+  TraitProfileSummary,
 } from '../../types';
 import copy from './copy';
 
@@ -147,6 +148,29 @@ const trait: Trait = {
         community,
         delta: round1(absDelta),
       },
+    };
+  },
+
+  profileSummary(value): TraitProfileSummary | null {
+    const v = value as { n?: number; avgDelta?: number };
+    if (!v.n || v.n < HISTORY_FLOOR) return null;
+    const avg = v.avgDelta ?? 0;
+    if (Math.abs(avg) < 0.3) {
+      return {
+        headline: 'Rating calibration',
+        body: 'You rate right in line with the room.',
+        primaryStat: '±' + round1(Math.abs(avg)).toFixed(1),
+        secondaryStat: `${v.n} fights`,
+        weight: 35,
+      };
+    }
+    const sign = avg > 0 ? '+' : '−';
+    return {
+      headline: avg > 0 ? 'Rates above the room' : 'Rates below the room',
+      body: `Across ${v.n} fights, your rating lands ${round1(Math.abs(avg)).toFixed(1)} ${avg > 0 ? 'above' : 'below'} the community.`,
+      primaryStat: `${sign}${round1(Math.abs(avg)).toFixed(1)}`,
+      secondaryStat: `${v.n} fights`,
+      weight: 62,
     };
   },
 };

@@ -17,6 +17,7 @@ import type {
   EventContext,
   TraitEventResult,
   TraitComputeResult,
+  TraitProfileSummary,
 } from '../../types';
 import copy from './copy';
 
@@ -110,6 +111,30 @@ const trait: Trait = {
       };
     }
     return null;
+  },
+
+  profileSummary(value): TraitProfileSummary | null {
+    const v = value as {
+      firstRateCount?: number;
+      firstHypeCount?: number;
+      total?: number;
+    };
+    const total = v.total ?? 0;
+    if (total < 1) return null;
+    const rate = v.firstRateCount ?? 0;
+    const hype = v.firstHypeCount ?? 0;
+    const parts: string[] = [];
+    if (rate > 0) parts.push(`${rate} first-rating${rate === 1 ? '' : 's'}`);
+    if (hype > 0) parts.push(`${hype} first-hype${hype === 1 ? '' : 's'}`);
+    return {
+      headline: 'Trailblazer',
+      body: parts.length === 0
+        ? `Among the first to react on ${total} fights.`
+        : parts.join(' · '),
+      primaryStat: `${total}`,
+      secondaryStat: 'first-ever',
+      weight: total >= 5 ? 90 : 65,
+    };
   },
 };
 

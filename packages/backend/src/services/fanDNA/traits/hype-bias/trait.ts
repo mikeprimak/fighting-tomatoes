@@ -19,6 +19,7 @@ import type {
   EventContext,
   TraitEventResult,
   TraitComputeResult,
+  TraitProfileSummary,
 } from '../../types';
 import copy from './copy';
 
@@ -182,6 +183,32 @@ const trait: Trait = {
       }
     }
     return null;
+  },
+
+  profileSummary(value): TraitProfileSummary | null {
+    const v = value as { n?: number; avgDelta?: number };
+    if (!v.n || v.n < HISTORY_FLOOR) return null;
+    const avg = v.avgDelta ?? 0;
+    // PATTERN_DELTA_THRESHOLD-equivalent in this file is 0.6, but we use a
+    // looser 0.3 here — the profile card is descriptive, not alerting.
+    if (Math.abs(avg) < 0.3) {
+      return {
+        headline: 'Hype calibration',
+        body: 'You hype right in line with the room.',
+        primaryStat: '±' + round1(Math.abs(avg)).toFixed(1),
+        secondaryStat: `${v.n} fights`,
+        weight: 35,
+      };
+    }
+    const direction = avg > 0 ? 'high' : 'low';
+    const sign = avg > 0 ? '+' : '−';
+    return {
+      headline: avg > 0 ? 'Hype runs hot' : 'Hype runs cool',
+      body: `Across ${v.n} fights, your hype lands ${round1(Math.abs(avg)).toFixed(1)} ${direction === 'high' ? 'above' : 'below'} the room.`,
+      primaryStat: `${sign}${round1(Math.abs(avg)).toFixed(1)}`,
+      secondaryStat: `${v.n} fights`,
+      weight: 60,
+    };
   },
 };
 

@@ -18,6 +18,7 @@ import type {
   EventContext,
   TraitEventResult,
   TraitComputeResult,
+  TraitProfileSummary,
 } from '../../types';
 import copy from './copy';
 
@@ -166,6 +167,28 @@ const trait: Trait = {
       return { copyKey: 'closure-close', score: 30, vars };
     }
     return { copyKey: 'closure-off', score: 35, vars };
+  },
+
+  profileSummary(value): TraitProfileSummary | null {
+    const v = value as {
+      totalHypedFights?: number;
+      accurateCount?: number;
+      hotTakeCount?: number;
+      accuracyPct?: number;
+    };
+    if (!v.totalHypedFights || v.totalHypedFights < HISTORY_FLOOR) return null;
+    const pct = v.accuracyPct ?? 0;
+    const hot = v.hotTakeCount ?? 0;
+    const body = hot > 0
+      ? `${v.accurateCount} of ${v.totalHypedFights} hypes inside 2 of the room. ${hot} hot take${hot === 1 ? '' : 's'}.`
+      : `${v.accurateCount} of ${v.totalHypedFights} hypes inside 2 of the room.`;
+    return {
+      headline: 'Hype vs Outcome',
+      body,
+      primaryStat: `${pct}%`,
+      secondaryStat: `${v.totalHypedFights} fights`,
+      weight: hot > 0 ? 92 : 70,
+    };
   },
 };
 

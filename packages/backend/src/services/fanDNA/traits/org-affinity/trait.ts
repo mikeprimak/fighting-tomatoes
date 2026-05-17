@@ -15,6 +15,7 @@ import type {
   EventContext,
   TraitEventResult,
   TraitComputeResult,
+  TraitProfileSummary,
 } from '../../types';
 import copy from './copy';
 
@@ -113,6 +114,35 @@ const trait: Trait = {
     // Otherwise: don't fire. Generic "Nth UFC rating" on every UFC rate is
     // wallpaper. Better to stay silent and let other traits speak.
     return null;
+  },
+
+  profileSummary(value): TraitProfileSummary | null {
+    const v = value as {
+      totals?: Record<string, number>;
+      total?: number;
+      dominant?: string | null;
+      dominantPct?: number;
+    };
+    if (!v.total || v.total < HISTORY_FLOOR) return null;
+    if (!v.dominant) {
+      // No single org meets the 40% threshold — user is a generalist.
+      const orgCount = Object.keys(v.totals ?? {}).length;
+      return {
+        headline: 'Cross-promotion fan',
+        body: `${v.total} signals across ${orgCount} promotions — no single home.`,
+        primaryStat: `${orgCount}`,
+        secondaryStat: 'promotions',
+        weight: 55,
+      };
+    }
+    const pretty = prettyOrg(v.dominant);
+    return {
+      headline: `${pretty} mainstay`,
+      body: `${v.dominantPct}% of your signals come from ${pretty}.`,
+      primaryStat: `${v.dominantPct}%`,
+      secondaryStat: pretty,
+      weight: 78,
+    };
   },
 };
 
