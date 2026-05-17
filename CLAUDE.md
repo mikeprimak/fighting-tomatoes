@@ -12,7 +12,7 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
-**→ `docs/HANDOFF-tag-aware-personality-2026-05-17.md`** — read first. Phase 1 Fan DNA is shipped + verified in prod (5 traits firing, peek endpoint, reveal modals stable). Next session builds the tag-aware copy layer — traits that read `Fight.aiTags` (populated by the AI enrichment pipeline) so lines can quote the fight's character: style clashes, rematches, stakes, pace. Start with `style-clash` as the pattern-validating trait. Prior peek-endpoint handoff at `docs/HANDOFF-next-session-2026-05-18.md` is done.
+**→ `docs/HANDOFF-ai-enrichment-mvp-2026-05-17.md`** — read first. Switching to AI enrichment workstream. **Surprise: the cron is already live and running daily** at 14:00 UTC (`.github/workflows/fight-enrichment.yml`) — the source-of-truth doc is stale on this. MVP-today work is: fix the doc, chase 2 events that extracted but failed to match (surname pair edge case in `persist.ts`), pick an observability surface (recommend admin-page widget), audit per-promotion coverage. Tag-aware Fan DNA handoff at `docs/HANDOFF-tag-aware-personality-2026-05-17.md` is the consumer of this pipeline — pickup there resumes after enrichment MVP lands.
 
 ## Workstream Sessions
 
