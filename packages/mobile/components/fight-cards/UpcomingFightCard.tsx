@@ -499,7 +499,8 @@ function UpcomingFightCard({
         return (
           <Text
             style={[styles.aiPreviewShort, { color: colors.textSecondary }]}
-            numberOfLines={3}
+            numberOfLines={1}
+            ellipsizeMode="tail"
           >
             {aiPreviewShort}
           </Text>
@@ -1050,8 +1051,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontStyle: 'italic',
     lineHeight: 14,
-    paddingTop: 8,
-    paddingBottom: 12,
+    paddingTop: 0,
+    paddingBottom: 5,
     paddingHorizontal: 64,
     textAlign: 'center',
   },

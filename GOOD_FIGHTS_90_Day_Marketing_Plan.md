@@ -31,6 +31,55 @@ The campaign tactics, dates, and cadences in this plan don't change because of t
 
 ---
 
+## TIMING THE SALE — SECTOR UPSWELLS
+
+This is a one-shot sale. Optimizing it means being ready to move when the combat-sports sector is in an attention/valuation upswell, not a trough. Wallets loosen during swells; multiples expand; corp dev teams say yes faster.
+
+**Current sector state (May 2026):** waning combat-sports M&A enthusiasm relative to the McGregor or Adesanya-era peaks. UFC's media-rights swell already largely happened — Paramount/CBS deal (~$7.7B / 7yr) announced 2025, broadcast began 2026 — so the next rights-cycle catalyst for UFC is ~7 years out. We are entering this 90 days into a softer market.
+
+**What causes a swell — stay open about this.** A swell is anything that loosens wallets and accelerates corp-dev appetite in combat sports. The cause can come from anywhere; we don't need to predict it, only recognize it when it happens. Possible drivers include but are not limited to:
+
+- **Star-driven swells** (the user's working hypothesis): a McGregor-tier solo breakout, or — more commonly — a constellation of 4–6 simultaneously compelling stars (the Adesanya / Volk / Usman / Khabib-tail / Oliveira pattern that powered the run-up to the TKO merger).
+- **Media/distribution swells:** new streamer entry (Netflix/Amazon expanding combat-sports posture), broadcast era visibly broadening casual fanbase, a rights deal repricing the sector.
+- **Capital-cycle swells:** sports-asset M&A multiples expanding broadly (private equity, sovereign wealth, sports-media SPAC waves), low-rate environments, or a comparable deal (rival sale, public comp) that resets multiples.
+- **Cultural-crossover swells:** a non-fighter event (a Netflix doc, a White House card, a Jake-Paul-tier crossover spectacle, a major cultural moment that puts the sport in front of new eyeballs).
+- **Strategic-acquirer swells:** TKO adjacent-IP roll-up appetite, DAZN/PFL/Misfits forcing incumbents to acquire engagement layers, a buyer doing a "we missed Letterboxd, don't miss this" lap.
+
+The user's personal lens is that exciting fighters drive most swells — that informs *attention*, not *strategy*. The strategy is: stay reactive to any of the above, don't pre-filter for the fighter-driven kind.
+
+**Time horizon, formally re-stated:**
+- **Floor:** 12–18 months from April 2026 — would sell at the early end if a clear swell is underway and terms are right.
+- **Ceiling:** willing to wait 24+ months if no swell has materialized, rather than sell into a flat market.
+- **Trigger to move:** sector upswell + readiness inputs in place (below).
+
+**Concrete signals to monitor at each two-week reassessment:**
+- PPV buy-rate trend (any org), Nielsen broadcast numbers post-CBS launch, cross-sport press mentions of MMA/boxing.
+- New entrants or expansions among streamers (Netflix, Amazon, Apple) in combat sports.
+- Public M&A activity in adjacent verticals (sports media, fan-data platforms, sports-betting tools) — comps that reprice us.
+- TKO investor-day commentary on M&A appetite.
+- Capital-market sentiment: are sports-asset deals getting done at expanding multiples, or compressing?
+
+**Readiness commitment:** when a swell hits, the goal is **60-day path to a term sheet, not 6 months**. That requires three inputs to already be in place:
+1. **Clean metrics narrative** — the Acquisition-Readiness Dashboard kept current, snapshotable into a one-pager on demand.
+2. **Warm acquirer relationships** — 3–5 plausible buyers (TKO corp dev, DAZN, Netflix sports BD, ESPN digital, Penn Entertainment, etc.) who recognize the name before we ever pitch. Slow cadence: one coffee or LinkedIn touch per quarter, parallel to this 90-day momentum work.
+3. **Defensible moat story** — the three pillars above kept tight and rehearsed.
+
+**What this section is not:** a trigger to start outbound now. It's a documented commitment to *be ready* — so a swell window doesn't pass while we're still pulling metrics together. Concrete acquirer-relationship cadence work is parallel to and slower than this 90-day momentum plan; revisit at the July 13 reassessment.
+
+### Sector Swell Monitor — automated monthly briefing (designed, not yet built)
+
+To make the swell-monitoring above operational rather than aspirational, a recurring monthly program was designed on 2026-05-10. It scans public industry resources across the five swell drivers (star, media/distribution, capital cycle, cultural crossover, strategic acquirer) and produces a scannable bulletin briefing — written for a tired reader, ~60 second top-half read, no inline links in the body.
+
+- **Design plan:** `docs/plans/sector-swell-monitor-2026-05-10.md`
+- **Validated format:** `docs/sector-monitor/2026-05.md` (manual prototype, May 2026)
+- **Architecture:** mirrors `broadcastDiscovery` — GH Actions cron → Brave Search → Claude Haiku extraction → Sonnet briefing synthesis → markdown report committed to repo + email via Resend
+- **Cost:** ~$0.80/month
+- **Build estimate:** 6–8 hours of focused work, phased
+
+**Pickup status:** designed and prototyped, build is the next priority for sector-monitoring work. When entering a marketing session, surface this as an active project — building it makes the readiness commitment above concrete and unblocks reactive sale-timing for the rest of the campaign and beyond.
+
+---
+
 ## GUIDING PRINCIPLES
 
 - Budget is small so precision beats volume. Every dollar spent during a fight week is worth 5x a dollar spent on a random Tuesday.

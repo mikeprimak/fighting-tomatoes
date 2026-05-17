@@ -1,189 +1,101 @@
 # CLAUDE.md
 
-### Important Rules
-
-- **Always ask before starting EAS builds** - Build credits are limited
-- **Never use local DB** - Always use Render External URL unless explicitly asked
-- **Document your work** - At the end of every session, create or update `docs/daily/YYYY-MM-DD.md` with what was done. If you changed how an area works, update the relevant `docs/areas/*.md` file. See `docs/README.md` for templates and process. Do this without being asked.
-- **Vercel CLI is installed** — manage Vercel things yourself (deploys, env vars, project linking, logs). Don't make the user run Vercel commands. Projects: `packages/web` (Next.js app at web-jet-gamma-12.vercel.app) and `packages/landing` (static site at goodfights.app). Both auto-deploy from `main`, so a `git push` usually suffices — only run `vercel --prod` manually if the user asks or auto-deploy isn't configured.
-
----
-
-## Marketing Sessions
-
-When the user says **"this is a marketing session"** (or similar), switch modes from coding assistant to marketing coach/guide/planner. In marketing mode, you are the user's cheerleader, accountability partner, and executor-in-chief for the **Good Fights 90-Day Marketing Plan** (April 13 – July 13, 2026).
-
-**Sources of truth** (read both at the start of every marketing session):
-- `GOOD_FIGHTS_90_Day_Marketing_Plan.md` (project root) — the 90-day momentum plan
-- `docs/marketing/buyer-pipeline.md` — buyer landscape, prep artifacts, outreach cadence (parallel workstream toward acquisition)
-
-**Context the user wants you to hold**:
-- He is a solo introvert developer, not a marketer. Reframe marketing tasks in developer terms (test → observe → adjust).
-- Budget is $100/mo concentrated on fight weeks — precision over volume.
-- 12–18 month horizon toward an acquisition conversation. Goal of this 90 days is **momentum**, not revenue.
-- Primary target cards: **UFC 328 (May 9)**, **MVP Netflix (May 16)**, **UFC White House (June 15)**.
-- He wants to execute a defined system, not invent daily. Your job is to tell him exactly what to do today.
-
-**Session protocol**:
-1. Check today's date against the plan's phase/deadlines.
-2. Tell him what phase he's in, what's due soon, and what today's concrete action is.
-3. Keep scope small — one next action, not the whole plan.
-4. Encourage. Reframe anxiety as normal. Remind him failure is data.
-5. At session end, log progress in `docs/daily/YYYY-MM-DD.md` under a **Marketing** section (tasks completed, metrics recorded, blockers).
-
-**Baseline metrics to track** (record early, check every 2 weeks): total downloads, MAU, App Store rating, cost per install, Reddit post engagement.
-
-**What not to do**: Don't let him drift into redesigning product mid-campaign. Don't over-adjust ad campaigns before they complete. Don't push him to do extrovert things (cold DMs to big creators, live video) — his channels are written/async.
-
----
-
-## Live Event Management
-
-See `archive/LIVE-EVENT-MANAGEMENT.md` for full documentation.
-
-**TL;DR:** One background job (`eventLifecycle.ts`) runs every 5 minutes:
-1. **UPCOMING → LIVE** when start time passes
-2. **Section-based fight completion** (by cardType + section start times)
-3. **LIVE → COMPLETED** after estimated duration (`numFights x 30min + 1hr`, max 8hr)
-
-Events use `scraperType` field (null = no scraper, or `ufc`/`matchroom`/`oktagon`/`onefc`/`tapology`/`bkfc`).
-
-**All production scrapers are fully automatic** — daily scrapers set `scraperType` and the lifecycle dispatches live trackers. The Tapology live tracker is generic and covers Zuffa Boxing, Karate Combat, Dirty Boxing, PFL, and RIZIN.
-
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `src/services/eventLifecycle.ts` | The 3-step lifecycle job (runs every 5 min) |
-| `src/config/liveTrackerConfig.ts` | `PRODUCTION_SCRAPERS`, `buildTrackerUpdateData()` |
-| `src/routes/admin.ts` | Admin endpoints: set-status, publish, publish-all |
-| `public/admin.html` | Admin panel UI with fight controls + tracker display |
-
-### Admin Panel Access
-
-- URL: `https://<backend-host>/admin.html`
-- Login: Use any email in the `ADMIN_EMAILS` env var
-- Currently: `michaelsprimak@gmail.com`, `avocadomike@hotmail.com`
-
----
-
 Good Fights: React Native + Node.js combat sports fight rating app.
 
-**Archive**: See `archive/` folder for historical docs, work session logs, and implementation records.
+## Important Rules
+
+- **Always ask before starting EAS builds** — build credits are limited
+- **Never use local DB** — always use Render External URL unless explicitly asked
+- **Document your work** — at end of every session, create or update `docs/daily/YYYY-MM-DD.md`. If you changed how an area works, update the relevant `docs/areas/*.md`. See `docs/README.md` for templates. Do this without being asked.
+- **Vercel CLI is installed** — manage Vercel things yourself (deploys, env vars, project linking, logs). Don't make the user run Vercel commands. Projects: `packages/web` (Next.js at web-jet-gamma-12.vercel.app) and `packages/landing` (static at goodfights.app). Both auto-deploy from `main` — a `git push` usually suffices.
+- **Log recurring tasks** — when a session surfaces a *recurring* operator task (weekly attribution review, quarterly trait refresh, scraper health audits, etc.), append it to `docs/operations/maintenance.md` under the right cadence section. One-offs don't belong there.
+
+## Next Session
+
+**→ `docs/HANDOFF-next-session-2026-05-18.md`** — read first. Fan DNA peek endpoint built this session to kill the spinner-then-load on the reveal modal. All edits in working tree, uncommitted, untested. Mike rebooted before testing. Pick up by starting backend+mobile and walking the test plan in the handoff doc. Prior handoff at `docs/HANDOFF-next-session-2026-05-17.md` has the pre-peek context.
+
+## Workstream Sessions
+
+When Mike says "this is a [X] session", switch into focused mode on that workstream. Read the source-of-truth doc first, then follow the standard protocol: tell him what phase we're in, what's next, pick the highest-impact unblocked item, log to `docs/daily/YYYY-MM-DD.md` at session end.
+
+| Trigger phrase | Source of truth | Mode notes |
+|---|---|---|
+| "marketing session" | `GOOD_FIGHTS_90_Day_Marketing_Plan.md` + `docs/marketing/buyer-pipeline.md` | Coach/cheerleader, not coder. Solo introvert; reframe in dev terms. $100/mo budget concentrated on fight weeks. Target cards: UFC 328 (May 9), MVP Netflix (May 16), UFC White House (Jun 15). Track installs, MAU, rating, CPI, Reddit engagement every 2wks. Don't push extrovert tactics (cold DMs, live video). |
+| "AI enrichment session" | `docs/areas/ai-enrichment.md` | First-class field, not a feature. Template: broadcast discovery (`packages/backend/src/services/broadcastDiscovery/`). Default model: Claude Haiku 4.5 + prompt caching. Cost ceiling <$300/yr. Don't ship LLM outputs without a confidence floor. |
+| "rewarding users session" | `docs/areas/rewarding-users.md` | Aesthetic: Letterboxd/Strava/Last.fm. Anti: Duolingo. **No leaderboards. No prizes.** Reward = closure + identity. Brainstorm new ideas each session and append to inventory. Don't ship Fan DNA before there's enough data (empty-room problem). |
+| "follow-fighter session" | `docs/areas/follow-fighter.md` | **THE acquisition workstream.** Every decision: does this make the dataset more valuable to a buyer? Target: 100K users × 5+ avg follows. Quality > volume — engagement tracking on every new follow surface. **Never derive `followedAt`** — that column is load-bearing for the sale narrative. No gamification, no auto-follow-everyone. |
+| "live trackers session" | `docs/areas/live-trackers.md` | The substrate every notification + rating-prompt compounds on. Goal: sub-5-min start/end signal for *every* org we list. Source ladder: official → aggregator → live blog → social → manual. **Don't fabricate timestamps** — null > guess. **Don't reverse COMPLETED→UPCOMING** ever. Log every source probed (even rejected ones) to the experiments log so future sessions don't redo dead research. Coverage gaps: MVP, Top Rank, Golden Boy, Gold Star. |
 
 ## Web App
 
-- **Package**: `packages/web` (Next.js 16.2 + Tailwind v4)
-- **Production URL**: https://web-jet-gamma-12.vercel.app
-- **Vercel project**: `michael-primaks-projects/web`
-- **29 routes**, SSR with SEO metadata, dark-only theme
-- **Env vars** (set in Vercel): `API_URL` and `NEXT_PUBLIC_API_URL` → Render backend
-- **Dev**: `cd packages/web && pnpm dev` (port 3000)
-- **Deploy**: `cd packages/web && vercel --prod`
-- See `archive/WORK-SESSION-WEB-APP.md` for full build log
+- `packages/web` (Next.js 16.2 + Tailwind v4), prod: https://web-jet-gamma-12.vercel.app
+- Vercel project: `michael-primaks-projects/web`, 29 routes, SSR, dark-only
+- Env vars in Vercel: `API_URL` + `NEXT_PUBLIC_API_URL` → Render backend
+- Dev: `cd packages/web && pnpm dev` (port 3000)
 
 ## Quick Start
 
-**Commands**:
 - Root: `pnpm dev|build|test|lint|type-check`
 - Backend: `cd packages/backend && PORT=3008 pnpm dev`
 - Mobile: `cd packages/mobile && npx expo start --port 8083 --lan`
-
-**Critical Ports**: Backend 3008, Expo 8083, PostgreSQL 5433
+- **Critical ports**: backend 3008, Expo 8083, Postgres 5433
 
 ## Stack
 
-**Monorepo**: backend (Fastify, Prisma, PostgreSQL), mobile (React Native Expo, Expo Router, React Query), web (Next.js 16.2, Tailwind v4, React Query)
-**Database**: 20+ tables, UUID v4 keys, JWT dual-token (15min/7day)
-**Mobile**: iOS/Android/Web, Stack-inside-Tabs pattern
+Monorepo: backend (Fastify + Prisma + PostgreSQL), mobile (Expo + Expo Router + React Query), web (Next.js 16.2 + Tailwind v4 + React Query). 20+ tables, UUID v4 keys, JWT dual-token (15min/7day). Mobile = iOS/Android/Web, Stack-inside-Tabs pattern.
 
-## How to Update App Icon
+## Live Event Management
 
-**Icon files** (in project root):
-- `GOOD-FIGHTS-ICON-HAND-THICKER-GREY-BG.png` - thick stroke, NO fill (current)
-- `GOOD-FIGHTS-ICON-HAND-THICKER-FINGER.png` - thick stroke, WITH fill
+One background job (`services/eventLifecycle.ts`) runs every 5 min:
+1. UPCOMING → LIVE when start time passes
+2. Section-based fight completion (by cardType + section start times)
+3. LIVE → COMPLETED after estimated duration (`numFights × 30min + 1hr`, max 8hr)
 
-**Steps to change icon:**
+Events use `scraperType` (null/`ufc`/`matchroom`/`oktagon`/`onefc`/`tapology`/`bkfc`). All production scrapers are fully automatic — daily scrapers set `scraperType` and the lifecycle dispatches live trackers. Tapology live tracker is generic (covers Zuffa Boxing, Karate Combat, Dirty Boxing, PFL, RIZIN).
 
-1. Copy new icon to assets:
-   ```bash
-   cp "GOOD-FIGHTS-ICON-HAND-THICKER-GREY-BG.png" "packages/mobile/assets/homescreen-icon.png"
-   cp "GOOD-FIGHTS-ICON-HAND-THICKER-GREY-BG.png" "packages/mobile/assets/adaptive-icon-foreground-new.png"
-   ```
-
-2. Clear ALL caches and regenerate native files:
-   ```bash
-   cd packages/mobile && rm -rf .expo dist && npx expo prebuild --clean --platform android
-   ```
-
-3. Update versionCode in BOTH files:
-   - `packages/mobile/app.json` (line ~56)
-   - `packages/mobile/android/app/build.gradle` (line ~95)
-
-4. Build: `eas build --platform android --profile production`
-
-5. **After installing on device**: If icon doesn't update, clear Android launcher cache:
-   - Settings > Apps > [Your Launcher] > Storage > Clear Cache
-   - Or Force Stop the launcher
-
-## Switching Work Locations (IP Change)
-
-When switching WiFi networks, update the dev IP in **2 files**:
-
-1. Get your new IP: `ipconfig | findstr "IPv4"`
-2. Update:
-   - `packages/mobile/services/api.ts` line ~20
-   - `packages/mobile/store/AuthContext.tsx` line ~76
-3. Reload the app
-
-**Known IPs**: Home `10.0.0.53` | Work `192.168.1.65`
-
-## API Endpoints
-
-**Base**: `http://localhost:3008/api` (web) | `http://<YOUR_IP>:3008/api` (mobile)
-- **Auth**: `POST register|login|logout|refresh`, `GET profile|verify-email`
-- **Fights**: `GET /fights`, `GET /fights/:id`, `POST /fights/:id/rate|review|tags`
-- **Fighters**: `GET /fighters`, `GET /fighters/:id`, `POST /fighters/:id/follow`
-- **Events**: `GET /events`, `GET /events/:id`
-- **Search**: `GET /search?q=query&limit=10`
-
-## Development Guidelines
-
-- **TypeScript**: Use trailing comma `<T,>` in .tsx files
-- **Debugging**: Config audit first → Add logging → Check for multiple PrismaClient instances
-- **Rule**: If 3+ fixes fail → STOP → Audit all config files
-- **File ops**: Prefer editing existing files over creating new ones
+Full docs: `archive/LIVE-EVENT-MANAGEMENT.md`. Admin panel: `https://<backend-host>/admin.html` (any email in `ADMIN_EMAILS`).
 
 ## Key Systems
 
-| System | Key Files |
-|--------|-----------|
-| Event Lifecycle | `services/eventLifecycle.ts` (3-step lifecycle, dispatches all live trackers) |
+| System | Files |
+|---|---|
+| Event Lifecycle | `services/eventLifecycle.ts` |
 | Live Event Tracker | `services/liveEventTracker.ts`, `services/ufcLiveParser.ts` |
-| Tapology Live Tracker | `scripts/runTapologyLiveTracker.ts` (generic — Zuffa, KC, DBX, PFL, RIZIN) |
+| Tapology Live Tracker | `scripts/runTapologyLiveTracker.ts` |
 | Image Storage (R2) | `services/imageStorage.ts` |
-| UFC Scraper | `services/scrapeAllUFCData.js` (requires `TZ=America/New_York` — UFC.com adapts times to viewer timezone) |
+| UFC Scraper | `services/scrapeAllUFCData.js` (requires `TZ=America/New_York`) |
 | ONE FC Scraper | `services/scrapeAllOneFCData.js` |
-| Karate Combat Scraper | `services/scrapeKarateCombatTapology.js` + `services/karateCombatDataParser.ts` |
-| Dirty Boxing Scraper | `services/scrapeDirtyBoxingTapology.js` + `services/dirtyBoxingDataParser.ts` |
+| Karate Combat | `services/scrapeKarateCombatTapology.js` + `services/karateCombatDataParser.ts` |
+| Dirty Boxing | `services/scrapeDirtyBoxingTapology.js` + `services/dirtyBoxingDataParser.ts` |
+
+## Development Guidelines
+
+- **TypeScript**: trailing comma `<T,>` in .tsx files
+- **Debugging**: config audit first → add logging → check for multiple PrismaClient instances
+- **Rule**: if 3+ fixes fail → STOP → audit all config files
+- **File ops**: prefer editing existing files over creating new ones
+
+## Reference
+
+- **App icon update / IP switching**: `docs/playbooks/update-app-icon.md`
+- **API endpoints**: `docs/API.md`
+- **Doc system overview**: `docs/README.md`
 
 ## Current Store Versions (as of Feb 27, 2026)
 
 | Platform | Version | Build # | Status |
-|----------|---------|---------|--------|
-| **Android (Play Store)** | 2.0.2 | versionCode 34 | Built, needs manual upload to Play Console |
-| **iOS (App Store)** | 2.0.1 | buildNumber 18 + OTA update | Live (OTA pushed Feb 27) |
+|---|---|---|---|
+| Android (Play Store) | 2.0.2 | versionCode 34 | Built, needs manual upload |
+| iOS (App Store) | 2.0.1 | buildNumber 18 + OTA | Live |
 
-- **app.json**: version `2.0.2`, iOS buildNumber `19`, Android versionCode `34`
-- **build.gradle**: versionCode `34`, versionName `2.0.2`
-- **iOS OTA update ID**: `562f0e34-83ef-4bdd-869e-39d6684ddfd1` (runtime 2.0.1)
-- **Note**: Android `eas submit` fails due to Google service account permissions — upload `.aab` manually via Play Console
-- **Note**: iOS App Store Connect UI won't let you swap builds on an existing version — create a new version instead
+- `app.json`: version `2.0.2`, iOS buildNumber `19`, Android versionCode `34`
+- iOS OTA update ID: `562f0e34-83ef-4bdd-869e-39d6684ddfd1` (runtime 2.0.1)
+- Android `eas submit` fails due to Google service account permissions — upload `.aab` manually
+- iOS App Store Connect won't let you swap builds on an existing version — create a new version instead
 
 ## Test Accounts
 
 - `avocadomike@hotmail.com` (1234 ratings, 72 reviews)
 - `michaelsprimak@gmail.com`
-- `applereview@goodfights.app` / `AppleTest2026!` (Apple Review test account)
-- `testdev2@goodfights.app` (dev testing account)
-- `test@goodfights.app` / `Testpass1!` (dev testing account)
+- `applereview@goodfights.app` / `AppleTest2026!` (Apple Review)
+- `testdev2@goodfights.app`, `test@goodfights.app` / `Testpass1!` (dev)
