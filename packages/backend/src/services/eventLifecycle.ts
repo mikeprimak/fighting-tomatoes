@@ -43,7 +43,7 @@ const VPS_SCRAPER_API_KEY = process.env.VPS_SCRAPER_API_KEY || '';
 // Scraper types that have a VPS handler in scraperService.ts scrapeOnce().
 // Anything not in this list (e.g. raf) must dispatch via GitHub Actions
 // even when the VPS is configured — VPS would silently no-op them otherwise.
-const VPS_SUPPORTED_SCRAPERS = ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl'];
+const VPS_SUPPORTED_SCRAPERS = ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl', 'sherdog'];
 
 /**
  * Trigger the VPS scraper service to start tracking an event.
@@ -218,6 +218,7 @@ export async function runEventLifecycleCheck(): Promise<{
         earlyPrelimStartTime: true,
         scraperType: true,
         ufcUrl: true,
+        sherdogPbpUrl: true,
         useManualLiveTracker: true,
       },
     });
@@ -279,6 +280,9 @@ export async function runEventLifecycleCheck(): Promise<{
         // Tapology is deliberately excluded entirely — its tracker overwrites
         // lifecycle no-tracker completions back to UPCOMING when Tapology hasn't
         // yet posted results, so all tapology orgs use the no-tracker path.
+        // Sherdog wins over the native scraperType when sherdogPbpUrl is set
+        // (typically tapology-backed orgs like MVP / Top Rank / Golden Boy /
+        // Gold Star that have no reliable native live source).
         const workflowMap: Record<string, string> = {
           ufc: 'ufc-live-tracker.yml',
           oktagon: 'oktagon-live-tracker.yml',
@@ -287,7 +291,9 @@ export async function runEventLifecycleCheck(): Promise<{
           raf: 'raf-live-tracker.yml',
           pfl: 'pfl-live-tracker.yml',
         };
-        if (event.scraperType && VPS_SUPPORTED_SCRAPERS.includes(event.scraperType)) {
+        if (event.sherdogPbpUrl) {
+          await triggerVPSLiveTracker(event.id, 'sherdog', event.name);
+        } else if (event.scraperType && VPS_SUPPORTED_SCRAPERS.includes(event.scraperType)) {
           const vpsOk = await triggerVPSLiveTracker(event.id, event.scraperType, event.name);
           if (!vpsOk) {
             const workflow = workflowMap[event.scraperType];
