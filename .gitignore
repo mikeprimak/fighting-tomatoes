@@ -166,3 +166,4 @@ AuthKey*.p8
 
 # Security alert tracking
 gitissues.txt
+.vercel

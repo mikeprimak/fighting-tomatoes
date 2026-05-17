@@ -101,6 +101,7 @@ Users keep coming back not because we nag them, but because the app **remembers 
 **Wave 3 — Fan DNA personality engine**
 - ✅ **Phase 1 architectural slice — shipped 2026-05-16** (commit `9e14040`). File-per-trait registry, event-mode + batch-mode engine, 30-day per-line cooldown, toggle-storm META/EXIT contingency, trait isolation. Worms-tone copy. First trait: `hype-accuracy` closure-loop, wired into `HypeRevealModal` + `RatingRevealModal` as an italic third beat. Non-blocking.
 - 🟡 **Phase 1 completion** — add traits #2 (`org-affinity`) + #3 (`rating-bias`); LLM-layer (Layer 2) is Phase 2.
+- 🟡 **Peek endpoint — built 2026-05-17, awaiting test+push**. `GET /api/fan-dna/peek` pre-computes the line for every possible value (1-10) when the rate/hype modal opens; reveal modal pulls from cache on Done so the DNA line lands at the same instant the modal opens (no spinner, no swap). Commit path passes the peeked `dnaCommittedLine` back so the cooldown ledger reflects the exact line the user saw. `eventEvaluate({ peek: true })` skips impression writes. See `docs/daily/2026-05-17.md`.
 - 📋 **Phase 3** — profile section (`Fan DNA` SectionContainer replaces the standalone `Hype vs Outcome`) + full-screen Fan DNA page + Layer 3 fun-fact scanner + 5 more traits.
 - 📋 **Phase 4** — recommendation engine ("Fights you might love" / "Fighters you might love" / cross-promo lanes) + Tier 2 traits (depends on AI enrichment cron being live).
 - 📋 Fan resume profile page — folds into Phase 3 Fan DNA full-screen.
