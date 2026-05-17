@@ -104,9 +104,9 @@ Users keep coming back not because we nag them, but because the app **remembers 
 - 🟡 **Peek endpoint — built 2026-05-17, awaiting test+push**. `GET /api/fan-dna/peek` pre-computes the line for every possible value (1-10) when the rate/hype modal opens; reveal modal pulls from cache on Done so the DNA line lands at the same instant the modal opens (no spinner, no swap). Commit path passes the peeked `dnaCommittedLine` back so the cooldown ledger reflects the exact line the user saw. `eventEvaluate({ peek: true })` skips impression writes. See `docs/daily/2026-05-17.md`.
 - 🟡 **Phase 2 (Layer 2 — tag-aware copy) underway 2026-05-17**:
   - ✅ **`style-clash`** — first tag-aware trait. Reads `Fight.aiTags.styleTags` for "X vs Y" clash framing. Score 75. Verified on MVP MMA 1 (Rousey vs Carano, dos Santos vs Despaigne). See `docs/daily/2026-05-17.md`.
-  - 📋 `rematch-fan` (next) — rematch detection in storylines/styleTags; user-level pattern via batchCompute (or single-event v1).
-  - 📋 `stakes-aware` — `aiTags.stakes` ("title fight", "Netflix flagship", "comeback").
-  - 📋 `pace-affinity` — `aiTags.pace` ∈ {fast, tactical, grinding}.
+  - ✅ **`stakes-aware`** — second tag-aware trait. Reads `Fight.aiTags.stakes` and normalizes to a short label (`title fight` / `comeback` / `debut` / `cross-sport showcase` / `main event` / `ranking shake-up`). Score 75. 6 copy keys × {soft, humor}. Verified against Render fights (Sheeraz/Begic, Usyk/Verhoeven, Mgoyan/Morales, Jackson/Creighton). See `docs/daily/2026-05-17.md`.
+  - 📋 `rematch-fan` — **deferred**. Current enrichment pipeline produces zero "rematch" / "trilogy" / "unfinished" phrases across 52 enriched fights (checked 2026-05-17). Revisit when a recurring-matchup card lands (e.g. Volkanovski-Topuria-style rebooking) or when the enrichment prompt is updated to flag rematches explicitly.
+  - 📋 `pace-affinity` — `aiTags.pace` ∈ {fast, tactical, grinding}. Currently most fights have `pace: null` — confirm pace-tagging coverage before building.
 - 📋 **Phase 3** — profile section (`Fan DNA` SectionContainer replaces the standalone `Hype vs Outcome`) + full-screen Fan DNA page + Layer 3 fun-fact scanner + 5 more traits.
 - 📋 **Phase 4** — recommendation engine ("Fights you might love" / "Fighters you might love" / cross-promo lanes) + Tier 2 traits (depends on AI enrichment cron being live).
 - 📋 Fan resume profile page — folds into Phase 3 Fan DNA full-screen.
