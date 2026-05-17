@@ -183,6 +183,23 @@ export default function ProfileScreen() {
   }>({ comments: [], totalWithUpvotes: 0 });
   const [upvotingPreflightId, setUpvotingPreflightId] = useState<string | null>(null);
 
+  // Fan DNA trait cards — ordered by weight, populated lazily by the
+  // backend's batchCompute path. Empty array = either no traits met their
+  // floor yet or the fetch failed (silent — section just stays hidden).
+  type FanDNACard = {
+    traitId: string;
+    family: 'affinity' | 'behaviour' | 'prediction' | 'identity';
+    headline: string;
+    body?: string;
+    primaryStat?: string;
+    secondaryStat?: string;
+    weight: number;
+    confidence: number;
+    computedAt: string;
+  };
+  const [fanDNACards, setFanDNACards] = useState<FanDNACard[]>([]);
+  const [fanDNALoading, setFanDNALoading] = useState<boolean>(false);
+
   // Time filter state - default to 'allTime' to show all predictions
   const [timeFilter, setTimeFilter] = useState<string>('allTime');
   const timeFilterOptions = [
@@ -266,6 +283,26 @@ export default function ProfileScreen() {
       fetchData();
     }, [user?.id])
   );
+
+  // Fetch Fan DNA. First call after login triggers a lazy batchCompute on the
+  // backend, so it can take a few seconds for users with lots of ratings —
+  // hence the separate loading flag and the silent on-error path.
+  useEffect(() => {
+    const fetchFanDNA = async () => {
+      if (!user) return;
+      setFanDNALoading(true);
+      try {
+        const data = await apiService.getFanDNAProfile();
+        setFanDNACards(data.cards ?? []);
+      } catch (error) {
+        console.log('Fan DNA fetch failed (silent):', error);
+        setFanDNACards([]);
+      } finally {
+        setFanDNALoading(false);
+      }
+    };
+    fetchFanDNA();
+  }, [user?.id]);
 
   // Auto-refresh user data if averageRating or averageHype is missing (from old cached data)
   // OR if distributions are empty (to get real data)
@@ -1091,6 +1128,88 @@ export default function ProfileScreen() {
             )}
           </View>
         </SectionContainer>
+
+        {/* Fan DNA — surfaces the user's trait cards from the personality engine. */}
+        {(fanDNALoading || fanDNACards.length > 0) && (
+          <SectionContainer
+            title="Fan DNA"
+            icon="dna"
+            iconFamily="fontawesome6"
+            iconColor="#000"
+            headerBgColor="#A78BFA"
+            containerBgColorDark="rgba(167, 139, 250, 0.06)"
+            containerBgColorLight="rgba(167, 139, 250, 0.10)"
+            headerRight={fanDNACards.length > 0 ? (
+              <TouchableOpacity
+                onPress={() => router.push('/activity/fan-dna' as any)}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              >
+                <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>See All</Text>
+                <FontAwesome name="chevron-right" size={10} color="rgba(255,255,255,0.85)" />
+              </TouchableOpacity>
+            ) : undefined}
+          >
+            <View style={{ paddingVertical: 12 }}>
+              {fanDNALoading && fanDNACards.length === 0 ? (
+                <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', paddingVertical: 8 }}>
+                  Computing your DNA…
+                </Text>
+              ) : (
+                <View style={{ gap: 10 }}>
+                  {fanDNACards.slice(0, 2).map((card) => (
+                    <TouchableOpacity
+                      key={card.traitId}
+                      onPress={() => router.push('/activity/fan-dna' as any)}
+                      activeOpacity={0.7}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 12,
+                        paddingVertical: 8,
+                      }}
+                    >
+                      {card.primaryStat ? (
+                        <View style={{
+                          minWidth: 64,
+                          paddingHorizontal: 10,
+                          paddingVertical: 8,
+                          backgroundColor: 'rgba(167, 139, 250, 0.15)',
+                          borderRadius: 8,
+                          alignItems: 'center',
+                        }}>
+                          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>
+                            {card.primaryStat}
+                          </Text>
+                          {card.secondaryStat && (
+                            <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 1 }} numberOfLines={1}>
+                              {card.secondaryStat}
+                            </Text>
+                          )}
+                        </View>
+                      ) : null}
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>
+                          {card.headline}
+                        </Text>
+                        {card.body && (
+                          <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }} numberOfLines={2}>
+                            {card.body}
+                          </Text>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                  {fanDNACards.length > 2 && (
+                    <Text style={{ fontSize: 11, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
+                      +{fanDNACards.length - 2} more trait{fanDNACards.length - 2 === 1 ? '' : 's'}
+                    </Text>
+                  )}
+                </View>
+              )}
+            </View>
+          </SectionContainer>
+        )}
 
         {/* Actions */}
         <View style={styles.actionsContainer}>

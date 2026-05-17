@@ -11,12 +11,16 @@
 import { FastifyInstance } from 'fastify';
 
 import { authenticateUser } from '../middleware/auth';
-import { eventEvaluate } from '../services/fanDNA/engine';
+import { batchCompute, eventEvaluate } from '../services/fanDNA/engine';
 import { getAllTraits } from '../services/fanDNA/registry';
 import type {
   FanDNAAction,
   FanDNASurface,
 } from '../services/fanDNA/types';
+
+// How long a TraitValue stays fresh before /profile recomputes. Cron will
+// eventually own recompute; until then this gives us a sensible auto-refresh.
+const PROFILE_STALE_MS = 24 * 60 * 60 * 1000;
 
 const ACTIONS: FanDNAAction[] = [
   'hype',
@@ -183,6 +187,104 @@ export default async function fanDNARoutes(fastify: FastifyInstance) {
       return reply
         .code(200)
         .send({ lines: [null, null, null, null, null, null, null, null, null, null] });
+    }
+  });
+
+  fastify.get('/profile', {
+    schema: {
+      description:
+        'Surfaced Fan DNA traits for the current user. Lazy-recomputes any trait whose TraitValue is stale (>24h) or missing. Returns one card per trait whose profileSummary fires; sorted by weight desc.',
+      tags: ['fan-dna'],
+    },
+    preHandler: authenticateUser,
+  }, async (request, reply) => {
+    const user = (request as any).user;
+    const userId = user.id;
+
+    try {
+      const traits = getAllTraits().filter(
+        (t) => !t.deprecated && typeof t.profileSummary === 'function',
+      );
+
+      const existing = await fastify.prisma.traitValue.findMany({
+        where: { userId, traitId: { in: traits.map((t) => t.id) } },
+        select: {
+          traitId: true,
+          value: true,
+          confidence: true,
+          hasFloor: true,
+          version: true,
+          computedAt: true,
+        },
+      });
+      const existingMap = new Map(existing.map((r) => [r.traitId, r]));
+
+      const staleSince = new Date(Date.now() - PROFILE_STALE_MS);
+      const stale = traits.filter((t) => {
+        const row = existingMap.get(t.id);
+        if (!row) return true;
+        if (row.version !== t.version) return true;
+        if (row.computedAt < staleSince) return true;
+        return false;
+      });
+
+      if (stale.length > 0) {
+        for (const trait of stale) {
+          await batchCompute({
+            prisma: fastify.prisma,
+            userId,
+            traitId: trait.id,
+          });
+        }
+        // Re-read after recompute so the response reflects the freshest values.
+        const refreshed = await fastify.prisma.traitValue.findMany({
+          where: { userId, traitId: { in: stale.map((t) => t.id) } },
+        });
+        for (const row of refreshed) existingMap.set(row.traitId, row);
+      }
+
+      const cards: Array<{
+        traitId: string;
+        family: string;
+        headline: string;
+        body?: string;
+        primaryStat?: string;
+        secondaryStat?: string;
+        weight: number;
+        confidence: number;
+        computedAt: string;
+      }> = [];
+
+      for (const trait of traits) {
+        const row = existingMap.get(trait.id);
+        if (!row || !row.hasFloor) continue;
+        const summary = trait.profileSummary!(row.value as Record<string, unknown>);
+        if (!summary) continue;
+        cards.push({
+          traitId: trait.id,
+          family: trait.family,
+          headline: summary.headline,
+          body: summary.body,
+          primaryStat: summary.primaryStat,
+          secondaryStat: summary.secondaryStat,
+          weight: summary.weight,
+          confidence: row.confidence,
+          computedAt: row.computedAt.toISOString(),
+        });
+      }
+
+      cards.sort((a, b) => b.weight - a.weight);
+
+      return reply.code(200).send({
+        cards,
+        count: cards.length,
+      });
+    } catch (err: unknown) {
+      request.log.error(err, '[fanDNA] /profile handler failed');
+      return reply.code(500).send({
+        error: 'Failed to load Fan DNA profile',
+        code: 'FAN_DNA_PROFILE_FAILED',
+      });
     }
   });
 

@@ -137,8 +137,40 @@ export interface Trait {
   /** Copy pools — loaded from `copy.json` alongside this file. */
   copy: CopyVariants;
 
+  /**
+   * Optional: turn a computed `TraitValue.value` into a profile-page card.
+   * Return null when the value doesn't warrant a card (e.g. below floor, no
+   * dominant signal). Traits that don't implement this never appear on profile.
+   */
+  profileSummary?(value: Record<string, unknown>): TraitProfileSummary | null;
+
   /** Marks a trait as sunset: no new computation, no surfacing, history preserved. */
   deprecated?: boolean;
+}
+
+/**
+ * What a trait emits from `profileSummary`. The shape the mobile profile
+ * surfaces render — one card per surfaced trait. Optional; traits that don't
+ * implement it (event-only traits like `night-owl`, `style-clash`) just don't
+ * appear on the profile page.
+ */
+export interface TraitProfileSummary {
+  /** One-line headline. Keep terse — fits a card header. */
+  headline: string;
+  /** Optional supporting sentence underneath the headline. */
+  body?: string;
+  /** Optional primary stat for a callout — e.g. "78%" or "12 first-rates". */
+  primaryStat?: string;
+  /** Optional secondary stat — e.g. "20 fights tracked". */
+  secondaryStat?: string;
+  /**
+   * Sort weight inside the profile page. Higher = more prominent. The endpoint
+   * sorts descending. Suggested ranges:
+   *   90+ identity moments (trailblazer, hot-takes streak)
+   *   60-89 strong signals with floor met
+   *   30-59 baseline observations
+   */
+  weight: number;
 }
 
 /** Final engine output — one rendered line + provenance for impression record. */
