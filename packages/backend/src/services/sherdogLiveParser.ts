@@ -148,9 +148,18 @@ export async function parseSherdogLiveData(
   const tag = options.dryRun ? '🔍 [SHERDOG DRY-RUN]' : '📊 [SHERDOG PARSER]';
   console.log(`\n${tag} ${liveData.eventName} (eventId=${eventId})`);
 
+  // Explicit select on event scalars (avoid pulling the brand-new
+  // sherdogPbpUrl column until the migration deploys to prod). Fights and
+  // fighters are included via relation as before.
   const event = await prisma.event.findUnique({
     where: { id: eventId },
-    include: { fights: { include: { fighter1: true, fighter2: true } } },
+    select: {
+      id: true,
+      name: true,
+      scraperType: true,
+      eventStatus: true,
+      fights: { include: { fighter1: true, fighter2: true } },
+    },
   });
   if (!event) {
     console.error(`  ❌ Event not found: ${eventId}`);

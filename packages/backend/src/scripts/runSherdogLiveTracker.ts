@@ -76,7 +76,14 @@ async function main() {
   // SystemConfig says it should.
   await refreshProductionScrapersCache(prisma);
 
-  const event = await prisma.event.findUnique({ where: { id: args.eventId } });
+  // Explicit select so we're not dependent on the local Prisma client and
+  // the prod DB being in lockstep — when a new column is added to the schema
+  // but the migration hasn't deployed yet, default findUnique selects all
+  // columns including the new one and errors with P2022.
+  const event = await prisma.event.findUnique({
+    where: { id: args.eventId },
+    select: { id: true, name: true, scraperType: true, eventStatus: true },
+  });
   if (!event) {
     console.error(`❌ Event not found: ${args.eventId}`);
     process.exit(1);
