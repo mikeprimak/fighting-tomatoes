@@ -34,9 +34,9 @@ Output STRICT JSON (no prose, no markdown, no fences):
       "odds": { "red": "-135", "blue": "+115" },  // strings; null if not shown
       "whyCare": "1-sentence hook a casual fan would understand. Plain English, no jargon. Omit the field if you have nothing grounded.",
       "stakes": [],                                // short bullet list of what's on the line. Empty if not in editorial.
-      "storylines": [],                            // narrative angles ("rematch of 2024 FOTY", "Allen returns from 18-month layoff"). Empty if not in editorial.
-      "styleTags": [],                             // ("striker vs grappler", "high-output volume"). Empty if not derivable.
-      "pace": null,                                // "fast" | "tactical" | "grinding" | null
+      "storylines": [],                            // narrative angles ("rematch of 2024 FOTY", "Allen returns from 18-month layoff"). When editorial confirms a prior fight between the same two named fighters, you MUST include the literal word "rematch" (or "trilogy" for a third meeting) in one of the entries. Empty if not in editorial.
+      "styleTags": [],                             // contrast tags like "striker vs grappler", "wrestler vs striker", "kickboxer vs MMA grappler". Apply the Inference rules below — these don't require explicit editorial phrasing, just enough signal from the matchup or framing.
+      "pace": null,                                // "fast" | "tactical" | "grinding" | null. Apply the Inference rules below — pace is inferential. Leave null only when you genuinely have no read on the matchup.
       "riskTier": null,                            // "lopsided" | "favorite-leans" | "pickem" | null  — derive from odds when present
       "confidence": 0.6                            // 0.0–1.0, YOUR confidence the record is correct and useful for this specific fight
     }
@@ -47,11 +47,22 @@ Hard rules:
   - "fightId" must be one of the IDs from the CARD. Never invent IDs. Records with unknown fightIds will be dropped.
   - The CARD is the ground truth for which fights are on the event. NEVER add fights not in the CARD, even if you see them mentioned in the editorial.
   - "red" = fighter1 from the CARD, "blue" = fighter2. Orientation is fixed by the CARD; do not flip.
-  - Narrative fields (stakes, storylines, styleTags) MUST be grounded in the editorial text you were given. If editorial doesn't speak to a specific fight, OMIT that fightId from your output entirely. Don't pad with empty arrays — just leave it out.
+  - Narrative fields about EVENTS (stakes, whyCare, factual storylines like "X is coming off a knockout loss") MUST be grounded in the editorial text. If editorial doesn't speak to a specific fight at all, OMIT that fightId entirely — don't pad with empty arrays.
   - "riskTier" mapping when odds are present: spread of 300+ → lopsided; 150–299 → favorite-leans; <150 → pickem.
   - "confidence" reflects YOUR estimate. Editorial with named-fight discussion ⇒ 0.7+. Editorial that only namedrops the event ⇒ 0.4–0.5.
   - If editorial is silent on every fight, return {"fights": []}.
-  - Output the JSON object only. No commentary, no markdown fences, no rationale before or after the JSON.`;
+  - Output the JSON object only. No commentary, no markdown fences, no rationale before or after the JSON.
+
+Inference rules (these are NOT fabrication — apply them whenever the matchup gives you signal):
+  - "pace" is inferential — it describes how the fight will likely PLAY OUT given the two fighters' established tendencies. Pick one:
+      • "fast" — two high-output strikers, known brawlers, or a striker with cardio against an aggressive opponent. Expect a firefight.
+      • "tactical" — technical strikers, counter-fighters, low-output veterans, or a measured matchup of skilled-but-cautious fighters. Expect a chess match.
+      • "grinding" — wrestler vs wrestler, a grappler taking down a striker, attrition matchups, or known cardio-grinders. Expect clinch/control/scrambles.
+      • null — only when you have zero read on either fighter's style.
+    Pace inference does NOT require editorial to say "this will be fast" — it requires you to recognize the matchup. You are an analyst; act like one.
+  - "styleTags" follow the same rule: emit contrast tags when fighters' established styles imply a clash, even if the editorial doesn't spell it out. Common patterns: "striker vs grappler", "wrestler vs striker", "kickboxer vs boxer", "veteran vs prospect". Skip when the matchup is symmetrical with no contrast hook.
+  - Rematches/trilogies: when editorial confirms (or strongly implies) a prior meeting between the two named fighters, ALWAYS include the literal word "rematch" (or "trilogy" for a third meeting) in storylines, plus the prior outcome when given. Example: "rematch of 2024 FOTY (Allen UD)". This token is load-bearing for downstream personalization.
+  - You may use your general knowledge of named fighters' styles for pace + styleTags + rematch detection. Don't make up records or specific past events not in the editorial, but recognizing that (for example) a known wrestler will likely wrestle is analysis, not fabrication.`;
 
 export interface CardItem {
   fightId: string;
