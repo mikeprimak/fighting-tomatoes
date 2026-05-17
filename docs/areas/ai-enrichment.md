@@ -53,7 +53,7 @@ Default model: **Claude Haiku 4.5** (cheap, structured output reliable, prompt c
   - `fetchTapologyEventPreview.ts` — non-UFC events (plain fetch+cheerio)
   - `fetchEditorialPreviews.ts` — Brave search across 9-outlet allowlist, replaces single-site MMA Fighting search
 - `extractFightEnrichment.ts` — Claude Haiku 4.5, structured-output JSON, prompt caching on system prompt, hard rule against fabrication.
-- `persist.ts` — pair-agnostic surname-anchored matching against UPCOMING-only DB fights; upserts straight to DB (no review inbox).
+- `persist.ts` — fightId-anchored write against UPCOMING-only DB fights; upserts straight to DB (no review inbox). DB is authoritative for the card; LLM enriches each fightId from supplementary editorial (see Decisions §9).
 - Migration `20260516000000_add_ai_fight_enrichment_fields` — added 6 nullable columns to `fights`.
 - CLI: `scripts/enrich-event.ts --event-id <id> [--persist]` (default dry-run).
 - Trigger: ✅ wired. Daily GitHub Actions cron at 14:00 UTC (`.github/workflows/fight-enrichment.yml` → `scripts/run-fight-enrichment.ts` → `services/aiEnrichment/run.ts`). Per-event T-10/T-5/T-2 window logic + 36h dedup live in `run.ts`.
@@ -74,6 +74,16 @@ Default model: **Claude Haiku 4.5** (cheap, structured output reliable, prompt c
 **Phase 5 — Beyond fights**
 - Fighter profile enrichment (career arc, style summary).
 - Event-level enrichment (card narrative, "why this card matters").
+
+**Phase 6 — Post-fight enrichment** — 📋 PLANNED
+Sibling to Phase 1, runs against COMPLETED fights instead of UPCOMING. Reuses ~80% of the Phase 1 plumbing (DB-as-card-source load, Brave editorial fetch, Puppeteer/Tapology page fetch, fightId-based persist, cron orchestrator). New surfaces:
+- New LLM schema: `aiPostFight` JSON with `methodNarrative`, `momentDescription`, `bonuses[]`, `callouts[]`, `aftermath` (injuries, retirements, ranking implications), `fotyConsideration`.
+- New DB columns: `aiPostFightTags`, `aiPostFightSummary`, `aiPostFightEnrichedAt`. Mirror migration of the Phase 1 add.
+- Cadence: one pass per fight at T+5d after `fightStatus → COMPLETED` (earlier the editorial is still trickling, later it thins out).
+- Cron: new daily workflow `.github/workflows/post-fight-enrichment.yml` (or extend the Phase 1 workflow with a `mode` input).
+- Folder layout: hoist shared bits into `services/aiEnrichment/shared/` (loadCard, fetchEditorial, fetchUFC/Tapology). Phase 1 files move to `services/aiEnrichment/preFight/`. New work lands in `services/aiEnrichment/postFight/`. This split prevents "mode" leakage across the codepath.
+- Consumers: closure-loop screens (Use Case F), weekly digest (E), completed-card detail screen FOTY sticker, post-fight push notifications (D).
+- Estimated effort: ~4-6 hr for plumbing + 1-2 hr for first consumer surface. Becomes its own "post-fight enrichment session" once Phase 1 render quality is locked in.
 
 ## Schema (Phase 1 — shipped)
 
@@ -133,14 +143,19 @@ On `UpcomingFightCard`, the left aggregate-hype square and the right user-hype f
 **8. Card variant uses single-line ellipsized preview; modal variant uses full multi-line (2026-05-15)**
 The card is dense and lives in a scrolling list — long previews truncate at the line. The hype modal has more room and is the moment the user is *deciding* about the fight, so they get the full one-liner. Two distinct visual contracts for the same field. If a third surface needs different treatment, follow this pattern.
 
-## Status (2026-05-15)
+**9. DB is the authoritative card source; LLM enriches by fightId (2026-05-17)**
+Original Phase 1 flow asked the LLM to extract fights from editorial text, then surname-matched the extractions back to DB rows. Two problems surfaced in prod: (a) 50/66 UPCOMING events had `ufcUrl` pointing to a promotion page (bkfc.com, pflmma.com, onefc.com, oktagonmma.com, etc.) that the dispatch didn't recognize as a backbone source, so those events ran editorial-only; (b) when editorial was sparse, the LLM filled gaps with fights it saw mentioned in adjacent-event articles — on 2026-05-17 the BKFC Palm Desert run hallucinated Till/Chalmers and Alex Terrible/Delano onto the wrong card. **Fix:** load the card from the DB by eventId, pass it to the LLM as the authoritative input, ask the LLM to enrich each fightId from supplementary editorial. Records with fightIds not in the card are dropped as ghosts. Eliminates the surname matcher entirely; works uniformly for all promotions. Side benefit: honest "no narrative" instead of empty padded records — previous "10/10 wrote" on PFL Brussels was 9 empty shells + 1 real record. Consumers unaffected (Fan DNA reads `aiTags.styleTags`/`aiTags.stakes` which were empty in the padded version anyway). Commit `2a01f76`.
+
+## Status (2026-05-17)
 
 - ✅ Broadcast discovery shipped (precedent).
 - ✅ Phase 1 fight enrichment pipeline shipped: fetch (3 sources) → extract (Haiku 4.5) → match → persist. End-to-end run against MVP Rousey vs. Carano wrote 9/11 UPCOMING fights at $0.023.
 - ✅ Phase 2.A shipped (`UpcomingFightCard` one-liner) — committed locally `f050c64`, **not pushed to prod**. Backend `/api/events?includeFights=true` Prisma select updated to include the 6 `ai*` fields.
 - 🟡 Phase 2.B partial (`UpcomingFightModal` full one-liner) — wired, **uncommitted**.
 - ✅ Cron trigger — three-pass cadence (T-10/T-5/T-2) shipped via daily GH Actions workflow.
+- ✅ DB-as-card-source refactor (2026-05-17) — eliminated 76% coverage gap, killed hallucinated-card failure mode. See Decisions §9.
 - 📋 Use cases B (stakes-bullets), G (web SEO) are the next two render targets.
+- 📋 Phase 6 post-fight enrichment — design recorded; build queued as its own session once Phase 1 render quality is locked in.
 
 ## Open questions
 
