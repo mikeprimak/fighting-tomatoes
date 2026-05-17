@@ -1,18 +1,25 @@
 /**
  * Trait: rating-bias
  *
- * Does the user rate higher or lower than the room? Two firing modes:
- *   • single-* — the just-submitted rating has a big delta vs community avg
- *                excluding self (the moment-of-action drama).
- *   • pattern-* — the user has a persistent tilt across history (uses the
- *                 batch-computed value); fires when the single-event delta is
- *                 small but the cumulative bias is meaningful.
+ * The PRIMARY trait on the rate path: every rating gets a line comparing the
+ * user's just-submitted rating to the community average (excluding self).
  *
- * Floors: COMMUNITY_FLOOR=5 community ratings excluding self on this fight;
- *         HISTORY_FLOOR=5 prior rated fights with community floor met.
+ * Single-event firing tiers, in order of drama:
+ *   • single-* (big)    — |delta| >= 2.5  → score 88
+ *   • single-* (notable)— |delta| >= 1.5  → score 80
+ *   • single-mild-*     — 0.5 <  |delta| < 1.5 → score 72
+ *   • single-agreement  — |delta| <= 0.5 → score 72
  *
- * Scoring: single-* wins (more interesting than a pattern restatement) when
- * the delta is large. hype-accuracy outranks both on fights the user hyped.
+ * Floor: COMMUNITY_FLOOR=5 community ratings excluding self on this fight.
+ * Below that, the trait stays silent and the engine returns null (no message).
+ *
+ * Scoring sits above hype-accuracy's close/spot-on/off cases so the natural
+ * rating-vs-room comparison wins by default. hype-accuracy still wins on
+ * hot-takes and way-off — those are the actually-dramatic closure moments.
+ *
+ * Pattern-leans-* copy is retained in copy.ts for future surface use (profile,
+ * weekly recap) but is no longer surfaced on the rate-reveal modal — the
+ * single-event path always fires now, so the pattern path was unreachable.
  */
 import type {
   Trait,
@@ -24,15 +31,15 @@ import copy from './copy';
 
 const COMMUNITY_FLOOR = 5;
 const HISTORY_FLOOR = 5;
+const AGREEMENT_DELTA = 0.5;
 const SINGLE_DELTA_NOTABLE = 1.5;
 const SINGLE_DELTA_BIG = 2.5;
-const PATTERN_DELTA_THRESHOLD = 0.6;
 
 const trait: Trait = {
   id: 'rating-bias',
   family: 'behaviour',
   tier: 1,
-  version: 1,
+  version: 2,
   respondsTo: ['rate'] as const,
   surfaces: ['rate-reveal-modal', 'profile-fullscreen'] as const,
   copy,
@@ -99,7 +106,7 @@ const trait: Trait = {
     if (absDelta >= SINGLE_DELTA_BIG) {
       return {
         copyKey: delta > 0 ? 'single-high' : 'single-low',
-        score: 78,
+        score: 88,
         vars: {
           rating: userRating,
           community,
@@ -110,7 +117,7 @@ const trait: Trait = {
     if (absDelta >= SINGLE_DELTA_NOTABLE) {
       return {
         copyKey: delta > 0 ? 'single-high' : 'single-low',
-        score: 65,
+        score: 80,
         vars: {
           rating: userRating,
           community,
@@ -119,32 +126,28 @@ const trait: Trait = {
       };
     }
 
-    // No big single-event drama → check if the cumulative pattern is interesting.
-    const cv = ctx.currentValue;
-    if (cv && cv.hasFloor) {
-      const avgDelta = (cv.value as { avgDelta?: number }).avgDelta ?? 0;
-      if (avgDelta >= PATTERN_DELTA_THRESHOLD) {
-        return {
-          copyKey: 'pattern-leans-high',
-          score: 55,
-          vars: {
-            avgDelta: round1(avgDelta),
-            n: (cv.value as { n?: number }).n ?? 0,
-          },
-        };
-      }
-      if (avgDelta <= -PATTERN_DELTA_THRESHOLD) {
-        return {
-          copyKey: 'pattern-leans-low',
-          score: 55,
-          vars: {
-            avgDelta: round1(Math.abs(avgDelta)),
-            n: (cv.value as { n?: number }).n ?? 0,
-          },
-        };
-      }
+    // Tight agreement with the room — warm consensus line.
+    if (absDelta <= AGREEMENT_DELTA) {
+      return {
+        copyKey: 'single-agreement',
+        score: 72,
+        vars: {
+          rating: userRating,
+          community,
+        },
+      };
     }
-    return null;
+
+    // Mid-range delta (0.5 < |delta| < 1.5) — mild lean copy.
+    return {
+      copyKey: delta > 0 ? 'single-mild-high' : 'single-mild-low',
+      score: 72,
+      vars: {
+        rating: userRating,
+        community,
+        delta: round1(absDelta),
+      },
+    };
   },
 };
 

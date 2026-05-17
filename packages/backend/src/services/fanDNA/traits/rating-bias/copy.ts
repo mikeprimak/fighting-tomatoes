@@ -6,6 +6,60 @@ import type { CopyVariants } from '../../types';
 
 const copy: CopyVariants = {
   lines: {
+    'single-agreement': {
+      soft: [
+        'You rated this {rating}; the room sits at {community}. In step.',
+        'A {rating}, matching the {community} consensus. Aligned.',
+        'You and the room landed in the same place. {rating} vs {community}.',
+        'Right on the room: your {rating} matches the {community} consensus.',
+        '{rating} from you, {community} from them. Same page.',
+        'You agreed with the room: {rating} vs {community}.',
+      ],
+      humor: [
+        '{rating}, same as the room. Suspiciously sensible of everyone.',
+        'You and the room agree at {community}. The committee notes the consensus.',
+        '{rating} vs {community}. Effectively the same. The math, satisfied.',
+        'Lockstep with the room. {rating} from you, {community} from them. Strange feeling.',
+        '{rating} from you, {community} from them. The opinion department has nothing to do today.',
+        'You and the room walked into the same conclusion. {rating} vs {community}. Cozy.',
+      ],
+    },
+    'single-mild-high': {
+      soft: [
+        'You rated this {rating}; the room sits at {community}. Slight lean up.',
+        'A {rating} from you, {community} from them. Mild divergence.',
+        'Your {rating} runs {delta} above the room. Touch warmer.',
+        '{rating} vs {community}. A nudge above the consensus.',
+        'You rated this {rating}, the room {community}. Modest bullishness.',
+        'A {rating} where the room said {community}. Slightly higher than the consensus.',
+      ],
+      humor: [
+        '{rating}. The room is at {community}. A polite disagreement.',
+        'You rated this {rating}, the room {community}. Touch warmer than the consensus.',
+        'A {rating} vs {community}. You enjoyed it {delta} more than the average member.',
+        '{rating} from you, {community} from them. The opinion department logs a mild lean.',
+        'A {rating}. The room offered {community}. You\'re feeling fractionally generous.',
+        '{rating} vs {community}. A modest tilt above the room.',
+      ],
+    },
+    'single-mild-low': {
+      soft: [
+        'You rated this {rating}; the room sits at {community}. Slight lean down.',
+        'A {rating} from you, {community} from them. Mild divergence.',
+        'Your {rating} runs {delta} below the room. Touch cooler.',
+        '{rating} vs {community}. A nudge below the consensus.',
+        'You rated this {rating}, the room {community}. Modest restraint.',
+        'A {rating} where the room said {community}. Slightly lower than the consensus.',
+      ],
+      humor: [
+        '{rating}. The room is at {community}. A polite disagreement.',
+        'You rated this {rating}, the room {community}. Touch cooler than the consensus.',
+        'A {rating} vs {community}. You enjoyed it {delta} less than the average member.',
+        '{rating} from you, {community} from them. The opinion department logs a mild lean.',
+        'A {rating}. The room offered {community}. You\'re feeling fractionally measured.',
+        '{rating} vs {community}. A modest tilt below the room.',
+      ],
+    },
     'single-high': {
       soft: [
         'You rated this {rating}; the room landed at {community}. Bullish.',
