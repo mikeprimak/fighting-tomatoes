@@ -280,6 +280,12 @@ model Event {
   // UFC.com URL for live tracking
   ufcUrl            String?   // e.g., "https://www.ufc.com/event/ufc-320"
 
+  // Sherdog play-by-play URL — used by the Sherdog live tracker for orgs
+  // without a reliable native live source (MVP, Top Rank, Golden Boy, Gold
+  // Star, anywhere Tapology updates lag). Set per-event when Sherdog staff
+  // covers the card; null otherwise.
+  sherdogPbpUrl     String?
+
   // Stats
   averageRating     Float     @default(0)
   totalRatings      Int       @default(0)
