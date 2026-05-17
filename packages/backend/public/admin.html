@@ -1898,6 +1898,23 @@
         </div>
       </div>
 
+      <!-- AI Enrichment Health -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">AI Enrichment Health</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadEnrichmentHealth()">Refresh</button>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 0.75rem 0;">
+          Daily cron at 14:00 UTC enriches UPCOMING events sitting in T-10, T-5, or T-2 day windows. Each fight gets <code>aiTags</code> + <code>aiPreviewShort</code>. The most actionable signal is the <strong>in-window</strong> table — events currently in a window with no recent enrichment indicate a broken cron.
+        </p>
+        <div id="enrichmentHealthBody">
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <div class="empty-state-text" style="margin-top: 0.5rem;">Loading enrichment health...</div>
+          </div>
+        </div>
+      </div>
+
       <!-- OKTAGON Live Tracker Controls -->
       <div class="ops-section">
         <div class="ops-section-header">
@@ -4330,6 +4347,7 @@
         loadNotifyPromotions(),
         loadProductionScrapers(),
         loadBackfillHealth(),
+        loadEnrichmentHealth(),
         loadScraperStatus(),
         loadTrackerStatus(),
         loadBackupStatus(),
@@ -4411,6 +4429,141 @@
           <tbody>${rowsHtml}</tbody>
         </table>
       `;
+    }
+
+    // ── AI Enrichment health ──
+    async function loadEnrichmentHealth() {
+      const body = document.getElementById('enrichmentHealthBody');
+      try {
+        const res = await authFetch(`${API_BASE}/admin/health/enrichment`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        renderEnrichmentHealth(json.data);
+      } catch (err) {
+        body.innerHTML = '<div class="empty-state"><div class="empty-state-text">Failed to load enrichment health</div></div>';
+      }
+    }
+
+    function renderEnrichmentHealth(data) {
+      const body = document.getElementById('enrichmentHealthBody');
+      const fmtAgo = (iso) => {
+        if (!iso) return 'never';
+        const d = new Date(iso);
+        const hours = (Date.now() - d.getTime()) / 3_600_000;
+        if (hours < 1) return `${Math.round(hours * 60)}m ago`;
+        if (hours < 48) return `${hours.toFixed(1)}h ago`;
+        return `${Math.floor(hours / 24)}d ago`;
+      };
+
+      const t = data.totals;
+      const lastTag = data.lastEnrichmentAt
+        ? `<span style="color: var(--text-secondary);">Last write across all fights: <strong>${fmtAgo(data.lastEnrichmentAt)}</strong></span>`
+        : `<span style="color: #ff9800;">No fights have ever been enriched.</span>`;
+
+      const summary = `
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.75rem;">
+          <div style="padding: 0.5rem 0.75rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 6px;">
+            <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Upcoming fights</div>
+            <div style="font-size: 1.25rem; font-weight: 600;">${t.upcomingFights}</div>
+          </div>
+          <div style="padding: 0.5rem 0.75rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 6px;">
+            <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">Enriched (any)</div>
+            <div style="font-size: 1.25rem; font-weight: 600;">${t.enrichedAny} <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 400;">(${pct(t.enrichedAny, t.upcomingFights)})</span></div>
+          </div>
+          <div style="padding: 0.5rem 0.75rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 6px;">
+            <div style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">With narrative</div>
+            <div style="font-size: 1.25rem; font-weight: 600;">${t.withNarrative} <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 400;">(${pct(t.withNarrative, t.upcomingFights)})</span></div>
+          </div>
+        </div>
+        <div style="font-size: 0.8rem; margin-bottom: 0.75rem;">${lastTag}</div>
+      `;
+
+      const inWin = data.inWindow;
+      let windowBanner;
+      if (inWin.total === 0) {
+        windowBanner = `
+          <div style="padding: 0.75rem; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 0.75rem;">
+            <div style="font-weight: 600;">No events currently in a cadence window</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">Coverage will populate as upcoming events approach the T-10 / T-5 / T-2 boundaries.</div>
+          </div>
+        `;
+      } else if (inWin.missing === 0) {
+        windowBanner = `
+          <div style="padding: 0.75rem; background: rgba(0, 200, 83, 0.08); border: 1px solid rgba(0, 200, 83, 0.3); border-radius: 6px; margin-bottom: 0.75rem;">
+            <div style="font-weight: 600; color: #00c853;">All ${inWin.total} in-window events have been enriched within 36h</div>
+          </div>
+        `;
+      } else {
+        windowBanner = `
+          <div style="padding: 0.75rem; background: rgba(255, 152, 0, 0.1); border: 1px solid rgba(255, 152, 0, 0.4); border-radius: 6px; margin-bottom: 0.75rem;">
+            <div style="font-weight: 600; color: #ff9800;">⚠ ${inWin.missing} of ${inWin.total} in-window events not enriched in 36h+</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">Possible cron failure — check <code>.github/workflows/fight-enrichment.yml</code> runs.</div>
+          </div>
+        `;
+      }
+
+      const inWindowRows = inWin.events.map(e => {
+        const stale = !e.lastEnrichedAt || (Date.now() - new Date(e.lastEnrichedAt).getTime()) / 3_600_000 > 36;
+        const statusCell = stale
+          ? `<span style="color: #ff9800;">missing</span>`
+          : `<span style="color: #00c853;">${fmtAgo(e.lastEnrichedAt)}</span>`;
+        return `
+          <tr>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);"><strong>${e.window}</strong></td>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">${e.promotion}</td>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">${e.name}</td>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">${e.date.slice(0, 10)}</td>
+            <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">${statusCell}</td>
+          </tr>
+        `;
+      }).join('');
+
+      const inWindowTable = inWin.total > 0 ? `
+        <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin: 0.75rem 0 0.25rem 0;">In-window events</div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 0.75rem;">
+          <thead>
+            <tr style="text-align: left; color: var(--text-secondary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border);">Window</th>
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border);">Promotion</th>
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border);">Event</th>
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">Date</th>
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">Last enriched</th>
+            </tr>
+          </thead>
+          <tbody>${inWindowRows}</tbody>
+        </table>
+      ` : '';
+
+      const promoRows = data.byPromotion.map(r => `
+        <tr>
+          <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);"><strong>${r.promotion}</strong></td>
+          <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">${r.upcoming}</td>
+          <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">${r.enrichedAny} <span style="color: var(--text-secondary); font-size: 0.75rem;">(${pct(r.enrichedAny, r.upcoming)})</span></td>
+          <td style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">${r.withNarrative} <span style="color: var(--text-secondary); font-size: 0.75rem;">(${pct(r.withNarrative, r.upcoming)})</span></td>
+        </tr>
+      `).join('');
+
+      const promoTable = `
+        <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin: 0.75rem 0 0.25rem 0;">Coverage by promotion (all UPCOMING fights)</div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+          <thead>
+            <tr style="text-align: left; color: var(--text-secondary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border);">Promotion</th>
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">Upcoming</th>
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">Enriched (any)</th>
+              <th style="padding: 0.5rem; border-bottom: 1px solid var(--border); text-align: right;">With narrative</th>
+            </tr>
+          </thead>
+          <tbody>${promoRows}</tbody>
+        </table>
+      `;
+
+      body.innerHTML = summary + windowBanner + inWindowTable + promoTable;
+    }
+
+    function pct(num, total) {
+      if (!total) return '0%';
+      return `${((num / total) * 100).toFixed(0)}%`;
     }
 
     // Promotion registry — fetched from /admin/config/promotions on first use.

@@ -1507,6 +1507,132 @@ export async function adminRoutes(fastify: FastifyInstance) {
   });
 
   // ============================================
+  // AI ENRICHMENT HEALTH
+  // ============================================
+  // Sentinel for the daily AI enrichment cron (14:00 UTC). Surfaces coverage
+  // across UPCOMING fights, broken down by promotion and by T-10/T-5/T-2
+  // window. The most actionable signal is `inWindowMissing` — events that
+  // are currently in a cadence window but have NOT been enriched in 36h.
+  // If that number stays non-zero across days, the cron is broken.
+  fastify.get('/admin/health/enrichment', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (_request, reply) => {
+    try {
+      const MS_PER_DAY = 86_400_000;
+      const FRESH_HOURS = 36;
+      const now = Date.now();
+      const freshCutoff = new Date(now - FRESH_HOURS * 3_600_000);
+
+      const fights = await prisma.fight.findMany({
+        where: { fightStatus: 'UPCOMING' },
+        select: {
+          id: true,
+          aiTags: true,
+          aiPreviewShort: true,
+          aiEnrichedAt: true,
+          event: { select: { id: true, name: true, promotion: true, date: true } },
+        },
+      });
+
+      type PromoStats = { promotion: string; upcoming: number; enrichedAny: number; withNarrative: number };
+      const byPromo = new Map<string, PromoStats>();
+
+      let totalUpcoming = 0;
+      let totalEnrichedAny = 0;
+      let totalWithNarrative = 0;
+
+      const hasNarrative = (f: typeof fights[number]) => {
+        if (f.aiPreviewShort) return true;
+        const t = f.aiTags as any;
+        if (!t) return false;
+        return (t.stakes?.length ?? 0) > 0 || (t.storylines?.length ?? 0) > 0 || (t.styleTags?.length ?? 0) > 0;
+      };
+
+      for (const f of fights) {
+        totalUpcoming++;
+        const promo = f.event.promotion;
+        let row = byPromo.get(promo);
+        if (!row) {
+          row = { promotion: promo, upcoming: 0, enrichedAny: 0, withNarrative: 0 };
+          byPromo.set(promo, row);
+        }
+        row.upcoming++;
+        if (f.aiEnrichedAt) {
+          row.enrichedAny++;
+          totalEnrichedAny++;
+        }
+        if (hasNarrative(f)) {
+          row.withNarrative++;
+          totalWithNarrative++;
+        }
+      }
+
+      const byPromotion = Array.from(byPromo.values()).sort((a, b) => b.upcoming - a.upcoming);
+
+      // In-window status: events currently in a T-10/T-5/T-2 window.
+      const eventMap = new Map<string, { id: string; name: string; promotion: string; date: Date; window: 'T-10' | 'T-5' | 'T-2'; lastEnriched: Date | null }>();
+      for (const f of fights) {
+        const ev = f.event;
+        const daysUntil = Math.floor((ev.date.getTime() - now) / MS_PER_DAY);
+        let window: 'T-10' | 'T-5' | 'T-2' | null = null;
+        if (daysUntil < 0) window = null;
+        else if (daysUntil <= 2) window = 'T-2';
+        else if (daysUntil <= 5) window = 'T-5';
+        else if (daysUntil <= 10) window = 'T-10';
+        if (!window) continue;
+        const existing = eventMap.get(ev.id);
+        const last = f.aiEnrichedAt ?? null;
+        if (!existing) {
+          eventMap.set(ev.id, { id: ev.id, name: ev.name, promotion: ev.promotion, date: ev.date, window, lastEnriched: last });
+        } else if (last && (!existing.lastEnriched || last > existing.lastEnriched)) {
+          existing.lastEnriched = last;
+        }
+      }
+
+      const inWindow = Array.from(eventMap.values()).sort((a, b) => a.date.getTime() - b.date.getTime());
+      const inWindowMissing = inWindow.filter(e => !e.lastEnriched || e.lastEnriched < freshCutoff);
+
+      // Most-recent enrichment timestamp across the whole DB — proxy for cron health.
+      const lastEnrichedAcross = await prisma.fight.aggregate({
+        where: { aiEnrichedAt: { not: null } },
+        _max: { aiEnrichedAt: true },
+      });
+
+      return reply.send({
+        success: true,
+        data: {
+          asOf: new Date().toISOString(),
+          totals: {
+            upcomingFights: totalUpcoming,
+            enrichedAny: totalEnrichedAny,
+            withNarrative: totalWithNarrative,
+          },
+          lastEnrichmentAt: lastEnrichedAcross._max.aiEnrichedAt?.toISOString() ?? null,
+          inWindow: {
+            total: inWindow.length,
+            missing: inWindowMissing.length,
+            events: inWindow.map(e => ({
+              id: e.id,
+              name: e.name,
+              promotion: e.promotion,
+              date: e.date.toISOString(),
+              window: e.window,
+              lastEnrichedAt: e.lastEnriched?.toISOString() ?? null,
+            })),
+          },
+          byPromotion,
+        },
+      });
+    } catch (error: any) {
+      console.error('[Admin] Enrichment health check failed:', error);
+      return reply.code(500).send({
+        error: 'Enrichment health check failed',
+        message: error.message,
+      });
+    }
+  });
+
+  // ============================================
   // TEST EMAIL ALERTS
   // ============================================
 
