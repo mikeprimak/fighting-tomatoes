@@ -1,10 +1,10 @@
 /**
- * Claude Haiku 4.5 — per-fight enrichment from event preview source text.
+ * Claude Haiku 4.5 — per-fight enrichment, anchored to the DB card.
  *
- * Given the raw text from one source (e.g. a ufc.com event page), emit one
- * structured record per fight. Designed to be honest about coverage gaps:
- * fields the source doesn't support are returned empty/null rather than
- * fabricated.
+ * The DB holds the authoritative card list (fightId, fighters, section, order).
+ * We pass that card to the LLM and ask it to fill in narrative fields per
+ * fightId from editorial text. The LLM never invents fights, never matches
+ * fighter names — those problems are gone.
  *
  * Prompt caching is on the system prompt — across a batch of events the
  * cached read is ~0.1× the input cost.
@@ -15,62 +15,68 @@ import Anthropic from '@anthropic-ai/sdk';
 const MODEL = 'claude-haiku-4-5-20251001';
 const MAX_TOKENS = 4096;
 
-const SYSTEM_PROMPT = `You are a combat-sports analyst extracting per-fight enrichment from web content for a fight-rating app.
+const SYSTEM_PROMPT = `You are a combat-sports analyst enriching a fight card for a fight-rating app.
 
 You will be given:
   - A promotion (e.g. "UFC")
   - An event name (e.g. "UFC Fight Night Allen vs Costa")
-  - One or more source excerpts of varying quality (card listings, articles, etc.)
+  - A CARD: the authoritative list of fights on this event, each with a fightId, fighter names, weight class, card section, and order on card.
+  - One or more source excerpts (preview articles, official event pages).
 
-For EACH fight you can identify in the source, emit one record. Do NOT fabricate fighters or fields that the source does not support — leave unsupported fields empty/null.
+Your job: emit ONE record per fightId that the editorial actually covers. Skip fightIds the editorial doesn't speak to — do NOT invent narrative from training data.
 
 Output STRICT JSON (no prose, no markdown, no fences):
 {
   "fights": [
     {
-      "redFighter": "Arnold Allen",                // surname only is OK if that's all the source gives — try for full name
-      "blueFighter": "Melquizael Costa",
-      "weightClass": "Featherweight",              // null if not stated
-      "cardSection": "MAIN_CARD",                  // EARLY_PRELIMS | PRELIMS | MAIN_CARD | null
-      "isMainEvent": false,                        // true ONLY if the source flags this fight as the main event / headliner
-      "rankings": { "red": 7, "blue": 12 },        // numeric rank when shown like "#7"; use null for unranked side; use null for the whole field if no rankings shown
-      "odds": { "red": "-135", "blue": "+115" },   // strings; null if not shown
-      "whyCare": "1-sentence hook a casual fan would understand. Plain English. Avoid jargon. Empty string if the source gives you nothing to anchor to.",
-      "stakes": [],                                // short bullet list of what's on the line ("ranking implications", "title eliminator", "main event spotlight"). Empty if source doesn't support it.
-      "storylines": [],                            // narrative angles ("rematch of 2024 FOTY", "Allen returns from 18-month layoff"). Empty if source doesn't support it.
-      "styleTags": [],                             // ("striker vs grappler", "high-output volume", "knockout artist"). Empty if not derivable from source.
+      "fightId": "abc-123-...",                   // copied verbatim from the CARD
+      "rankings": { "red": 7, "blue": 12 },       // numeric rank when shown ("#7"); use null for unranked side; use null for the whole field if no rankings shown
+      "odds": { "red": "-135", "blue": "+115" },  // strings; null if not shown
+      "whyCare": "1-sentence hook a casual fan would understand. Plain English, no jargon. Omit the field if you have nothing grounded.",
+      "stakes": [],                                // short bullet list of what's on the line. Empty if not in editorial.
+      "storylines": [],                            // narrative angles ("rematch of 2024 FOTY", "Allen returns from 18-month layoff"). Empty if not in editorial.
+      "styleTags": [],                             // ("striker vs grappler", "high-output volume"). Empty if not derivable.
       "pace": null,                                // "fast" | "tactical" | "grinding" | null
       "riskTier": null,                            // "lopsided" | "favorite-leans" | "pickem" | null  — derive from odds when present
-      "confidence": 0.6                            // 0.0–1.0, your own confidence the record is correct and useful
+      "confidence": 0.6                            // 0.0–1.0, YOUR confidence the record is correct and useful for this specific fight
     }
   ]
 }
 
 Hard rules:
-  - One record per fight. Don't merge multi-bout sections.
-  - Prefer full fighter names. If only a surname is in the source, use the surname.
-  - "isMainEvent" is true for at most ONE fight per event.
+  - "fightId" must be one of the IDs from the CARD. Never invent IDs. Records with unknown fightIds will be dropped.
+  - The CARD is the ground truth for which fights are on the event. NEVER add fights not in the CARD, even if you see them mentioned in the editorial.
+  - "red" = fighter1 from the CARD, "blue" = fighter2. Orientation is fixed by the CARD; do not flip.
+  - Narrative fields (stakes, storylines, styleTags) MUST be grounded in the editorial text you were given. If editorial doesn't speak to a specific fight, OMIT that fightId from your output entirely. Don't pad with empty arrays — just leave it out.
   - "riskTier" mapping when odds are present: spread of 300+ → lopsided; 150–299 → favorite-leans; <150 → pickem.
-  - Do NOT invent storylines, styleTags, or stakes from training data. They MUST be grounded in the provided source text. If the source is just a card listing with no narrative, those arrays should be empty.
-  - "confidence" reflects YOUR estimate of correctness. Card-listing-only inputs should yield 0.4–0.6. Editorial-grade inputs can yield 0.7+.
-  - If you can't identify any fights, return {"fights": []}.`;
+  - "confidence" reflects YOUR estimate. Editorial with named-fight discussion ⇒ 0.7+. Editorial that only namedrops the event ⇒ 0.4–0.5.
+  - If editorial is silent on every fight, return {"fights": []}.
+  - Output the JSON object only. No commentary, no markdown fences, no rationale before or after the JSON.`;
+
+export interface CardItem {
+  fightId: string;
+  fighter1: string;
+  fighter2: string;
+  weightClass: string | null;
+  cardSection: string | null;
+  orderOnCard: number | null;
+  isMainEvent: boolean;
+  isTitle: boolean;
+}
 
 export interface FightEnrichmentInput {
   promotion: string;
   eventName: string;
-  sources: Array<{ url: string; text: string }>;
+  eventDate?: string;
+  card: CardItem[];
+  sources: Array<{ url: string; text: string; label?: string }>;
 }
 
-export type CardSection = 'EARLY_PRELIMS' | 'PRELIMS' | 'MAIN_CARD' | null;
 export type Pace = 'fast' | 'tactical' | 'grinding' | null;
 export type RiskTier = 'lopsided' | 'favorite-leans' | 'pickem' | null;
 
 export interface FightEnrichmentRecord {
-  redFighter: string;
-  blueFighter: string;
-  weightClass: string | null;
-  cardSection: CardSection;
-  isMainEvent: boolean;
+  fightId: string;
   rankings: { red: number | null; blue: number | null } | null;
   odds: { red: string | null; blue: string | null } | null;
   whyCare: string;
@@ -84,6 +90,7 @@ export interface FightEnrichmentRecord {
 
 export interface FightEnrichmentResult {
   fights: FightEnrichmentRecord[];
+  ghostFightIds: string[]; // fightIds returned by LLM that aren't in the card (dropped)
   usage: {
     inputTokens: number;
     outputTokens: number;
@@ -126,9 +133,13 @@ export async function extractFightEnrichment(
     .join('\n')
     .trim();
 
+  const validIds = new Set(input.card.map((c) => c.fightId));
+  const { records, ghosts } = parseFights(text, validIds);
+
   const usage = resp.usage as any;
   return {
-    fights: parseFights(text),
+    fights: records,
+    ghostFightIds: ghosts,
     usage: {
       inputTokens: usage?.input_tokens ?? 0,
       outputTokens: usage?.output_tokens ?? 0,
@@ -142,44 +153,68 @@ function buildUserMessage(input: FightEnrichmentInput): string {
   const lines: string[] = [];
   lines.push(`Promotion: ${input.promotion}`);
   lines.push(`Event: ${input.eventName}`);
+  if (input.eventDate) lines.push(`Date: ${input.eventDate}`);
   lines.push('');
-  for (let i = 0; i < input.sources.length; i++) {
-    const s = input.sources[i];
-    lines.push(`## Source ${i + 1}`);
-    lines.push(`URL: ${s.url}`);
-    lines.push('Text:');
-    lines.push(s.text);
-    lines.push('');
+  lines.push('## CARD (authoritative — enrich only these fightIds):');
+  for (const c of input.card) {
+    const bits: string[] = [];
+    bits.push(`fightId=${c.fightId}`);
+    bits.push(`${c.fighter1} vs ${c.fighter2}`);
+    if (c.weightClass) bits.push(`weight=${c.weightClass}`);
+    if (c.cardSection) bits.push(`section=${c.cardSection}`);
+    if (c.orderOnCard !== null) bits.push(`order=${c.orderOnCard}`);
+    if (c.isMainEvent) bits.push('MAIN_EVENT');
+    if (c.isTitle) bits.push('TITLE');
+    lines.push(`- ${bits.join(' | ')}`);
+  }
+  lines.push('');
+  if (input.sources.length === 0) {
+    lines.push('## SOURCES: none');
+  } else {
+    for (let i = 0; i < input.sources.length; i++) {
+      const s = input.sources[i];
+      lines.push(`## Source ${i + 1}${s.label ? ` (${s.label})` : ''}`);
+      lines.push(`URL: ${s.url}`);
+      lines.push('Text:');
+      lines.push(s.text);
+      lines.push('');
+    }
   }
   return lines.join('\n');
 }
 
-function parseFights(raw: string): FightEnrichmentRecord[] {
-  const cleaned = raw
-    .replace(/^```json\s*/i, '')
-    .replace(/^```\s*/i, '')
-    .replace(/```$/, '')
-    .trim();
+function parseFights(
+  raw: string,
+  validIds: Set<string>,
+): { records: FightEnrichmentRecord[]; ghosts: string[] } {
+  const jsonText = extractFirstJsonObject(raw);
+  if (!jsonText) {
+    console.warn('[aiEnrichment.extract] no JSON object found; raw:', raw.slice(0, 200));
+    return { records: [], ghosts: [] };
+  }
   let parsed: any;
   try {
-    parsed = JSON.parse(cleaned);
+    parsed = JSON.parse(jsonText);
   } catch {
-    console.warn('[aiEnrichment.extract] JSON parse failed; raw:', cleaned.slice(0, 300));
-    return [];
+    console.warn('[aiEnrichment.extract] JSON parse failed; text:', jsonText.slice(0, 200));
+    return { records: [], ghosts: [] };
   }
   const fights: any[] = parsed?.fights ?? [];
-  const SECTIONS = ['EARLY_PRELIMS', 'PRELIMS', 'MAIN_CARD'];
   const PACES = ['fast', 'tactical', 'grinding'];
   const RISK = ['lopsided', 'favorite-leans', 'pickem'];
 
-  return fights
-    .filter((f) => f && typeof f.redFighter === 'string' && typeof f.blueFighter === 'string')
-    .map((f) => ({
-      redFighter: String(f.redFighter).trim(),
-      blueFighter: String(f.blueFighter).trim(),
-      weightClass: typeof f.weightClass === 'string' ? f.weightClass.trim() : null,
-      cardSection: SECTIONS.includes(f.cardSection) ? (f.cardSection as CardSection) : null,
-      isMainEvent: f.isMainEvent === true,
+  const records: FightEnrichmentRecord[] = [];
+  const ghosts: string[] = [];
+
+  for (const f of fights) {
+    if (!f || typeof f.fightId !== 'string') continue;
+    const fightId = f.fightId.trim();
+    if (!validIds.has(fightId)) {
+      ghosts.push(fightId);
+      continue;
+    }
+    records.push({
+      fightId,
       rankings: f.rankings && typeof f.rankings === 'object'
         ? {
             red: typeof f.rankings.red === 'number' ? f.rankings.red : null,
@@ -201,5 +236,29 @@ function parseFights(raw: string): FightEnrichmentRecord[] {
       confidence: typeof f.confidence === 'number'
         ? Math.max(0, Math.min(1, f.confidence))
         : 0.5,
-    }));
+    });
+  }
+
+  return { records, ghosts };
+}
+
+function extractFirstJsonObject(raw: string): string | null {
+  const start = raw.indexOf('{');
+  if (start < 0) return null;
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < raw.length; i++) {
+    const ch = raw[i];
+    if (escape) { escape = false; continue; }
+    if (ch === '\\' && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return raw.slice(start, i + 1);
+    }
+  }
+  return null;
 }

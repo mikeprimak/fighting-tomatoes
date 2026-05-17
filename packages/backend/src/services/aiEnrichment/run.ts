@@ -135,8 +135,9 @@ export async function runFightEnrichment(
         const tag = result.abortedReason ? `ABORT(${result.abortedReason})` : `${result.wroteCount} wrote`;
         console.log(
           `[runFightEnrichment] ${window}  ${ev.promotion} | ${ev.name}  ` +
-            `→ ${result.fightsWithNarrative}/${result.fightsExtracted} narrative, ` +
-            `${result.matched} matched, ${tag}, ` +
+            `→ card ${result.cardSize}, ` +
+            `${result.fightsWithNarrative}/${result.fightsEnriched} narrative, ` +
+            `${result.uncoveredFightIds.length} uncovered, ${tag}, ` +
             `$${result.costUsd.toFixed(4)}`,
         );
       } catch (err: any) {

@@ -1,128 +1,73 @@
 /**
- * Match LLM-extracted enrichment records against the event's UPCOMING DB
- * fights, then upsert the ai* fields. CANCELLED fights are excluded — this is
- * the bug-shield against stale matchups inflated by Tapology imports.
+ * Write LLM enrichment records straight onto Fight rows by fightId.
  *
- * Matching is pair-agnostic (red↔fighter1+blue↔fighter2 OR the flipped
- * orientation) and surname-anchored: the LLM frequently emits "Rousey" /
- * "Ronda Rousey" / "Gina Carano" against DB rows that store first+last
- * separately, so surname overlap is the strongest single signal.
+ * The DB is the source of truth for the card (see enrichOneEvent.ts), so by
+ * the time we get here every record has a fightId we trust. Structural fields
+ * (cardSection, weightClass, isMainEvent) are pulled from the DB row at write
+ * time and merged into aiTags so downstream consumers see a stable shape.
  */
 
 import { PrismaClient } from '@prisma/client';
-import { normalizeName, similarityScore } from '../../utils/fighterMatcher';
-import type { FightEnrichmentRecord } from './extractFightEnrichment';
-
-const MIN_FIGHTER_SCORE = 0.7;
+import type { FightEnrichmentRecord, CardItem } from './extractFightEnrichment';
 
 export interface PersistOptions {
-  /** When true, compute matches and report but do NOT write to DB. */
   dryRun?: boolean;
 }
 
-export interface PersistedMatch {
-  llmRed: string;
-  llmBlue: string;
-  fightId: string;
-  dbRed: string;
-  dbBlue: string;
-  score: number;
-  flipped: boolean;
-}
-
 export interface PersistResult {
-  matched: PersistedMatch[];
-  unmatchedRecords: FightEnrichmentRecord[];      // LLM records that didn't map to any DB fight
-  uncoveredDbFightIds: string[];                  // DB UPCOMING fights with no LLM coverage
   wroteCount: number;
-}
-
-interface DbFighter {
-  id: string;
-  firstName: string;
-  lastName: string;
-  nickname: string | null;
-}
-
-interface DbFight {
-  id: string;
-  fighter1: DbFighter;
-  fighter2: DbFighter;
+  writtenFightIds: string[];
+  uncoveredFightIds: string[]; // card fightIds the LLM didn't return a record for
 }
 
 export async function persistEnrichment(
   prisma: PrismaClient,
-  eventId: string,
+  card: CardItem[],
   records: FightEnrichmentRecord[],
   sourceUrls: string[],
   opts: PersistOptions = {},
 ): Promise<PersistResult> {
-  const dbFights = (await prisma.fight.findMany({
-    where: { eventId, fightStatus: 'UPCOMING' },
-    include: {
-      fighter1: { select: { id: true, firstName: true, lastName: true, nickname: true } },
-      fighter2: { select: { id: true, firstName: true, lastName: true, nickname: true } },
-    },
-  })) as unknown as DbFight[];
+  const byId = new Map<string, CardItem>();
+  for (const c of card) byId.set(c.fightId, c);
 
-  const matched: PersistedMatch[] = [];
-  const unmatched: FightEnrichmentRecord[] = [];
-  const usedFightIds = new Set<string>();
+  const covered = new Set<string>();
+  const written: string[] = [];
 
-  for (const rec of records) {
-    let best: { fight: DbFight; score: number; flipped: boolean } | null = null;
-    for (const f of dbFights) {
-      if (usedFightIds.has(f.id)) continue;
-      const straight = pairScore(rec.redFighter, rec.blueFighter, f.fighter1, f.fighter2);
-      const flipped = pairScore(rec.redFighter, rec.blueFighter, f.fighter2, f.fighter1);
-      const score = Math.max(straight, flipped);
-      if (score > (best?.score ?? 0)) {
-        best = { fight: f, score, flipped: flipped > straight };
-      }
-    }
-    if (best && best.score >= MIN_FIGHTER_SCORE * 2) {
-      // pairScore sums two fighter scores (0..2). Require min on each side via /2 threshold above.
-      usedFightIds.add(best.fight.id);
-      matched.push({
-        llmRed: rec.redFighter,
-        llmBlue: rec.blueFighter,
-        fightId: best.fight.id,
-        dbRed: fullName(best.fight.fighter1),
-        dbBlue: fullName(best.fight.fighter2),
-        score: best.score,
-        flipped: best.flipped,
-      });
-    } else {
-      unmatched.push(rec);
-    }
-  }
-
-  const uncoveredDbFightIds = dbFights.filter((f) => !usedFightIds.has(f.id)).map((f) => f.id);
-
-  // Write phase.
-  let wroteCount = 0;
   if (!opts.dryRun) {
-    for (const m of matched) {
-      const rec = records.find((r) => r.redFighter === m.llmRed && r.blueFighter === m.llmBlue);
-      if (!rec) continue;
+    for (const rec of records) {
+      const cardItem = byId.get(rec.fightId);
+      if (!cardItem) continue; // shouldn't happen — already filtered upstream
+      covered.add(rec.fightId);
       await prisma.fight.update({
-        where: { id: m.fightId },
+        where: { id: rec.fightId },
         data: {
-          aiTags: buildAiTags(rec),
+          aiTags: buildAiTags(rec, cardItem),
           aiPreviewShort: rec.whyCare || null,
           aiSourceUrls: sourceUrls,
           aiConfidence: rec.confidence,
           aiEnrichedAt: new Date(),
         },
       });
-      wroteCount++;
+      written.push(rec.fightId);
+    }
+  } else {
+    for (const rec of records) {
+      if (byId.has(rec.fightId)) covered.add(rec.fightId);
     }
   }
 
-  return { matched, unmatchedRecords: unmatched, uncoveredDbFightIds, wroteCount };
+  const uncoveredFightIds = card
+    .map((c) => c.fightId)
+    .filter((id) => !covered.has(id));
+
+  return {
+    wroteCount: written.length,
+    writtenFightIds: written,
+    uncoveredFightIds,
+  };
 }
 
-function buildAiTags(rec: FightEnrichmentRecord) {
+function buildAiTags(rec: FightEnrichmentRecord, cardItem: CardItem) {
   return {
     stakes: rec.stakes,
     storylines: rec.storylines,
@@ -131,56 +76,8 @@ function buildAiTags(rec: FightEnrichmentRecord) {
     riskTier: rec.riskTier,
     rankings: rec.rankings,
     odds: rec.odds,
-    isMainEvent: rec.isMainEvent,
-    cardSection: rec.cardSection,
-    weightClass: rec.weightClass,
+    isMainEvent: cardItem.isMainEvent,
+    cardSection: cardItem.cardSection,
+    weightClass: cardItem.weightClass,
   };
-}
-
-/** Returns a sum of two per-fighter scores in [0, 2]. */
-function pairScore(
-  llmRed: string,
-  llmBlue: string,
-  dbA: DbFighter,
-  dbB: DbFighter,
-): number {
-  return fighterScore(llmRed, dbA) + fighterScore(llmBlue, dbB);
-}
-
-/** Score one LLM name against one DB fighter (firstName, lastName). 0..1. */
-function fighterScore(llmName: string, db: DbFighter): number {
-  const llm = normalizeName(llmName);
-  const dbFirst = normalizeName(db.firstName);
-  const dbLast = normalizeName(db.lastName);
-  const dbFull = `${dbFirst} ${dbLast}`.trim();
-
-  if (!llm || !dbLast) return 0;
-
-  // Exact full-name match — strongest signal.
-  if (llm === dbFull) return 1.0;
-
-  // Surname appears as a whole word in the LLM string.
-  const llmTokens = llm.split(/\s+/);
-  if (llmTokens.includes(dbLast)) {
-    // Bonus when the first name also appears.
-    if (llmTokens.includes(dbFirst)) return 0.98;
-    return 0.9;
-  }
-
-  // LLM is just the surname.
-  if (llm === dbLast) return 0.85;
-
-  // Fuzzy surname (Cyrillic ↔ Latin transliterations etc).
-  const llmLast = llmTokens[llmTokens.length - 1];
-  const lastSim = similarityScore(llmLast, dbLast);
-  if (lastSim >= 0.85) {
-    const firstSim = similarityScore(llmTokens[0] ?? '', dbFirst);
-    return 0.6 * lastSim + 0.4 * firstSim;
-  }
-
-  return 0;
-}
-
-function fullName(f: DbFighter): string {
-  return `${f.firstName} ${f.lastName}`.trim();
 }
