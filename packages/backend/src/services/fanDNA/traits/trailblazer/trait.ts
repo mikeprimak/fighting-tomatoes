@@ -123,16 +123,19 @@ const trait: Trait = {
     if (total < 1) return null;
     const rate = v.firstRateCount ?? 0;
     const hype = v.firstHypeCount ?? 0;
-    const parts: string[] = [];
-    if (rate > 0) parts.push(`${rate} first-rating${rate === 1 ? '' : 's'}`);
-    if (hype > 0) parts.push(`${hype} first-hype${hype === 1 ? '' : 's'}`);
+    let body: string;
+    if (rate > 0 && hype > 0) {
+      body = `You've been the first person to rate ${rate} fight${rate === 1 ? '' : 's'} and the first to hype ${hype} more.`;
+    } else if (rate > 0) {
+      body = `You've been the first person to rate ${rate} fight${rate === 1 ? '' : 's'}.`;
+    } else {
+      body = `You've been the first person to hype ${hype} fight${hype === 1 ? '' : 's'}.`;
+    }
     return {
       headline: 'Trailblazer',
-      body: parts.length === 0
-        ? `Among the first to react on ${total} fights.`
-        : parts.join(' · '),
+      body,
       primaryStat: `${total}`,
-      secondaryStat: 'first-ever',
+      secondaryStat: total === 1 ? 'fight' : 'fights',
       weight: total >= 5 ? 90 : 65,
     };
   },

@@ -1332,6 +1332,30 @@ export async function authRoutes(fastify: FastifyInstance) {
         orderBy: { fight: { event: { date: 'desc' } } },
       });
 
+      // Community HYPE average per fight, excluding this user. Drives the
+      // "hot take" detection (your hype differed from the crowd's hype AND
+      // turned out to match the final rating).
+      const fightIds = predictions.map((p) => p.fight.id);
+      const communityHypeAggs = fightIds.length > 0
+        ? await fastify.prisma.fightPrediction.groupBy({
+            by: ['fightId'],
+            where: {
+              fightId: { in: fightIds },
+              userId: { not: userId },
+              predictedRating: { not: null },
+            },
+            _avg: { predictedRating: true },
+            _count: { _all: true },
+          })
+        : [];
+      const communityHypeByFight = new Map<string, { avg: number; count: number }>();
+      for (const agg of communityHypeAggs) {
+        communityHypeByFight.set(agg.fightId, {
+          avg: agg._avg.predictedRating ?? 0,
+          count: agg._count._all,
+        });
+      }
+
       type Row = {
         fightId: string;
         fighter1Name: string;
@@ -1379,9 +1403,19 @@ export async function authRoutes(fastify: FastifyInstance) {
         else if (delta < 3) bucket = 'off';
         else bucket = 'way_off';
 
-        // Hot take: nailed an extreme call (user hyped 8+ or 3-, community agreed within 1.5)
-        const isExtreme = userHype >= 8 || userHype <= 3;
-        const isHotTake = isExtreme && delta < 1.5;
+        // Hot take: contrarian prediction that paid off. Your hype was
+        // notably different from how everyone else was hyping the fight,
+        // AND your hype was close to how the community ended up rating it.
+        // i.e. you saw something the crowd didn't.
+        const communityHype = communityHypeByFight.get(fight.id);
+        const hypeGap = communityHype && communityHype.count >= COMMUNITY_FLOOR
+          ? Math.abs(userHype - communityHype.avg)
+          : 0;
+        const isHotTake =
+          !!communityHype &&
+          communityHype.count >= COMMUNITY_FLOOR &&
+          hypeGap >= 2.0 &&
+          delta <= 1.5;
 
         rows.push({
           fightId: fight.id,

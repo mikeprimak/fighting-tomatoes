@@ -178,16 +178,15 @@ const trait: Trait = {
     };
     if (!v.totalHypedFights || v.totalHypedFights < HISTORY_FLOOR) return null;
     const pct = v.accuracyPct ?? 0;
-    const hot = v.hotTakeCount ?? 0;
-    const body = hot > 0
-      ? `${v.accurateCount} of ${v.totalHypedFights} hypes inside 2 of the room. ${hot} hot take${hot === 1 ? '' : 's'}.`
-      : `${v.accurateCount} of ${v.totalHypedFights} hypes inside 2 of the room.`;
+    const body = pct >= 55
+      ? `You're good at predicting how exciting a fight will be. ${pct}% of fights are as exciting as you predict.`
+      : `${pct}% of fights end up about as exciting as you predict.`;
     return {
       headline: 'Hype vs Outcome',
       body,
       primaryStat: `${pct}%`,
-      secondaryStat: `${v.totalHypedFights} fights`,
-      weight: hot > 0 ? 92 : 70,
+      secondaryStat: 'accuracy',
+      weight: 80,
     };
   },
 };

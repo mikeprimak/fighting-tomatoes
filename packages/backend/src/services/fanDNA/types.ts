@@ -138,11 +138,15 @@ export interface Trait {
   copy: CopyVariants;
 
   /**
-   * Optional: turn a computed `TraitValue.value` into a profile-page card.
-   * Return null when the value doesn't warrant a card (e.g. below floor, no
-   * dominant signal). Traits that don't implement this never appear on profile.
+   * Optional: turn a computed `TraitValue.value` into one or more profile-page
+   * cards. Return null when nothing warrants a card. Return an array when one
+   * trait has multiple independent stories to tell (e.g. org-affinity might
+   * surface a ratings-affinity card AND a hypes-affinity card separately).
+   * Traits that don't implement this never appear on profile.
    */
-  profileSummary?(value: Record<string, unknown>): TraitProfileSummary | null;
+  profileSummary?(
+    value: Record<string, unknown>,
+  ): TraitProfileSummary | TraitProfileSummary[] | null;
 
   /** Marks a trait as sunset: no new computation, no surfacing, history preserved. */
   deprecated?: boolean;

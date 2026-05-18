@@ -27,14 +27,21 @@ const trait: Trait = {
   id: 'org-affinity',
   family: 'affinity',
   tier: 1,
-  version: 1,
+  version: 2,
   respondsTo: ['rate', 'hype'] as const,
   surfaces: ['rate-reveal-modal', 'hype-reveal-modal', 'profile-fullscreen'] as const,
   copy,
 
   async batchCompute({ prisma, userId }) {
+    // Combined ratings + hypes drives the eventEvaluate path (whose copy
+    // doesn't distinguish action). Per-action totals drive the profile
+    // surface, which should speak about ratings and hypes separately.
     const totals = await aggregateByOrg(prisma, userId);
+    const ratingTotals = await aggregateByOrgForAction(prisma, userId, 'rate');
+    const hypeTotals = await aggregateByOrgForAction(prisma, userId, 'hype');
     const total = Object.values(totals).reduce((a, b) => a + b, 0);
+    const ratingTotal = Object.values(ratingTotals).reduce((a, b) => a + b, 0);
+    const hypeTotal = Object.values(hypeTotals).reduce((a, b) => a + b, 0);
     if (total === 0) {
       return { value: { totals: {}, total: 0, dominant: null }, confidence: 0, hasFloor: false };
     }
@@ -42,12 +49,29 @@ const trait: Trait = {
     const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
     const dominant = sorted[0][1] / total >= DOMINANT_THRESHOLD ? sorted[0][0] : null;
 
+    const ratingSorted = Object.entries(ratingTotals).sort((a, b) => b[1] - a[1]);
+    const ratingDominant = ratingTotal > 0 && ratingSorted[0][1] / ratingTotal >= DOMINANT_THRESHOLD
+      ? ratingSorted[0][0]
+      : null;
+    const hypeSorted = Object.entries(hypeTotals).sort((a, b) => b[1] - a[1]);
+    const hypeDominant = hypeTotal > 0 && hypeSorted[0][1] / hypeTotal >= DOMINANT_THRESHOLD
+      ? hypeSorted[0][0]
+      : null;
+
     return {
       value: {
         totals,
         total,
         dominant,
         dominantPct: dominant ? Math.round((sorted[0][1] / total) * 100) : 0,
+        ratingTotals,
+        ratingTotal,
+        ratingDominant,
+        ratingDominantPct: ratingDominant ? Math.round((ratingSorted[0][1] / ratingTotal) * 100) : 0,
+        hypeTotals,
+        hypeTotal,
+        hypeDominant,
+        hypeDominantPct: hypeDominant ? Math.round((hypeSorted[0][1] / hypeTotal) * 100) : 0,
       },
       confidence: Math.min(1, total / 30),
       hasFloor: total >= HISTORY_FLOOR,
@@ -116,33 +140,69 @@ const trait: Trait = {
     return null;
   },
 
-  profileSummary(value): TraitProfileSummary | null {
+  profileSummary(value): TraitProfileSummary | TraitProfileSummary[] | null {
     const v = value as {
-      totals?: Record<string, number>;
-      total?: number;
-      dominant?: string | null;
-      dominantPct?: number;
+      ratingTotals?: Record<string, number>;
+      ratingTotal?: number;
+      ratingDominant?: string | null;
+      ratingDominantPct?: number;
+      hypeTotals?: Record<string, number>;
+      hypeTotal?: number;
+      hypeDominant?: string | null;
+      hypeDominantPct?: number;
     };
-    if (!v.total || v.total < HISTORY_FLOOR) return null;
-    if (!v.dominant) {
-      // No single org meets the 40% threshold — user is a generalist.
-      const orgCount = Object.keys(v.totals ?? {}).length;
-      return {
-        headline: 'Cross-promotion fan',
-        body: `${v.total} signals across ${orgCount} promotions — no single home.`,
-        primaryStat: `${orgCount}`,
-        secondaryStat: 'promotions',
-        weight: 55,
-      };
+
+    // Ratings and hypes are independent stories. Either, both, or neither
+    // can fire — whichever has enough data and something worth saying.
+    const cards: TraitProfileSummary[] = [];
+
+    const ratingTotal = v.ratingTotal ?? 0;
+    if (ratingTotal >= HISTORY_FLOOR) {
+      if (v.ratingDominant) {
+        const pretty = prettyOrg(v.ratingDominant);
+        cards.push({
+          headline: `${pretty} mainstay`,
+          body: `${v.ratingDominantPct}% of your ratings are on ${pretty} fights.`,
+          primaryStat: `${v.ratingDominantPct}%`,
+          secondaryStat: pretty,
+          weight: 78,
+        });
+      } else {
+        const orgCount = Object.keys(v.ratingTotals ?? {}).length;
+        cards.push({
+          headline: 'Cross-promotion fan',
+          body: `You've rated fights across ${orgCount} different promotions — no clear favorite.`,
+          primaryStat: `${orgCount}`,
+          secondaryStat: 'promotions',
+          weight: 55,
+        });
+      }
     }
-    const pretty = prettyOrg(v.dominant);
-    return {
-      headline: `${pretty} mainstay`,
-      body: `${v.dominantPct}% of your signals come from ${pretty}.`,
-      primaryStat: `${v.dominantPct}%`,
-      secondaryStat: pretty,
-      weight: 78,
-    };
+
+    const hypeTotal = v.hypeTotal ?? 0;
+    if (hypeTotal >= HISTORY_FLOOR) {
+      if (v.hypeDominant) {
+        const pretty = prettyOrg(v.hypeDominant);
+        cards.push({
+          headline: `${pretty} hype fan`,
+          body: `${v.hypeDominantPct}% of your hypes are on ${pretty} fights.`,
+          primaryStat: `${v.hypeDominantPct}%`,
+          secondaryStat: pretty,
+          weight: 76,
+        });
+      } else {
+        const orgCount = Object.keys(v.hypeTotals ?? {}).length;
+        cards.push({
+          headline: 'Cross-promotion hyper',
+          body: `You've hyped fights across ${orgCount} different promotions — no clear favorite.`,
+          primaryStat: `${orgCount}`,
+          secondaryStat: 'promotions',
+          weight: 53,
+        });
+      }
+    }
+
+    return cards.length > 0 ? cards : null;
   },
 };
 
@@ -154,6 +214,37 @@ function isMilestone(n: number): boolean {
 }
 
 export default trait;
+
+async function aggregateByOrgForAction(
+  prisma: EventContext['prisma'],
+  userId: string,
+  action: 'rate' | 'hype',
+): Promise<Record<string, number>> {
+  const rows = action === 'rate'
+    ? await prisma.$queryRaw<Array<{ promotion: string; count: bigint }>>`
+        SELECT e.promotion AS promotion, COUNT(*)::bigint AS count
+        FROM fight_ratings r
+        INNER JOIN fights f ON f.id = r."fightId"
+        INNER JOIN events e ON e.id = f."eventId"
+        WHERE r."userId" = ${userId} AND e.promotion IS NOT NULL
+        GROUP BY e.promotion
+      `
+    : await prisma.$queryRaw<Array<{ promotion: string; count: bigint }>>`
+        SELECT e.promotion AS promotion, COUNT(*)::bigint AS count
+        FROM fight_predictions p
+        INNER JOIN fights f ON f.id = p."fightId"
+        INNER JOIN events e ON e.id = f."eventId"
+        WHERE p."userId" = ${userId}
+          AND p."predictedRating" IS NOT NULL
+          AND e.promotion IS NOT NULL
+        GROUP BY e.promotion
+      `;
+  const totals: Record<string, number> = {};
+  for (const r of rows) {
+    totals[r.promotion] = Number(r.count);
+  }
+  return totals;
+}
 
 async function aggregateByOrg(
   prisma: EventContext['prisma'],
