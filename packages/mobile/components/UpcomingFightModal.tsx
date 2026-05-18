@@ -627,31 +627,6 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             );
           })()}
 
-          {/* Stakes bullets — what's on the line + what each fighter wants */}
-          {(() => {
-            const aiConfidence = (fight as any).aiConfidence as number | null | undefined;
-            if (aiConfidence == null || aiConfidence < 0.5) return null;
-            const aiTags = (fight as any).aiTags as { stakes?: unknown } | null | undefined;
-            const stakesRaw = aiTags && typeof aiTags === 'object' ? aiTags.stakes : null;
-            if (!Array.isArray(stakesRaw)) return null;
-            const stakes = stakesRaw.filter(
-              (s): s is string => typeof s === 'string' && s.trim().length > 0,
-            );
-            if (stakes.length === 0) return null;
-            return (
-              <View style={styles.stakesContainer}>
-                {stakes.map((s, i) => (
-                  <View key={i} style={styles.stakesRow}>
-                    <Text style={[styles.stakesBullet, { color: colors.textSecondary }]}>•</Text>
-                    <Text style={[styles.stakesText, { color: colors.textSecondary }]}>
-                      {s}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            );
-          })()}
-
           {/* Large flame wheel display */}
           <View style={styles.flameWheelContainer}>
             <View style={styles.flameWheelWindow}>
