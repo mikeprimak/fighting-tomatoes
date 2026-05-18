@@ -918,6 +918,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   stakesContainer: {
+    alignSelf: 'stretch',
     marginTop: 10,
     paddingHorizontal: 28,
     gap: 4,
