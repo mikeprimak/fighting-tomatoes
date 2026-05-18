@@ -76,7 +76,11 @@ Default model: **Claude Haiku 4.5** (cheap, structured output reliable, prompt c
 - Fighter profile enrichment (career arc, style summary).
 - Event-level enrichment (card narrative, "why this card matters").
 
-**Phase 6 — Post-fight enrichment** — 📋 PLANNED
+**Phase 6.5 — Historic backfill campaign** — 🟡 IN PROGRESS (2026-05-18)
+Triaged sweep of the 16K-fight legacy DB. Pilot batches 1 + 2 shipped — 30 fights enriched with full schema (pre + post long-form, structured tags both directions, ~500-600w/fight). Decision shifted from "Haiku via API" to **using Claude Code as the LLM directly** (Mike already pays for Claude Code; this is a one-off, not a cron; Opus 4.7 quality > Haiku 4.5 for narrative content). Pulled Phase 6 schema design forward — both pre-fight and post-fight long-form per fight because post-fight is the higher-value SEO surface for historic completed fights. Full handoff doc at `docs/HANDOFF-historic-enrichment-campaign-2026-05-18.md`. Open: thousands of rated fights still null; parallel programmatic `ufcstats.com` sweep for winner/method/weightClass (97% gap on top-500) not started.
+
+**Phase 6 — Post-fight enrichment** — 🟢 SCHEMA SHIPPED (2026-05-18)
+Migration `20260518000000_add_ai_post_fight_enrichment_fields` added `aiPostFightTags` (JSONB), `aiPostFightSummary` (TEXT), `aiPostFightEnrichedAt` (TIMESTAMP). 30 historic fights already populated via Phase 6.5 campaign. Cron + automatic post-fight enrichment of new completed fights still planned.
 Sibling to Phase 1, runs against COMPLETED fights instead of UPCOMING. Reuses ~80% of the Phase 1 plumbing (DB-as-card-source load, Brave editorial fetch, Puppeteer/Tapology page fetch, fightId-based persist, cron orchestrator). New surfaces:
 - New LLM schema: `aiPostFight` JSON with `methodNarrative`, `momentDescription`, `bonuses[]`, `callouts[]`, `aftermath` (injuries, retirements, ranking implications), `fotyConsideration`.
 - New DB columns: `aiPostFightTags`, `aiPostFightSummary`, `aiPostFightEnrichedAt`. Mirror migration of the Phase 1 add.
