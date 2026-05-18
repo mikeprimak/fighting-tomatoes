@@ -194,19 +194,18 @@ const trait: Trait = {
     if (Math.abs(avg) < 0.3) {
       return {
         headline: 'Hype calibration',
-        body: 'You hype right in line with the room.',
+        body: `Across ${v.n} fights, your hype usually lines up with what everyone else is hyping.`,
         primaryStat: '±' + round1(Math.abs(avg)).toFixed(1),
-        secondaryStat: `${v.n} fights`,
+        secondaryStat: 'avg gap',
         weight: 35,
       };
     }
-    const direction = avg > 0 ? 'high' : 'low';
     const sign = avg > 0 ? '+' : '−';
     return {
       headline: avg > 0 ? 'Hype runs hot' : 'Hype runs cool',
-      body: `Across ${v.n} fights, your hype lands ${round1(Math.abs(avg)).toFixed(1)} ${direction === 'high' ? 'above' : 'below'} the room.`,
+      body: `Across ${v.n} fights, you hype ${round1(Math.abs(avg)).toFixed(1)} points ${avg > 0 ? 'higher' : 'lower'} than the average user.`,
       primaryStat: `${sign}${round1(Math.abs(avg)).toFixed(1)}`,
-      secondaryStat: `${v.n} fights`,
+      secondaryStat: 'vs average',
       weight: 60,
     };
   },

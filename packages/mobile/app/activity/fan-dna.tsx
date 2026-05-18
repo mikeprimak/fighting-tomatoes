@@ -157,7 +157,7 @@ export default function FanDNAScreen() {
                 <Text style={styles.hotTakesCount}>{hotTakes.length}</Text>
               </View>
               <Text style={styles.hotTakesSubtitle}>
-                Extreme calls (≥8 or ≤3) where the room agreed within 1.5.
+                Fights where your hype was very different from the community, but you were right.
               </Text>
               <View style={{ gap: 8, marginTop: 12 }}>
                 {hotTakes.slice(0, 20).map((take) => (
@@ -180,7 +180,7 @@ export default function FanDNAScreen() {
                         {take.userHype}
                       </Text>
                       <Text style={styles.hotTakeRoom}>
-                        room {take.communityAvg.toFixed(1)}
+                        avg {take.communityAvg.toFixed(1)}
                       </Text>
                     </View>
                   </TouchableOpacity>

@@ -258,19 +258,22 @@ export default async function fanDNARoutes(fastify: FastifyInstance) {
       for (const trait of traits) {
         const row = existingMap.get(trait.id);
         if (!row || !row.hasFloor) continue;
-        const summary = trait.profileSummary!(row.value as Record<string, unknown>);
-        if (!summary) continue;
-        cards.push({
-          traitId: trait.id,
-          family: trait.family,
-          headline: summary.headline,
-          body: summary.body,
-          primaryStat: summary.primaryStat,
-          secondaryStat: summary.secondaryStat,
-          weight: summary.weight,
-          confidence: row.confidence,
-          computedAt: row.computedAt.toISOString(),
-        });
+        const result = trait.profileSummary!(row.value as Record<string, unknown>);
+        if (!result) continue;
+        const summaries = Array.isArray(result) ? result : [result];
+        for (const summary of summaries) {
+          cards.push({
+            traitId: trait.id,
+            family: trait.family,
+            headline: summary.headline,
+            body: summary.body,
+            primaryStat: summary.primaryStat,
+            secondaryStat: summary.secondaryStat,
+            weight: summary.weight,
+            confidence: row.confidence,
+            computedAt: row.computedAt.toISOString(),
+          });
+        }
       }
 
       cards.sort((a, b) => b.weight - a.weight);

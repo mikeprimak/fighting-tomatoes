@@ -158,18 +158,18 @@ const trait: Trait = {
     if (Math.abs(avg) < 0.3) {
       return {
         headline: 'Rating calibration',
-        body: 'You rate right in line with the room.',
+        body: `Across ${v.n} fights, your ratings usually line up with what everyone else gave them.`,
         primaryStat: '±' + round1(Math.abs(avg)).toFixed(1),
-        secondaryStat: `${v.n} fights`,
+        secondaryStat: 'avg gap',
         weight: 35,
       };
     }
     const sign = avg > 0 ? '+' : '−';
     return {
-      headline: avg > 0 ? 'Rates above the room' : 'Rates below the room',
-      body: `Across ${v.n} fights, your rating lands ${round1(Math.abs(avg)).toFixed(1)} ${avg > 0 ? 'above' : 'below'} the community.`,
+      headline: avg > 0 ? 'Rates higher than average' : 'Rates lower than average',
+      body: `Across ${v.n} fights, you rate ${round1(Math.abs(avg)).toFixed(1)} points ${avg > 0 ? 'higher' : 'lower'} than the average user.`,
       primaryStat: `${sign}${round1(Math.abs(avg)).toFixed(1)}`,
-      secondaryStat: `${v.n} fights`,
+      secondaryStat: 'vs average',
       weight: 62,
     };
   },
