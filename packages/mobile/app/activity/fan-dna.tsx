@@ -30,6 +30,10 @@ const FAMILY_COLORS: Record<string, string> = {
   identity: '#F59E0B',
 };
 
+// Hidden 2026-05-18 — list works but the row layout/copy needs another pass
+// before users see it. Flip to true when ready to ship.
+const SHOW_HOT_TAKES_LIST = false;
+
 export default function FanDNAScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -166,7 +170,7 @@ export default function FanDNAScreen() {
             </View>
           )}
 
-          {hotTakes.length > 0 && (
+          {SHOW_HOT_TAKES_LIST && hotTakes.length > 0 && (
             <View style={styles.hotTakesBlock}>
               <View style={styles.hotTakesHeader}>
                 <FontAwesome name="fire" size={16} color="#F59E0B" />
