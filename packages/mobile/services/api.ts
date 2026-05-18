@@ -1616,6 +1616,13 @@ class ApiService {
    * whose `profileSummary` fired (floor met + something worth saying).
    */
   async getFanDNAProfile(): Promise<{
+    personalityType: {
+      id: string;
+      label: string;
+      body: string;
+      primaryStat?: string;
+      secondaryStat?: string;
+    } | null;
     cards: Array<{
       traitId: string;
       family: 'affinity' | 'behaviour' | 'prediction' | 'identity';
