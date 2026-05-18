@@ -240,7 +240,6 @@ packages/database-backups/
 a.txt
 FETCH_HEAD
 ssh
-prisma
 curl-command
 curl-command.txt
 event.json
