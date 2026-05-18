@@ -141,6 +141,17 @@ export default function FanDNAScreen() {
             </View>
           ) : (
             <View style={{ gap: 12 }}>
+              {/* TEMP debug — remove once method-affinity render bug is solved */}
+              <View style={{ padding: 8, backgroundColor: '#fef3c7', borderRadius: 6 }}>
+                <Text style={{ fontSize: 10, color: '#78350f', fontWeight: '700' }}>
+                  DEBUG: received {cards.length} cards
+                </Text>
+                {cards.map((c, idx) => (
+                  <Text key={`dbg-${idx}`} style={{ fontSize: 10, color: '#78350f' }}>
+                    {idx + 1}. [{c.traitId}] {c.headline} (w{c.weight})
+                  </Text>
+                ))}
+              </View>
               {cards.map((card, i) => (
                 <View key={`${card.traitId}-${i}`} style={styles.card}>
                   <View style={styles.cardRow}>
