@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router, useFocusEffect } from 'expo-router';
@@ -78,7 +79,19 @@ export default function FanDNAScreen() {
         }}
       />
       <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={profileQuery.isFetching}
+              onRefresh={() => {
+                profileQuery.refetch();
+                hypeAccuracyQuery.refetch();
+              }}
+              tintColor={colors.textSecondary}
+            />
+          }
+        >
           <View style={styles.heroBlock}>
             <FontAwesome6 name="dna" size={28} color={FAMILY_COLORS.affinity} />
             <Text style={styles.heroTitle}>Your Fan DNA</Text>
