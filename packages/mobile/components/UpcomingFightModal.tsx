@@ -627,6 +627,31 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             );
           })()}
 
+          {/* Stakes bullets — what's on the line + what each fighter wants */}
+          {(() => {
+            const aiConfidence = (fight as any).aiConfidence as number | null | undefined;
+            if (aiConfidence == null || aiConfidence < 0.5) return null;
+            const aiTags = (fight as any).aiTags as { stakes?: unknown } | null | undefined;
+            const stakesRaw = aiTags && typeof aiTags === 'object' ? aiTags.stakes : null;
+            if (!Array.isArray(stakesRaw)) return null;
+            const stakes = stakesRaw.filter(
+              (s): s is string => typeof s === 'string' && s.trim().length > 0,
+            );
+            if (stakes.length === 0) return null;
+            return (
+              <View style={styles.stakesContainer}>
+                {stakes.map((s, i) => (
+                  <View key={i} style={styles.stakesRow}>
+                    <Text style={[styles.stakesBullet, { color: colors.textSecondary }]}>•</Text>
+                    <Text style={[styles.stakesText, { color: colors.textSecondary }]}>
+                      {s}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            );
+          })()}
+
           {/* Large flame wheel display */}
           <View style={styles.flameWheelContainer}>
             <View style={styles.flameWheelWindow}>
@@ -891,6 +916,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 24,
     marginTop: 12,
+  },
+  stakesContainer: {
+    marginTop: 10,
+    paddingHorizontal: 28,
+    gap: 4,
+  },
+  stakesRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  stakesBullet: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: '600',
+  },
+  stakesText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
   },
   flameWheelContainer: {
     alignItems: 'center',
