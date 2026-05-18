@@ -41,7 +41,7 @@ Users keep coming back not because we nag them, but because the app **remembers 
 
 ### Identity / self-understanding
 
-- [ ] **Fan DNA personality engine** — "You over-hype rematches by 1.4. Most accurate on PFL cards. Love bantamweight wars." Built on metadata + AI tags. Gated behind N ratings (~25). Hype accuracy folds in as one trait inside Fan DNA, not a separate engine. See [[project-ai-enrichment-workstream]].
+- [~] **Fan DNA personality engine** — Phase 1-3 shipped through 2026-05-17 (engine, 12 traits, profile section, full-screen page). Personality "type" hero shipped 2026-05-18 — single identity label (Hot Take Artist, UFC Mainstay, Globetrotter, Skeptic, etc.) synthesized from trait values. See `packages/backend/src/services/fanDNA/personalityType.ts`. Open: more tag-aware traits, nightly batchCompute cron, recommendation engine (Phase 4).
 - [ ] **Predicted favorite fighter** — *"Based on your ratings, your favorite is X."* Inferred from rating patterns, hype scores, follows.
 - [ ] **Style match recommendations** — *"If you loved fight X, you'll probably love fight Y."*
 - [ ] **Fan resume page** — Strava-style athlete profile but for fight fans: total fights rated, average rating given, hottest take, etc.
@@ -65,7 +65,7 @@ Users keep coming back not because we nag them, but because the app **remembers 
 - [ ] **Friend follow + side-by-side** — see friends' hype/ratings on the same fight. No ranking, just comparison.
 - [ ] **Same-hype comments surfaced** — when you rate hype 8, see what other 8-raters said.
 - [ ] **Comment kudos** — light upvote/agree signal on reviews. Not karma-farming, just acknowledgement.
-- [ ] **Tribe identification** — *"You're in the 'War Crowd' — high-hype, high-payoff fans."* Soft cohort labels.
+- [~] **Tribe identification** — soft cohort labels. v1 shipped 2026-05-18 as Fan DNA personality types (Hot Take Artist, UFC Mainstay, Skeptic, Globetrotter, Loyalist, Generous Critic, Hype Believer, Doubter, Calibrator, Trailblazer, Oracle). One label per user, surfaced as hero on profile + full-screen Fan DNA page. Cohort-level rollups (counts per type) deferred.
 
 ### Retrospection
 
