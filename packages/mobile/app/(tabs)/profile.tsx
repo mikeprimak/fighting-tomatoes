@@ -199,6 +199,14 @@ export default function ProfileScreen() {
   };
   const [fanDNACards, setFanDNACards] = useState<FanDNACard[]>([]);
   const [fanDNALoading, setFanDNALoading] = useState<boolean>(false);
+  type FanDNAPersonalityType = {
+    id: string;
+    label: string;
+    body: string;
+    primaryStat?: string;
+    secondaryStat?: string;
+  };
+  const [fanDNAType, setFanDNAType] = useState<FanDNAPersonalityType | null>(null);
 
   // Time filter state - default to 'allTime' to show all predictions
   const [timeFilter, setTimeFilter] = useState<string>('allTime');
@@ -294,9 +302,11 @@ export default function ProfileScreen() {
       try {
         const data = await apiService.getFanDNAProfile();
         setFanDNACards(data.cards ?? []);
+        setFanDNAType(data.personalityType ?? null);
       } catch (error) {
         console.log('Fan DNA fetch failed (silent):', error);
         setFanDNACards([]);
+        setFanDNAType(null);
       } finally {
         setFanDNALoading(false);
       }
@@ -1130,7 +1140,7 @@ export default function ProfileScreen() {
         </SectionContainer>
 
         {/* Fan DNA — surfaces the user's trait cards from the personality engine. */}
-        {(fanDNALoading || fanDNACards.length > 0) && (
+        {(fanDNALoading || fanDNACards.length > 0 || fanDNAType) && (
           <SectionContainer
             title="Fan DNA"
             icon="dna"
@@ -1139,7 +1149,7 @@ export default function ProfileScreen() {
             headerBgColor="#A78BFA"
             containerBgColorDark="rgba(167, 139, 250, 0.06)"
             containerBgColorLight="rgba(167, 139, 250, 0.10)"
-            headerRight={fanDNACards.length > 0 ? (
+            headerRight={(fanDNACards.length > 0 || fanDNAType) ? (
               <TouchableOpacity
                 onPress={() => router.push('/activity/fan-dna' as any)}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
@@ -1151,12 +1161,57 @@ export default function ProfileScreen() {
             ) : undefined}
           >
             <View style={{ paddingVertical: 12 }}>
-              {fanDNALoading && fanDNACards.length === 0 ? (
+              {fanDNALoading && fanDNACards.length === 0 && !fanDNAType ? (
                 <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', paddingVertical: 8 }}>
                   Computing your DNA…
                 </Text>
               ) : (
                 <View style={{ gap: 10 }}>
+                  {fanDNAType && (
+                    <TouchableOpacity
+                      onPress={() => router.push('/activity/fan-dna' as any)}
+                      activeOpacity={0.7}
+                      style={{
+                        backgroundColor: 'rgba(167, 139, 250, 0.18)',
+                        borderRadius: 10,
+                        padding: 14,
+                        borderWidth: 1,
+                        borderColor: 'rgba(167, 139, 250, 0.4)',
+                        marginBottom: 4,
+                      }}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        {fanDNAType.primaryStat ? (
+                          <View style={{
+                            minWidth: 64,
+                            paddingHorizontal: 8,
+                            paddingVertical: 8,
+                            alignItems: 'center',
+                          }}>
+                            <Text style={{ fontSize: 22, fontWeight: '800', color: '#A78BFA' }}>
+                              {fanDNAType.primaryStat}
+                            </Text>
+                            {fanDNAType.secondaryStat ? (
+                              <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 1 }} numberOfLines={1}>
+                                {fanDNAType.secondaryStat}
+                              </Text>
+                            ) : null}
+                          </View>
+                        ) : null}
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 11, color: '#A78BFA', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}>
+                            Your type
+                          </Text>
+                          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text, marginTop: 2 }}>
+                            {fanDNAType.label}
+                          </Text>
+                          <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4, lineHeight: 17 }}>
+                            {fanDNAType.body}
+                          </Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  )}
                   {fanDNACards.slice(0, 2).map((card) => (
                     <TouchableOpacity
                       key={card.traitId}

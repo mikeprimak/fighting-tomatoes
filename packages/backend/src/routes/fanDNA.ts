@@ -12,6 +12,7 @@ import { FastifyInstance } from 'fastify';
 
 import { authenticateUser } from '../middleware/auth';
 import { batchCompute, eventEvaluate } from '../services/fanDNA/engine';
+import { computeUserType } from '../services/fanDNA/personalityType';
 import { getAllTraits } from '../services/fanDNA/registry';
 import type {
   FanDNAAction,
@@ -278,7 +279,10 @@ export default async function fanDNARoutes(fastify: FastifyInstance) {
 
       cards.sort((a, b) => b.weight - a.weight);
 
+      const personalityType = await computeUserType(fastify.prisma, userId);
+
       return reply.code(200).send({
+        personalityType,
         cards,
         count: cards.length,
       });

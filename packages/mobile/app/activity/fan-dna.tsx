@@ -53,6 +53,7 @@ export default function FanDNAScreen() {
   );
 
   const cards = profileQuery.data?.cards ?? [];
+  const personalityType = profileQuery.data?.personalityType ?? null;
   const hotTakes =
     (hypeAccuracyQuery.data?.fights ?? []).filter((f) => f.isHotTake);
 
@@ -81,6 +82,22 @@ export default function FanDNAScreen() {
               Patterns the app has learned from your ratings and hypes.
             </Text>
           </View>
+
+          {personalityType && (
+            <View style={styles.typeCard}>
+              <Text style={styles.typeLabel}>YOUR TYPE</Text>
+              <Text style={styles.typeName}>{personalityType.label}</Text>
+              <Text style={styles.typeBody}>{personalityType.body}</Text>
+              {personalityType.primaryStat ? (
+                <View style={styles.typeStatRow}>
+                  <Text style={styles.typeStatPrimary}>{personalityType.primaryStat}</Text>
+                  {personalityType.secondaryStat ? (
+                    <Text style={styles.typeStatSecondary}>{personalityType.secondaryStat}</Text>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+          )}
 
           {profileQuery.isLoading ? (
             <View style={styles.centerBlock}>
@@ -213,6 +230,48 @@ const createStyles = (colors: any) =>
       color: colors.textSecondary,
       textAlign: 'center',
       maxWidth: 280,
+    },
+    typeCard: {
+      marginTop: 12,
+      marginBottom: 4,
+      padding: 18,
+      borderRadius: 14,
+      backgroundColor: 'rgba(167, 139, 250, 0.18)',
+      borderWidth: 1,
+      borderColor: 'rgba(167, 139, 250, 0.45)',
+    },
+    typeLabel: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: '#A78BFA',
+      letterSpacing: 0.6,
+    },
+    typeName: {
+      fontSize: 22,
+      fontWeight: '800',
+      color: colors.text,
+      marginTop: 4,
+    },
+    typeBody: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 6,
+      lineHeight: 20,
+    },
+    typeStatRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      gap: 8,
+      marginTop: 10,
+    },
+    typeStatPrimary: {
+      fontSize: 26,
+      fontWeight: '800',
+      color: '#A78BFA',
+    },
+    typeStatSecondary: {
+      fontSize: 12,
+      color: colors.textSecondary,
     },
     centerBlock: {
       alignItems: 'center',
