@@ -60,7 +60,8 @@ Default model: **Claude Haiku 4.5** (cheap, structured output reliable, prompt c
 
 **Phase 2 — Multi-surface render** — 🟡 IN PROGRESS
 - ✅ Mobile fight cards: "Why care" line — shipped 2026-05-15 (`UpcomingFightCard`, single-line, ellipsized).
-- 🟡 Mobile hype/rating modal: full one-liner under fighter row — wired 2026-05-15, **uncommitted**. Stakes-bullets card still TODO.
+- ✅ Upcoming detail screen: `aiPreviewShort` italic one-liner + `aiTags.stakes[]` bullets — shipped 2026-05-18 (after hype-modal revert per `ee8d7e8`).
+- ✅ Completed detail screen: same shape, mirrored from upcoming — shipped 2026-05-18 (`6b98ba9`). Renders regardless of spoiler-free mode (pre-fight content, no outcome).
 - 📋 Web fight pages: full preview section (SEO) — uses `aiPreview` (currently null; Phase 1 only ships `aiPreviewShort`).
 
 **Phase 3 — Engagement layers**
