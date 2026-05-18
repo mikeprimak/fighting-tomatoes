@@ -567,6 +567,12 @@ model Fight {
   aiSourceUrls    String[]   // grounding URLs used for the extraction
   aiConfidence    Float?     // 0-1, drop renders below threshold
 
+  // Phase 6 post-fight enrichment (see docs/areas/ai-enrichment.md).
+  // Populated against COMPLETED fights. Siblings to the pre-fight ai* columns above.
+  aiPostFightTags        Json?      // { methodNarrative, momentDescription, bonuses[], callouts[], aftermath[], fotyConsideration }
+  aiPostFightSummary     String?    // long-form post-fight editorial paragraph for SEO/web
+  aiPostFightEnrichedAt  DateTime?
+
   // Timestamps
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
