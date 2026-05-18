@@ -1224,6 +1224,38 @@ export default function UpcomingFightDetailScreen({
         </Text>
       </View>
 
+      {/* AI preview one-liner + stakes bullets */}
+      {(() => {
+        const aiPreviewShort = (fight as any).aiPreviewShort as string | null | undefined;
+        const aiConfidence = (fight as any).aiConfidence as number | null | undefined;
+        const aiTags = (fight as any).aiTags as { stakes?: unknown } | null | undefined;
+        if (aiConfidence == null || aiConfidence < 0.5) return null;
+        const stakesRaw = aiTags && typeof aiTags === 'object' ? aiTags.stakes : null;
+        const stakes = Array.isArray(stakesRaw)
+          ? stakesRaw.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+          : [];
+        if (!aiPreviewShort && stakes.length === 0) return null;
+        return (
+          <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
+            {aiPreviewShort ? (
+              <Text style={{ fontSize: 13, fontStyle: 'italic', lineHeight: 18, color: colors.textSecondary, textAlign: 'center' }}>
+                {aiPreviewShort}
+              </Text>
+            ) : null}
+            {stakes.length > 0 ? (
+              <View style={{ marginTop: aiPreviewShort ? 12 : 0, gap: 6 }}>
+                {stakes.map((s, i) => (
+                  <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                    <Text style={{ fontSize: 13, lineHeight: 18, fontWeight: '600', color: colors.textSecondary }}>•</Text>
+                    <Text style={{ flex: 1, fontSize: 13, lineHeight: 18, color: colors.textSecondary }}>{s}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        );
+      })()}
+
       {/* Crowd Hype */}
       <View style={{ paddingHorizontal: 16, marginTop: 5, marginBottom: 8 }}>
         <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 16 }}>
