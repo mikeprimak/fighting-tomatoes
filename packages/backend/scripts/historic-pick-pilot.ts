@@ -3,13 +3,24 @@
  * enrichment campaign. Used to seed the search/fetch loop.
  *
  * Usage:
- *   npx tsx scripts/historic-pick-pilot.ts [limit=5]
+ *   npx tsx scripts/historic-pick-pilot.ts [limit=5] [offset=0]
+ *
+ * For multi-window parallelization, partition the candidate list by offset:
+ *   Window A: npx tsx scripts/historic-pick-pilot.ts 250 0     # ranks 1-250
+ *   Window B: npx tsx scripts/historic-pick-pilot.ts 250 250   # ranks 251-500
+ *   Window C: npx tsx scripts/historic-pick-pilot.ts 250 500   # ranks 501-750
+ *   Window D: npx tsx scripts/historic-pick-pilot.ts 250 750   # ranks 751-1000
+ *
+ * Each window writes its own fightIds; the writer's UPSERT is idempotent so
+ * even if two windows collide on a fightId, the second write is a harmless
+ * overwrite of the first.
  */
 import { PrismaClient } from '@prisma/client';
 
 async function main() {
   const prisma = new PrismaClient();
   const limit = Number(process.argv[2] ?? 5);
+  const offset = Number(process.argv[3] ?? 0);
 
   const rows = await prisma.$queryRaw<Array<{
     id: string;
@@ -35,6 +46,7 @@ async function main() {
     GROUP BY f.id, f1."firstName", f1."lastName", f2."firstName", f2."lastName", e.name, e.date
     ORDER BY rating_count DESC
     LIMIT ${limit}
+    OFFSET ${offset}
   `;
 
   console.log(JSON.stringify(
