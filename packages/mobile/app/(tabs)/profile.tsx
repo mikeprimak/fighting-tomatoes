@@ -1212,9 +1212,9 @@ export default function ProfileScreen() {
                       </View>
                     </TouchableOpacity>
                   )}
-                  {fanDNACards.slice(0, 2).map((card) => (
+                  {fanDNACards.slice(0, 2).map((card, i) => (
                     <TouchableOpacity
-                      key={card.traitId}
+                      key={`${card.traitId}-${i}`}
                       onPress={() => router.push('/activity/fan-dna' as any)}
                       activeOpacity={0.7}
                       style={{

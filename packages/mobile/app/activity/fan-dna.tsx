@@ -128,8 +128,8 @@ export default function FanDNAScreen() {
             </View>
           ) : (
             <View style={{ gap: 12 }}>
-              {cards.map((card) => (
-                <View key={card.traitId} style={styles.card}>
+              {cards.map((card, i) => (
+                <View key={`${card.traitId}-${i}`} style={styles.card}>
                   <View style={styles.cardRow}>
                     {card.primaryStat ? (
                       <View style={[styles.statBlock, { backgroundColor: `${FAMILY_COLORS[card.family] ?? '#888'}22` }]}>
