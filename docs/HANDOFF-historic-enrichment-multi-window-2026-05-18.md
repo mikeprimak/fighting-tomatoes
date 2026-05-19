@@ -25,7 +25,7 @@ Continuation of the campaign kicked off in `HANDOFF-historic-enrichment-campaign
 
 The campaign goal is now 2000 enriched fights total (per Mike's direction). With 105 done, there are ~1895 to go. Mike wants to chunk this across N parallel Claude Code windows.
 
-**Recommended chunk size: 250 fights per window.** Smaller chunks (e.g., 100) increase coordination overhead without much speedup; larger chunks (e.g., 500) risk context exhaustion in a single window. 250 hits the sweet spot we proved out this session.
+**Chunk size: 100 fights per window.** Per Mike (2026-05-18): smaller chunks make each window self-contained and finish-able in a single working session, reduce context-exhaustion risk, and give Mike granular control over how many windows to spin up. Trade-off vs 250: more partition commands to run upfront and slightly more per-window bootstrap overhead, but those costs are trivial compared to running into mid-batch context pressure.
 
 **Partition by offset against the unfilled-fight list.** Each window picks its assigned range with:
 
@@ -36,29 +36,40 @@ npx tsx scripts/historic-pick-pilot.ts <limit> <offset>
 
 The picker already filters out enriched fights (`WHERE f.aiTags IS NULL`), so an offset of N skips the N most-rated unfilled fights at the moment of invocation. **Race-safety note:** if Window A is mid-batch when Window B picks, B's offset is computed against the DB state at B's pick time — so by the time A's batch hits the DB, B might end up with some overlap. The writer's UPSERT is idempotent and the second write is harmless, but to minimize wasted work, **pick all windows' batches BEFORE any window starts writing**. Once each window has its JSON committed to its own `pilot-batch-N.json`, the windows can run in parallel safely.
 
-**Suggested partition for the next 1000 fights (4 windows):**
+**Suggested partition for the next 1000 fights (10 windows × 100 each):**
 
 ```bash
-# Window A — fights 1-250
-npx tsx scripts/historic-pick-pilot.ts 250 0   > tmp/historic-enrichment/window-A-candidates.json
-
-# Window B — fights 251-500
-npx tsx scripts/historic-pick-pilot.ts 250 250 > tmp/historic-enrichment/window-B-candidates.json
-
-# Window C — fights 501-750
-npx tsx scripts/historic-pick-pilot.ts 250 500 > tmp/historic-enrichment/window-C-candidates.json
-
-# Window D — fights 751-1000
-npx tsx scripts/historic-pick-pilot.ts 250 750 > tmp/historic-enrichment/window-D-candidates.json
+# Window A — ranks 1-100
+npx tsx scripts/historic-pick-pilot.ts 100 0   > tmp/historic-enrichment/window-A-candidates.json
+# Window B — ranks 101-200
+npx tsx scripts/historic-pick-pilot.ts 100 100 > tmp/historic-enrichment/window-B-candidates.json
+# Window C — ranks 201-300
+npx tsx scripts/historic-pick-pilot.ts 100 200 > tmp/historic-enrichment/window-C-candidates.json
+# Window D — ranks 301-400
+npx tsx scripts/historic-pick-pilot.ts 100 300 > tmp/historic-enrichment/window-D-candidates.json
+# Window E — ranks 401-500
+npx tsx scripts/historic-pick-pilot.ts 100 400 > tmp/historic-enrichment/window-E-candidates.json
+# Window F — ranks 501-600
+npx tsx scripts/historic-pick-pilot.ts 100 500 > tmp/historic-enrichment/window-F-candidates.json
+# Window G — ranks 601-700
+npx tsx scripts/historic-pick-pilot.ts 100 600 > tmp/historic-enrichment/window-G-candidates.json
+# Window H — ranks 701-800
+npx tsx scripts/historic-pick-pilot.ts 100 700 > tmp/historic-enrichment/window-H-candidates.json
+# Window I — ranks 801-900
+npx tsx scripts/historic-pick-pilot.ts 100 800 > tmp/historic-enrichment/window-I-candidates.json
+# Window J — ranks 901-1000
+npx tsx scripts/historic-pick-pilot.ts 100 900 > tmp/historic-enrichment/window-J-candidates.json
 ```
 
-**Run all four pick commands in one window first, then open four new Claude Code windows, give each its candidates file path, and let them grind in parallel.**
+**Run all pick commands first in one window**, then open the parallel Claude Code windows and give each its candidates file path. Don't have to spin up all 10 at once — open as many as Mike wants to run simultaneously (e.g., 4 at a time, then the next 4 when those finish). Each chunk is sized to finish in one window-session of ~40-50 minutes.
+
+You can also do partial runs — e.g. just A-D for now (400 fights) and queue the rest later. Re-running the pick commands at any future time still works because the picker filters `WHERE aiTags IS NULL` — already-enriched fights drop out automatically, and the ordering re-stabilizes against the current unfilled list.
 
 ## Per-window bootstrap prompt (paste into each new window)
 
 Each new window needs the full context bootstrap. Paste this prompt into each:
 
-> Read `docs/HANDOFF-historic-enrichment-campaign-2026-05-18.md` and `docs/HANDOFF-historic-enrichment-multi-window-2026-05-18.md`. You are Window [X] of a multi-window historic enrichment campaign. Your assigned candidates file is `packages/backend/tmp/historic-enrichment/window-[X]-candidates.json` (250 fights). Process them in 25-fight sub-batches following the protocol in the session-1 handoff (pick → WebSearch grounding → JSON synthesis → dry-run → live-write → next batch). Name your output files `pilot-batch-W[X]-[1-10].json`. Stop and write your own session handoff when you've completed all 250.
+> Read `docs/HANDOFF-historic-enrichment-campaign-2026-05-18.md` and `docs/HANDOFF-historic-enrichment-multi-window-2026-05-18.md`. You are Window [X] of a multi-window historic enrichment campaign. Your assigned candidates file is `packages/backend/tmp/historic-enrichment/window-[X]-candidates.json` (100 fights). Process them in 25-fight sub-batches following the protocol in the session-1 handoff (pick → WebSearch grounding → JSON synthesis → dry-run → live-write → next batch) — that's 4 sub-batches total for your 100. Name your output files `pilot-batch-W[X]-[1-4].json`. Stop and write a one-line completion note when all 100 are done.
 
 ## Tracking progress across windows
 
@@ -89,12 +100,13 @@ For continuity across windows, here's the pattern that worked in batches 3-5:
 
 ## Cost ceiling per window
 
-Each 250-fight window consumes roughly:
-- 8-12 WebSearch calls (for uncertain bouts)
-- 10 batches of ~25 fights each
-- ~3-4MB of token throughput across all turns
+Each 100-fight window consumes roughly:
+- 3-5 WebSearch calls (for uncertain bouts)
+- 4 batches of 25 fights each
+- ~1.5MB of token throughput across all turns
+- Wall-time: ~40-50 minutes per window
 
-At Opus 4.7 rates that's ~$30-50 per window assuming ~12K input + ~8K output tokens per fight. Four windows in parallel = ~$120-200 to enrich the next 1000 fights at hand-curated quality.
+At Opus 4.7 rates that's ~$12-20 per window. Ten windows × 100 fights = $120-200 to enrich the next 1000 fights at hand-curated quality, same total cost as the 4×250 plan — just split across more sessions.
 
 For context: the alternative (Haiku via API batch on the existing Phase 1 pipeline) would do the same 1000 fights for ~$15-25 total but at lower quality (~0.7-0.85 confidence vs 0.92-0.95).
 
