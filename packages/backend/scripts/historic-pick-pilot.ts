@@ -44,7 +44,7 @@ async function main() {
     INNER JOIN events e ON e.id = f."eventId"
     WHERE f."aiTags" IS NULL
     GROUP BY f.id, f1."firstName", f1."lastName", f2."firstName", f2."lastName", e.name, e.date
-    ORDER BY rating_count DESC
+    ORDER BY rating_count DESC, f.id ASC
     LIMIT ${limit}
     OFFSET ${offset}
   `;
