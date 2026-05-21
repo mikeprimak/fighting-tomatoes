@@ -118,6 +118,12 @@ export async function notifyCrewMessage(
 /**
  * Send notification when a fight starts (using notification rules)
  * This integrates with the unified notification rule system
+ *
+ * Fighter-follow matches are gated by the per-user `notifyFollowedWalkout`
+ * toggle. Manual-fight-follow and hyped-fight matches always dispatch (they
+ * have their own per-rule isActive opt-out). A user with only fighter-follow
+ * matches AND walkout disabled is skipped — but their rows still get marked
+ * sent so the moment isn't replayed if they re-enable later.
  */
 export async function notifyFightStartViaRules(
   fightId: string,
@@ -142,6 +148,11 @@ export async function notifyFightStartViaRules(
     },
   });
 
+  if (matches.length === 0) {
+    console.log(`[Notifications] No active notification matches for fight ${fightId}`);
+    return;
+  }
+
   // Get user details separately
   const userIds = [...new Set(matches.map(m => m.userId))];
   const users = await prisma.user.findMany({
@@ -152,31 +163,65 @@ export async function notifyFightStartViaRules(
       id: true,
       pushToken: true,
       notificationsEnabled: true,
+      notifyFollowedWalkout: true,
     },
   });
-
-  if (matches.length === 0) {
-    console.log(`[Notifications] No active notification matches for fight ${fightId}`);
-    return;
-  }
+  const userById = new Map(users.map((u) => [u.id, u]));
 
   console.log(`[Notifications] Found ${matches.length} notification matches for fight ${fightId}`);
 
-  // Filter users with valid push tokens
-  const validUsers = users.filter(
-    (user) => user.notificationsEnabled && user.pushToken && Expo.isExpoPushToken(user.pushToken)
-  );
+  // Group matches by user, classifying each as fighter-follow vs other
+  const matchesByUser = new Map<string, typeof matches>();
+  for (const m of matches) {
+    const arr = matchesByUser.get(m.userId) ?? [];
+    arr.push(m);
+    matchesByUser.set(m.userId, arr);
+  }
 
-  if (validUsers.length === 0) {
-    console.log(`[Notifications] No users with valid push tokens`);
+  const dispatchableUserIds: string[] = [];
+  const fighterFollowMatchesDispatched: typeof matches = [];
+
+  for (const [userId, userMatches] of matchesByUser) {
+    const user = userById.get(userId);
+    if (!user || !user.notificationsEnabled || !user.pushToken || !Expo.isExpoPushToken(user.pushToken)) {
+      continue;
+    }
+    const fighterFollowMatches = userMatches.filter((m) =>
+      m.rule.name.startsWith('Fighter Follow:'),
+    );
+    const otherMatches = userMatches.filter(
+      (m) => !m.rule.name.startsWith('Fighter Follow:'),
+    );
+
+    // Skip user if their only reason to be notified is a fighter-follow
+    // and they've disabled the walkout lane.
+    if (otherMatches.length === 0 && !user.notifyFollowedWalkout) {
+      continue;
+    }
+
+    dispatchableUserIds.push(userId);
+    // Track which fighter-follow match rows actually dispatch for engagement log
+    if (user.notifyFollowedWalkout || otherMatches.length > 0) {
+      // If walkout is on OR they're getting the push for some other reason,
+      // the fighter-follow rows still constitute a dispatch from the user's POV.
+      for (const m of fighterFollowMatches) fighterFollowMatchesDispatched.push(m);
+    }
+  }
+
+  if (dispatchableUserIds.length === 0) {
+    console.log(`[Notifications] No dispatchable users (all filtered or walkout-disabled)`);
+    // Still mark sent so we don't replay later. See doc comment.
+    await prisma.fightNotificationMatch.updateMany({
+      where: { fightId, isActive: true, notificationSent: false },
+      data: { notificationSent: true },
+    });
     return;
   }
 
   const matchup = `${fighter1Name} vs ${fighter2Name}`;
 
-  // Send notifications
   const result = await sendPushNotifications(
-    validUsers.map((u) => u.id),
+    dispatchableUserIds,
     {
       title: '🥊 Fight Up Next!',
       body: matchup,
@@ -186,7 +231,19 @@ export async function notifyFightStartViaRules(
 
   console.log(`[Notifications] Sent ${result.success} notifications, ${result.failed} failed`);
 
-  // Mark notifications as sent
+  // Engagement log: one row per fighter-follow match that actually dispatched.
+  if (fighterFollowMatchesDispatched.length > 0) {
+    await prisma.followNotificationEvent.createMany({
+      data: fighterFollowMatchesDispatched.map((m) => ({
+        matchId: m.id,
+        userId: m.userId,
+        fightId: m.fightId,
+        lane: 'WALKOUT' as const,
+      })),
+    });
+  }
+
+  // Mark all matches as sent (preserves prior behavior even for skipped users)
   await prisma.fightNotificationMatch.updateMany({
     where: {
       fightId,
@@ -227,6 +284,9 @@ export async function notifyEventSectionStart(
       isActive: true,
       notificationSent: false,
     },
+    include: {
+      rule: { select: { name: true } },
+    },
   });
 
   if (matches.length === 0) return;
@@ -253,7 +313,12 @@ export async function notifyEventSectionStart(
   const userIds = [...matchesByUser.keys()];
   const users = await prisma.user.findMany({
     where: { id: { in: userIds } },
-    select: { id: true, pushToken: true, notificationsEnabled: true },
+    select: {
+      id: true,
+      pushToken: true,
+      notificationsEnabled: true,
+      notifyFollowedWalkout: true,
+    },
   });
 
   const validUsers = users.filter(
@@ -270,10 +335,25 @@ export async function notifyEventSectionStart(
     : `${eventName} starts soon!`;
 
   const matchedRowIds: string[] = [];
+  const fighterFollowDispatched: typeof matches = [];
 
   for (const user of validUsers) {
     const userMatches = matchesByUser.get(user.id) ?? [];
     if (userMatches.length === 0) continue;
+
+    const fighterFollowMatches = userMatches.filter((m) =>
+      m.rule.name.startsWith('Fighter Follow:'),
+    );
+    const otherMatches = userMatches.filter(
+      (m) => !m.rule.name.startsWith('Fighter Follow:'),
+    );
+
+    // Skip user if their only reason is a fighter-follow and walkout disabled.
+    // Still mark rows sent so we don't replay later.
+    if (otherMatches.length === 0 && !user.notifyFollowedWalkout) {
+      for (const m of userMatches) matchedRowIds.push(m.id);
+      continue;
+    }
 
     let body: string;
     if (userMatches.length === 1) {
@@ -286,8 +366,6 @@ export async function notifyEventSectionStart(
         : 'Fighter 2';
       body = `${name1} vs ${name2} is up soon.`;
     } else {
-      // Row count, not distinct fighter count — close enough for the user-facing
-      // copy and avoids a second query.
       body = `${userMatches.length} fighters you follow are fighting soon.`;
     }
 
@@ -301,6 +379,18 @@ export async function notifyEventSectionStart(
     );
 
     for (const m of userMatches) matchedRowIds.push(m.id);
+    for (const m of fighterFollowMatches) fighterFollowDispatched.push(m);
+  }
+
+  if (fighterFollowDispatched.length > 0) {
+    await prisma.followNotificationEvent.createMany({
+      data: fighterFollowDispatched.map((m) => ({
+        matchId: m.id,
+        userId: m.userId,
+        fightId: m.fightId,
+        lane: 'WALKOUT' as const,
+      })),
+    });
   }
 
   if (matchedRowIds.length > 0) {

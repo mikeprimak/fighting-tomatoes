@@ -16,6 +16,10 @@ const PERMISSION_PROMPT_KEY = '@gf/lastNotifPromptAt';
 const PERMISSION_PROMPT_COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
 let promptInFlight = false;
 
+// Cached last-synced timezone so we only PUT when the device's IANA zone changes.
+const TIMEZONE_CACHE_KEY = '@gf/lastSyncedTimezone';
+let timezoneSyncedThisSession = false;
+
 function initializeNotifications() {
   if (isInitialized) return;
 
@@ -90,6 +94,13 @@ export async function registerPushToken(): Promise<string | null> {
       await apiService.registerPushToken(token.data);
       console.log('Push token registered:', token.data);
       tokenRegistered = true;
+
+      // Also sync device timezone so the morning-of / 3-day-warn crons can
+      // compute each user's local "fight day" with overnight rollback.
+      syncDeviceTimezone().catch((err) =>
+        console.warn('[Notifications] Timezone sync failed:', err),
+      );
+
       return token.data;
     }
 
@@ -98,6 +109,31 @@ export async function registerPushToken(): Promise<string | null> {
     console.error('Error registering push token:', error);
     return null;
   }
+}
+
+/**
+ * Read the device's IANA timezone (e.g. "America/New_York") and PUT it to the
+ * backend if it has changed since the last sync. Once-per-session safety so we
+ * don't re-PUT on every screen mount.
+ */
+export async function syncDeviceTimezone(): Promise<void> {
+  if (timezoneSyncedThisSession) return;
+  timezoneSyncedThisSession = true;
+
+  let tz: string | null = null;
+  try {
+    tz = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+  } catch {
+    return; // Intl unavailable — leave backend default (America/New_York)
+  }
+  if (!tz) return;
+
+  const cached = await AsyncStorage.getItem(TIMEZONE_CACHE_KEY);
+  if (cached === tz) return;
+
+  const { apiService } = await import('./api');
+  await apiService.updateNotificationPreferences({ timezone: tz });
+  await AsyncStorage.setItem(TIMEZONE_CACHE_KEY, tz);
 }
 
 /**
@@ -221,6 +257,7 @@ export async function ensurePushPermissionAfterAction(opts: {
 export const notificationService = {
   requestNotificationPermissions,
   registerPushToken,
+  syncDeviceTimezone,
   addNotificationResponseListener,
   addNotificationReceivedListener,
   getLastNotificationResponseAsync,

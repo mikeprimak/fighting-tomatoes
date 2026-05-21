@@ -45,10 +45,17 @@ model User {
   // Push Notifications
   pushToken                    String?
   notificationsEnabled         Boolean   @default(true)
-  // Legacy notification fields removed - all notifications now use UserNotificationRule system
-  // notifyFollowedFighterFights removed
-  // notifyPreEventReport removed
-  // notifyHypedFights removed
+  // Followed-fighter per-lane toggles (gates each notification independently of the
+  // Fighter Follow: rules — rules drive WHICH fighters, these drive WHICH LANES).
+  notifyFollowedBooked         Boolean   @default(true)
+  notifyFollowed3DayWarn       Boolean   @default(true)
+  notifyFollowedMorningOf      Boolean   @default(true)
+  notifyFollowedWalkout        Boolean   @default(true)
+
+  // IANA timezone string, used by the 3-day-warn and morning-of crons to compute
+  // each user's local "fight day" (with overnight rollback for late-night fights).
+  // Captured from the device on app open; defaults to America/New_York if unknown.
+  timezone                     String    @default("America/New_York")
 
   // Media/Professional users
   isMedia           Boolean   @default(false)
@@ -951,7 +958,13 @@ model FightNotificationMatch {
 
   // Status
   isActive  Boolean @default(true)  // User can disable per-fight without deleting rule
-  notificationSent Boolean @default(false)
+  notificationSent Boolean @default(false)  // legacy walkout-lane sent flag
+
+  // Per-lane idempotency: null = not yet dispatched on this lane. Walkout still
+  // uses the legacy notificationSent boolean above.
+  bookedSentAt    DateTime?
+  threeDaySentAt  DateTime?
+  morningOfSentAt DateTime?
 
   // Metadata
   matchedAt DateTime @default(now()) // When the rule matched
@@ -960,10 +973,49 @@ model FightNotificationMatch {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relations
+  dispatchEvents FollowNotificationEvent[]
+
   @@unique([userId, fightId, ruleId])
   @@index([userId, fightId])
   @@index([fightId, isActive])
+  @@index([threeDaySentAt])
+  @@index([morningOfSentAt])
   @@map("fight_notification_matches")
+}
+
+// Engagement log for follow-fighter notifications.
+// One row per (match, lane) dispatch. Required for the acquisition-narrative
+// signal — see docs/areas/follow-fighter.md "no new notification ships without
+// engagement tracking". Open/click columns are populated by mobile telemetry
+// callbacks (future work); dispatch logging is the irreversible piece.
+enum FollowNotificationLane {
+  BOOKED
+  THREE_DAY
+  MORNING_OF
+  WALKOUT
+}
+
+model FollowNotificationEvent {
+  id        String @id @default(uuid())
+
+  matchId   String
+  match     FightNotificationMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  userId    String  // denormalized for fast per-user queries
+  fightId   String  // denormalized for fast per-fight queries
+  fighterId String? // which followed fighter triggered this (null for older rows)
+
+  lane      FollowNotificationLane
+
+  dispatchedAt DateTime @default(now())
+  openedAt     DateTime?
+  clickedAt    DateTime?
+
+  @@index([userId, dispatchedAt])
+  @@index([fightId, lane])
+  @@index([fighterId])
+  @@map("follow_notification_events")
 }
 
 // ============== GAMIFICATION ==============

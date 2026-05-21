@@ -265,6 +265,10 @@ export async function syncRuleMatches(ruleId: string): Promise<number> {
  *
  * Idempotent: safe to call repeatedly with the same fightId. Skips fights
  * that don't exist or aren't UPCOMING.
+ *
+ * When a match row is NEWLY created AND the fight was booked AFTER the user's
+ * follow on the fighter, the booked-lane notification is dispatched. Re-syncs
+ * of existing rows (e.g. re-scrapes) do NOT re-fire the booked lane.
  */
 export async function syncFighterFollowMatchesForFight(fightId: string): Promise<number> {
   const fight = await prisma.fight.findUnique({
@@ -274,6 +278,7 @@ export async function syncFighterFollowMatchesForFight(fightId: string): Promise
       fighter1Id: true,
       fighter2Id: true,
       fightStatus: true,
+      createdAt: true,
     },
   });
 
@@ -296,18 +301,28 @@ export async function syncFighterFollowMatchesForFight(fightId: string): Promise
     },
   });
 
+  // Buffer booked-lane dispatches and run after the loop completes so the
+  // match-row writes are settled before we send the push.
+  const bookedDispatches: Array<{
+    matchId: string;
+    userId: string;
+    fightId: string;
+    followedFighterId: string;
+  }> = [];
+
   let createdCount = 0;
   for (const rule of candidateRules) {
     const conditions = rule.conditions as NotificationRuleConditions;
     const fighterIds = conditions.fighterIds || [];
-    if (
-      !fighterIds.includes(fight.fighter1Id) &&
-      !fighterIds.includes(fight.fighter2Id)
-    ) {
-      continue;
-    }
 
-    await prisma.fightNotificationMatch.upsert({
+    let followedFighterId: string | undefined;
+    if (fighterIds.includes(fight.fighter1Id)) followedFighterId = fight.fighter1Id;
+    else if (fighterIds.includes(fight.fighter2Id)) followedFighterId = fight.fighter2Id;
+    if (!followedFighterId) continue;
+
+    // Need to know whether this is a NEW row (booked-lane candidate) or an
+    // existing row (no-op re-sync). Upsert doesn't tell us, so look up first.
+    const existing = await prisma.fightNotificationMatch.findUnique({
       where: {
         userId_fightId_ruleId: {
           userId: rule.userId,
@@ -315,19 +330,59 @@ export async function syncFighterFollowMatchesForFight(fightId: string): Promise
           ruleId: rule.id,
         },
       },
-      create: {
-        userId: rule.userId,
-        fightId: fight.id,
-        ruleId: rule.id,
-        isActive: true,
-        notificationSent: false,
-      },
-      update: {
-        isActive: true,
-        matchedAt: new Date(),
-      },
+      select: { id: true },
     });
+
+    if (existing) {
+      await prisma.fightNotificationMatch.update({
+        where: { id: existing.id },
+        data: { isActive: true, matchedAt: new Date() },
+      });
+    } else {
+      const newMatch = await prisma.fightNotificationMatch.create({
+        data: {
+          userId: rule.userId,
+          fightId: fight.id,
+          ruleId: rule.id,
+          isActive: true,
+          notificationSent: false,
+        },
+        select: { id: true },
+      });
+
+      // Only dispatch booked if the fight was created AFTER the follow.
+      // Users following a fighter who already has 3 upcoming fights should
+      // NOT get retroactive "booked!" notifications for those existing fights.
+      const follow = await prisma.userFighterFollow.findUnique({
+        where: {
+          userId_fighterId: {
+            userId: rule.userId,
+            fighterId: followedFighterId,
+          },
+        },
+        select: { createdAt: true },
+      });
+
+      if (follow && fight.createdAt > follow.createdAt) {
+        bookedDispatches.push({
+          matchId: newMatch.id,
+          userId: rule.userId,
+          fightId: fight.id,
+          followedFighterId,
+        });
+      }
+    }
     createdCount++;
+  }
+
+  // Best-effort dispatches — don't fail the scrape sync if push fails.
+  if (bookedDispatches.length > 0) {
+    const { dispatchBookedNotification } = await import('./followFighterNotifications');
+    for (const d of bookedDispatches) {
+      await dispatchBookedNotification(d).catch((err) =>
+        console.error('[BookedNotification] dispatch failed:', err),
+      );
+    }
   }
 
   return createdCount;
