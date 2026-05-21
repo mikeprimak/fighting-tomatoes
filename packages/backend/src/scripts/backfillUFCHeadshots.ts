@@ -165,7 +165,7 @@ async function processFighter(
   // / disambiguation suffix we didn't know about). Ask DDG for the canonical
   // slug and try one more time.
   if (!imageUrl && (lastResult === 'no-image' || lastResult === 'no-page')) {
-    const searchSlug = await searchUFCAthleteSlugViaDDG(fullName, handle);
+    const searchSlug = await searchUFCAthleteSlugViaDDG(fullName);
     if (searchSlug && !slugCandidates.includes(searchSlug)) {
       const r = await fetchUFCAthleteHeadshot(searchSlug, handle);
       if (r.status === 'ok' && r.imageUrl) {
@@ -306,40 +306,40 @@ async function main() {
     placeholderUsed: 0, noPage: 0, noImage: 0, errors: 0, uploaded: 0, skipped: 0,
   };
 
-  // Long Puppeteer sessions accumulate state and eventually throw
-  // ProtocolError (observed after ~80 fighters in earlier runs). Recycle
-  // the browser preemptively every BROWSER_RECYCLE_EVERY fighters AND
-  // catch protocol errors mid-loop to relaunch.
-  const BROWSER_RECYCLE_EVERY = 50;
+  // Parallel worker pool. Page-per-fetch (in scrapeUFCAthleteHeadshot) is
+  // safe to share across concurrent workers using one browser; the prior
+  // protocol-buildup bug was scoped to a reused Page, not a reused Browser.
+  // Concurrency = 3 keeps the request rate against UFC.com modest (each
+  // worker is mostly blocked on its own page.goto) while cutting wall-clock
+  // time ~3x vs the old serial loop. Per-worker inter-fighter sleep is
+  // dropped since the natural page.goto latency provides throttling.
+  const CONCURRENCY = parseInt(process.env.BACKFILL_HEADSHOT_CONCURRENCY || '3', 10);
   console.log('\n[ufc-headshots] Launching headless Chrome…');
-  let handle = await launchAthleteBrowser();
-  let processedSinceLaunch = 0;
+  const handle = await launchAthleteBrowser();
+  let cursor = 0;
+  const claimNext = (): number | null => {
+    if (cursor >= subset.length) return null;
+    return cursor++;
+  };
+  console.log(`[ufc-headshots] Worker concurrency: ${CONCURRENCY}`);
   try {
-    for (let i = 0; i < subset.length; i++) {
-      const fighter = subset[i];
-      if (i % 25 === 0) {
-        console.log(`\n[ufc-headshots] Progress: ${i}/${subset.length}`);
+    const workers = Array.from({ length: CONCURRENCY }, (_, workerId) => (async () => {
+      for (;;) {
+        const i = claimNext();
+        if (i === null) return;
+        const fighter = subset[i];
+        if (i % 25 === 0) {
+          console.log(`\n[ufc-headshots] Progress: ~${i}/${subset.length}`);
+        }
+        try {
+          await processFighter(fighter, stats, handle);
+        } catch (err: any) {
+          console.log(`  [worker${workerId}-err] ${fighter.firstName} ${fighter.lastName}: ${err.message}`);
+          stats.errors++;
+        }
       }
-      if (processedSinceLaunch >= BROWSER_RECYCLE_EVERY) {
-        console.log('[ufc-headshots] Preemptive browser recycle');
-        await closeAthleteBrowser(handle).catch(() => {});
-        handle = await launchAthleteBrowser();
-        processedSinceLaunch = 0;
-      }
-      try {
-        await processFighter(fighter, stats, handle);
-      } catch (err: any) {
-        // Most plausible cause: Puppeteer ProtocolError or browser died.
-        // Recycle and continue with next fighter (don't lose the run).
-        console.log(`  [browser-err] ${fighter.firstName} ${fighter.lastName}: ${err.message}`);
-        stats.errors++;
-        await closeAthleteBrowser(handle).catch(() => {});
-        handle = await launchAthleteBrowser();
-        processedSinceLaunch = 0;
-      }
-      processedSinceLaunch++;
-      if (i < subset.length - 1) await sleep(RATE_LIMIT_MS);
-    }
+    })());
+    await Promise.all(workers);
   } finally {
     await closeAthleteBrowser(handle).catch(() => {});
   }
