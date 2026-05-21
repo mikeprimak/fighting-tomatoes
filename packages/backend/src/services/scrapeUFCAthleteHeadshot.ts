@@ -142,69 +142,57 @@ export async function fetchUFCAthleteHeadshot(
  * resolve via derived-from-name guessing (e.g. "Khalil Rountree" really
  * lives at `khalil-rountree-jr`; "Paulo Borrachinha" lives at `paulo-costa`).
  *
- * Implementation: DuckDuckGo HTML search — the bot-friendliest free search
- * surface. We query `<name> ufc.com athlete` and take the first result
- * whose URL is on any *.ufc.com host with an `/athlete/<slug>` path.
- * Localized subdomains (kr.ufc.com, etc.) share the same slug as www, so
- * we accept them.
+ * Implementation: DuckDuckGo HTML search via plain HTTP — `html.duckduckgo.com`
+ * is server-rendered and parses fine without a real browser. Skipping
+ * Puppeteer here saves ~2-3s per search vs spinning up a page just for
+ * the lookup; UFC.com's stealth-required nav still uses Puppeteer.
  *
- * Returns the slug or null if no usable result was found. Always returns
- * after at most one navigation; caller is expected to throttle.
+ * We query `<name> ufc.com athlete` and take the first result whose URL is
+ * on any *.ufc.com host with an `/athlete/<slug>` path. Localized subdomains
+ * (kr.ufc.com, etc.) share the same slug as www, so we accept them.
+ *
+ * Returns the slug or null if no usable result was found.
  */
 export async function searchUFCAthleteSlugViaDDG(
   fighterName: string,
-  handle: AthleteBrowserHandle,
 ): Promise<string | null> {
   const query = encodeURIComponent(`${fighterName} ufc.com athlete`);
   const url = `https://html.duckduckgo.com/html/?q=${query}`;
-  const page = await handle.browser.newPage();
+
+  let html: string;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
   try {
-    await page.setUserAgent(
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    );
-    await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
-    await page.setRequestInterception(true);
-    page.on('request', (req) => {
-      const type = req.resourceType();
-      if (type === 'image' || type === 'stylesheet' || type === 'font' || type === 'media') {
-        req.abort();
-      } else {
-        req.continue();
-      }
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
     });
-
-    let response;
-    try {
-      response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT_MS });
-    } catch {
-      return null;
-    }
-    if (!response || response.status() >= 400) return null;
-
-    // DDG HTML wraps result hrefs in a redirector: //duckduckgo.com/l/?uddg=<urlencoded>...
-    // Sometimes it serves the raw URL. Handle both.
-    const hrefs: string[] = await page.evaluate(() => {
-      const anchors = Array.from(document.querySelectorAll('a.result__a, a.result__url')) as HTMLAnchorElement[];
-      return anchors.map(a => a.href || a.getAttribute('href') || '').filter(Boolean);
-    });
-
-    for (const raw of hrefs) {
-      let resolved = raw;
-      // Unwrap DDG redirector if present
-      const ddgMatch = raw.match(/[?&]uddg=([^&]+)/);
-      if (ddgMatch) {
-        try { resolved = decodeURIComponent(ddgMatch[1]); } catch { continue; }
-      }
-      // Match any *.ufc.com host + /athlete/<slug>
-      const ufcMatch = resolved.match(/https?:\/\/(?:[a-z]{2,3}\.)?ufc\.com\/athlete\/([a-z0-9-]+)/i);
-      if (ufcMatch && ufcMatch[1]) {
-        return ufcMatch[1].toLowerCase();
-      }
-    }
+    if (!res.ok) return null;
+    html = await res.text();
+  } catch {
     return null;
   } finally {
-    await page.close().catch(() => {});
+    clearTimeout(timeout);
   }
+
+  // DDG HTML wraps result hrefs in a redirector (//duckduckgo.com/l/?uddg=<urlencoded>...)
+  // OR serves raw URLs. Match both: either a uddg-wrapped ufc.com link or a
+  // bare ufc.com/athlete/<slug> URL anywhere in the document.
+  const uddgMatches = html.matchAll(/[?&]uddg=([^"&]+)/g);
+  for (const m of uddgMatches) {
+    let resolved: string;
+    try { resolved = decodeURIComponent(m[1]); } catch { continue; }
+    const ufcMatch = resolved.match(/https?:\/\/(?:[a-z]{2,3}\.)?ufc\.com\/athlete\/([a-z0-9-]+)/i);
+    if (ufcMatch && ufcMatch[1]) return ufcMatch[1].toLowerCase();
+  }
+  // Bare URL fallback
+  const bare = html.match(/https?:\/\/(?:[a-z]{2,3}\.)?ufc\.com\/athlete\/([a-z0-9-]+)/i);
+  if (bare && bare[1]) return bare[1].toLowerCase();
+  return null;
 }
 
 /**
