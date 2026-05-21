@@ -12,7 +12,11 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
-**→ `docs/HANDOFF-ai-enrichment-mvp-2026-05-17.md`** — read first. Switching to AI enrichment workstream. **Surprise: the cron is already live and running daily** at 14:00 UTC (`.github/workflows/fight-enrichment.yml`) — the source-of-truth doc is stale on this. MVP-today work is: fix the doc, chase 2 events that extracted but failed to match (surname pair edge case in `persist.ts`), pick an observability surface (recommend admin-page widget), audit per-promotion coverage. Tag-aware Fan DNA handoff at `docs/HANDOFF-tag-aware-personality-2026-05-17.md` is the consumer of this pipeline — pickup there resumes after enrichment MVP lands.
+**→ `docs/HANDOFF-follow-fighter-notifications-test-2026-05-20.md`** — read first. The follow-fighter notification lanes (Booked / 3-day-warn / Morning-of / Walkout-gating) shipped 2026-05-20 but have NOT been exercised end-to-end. Next session is testing: settings persistence smoke test, timezone capture verification, walkout gating (easiest), then booked + cron lanes with the setup steps in the handoff. Test account: `avocadomike@hotmail.com`.
+
+Earlier handoffs still active:
+- AI enrichment: `docs/HANDOFF-ai-enrichment-mvp-2026-05-17.md` (cron is live; BKFC editorial gap fix shipped 2026-05-20 — re-audit coverage after a couple cron cycles).
+- Tag-aware Fan DNA: `docs/HANDOFF-tag-aware-personality-2026-05-17.md`.
 
 ## Workstream Sessions
 
@@ -25,6 +29,7 @@ When Mike says "this is a [X] session", switch into focused mode on that workstr
 | "rewarding users session" | `docs/areas/rewarding-users.md` | Aesthetic: Letterboxd/Strava/Last.fm. Anti: Duolingo. **No leaderboards. No prizes.** Reward = closure + identity. Brainstorm new ideas each session and append to inventory. Don't ship Fan DNA before there's enough data (empty-room problem). |
 | "follow-fighter session" | `docs/areas/follow-fighter.md` | **THE acquisition workstream.** Every decision: does this make the dataset more valuable to a buyer? Target: 100K users × 5+ avg follows. Quality > volume — engagement tracking on every new follow surface. **Never derive `followedAt`** — that column is load-bearing for the sale narrative. No gamification, no auto-follow-everyone. |
 | "live trackers session" | `docs/areas/live-trackers.md` | The substrate every notification + rating-prompt compounds on. Goal: sub-5-min start/end signal for *every* org we list. Source ladder: official → aggregator → live blog → social → manual. **Don't fabricate timestamps** — null > guess. **Don't reverse COMPLETED→UPCOMING** ever. Log every source probed (even rejected ones) to the experiments log so future sessions don't redo dead research. Coverage gaps: MVP, Top Rank, Golden Boy, Gold Star. |
+| "sale value session" / "let's talk about building the sale value" / "selling the app" | `docs/areas/sale-value.md` | **Open thinking mode, not plan-following.** Persistent context for the acquisition thesis. Every session is a reassessment — don't push a plan, let Mike lead. The doc is context to load, not a checklist to execute. Honesty over optimism (200 users is small, don't dress up). Push back on overreach. Update the doc when the framework shifts; save new roadmap items as project memories. At current scale almost nothing executes today — purpose is to shape decisions now so assets exist with history when scale lands. |
 
 ## Web App
 
