@@ -38,7 +38,8 @@ import {
   deriveUFCAthleteSlug,
   launchAthleteBrowser,
   closeAthleteBrowser,
-  searchUFCAthleteSlugViaDDG,
+  searchUFCAthleteSlugViaBrave,
+  isHeadshotTrustworthy,
   AthleteBrowserHandle,
 } from '../services/scrapeUFCAthleteHeadshot';
 import { uploadFighterImage, uploadImageToR2 } from '../services/imageStorage';
@@ -71,6 +72,49 @@ const PLACEHOLDER_R2_PREFIX = 'placeholder';
 
 function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms));
+}
+
+/**
+ * One-time cleanup: identify rows where ufcAthleteSlug looks unrelated to
+ * the fighter's name and null out both profileImage + ufcAthleteSlug so the
+ * normal backfill predicate picks them up for retry.
+ *
+ * Rule: a slug is suspicious if NONE of its segments share ≥4 chars with
+ * either the firstName or lastName (case-insensitive prefix match, length 4).
+ * Conservative — we'd rather miss a few obviously-wrong slugs than wipe
+ * legit photos. Examples of intent:
+ *   - "Polo Reyes" / slug=tamia-hasohitsuku → wiped (no shared prefix ≥4)
+ *   - "Khalil Rountree" / slug=khalil-rountree-jr → kept (khal*, roun*)
+ *   - "Paulo Borrachinha" / slug=paulo-costa → kept (paul*)
+ */
+async function healCorruptedRows(): Promise<number> {
+  const rows = await prisma.$queryRaw<Array<{
+    id: string; firstName: string; lastName: string; ufcAthleteSlug: string;
+  }>>`
+    SELECT id, "firstName", "lastName", "ufcAthleteSlug"
+    FROM fighters
+    WHERE "ufcAthleteSlug" IS NOT NULL
+  `;
+  let toNull = 0;
+  for (const r of rows) {
+    const slug = r.ufcAthleteSlug.toLowerCase();
+    const slugSegments = slug.split(/[-_]/).filter(s => s.length >= 4);
+    const fn = (r.firstName || '').toLowerCase();
+    const ln = (r.lastName || '').toLowerCase();
+    const namePrefixes: string[] = [];
+    if (fn.length >= 4) namePrefixes.push(fn.slice(0, 4));
+    if (ln.length >= 4) namePrefixes.push(ln.slice(0, 4));
+    if (namePrefixes.length === 0) continue;  // too-short names — skip
+    const anyOverlap = slugSegments.some(seg => namePrefixes.some(np => seg.startsWith(np) || np.startsWith(seg.slice(0, 4))));
+    if (anyOverlap) continue;
+    console.log(`[heal] ${r.firstName} ${r.lastName} had bogus slug "${r.ufcAthleteSlug}" — clearing.`);
+    await prisma.fighter.update({
+      where: { id: r.id },
+      data: { profileImage: null, ufcAthleteSlug: null },
+    });
+    toNull++;
+  }
+  return toNull;
 }
 
 async function findCandidates() {
@@ -147,6 +191,15 @@ async function processFighter(
   for (const slug of slugCandidates) {
     const r = await fetchUFCAthleteHeadshot(slug, handle);
     if (r.status === 'ok' && r.imageUrl) {
+      // Trust check: UFC.com occasionally redirects unknown slugs to a
+      // generic athlete page whose og:image belongs to someone else. Verify
+      // the page title actually matches this fighter before accepting.
+      if (!isHeadshotTrustworthy(fullName, r.pageTitle, slug)) {
+        console.log(`  [reject]  ${fullName}  slug=${slug} title="${r.pageTitle || '<none>'}"`);
+        lastResult = 'no-image';
+        await sleep(150);
+        continue;
+      }
       imageUrl = r.imageUrl;
       usedSlug = slug;
       isPlaceholder = !!r.isPlaceholder;
@@ -162,17 +215,21 @@ async function processFighter(
   // Search fallback: every derived/existing slug missed. Either the page
   // 404'd (slug we computed never existed on UFC.com — common for nicknames
   // stored as legal name) or the page rendered with no og:image (slug typo
-  // / disambiguation suffix we didn't know about). Ask DDG for the canonical
-  // slug and try one more time.
+  // / disambiguation suffix we didn't know about). Ask Brave Search for the
+  // canonical slug and try one more time — still verifying the result page
+  // is about this fighter via og:title check (defense in depth).
   if (!imageUrl && (lastResult === 'no-image' || lastResult === 'no-page')) {
-    const searchSlug = await searchUFCAthleteSlugViaDDG(fullName, handle);
+    const searchSlug = await searchUFCAthleteSlugViaBrave(fullName);
     if (searchSlug && !slugCandidates.includes(searchSlug)) {
       const r = await fetchUFCAthleteHeadshot(searchSlug, handle);
-      if (r.status === 'ok' && r.imageUrl) {
+      if (r.status === 'ok' && r.imageUrl && isHeadshotTrustworthy(fullName, r.pageTitle, searchSlug)) {
         imageUrl = r.imageUrl;
         usedSlug = searchSlug;
         isPlaceholder = !!r.isPlaceholder;
         resolvedVia = 'search';
+      } else if (r.status === 'ok' && r.imageUrl) {
+        console.log(`  [reject]  ${fullName}  search-slug=${searchSlug} title="${r.pageTitle || '<none>'}"`);
+        lastResult = 'no-image';
       } else {
         lastResult = r.status === 'ok' ? 'no-image' : r.status;
         lastError = r.errorMessage;
@@ -294,6 +351,16 @@ async function main() {
   console.log(`[ufc-headshots] Dry run: ${DRY_RUN}`);
   console.log(`[ufc-headshots] Started: ${new Date().toISOString()}`);
   console.log('========================================');
+
+  // Heal corrupted rows from prior runs first. Before the trust-check landed,
+  // the DDG fallback would accept the first ufc.com/athlete link DDG returned
+  // even when UFC.com served a generic fallback page with another fighter's
+  // photo (see Polo Reyes → tamia-hasohitsuku → Damir Hadzovic photo, run
+  // #26227970527). Find rows whose ufcAthleteSlug doesn't share tokens with
+  // the fighter name and null both profileImage + ufcAthleteSlug so they get
+  // re-attempted properly with validation this time.
+  const healed = await healCorruptedRows();
+  if (healed > 0) console.log(`[ufc-headshots] Cleaned ${healed} corrupted rows from prior runs.`);
 
   const candidates = await findCandidates();
   console.log(`\n[ufc-headshots] Candidates: ${candidates.length} fighters with no profileImage`);
