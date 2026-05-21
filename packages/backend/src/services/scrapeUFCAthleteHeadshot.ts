@@ -12,13 +12,13 @@
  *   handshake and is the same pattern the existing daily UFC scraper
  *   (`scrapeAllUFCData.js`) uses to access the same site on GH Actions.
  *
- * Design — browser/page reuse:
- *   Launching Puppeteer is expensive (~2s) and consumes ~150MB. A 1,470-
- *   fighter sweep that launches once per fighter would take 50+ minutes and
- *   thrash memory. Callers should call `launchAthleteBrowser()` once,
- *   reuse the returned `{ browser, page }`, and call `closeAthleteBrowser()`
- *   at the end. Each `fetchUFCAthleteHeadshot()` call only navigates the
- *   shared page — order of magnitude faster.
+ * Design — browser reuse, page-per-fetch:
+ *   Launching Puppeteer is expensive (~2s) so callers should share one
+ *   browser across many fetches. BUT reusing a single page across many
+ *   navigations causes the stealth plugin's protocol channel to accumulate
+ *   state and eventually time out (Page.addScriptToEvaluateOnNewDocument).
+ *   The proven daily UFC scraper (`scrapeAllUFCData.js`) opens a fresh
+ *   page per athlete and closes it after; we match that pattern here.
  */
 
 // puppeteer-extra and stealth plugin lack TypeScript types in this repo,
@@ -35,12 +35,12 @@ const PAGE_TIMEOUT_MS = 25_000;
 
 export interface AthleteBrowserHandle {
   browser: Browser;
-  page: Page;
 }
 
 export async function launchAthleteBrowser(): Promise<AthleteBrowserHandle> {
   const browser = await puppeteer.launch({
     headless: 'new',
+    protocolTimeout: 240_000,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -52,31 +52,10 @@ export async function launchAthleteBrowser(): Promise<AthleteBrowserHandle> {
       '--lang=en-US,en',
     ],
   });
-  const page = await browser.newPage();
-  await page.setUserAgent(
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  );
-  await page.setExtraHTTPHeaders({
-    'Accept-Language': 'en-US,en;q=0.9',
-  });
-  // Block heavy assets we don't need for the meta-tag read — speeds each
-  // page load substantially and reduces bandwidth.
-  await page.setRequestInterception(true);
-  page.on('request', (req) => {
-    const type = req.resourceType();
-    if (type === 'image' || type === 'stylesheet' || type === 'font' || type === 'media') {
-      req.abort();
-    } else {
-      req.continue();
-    }
-  });
-  return { browser, page };
+  return { browser };
 }
 
 export async function closeAthleteBrowser(handle: AthleteBrowserHandle): Promise<void> {
-  try {
-    await handle.page.close();
-  } catch { /* noop */ }
   try {
     await handle.browser.close();
   } catch { /* noop */ }
@@ -94,36 +73,54 @@ export async function fetchUFCAthleteHeadshot(
   handle: AthleteBrowserHandle,
 ): Promise<UFCHeadshotResult> {
   const url = `https://www.ufc.com/athlete/${encodeURIComponent(slug)}`;
-  let response;
+  const page = await handle.browser.newPage();
   try {
-    response = await handle.page.goto(url, {
-      waitUntil: 'domcontentloaded',
-      timeout: PAGE_TIMEOUT_MS,
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    );
+    await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const type = req.resourceType();
+      if (type === 'image' || type === 'stylesheet' || type === 'font' || type === 'media') {
+        req.abort();
+      } else {
+        req.continue();
+      }
     });
-  } catch (err: any) {
-    return { status: 'error', errorMessage: err.message, finalUrl: url };
-  }
 
-  const statusCode = response?.status() ?? 0;
-  const finalUrl = handle.page.url();
+    let response;
+    try {
+      response = await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: PAGE_TIMEOUT_MS,
+      });
+    } catch (err: any) {
+      return { status: 'error', errorMessage: err.message, finalUrl: url };
+    }
 
-  if (statusCode === 404 || statusCode === 410) {
-    return { status: 'no-page', finalUrl };
-  }
-  if (statusCode >= 400) {
-    return { status: 'error', errorMessage: `HTTP ${statusCode}`, finalUrl };
-  }
+    const statusCode = response?.status() ?? 0;
+    const finalUrl = page.url();
 
-  // Read og:image directly off the document; cheaper than serializing HTML.
-  const ogImage = await handle.page.evaluate(() => {
-    const m = document.querySelector('meta[property="og:image"]');
-    return m ? m.getAttribute('content') : null;
-  });
+    if (statusCode === 404 || statusCode === 410) {
+      return { status: 'no-page', finalUrl };
+    }
+    if (statusCode >= 400) {
+      return { status: 'error', errorMessage: `HTTP ${statusCode}`, finalUrl };
+    }
 
-  if (!ogImage) {
-    return { status: 'no-image', finalUrl };
+    const ogImage = await page.evaluate(() => {
+      const m = document.querySelector('meta[property="og:image"]');
+      return m ? m.getAttribute('content') : null;
+    });
+
+    if (!ogImage) {
+      return { status: 'no-image', finalUrl };
+    }
+    return { status: 'ok', imageUrl: ogImage.trim(), finalUrl };
+  } finally {
+    await page.close().catch(() => {});
   }
-  return { status: 'ok', imageUrl: ogImage.trim(), finalUrl };
 }
 
 /**

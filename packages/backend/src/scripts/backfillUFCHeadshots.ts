@@ -66,25 +66,41 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function findCandidates() {
-  // Fighters who: (a) have no profileImage AND (b) have appeared in any
-  // UFC event (eventStatus doesn't matter — even unfinished bookings count
-  // because the fighter exists and has a UFC slug worth checking).
+  // Fighters who appeared in any UFC event (eventStatus doesn't matter)
+  // AND have a missing/broken profileImage. "Broken" today means the
+  // legacy fightingtomatoes.com host that stopped serving images after the
+  // 2026-04-17 migration off GoDaddy — every such URL now 404s.
+  //
+  // Ordering: rating-weighted impact — fighters in the most-engaged UFC
+  // fights surface first, so stars (McGregor duplicates, Khabib, Glover
+  // Teixeira, Robbie Lawler, Rory MacDonald, etc.) get fixed in the
+  // earliest batch.
   return prisma.$queryRaw<Array<{ id: string; firstName: string; lastName: string; ufcAthleteSlug: string | null }>>`
-    SELECT DISTINCT f.id, f."firstName", f."lastName", f."ufcAthleteSlug"
+    SELECT f.id, f."firstName", f."lastName", f."ufcAthleteSlug"
     FROM fighters f
-    WHERE f."profileImage" IS NULL
-      AND EXISTS (
-        SELECT 1
-        FROM fights fi
-        JOIN events e ON e.id = fi."eventId"
-        WHERE (fi."fighter1Id" = f.id OR fi."fighter2Id" = f.id)
-          AND (
+    JOIN fights fi ON (fi."fighter1Id" = f.id OR fi."fighter2Id" = f.id)
+    JOIN events e ON e.id = fi."eventId"
+    WHERE (
+            f."profileImage" IS NULL
+            OR f."profileImage" LIKE 'https://fightingtomatoes.com/%'
+            OR f."profileImage" LIKE 'http://fightingtomatoes.com/%'
+            -- An earlier run with R2 misconfigured wrote raw ufc.com URLs;
+            -- re-process them so the image ends up in R2 (owned), not
+            -- hot-linked. Once R2 hosts them, this branch becomes a no-op
+            -- (no rows match) and is harmless.
+            OR f."profileImage" LIKE 'https://ufc.com/%'
+            OR f."profileImage" LIKE 'https://www.ufc.com/%'
+            -- An interim run with R2_PUBLIC_URL unset wrote URLs of the
+            -- form <bucket>.r2.dev which 500. Heal those too.
+            OR f."profileImage" LIKE 'https://fightcrewapp-images.r2.dev/%'
+          )
+      AND (
             e."scraperType" = 'ufc'
             OR e.name ~* '^UFC[: ]'
             OR e.name ~* '^UFC$'
           )
-      )
-    ORDER BY f."lastName", f."firstName"
+    GROUP BY f.id, f."firstName", f."lastName", f."ufcAthleteSlug"
+    ORDER BY COALESCE(SUM(fi."totalRatings"),0) DESC, AVG(NULLIF(fi."averageRating",0)) DESC NULLS LAST
   `;
 }
 
@@ -158,24 +174,55 @@ async function processFighter(
     return;
   }
 
-  // Persist to DB
+  // Persist to DB. updateMany lets us re-check that the row STILL matches the
+  // backfill predicate (null OR dead legacy URL) at write time, so a concurrent
+  // run or human edit that just set a real R2 image won't get overwritten.
   const updateData: { profileImage: string; ufcAthleteSlug?: string } = { profileImage: r2Url };
-  // If we had to derive the slug and it worked, write it back so future runs
-  // skip the derivation step
   if (!fighter.ufcAthleteSlug && usedSlug) {
     updateData.ufcAthleteSlug = usedSlug;
   }
+  const whereClause = {
+    id: fighter.id,
+    OR: [
+      { profileImage: null },
+      { profileImage: { startsWith: 'https://fightingtomatoes.com/' } },
+      { profileImage: { startsWith: 'http://fightingtomatoes.com/' } },
+      { profileImage: { startsWith: 'https://ufc.com/' } },
+      { profileImage: { startsWith: 'https://www.ufc.com/' } },
+      { profileImage: { startsWith: 'https://fightcrewapp-images.r2.dev/' } },
+    ],
+  };
   try {
-    await prisma.fighter.update({
-      where: { id: fighter.id, profileImage: null }, // re-check null at write time
-      data: updateData,
-    });
-    stats.uploaded++;
-    console.log(`  [ok]      ${fullName}  slug=${usedSlug}`);
-  } catch (err: any) {
-    if (err.code === 'P2025') {
-      // Row no longer matches the WHERE (profileImage was set by another run)
+    let result = await prisma.fighter.updateMany({ where: whereClause, data: updateData });
+    if (result.count === 0 && updateData.ufcAthleteSlug) {
       stats.skipped++;
+      return;
+    }
+    if (result.count > 0) {
+      stats.uploaded++;
+      console.log(`  [ok]      ${fullName}  slug=${usedSlug}`);
+      return;
+    }
+    // updateMany returned 0 but we had no slug to drop — true skip.
+    stats.skipped++;
+  } catch (err: any) {
+    // P2002: unique-constraint failure on ufcAthleteSlug — another fighter
+    // already owns the derived slug (the duplicate-fighter problem). Retry
+    // without writing the slug; the image is what we actually need.
+    if (err.code === 'P2002' && updateData.ufcAthleteSlug) {
+      try {
+        const { ufcAthleteSlug: _drop, ...imageOnly } = updateData;
+        const result = await prisma.fighter.updateMany({ where: whereClause, data: imageOnly });
+        if (result.count > 0) {
+          stats.uploaded++;
+          console.log(`  [ok-noslug] ${fullName}  (slug ${usedSlug} taken by duplicate)`);
+          return;
+        }
+        stats.skipped++;
+      } catch (err2: any) {
+        console.log(`  [db-err]  ${fullName}: ${err2.message}`);
+        stats.errors++;
+      }
       return;
     }
     console.log(`  [db-err]  ${fullName}: ${err.message}`);
@@ -203,19 +250,42 @@ async function main() {
     noPage: 0, noImage: 0, errors: 0, uploaded: 0, skipped: 0,
   };
 
+  // Long Puppeteer sessions accumulate state and eventually throw
+  // ProtocolError (observed after ~80 fighters in earlier runs). Recycle
+  // the browser preemptively every BROWSER_RECYCLE_EVERY fighters AND
+  // catch protocol errors mid-loop to relaunch.
+  const BROWSER_RECYCLE_EVERY = 50;
   console.log('\n[ufc-headshots] Launching headless Chrome…');
-  const handle = await launchAthleteBrowser();
+  let handle = await launchAthleteBrowser();
+  let processedSinceLaunch = 0;
   try {
     for (let i = 0; i < subset.length; i++) {
       const fighter = subset[i];
       if (i % 25 === 0) {
         console.log(`\n[ufc-headshots] Progress: ${i}/${subset.length}`);
       }
-      await processFighter(fighter, stats, handle);
+      if (processedSinceLaunch >= BROWSER_RECYCLE_EVERY) {
+        console.log('[ufc-headshots] Preemptive browser recycle');
+        await closeAthleteBrowser(handle).catch(() => {});
+        handle = await launchAthleteBrowser();
+        processedSinceLaunch = 0;
+      }
+      try {
+        await processFighter(fighter, stats, handle);
+      } catch (err: any) {
+        // Most plausible cause: Puppeteer ProtocolError or browser died.
+        // Recycle and continue with next fighter (don't lose the run).
+        console.log(`  [browser-err] ${fighter.firstName} ${fighter.lastName}: ${err.message}`);
+        stats.errors++;
+        await closeAthleteBrowser(handle).catch(() => {});
+        handle = await launchAthleteBrowser();
+        processedSinceLaunch = 0;
+      }
+      processedSinceLaunch++;
       if (i < subset.length - 1) await sleep(RATE_LIMIT_MS);
     }
   } finally {
-    await closeAthleteBrowser(handle);
+    await closeAthleteBrowser(handle).catch(() => {});
   }
 
   console.log('\n========================================');
