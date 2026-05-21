@@ -1460,7 +1460,7 @@ export default function CompletedFightDetailScreen({
       >
 
         {/* Fighter Images */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16, marginBottom: 12, gap: 0 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'center', marginTop: 16, marginBottom: 12, gap: 0 }}>
           <TouchableOpacity
             style={{ alignItems: 'center', width: 140 }}
             onPress={() => router.push(`/fighter/${fight.fighter1.id}` as any)}
@@ -1492,7 +1492,7 @@ export default function CompletedFightDetailScreen({
               )}
             </View>
           </TouchableOpacity>
-          <Text style={{ fontSize: 16, fontWeight: '600', color: colors.textSecondary, marginHorizontal: 24, marginBottom: 40 }}>
+          <Text style={{ fontSize: 16, fontWeight: '600', color: colors.textSecondary, marginHorizontal: 24, marginTop: 50 }}>
             vs
           </Text>
           <TouchableOpacity
