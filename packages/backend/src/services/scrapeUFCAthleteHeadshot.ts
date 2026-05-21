@@ -66,6 +66,14 @@ export interface UFCHeadshotResult {
   imageUrl?: string;
   finalUrl?: string;
   errorMessage?: string;
+  // True when og:image points at UFC.com's generic silhouette placeholder
+  // (https://ufc.com/images/.../SILHOUETTE.png). Caller decides whether to
+  // use it (low-tier fighters who'll never get a real photo) or skip it.
+  isPlaceholder?: boolean;
+}
+
+export function isSilhouettePlaceholderUrl(url: string): boolean {
+  return /SILHOUETTE\.png/i.test(url);
 }
 
 export async function fetchUFCAthleteHeadshot(
@@ -117,7 +125,83 @@ export async function fetchUFCAthleteHeadshot(
     if (!ogImage) {
       return { status: 'no-image', finalUrl };
     }
-    return { status: 'ok', imageUrl: ogImage.trim(), finalUrl };
+    const trimmed = ogImage.trim();
+    return {
+      status: 'ok',
+      imageUrl: trimmed,
+      finalUrl,
+      isPlaceholder: isSilhouettePlaceholderUrl(trimmed),
+    };
+  } finally {
+    await page.close().catch(() => {});
+  }
+}
+
+/**
+ * Find the canonical UFC.com athlete slug for a fighter name we can't
+ * resolve via derived-from-name guessing (e.g. "Khalil Rountree" really
+ * lives at `khalil-rountree-jr`; "Paulo Borrachinha" lives at `paulo-costa`).
+ *
+ * Implementation: DuckDuckGo HTML search — the bot-friendliest free search
+ * surface. We query `<name> ufc.com athlete` and take the first result
+ * whose URL is on any *.ufc.com host with an `/athlete/<slug>` path.
+ * Localized subdomains (kr.ufc.com, etc.) share the same slug as www, so
+ * we accept them.
+ *
+ * Returns the slug or null if no usable result was found. Always returns
+ * after at most one navigation; caller is expected to throttle.
+ */
+export async function searchUFCAthleteSlugViaDDG(
+  fighterName: string,
+  handle: AthleteBrowserHandle,
+): Promise<string | null> {
+  const query = encodeURIComponent(`${fighterName} ufc.com athlete`);
+  const url = `https://html.duckduckgo.com/html/?q=${query}`;
+  const page = await handle.browser.newPage();
+  try {
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    );
+    await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const type = req.resourceType();
+      if (type === 'image' || type === 'stylesheet' || type === 'font' || type === 'media') {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+
+    let response;
+    try {
+      response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: PAGE_TIMEOUT_MS });
+    } catch {
+      return null;
+    }
+    if (!response || response.status() >= 400) return null;
+
+    // DDG HTML wraps result hrefs in a redirector: //duckduckgo.com/l/?uddg=<urlencoded>...
+    // Sometimes it serves the raw URL. Handle both.
+    const hrefs: string[] = await page.evaluate(() => {
+      const anchors = Array.from(document.querySelectorAll('a.result__a, a.result__url')) as HTMLAnchorElement[];
+      return anchors.map(a => a.href || a.getAttribute('href') || '').filter(Boolean);
+    });
+
+    for (const raw of hrefs) {
+      let resolved = raw;
+      // Unwrap DDG redirector if present
+      const ddgMatch = raw.match(/[?&]uddg=([^&]+)/);
+      if (ddgMatch) {
+        try { resolved = decodeURIComponent(ddgMatch[1]); } catch { continue; }
+      }
+      // Match any *.ufc.com host + /athlete/<slug>
+      const ufcMatch = resolved.match(/https?:\/\/(?:[a-z]{2,3}\.)?ufc\.com\/athlete\/([a-z0-9-]+)/i);
+      if (ufcMatch && ufcMatch[1]) {
+        return ufcMatch[1].toLowerCase();
+      }
+    }
+    return null;
   } finally {
     await page.close().catch(() => {});
   }

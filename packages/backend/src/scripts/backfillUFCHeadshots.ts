@@ -38,9 +38,10 @@ import {
   deriveUFCAthleteSlug,
   launchAthleteBrowser,
   closeAthleteBrowser,
+  searchUFCAthleteSlugViaDDG,
   AthleteBrowserHandle,
 } from '../services/scrapeUFCAthleteHeadshot';
-import { uploadFighterImage } from '../services/imageStorage';
+import { uploadFighterImage, uploadImageToR2 } from '../services/imageStorage';
 
 const prisma = new PrismaClient();
 
@@ -54,12 +55,19 @@ interface RunStats {
   considered: number;
   okFromExistingSlug: number;
   okFromDerivedSlug: number;
+  okFromSearch: number;
+  placeholderUsed: number;
   noPage: number;
   noImage: number;
   errors: number;
   uploaded: number;
   skipped: number;
 }
+
+// Stored URL pattern for SILHOUETTE placeholders. The R2 key uses prefix
+// "placeholder" so the predicate can identify these rows on the next run
+// and re-attempt to find a real headshot.
+const PLACEHOLDER_R2_PREFIX = 'placeholder';
 
 function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms));
@@ -93,6 +101,12 @@ async function findCandidates() {
             -- An interim run with R2_PUBLIC_URL unset wrote URLs of the
             -- form <bucket>.r2.dev which 500. Heal those too.
             OR f."profileImage" LIKE 'https://fightcrewapp-images.r2.dev/%'
+            -- Placeholder silhouettes from a previous run; re-attempt to
+            -- find a real headshot via the DDG search fallback.
+            OR f."profileImage" LIKE '%/fighters/placeholder-%'
+            -- Raw UFC SILHOUETTE URL written by older runs that missed the
+            -- placeholder branch entirely.
+            OR f."profileImage" ILIKE '%SILHOUETTE.png%'
           )
       AND (
             e."scraperType" = 'ufc'
@@ -125,6 +139,8 @@ async function processFighter(
 
   let imageUrl: string | undefined;
   let usedSlug: string | undefined;
+  let isPlaceholder = false;
+  let resolvedVia: 'existing' | 'derived' | 'search' | undefined;
   let lastResult: 'no-page' | 'no-image' | 'error' = 'no-page';
   let lastError: string | undefined;
 
@@ -133,12 +149,35 @@ async function processFighter(
     if (r.status === 'ok' && r.imageUrl) {
       imageUrl = r.imageUrl;
       usedSlug = slug;
+      isPlaceholder = !!r.isPlaceholder;
+      resolvedVia = slug === fighter.ufcAthleteSlug ? 'existing' : 'derived';
       break;
     }
     lastResult = r.status === 'ok' ? 'no-image' : r.status;
     lastError = r.errorMessage;
     // small interleave delay to be polite
     await sleep(150);
+  }
+
+  // Search fallback: every derived/existing slug missed. Either the page
+  // 404'd (slug we computed never existed on UFC.com — common for nicknames
+  // stored as legal name) or the page rendered with no og:image (slug typo
+  // / disambiguation suffix we didn't know about). Ask DDG for the canonical
+  // slug and try one more time.
+  if (!imageUrl && (lastResult === 'no-image' || lastResult === 'no-page')) {
+    const searchSlug = await searchUFCAthleteSlugViaDDG(fullName, handle);
+    if (searchSlug && !slugCandidates.includes(searchSlug)) {
+      const r = await fetchUFCAthleteHeadshot(searchSlug, handle);
+      if (r.status === 'ok' && r.imageUrl) {
+        imageUrl = r.imageUrl;
+        usedSlug = searchSlug;
+        isPlaceholder = !!r.isPlaceholder;
+        resolvedVia = 'search';
+      } else {
+        lastResult = r.status === 'ok' ? 'no-image' : r.status;
+        lastError = r.errorMessage;
+      }
+    }
   }
 
   if (!imageUrl || !usedSlug) {
@@ -155,7 +194,8 @@ async function processFighter(
     return;
   }
 
-  if (fighter.ufcAthleteSlug) stats.okFromExistingSlug++;
+  if (resolvedVia === 'existing') stats.okFromExistingSlug++;
+  else if (resolvedVia === 'search') stats.okFromSearch++;
   else stats.okFromDerivedSlug++;
 
   if (DRY_RUN) {
@@ -164,10 +204,19 @@ async function processFighter(
     return;
   }
 
-  // Upload to R2; if R2 not configured, the helper falls back to the source URL
+  // Upload to R2; if R2 not configured, the helper falls back to the source URL.
+  // Placeholders go through a known "placeholder" prefix so the predicate can
+  // re-attempt them on future runs (e.g. after UFC adds a real headshot).
+  // Since the silhouette URL is identical across fighters, all placeholders
+  // dedupe to one shared R2 object.
   let r2Url: string;
   try {
-    r2Url = await uploadFighterImage(imageUrl, fullName);
+    if (isPlaceholder) {
+      r2Url = await uploadImageToR2(imageUrl, 'fighters', PLACEHOLDER_R2_PREFIX);
+      stats.placeholderUsed++;
+    } else {
+      r2Url = await uploadFighterImage(imageUrl, fullName);
+    }
   } catch (err: any) {
     console.log(`  [upload-err] ${fullName}: ${err.message}`);
     stats.errors++;
@@ -190,6 +239,10 @@ async function processFighter(
       { profileImage: { startsWith: 'https://ufc.com/' } },
       { profileImage: { startsWith: 'https://www.ufc.com/' } },
       { profileImage: { startsWith: 'https://fightcrewapp-images.r2.dev/' } },
+      // Placeholder silhouettes — overwriteable so a later run with a real
+      // photo replaces the silhouette.
+      { profileImage: { contains: '/fighters/placeholder-' } },
+      { profileImage: { contains: 'SILHOUETTE.png' } },
     ],
   };
   try {
@@ -200,7 +253,10 @@ async function processFighter(
     }
     if (result.count > 0) {
       stats.uploaded++;
-      console.log(`  [ok]      ${fullName}  slug=${usedSlug}`);
+      const tag = isPlaceholder
+        ? '[ok-placeholder]'
+        : resolvedVia === 'search' ? '[ok-search]' : '[ok]';
+      console.log(`  ${tag} ${fullName}  slug=${usedSlug}`);
       return;
     }
     // updateMany returned 0 but we had no slug to drop — true skip.
@@ -246,8 +302,8 @@ async function main() {
   if (LIMIT) console.log(`[ufc-headshots] After limit: ${subset.length}`);
 
   const stats: RunStats = {
-    considered: 0, okFromExistingSlug: 0, okFromDerivedSlug: 0,
-    noPage: 0, noImage: 0, errors: 0, uploaded: 0, skipped: 0,
+    considered: 0, okFromExistingSlug: 0, okFromDerivedSlug: 0, okFromSearch: 0,
+    placeholderUsed: 0, noPage: 0, noImage: 0, errors: 0, uploaded: 0, skipped: 0,
   };
 
   // Long Puppeteer sessions accumulate state and eventually throw
@@ -294,6 +350,8 @@ async function main() {
   console.log(`  uploaded:   ${stats.uploaded}`);
   console.log(`    via existing slug: ${stats.okFromExistingSlug}`);
   console.log(`    via derived slug:  ${stats.okFromDerivedSlug}`);
+  console.log(`    via DDG search:    ${stats.okFromSearch}`);
+  console.log(`    placeholder used:  ${stats.placeholderUsed}`);
   console.log(`  skipped (already set): ${stats.skipped}`);
   console.log(`  no ufc.com page: ${stats.noPage}`);
   console.log(`  page exists, no image: ${stats.noImage}`);
@@ -301,7 +359,13 @@ async function main() {
   console.log(`[ufc-headshots] Done at ${new Date().toISOString()}`);
   console.log('========================================');
 
-  if (stats.errors > 0) process.exitCode = 1;
+  // Only fail the workflow if errors are systemic, not transient. A handful
+  // of HTTP 403s on UFC's CDN during a 600+ fighter run is normal noise.
+  const errorRate = stats.considered > 0 ? stats.errors / stats.considered : 0;
+  if (errorRate > 0.05) {
+    console.log(`[ufc-headshots] Error rate ${(errorRate * 100).toFixed(1)}% exceeds 5% — marking workflow failed.`);
+    process.exitCode = 1;
+  }
 }
 
 main()
