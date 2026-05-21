@@ -95,9 +95,8 @@ export default function ProfileScreen() {
   const { spoilerFreeMode, setSpoilerFreeMode } = useSpoilerFree();
   const queryClient = useQueryClient();
 
-  // Notification permission + master toggle state
+  // Notification permission state (master + per-lane toggles all live on /settings)
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
-  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -106,30 +105,8 @@ export default function ProfileScreen() {
         const hasPermission = await notificationService.requestNotificationPermissions();
         setPermissionStatus(hasPermission ? 'granted' : 'denied');
       } catch {}
-      try {
-        const response = await apiService.getNotificationPreferences();
-        if (response?.preferences) {
-          setNotificationsEnabled(!!response.preferences.notificationsEnabled);
-        }
-      } catch {}
     })();
   }, [isAuthenticated]);
-
-  const updateNotificationsEnabled = async (value: boolean) => {
-    const old = notificationsEnabled;
-    setNotificationsEnabled(value);
-    try {
-      await apiService.updateNotificationPreferences({ notificationsEnabled: value });
-      queryClient.invalidateQueries({ queryKey: ['fights'] });
-      queryClient.invalidateQueries({ queryKey: ['fight'] });
-      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
-      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
-      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
-    } catch {
-      setNotificationsEnabled(old);
-      showError('Failed to update preference');
-    }
-  };
 
   const requestPermissions = async () => {
     const hasPermission = await notificationService.requestNotificationPermissions();
@@ -863,20 +840,6 @@ export default function ProfileScreen() {
             </View>
           )}
           <View style={[styles.settingsGroup, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-            <View style={[styles.settingsRow, { borderBottomColor: colors.border }]}>
-              <View style={styles.settingsRowLeft}>
-                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Allow Notifications</Text>
-                <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
-                  Get notified when followed fights are about to start
-                </Text>
-              </View>
-              <Switch
-                value={notificationsEnabled}
-                onValueChange={updateNotificationsEnabled}
-                trackColor={{ false: '#767577', true: '#4CAF50' }}
-                thumbColor={notificationsEnabled ? '#FFFFFF' : '#f4f3f4'}
-              />
-            </View>
             <TouchableOpacity
               style={[styles.settingsRow, { borderBottomWidth: 0 }]}
               onPress={() => router.push('/settings')}
