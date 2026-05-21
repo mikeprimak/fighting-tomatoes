@@ -62,11 +62,12 @@ Key invariants:
 - ✅ Top-followed discovery endpoint (`/api/community/top-followed-fighters`)
 - ✅ Scrape-time match sync (commit, 2026-05-01) — when a new fight is booked, all existing follow rules for either fighter get a notification rule attached automatically
 - ✅ Non-tracker card-start fallback (2026-05-02)
-- ✅ Walkout-warning notification (~10 min pre-fight) — currently the **only** notification a follow triggers
+- ✅ Walkout-warning notification (~10 min pre-fight)
+- ✅ **Booked / 3-day-warn / morning-of notifications shipped 2026-05-20.** Per-lane toggles in mobile settings + Profile "Notification settings →" entry. Booked fires from scrape-time sync only when `Fight.createdAt > UserFighterFollow.createdAt` (no retroactive bombardment). 3-day and morning-of run on a 15-min cron with user-local timezone math (`User.timezone` captured from device on app open) and overnight rollback (3am ONE FC fight uses previous local day). FollowNotificationEvent table logs every dispatch.
 
 ### Known gaps (the immediate work)
-- Only one notification lane wired up (walkout). No day-before, no morning-of, no booked/scratched, no signed-with-new-org, no in-progress, no results recap.
-- No engagement tracking on the existing notification — we can't tell who opened it, who clicked through, who rated after.
+- Scratched / signed-with-new-org / spoiler-safe-post-fight lanes still TODO.
+- Engagement tracking dispatch-side is in (FollowNotificationEvent). Open/click attribution still TODO (mobile telemetry callback).
 - Top-followed carousel exists but discovery of the feature itself is weak — many active users have never tapped a "+".
 - No suggested-follows / recommendation engine.
 - No buyer-facing aggregate report exists yet. The dataset is there; the demo screen is not.
