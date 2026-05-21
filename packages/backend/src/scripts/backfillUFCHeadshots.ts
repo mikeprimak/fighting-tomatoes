@@ -39,16 +39,8 @@ import {
   launchAthleteBrowser,
   closeAthleteBrowser,
   searchUFCAthleteSlugViaDDG,
-  buildAthleteIndex,
-  lookupAthleteSlug,
   AthleteBrowserHandle,
-  AthleteIndexLookup,
 } from '../services/scrapeUFCAthleteHeadshot';
-import {
-  scrapeAllUFCAthletes,
-  writeIndexCache,
-  readIndexCache,
-} from '../services/scrapeUFCAthletesIndex';
 import { uploadFighterImage, uploadImageToR2 } from '../services/imageStorage';
 
 const prisma = new PrismaClient();
@@ -63,7 +55,6 @@ interface RunStats {
   considered: number;
   okFromExistingSlug: number;
   okFromDerivedSlug: number;
-  okFromIndex: number;
   okFromSearch: number;
   placeholderUsed: number;
   noPage: number;
@@ -131,30 +122,15 @@ async function processFighter(
   fighter: { id: string; firstName: string; lastName: string; ufcAthleteSlug: string | null },
   stats: RunStats,
   handle: AthleteBrowserHandle,
-  index: AthleteIndexLookup,
 ): Promise<void> {
   stats.considered++;
   const fullName = `${fighter.firstName} ${fighter.lastName}`.trim();
 
-  // Resolve slug via cascading strategies. Each candidate is tried against
-  // the UFC.com athlete page; the first to return a real (non-placeholder)
-  // image wins.
-  //   1. Existing ufcAthleteSlug column
-  //   2. Derived slug from name (cheap guess)
-  //   3. Index lookup against the harvested UFC.com /athletes/all roster
-  //      — handles suffix differences, typos, Saint/St., Levenshtein ≤ 3
-  //   4. DDG search fallback (Puppeteer) — last resort for nicknames-as-name
-  //      where UFC.com's listed name differs entirely from the DB name
-  const slugCandidates: Array<{ slug: string; via: 'existing' | 'derived' | 'index' }> = [];
-  if (fighter.ufcAthleteSlug) slugCandidates.push({ slug: fighter.ufcAthleteSlug, via: 'existing' });
+  // Slug priority: existing column → derived from name
+  const slugCandidates: string[] = [];
+  if (fighter.ufcAthleteSlug) slugCandidates.push(fighter.ufcAthleteSlug);
   const derived = deriveUFCAthleteSlug(fullName);
-  if (derived && !slugCandidates.find(c => c.slug === derived)) {
-    slugCandidates.push({ slug: derived, via: 'derived' });
-  }
-  const indexed = lookupAthleteSlug(fullName, index);
-  if (indexed && !slugCandidates.find(c => c.slug === indexed)) {
-    slugCandidates.push({ slug: indexed, via: 'index' });
-  }
+  if (derived && !slugCandidates.includes(derived)) slugCandidates.push(derived);
 
   if (slugCandidates.length === 0) {
     stats.noPage++;
@@ -164,31 +140,33 @@ async function processFighter(
   let imageUrl: string | undefined;
   let usedSlug: string | undefined;
   let isPlaceholder = false;
-  let resolvedVia: 'existing' | 'derived' | 'index' | 'search' | undefined;
+  let resolvedVia: 'existing' | 'derived' | 'search' | undefined;
   let lastResult: 'no-page' | 'no-image' | 'error' = 'no-page';
   let lastError: string | undefined;
 
-  for (const cand of slugCandidates) {
-    const r = await fetchUFCAthleteHeadshot(cand.slug, handle);
+  for (const slug of slugCandidates) {
+    const r = await fetchUFCAthleteHeadshot(slug, handle);
     if (r.status === 'ok' && r.imageUrl) {
       imageUrl = r.imageUrl;
-      usedSlug = cand.slug;
+      usedSlug = slug;
       isPlaceholder = !!r.isPlaceholder;
-      resolvedVia = cand.via;
+      resolvedVia = slug === fighter.ufcAthleteSlug ? 'existing' : 'derived';
       break;
     }
     lastResult = r.status === 'ok' ? 'no-image' : r.status;
     lastError = r.errorMessage;
+    // small interleave delay to be polite
     await sleep(150);
   }
 
-  // DDG last-resort: every index/derived/existing path failed. Most likely
-  // a fighter UFC.com lists under their legal name while we store their
-  // nickname (Paulo Borrachinha → paulo-costa). Index match can't catch
-  // those — DDG can.
+  // Search fallback: every derived/existing slug missed. Either the page
+  // 404'd (slug we computed never existed on UFC.com — common for nicknames
+  // stored as legal name) or the page rendered with no og:image (slug typo
+  // / disambiguation suffix we didn't know about). Ask DDG for the canonical
+  // slug and try one more time.
   if (!imageUrl && (lastResult === 'no-image' || lastResult === 'no-page')) {
     const searchSlug = await searchUFCAthleteSlugViaDDG(fullName, handle);
-    if (searchSlug && !slugCandidates.find(c => c.slug === searchSlug)) {
+    if (searchSlug && !slugCandidates.includes(searchSlug)) {
       const r = await fetchUFCAthleteHeadshot(searchSlug, handle);
       if (r.status === 'ok' && r.imageUrl) {
         imageUrl = r.imageUrl;
@@ -203,24 +181,22 @@ async function processFighter(
   }
 
   if (!imageUrl || !usedSlug) {
-    const triedSlugs = slugCandidates.map(c => c.slug).join(', ');
     if (lastResult === 'error') {
       stats.errors++;
-      console.log(`  [error]   ${fullName}  (slugs tried: ${triedSlugs})  ${lastError || ''}`);
+      console.log(`  [error]   ${fullName}  (slugs tried: ${slugCandidates.join(', ')})  ${lastError || ''}`);
     } else if (lastResult === 'no-image') {
       stats.noImage++;
-      console.log(`  [no-img]  ${fullName}  (tried: ${triedSlugs})`);
+      console.log(`  [no-img]  ${fullName}  (slug: ${slugCandidates[slugCandidates.length - 1]})`);
     } else {
       stats.noPage++;
-      console.log(`  [no-page] ${fullName}  (tried: ${triedSlugs})`);
+      console.log(`  [no-page] ${fullName}  (slugs tried: ${slugCandidates.join(', ')})`);
     }
     return;
   }
 
   if (resolvedVia === 'existing') stats.okFromExistingSlug++;
-  else if (resolvedVia === 'derived') stats.okFromDerivedSlug++;
-  else if (resolvedVia === 'index') stats.okFromIndex++;
   else if (resolvedVia === 'search') stats.okFromSearch++;
+  else stats.okFromDerivedSlug++;
 
   if (DRY_RUN) {
     console.log(`  [dry-run] ${fullName}  slug=${usedSlug}  → ${imageUrl}`);
@@ -277,11 +253,9 @@ async function processFighter(
     }
     if (result.count > 0) {
       stats.uploaded++;
-      let tag: string;
-      if (isPlaceholder) tag = '[ok-placeholder]';
-      else if (resolvedVia === 'index') tag = '[ok-index]';
-      else if (resolvedVia === 'search') tag = '[ok-search]';
-      else tag = '[ok]';
+      const tag = isPlaceholder
+        ? '[ok-placeholder]'
+        : resolvedVia === 'search' ? '[ok-search]' : '[ok]';
       console.log(`  ${tag} ${fullName}  slug=${usedSlug}`);
       return;
     }
@@ -328,59 +302,44 @@ async function main() {
   if (LIMIT) console.log(`[ufc-headshots] After limit: ${subset.length}`);
 
   const stats: RunStats = {
-    considered: 0, okFromExistingSlug: 0, okFromDerivedSlug: 0, okFromIndex: 0,
-    okFromSearch: 0, placeholderUsed: 0, noPage: 0, noImage: 0, errors: 0,
-    uploaded: 0, skipped: 0,
+    considered: 0, okFromExistingSlug: 0, okFromDerivedSlug: 0, okFromSearch: 0,
+    placeholderUsed: 0, noPage: 0, noImage: 0, errors: 0, uploaded: 0, skipped: 0,
   };
 
-  const CONCURRENCY = parseInt(process.env.BACKFILL_HEADSHOT_CONCURRENCY || '3', 10);
+  // Long Puppeteer sessions accumulate state and eventually throw
+  // ProtocolError (observed after ~80 fighters in earlier runs). Recycle
+  // the browser preemptively every BROWSER_RECYCLE_EVERY fighters AND
+  // catch protocol errors mid-loop to relaunch.
+  const BROWSER_RECYCLE_EVERY = 50;
   console.log('\n[ufc-headshots] Launching headless Chrome…');
-  const handle = await launchAthleteBrowser();
-
+  let handle = await launchAthleteBrowser();
+  let processedSinceLaunch = 0;
   try {
-    // Phase 1: harvest the UFC.com /athletes/all index (or load from cache
-    // if a prior step in this same workflow already scraped it). Index
-    // lookup is the foolproof path — no more guessing slugs from DB names.
-    let indexEntries = readIndexCache();
-    if (indexEntries && indexEntries.length > 0) {
-      console.log(`[ufc-headshots] Loaded ${indexEntries.length} cached athletes from index.`);
-    } else {
-      console.log('[ufc-headshots] Scraping UFC.com athletes index (one-time per run)…');
-      indexEntries = await scrapeAllUFCAthletes(handle, { concurrency: 2 });
-      writeIndexCache(indexEntries);
-    }
-    const index = buildAthleteIndex(indexEntries);
-    console.log(
-      `[ufc-headshots] Index ready: ${index.byExact.size} exact / ${index.byLastName.size} unique surnames.`,
-    );
-
-    // Phase 2: parallel worker pool over backfill candidates. Page-per-fetch
-    // (in scrapeUFCAthleteHeadshot) is safe across concurrent workers using
-    // one browser; the prior protocol-buildup bug was scoped to a reused
-    // Page, not a reused Browser.
-    let cursor = 0;
-    const claimNext = (): number | null => {
-      if (cursor >= subset.length) return null;
-      return cursor++;
-    };
-    console.log(`[ufc-headshots] Worker concurrency: ${CONCURRENCY}`);
-    const workers = Array.from({ length: CONCURRENCY }, (_, workerId) => (async () => {
-      for (;;) {
-        const i = claimNext();
-        if (i === null) return;
-        const fighter = subset[i];
-        if (i % 25 === 0) {
-          console.log(`\n[ufc-headshots] Progress: ~${i}/${subset.length}`);
-        }
-        try {
-          await processFighter(fighter, stats, handle, index);
-        } catch (err: any) {
-          console.log(`  [worker${workerId}-err] ${fighter.firstName} ${fighter.lastName}: ${err.message}`);
-          stats.errors++;
-        }
+    for (let i = 0; i < subset.length; i++) {
+      const fighter = subset[i];
+      if (i % 25 === 0) {
+        console.log(`\n[ufc-headshots] Progress: ${i}/${subset.length}`);
       }
-    })());
-    await Promise.all(workers);
+      if (processedSinceLaunch >= BROWSER_RECYCLE_EVERY) {
+        console.log('[ufc-headshots] Preemptive browser recycle');
+        await closeAthleteBrowser(handle).catch(() => {});
+        handle = await launchAthleteBrowser();
+        processedSinceLaunch = 0;
+      }
+      try {
+        await processFighter(fighter, stats, handle);
+      } catch (err: any) {
+        // Most plausible cause: Puppeteer ProtocolError or browser died.
+        // Recycle and continue with next fighter (don't lose the run).
+        console.log(`  [browser-err] ${fighter.firstName} ${fighter.lastName}: ${err.message}`);
+        stats.errors++;
+        await closeAthleteBrowser(handle).catch(() => {});
+        handle = await launchAthleteBrowser();
+        processedSinceLaunch = 0;
+      }
+      processedSinceLaunch++;
+      if (i < subset.length - 1) await sleep(RATE_LIMIT_MS);
+    }
   } finally {
     await closeAthleteBrowser(handle).catch(() => {});
   }
@@ -389,11 +348,10 @@ async function main() {
   console.log('[ufc-headshots] Summary');
   console.log(`  considered: ${stats.considered}`);
   console.log(`  uploaded:   ${stats.uploaded}`);
-  console.log(`    via existing slug:    ${stats.okFromExistingSlug}`);
-  console.log(`    via derived slug:     ${stats.okFromDerivedSlug}`);
-  console.log(`    via athletes index:   ${stats.okFromIndex}`);
-  console.log(`    via DDG search:       ${stats.okFromSearch}`);
-  console.log(`    placeholder used:     ${stats.placeholderUsed}`);
+  console.log(`    via existing slug: ${stats.okFromExistingSlug}`);
+  console.log(`    via derived slug:  ${stats.okFromDerivedSlug}`);
+  console.log(`    via DDG search:    ${stats.okFromSearch}`);
+  console.log(`    placeholder used:  ${stats.placeholderUsed}`);
   console.log(`  skipped (already set): ${stats.skipped}`);
   console.log(`  no ufc.com page: ${stats.noPage}`);
   console.log(`  page exists, no image: ${stats.noImage}`);
