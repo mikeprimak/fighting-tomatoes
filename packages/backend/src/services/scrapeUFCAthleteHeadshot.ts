@@ -142,17 +142,14 @@ export async function fetchUFCAthleteHeadshot(
  * resolve via derived-from-name guessing (e.g. "Khalil Rountree" really
  * lives at `khalil-rountree-jr`; "Paulo Borrachinha" lives at `paulo-costa`).
  *
- * Implementation: DuckDuckGo HTML search via Puppeteer (stealth-enabled
- * browser). We initially tried plain HTTPS fetch since html.duckduckgo.com
- * is server-rendered, but DDG silently blocks AWS / GH Actions IP ranges
- * for non-browser fingerprints — every request returns 200 with results
- * that don't include any ufc.com links. Puppeteer with stealth gets through.
+ * Implementation: DuckDuckGo HTML search — the bot-friendliest free search
+ * surface. We query `<name> ufc.com athlete` and take the first result
+ * whose URL is on any *.ufc.com host with an `/athlete/<slug>` path.
+ * Localized subdomains (kr.ufc.com, etc.) share the same slug as www, so
+ * we accept them.
  *
- * We query `<name> ufc.com athlete` and take the first result whose URL is
- * on any *.ufc.com host with an `/athlete/<slug>` path. Localized subdomains
- * (kr.ufc.com, etc.) share the same slug as www, so we accept them.
- *
- * Returns the slug or null if no usable result was found.
+ * Returns the slug or null if no usable result was found. Always returns
+ * after at most one navigation; caller is expected to throttle.
  */
 export async function searchUFCAthleteSlugViaDDG(
   fighterName: string,
@@ -193,12 +190,16 @@ export async function searchUFCAthleteSlugViaDDG(
 
     for (const raw of hrefs) {
       let resolved = raw;
+      // Unwrap DDG redirector if present
       const ddgMatch = raw.match(/[?&]uddg=([^&]+)/);
       if (ddgMatch) {
         try { resolved = decodeURIComponent(ddgMatch[1]); } catch { continue; }
       }
+      // Match any *.ufc.com host + /athlete/<slug>
       const ufcMatch = resolved.match(/https?:\/\/(?:[a-z]{2,3}\.)?ufc\.com\/athlete\/([a-z0-9-]+)/i);
-      if (ufcMatch && ufcMatch[1]) return ufcMatch[1].toLowerCase();
+      if (ufcMatch && ufcMatch[1]) {
+        return ufcMatch[1].toLowerCase();
+      }
     }
     return null;
   } finally {
@@ -226,162 +227,4 @@ export function deriveUFCAthleteSlug(fullName: string): string {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
-}
-
-// =================== Name-match helpers for UFC.com athlete index ===================
-//
-// The backfill resolves a DB fighter to a UFC.com slug via the harvested
-// /athletes/all index. Goal: match every reasonable spelling/suffix variant
-// without false positives on common surnames.
-
-function normalizeForMatch(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/['’‘`.]/g, '')
-    .replace(/[^a-z0-9 -]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function tokensOf(name: string): string[] {
-  return normalizeForMatch(name).split(' ').filter(Boolean);
-}
-
-function stripSuffixTokens(tokens: string[]): string[] {
-  // Drop trailing "jr", "sr", "ii", "iii", "iv" — UFC slugs include them but
-  // our DB display names often don't (and vice versa).
-  const stripped = [...tokens];
-  while (stripped.length > 1) {
-    const tail = stripped[stripped.length - 1];
-    if (/^(jr|sr|ii|iii|iv|v)$/i.test(tail)) stripped.pop();
-    else break;
-  }
-  return stripped;
-}
-
-function levenshtein(a: string, b: string): number {
-  if (a === b) return 0;
-  if (!a.length) return b.length;
-  if (!b.length) return a.length;
-  const m = a.length, n = b.length;
-  let prev = Array.from({ length: n + 1 }, (_, j) => j);
-  let curr = new Array(n + 1);
-  for (let i = 1; i <= m; i++) {
-    curr[0] = i;
-    for (let j = 1; j <= n; j++) {
-      const cost = a.charCodeAt(i - 1) === b.charCodeAt(j - 1) ? 0 : 1;
-      curr[j] = Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost);
-    }
-    [prev, curr] = [curr, prev];
-  }
-  return prev[n];
-}
-
-export interface AthleteIndexLookup {
-  byExact: Map<string, string>;            // normalized full name → slug
-  byLastFirstInitial: Map<string, string[]>;  // "lastname f" → [slugs]
-  byLastName: Map<string, string[]>;       // "lastname" → [slugs]
-  all: Array<{ normalized: string; slug: string }>;
-}
-
-export function buildAthleteIndex(
-  entries: Array<{ name: string; slug: string }>,
-): AthleteIndexLookup {
-  const byExact = new Map<string, string>();
-  const byLastFirstInitial = new Map<string, string[]>();
-  const byLastName = new Map<string, string[]>();
-  const all: Array<{ normalized: string; slug: string }> = [];
-
-  for (const e of entries) {
-    const norm = normalizeForMatch(e.name);
-    if (!norm) continue;
-    if (!byExact.has(norm)) byExact.set(norm, e.slug);
-
-    const tokens = stripSuffixTokens(tokensOf(e.name));
-    if (tokens.length >= 1) {
-      const last = tokens[tokens.length - 1];
-      const lastArr = byLastName.get(last) || [];
-      if (!lastArr.includes(e.slug)) lastArr.push(e.slug);
-      byLastName.set(last, lastArr);
-
-      if (tokens.length >= 2) {
-        const firstInitial = tokens[0][0];
-        const key = `${last} ${firstInitial}`;
-        const arr = byLastFirstInitial.get(key) || [];
-        if (!arr.includes(e.slug)) arr.push(e.slug);
-        byLastFirstInitial.set(key, arr);
-      }
-    }
-    all.push({ normalized: norm, slug: e.slug });
-  }
-  return { byExact, byLastFirstInitial, byLastName, all };
-}
-
-/**
- * Resolve a DB fighter name against the UFC.com athletes index. Multi-tier:
- *
- *   1. Exact normalized match (handles "Conor McGregor", diacritics, etc.)
- *   2. Strip-suffix exact match (DB "Khalil Rountree" → index "Khalil Rountree Jr")
- *      We compare the DB name's tokens against suffix-stripped index entries.
- *   3. Last name + first initial (handles rare disambiguation cases where the
- *      DB has only one token off, e.g. middle-name variants)
- *   4. Levenshtein ≤ 3 on the normalized full name, restricted to candidates
- *      sharing the same last name (catches "Josh Emmet" → "Josh Emmett",
- *      "Santiagio Ponzinibbio" → "Santiago Ponzinibbio")
- *
- * Returns the matched slug or null when no confident match exists.
- * Nickname-as-name cases (e.g., DB "Paulo Borrachinha" vs UFC "Paulo Costa")
- * intentionally do NOT match here — they fall through to DDG fallback.
- */
-export function lookupAthleteSlug(
-  dbName: string,
-  index: AthleteIndexLookup,
-): string | null {
-  const norm = normalizeForMatch(dbName);
-  if (!norm) return null;
-
-  // 1. Exact
-  const exact = index.byExact.get(norm);
-  if (exact) return exact;
-
-  const dbTokens = stripSuffixTokens(tokensOf(dbName));
-  if (dbTokens.length === 0) return null;
-  const dbLast = dbTokens[dbTokens.length - 1];
-  const dbFirstInitial = dbTokens[0][0];
-
-  // 2. Suffix-stripped exact: rebuild the DB name without suffix tokens and
-  //    try matching that against any index entry whose suffix-stripped form
-  //    equals it.
-  const dbStripped = dbTokens.join(' ');
-  const lastNameCandidates = index.byLastName.get(dbLast) || [];
-  for (const slug of lastNameCandidates) {
-    // Reconstruct the index entry's stripped form from the slug's source
-    // entry. We stored only slugs in byLastName, so look up the full
-    // normalized form via index.all.
-    const entry = index.all.find(a => a.slug === slug);
-    if (!entry) continue;
-    const idxStripped = stripSuffixTokens(tokensOf(entry.normalized)).join(' ');
-    if (idxStripped === dbStripped) return slug;
-  }
-
-  // 3. Last name + first initial
-  const liKey = `${dbLast} ${dbFirstInitial}`;
-  const liCands = index.byLastFirstInitial.get(liKey) || [];
-  if (liCands.length === 1) return liCands[0];
-
-  // 4. Fuzzy (Levenshtein ≤ 3) among entries sharing the last name. This
-  //    catches typos in either the DB ("Josh Emmet" / "Santiagio") or
-  //    historical OCR'd imports.
-  let bestSlug: string | null = null;
-  let bestDist = 4;
-  for (const slug of lastNameCandidates) {
-    const entry = index.all.find(a => a.slug === slug);
-    if (!entry) continue;
-    const d = levenshtein(norm, entry.normalized);
-    if (d < bestDist) { bestDist = d; bestSlug = slug; }
-  }
-  if (bestDist <= 3) return bestSlug;
-  return null;
 }
