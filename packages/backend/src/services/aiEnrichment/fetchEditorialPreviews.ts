@@ -14,7 +14,14 @@ import { braveSearch, BraveFreshness } from '../broadcastDiscovery/searchBrave';
 const FETCH_TIMEOUT_MS = 15_000;
 const TEXT_CAP_BYTES = 10_000;
 
-/** Outlets we'll accept preview articles from. Order is preference. */
+/**
+ * Outlets we'll accept preview articles from. Order is preference.
+ *
+ * Note: the promotion's own site (ufc.com, bkfc.com, etc.) is NOT in this
+ * list — those are pulled separately as a structured "backbone" source in
+ * enrichOneEvent.ts. Editorial is meant to be third-party perspective, not
+ * promotional copy.
+ */
 const ALLOWED_DOMAINS = [
   'mmafighting.com',
   'mmajunkie.usatoday.com',
@@ -25,6 +32,13 @@ const ALLOWED_DOMAINS = [
   'mmaweekly.com',
   'cbssports.com',
   'bjpenn.com',
+  // Broader combat-sports / crossover coverage (helps BKFC, niche boxing, and
+  // UK cards that the MMA outlets above tend to skip).
+  'bareknuckle.tv',
+  'lowkickmma.com',
+  'boxingscene.com',
+  'talksport.com',
+  'dailymail.co.uk',
 ];
 
 export interface EditorialSnapshot {

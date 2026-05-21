@@ -16,6 +16,7 @@ import {
   type PreviewBrowserHandle,
 } from './fetchUFCEventPreview';
 import { fetchTapologyEventPreview } from './fetchTapologyEventPreview';
+import { fetchBkfcEventPreview } from './fetchBkfcEventPreview';
 import { fetchEditorialPreviews } from './fetchEditorialPreviews';
 import {
   extractFightEnrichment,
@@ -90,6 +91,7 @@ export async function enrichOneEvent(
   const sourceUrl = event.ufcUrl ?? '';
   const isUfcCom = /(^|\.)ufc\.com\b/i.test(sourceUrl);
   const isTapology = /(^|\.)tapology\.com\b/i.test(sourceUrl);
+  const isBkfcCom = /(^|\.)bkfc\.com\b/i.test(sourceUrl);
   const editorialTopN = opts.editorialTopN ?? 3;
 
   const sources: Array<{ url: string; text: string; label?: string }> = [];
@@ -108,6 +110,12 @@ export async function enrichOneEvent(
     if (snap) {
       sources.push({ url: snap.finalUrl, text: snap.text, label: 'tapology.com' });
       sourcesFetched.push({ url: snap.finalUrl, chars: snap.text.length, label: 'tapology.com' });
+    }
+  } else if (isBkfcCom) {
+    const snap = await fetchBkfcEventPreview(sourceUrl);
+    if (snap) {
+      sources.push({ url: snap.finalUrl, text: snap.text, label: 'bkfc.com' });
+      sourcesFetched.push({ url: snap.finalUrl, chars: snap.text.length, label: 'bkfc.com' });
     }
   }
 
