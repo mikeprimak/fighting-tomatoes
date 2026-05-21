@@ -145,6 +145,7 @@ db-creds.txt
 dburl.txt
 *.dump
 *.sql
+!packages/backend/prisma/migrations/**/*.sql
 *.stackdump
 gitguardian_messages.txt
 databases from fightingtomatoes/

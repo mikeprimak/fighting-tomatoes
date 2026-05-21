@@ -15,7 +15,14 @@ const updatePreferencesSchema = z.object({
   notificationsEnabled: z.boolean().optional(),
   notifyHypedFights: z.boolean().optional(),
   notifyPreEventReport: z.boolean().optional(),
-  // Legacy fields removed - all notifications now managed via rules
+  // Followed-fighter per-lane toggles
+  notifyFollowedBooked: z.boolean().optional(),
+  notifyFollowed3DayWarn: z.boolean().optional(),
+  notifyFollowedMorningOf: z.boolean().optional(),
+  notifyFollowedWalkout: z.boolean().optional(),
+  // IANA timezone string. Validated loosely — if Intl can't resolve it, we fall
+  // back to America/New_York in the cron rather than rejecting the write.
+  timezone: z.string().min(1).max(64).optional(),
 });
 
 /**
@@ -149,6 +156,11 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         where: { id: userId },
         select: {
           notificationsEnabled: true,
+          notifyFollowedBooked: true,
+          notifyFollowed3DayWarn: true,
+          notifyFollowedMorningOf: true,
+          notifyFollowedWalkout: true,
+          timezone: true,
         },
       });
 
@@ -177,7 +189,6 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
           ...user,
           notifyHypedFights: hypedFightsRule?.isActive ?? false,
           notifyPreEventReport: preEventReportRule?.isActive ?? false,
-          // Legacy fields removed - all notifications now managed via rules
         },
       });
     }
@@ -198,12 +209,17 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         // Extract rule-based preferences from user preferences
         const { notifyHypedFights, notifyPreEventReport, ...userPreferences } = preferences;
 
-        // Update basic user preferences
+        // Update basic user preferences (includes lane toggles + timezone)
         const updatedUser = await prisma.user.update({
           where: { id: userId },
           data: userPreferences,
           select: {
             notificationsEnabled: true,
+            notifyFollowedBooked: true,
+            notifyFollowed3DayWarn: true,
+            notifyFollowedMorningOf: true,
+            notifyFollowedWalkout: true,
+            timezone: true,
           },
         });
 

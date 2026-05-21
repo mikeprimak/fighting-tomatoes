@@ -23,9 +23,13 @@ import { useQueryClient } from '@tanstack/react-query';
 
 interface NotificationPreferences {
   notificationsEnabled: boolean;
-  notifyFollowedFighterFights: boolean;
   notifyPreEventReport: boolean;
   notifyHypedFights: boolean;
+  // Followed-fighter per-lane toggles
+  notifyFollowedBooked: boolean;
+  notifyFollowed3DayWarn: boolean;
+  notifyFollowedMorningOf: boolean;
+  notifyFollowedWalkout: boolean;
 }
 
 export default function SettingsScreen() {
@@ -38,9 +42,12 @@ export default function SettingsScreen() {
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     notificationsEnabled: true,
-    notifyFollowedFighterFights: true,
     notifyPreEventReport: true,
     notifyHypedFights: true,
+    notifyFollowedBooked: true,
+    notifyFollowed3DayWarn: true,
+    notifyFollowedMorningOf: true,
+    notifyFollowedWalkout: true,
   });
 
   useEffect(() => {
@@ -242,6 +249,45 @@ export default function SettingsScreen() {
               All notifications are turned off.
             </Text>
           )}
+        </View>
+
+        {/* Followed Fighters lane toggles */}
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Followed Fighters</Text>
+          </View>
+          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
+            Choose which alerts you want for fighters you follow.
+          </Text>
+
+          <SettingRow
+            label="When a fight is booked"
+            sublabel="Get notified weeks or months in advance when one of your fighters lands on an upcoming card."
+            value={preferences.notifyFollowedBooked}
+            onValueChange={(v) => updatePreference('notifyFollowedBooked', v)}
+            disabled={!preferences.notificationsEnabled}
+          />
+          <SettingRow
+            label="3 days before"
+            sublabel="A heads-up 3 days out so you can plan to watch."
+            value={preferences.notifyFollowed3DayWarn}
+            onValueChange={(v) => updatePreference('notifyFollowed3DayWarn', v)}
+            disabled={!preferences.notificationsEnabled}
+          />
+          <SettingRow
+            label="Morning of the fight"
+            sublabel="Reminder the day of, in your local morning."
+            value={preferences.notifyFollowedMorningOf}
+            onValueChange={(v) => updatePreference('notifyFollowedMorningOf', v)}
+            disabled={!preferences.notificationsEnabled}
+          />
+          <SettingRow
+            label="When their fight is up next"
+            sublabel="~10 minutes before walkout, while the card is live."
+            value={preferences.notifyFollowedWalkout}
+            onValueChange={(v) => updatePreference('notifyFollowedWalkout', v)}
+            disabled={!preferences.notificationsEnabled}
+          />
         </View>
 
       </ScrollView>

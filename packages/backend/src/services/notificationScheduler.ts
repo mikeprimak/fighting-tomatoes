@@ -1,23 +1,26 @@
 import cron from 'node-cron';
 import type { ScheduledTask } from 'node-cron';
 import { checkAndSendPreEventReports } from './preEventReportService';
+import { runFollowFighterCron } from './followFighterNotifications';
 
 /**
  * Notification Scheduler Service
  *
  * Manages scheduled tasks for sending notifications:
  * - Pre-event reports: Sent 7-8 hours before main card (checked hourly)
+ * - Follow-fighter 3-day-warn + morning-of: Every 15 min
  */
 
 let scheduledTask: ScheduledTask | null = null;
+let followFighterTask: ScheduledTask | null = null;
 
 /**
  * Initialize the notification scheduler
- * Starts a cron job that runs every hour to check for upcoming events
+ * Starts cron jobs for pre-event reports (hourly) and follow-fighter
+ * 3-day-warn + morning-of dispatch (every 15 min).
  */
 export function initializeNotificationScheduler(): void {
-  // Run every hour at :00 minutes
-  // Cron pattern: '0 * * * *' = At minute 0 of every hour
+  // Pre-event reports: hourly
   scheduledTask = cron.schedule('0 * * * *', async () => {
     console.log('[Notification Scheduler] Running hourly check for pre-event reports');
     try {
@@ -28,14 +31,16 @@ export function initializeNotificationScheduler(): void {
     }
   });
 
-  console.log('[Notification Scheduler] Initialized - will check for pre-event reports every hour');
+  // Follow-fighter lanes: every 15 minutes
+  followFighterTask = cron.schedule('*/15 * * * *', async () => {
+    try {
+      await runFollowFighterCron();
+    } catch (error) {
+      console.error('[Notification Scheduler] Error in follow-fighter cron:', error);
+    }
+  });
 
-  // Optionally run immediately on startup (useful for testing)
-  // Uncomment the following lines to run on startup:
-  // console.log('[Notification Scheduler] Running initial check on startup');
-  // checkAndSendPreEventReports().catch(error => {
-  //   console.error('[Notification Scheduler] Error in initial check:', error);
-  // });
+  console.log('[Notification Scheduler] Initialized - pre-event hourly + follow-fighter every 15min');
 }
 
 /**
@@ -45,8 +50,13 @@ export function initializeNotificationScheduler(): void {
 export function stopNotificationScheduler(): void {
   if (scheduledTask) {
     scheduledTask.stop();
-    console.log('[Notification Scheduler] Stopped');
+    scheduledTask = null;
   }
+  if (followFighterTask) {
+    followFighterTask.stop();
+    followFighterTask = null;
+  }
+  console.log('[Notification Scheduler] Stopped');
 }
 
 /**
