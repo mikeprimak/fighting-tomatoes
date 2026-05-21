@@ -77,8 +77,15 @@ export interface UFCHeadshotResult {
   pageTitle?: string;
 }
 
+// URL of UFC.com's theme-asset "no profile image" PNG. Used when the athlete
+// page exists but doesn't populate og:image — the page itself renders this
+// asset in the headshot slot. Treat it as a placeholder so the backfill
+// re-checks the fighter on future runs when UFC may have added a real photo.
+export const UFC_NO_PROFILE_IMAGE_URL =
+  'https://www.ufc.com/themes/custom/ufc/assets/img/no-profile-image.png';
+
 export function isSilhouettePlaceholderUrl(url: string): boolean {
-  return /SILHOUETTE\.png/i.test(url);
+  return /SILHOUETTE\.png/i.test(url) || /no-profile-image\.png/i.test(url);
 }
 
 function normalizeForCompare(s: string): string[] {
@@ -197,10 +204,24 @@ export async function fetchUFCAthleteHeadshot(
     const meta = await page.evaluate(() => {
       const img = document.querySelector('meta[property="og:image"]')?.getAttribute('content') || null;
       const title = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || null;
-      return { img, title };
+      // UFC.com renders a theme placeholder PNG in the headshot slot for
+      // fighters who have a profile page but no portrait (mostly 1990s-2000s
+      // legends). When this is the only image marker, treat it as a
+      // placeholder hit so we save the silhouette and re-check later.
+      const hasThemePlaceholder = !!document.querySelector('img[src*="no-profile-image"]');
+      return { img, title, hasThemePlaceholder };
     });
 
     if (!meta.img) {
+      if (meta.hasThemePlaceholder) {
+        return {
+          status: 'ok',
+          imageUrl: UFC_NO_PROFILE_IMAGE_URL,
+          finalUrl,
+          isPlaceholder: true,
+          pageTitle: meta.title || undefined,
+        };
+      }
       return { status: 'no-image', finalUrl, pageTitle: meta.title || undefined };
     }
     const trimmed = meta.img.trim();
