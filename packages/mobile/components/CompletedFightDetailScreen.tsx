@@ -1611,6 +1611,56 @@ export default function CompletedFightDetailScreen({
           );
         })()}
 
+        {/* AI post-fight summary + bonuses + FOTY context — outcome content, gated on spoiler-free reveal */}
+        {isOutcomeRevealed && (() => {
+          const aiPostFightSummary = (fight as any).aiPostFightSummary as string | null | undefined;
+          const aiConfidence = (fight as any).aiConfidence as number | null | undefined;
+          const aiPostFightTags = (fight as any).aiPostFightTags as {
+            bonuses?: unknown;
+            fotyConsideration?: unknown;
+          } | null | undefined;
+          if (aiConfidence == null || aiConfidence < 0.5) return null;
+          const bonusesRaw = aiPostFightTags && typeof aiPostFightTags === 'object' ? aiPostFightTags.bonuses : null;
+          const bonuses = Array.isArray(bonusesRaw)
+            ? bonusesRaw.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+            : [];
+          const fotyRaw = aiPostFightTags && typeof aiPostFightTags === 'object' ? aiPostFightTags.fotyConsideration : null;
+          const fotyConsideration = typeof fotyRaw === 'string'
+            && fotyRaw.trim().length > 0
+            && fotyRaw.trim().toLowerCase() !== 'n/a'
+            ? fotyRaw.trim()
+            : null;
+          if (!aiPostFightSummary && bonuses.length === 0 && !fotyConsideration) return null;
+          return (
+            <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
+              <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 8, textAlign: 'center', fontWeight: '600' }}>
+                What happened
+              </Text>
+              {aiPostFightSummary ? (
+                <Text style={{ fontSize: 13, lineHeight: 19, color: colors.textSecondary }}>
+                  {aiPostFightSummary}
+                </Text>
+              ) : null}
+              {(bonuses.length > 0 || fotyConsideration) ? (
+                <View style={{ marginTop: aiPostFightSummary ? 12 : 0, gap: 6 }}>
+                  {bonuses.map((s, i) => (
+                    <View key={`b-${i}`} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                      <Text style={{ fontSize: 13, lineHeight: 18, fontWeight: '600', color: colors.textSecondary }}>•</Text>
+                      <Text style={{ flex: 1, fontSize: 13, lineHeight: 18, color: colors.textSecondary }}>{s}</Text>
+                    </View>
+                  ))}
+                  {fotyConsideration ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                      <Text style={{ fontSize: 13, lineHeight: 18, fontWeight: '600', color: colors.textSecondary }}>•</Text>
+                      <Text style={{ flex: 1, fontSize: 13, lineHeight: 18, color: colors.textSecondary }}>{fotyConsideration}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+          );
+        })()}
+
         {/* Reactions Section */}
         <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 8 }}>
           <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 16, marginBottom: 12 }}>
