@@ -278,6 +278,42 @@ const getAvailableTagsForRating = (
 // Neutral placeholder image for fighters without profile images
 const FIGHTER_PLACEHOLDER = require('../assets/fighters/fighter-default-alpha.png');
 
+// Split a post-fight summary into paragraphs. Honors explicit \n\n breaks when present;
+// otherwise groups sentences into 2-4 paragraphs of ~3 sentences each.
+function splitSummaryIntoParagraphs(text: string): string[] {
+  const explicit = text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
+  if (explicit.length > 1) return explicit;
+  const sentences = text
+    .split(/(?<=[.!?])\s+(?=["'A-Z])/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+  if (sentences.length <= 3) return [text.trim()];
+  const targetParas = sentences.length >= 12 ? 4 : sentences.length >= 7 ? 3 : 2;
+  const perPara = Math.ceil(sentences.length / targetParas);
+  const result: string[] = [];
+  for (let i = 0; i < sentences.length; i += perPara) {
+    result.push(sentences.slice(i, i + perPara).join(' '));
+  }
+  return result;
+}
+
+// Truncate a summary at a sentence boundary to roughly maxWords words for the collapsed preview.
+function condenseSummary(text: string, maxWords: number = 50): string {
+  const sentences = text
+    .split(/(?<=[.!?])\s+(?=["'A-Z])/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+  let result = '';
+  let words = 0;
+  for (const sentence of sentences) {
+    const sw = sentence.split(/\s+/).length;
+    if (words + sw > maxWords && result.length > 0) break;
+    result += (result ? ' ' : '') + sentence;
+    words += sw;
+  }
+  return result;
+}
+
 export default function CompletedFightDetailScreen({
   fight,
   onRatingSuccess,
@@ -317,6 +353,7 @@ export default function CompletedFightDetailScreen({
   const [predictionTab, setPredictionTab] = useState<'mine' | 'community'>('mine');
   const [commentsTab, setCommentsTab] = useState<'postfight' | 'preflight'>('postfight');
   const [hasLocallyRevealed, setHasLocallyRevealed] = useState(false);
+  const [postFightExpanded, setPostFightExpanded] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [upvotingCommentId, setUpvotingCommentId] = useState<string | null>(null);
@@ -1631,15 +1668,48 @@ export default function CompletedFightDetailScreen({
             ? fotyRaw.trim()
             : null;
           if (!aiPostFightSummary && bonuses.length === 0 && !fotyConsideration) return null;
+          const paragraphs = aiPostFightSummary ? splitSummaryIntoParagraphs(aiPostFightSummary) : [];
+          const condensed = aiPostFightSummary ? condenseSummary(aiPostFightSummary, 50) : '';
+          const isTruncatable = !!aiPostFightSummary && condensed.length < aiPostFightSummary.trim().length;
           return (
             <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
               <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 8, textAlign: 'center', fontWeight: '600' }}>
                 What happened
               </Text>
               {aiPostFightSummary ? (
-                <Text style={{ fontSize: 13, lineHeight: 19, color: colors.textSecondary }}>
-                  {aiPostFightSummary}
-                </Text>
+                <View>
+                  {postFightExpanded || !isTruncatable ? (
+                    paragraphs.map((p, i) => (
+                      <Text
+                        key={`p-${i}`}
+                        style={{
+                          fontSize: 13,
+                          lineHeight: 19,
+                          color: colors.textSecondary,
+                          marginTop: i === 0 ? 0 : 10,
+                        }}
+                      >
+                        {p}
+                      </Text>
+                    ))
+                  ) : (
+                    <Text style={{ fontSize: 13, lineHeight: 19, color: colors.textSecondary }}>
+                      {condensed}
+                      {'…'}
+                    </Text>
+                  )}
+                  {isTruncatable ? (
+                    <TouchableOpacity
+                      onPress={() => setPostFightExpanded(v => !v)}
+                      style={{ marginTop: 6, alignSelf: 'flex-start' }}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: colors.tint }}>
+                        {postFightExpanded ? 'See less' : 'See all'}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
               ) : null}
               {(bonuses.length > 0 || fotyConsideration) ? (
                 <View style={{ marginTop: aiPostFightSummary ? 12 : 0, gap: 6 }}>
