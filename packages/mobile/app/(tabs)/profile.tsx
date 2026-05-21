@@ -863,7 +863,7 @@ export default function ProfileScreen() {
             </View>
           )}
           <View style={[styles.settingsGroup, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-            <View style={[styles.settingsRow, { borderBottomWidth: 0 }]}>
+            <View style={[styles.settingsRow, { borderBottomColor: colors.border }]}>
               <View style={styles.settingsRowLeft}>
                 <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Allow Notifications</Text>
                 <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
@@ -877,6 +877,18 @@ export default function ProfileScreen() {
                 thumbColor={notificationsEnabled ? '#FFFFFF' : '#f4f3f4'}
               />
             </View>
+            <TouchableOpacity
+              style={[styles.settingsRow, { borderBottomWidth: 0 }]}
+              onPress={() => router.push('/settings')}
+            >
+              <View style={styles.settingsRowLeft}>
+                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Notification settings</Text>
+                <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+                  Choose which alerts you get for fighters you follow
+                </Text>
+              </View>
+              <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+            </TouchableOpacity>
           </View>
         </View>
 
