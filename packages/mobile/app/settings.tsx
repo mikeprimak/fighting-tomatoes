@@ -241,7 +241,7 @@ export default function SettingsScreen() {
           </View>
 
           <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-            Get notified when fights you follow are about to start. Tap the bell icon on any upcoming fight to follow it.
+            Master switch for every notification Good Fights can send. Turn off to silence everything; turn on to enable the per-type toggles below.
           </Text>
 
           {!preferences.notificationsEnabled && (
