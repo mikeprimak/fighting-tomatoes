@@ -1462,7 +1462,7 @@ export default function CompletedFightDetailScreen({
         {/* Fighter Images */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16, marginBottom: 12, gap: 0 }}>
           <TouchableOpacity
-            style={{ alignItems: 'center' }}
+            style={{ alignItems: 'center', width: 140 }}
             onPress={() => router.push(`/fighter/${fight.fighter1.id}` as any)}
             activeOpacity={0.7}
           >
@@ -1484,7 +1484,7 @@ export default function CompletedFightDetailScreen({
             </Text>
             <View style={{ minHeight: 20, marginTop: 2, justifyContent: 'center' }}>
               {isOutcomeRevealed && fight.winner === fight.fighter1.id && (
-                <Text style={{ color: '#4CAF50', fontSize: 12, textAlign: 'center', fontWeight: '600' }}>
+                <Text style={{ color: '#4CAF50', fontSize: 12, textAlign: 'center', fontWeight: '600', lineHeight: 16 }}>
                   by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
                   {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
                   {fight.time && ` ${fight.time}`}
@@ -1496,7 +1496,7 @@ export default function CompletedFightDetailScreen({
             vs
           </Text>
           <TouchableOpacity
-            style={{ alignItems: 'center' }}
+            style={{ alignItems: 'center', width: 140 }}
             onPress={() => router.push(`/fighter/${fight.fighter2.id}` as any)}
             activeOpacity={0.7}
           >
@@ -1518,7 +1518,7 @@ export default function CompletedFightDetailScreen({
             </Text>
             <View style={{ minHeight: 20, marginTop: 2, justifyContent: 'center' }}>
               {isOutcomeRevealed && fight.winner === fight.fighter2.id && (
-                <Text style={{ color: '#4CAF50', fontSize: 12, textAlign: 'center', fontWeight: '600' }}>
+                <Text style={{ color: '#4CAF50', fontSize: 12, textAlign: 'center', fontWeight: '600', lineHeight: 16 }}>
                   by {fight.method?.includes('Decision') ? 'Decision' : (fight.method || 'Unknown')}
                   {fight.round && !fight.method?.includes('Decision') && ` R${fight.round}`}
                   {fight.time && ` ${fight.time}`}
@@ -1603,7 +1603,7 @@ export default function CompletedFightDetailScreen({
             {fight.event.name}
           </Text>
           <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
-            {formatEventDate(fight.event.date, { weekday: 'long', month: 'long' })}
+            {formatEventDate(fight.event.date, { weekday: 'long', month: 'long', year: true })}
           </Text>
           <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 2 }}>
             {[
