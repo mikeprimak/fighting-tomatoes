@@ -225,7 +225,7 @@ export async function fetchUFCAthleteHeadshot(
  * DB rows. Brave's web/search endpoint returns structured JSON, supports
  * any IP, and respects rate limits cleanly.
  *
- * Auth: requires BRAVE_SEARCH_API_KEY env var. Free tier covers 2000
+ * Auth: requires BRAVE_API_KEY env var. Free tier covers 2000
  * queries/month at 1 req/sec — fine for the 500-fighter backfill.
  *
  * Validation still happens downstream: the caller fetches the UFC.com page
@@ -246,9 +246,9 @@ async function braveRateLimit(): Promise<void> {
 export async function searchUFCAthleteSlugViaBrave(
   fighterName: string,
 ): Promise<string | null> {
-  const apiKey = process.env.BRAVE_SEARCH_API_KEY;
+  const apiKey = process.env.BRAVE_API_KEY;
   if (!apiKey) {
-    console.warn('[brave] BRAVE_SEARCH_API_KEY not set — skipping search fallback.');
+    console.warn('[brave] BRAVE_API_KEY not set — skipping search fallback.');
     return null;
   }
   await braveRateLimit();
