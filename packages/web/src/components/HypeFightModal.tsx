@@ -211,7 +211,7 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype }: HypeFig
               type="button"
               onClick={handleSeeComments}
               disabled={saving}
-              className="mt-2 w-full text-right text-xs text-text-secondary hover:text-foreground disabled:opacity-50"
+              className="mt-2 w-full text-center text-xs text-text-secondary hover:text-foreground disabled:opacity-50"
             >
               {totalComments > 0
                 ? `See ${totalComments} ${totalComments === 1 ? 'Comment' : 'Comments'} >`
