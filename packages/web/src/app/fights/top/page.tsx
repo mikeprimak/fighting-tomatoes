@@ -13,7 +13,7 @@ const TIME_PERIODS = [
   { value: 'month', label: 'This Month' },
   { value: '3months', label: '3 Months' },
   { value: 'year', label: 'This Year' },
-  { value: 'alltime', label: 'All Time' },
+  { value: 'all', label: 'All Time' },
 ];
 
 export default function TopFightsPage() {
