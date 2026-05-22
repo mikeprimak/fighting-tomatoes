@@ -10,7 +10,10 @@ import { upsertFightSwapAware } from '../utils/fightUpsert';
 import {
   CANCELLATION_STRIKE_THRESHOLD,
   MIN_SCRAPED_EVENTS_FOR_CANCEL,
+  MIN_HEALTHY_SCRAPE_FIGHTS,
+  computeCancellationSafetyFloor,
   decideStrike,
+  isScrapeHealthyForCancellation,
 } from './cancellationGuards';
 
 const prisma = new PrismaClient();
@@ -436,15 +439,15 @@ async function importKarateCombatEvents(
     // non-cancelled fight count to guard against partial-page renders.
     const eventInProgress = event.eventStatus !== 'UPCOMING';
     const dbNonCancelledCount = dbFights.filter(f => f.fightStatus !== 'CANCELLED').length;
-    const cancellationSafetyFloor = Math.max(2, Math.floor(dbNonCancelledCount * 0.75));
-    const scrapeLooksComplete = scrapedFightSignatures.size >= cancellationSafetyFloor;
+    const cancellationSafetyFloor = computeCancellationSafetyFloor(dbNonCancelledCount);
+    const scrapeLooksComplete = isScrapeHealthyForCancellation(scrapedFightSignatures.size, dbNonCancelledCount);
     const canCancelMissing =
       scrapeIsSane && !eventInProgress && (dbNonCancelledCount === 0 || scrapeLooksComplete);
 
     if (eventInProgress) {
       console.log(`    ⏭️  Skipping cancellation (event is ${event.eventStatus} — live tracker owns this).`);
     } else if (!scrapeLooksComplete && dbNonCancelledCount > 0) {
-      console.log(`    ⚠️  Skipping cancellation (scrape returned ${scrapedFightSignatures.size} fights, DB has ${dbNonCancelledCount} non-cancelled, need ≥${cancellationSafetyFloor}). Treating as partial scrape.`);
+      console.log(`    ⚠️  Skipping cancellation (scrape returned ${scrapedFightSignatures.size} fights, DB has ${dbNonCancelledCount} non-cancelled, need ≥${cancellationSafetyFloor} (75%) or ≥${MIN_HEALTHY_SCRAPE_FIGHTS} (absolute)). Treating as partial scrape.`);
     }
 
     for (const dbFight of dbFights) {

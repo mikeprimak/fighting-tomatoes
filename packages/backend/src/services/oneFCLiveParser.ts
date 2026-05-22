@@ -9,6 +9,7 @@ import { OneFCEventData, OneFCFightData } from './oneFCLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
+import { MIN_HEALTHY_SCRAPE_FIGHTS, computeCancellationSafetyFloor, isScrapeHealthyForCancellation } from './cancellationGuards';
 
 const prisma = new PrismaClient();
 
@@ -473,11 +474,11 @@ export async function parseOneFCLiveData(
     // since it only triggers when the fight *reappears* in the scrape.
     const dbNonCancelledCount = event.fights.filter(f => f.fightStatus !== 'CANCELLED').length;
     const scrapedCount = liveData.fights.length;
-    const cancellationSafetyFloor = Math.max(2, Math.floor(dbNonCancelledCount * 0.75));
-    const scrapeLooksComplete = scrapedCount >= cancellationSafetyFloor;
+    const cancellationSafetyFloor = computeCancellationSafetyFloor(dbNonCancelledCount);
+    const scrapeLooksComplete = isScrapeHealthyForCancellation(scrapedCount, dbNonCancelledCount);
 
     if (!scrapeLooksComplete && dbNonCancelledCount > 0) {
-      console.log(`  ⚠️  Skipping cancellation (scrape returned ${scrapedCount} fights, DB has ${dbNonCancelledCount} non-cancelled, need ≥${cancellationSafetyFloor}). Treating as partial scrape.`);
+      console.log(`  ⚠️  Skipping cancellation (scrape returned ${scrapedCount} fights, DB has ${dbNonCancelledCount} non-cancelled, need ≥${cancellationSafetyFloor} (75%) or ≥${MIN_HEALTHY_SCRAPE_FIGHTS} (absolute)). Treating as partial scrape.`);
     }
 
     for (const dbFight of event.fights) {
