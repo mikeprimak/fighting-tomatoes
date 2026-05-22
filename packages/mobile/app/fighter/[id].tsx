@@ -638,7 +638,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginHorizontal: 13,
+    marginHorizontal: -2,
     paddingVertical: 8,
     marginBottom: 2,
   },
@@ -647,6 +647,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 0,
     width: 60,
+    marginLeft: -4,
     justifyContent: 'center',
   },
   columnHeadersUpcomingRight: {
