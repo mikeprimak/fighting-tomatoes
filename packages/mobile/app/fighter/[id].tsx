@@ -428,107 +428,52 @@ export default function FighterDetailScreen() {
             </View>
           ) : sortedFights.length > 0 ? (
             <View style={styles.fightsContainer}>
-              {/* Render based on sort order */}
-              {sortBy === 'newest' ? (
+              {/* Upcoming fights always render first, regardless of sort.
+                  Sort still controls ordering WITHIN the completed section. */}
+              {upcomingFights.length > 0 && (
                 <>
-                  {/* Upcoming Fights Section */}
-                  {upcomingFights.length > 0 && (
-                    <>
-                      <View style={styles.columnHeadersRow}>
-                        <View style={styles.columnHeadersUpcoming}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
-                        </View>
-                        <View style={styles.columnHeadersUpcomingRight}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
-                        </View>
-                      </View>
-                      {upcomingFights.map((fight: Fight, index: number) => (
-                        <FightDisplayCard
-                          key={fight.id}
-                          fight={fight}
-                          onPress={() => handleFightPress(fight)}
-                          showEvent={true}
-                          index={index}
-                        />
-                      ))}
-                    </>
-                  )}
-
-                  {/* Completed Fights Section */}
-                  {completedFights.length > 0 && (
-                    <>
-                      {upcomingFights.length > 0 && <View style={{ marginTop: 20 }} />}
-                      <View style={styles.columnHeadersRow}>
-                        <View style={styles.columnHeadersCompleted}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
-                        </View>
-                        <View style={styles.columnHeadersCompletedRight}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
-                        </View>
-                      </View>
-                      {completedFights.map((fight: Fight, index: number) => (
-                        <FightDisplayCard
-                          key={fight.id}
-                          fight={fight}
-                          onPress={() => handleFightPress(fight)}
-                          showEvent={true}
-                          index={upcomingFights.length + index}
-                        />
-                      ))}
-                    </>
-                  )}
+                  <View style={styles.columnHeadersRow}>
+                    <View style={styles.columnHeadersUpcoming}>
+                      <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
+                    </View>
+                    <View style={styles.columnHeadersUpcomingRight}>
+                      <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                      <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
+                    </View>
+                  </View>
+                  {upcomingFights.map((fight: Fight, index: number) => (
+                    <FightDisplayCard
+                      key={fight.id}
+                      fight={fight}
+                      onPress={() => handleFightPress(fight)}
+                      showEvent={true}
+                      index={index}
+                    />
+                  ))}
                 </>
-              ) : (
-                <>
-                  {/* Completed Fights Section (shown first for rating sorts) */}
-                  {completedFights.length > 0 && (
-                    <>
-                      <View style={styles.columnHeadersRow}>
-                        <View style={styles.columnHeadersCompleted}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
-                        </View>
-                        <View style={styles.columnHeadersCompletedRight}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
-                        </View>
-                      </View>
-                      {completedFights.map((fight: Fight, index: number) => (
-                        <FightDisplayCard
-                          key={fight.id}
-                          fight={fight}
-                          onPress={() => handleFightPress(fight)}
-                          showEvent={true}
-                          index={index}
-                        />
-                      ))}
-                    </>
-                  )}
+              )}
 
-                  {/* Upcoming Fights Section (shown last for rating sorts) */}
-                  {upcomingFights.length > 0 && (
-                    <>
-                      <View style={[styles.columnHeadersRow, { marginTop: completedFights.length > 0 ? 20 : 0 }]}>
-                        <View style={styles.columnHeadersUpcoming}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
-                        </View>
-                        <View style={styles.columnHeadersUpcomingRight}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
-                        </View>
-                      </View>
-                      {upcomingFights.map((fight: Fight, index: number) => (
-                        <FightDisplayCard
-                          key={fight.id}
-                          fight={fight}
-                          onPress={() => handleFightPress(fight)}
-                          showEvent={true}
-                          index={completedFights.length + index}
-                        />
-                      ))}
-                    </>
-                  )}
+              {completedFights.length > 0 && (
+                <>
+                  {upcomingFights.length > 0 && <View style={{ marginTop: 20 }} />}
+                  <View style={styles.columnHeadersRow}>
+                    <View style={styles.columnHeadersCompleted}>
+                      <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
+                    </View>
+                    <View style={styles.columnHeadersCompletedRight}>
+                      <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                      <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
+                    </View>
+                  </View>
+                  {completedFights.map((fight: Fight, index: number) => (
+                    <FightDisplayCard
+                      key={fight.id}
+                      fight={fight}
+                      onPress={() => handleFightPress(fight)}
+                      showEvent={true}
+                      index={upcomingFights.length + index}
+                    />
+                  ))}
                 </>
               )}
             </View>
@@ -693,7 +638,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginHorizontal: 16,
+    marginHorizontal: 28,
     paddingVertical: 8,
     marginBottom: 2,
   },
@@ -715,7 +660,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 0,
-    marginLeft: -16,
     width: 60,
     justifyContent: 'center',
   },
@@ -723,7 +667,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 0,
-    marginRight: -18,
     width: 60,
     justifyContent: 'center',
   },
