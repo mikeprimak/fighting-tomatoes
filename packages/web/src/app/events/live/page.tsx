@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getEvents } from '@/lib/api';
 import { useOrgFilter } from '@/lib/orgFilter';
+import { isEventLiveNow } from '@/lib/eventStatus';
 import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { EventCard } from '@/components/EventCard';
 import { Loader2, Radio } from 'lucide-react';
@@ -17,9 +18,7 @@ export default function LiveEventsPage() {
   });
 
   const allEvents = data?.events ?? [];
-  const liveEvents = filterEventsByOrg(
-    allEvents.filter((e: any) => e.eventStatus === 'LIVE')
-  );
+  const liveEvents = filterEventsByOrg(allEvents.filter((e: any) => isEventLiveNow(e)));
 
   return (
     <div>

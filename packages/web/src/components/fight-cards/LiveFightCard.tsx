@@ -59,7 +59,7 @@ function FighterImage({ fighter, hasUserPick }: { fighter: Fighter; hasUserPick:
 
 export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps) {
   const isLive = isLiveNow ?? fight.fightStatus === 'LIVE';
-  const stripText = isLive ? 'Live Now' : isUpNext ? 'Up Next' : 'Live Now';
+  const stripText = isLive ? 'Live Now' : 'Up Next';
 
   const hypeScore = fight.averageHype ?? 0;
   const userHype = fight.userHypePrediction ?? 0;
