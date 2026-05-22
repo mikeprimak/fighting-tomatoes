@@ -39,6 +39,27 @@ const MONTHS = {
 // this are skipped entirely (Gold Star only cares about upcoming cards).
 const STALE_DAYS = 3;
 
+// Tapology event IDs to skip during Gold Star scraping. Tapology lists some
+// cards on the Gold Star Promotions page that are actually promoted by other
+// orgs (Matchroom, Top Rank, etc.) — Gold Star being a co-promoter or local
+// partner. Importing them here creates duplicate Event rows for the same
+// real-world card, since the canonical-promoter scraper imports them too.
+//
+// Add an entry here when an event surfaces in this scraper that has a cleaner
+// canonical home elsewhere in the system. Format: 'TAPOLOGY_ID' or full URL
+// fragment from /events/{id}-...
+//
+// See docs/daily/2026-05-22.md for the Gold Star Glory in Giza incident that
+// motivated this list.
+const SKIP_TAPOLOGY_EVENT_IDS = new Set([
+  '140464', // Usyk vs. Verhoeven "Glory in Giza" — canonical home is Matchroom scraper
+]);
+
+function isBlacklistedEventUrl(url) {
+  const match = url && url.match(/\/events\/(\d+)-/);
+  return match ? SKIP_TAPOLOGY_EVENT_IDS.has(match[1]) : false;
+}
+
 function parseTapologyDate(dateStr) {
   if (!dateStr) return null;
   const cleanDate = dateStr.replace(/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday),?\s*/i, '');
@@ -271,6 +292,10 @@ async function main() {
     const athleteMap = new Map();
 
     for (const discovered of discoveredEvents) {
+      if (isBlacklistedEventUrl(discovered.eventUrl)) {
+        console.log(`\n⏭  Skipping blacklisted event: ${discovered.eventName} (${discovered.eventUrl}) — canonical home is another scraper`);
+        continue;
+      }
       console.log(`\n📄 Processing event: ${discovered.eventName}`);
       await new Promise(r => setTimeout(r, delays.betweenPages));
       const eventData = await scrapeEventPage(browser, discovered.eventUrl);

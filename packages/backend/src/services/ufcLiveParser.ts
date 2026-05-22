@@ -13,7 +13,7 @@ import { PrismaClient, WeightClass, Gender, FightStatus } from '@prisma/client';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
-import { decideStrike, CANCELLATION_STRIKE_THRESHOLD } from './cancellationGuards';
+import { decideStrike, CANCELLATION_STRIKE_THRESHOLD, MIN_HEALTHY_SCRAPE_FIGHTS, computeCancellationSafetyFloor, isScrapeHealthyForCancellation } from './cancellationGuards';
 
 const prisma = new PrismaClient();
 
@@ -732,12 +732,12 @@ export async function parseLiveEventData(
     const dbNonCancelledCount = event.fights.filter(f =>
       f.fightStatus !== 'CANCELLED' && f.fightStatus !== 'COMPLETED'
     ).length;
-    const cancellationSafetyFloor = Math.max(2, Math.floor(dbNonCancelledCount * 0.75));
-    const scrapeLooksComplete = scrapedFightSignatures.size >= cancellationSafetyFloor;
+    const cancellationSafetyFloor = computeCancellationSafetyFloor(dbNonCancelledCount);
+    const scrapeLooksComplete = isScrapeHealthyForCancellation(scrapedFightSignatures.size, dbNonCancelledCount);
     const canCancelMissing = dbNonCancelledCount === 0 || scrapeLooksComplete;
 
     if (!canCancelMissing) {
-      console.log(`  ⚠️  Skipping cancellation pass: scrape returned ${scrapedFightSignatures.size} fights, DB has ${dbNonCancelledCount} non-final fights (need ≥${cancellationSafetyFloor}). Treating as partial render.`);
+      console.log(`  ⚠️  Skipping cancellation pass: scrape returned ${scrapedFightSignatures.size} fights, DB has ${dbNonCancelledCount} non-final fights (need ≥${cancellationSafetyFloor} (75%) or ≥${MIN_HEALTHY_SCRAPE_FIGHTS} (absolute)). Treating as partial render.`);
     }
 
     for (const dbFight of event.fights) {
