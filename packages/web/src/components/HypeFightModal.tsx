@@ -1,10 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Flame } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Flame } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
-import { createFightPrediction } from '@/lib/api';
-import { useQueryClient } from '@tanstack/react-query';
+import {
+  createFightPrediction,
+  createPreFightComment,
+  getFightPreFightComments,
+} from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface HypeFightModalProps {
   isOpen: boolean;
@@ -13,83 +18,197 @@ interface HypeFightModalProps {
   existingHype?: number;
 }
 
+const FLAME_SLOT_HEIGHT = 120;
+const WHEEL_NUMBERS = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+
 export function HypeFightModal({ isOpen, onClose, fight, existingHype }: HypeFightModalProps) {
-  const [hype, setHype] = useState(existingHype || 5);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
-  if (!isOpen) return null;
+  const [selectedHype, setSelectedHype] = useState<number | null>(existingHype ?? null);
+  const [comment, setComment] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const initialCommentRef = useRef('');
 
-  const hypeColor = getHypeHeatmapColor(hype);
+  const { data: commentsData } = useQuery({
+    queryKey: ['preFightComments', fight?.id],
+    queryFn: () => getFightPreFightComments(fight.id),
+    enabled: !!fight?.id && isAuthenticated && isOpen,
+  });
 
-  const handleSubmit = async () => {
+  useEffect(() => {
+    if (!isOpen) return;
+    setSelectedHype(existingHype ?? null);
+    setError('');
+  }, [isOpen, existingHype, fight?.id]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const existing = commentsData?.userComment?.content ?? '';
+    setComment(existing);
+    initialCommentRef.current = existing;
+  }, [isOpen, commentsData?.userComment?.content]);
+
+  if (!isOpen || !fight) return null;
+
+  // Wheel position: each "slot" is FLAME_SLOT_HEIGHT tall. The 10 sits at the top
+  // (offset 0), 9 at -1*h, …, 1 at -9*h, blank at -10*h. Negative translateY
+  // brings the desired number into the window.
+  const wheelOffset = selectedHype != null
+    ? -(10 - selectedHype) * FLAME_SLOT_HEIGHT
+    : -10 * FLAME_SLOT_HEIGHT;
+
+  const handleDone = async () => {
     setSaving(true);
     setError('');
     try {
-      await createFightPrediction(fight.id, { predictedRating: hype });
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
-      queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
+      const tasks: Promise<any>[] = [];
+      if (selectedHype != null && selectedHype !== existingHype) {
+        tasks.push(createFightPrediction(fight.id, { predictedRating: selectedHype }));
+      }
+      if (isAuthenticated) {
+        const trimmed = comment.trim();
+        if (trimmed !== initialCommentRef.current.trim()) {
+          tasks.push(createPreFightComment(fight.id, trimmed));
+        }
+      }
+      await Promise.all(tasks);
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
       onClose();
     } catch (err: any) {
-      setError(err.error || 'Failed to save');
+      setError(err?.error || 'Failed to save');
     } finally {
       setSaving(false);
     }
   };
 
+  const f1 = fight.fighter1 ?? {};
+  const f2 = fight.fighter2 ?? {};
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-xl border border-border bg-background p-5" onClick={e => e.stopPropagation()}>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">Rate Your Hype</h2>
-          <button onClick={onClose} className="text-text-secondary hover:text-foreground">
-            <X size={20} />
-          </button>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md rounded-t-2xl border border-border bg-background p-5 sm:rounded-xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <h2 className="mb-4 text-center text-base font-bold uppercase tracking-wider text-foreground">
+          How Hyped Are You?
+        </h2>
+
+        {/* Fighter row: image | lastName vs lastName | image */}
+        <div className="mb-3 flex items-center justify-center gap-3">
+          <FighterImage fighter={f1} />
+          <div className="flex min-w-0 flex-col items-center text-center">
+            <span className="max-w-[100px] truncate text-sm font-bold text-foreground">{f1.lastName}</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">vs</span>
+            <span className="max-w-[100px] truncate text-sm font-bold text-foreground">{f2.lastName}</span>
+          </div>
+          <FighterImage fighter={f2} />
         </div>
 
-        <p className="mb-4 text-center text-sm text-text-secondary">
-          {fight.fighter1?.firstName} {fight.fighter1?.lastName} vs {fight.fighter2?.firstName} {fight.fighter2?.lastName}
-        </p>
+        {/* Flame wheel — one slot visible, transitions on selection */}
+        <div
+          className="relative mx-auto overflow-hidden"
+          style={{ width: FLAME_SLOT_HEIGHT, height: FLAME_SLOT_HEIGHT }}
+        >
+          <div
+            className="flex flex-col transition-transform duration-500 ease-out"
+            style={{ transform: `translateY(${wheelOffset}px)` }}
+          >
+            {WHEEL_NUMBERS.map(n => {
+              const color = getHypeHeatmapColor(n);
+              return (
+                <div
+                  key={n}
+                  className="relative flex shrink-0 items-center justify-center"
+                  style={{ height: FLAME_SLOT_HEIGHT }}
+                >
+                  <Flame size={96} fill={color} color={color} strokeWidth={1.25} />
+                  <span className="absolute inset-0 flex items-center justify-center pt-2 text-3xl font-bold text-white [text-shadow:_0_2px_4px_rgb(0_0_0_/_70%)]">
+                    {n}
+                  </span>
+                </div>
+              );
+            })}
+            {/* Blank/hollow flame for "no selection" */}
+            <div
+              className="flex shrink-0 items-center justify-center"
+              style={{ height: FLAME_SLOT_HEIGHT }}
+            >
+              <Flame size={96} className="text-text-secondary/30" strokeWidth={1.25} />
+            </div>
+          </div>
+        </div>
+
+        {/* Row of clickable flames 1..10 */}
+        <div className="mb-4 mt-2 flex items-center justify-between px-1">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => {
+            const isSelected = selectedHype != null && level <= selectedHype;
+            const color = isSelected ? getHypeHeatmapColor(level) : 'transparent';
+            return (
+              <button
+                key={level}
+                type="button"
+                onClick={() => setSelectedHype(level)}
+                className="flex h-9 w-7 items-center justify-center"
+                aria-label={`Hype level ${level}`}
+              >
+                <Flame
+                  size={26}
+                  fill={isSelected ? color : 'transparent'}
+                  color={isSelected ? color : '#808080'}
+                  strokeWidth={1.5}
+                />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Comment input — auth only */}
+        {isAuthenticated && (
+          <div className="mb-4">
+            <textarea
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              placeholder={selectedHype ? `Why are you ${selectedHype}/10 hyped?` : 'Why are you hyped?'}
+              maxLength={500}
+              rows={3}
+              className="w-full resize-none rounded-lg border border-border bg-card p-3 text-sm text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none"
+            />
+          </div>
+        )}
 
         {error && (
           <div className="mb-3 rounded-lg border border-danger/30 bg-danger/10 p-2 text-sm text-danger">{error}</div>
         )}
 
-        {/* Hype slider */}
-        <div className="mb-6">
-          <div className="mb-2 flex items-center justify-center gap-2">
-            <Flame size={28} style={{ color: hypeColor }} />
-            <span className="text-5xl font-bold" style={{ color: hypeColor }}>{hype}</span>
-            <span className="text-lg text-text-secondary">/ 10</span>
-          </div>
-          <input
-            type="range"
-            min={1}
-            max={10}
-            step={1}
-            value={hype}
-            onChange={e => setHype(Number(e.target.value))}
-            className="w-full accent-primary"
-          />
-          <div className="flex justify-between text-[10px] text-text-secondary">
-            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-            <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
-          </div>
-          <p className="mt-2 text-center text-xs text-text-secondary">
-            How excited are you for this fight?
-          </p>
-        </div>
-
         <button
-          onClick={handleSubmit}
+          onClick={handleDone}
           disabled={saving}
-          className="w-full rounded-lg bg-primary py-3 font-semibold text-text-on-accent transition-colors hover:bg-primary/90 disabled:opacity-50"
+          className="w-full rounded-lg bg-primary py-3 text-sm font-bold uppercase tracking-wider text-text-on-accent transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
-          {saving ? 'Saving...' : existingHype ? 'Update Hype' : 'Submit Hype'}
+          {saving ? 'Saving…' : 'Done'}
         </button>
       </div>
+    </div>
+  );
+}
+
+function FighterImage({ fighter }: { fighter: any }) {
+  const img = fighter?.profileImage || '';
+  const initials = `${fighter?.firstName?.[0] ?? ''}${fighter?.lastName?.[0] ?? ''}`.toUpperCase();
+  return (
+    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-card">
+      {img ? (
+        <img src={img} alt={`${fighter.firstName} ${fighter.lastName}`} className="h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-sm font-bold text-text-secondary">
+          {initials}
+        </div>
+      )}
     </div>
   );
 }
