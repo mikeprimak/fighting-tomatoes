@@ -78,7 +78,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         return { OR: baseConditions };
       };
 
-      const foundFighters = await prisma.fighter.findMany({
+      const candidateFighters = await prisma.fighter.findMany({
         where: {
           AND: [
             buildFighterSearchConditions(),
@@ -98,8 +98,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
           draws: true,
           isChampion: true,
           championshipTitle: true,
+          totalFights: true,
         },
-        take: resultLimit,
+        take: Math.max(resultLimit * 5, 50),
         orderBy: [
           { isChampion: 'desc' },
           { totalFights: 'desc' },
@@ -107,9 +108,72 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         ],
       });
 
+      // Score each candidate by how well the name matches the search term.
+      // Exact name match must outrank champion/recency, so a search for the
+      // fighter's name surfaces them at the top even if they're retired.
+      const searchLower = searchTerm.toLowerCase();
+      const searchTermsLower = searchTerms.map((t) => t.toLowerCase());
+
+      const getFighterRelevanceScore = (f: typeof candidateFighters[number]): number => {
+        const first = (f.firstName || '').toLowerCase();
+        const last = (f.lastName || '').toLowerCase();
+        const nick = (f.nickname || '').toLowerCase();
+        const full = `${first} ${last}`.trim();
+
+        if (full === searchLower) return 1000;
+
+        if (searchTermsLower.length >= 2) {
+          const [s1, s2] = searchTermsLower;
+          if (first === s1 && last === s2) return 1000;
+          if (first === s2 && last === s1) return 950;
+          const lastTerm = searchTermsLower[searchTermsLower.length - 1];
+          if (last === lastTerm) {
+            // Multi-word query where the last word is an exact lastName match
+            // (e.g. "conor mcgregor" → McGregor). Also reward matching first name.
+            return first === searchTermsLower[0] ? 900 : 700;
+          }
+        }
+
+        if (last === searchLower) return 800;
+        if (nick === searchLower) return 750;
+        if (first === searchLower) return 700;
+
+        if (last.startsWith(searchLower)) return 500;
+        if (nick.startsWith(searchLower)) return 450;
+        if (first.startsWith(searchLower)) return 400;
+
+        if (full.includes(searchLower)) return 250;
+        if (nick.includes(searchLower)) return 200;
+
+        // Per-word partial scoring for everything else
+        let score = 0;
+        for (const t of searchTermsLower) {
+          if (last === t) score += 100;
+          else if (first === t) score += 80;
+          else if (nick === t) score += 80;
+          else if (last.startsWith(t)) score += 50;
+          else if (first.startsWith(t)) score += 40;
+          else if (last.includes(t) || first.includes(t) || nick.includes(t)) score += 20;
+        }
+        return score;
+      };
+
+      const scoredFighters = candidateFighters
+        .map((f) => ({ fighter: f, score: getFighterRelevanceScore(f) }))
+        .sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          // Tie-break: champion first, then more total fights, then better rated
+          if (a.fighter.isChampion !== b.fighter.isChampion) {
+            return a.fighter.isChampion ? -1 : 1;
+          }
+          return (b.fighter.totalFights || 0) - (a.fighter.totalFights || 0);
+        })
+        .slice(0, resultLimit)
+        .map(({ fighter }) => fighter);
+
       // Calculate average rating from last 3 completed fights for each fighter
       const fighters = await Promise.all(
-        foundFighters.map(async (fighter) => {
+        scoredFighters.map(async (fighter) => {
           // Get last 3 completed fights for this fighter
           const recentFights = await prisma.fight.findMany({
             where: {
