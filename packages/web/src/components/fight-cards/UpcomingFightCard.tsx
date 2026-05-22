@@ -1,8 +1,9 @@
 'use client';
 
-import Link from 'next/link';
+import { useState } from 'react';
 import { Flame, MessageCircle } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
+import { HypeFightModal } from '@/components/HypeFightModal';
 
 interface Fighter {
   id: string;
@@ -78,6 +79,8 @@ function FighterSide({ fighter, side }: { fighter: Fighter; side: 'left' | 'righ
 }
 
 export function UpcomingFightCard({ fight }: UpcomingFightCardProps) {
+  const [modalOpen, setModalOpen] = useState(false);
+
   const hypeScore = fight.averageHype ?? 0;
   const userHype = fight.userHypePrediction ?? 0;
   const hypeCount = fight.hypeCount ?? 0;
@@ -89,7 +92,12 @@ export function UpcomingFightCard({ fight }: UpcomingFightCardProps) {
   const userHypeColor = hasUserHype ? getHypeHeatmapColor(userHype) : undefined;
 
   return (
-    <Link href={`/fights/${fight.id}`} className="block">
+    <>
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className="block w-full text-left"
+      >
       <div className="group flex min-h-[64px] items-stretch transition-colors hover:bg-background/40">
         {/* Left: community hype square */}
         <div
@@ -159,6 +167,13 @@ export function UpcomingFightCard({ fight }: UpcomingFightCardProps) {
           )}
         </div>
       </div>
-    </Link>
+      </button>
+      <HypeFightModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        fight={fight}
+        existingHype={userHype || undefined}
+      />
+    </>
   );
 }
