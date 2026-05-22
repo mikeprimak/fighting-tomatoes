@@ -80,6 +80,8 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype }: HypeFig
     queryClient.invalidateQueries({ queryKey: ['events'] });
     queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
     queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+    queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+    queryClient.invalidateQueries({ queryKey: ['search'] });
   };
 
   const handleDone = async () => {
