@@ -2,8 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getFighter, getFights } from '@/lib/api';
-import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { formatEventDate } from '@/utils/dateFormatters';
+import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
+import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { Loader2, ArrowLeft, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -29,14 +30,19 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
   });
 
   const fighter = fighterData?.fighter;
-  const fights = fightsData?.fights ?? [];
+  const allFights = fightsData?.fights ?? [];
 
-  const sortedFights = [...fights].sort((a: any, b: any) => {
-    if (sortBy === 'rating') {
-      return (b.averageRating || 0) - (a.averageRating || 0);
-    }
-    return new Date(b.event?.date || 0).getTime() - new Date(a.event?.date || 0).getTime();
-  });
+  const upcomingFights = allFights.filter(
+    (f: any) => f.fightStatus === 'UPCOMING' || f.fightStatus === 'LIVE',
+  );
+  const completedFights = [...allFights.filter((f: any) => f.fightStatus === 'COMPLETED')].sort(
+    (a: any, b: any) => {
+      if (sortBy === 'rating') {
+        return (b.averageRating || 0) - (a.averageRating || 0);
+      }
+      return new Date(b.event?.date || 0).getTime() - new Date(a.event?.date || 0).getTime();
+    },
+  );
 
   if (isLoading || !fighter) {
     return (
@@ -86,80 +92,87 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
         </div>
       </div>
 
-      {/* Sort */}
-      <div className="mb-4 flex items-center gap-2">
-        <span className="text-xs text-text-secondary">Sort by:</span>
-        <button
-          onClick={() => setSortBy('date')}
-          className={`rounded-full px-3 py-1 text-xs font-medium ${sortBy === 'date' ? 'bg-primary text-text-on-accent' : 'bg-card text-text-secondary'}`}
-        >
-          Date
-        </button>
-        <button
-          onClick={() => setSortBy('rating')}
-          className={`rounded-full px-3 py-1 text-xs font-medium ${sortBy === 'rating' ? 'bg-primary text-text-on-accent' : 'bg-card text-text-secondary'}`}
-        >
-          Highest Rated
-        </button>
-      </div>
+      {/* Upcoming section */}
+      {upcomingFights.length > 0 && (
+        <section className="mb-6">
+          <SectionHeaderRow leftLabel="HYPE" rightLabel="MY HYPE" />
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            {upcomingFights.map((fight: any) => (
+              <FightWithEventLabel key={fight.id} fight={fight}>
+                <UpcomingFightCard fight={fight} />
+              </FightWithEventLabel>
+            ))}
+          </div>
+        </section>
+      )}
 
-      {/* Fights list */}
-      <div className="space-y-2">
-        {sortedFights.map((fight: any) => {
-          const opponent = fight.fighter1.id === fighterId ? fight.fighter2 : fight.fighter1;
-          const isCompleted = fight.fightStatus === 'COMPLETED';
-          const isWinner = fight.winner === fighterId;
-          const ratingColor = fight.averageRating > 0 ? getHypeHeatmapColor(fight.averageRating) : undefined;
+      {/* Completed section */}
+      {completedFights.length > 0 && (
+        <section>
+          <div className="mb-2 flex items-center justify-between">
+            <SectionHeaderRow leftLabel="RATING" rightLabel="MY RATING" />
+          </div>
 
-          return (
-            <Link key={fight.id} href={`/fights/${fight.id}`} className="block">
-              <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/30">
-                {/* Opponent image */}
-                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-background">
-                  {opponent.profileImage ? (
-                    <img src={opponent.profileImage} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm font-bold text-text-secondary">
-                      {opponent.firstName[0]}{opponent.lastName[0]}
-                    </div>
-                  )}
-                </div>
+          {/* Sort */}
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-xs text-text-secondary">Sort by:</span>
+            <button
+              onClick={() => setSortBy('date')}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${sortBy === 'date' ? 'bg-primary text-text-on-accent' : 'bg-card text-text-secondary'}`}
+            >
+              Date
+            </button>
+            <button
+              onClick={() => setSortBy('rating')}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${sortBy === 'rating' ? 'bg-primary text-text-on-accent' : 'bg-card text-text-secondary'}`}
+            >
+              Highest Rated
+            </button>
+          </div>
 
-                {/* Fight info */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    {isCompleted && (
-                      <span className={`text-xs font-bold ${isWinner ? 'text-success' : 'text-danger'}`}>
-                        {isWinner ? 'W' : 'L'}
-                      </span>
-                    )}
-                    <span className="truncate text-sm font-medium">
-                      vs {opponent.firstName} {opponent.lastName}
-                    </span>
-                  </div>
-                  <p className="truncate text-xs text-text-secondary">
-                    {fight.event?.name} - {fight.event?.date ? formatEventDate(fight.event.date) : ''}
-                  </p>
-                </div>
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            {completedFights.map((fight: any) => (
+              <FightWithEventLabel key={fight.id} fight={fight}>
+                <CompletedFightCard fight={fight} />
+              </FightWithEventLabel>
+            ))}
+          </div>
+        </section>
+      )}
 
-                {/* Rating */}
-                {isCompleted && fight.averageRating > 0 && (
-                  <div className="text-right">
-                    <span className="text-sm font-bold" style={{ color: ratingColor }}>
-                      {fight.averageRating.toFixed(1)}
-                    </span>
-                    <p className="text-[10px] text-text-secondary">{fight.totalRatings} ratings</p>
-                  </div>
-                )}
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-
-      {sortedFights.length === 0 && (
+      {upcomingFights.length === 0 && completedFights.length === 0 && (
         <p className="py-8 text-center text-sm text-text-secondary">No fights found.</p>
       )}
+    </div>
+  );
+}
+
+function SectionHeaderRow({ leftLabel, rightLabel }: { leftLabel: string; rightLabel: string }) {
+  return (
+    <div className="mb-1 flex items-center justify-between px-2">
+      <span className="w-12 text-center text-[10px] font-bold uppercase tracking-wider text-text-secondary">
+        {leftLabel}
+      </span>
+      <span className="w-12 text-center text-[10px] font-bold uppercase tracking-wider text-text-secondary">
+        {rightLabel}
+      </span>
+    </div>
+  );
+}
+
+function FightWithEventLabel({ fight, children }: { fight: any; children: React.ReactNode }) {
+  const eventName = fight.event?.name;
+  const eventDate = fight.event?.date;
+  if (!eventName && !eventDate) return <>{children}</>;
+  return (
+    <div>
+      {(eventName || eventDate) && (
+        <div className="flex items-center justify-between px-3 pt-2 text-[10px] uppercase tracking-wider text-text-secondary">
+          <span className="truncate">{eventName}</span>
+          {eventDate && <span className="shrink-0 pl-2">{formatEventDate(eventDate)}</span>}
+        </div>
+      )}
+      {children}
     </div>
   );
 }
