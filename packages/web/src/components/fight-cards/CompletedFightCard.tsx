@@ -1,9 +1,10 @@
 'use client';
 
-import Link from 'next/link';
+import { useState } from 'react';
 import { Star, MessageCircle } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { useSpoilerFree } from '@/lib/spoilerFree';
+import { RateFightModal } from '@/components/RateFightModal';
 
 interface Fighter {
   id: string;
@@ -33,6 +34,7 @@ interface CompletedFightCardProps {
     reviewCount?: number;
     averageHype?: number;
     userRating?: number;
+    userReview?: { content: string; rating?: number };
     userPredictedWinner?: string | null;
     fightStatus: string;
   };
@@ -139,6 +141,7 @@ function FighterBlock({
 export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps) {
   const { spoilerFreeMode } = useSpoilerFree();
   const hideSpoilers = spoilerFreeMode && !fight.userRating;
+  const [modalOpen, setModalOpen] = useState(false);
 
   const avgRating = fight.averageRating ?? 0;
   const totalRatings = fight.totalRatings ?? 0;
@@ -163,7 +166,12 @@ export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps)
   const userPickedF2 = fight.userPredictedWinner === fight.fighter2.id;
 
   return (
-    <Link href={`/fights/${fight.id}`} className="block">
+    <>
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className="block w-full text-left"
+      >
       <div className="group relative flex min-h-[72px] items-stretch overflow-visible transition-colors hover:bg-background/40">
         {/* Left: hype square offset behind rating square */}
         <div className="relative w-12 shrink-0">
@@ -281,6 +289,14 @@ export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps)
           )}
         </div>
       </div>
-    </Link>
+      </button>
+      <RateFightModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        fight={fight}
+        existingRating={userRating || undefined}
+        existingReview={fight.userReview}
+      />
+    </>
   );
 }

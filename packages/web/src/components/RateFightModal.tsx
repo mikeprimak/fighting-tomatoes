@@ -1,169 +1,257 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Star } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Star } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
-import { rateFight, reviewFight, updateReview, applyFightTags } from '@/lib/api';
-import { useQueryClient } from '@tanstack/react-query';
-
-const FIGHT_TAGS = [
-  // Quality
-  'Masterpiece', 'Legendary', 'Instant Classic', 'FOTY Contender', 'FOTN', 'Exciting', 'Solid', 'Decent', 'Disappointing', 'Terrible',
-  // Emotion
-  'Epic', 'Spectacular', 'Thrilling', 'Emotional', 'Inspiring', 'Heartbreaking', 'Shocking', 'Flat', 'Boring',
-  // Style
-  'War', 'Technical', 'Striking Clinic', 'Grappling Clinic', 'Ground & Pound', 'Tactical', 'Brawl', 'Chess Match',
-  // Outcome
-  'Knockout', 'Submission', 'Decision', 'Upset', 'Robbery', 'Mismatch', 'Dominant',
-  // Drama
-  'Comeback', 'Back-and-Forth', 'Momentum Shifts', 'Last Second Finish', 'One-Sided',
-  // Stakes
-  'Title Fight', 'Main Event', 'Debut', 'Rematch', 'Trilogy', 'Retirement Fight',
-];
+import {
+  rateFight,
+  reviewFight,
+  updateReview,
+  getFightReviews,
+} from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 interface RateFightModalProps {
   isOpen: boolean;
   onClose: () => void;
   fight: any;
   existingRating?: number;
-  existingReview?: { content: string; rating: number; id: string };
-  existingTags?: string[];
+  existingReview?: { content: string; rating?: number; id?: string };
 }
 
-export function RateFightModal({ isOpen, onClose, fight, existingRating, existingReview, existingTags }: RateFightModalProps) {
-  const [rating, setRating] = useState(existingRating || 5);
-  const [reviewText, setReviewText] = useState(existingReview?.content || '');
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set(existingTags || []));
+const WHEEL_SLOT_HEIGHT = 120;
+const WHEEL_NUMBERS = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+
+export function RateFightModal({ isOpen, onClose, fight, existingRating, existingReview }: RateFightModalProps) {
+  const { isAuthenticated, user } = useAuth();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const [selectedRating, setSelectedRating] = useState<number | null>(existingRating ?? null);
+  const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const queryClient = useQueryClient();
+  const initialCommentRef = useRef('');
 
-  if (!isOpen) return null;
+  const { data: reviewsData } = useQuery({
+    queryKey: ['fightReviews', fight?.id],
+    queryFn: () => getFightReviews(fight.id, { limit: 50 }),
+    enabled: !!fight?.id && isAuthenticated && isOpen,
+  });
 
-  const ratingColor = getHypeHeatmapColor(rating);
+  useEffect(() => {
+    if (!isOpen) return;
+    setSelectedRating(existingRating ?? null);
+    setError('');
+  }, [isOpen, existingRating, fight?.id]);
 
-  const toggleTag = (tag: string) => {
-    setSelectedTags(prev => {
-      const next = new Set(prev);
-      if (next.has(tag)) next.delete(tag);
-      else next.add(tag);
-      return next;
-    });
+  useEffect(() => {
+    if (!isOpen) return;
+    // Prefer prop-passed review (FightDetailClient), then fall back to the
+    // current user's review pulled out of the reviews list.
+    const propContent = existingReview?.content ?? '';
+    const mineFromList =
+      user?.id && reviewsData?.reviews
+        ? reviewsData.reviews.find((r: any) => r.user?.id === user.id)
+        : null;
+    const existing = propContent || mineFromList?.content || '';
+    setComment(existing);
+    initialCommentRef.current = existing;
+  }, [isOpen, existingReview?.content, reviewsData, user?.id]);
+
+  if (!isOpen || !fight) return null;
+
+  const wheelOffset = selectedRating != null
+    ? -(10 - selectedRating) * WHEEL_SLOT_HEIGHT
+    : -10 * WHEEL_SLOT_HEIGHT;
+
+  const persistChanges = async () => {
+    const tasks: Promise<any>[] = [];
+    if (selectedRating != null && selectedRating !== (existingRating ?? null)) {
+      tasks.push(rateFight(fight.id, selectedRating));
+    }
+    if (isAuthenticated && selectedRating != null) {
+      const trimmed = comment.trim();
+      if (trimmed && trimmed !== initialCommentRef.current.trim()) {
+        const hasExisting = !!initialCommentRef.current.trim();
+        tasks.push(
+          hasExisting
+            ? updateReview(fight.id, { content: trimmed, rating: selectedRating })
+            : reviewFight(fight.id, { content: trimmed, rating: selectedRating }),
+        );
+      }
+    }
+    await Promise.all(tasks);
+    queryClient.invalidateQueries({ queryKey: ['events'] });
+    queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+    queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
+    queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
+    queryClient.invalidateQueries({ queryKey: ['topFights'] });
   };
 
-  const handleSubmit = async () => {
+  const handleDone = async () => {
     setSaving(true);
     setError('');
     try {
-      await rateFight(fight.id, rating);
-
-      if (reviewText.trim()) {
-        if (existingReview) {
-          await updateReview(fight.id, { content: reviewText, rating });
-        } else {
-          await reviewFight(fight.id, { content: reviewText, rating });
-        }
-      }
-
-      if (selectedTags.size > 0) {
-        await applyFightTags(fight.id, Array.from(selectedTags));
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
-      queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
-      queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['topFights'] });
+      await persistChanges();
       onClose();
     } catch (err: any) {
-      setError(err.error || 'Failed to save');
+      setError(err?.error || 'Failed to save');
     } finally {
       setSaving(false);
     }
   };
 
+  const handleSeeComments = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      await persistChanges();
+      onClose();
+      router.push(`/fights/${fight.id}`);
+    } catch (err: any) {
+      setError(err?.error || 'Failed to save');
+      setSaving(false);
+    }
+  };
+
+  const reviewCount = reviewsData?.pagination?.total ?? fight.reviewCount ?? 0;
+
+  const f1 = fight.fighter1 ?? {};
+  const f2 = fight.fighter2 ?? {};
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-background p-5" onClick={e => e.stopPropagation()}>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">Rate Fight</h2>
-          <button onClick={onClose} className="text-text-secondary hover:text-foreground">
-            <X size={20} />
-          </button>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md rounded-t-2xl border border-border bg-background p-5 sm:rounded-xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <h2 className="mb-4 text-center text-base font-bold uppercase tracking-wider text-foreground">
+          Rate This Fight
+        </h2>
+
+        {/* Fighter row */}
+        <div className="mb-3 flex items-center justify-center gap-3">
+          <FighterImage fighter={f1} />
+          <div className="flex min-w-0 flex-col items-center text-center">
+            <span className="max-w-[100px] truncate text-sm font-bold text-foreground">{f1.lastName}</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">vs</span>
+            <span className="max-w-[100px] truncate text-sm font-bold text-foreground">{f2.lastName}</span>
+          </div>
+          <FighterImage fighter={f2} />
         </div>
 
-        {/* Fighter names */}
-        <p className="mb-4 text-center text-sm text-text-secondary">
-          {fight.fighter1?.firstName} {fight.fighter1?.lastName} vs {fight.fighter2?.firstName} {fight.fighter2?.lastName}
-        </p>
+        {/* Star wheel */}
+        <div
+          className="relative mx-auto overflow-hidden"
+          style={{ width: WHEEL_SLOT_HEIGHT, height: WHEEL_SLOT_HEIGHT }}
+        >
+          <div
+            className="flex flex-col transition-transform duration-500 ease-out"
+            style={{ transform: `translateY(${wheelOffset}px)` }}
+          >
+            {WHEEL_NUMBERS.map(n => {
+              const color = getHypeHeatmapColor(n);
+              return (
+                <div
+                  key={n}
+                  className="relative flex shrink-0 items-center justify-center"
+                  style={{ height: WHEEL_SLOT_HEIGHT }}
+                >
+                  <Star size={96} fill={color} color={color} strokeWidth={1.25} />
+                  <span className="absolute inset-0 flex items-center justify-center text-3xl font-bold text-white [text-shadow:_0_2px_4px_rgb(0_0_0_/_70%)]">
+                    {n}
+                  </span>
+                </div>
+              );
+            })}
+            <div
+              className="flex shrink-0 items-center justify-center"
+              style={{ height: WHEEL_SLOT_HEIGHT }}
+            >
+              <Star size={96} className="text-text-secondary/30" strokeWidth={1.25} />
+            </div>
+          </div>
+        </div>
+
+        {/* Row of clickable stars 1..10 */}
+        <div className="mb-4 mt-2 flex items-center justify-between px-1">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => {
+            const isSelected = selectedRating != null && level <= selectedRating;
+            const color = isSelected ? getHypeHeatmapColor(level) : 'transparent';
+            return (
+              <button
+                key={level}
+                type="button"
+                onClick={() => setSelectedRating(prev => (prev === level ? null : level))}
+                className="flex h-9 w-7 items-center justify-center"
+                aria-label={`Rating ${level}`}
+              >
+                <Star
+                  size={26}
+                  fill={isSelected ? color : 'transparent'}
+                  color={isSelected ? color : '#808080'}
+                  strokeWidth={1.5}
+                />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Comment input — auth only */}
+        {isAuthenticated && (
+          <div className="mb-4">
+            <textarea
+              value={comment}
+              onChange={e => setComment(e.target.value)}
+              placeholder={selectedRating ? `Why ${selectedRating}/10?` : 'What did you think?'}
+              maxLength={1000}
+              rows={3}
+              className="w-full resize-none rounded-lg border border-border bg-card p-3 text-sm text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={handleSeeComments}
+              disabled={saving}
+              className="mt-2 w-full text-center text-xs text-text-secondary hover:text-foreground disabled:opacity-50"
+            >
+              {reviewCount > 0
+                ? `See ${reviewCount} ${reviewCount === 1 ? 'Comment' : 'Comments'} >`
+                : 'See Comments >'}
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="mb-3 rounded-lg border border-danger/30 bg-danger/10 p-2 text-sm text-danger">{error}</div>
         )}
 
-        {/* Rating slider */}
-        <div className="mb-6">
-          <div className="mb-2 flex items-center justify-center gap-2">
-            <Star size={24} style={{ color: ratingColor }} fill={ratingColor} />
-            <span className="text-4xl font-bold" style={{ color: ratingColor }}>{rating}</span>
-            <span className="text-lg text-text-secondary">/ 10</span>
-          </div>
-          <input
-            type="range"
-            min={1}
-            max={10}
-            step={1}
-            value={rating}
-            onChange={e => setRating(Number(e.target.value))}
-            className="w-full accent-primary"
-          />
-          <div className="flex justify-between text-[10px] text-text-secondary">
-            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
-            <span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
-          </div>
-        </div>
-
-        {/* Tags */}
-        <div className="mb-4">
-          <p className="mb-2 text-xs font-semibold text-text-secondary">FIGHT TAGS (optional)</p>
-          <div className="flex flex-wrap gap-1.5">
-            {FIGHT_TAGS.map(tag => (
-              <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className={`rounded-full px-2.5 py-1 text-xs transition-colors ${
-                  selectedTags.has(tag)
-                    ? 'bg-primary text-text-on-accent'
-                    : 'bg-card text-text-secondary hover:text-foreground'
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Review */}
-        <div className="mb-4">
-          <p className="mb-2 text-xs font-semibold text-text-secondary">REVIEW (optional)</p>
-          <textarea
-            value={reviewText}
-            onChange={e => setReviewText(e.target.value)}
-            placeholder="What did you think of this fight?"
-            rows={3}
-            className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none"
-          />
-        </div>
-
-        {/* Submit */}
         <button
-          onClick={handleSubmit}
+          onClick={handleDone}
           disabled={saving}
-          className="w-full rounded-lg bg-primary py-3 font-semibold text-text-on-accent transition-colors hover:bg-primary/90 disabled:opacity-50"
+          className="w-full rounded-lg bg-primary py-3 text-sm font-bold uppercase tracking-wider text-text-on-accent transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
-          {saving ? 'Saving...' : existingRating ? 'Update Rating' : 'Submit Rating'}
+          {saving ? 'Saving…' : 'Done'}
         </button>
       </div>
+    </div>
+  );
+}
+
+function FighterImage({ fighter }: { fighter: any }) {
+  const img = fighter?.profileImage || '';
+  const initials = `${fighter?.firstName?.[0] ?? ''}${fighter?.lastName?.[0] ?? ''}`.toUpperCase();
+  return (
+    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-card">
+      {img ? (
+        <img src={img} alt={`${fighter.firstName} ${fighter.lastName}`} className="h-full w-full object-cover" />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center text-sm font-bold text-text-secondary">
+          {initials}
+        </div>
+      )}
     </div>
   );
 }
