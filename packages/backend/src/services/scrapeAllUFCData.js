@@ -143,6 +143,19 @@ async function scrapeEventsList(browser) {
         if (numberMatch) {
           eventType = 'Numbered';
           eventName = `UFC ${numberMatch[1]}`;
+        } else {
+          // Special-named UFC event (e.g. ufc-freedom-250 → "UFC Freedom 250").
+          // Fall back to a Title Case rendering of the URL slug so non-standard
+          // events still get a non-empty name in the DB.
+          const slugMatch = eventUrl.match(/\/event\/([^/?#]+)/);
+          if (slugMatch) {
+            eventType = 'Special';
+            eventName = slugMatch[1]
+              .split('-')
+              .map((w) => (w.length > 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+              .join(' ')
+              .replace(/^Ufc\b/, 'UFC');
+          }
         }
       }
 
@@ -168,6 +181,8 @@ async function scrapeEventsList(browser) {
             if (numberMatch) {
               eventName = `UFC ${numberMatch[1]}: ${fighterALastName} vs. ${fighterBLastName}`;
             }
+          } else if (eventType === 'Special') {
+            eventName = `${eventName}: ${fighterALastName} vs. ${fighterBLastName}`;
           }
         }
       }
