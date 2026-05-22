@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { setAccessToken, getAccessToken, refreshSession, logout as apiLogout, login as apiLogin, register as apiRegister, loginWithGoogle as apiLoginWithGoogle, loginWithApple as apiLoginWithApple } from './api';
 
 interface User {
@@ -43,6 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isGuest, setIsGuest] = useState(false);
+  const queryClient = useQueryClient();
+  const lastUserIdRef = useRef<string | null>(null);
 
   const isAuthenticated = !!user && !!getAccessToken();
 
@@ -67,6 +70,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     tryRefresh();
   }, []);
+
+  // Refetch user-scoped queries when auth identity changes. Most pages mount
+  // and fire queries before refreshSession() resolves, so the first response
+  // comes back unauthenticated (missing userHypePrediction, userRating, etc.)
+  // and React Query caches it. Once the user lands, we kick the relevant
+  // queries to repull with the token attached.
+  useEffect(() => {
+    const id = user?.id ?? null;
+    if (id === lastUserIdRef.current) return;
+    lastUserIdRef.current = id;
+    queryClient.invalidateQueries({ queryKey: ['events'] });
+    queryClient.invalidateQueries({ queryKey: ['event'] });
+    queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+    queryClient.invalidateQueries({ queryKey: ['topFights'] });
+    queryClient.invalidateQueries({ queryKey: ['fight'] });
+    queryClient.invalidateQueries({ queryKey: ['fightStats'] });
+    queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+    queryClient.invalidateQueries({ queryKey: ['myRatings'] });
+    queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
+    queryClient.invalidateQueries({ queryKey: ['preFightComments'] });
+    queryClient.invalidateQueries({ queryKey: ['fightReviews'] });
+  }, [user?.id, queryClient]);
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await apiLogin(email, password);
