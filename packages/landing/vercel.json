@@ -3,6 +3,7 @@
   "outputDirectory": ".",
   "framework": null,
   "cleanUrls": true,
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet ./",
   "redirects": [
     {
       "source": "/download",
