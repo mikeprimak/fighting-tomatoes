@@ -89,6 +89,8 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
     queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
     queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });
     queryClient.invalidateQueries({ queryKey: ['topFights'] });
+    queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+    queryClient.invalidateQueries({ queryKey: ['search'] });
   };
 
   const handleDone = async () => {
