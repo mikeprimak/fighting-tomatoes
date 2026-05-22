@@ -91,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
     queryClient.invalidateQueries({ queryKey: ['preFightComments'] });
     queryClient.invalidateQueries({ queryKey: ['fightReviews'] });
+    queryClient.invalidateQueries({ queryKey: ['search'] });
   }, [user?.id, queryClient]);
 
   const login = useCallback(async (email: string, password: string) => {

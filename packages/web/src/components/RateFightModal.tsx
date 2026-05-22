@@ -5,6 +5,7 @@ import { Star } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import {
   rateFight,
+  deleteFightRating,
   reviewFight,
   updateReview,
   getFightReviews,
@@ -69,8 +70,13 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
 
   const persistChanges = async () => {
     const tasks: Promise<any>[] = [];
-    if (selectedRating != null && selectedRating !== (existingRating ?? null)) {
-      tasks.push(rateFight(fight.id, selectedRating));
+    const ratingChanged = selectedRating !== (existingRating ?? null);
+    if (ratingChanged) {
+      if (selectedRating == null) {
+        tasks.push(deleteFightRating(fight.id));
+      } else {
+        tasks.push(rateFight(fight.id, selectedRating));
+      }
     }
     if (isAuthenticated && selectedRating != null) {
       const trimmed = comment.trim();

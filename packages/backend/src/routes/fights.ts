@@ -3206,6 +3206,51 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // DELETE /api/fights/:id/prediction - Remove user's prediction for a fight
+  fastify.delete<{
+    Params: { id: string };
+  }>('/fights/:id/prediction', {
+    preHandler: [authenticateUser, requireEmailVerification],
+  }, async (request: any, reply: any) => {
+    try {
+      const fightId = request.params.id;
+      const currentUserId = (request as any).user.id;
+
+      await fastify.prisma.fightPrediction.deleteMany({
+        where: {
+          userId: currentUserId,
+          fightId,
+        },
+      });
+
+      // Recompute aggregate hype so the client cache can update immediately.
+      const aggregateResult = await fastify.prisma.fightPrediction.aggregate({
+        where: {
+          fightId,
+          predictedRating: { not: null },
+        },
+        _avg: { predictedRating: true },
+        _count: true,
+      });
+
+      const averageHype = aggregateResult._avg.predictedRating
+        ? Math.round(aggregateResult._avg.predictedRating * 10) / 10
+        : 0;
+
+      return reply.send({
+        message: 'Prediction removed',
+        averageHype,
+        totalHypePredictions: aggregateResult._count,
+      });
+    } catch (error) {
+      console.error('Prediction delete error:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
   // GET /api/fights/:id/predictions - Get aggregate prediction stats for a fight
   fastify.get('/fights/:id/predictions', async (request: FastifyRequest<{
     Params: { id: string };
