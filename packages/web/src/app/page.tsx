@@ -3,6 +3,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getEvents } from '@/lib/api';
 import { useOrgFilter } from '@/lib/orgFilter';
+import { isEventLiveNow } from '@/lib/eventStatus';
 import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { EventCard } from '@/components/EventCard';
 import { Loader2 } from 'lucide-react';
@@ -29,7 +30,7 @@ export default function UpcomingEventsPage() {
   });
 
   const allEvents = data?.pages.flatMap(page => page.events) ?? [];
-  const filteredEvents = filterEventsByOrg(allEvents);
+  const filteredEvents = filterEventsByOrg(allEvents.filter((e: any) => !isEventLiveNow(e)));
 
   return (
     <div>
