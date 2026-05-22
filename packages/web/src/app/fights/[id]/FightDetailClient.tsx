@@ -309,7 +309,6 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
         fight={fight}
         existingRating={fight.userRating}
         existingReview={fight.userReview}
-        existingTags={fight.userTags}
       />
       <HypeFightModal
         isOpen={hypeModalOpen}
