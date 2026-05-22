@@ -434,9 +434,8 @@ export default function FighterDetailScreen() {
                   {/* Upcoming Fights Section */}
                   {upcomingFights.length > 0 && (
                     <>
-                      <View style={[styles.columnHeadersRow, { marginBottom: 12 }]}>
+                      <View style={styles.columnHeadersRow}>
                         <View style={styles.columnHeadersUpcoming}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
                           <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
                         </View>
                         <View style={styles.columnHeadersUpcomingRight}>
@@ -460,6 +459,15 @@ export default function FighterDetailScreen() {
                   {completedFights.length > 0 && (
                     <>
                       {upcomingFights.length > 0 && <View style={{ marginTop: 20 }} />}
+                      <View style={styles.columnHeadersRow}>
+                        <View style={styles.columnHeadersCompleted}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
+                        </View>
+                        <View style={styles.columnHeadersCompletedRight}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
+                        </View>
+                      </View>
                       {completedFights.map((fight: Fight, index: number) => (
                         <FightDisplayCard
                           key={fight.id}
@@ -477,6 +485,15 @@ export default function FighterDetailScreen() {
                   {/* Completed Fights Section (shown first for rating sorts) */}
                   {completedFights.length > 0 && (
                     <>
+                      <View style={styles.columnHeadersRow}>
+                        <View style={styles.columnHeadersCompleted}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
+                        </View>
+                        <View style={styles.columnHeadersCompletedRight}>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>RATING</Text>
+                        </View>
+                      </View>
                       {completedFights.map((fight: Fight, index: number) => (
                         <FightDisplayCard
                           key={fight.id}
@@ -492,9 +509,8 @@ export default function FighterDetailScreen() {
                   {/* Upcoming Fights Section (shown last for rating sorts) */}
                   {upcomingFights.length > 0 && (
                     <>
-                      <View style={[styles.columnHeadersRow, { marginBottom: 12, marginTop: completedFights.length > 0 ? 20 : 0 }]}>
+                      <View style={[styles.columnHeadersRow, { marginTop: completedFights.length > 0 ? 20 : 0 }]}>
                         <View style={styles.columnHeadersUpcoming}>
-                          <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>ALL</Text>
                           <Text style={[styles.columnHeaderText, { color: colors.textSecondary }]}>HYPE</Text>
                         </View>
                         <View style={styles.columnHeadersUpcomingRight}>
@@ -677,12 +693,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginHorizontal: 16,
+    paddingVertical: 8,
+    marginBottom: 2,
   },
   columnHeadersUpcoming: {
     flexDirection: 'column',
     alignItems: 'center',
     gap: 0,
-    marginLeft: -16,
     width: 60,
     justifyContent: 'center',
   },
@@ -690,7 +708,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'center',
     gap: 0,
-    marginRight: -18,
     width: 60,
     justifyContent: 'center',
   },

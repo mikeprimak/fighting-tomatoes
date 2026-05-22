@@ -6,6 +6,21 @@ import { secureStorage } from '../utils/secureStorage';
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 
+function decodeJwtExp(token: string): number | null {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const padded = payload + '='.repeat((4 - (payload.length % 4)) % 4);
+    // React Native provides `atob` as a global.
+    const json = atob(padded);
+    const claims = JSON.parse(json);
+    return typeof claims.exp === 'number' ? claims.exp : null;
+  } catch {
+    return null;
+  }
+}
+
 const getApiBaseUrl = () => {
   // TEMPORARY: Use production API for pre-launch testing
   // This ensures email verification links work correctly
@@ -128,7 +143,26 @@ class ApiService {
 
   private async getAuthToken(): Promise<string | null> {
     try {
-      return await secureStorage.getItem('accessToken');
+      const token = await secureStorage.getItem('accessToken');
+      if (!token) return null;
+
+      // Decode JWT exp (payload is base64url-encoded JSON). If the token is
+      // already expired (or within a 30s buffer) trigger a refresh up-front.
+      // Without this, polling endpoints with optional auth (e.g. /api/events)
+      // accept the expired token, return anonymous data, and the user's
+      // ratings/hype quietly disappear until a 401-triggered refresh elsewhere.
+      const exp = decodeJwtExp(token);
+      if (exp != null && exp * 1000 - Date.now() < 30_000) {
+        const refreshed = await this.refreshAccessToken();
+        if (refreshed) {
+          return await secureStorage.getItem('accessToken');
+        }
+        // Refresh failed — fall through and return the (expired) token so the
+        // server can decide. Returning null would force anonymous, which is
+        // worse for required-auth endpoints (they 401 and the AuthContext
+        // logout path can handle it cleanly).
+      }
+      return token;
     } catch (error) {
       console.error('Error getting auth token:', error);
       return null;
