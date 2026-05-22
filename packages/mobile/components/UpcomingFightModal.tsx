@@ -348,7 +348,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     },
   });
 
-  const handleDone = useCallback(async () => {
+  const handleDone = useCallback(async (options?: { skipReveal?: boolean }) => {
     // Save comment if it changed (use refs to avoid stale closure)
     if (isAuthenticated && fight) {
       const fightId = fight.id;
@@ -360,6 +360,10 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
           // Mutation error handled by onError callback
         }
       }
+    }
+    if (options?.skipReveal) {
+      onClose();
+      return;
     }
     // If user tapped a hype this session, render the reveal instantly using
     // the prefetched community distribution + a local delta for the user's
@@ -734,7 +738,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               </View>
               <TouchableOpacity
                 style={styles.seeCommentsLink}
-                onPress={async () => { const fightId = fight.id; await handleDone(); router.push(`/fight/${fightId}` as any); }}
+                onPress={async () => { const fightId = fight.id; await handleDone({ skipReveal: true }); router.push(`/fight/${fightId}` as any); }}
               >
                 <Text style={[styles.seeCommentsText, { color: colors.textSecondary }]}>
                   {(() => {
@@ -776,7 +780,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
 
             <TouchableOpacity
               style={[styles.doneButton, { backgroundColor: colors.primary }]}
-              onPress={handleDone}
+              onPress={() => { handleDone(); }}
             >
               <Text style={styles.doneButtonText}>Done</Text>
             </TouchableOpacity>

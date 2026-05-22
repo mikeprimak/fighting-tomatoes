@@ -410,6 +410,11 @@ function LiveFightCard({
     [fight.userHypePrediction]
   );
 
+  const userRatingColor = useMemo(
+    () => getHypeHeatmapColor(fight.userRating || 0),
+    [fight.userRating]
+  );
+
   // Interpolate highlight color for animation
   const highlightBackgroundColor = highlightAnim.interpolate({
     inputRange: [0, 1],
@@ -454,10 +459,13 @@ function LiveFightCard({
               ? 'rgba(245, 197, 24, 0.12)' // subtle gold wash on dark background
               : 'rgba(245, 197, 24, 0.10)', // subtle gold wash on light background
           }}>
-            {/* Full-height community hype square on the left */}
+            {/* Hype square - behind rating square, offset 5px down and right */}
             <View style={[
               styles.hypeSquare,
               {
+                marginTop: -25 + 5,
+                left: 2 + 5,
+                zIndex: 0,
                 backgroundColor: (predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0)
                   ? hypeBorderColor
                   : 'transparent',
@@ -466,24 +474,39 @@ function LiveFightCard({
                   : 1,
                 borderColor: colors.textSecondary,
               }
+            ]} />
+
+            {/* Full-height community rating square on the left */}
+            <View style={[
+              styles.hypeSquare,
+              {
+                zIndex: 1,
+                backgroundColor: (fight.averageRating !== undefined && fight.averageRating > 0)
+                  ? ratingBorderColor
+                  : 'transparent',
+                borderWidth: (fight.averageRating !== undefined && fight.averageRating > 0)
+                  ? 0
+                  : 1,
+                borderColor: colors.textSecondary,
+              }
             ]}>
-              {(predictionStats?.averageHype !== undefined && predictionStats.averageHype > 0) ? (
+              {(fight.averageRating !== undefined && fight.averageRating > 0) ? (
                 <>
                   <Text style={styles.hypeSquareNumber}>
-                    {predictionStats.averageHype === 10 ? '10' : predictionStats.averageHype.toFixed(1)}
+                    {fight.averageRating === 10 ? '10' : fight.averageRating.toFixed(1)}
                   </Text>
-                  {(fight as any).hypeCount > 0 || (fight as any).commentCount > 0 ? (
+                  {(fight.totalRatings > 0 || (fight as any).reviewCount > 0) ? (
                     <View style={styles.hypeSquareCountRow}>
-                      {(fight as any).hypeCount > 0 && (
+                      {fight.totalRatings > 0 && (
                         <Text style={styles.hypeSquareCount}>
-                          ({(fight as any).hypeCount})
+                          ({fight.totalRatings})
                         </Text>
                       )}
-                      {(fight as any).commentCount > 0 && (
+                      {(fight as any).reviewCount > 0 && (
                         <View style={styles.commentCountRow}>
                           <FontAwesome name="comment" size={7} color="rgba(0,0,0,0.5)" />
                           <Text style={styles.commentCountText}>
-                            {(fight as any).commentCount}
+                            {(fight as any).reviewCount}
                           </Text>
                         </View>
                       )}
@@ -492,17 +515,17 @@ function LiveFightCard({
                 </>
               ) : (
                 <>
-                  <FontAwesome6
-                    name="fire-flame-curved"
-                    size={16}
+                  <FontAwesome
+                    name="star"
+                    size={24}
                     color={colors.textSecondary}
-                    style={{ opacity: 0.5 }}
+                    style={{ opacity: 0.3 }}
                   />
-                  {(fight as any).commentCount > 0 && (
+                  {(fight as any).reviewCount > 0 && (
                     <View style={styles.commentCountRow}>
                       <FontAwesome name="comment" size={7} color="rgba(255,255,255,0.5)" />
                       <Text style={[styles.commentCountText, { color: 'rgba(255,255,255,0.5)' }]}>
-                        {(fight as any).commentCount}
+                        {(fight as any).reviewCount}
                       </Text>
                     </View>
                   )}
@@ -510,22 +533,22 @@ function LiveFightCard({
               )}
             </View>
 
-            {/* User hype flame icon on the right */}
+            {/* User rating star icon on the right */}
             <View style={styles.userHypeFlameContainer}>
-              {(fight.userHypePrediction !== undefined && fight.userHypePrediction !== null && fight.userHypePrediction > 0) ? (
-                <View style={styles.userHypeFlameWrapper}>
-                  <FontAwesome6
-                    name="fire-flame-curved"
+              {(fight.userRating !== undefined && fight.userRating !== null && fight.userRating > 0) ? (
+                <Animated.View style={[styles.userHypeFlameWrapper, { transform: [{ scale: ratingScaleAnim }] }]}>
+                  <FontAwesome
+                    name="star"
                     size={42}
-                    color={userHypeColor}
+                    color={userRatingColor}
                   />
                   <Text style={styles.userHypeFlameNumber}>
-                    {Math.round(fight.userHypePrediction).toString()}
+                    {Math.round(fight.userRating).toString()}
                   </Text>
-                </View>
+                </Animated.View>
               ) : (
-                <FontAwesome6
-                  name="fire-flame-curved"
+                <FontAwesome
+                  name="star"
                   size={32}
                   color={colors.textSecondary}
                   style={{ opacity: 0.3 }}
