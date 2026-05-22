@@ -63,8 +63,12 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype }: HypeFig
 
   const persistChanges = async () => {
     const tasks: Promise<any>[] = [];
-    if (selectedHype != null && selectedHype !== existingHype) {
-      tasks.push(createFightPrediction(fight.id, { predictedRating: selectedHype }));
+    if (selectedHype !== (existingHype ?? null)) {
+      tasks.push(
+        createFightPrediction(fight.id, {
+          predictedRating: selectedHype ?? undefined,
+        }),
+      );
     }
     if (isAuthenticated) {
       const trimmed = comment.trim();
@@ -177,7 +181,7 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype }: HypeFig
               <button
                 key={level}
                 type="button"
-                onClick={() => setSelectedHype(level)}
+                onClick={() => setSelectedHype(prev => (prev === level ? null : level))}
                 className="flex h-9 w-7 items-center justify-center"
                 aria-label={`Hype level ${level}`}
               >
