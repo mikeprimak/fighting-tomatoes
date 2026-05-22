@@ -5,6 +5,7 @@ import { Flame } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import {
   createFightPrediction,
+  deleteFightPrediction,
   createPreFightComment,
   getFightPreFightComments,
 } from '@/lib/api';
@@ -64,11 +65,15 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype }: HypeFig
   const persistChanges = async () => {
     const tasks: Promise<any>[] = [];
     if (selectedHype !== (existingHype ?? null)) {
-      tasks.push(
-        createFightPrediction(fight.id, {
-          predictedRating: selectedHype ?? undefined,
-        }),
-      );
+      if (selectedHype == null) {
+        tasks.push(deleteFightPrediction(fight.id));
+      } else {
+        tasks.push(
+          createFightPrediction(fight.id, {
+            predictedRating: selectedHype,
+          }),
+        );
+      }
     }
     if (isAuthenticated) {
       const trimmed = comment.trim();

@@ -223,6 +223,12 @@ export async function rateFight(fightId: string, rating: number) {
   });
 }
 
+export async function deleteFightRating(fightId: string) {
+  return makeRequest<{ message: string }>(`/fights/${fightId}/rating`, {
+    method: 'DELETE',
+  });
+}
+
 export async function revealFightOutcome(fightId: string) {
   return makeRequest<{ message: string; hasRevealedOutcome: boolean }>(`/fights/${fightId}/reveal-outcome`, {
     method: 'POST',
@@ -302,6 +308,13 @@ export async function createFightPrediction(fightId: string, data: {
   return makeRequest<{ prediction: any; averageHype: number; totalHypePredictions: number; message: string }>(
     `/fights/${fightId}/prediction`,
     { method: 'POST', body: JSON.stringify(data) },
+  );
+}
+
+export async function deleteFightPrediction(fightId: string) {
+  return makeRequest<{ message: string; averageHype: number; totalHypePredictions: number }>(
+    `/fights/${fightId}/prediction`,
+    { method: 'DELETE' },
   );
 }
 

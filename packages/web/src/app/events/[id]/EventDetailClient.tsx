@@ -109,17 +109,13 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
 
       {sortedSectionKeys.map(section => (
         <div key={section} className="mb-6">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="text-xs font-semibold tracking-wider text-text-secondary">{section}</span>
-            <div className="h-px flex-1 bg-border" />
-            {isPast && (
-              <div className="flex gap-4 text-[10px] font-medium text-text-secondary">
-                <span>RATING</span>
-                <span>MY RATING</span>
-              </div>
-            )}
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {sortedSectionKeys.length > 1 && (
+            <div className="mb-1.5 flex items-center gap-2">
+              <span className="text-[10px] font-semibold tracking-wider text-text-secondary">{section}</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+          )}
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
             {sections[section].map((fight: any) => {
               if (isLive) {
                 return (
