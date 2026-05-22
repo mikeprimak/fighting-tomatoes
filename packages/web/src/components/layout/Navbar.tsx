@@ -40,6 +40,12 @@ export function Navbar() {
         <div className="flex h-14 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
+            <img
+              src="/good-fights-hand.png"
+              alt=""
+              aria-hidden="true"
+              className="h-8 w-8 shrink-0 object-contain"
+            />
             <span className="text-xl font-bold text-primary">GOOD FIGHTS</span>
           </Link>
 
