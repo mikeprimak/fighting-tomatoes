@@ -33,7 +33,7 @@ export default async function EventDetailPage({ params }: Props) {
   try {
     const [eventRes, fightsRes] = await Promise.all([
       fetch(`${API_BASE_URL}/events/${id}`, { next: { revalidate: 60 } }),
-      fetch(`${API_BASE_URL}/events/${id}/fights`, { next: { revalidate: 60 } }),
+      fetch(`${API_BASE_URL}/fights?eventId=${id}&limit=50`, { next: { revalidate: 60 } }),
     ]);
     if (eventRes.ok) initialEvent = (await eventRes.json()).event;
     if (fightsRes.ok) initialFights = (await fightsRes.json()).fights || [];
