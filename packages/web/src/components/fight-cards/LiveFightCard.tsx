@@ -1,8 +1,9 @@
 'use client';
 
-import Link from 'next/link';
+import { useState } from 'react';
 import { Flame, MessageCircle } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
+import { RateFightModal } from '@/components/RateFightModal';
 
 interface Fighter {
   id: string;
@@ -28,6 +29,8 @@ interface LiveFightCardProps {
     hypeCount?: number;
     commentCount?: number;
     userHypePrediction?: number;
+    userRating?: number;
+    userReview?: { content: string; rating?: number };
     userPredictedWinner?: string | null;
   };
   isUpNext?: boolean;
@@ -60,6 +63,7 @@ function FighterImage({ fighter, hasUserPick }: { fighter: Fighter; hasUserPick:
 export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps) {
   const isLive = isLiveNow ?? fight.fightStatus === 'LIVE';
   const stripText = isLive ? 'Live Now' : 'Up Next';
+  const [modalOpen, setModalOpen] = useState(false);
 
   const hypeScore = fight.averageHype ?? 0;
   const userHype = fight.userHypePrediction ?? 0;
@@ -75,7 +79,12 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
   const userPickedF2 = fight.userPredictedWinner === fight.fighter2.id;
 
   return (
-    <Link href={`/fights/${fight.id}`} className="block">
+    <>
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className="block w-full text-left"
+      >
       <div className="group overflow-hidden transition-colors hover:bg-background/40">
         {/* Status strip */}
         <div className="flex items-center justify-center gap-1.5 bg-[#F5C518] py-1.5">
@@ -186,6 +195,14 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
           </div>
         </div>
       </div>
-    </Link>
+      </button>
+      <RateFightModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        fight={fight}
+        existingRating={fight.userRating || undefined}
+        existingReview={fight.userReview}
+      />
+    </>
   );
 }
