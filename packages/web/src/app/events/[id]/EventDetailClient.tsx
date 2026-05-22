@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getEvent, getEventFights } from '@/lib/api';
+import { getEvent, getFights } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { formatEventDate, formatEventTime } from '@/utils/dateFormatters';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
@@ -31,6 +32,8 @@ interface Props {
 }
 
 export function EventDetailClient({ eventId, initialEvent, initialFights }: Props) {
+  const { isAuthenticated } = useAuth();
+
   const { data: eventData } = useQuery({
     queryKey: ['event', eventId],
     queryFn: () => getEvent(eventId),
@@ -38,9 +41,9 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
   });
 
   const { data: fightsData, isLoading: fightsLoading } = useQuery({
-    queryKey: ['eventFights', eventId],
-    queryFn: () => getEventFights(eventId),
-    initialData: initialFights.length > 0 ? { fights: initialFights } : undefined,
+    queryKey: ['eventFights', eventId, isAuthenticated],
+    queryFn: () => getFights({ eventId, limit: 50, includeUserData: isAuthenticated }),
+    initialData: initialFights.length > 0 ? { fights: initialFights, pagination: { page: 1, limit: 50, total: initialFights.length, totalPages: 1 } } : undefined,
     refetchInterval: eventData?.event?.eventStatus === 'LIVE' ? 10000 : 30000,
   });
 
