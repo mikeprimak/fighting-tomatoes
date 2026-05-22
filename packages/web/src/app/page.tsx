@@ -6,6 +6,7 @@ import { useOrgFilter } from '@/lib/orgFilter';
 import { isEventLiveNow } from '@/lib/eventStatus';
 import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { EventCard } from '@/components/EventCard';
+import { LoadMoreSentinel } from '@/components/layout/LoadMoreSentinel';
 import { Loader2 } from 'lucide-react';
 
 export default function UpcomingEventsPage() {
@@ -61,24 +62,11 @@ export default function UpcomingEventsPage() {
         </p>
       )}
 
-      {hasNextPage && (
-        <div className="flex justify-center py-4">
-          <button
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="flex items-center gap-2 rounded-lg bg-card px-6 py-2 text-sm font-medium text-foreground transition-colors hover:bg-border disabled:opacity-50"
-          >
-            {isFetchingNextPage ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              'Load More Events'
-            )}
-          </button>
-        </div>
-      )}
+      <LoadMoreSentinel
+        hasMore={!!hasNextPage}
+        isFetching={isFetchingNextPage}
+        onIntersect={fetchNextPage}
+      />
     </div>
   );
 }
