@@ -10,6 +10,7 @@ import {
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 interface HypeFightModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ const WHEEL_NUMBERS = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 export function HypeFightModal({ isOpen, onClose, fight, existingHype }: HypeFightModalProps) {
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const [selectedHype, setSelectedHype] = useState<number | null>(existingHype ?? null);
   const [comment, setComment] = useState('');
@@ -59,24 +61,28 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype }: HypeFig
     ? -(10 - selectedHype) * FLAME_SLOT_HEIGHT
     : -10 * FLAME_SLOT_HEIGHT;
 
+  const persistChanges = async () => {
+    const tasks: Promise<any>[] = [];
+    if (selectedHype != null && selectedHype !== existingHype) {
+      tasks.push(createFightPrediction(fight.id, { predictedRating: selectedHype }));
+    }
+    if (isAuthenticated) {
+      const trimmed = comment.trim();
+      if (trimmed !== initialCommentRef.current.trim()) {
+        tasks.push(createPreFightComment(fight.id, trimmed));
+      }
+    }
+    await Promise.all(tasks);
+    queryClient.invalidateQueries({ queryKey: ['events'] });
+    queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
+    queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+  };
+
   const handleDone = async () => {
     setSaving(true);
     setError('');
     try {
-      const tasks: Promise<any>[] = [];
-      if (selectedHype != null && selectedHype !== existingHype) {
-        tasks.push(createFightPrediction(fight.id, { predictedRating: selectedHype }));
-      }
-      if (isAuthenticated) {
-        const trimmed = comment.trim();
-        if (trimmed !== initialCommentRef.current.trim()) {
-          tasks.push(createPreFightComment(fight.id, trimmed));
-        }
-      }
-      await Promise.all(tasks);
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
-      queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+      await persistChanges();
       onClose();
     } catch (err: any) {
       setError(err?.error || 'Failed to save');
@@ -84,6 +90,25 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype }: HypeFig
       setSaving(false);
     }
   };
+
+  const handleSeeComments = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      await persistChanges();
+      onClose();
+      router.push(`/fights/${fight.id}`);
+    } catch (err: any) {
+      setError(err?.error || 'Failed to save');
+      setSaving(false);
+    }
+  };
+
+  const totalComments =
+    commentsData?.comments?.reduce(
+      (acc: number, c: any) => acc + 1 + (c.replies?.length || 0),
+      0,
+    ) ?? 0;
 
   const f1 = fight.fighter1 ?? {};
   const f2 = fight.fighter2 ?? {};
@@ -178,6 +203,16 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype }: HypeFig
               rows={3}
               className="w-full resize-none rounded-lg border border-border bg-card p-3 text-sm text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none"
             />
+            <button
+              type="button"
+              onClick={handleSeeComments}
+              disabled={saving}
+              className="mt-2 w-full text-right text-xs text-text-secondary hover:text-foreground disabled:opacity-50"
+            >
+              {totalComments > 0
+                ? `See ${totalComments} ${totalComments === 1 ? 'Comment' : 'Comments'} >`
+                : 'See Comments >'}
+            </button>
           </div>
         )}
 
