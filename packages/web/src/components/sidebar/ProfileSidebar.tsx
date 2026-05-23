@@ -1,6 +1,7 @@
 'use client';
 
 import { IdentityBlock } from './IdentityBlock';
+import { DistributionBlock } from './DistributionBlock';
 
 /**
  * Right-rail "About you" sidebar.
@@ -12,6 +13,7 @@ export function ProfileSidebar() {
   return (
     <aside className="space-y-4">
       <IdentityBlock />
+      <DistributionBlock />
     </aside>
   );
 }
