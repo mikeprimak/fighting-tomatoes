@@ -375,6 +375,12 @@ export async function getFollowedFighters() {
   return makeRequest<{ fighters: any[] }>('/fighters/followed');
 }
 
+export async function getTopFollowedFighters(limit = 20) {
+  return makeRequest<{
+    data: Array<{ fighter: any; followerCount: number; isFollowing: boolean }>;
+  }>(`/community/top-followed-fighters?limit=${limit}`);
+}
+
 // ==================== PRE-FIGHT COMMENTS ====================
 
 export async function createPreFightComment(fightId: string, content: string) {

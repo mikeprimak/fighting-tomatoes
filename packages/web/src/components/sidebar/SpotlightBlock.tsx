@@ -157,14 +157,18 @@ function SpotlightShell({
 
 function PastFightCard({ payload }: { payload: { fight: any } }) {
   const f = payload.fight;
+  const promotion = f.event?.promotion;
+  const eventName = f.event?.name ?? '';
+  const eventLine = promotion
+    ? `Event: ${promotion}${eventName ? ` · ${eventName}` : ''}`
+    : eventName;
   return (
     <SpotlightShell icon={<Telescope size={11} />} label="A fight you might love">
       <Link href={`/fights/${f.id}`} className="block group">
-        <p className="truncate text-sm font-medium text-foreground group-hover:text-primary">
-          {fighterLast(f.fighter1)} vs {fighterLast(f.fighter2)}
-        </p>
-        <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-text-secondary">
-          <span className="truncate">{f.event?.name ?? ''}</span>
+        <div className="flex items-center justify-between gap-2">
+          <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground group-hover:text-primary">
+            {fighterLast(f.fighter1)} vs {fighterLast(f.fighter2)}
+          </p>
           <span className="relative flex h-7 w-7 shrink-0 items-center justify-center">
             <Star
               size={28}
@@ -177,6 +181,9 @@ function PastFightCard({ payload }: { payload: { fight: any } }) {
             </span>
           </span>
         </div>
+        {eventLine ? (
+          <p className="mt-1 truncate text-[11px] text-text-secondary">{eventLine}</p>
+        ) : null}
         <p className="mt-2 text-[10px] text-text-secondary">
           {f.totalRatings} fans agreed.
         </p>
