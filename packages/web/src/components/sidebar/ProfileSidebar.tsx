@@ -18,7 +18,7 @@ import { MightLikeBlock } from './MightLikeBlock';
  */
 export function ProfileSidebar() {
   return (
-    <aside className="space-y-4">
+    <aside aria-label="About you" className="space-y-4">
       <IdentityBlock />
       <FanDNABlock />
       <DistributionBlock />
