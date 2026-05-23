@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { getMyRatings, getTopRecentFights } from '@/lib/api';
-import { Telescope, Star } from 'lucide-react';
+import { Telescope } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 
 function fighterLast(
@@ -73,17 +73,14 @@ export function SpotlightBlock() {
           <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground group-hover:text-primary">
             {fighterLast(f.fighter1)} vs {fighterLast(f.fighter2)}
           </p>
-          <span className="relative flex h-7 w-7 shrink-0 items-center justify-center">
-            <Star
-              size={28}
-              fill={getHypeHeatmapColor(f.averageRating ?? 0)}
-              color={getHypeHeatmapColor(f.averageRating ?? 0)}
-              strokeWidth={1.5}
-            />
-            <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_70%)]">
-              {Math.round(f.averageRating ?? 0)}
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md"
+            style={{ backgroundColor: getHypeHeatmapColor(f.averageRating ?? 0) }}
+          >
+            <span className="text-sm font-bold leading-none text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
+              {(f.averageRating ?? 0) === 10 ? '10' : (f.averageRating ?? 0).toFixed(1)}
             </span>
-          </span>
+          </div>
         </div>
         {eventLine ? (
           <p className="mt-1 truncate text-[11px] text-text-secondary">{eventLine}</p>
