@@ -557,3 +557,38 @@ export interface FanDNAProfile {
 export async function getFanDNAProfile() {
   return makeRequest<FanDNAProfile>('/fan-dna/profile');
 }
+
+// ==================== ME / RECENCY ====================
+
+export interface UpcomingFollowedFight {
+  id: string;
+  eventId: string;
+  event: {
+    id: string;
+    name: string;
+    date: string;
+    promotion: string | null;
+  };
+  fighter1: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    nickname: string | null;
+    profileImage: string | null;
+  };
+  fighter2: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    nickname: string | null;
+    profileImage: string | null;
+  };
+  isFollowingFighter1: boolean;
+  isFollowingFighter2: boolean;
+}
+
+export async function getUpcomingFollowedFights(limit = 5) {
+  return makeRequest<{ fights: UpcomingFollowedFight[] }>(
+    `/fights/upcoming-followed?limit=${limit}`,
+  );
+}
