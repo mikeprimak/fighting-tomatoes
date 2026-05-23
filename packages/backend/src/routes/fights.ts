@@ -4233,6 +4233,181 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // GET /api/fights/upcoming-hyped - upcoming fights the user has placed a high
+  // hype prediction on. Used by the web sidebar "fights you're hyped for" block.
+  fastify.get<{
+    Querystring: { limit?: string; minHype?: string };
+  }>('/fights/upcoming-hyped', {
+    preHandler: [authenticateUser],
+  }, async (request, reply) => {
+    try {
+      const currentUserId = (request as any).user.id;
+      const limit = Math.min(Math.max(parseInt(request.query.limit || '5'), 1), 25);
+      const minHype = Math.min(Math.max(parseInt(request.query.minHype || '7'), 1), 10);
+
+      const now = new Date();
+      const predictions = await fastify.prisma.fightPrediction.findMany({
+        where: {
+          userId: currentUserId,
+          predictedRating: { gte: minHype },
+          fight: {
+            fightStatus: { not: 'CANCELLED' },
+            event: { date: { gte: now } },
+          },
+        },
+        orderBy: { fight: { event: { date: 'asc' } } },
+        take: limit,
+        select: {
+          predictedRating: true,
+          fight: {
+            select: {
+              id: true,
+              eventId: true,
+              fighter1Id: true,
+              fighter2Id: true,
+              event: {
+                select: { id: true, name: true, date: true, promotion: true },
+              },
+              fighter1: {
+                select: { id: true, firstName: true, lastName: true, nickname: true, profileImage: true },
+              },
+              fighter2: {
+                select: { id: true, firstName: true, lastName: true, nickname: true, profileImage: true },
+              },
+            },
+          },
+        },
+      });
+
+      const fights = predictions.map((p) => ({
+        id: p.fight.id,
+        eventId: p.fight.eventId,
+        event: p.fight.event,
+        fighter1: p.fight.fighter1,
+        fighter2: p.fight.fighter2,
+        userHype: p.predictedRating,
+      }));
+
+      return reply.send({ fights });
+    } catch (error) {
+      console.error('Error in /fights/upcoming-hyped route:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
+  // GET /api/fights/upcoming-recommended - upcoming fights involving fighters the
+  // user follows OR has rated highly in the past. Excludes fights the user has
+  // already hyped (those live in /fights/upcoming-hyped). Sidebar "might like".
+  fastify.get<{
+    Querystring: { limit?: string; minPastRating?: string };
+  }>('/fights/upcoming-recommended', {
+    preHandler: [authenticateUser],
+  }, async (request, reply) => {
+    try {
+      const currentUserId = (request as any).user.id;
+      const limit = Math.min(Math.max(parseInt(request.query.limit || '5'), 1), 25);
+      const minPastRating = Math.min(Math.max(parseInt(request.query.minPastRating || '8'), 1), 10);
+
+      // Followed fighter IDs.
+      const follows = await fastify.prisma.userFighterFollow.findMany({
+        where: { userId: currentUserId },
+        select: { fighterId: true },
+      });
+
+      // Fighters the user has historically rated highly.
+      const highRatedFights = await fastify.prisma.fightRating.findMany({
+        where: {
+          userId: currentUserId,
+          rating: { gte: minPastRating },
+        },
+        select: {
+          fight: { select: { fighter1Id: true, fighter2Id: true } },
+        },
+        take: 500,
+      });
+
+      const fighterPool = new Set<string>();
+      for (const f of follows) fighterPool.add(f.fighterId);
+      for (const r of highRatedFights) {
+        if (r.fight.fighter1Id) fighterPool.add(r.fight.fighter1Id);
+        if (r.fight.fighter2Id) fighterPool.add(r.fight.fighter2Id);
+      }
+      const fighterIds = [...fighterPool];
+      if (fighterIds.length === 0) {
+        return reply.send({ fights: [] });
+      }
+
+      // Fights the user has already hyped — exclude these so the two blocks don't overlap.
+      const hypedFightIds = await fastify.prisma.fightPrediction.findMany({
+        where: { userId: currentUserId, predictedRating: { not: null } },
+        select: { fightId: true },
+      });
+      const excludeIds = hypedFightIds.map((p) => p.fightId);
+
+      const now = new Date();
+      const fights = await fastify.prisma.fight.findMany({
+        where: {
+          id: { notIn: excludeIds.length > 0 ? excludeIds : ['__none__'] },
+          fightStatus: { not: 'CANCELLED' },
+          OR: [
+            { fighter1Id: { in: fighterIds } },
+            { fighter2Id: { in: fighterIds } },
+          ],
+          event: { date: { gte: now } },
+        },
+        orderBy: { event: { date: 'asc' } },
+        take: limit,
+        include: {
+          event: {
+            select: { id: true, name: true, date: true, promotion: true },
+          },
+          fighter1: {
+            select: { id: true, firstName: true, lastName: true, nickname: true, profileImage: true },
+          },
+          fighter2: {
+            select: { id: true, firstName: true, lastName: true, nickname: true, profileImage: true },
+          },
+        },
+      });
+
+      const followedFighterIds = new Set(follows.map((f) => f.fighterId));
+      const transformed = fights.map((f) => {
+        // Reason chain: "following X" beats "you liked their last fight" if both apply.
+        let reason: string;
+        const f1Followed = followedFighterIds.has(f.fighter1Id);
+        const f2Followed = followedFighterIds.has(f.fighter2Id);
+        if (f1Followed && f2Followed) {
+          reason = 'Both followed';
+        } else if (f1Followed) {
+          reason = `Following ${f.fighter1.lastName || f.fighter1.firstName}`;
+        } else if (f2Followed) {
+          reason = `Following ${f.fighter2.lastName || f.fighter2.firstName}`;
+        } else {
+          reason = 'You liked their last fight';
+        }
+        return {
+          id: f.id,
+          eventId: f.eventId,
+          event: f.event,
+          fighter1: f.fighter1,
+          fighter2: f.fighter2,
+          reason,
+        };
+      });
+
+      return reply.send({ fights: transformed });
+    } catch (error) {
+      console.error('Error in /fights/upcoming-recommended route:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
   // GET /api/fights/my-comments - Get user's comments with pagination (by individual comments)
   fastify.get<{
     Querystring: { page?: string; limit?: string; sortBy?: string };
