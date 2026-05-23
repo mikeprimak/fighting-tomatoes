@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { search } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { formatEventDate } from '@/utils/dateFormatters';
@@ -13,11 +14,12 @@ import { Suspense } from 'react';
 function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
+  const { isLoading: authLoading } = useAuth();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['search', query],
     queryFn: () => search(query, 20),
-    enabled: query.length >= 2,
+    enabled: !authLoading && query.length >= 2,
   });
 
   if (!query || query.length < 2) {
