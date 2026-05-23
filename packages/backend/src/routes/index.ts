@@ -327,9 +327,13 @@ export async function registerRoutes(fastify: FastifyInstance) {
           whereClause.AND = [upcomingCondition];
         }
       } else if (type === 'past') {
-        // Past events: only show events that are actually complete
-        // Don't show events just because their date passed (they might be live)
+        // Past events: only show events that are actually complete.
+        // Date guard catches the edge case where a scraper bumped an
+        // already-COMPLETED event's date into the future (real case
+        // 2026-05-23: Matchroom "Navarrete vs Nunez" surfaced at the
+        // top of past with a 2027 date / -344 days ago badge).
         whereClause.eventStatus = 'COMPLETED';
+        whereClause.date = { lte: new Date() };
 
         if (promotionFilter) {
           whereClause.AND = [promotionFilter];
