@@ -27,8 +27,8 @@ export function FanDNABlock() {
   const cards = data?.cards ?? [];
   if (cards.length === 0) return null;
 
-  // Cards arrive sorted by weight desc from the backend; show the top 3.
-  const top = cards.slice(0, 3);
+  // Cards arrive sorted by weight desc from the backend; show the top 4.
+  const top = cards.slice(0, 4);
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -37,7 +37,7 @@ export function FanDNABlock() {
         Fan DNA
       </h3>
 
-      <ul className="space-y-2.5">
+      <ul className="space-y-3">
         {top.map((card, i) => (
           <li key={`${card.traitId}-${i}`}>
             <DNARow card={card} />
@@ -59,23 +59,36 @@ export function FanDNABlock() {
 function DNARow({ card }: { card: FanDNACard }) {
   const familyColor = FAMILY_COLORS[card.family] ?? '#888';
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-start gap-2">
       {card.primaryStat ? (
-        <span
-          className="shrink-0 rounded px-1.5 py-0.5 text-[11px] font-bold tabular-nums"
-          style={{ backgroundColor: `${familyColor}22`, color: familyColor }}
+        <div
+          className="flex shrink-0 flex-col items-center justify-center rounded px-1.5 py-1 text-center"
+          style={{ backgroundColor: `${familyColor}22`, minWidth: 40 }}
         >
-          {card.primaryStat}
-        </span>
+          <span
+            className="text-[11px] font-bold leading-tight tabular-nums"
+            style={{ color: familyColor }}
+          >
+            {card.primaryStat}
+          </span>
+          {card.secondaryStat ? (
+            <span className="mt-0.5 text-[9px] leading-tight text-text-secondary">
+              {card.secondaryStat}
+            </span>
+          ) : null}
+        </div>
       ) : (
         <span
-          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
           style={{ backgroundColor: familyColor }}
         />
       )}
-      <p className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">
-        {card.headline}
-      </p>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold text-foreground">{card.headline}</p>
+        {card.body ? (
+          <p className="mt-0.5 text-[11px] leading-snug text-text-secondary">{card.body}</p>
+        ) : null}
+      </div>
     </div>
   );
 }
