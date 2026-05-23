@@ -107,7 +107,7 @@ export function IdentityBlock() {
       <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-3">
         <Stat value={user.totalRatings ?? 0} label="Ratings" />
         <Stat value={user.totalHype ?? 0} label="Hype" />
-        <Stat value={user.totalReviews ?? 0} label="Reviews" />
+        <Stat value={user.totalReviews ?? 0} label="Comments" />
       </div>
     </div>
   );
