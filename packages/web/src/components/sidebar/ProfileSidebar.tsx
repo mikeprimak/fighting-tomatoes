@@ -3,6 +3,7 @@
 import { IdentityBlock } from './IdentityBlock';
 import { DistributionBlock } from './DistributionBlock';
 import { RecencyBlock } from './RecencyBlock';
+import { SpotlightBlock } from './SpotlightBlock';
 
 /**
  * Right-rail "About you" sidebar.
@@ -14,6 +15,7 @@ export function ProfileSidebar() {
   return (
     <aside className="space-y-4">
       <IdentityBlock />
+      <SpotlightBlock />
       <RecencyBlock />
       <DistributionBlock />
     </aside>
