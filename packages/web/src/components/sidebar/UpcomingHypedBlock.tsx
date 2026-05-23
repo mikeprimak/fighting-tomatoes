@@ -52,7 +52,7 @@ export function UpcomingHypedBlock() {
                     color={getHypeHeatmapColor(f.userHype)}
                     strokeWidth={1.5}
                   />
-                  <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_70%)]">
+                  <span className="absolute inset-0 flex translate-y-[3px] items-center justify-center text-[11px] font-bold text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_70%)]">
                     {Math.round(f.userHype)}
                   </span>
                 </span>
