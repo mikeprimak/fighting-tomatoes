@@ -29,6 +29,18 @@ const DELAYS = {
 
 const delays = DELAYS[SCRAPER_MODE] || DELAYS.manual;
 
+// Tapology event IDs to skip — events whose page bundles unrelated fights
+// (sidebar/related events) that polluted our row, or events whose canonical
+// home is a different scraper. See docs/daily/2026-05-23.md.
+const SKIP_TAPOLOGY_EVENT_IDS = new Set([
+  '142087', // Foster vs. Ford (2026-05-30) — page contained 29 fights from 3+ unrelated cards; canonical home is Matchroom scraper
+]);
+
+function isBlacklistedEventUrl(url) {
+  const match = url && url.match(/\/events\/(\d+)-/);
+  return match ? SKIP_TAPOLOGY_EVENT_IDS.has(match[1]) : false;
+}
+
 const MONTHS = {
   'january': 0, 'jan': 0, 'february': 1, 'feb': 1, 'march': 2, 'mar': 2,
   'april': 3, 'apr': 3, 'may': 4, 'june': 5, 'jun': 5, 'july': 6, 'jul': 6,
@@ -258,6 +270,11 @@ async function main() {
     let skippedOld = 0;
 
     for (const discovered of discoveredEvents) {
+      if (isBlacklistedEventUrl(discovered.eventUrl)) {
+        console.log(`\n⏭  Skipping blacklisted event: ${discovered.eventName} (${discovered.eventUrl}) — canonical home is another scraper`);
+        continue;
+      }
+
       // Check hub-level date text — if parseable and too old, skip the detail scrape
       if (discovered.dateText) {
         const hubDate = parseTapologyDate(discovered.dateText);
