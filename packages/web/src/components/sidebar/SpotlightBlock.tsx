@@ -66,7 +66,7 @@ export function SpotlightBlock() {
     <div className="rounded-lg border border-primary/30 bg-gradient-to-b from-primary/[0.06] to-card p-4">
       <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
         <Telescope size={11} />
-        A fight you might love
+        A good fight you might love
       </div>
       <Link href={`/fights/${f.id}`} className="block group">
         <div className="flex items-center justify-between gap-2">

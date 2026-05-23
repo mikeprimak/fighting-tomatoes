@@ -1,10 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { getUpcomingRecommendedFights, type RecommendedFight } from '@/lib/api';
 import { Telescope } from 'lucide-react';
+
+const ROTATE_MS = 10_000;
 
 function fighterLast(f: RecommendedFight['fighter1']): string {
   return f.lastName || f.firstName || '';
@@ -15,40 +18,44 @@ function shortDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-// Daily rotation seed — hash(userId + day-of-year) % count.
-// Stable per day, changes overnight, varies between users.
-function pickIndex(seed: string, count: number): number {
-  let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return Math.abs(h) % count;
-}
-
-function dayKey(): string {
-  const now = new Date();
-  return `${now.getUTCFullYear()}-${now.getUTCMonth()}-${now.getUTCDate()}`;
-}
-
 export function MightLikeBlock() {
   const { user, isAuthenticated } = useAuth();
+  const [index, setIndex] = useState(0);
+  const [visible, setVisible] = useState(true);
 
-  // Fetch a small pool so the daily rotation has room to vary. Backend
-  // returns by relevance — any of these is a fair "you might like" pick.
   const { data } = useQuery({
     queryKey: ['upcomingRecommended', user?.id ?? null],
-    queryFn: () => getUpcomingRecommendedFights(5),
+    queryFn: () => getUpcomingRecommendedFights(10),
     enabled: isAuthenticated,
     staleTime: 10 * 60 * 1000,
   });
 
-  if (!isAuthenticated) return null;
   const fights = data?.fights ?? [];
+
+  // Rotate the visible fight every ROTATE_MS. Brief fade between picks so the
+  // change registers without being jarring.
+  useEffect(() => {
+    if (fights.length <= 1) return;
+    const tick = setInterval(() => {
+      setVisible(false);
+      const fadeTimer = setTimeout(() => {
+        setIndex(i => (i + 1) % fights.length);
+        setVisible(true);
+      }, 250);
+      // Stash so cleanup below can clear it if the component unmounts mid-fade.
+      (tick as any)._fadeTimer = fadeTimer;
+    }, ROTATE_MS);
+    return () => {
+      clearInterval(tick);
+      const fade = (tick as any)._fadeTimer;
+      if (fade) clearTimeout(fade);
+    };
+  }, [fights.length]);
+
+  if (!isAuthenticated) return null;
   if (fights.length === 0) return null;
 
-  const idx = pickIndex(`${user?.id ?? 'anon'}-${dayKey()}`, fights.length);
-  const f = fights[idx];
+  const f = fights[Math.min(index, fights.length - 1)];
   const promotion = (f.event as any)?.promotion as string | undefined;
 
   return (
@@ -58,7 +65,11 @@ export function MightLikeBlock() {
         Upcoming fight you might like
       </h3>
 
-      <Link href={`/fights/${f.id}`} className="block group">
+      <Link
+        href={`/fights/${f.id}`}
+        className="block group transition-opacity duration-200"
+        style={{ opacity: visible ? 1 : 0 }}
+      >
         <p className="truncate text-sm font-medium text-foreground group-hover:text-primary">
           {fighterLast(f.fighter1)} vs {fighterLast(f.fighter2)}
         </p>
