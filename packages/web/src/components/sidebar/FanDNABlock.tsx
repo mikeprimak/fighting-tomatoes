@@ -34,7 +34,7 @@ export function FanDNABlock() {
     <div className="rounded-lg border border-border bg-card p-4">
       <h3 className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
         <Dna size={11} style={{ color: FAMILY_COLORS.affinity }} />
-        Fan DNA
+        Your Fan DNA
       </h3>
 
       <ul className="space-y-3">

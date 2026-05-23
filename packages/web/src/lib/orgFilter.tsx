@@ -1,8 +1,12 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { API_BASE_URL } from './api';
+
+// localStorage key — mirrors the mobile app's AsyncStorage key so terminology
+// stays consistent across platforms.
+const ORG_FILTER_STORAGE_KEY = 'events_org_filter';
 
 // Bundled fallback list. The runtime list is hydrated from /api/promotions
 // and falls back to this when offline or before the first fetch returns.
@@ -43,6 +47,36 @@ const OrgFilterContext = createContext<OrgFilterContextType | undefined>(undefin
 
 export function OrgFilterProvider({ children }: { children: ReactNode }) {
   const [selectedOrgs, setSelectedOrgs] = useState<Set<Organization>>(new Set());
+  // Skip saving on the first render — initial state is always empty, and we
+  // don't want to overwrite a persisted selection before the load effect runs.
+  const [hydrated, setHydrated] = useState(false);
+
+  // Load saved selection from localStorage on mount (client-only).
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(ORG_FILTER_STORAGE_KEY);
+      if (saved) {
+        const orgs = JSON.parse(saved) as Organization[];
+        if (Array.isArray(orgs)) setSelectedOrgs(new Set(orgs));
+      }
+    } catch (err) {
+      console.error('[OrgFilter] Error loading saved filter:', err);
+    }
+    setHydrated(true);
+  }, []);
+
+  // Persist when the selection changes (after hydration).
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      window.localStorage.setItem(
+        ORG_FILTER_STORAGE_KEY,
+        JSON.stringify(Array.from(selectedOrgs)),
+      );
+    } catch (err) {
+      console.error('[OrgFilter] Error saving filter:', err);
+    }
+  }, [selectedOrgs, hydrated]);
 
   const { data: registryData } = useQuery({
     queryKey: ['promotions-registry'],
