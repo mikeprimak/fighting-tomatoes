@@ -35,7 +35,7 @@ export default function UpcomingEventsPage() {
   const filteredEvents = filterEventsByOrg(allEvents.filter((e: any) => !isEventLiveNow(e)));
 
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-6">
+    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-6">
       <div className="min-w-0">
         <div className="mb-4">
           <h1 className="mb-3 text-lg font-bold text-foreground">Upcoming Events</h1>
