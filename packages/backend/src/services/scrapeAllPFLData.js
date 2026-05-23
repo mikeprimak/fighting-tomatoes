@@ -116,8 +116,18 @@ async function scrapeEventsList(browser) {
       if (!container) return;
 
       // Convert slug to readable name: "pfl-africa-finals" -> "PFL Africa Finals"
-      // Always use the slug-based name for consistency
-      const eventName = eventSlug
+      // Always use the slug-based name for consistency.
+      //
+      // PFL is inconsistent with slug separators — some events use
+      // "pfl-mena-9" (3 tokens) and others use "pflmena-9" (2 tokens, e.g.
+      // event 5/24/2026). Pre-split known "pfl<region>" concatenations so
+      // the per-word mapping below sees "pfl" and the region as separate
+      // tokens regardless of PFL's slug spelling.
+      const normalizedSlug = eventSlug
+        .toLowerCase()
+        .replace(/^pfl(mena|africa|europe|asia)(?=-|$)/, 'pfl-$1');
+
+      const eventName = normalizedSlug
         .split('-')
         .map(word => {
           // Handle special cases like "pfl", "wt", "cs"
