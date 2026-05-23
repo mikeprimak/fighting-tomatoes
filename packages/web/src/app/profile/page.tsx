@@ -9,7 +9,6 @@ import { SpotlightBlock } from '@/components/sidebar/SpotlightBlock';
 import { UpcomingHypedBlock } from '@/components/sidebar/UpcomingHypedBlock';
 import { MightLikeBlock } from '@/components/sidebar/MightLikeBlock';
 import { FanDNABlock } from '@/components/sidebar/FanDNABlock';
-import { RecencyBlock } from '@/components/sidebar/RecencyBlock';
 import { DistributionBlock } from '@/components/sidebar/DistributionBlock';
 
 export default function ProfilePage() {
@@ -47,7 +46,6 @@ export default function ProfilePage() {
       <UpcomingHypedBlock />
       <MightLikeBlock />
       <FanDNABlock />
-      <RecencyBlock />
       <DistributionBlock />
 
       <div className="space-y-2 pt-2">
