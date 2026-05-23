@@ -6,7 +6,7 @@ import { API_BASE_URL } from '../services/api';
 // Bundled fallback list. The runtime list is hydrated from /api/promotions
 // and falls back to this when offline or before the first fetch returns.
 // Source of truth lives in packages/backend/src/config/promotionRegistry.ts.
-export const ORGANIZATIONS = ['UFC', 'MVP', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'ZUFFA BOXING', 'TOP RANK', 'GOLDEN BOY', 'GOLD STAR', 'RAF', 'GAMEBRED'] as const;
+export const ORGANIZATIONS = ['UFC', 'MVP', 'PFL', 'ONE', 'BKFC', 'OKTAGON', 'RIZIN', 'KARATE COMBAT', 'DIRTY BOXING', 'ZUFFA BOXING', 'TOP RANK', 'GOLDEN BOY', 'GOLD STAR', 'MATCHROOM', 'RAF', 'GAMEBRED'] as const;
 export type Organization = string;
 
 interface PromotionRegistryEntry {
@@ -38,7 +38,7 @@ const ORG_GROUPS: Partial<Record<Organization, { exact?: string[]; contains?: st
 };
 
 // Organizations to completely hide from all screens
-const HIDDEN_ORGS = ['MATCHROOM'];
+const HIDDEN_ORGS: string[] = [];
 
 // AsyncStorage key for persisting filter preference
 const ORG_FILTER_STORAGE_KEY = 'events_org_filter';

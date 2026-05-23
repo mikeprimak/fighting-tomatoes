@@ -321,12 +321,10 @@ export const PROMOTION_REGISTRY: PromotionRegistryEntry[] = [
     canonicalPromotion: 'Matchroom Boxing',
     shortLabel: 'MATCHROOM',
     fullLabel: 'Matchroom Boxing',
-    scraperType: 'matchroom',
-    hasReliableLiveTracker: true,
+    scraperType: 'tapology',
+    hasReliableLiveTracker: false,
     logoKey: 'matchroom',
-    // Hidden from user-facing filters per existing HIDDEN_ORGS treatment in
-    // mobile + web. Admin keeps the toggle since events are still scraped.
-    userVisible: false,
+    userVisible: true,
     notificationEligible: true,
     tapologyHub: {
       url: 'https://www.tapology.com/fightcenter/promotions/2484-matchroom-boxing-mb',

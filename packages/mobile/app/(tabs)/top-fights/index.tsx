@@ -72,13 +72,9 @@ export default function TopFightsScreen() {
     }
   }, [refetch]);
 
-  // Top rated fights data - flatten pages and filter out hidden orgs client-side
+  // Top rated fights data - flatten pages
   const topRatedData = React.useMemo(() => {
-    const fights = topRatedFights?.pages?.flatMap((p: any) => p.data) || [];
-    return fights.filter((fight: any) => {
-      const promotion = (fight.event?.promotion || '').toUpperCase();
-      return !promotion.includes('MATCHROOM');
-    });
+    return topRatedFights?.pages?.flatMap((p: any) => p.data) || [];
   }, [topRatedFights?.pages]);
 
   const handleEndReached = useCallback(() => {
