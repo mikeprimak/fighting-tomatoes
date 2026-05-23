@@ -4330,10 +4330,17 @@ export async function fightRoutes(fastify: FastifyInstance) {
       });
 
       const fighterPool = new Set<string>();
+      const highRatedFighterIds = new Set<string>();
       for (const f of follows) fighterPool.add(f.fighterId);
       for (const r of highRatedFights) {
-        if (r.fight.fighter1Id) fighterPool.add(r.fight.fighter1Id);
-        if (r.fight.fighter2Id) fighterPool.add(r.fight.fighter2Id);
+        if (r.fight.fighter1Id) {
+          fighterPool.add(r.fight.fighter1Id);
+          highRatedFighterIds.add(r.fight.fighter1Id);
+        }
+        if (r.fight.fighter2Id) {
+          fighterPool.add(r.fight.fighter2Id);
+          highRatedFighterIds.add(r.fight.fighter2Id);
+        }
       }
       const fighterIds = [...fighterPool];
       if (fighterIds.length === 0) {
@@ -4375,18 +4382,31 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       const followedFighterIds = new Set(follows.map((f) => f.fighterId));
       const transformed = fights.map((f) => {
-        // Reason chain: "following X" beats "you liked their last fight" if both apply.
+        // Reason chain: "following X" beats "you liked X's last fight" if both apply.
         let reason: string;
         const f1Followed = followedFighterIds.has(f.fighter1Id);
         const f2Followed = followedFighterIds.has(f.fighter2Id);
+        const f1Name = f.fighter1.lastName || f.fighter1.firstName || '';
+        const f2Name = f.fighter2.lastName || f.fighter2.firstName || '';
         if (f1Followed && f2Followed) {
           reason = 'Both followed';
         } else if (f1Followed) {
-          reason = `Following ${f.fighter1.lastName || f.fighter1.firstName}`;
+          reason = `Following ${f1Name}`;
         } else if (f2Followed) {
-          reason = `Following ${f.fighter2.lastName || f.fighter2.firstName}`;
+          reason = `Following ${f2Name}`;
         } else {
-          reason = 'You liked their last fight';
+          const f1HighRated = highRatedFighterIds.has(f.fighter1Id);
+          const f2HighRated = highRatedFighterIds.has(f.fighter2Id);
+          if (f1HighRated && f2HighRated) {
+            reason = `You liked ${f1Name}'s and ${f2Name}'s last fights`;
+          } else if (f1HighRated) {
+            reason = `You liked ${f1Name}'s last fight`;
+          } else if (f2HighRated) {
+            reason = `You liked ${f2Name}'s last fight`;
+          } else {
+            // Shouldn't happen — fighter pool guarantees one path matched.
+            reason = 'You liked their last fight';
+          }
         }
         return {
           id: f.id,
