@@ -101,44 +101,44 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
 
         {/* Body with gold wash */}
         <div className="relative flex items-stretch bg-[#F5C518]/[0.12]">
-          {/* Left: community hype square */}
-          <div
-            className="flex w-12 shrink-0 flex-col items-center justify-center gap-0.5"
-            style={{
-              backgroundColor: hasHype ? hypeColor : 'transparent',
-              border: hasHype ? 'none' : '1px solid var(--color-border, #2a2a2a)',
-            }}
-          >
-            {hasHype ? (
-              <>
-                <span className="text-base font-bold leading-none text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
-                  {hypeScore === 10 ? '10' : hypeScore.toFixed(1)}
-                </span>
-                {(hypeCount > 0 || commentCount > 0) ? (
-                  <div className="flex items-center gap-1 text-[9px] font-semibold leading-none text-black/60">
-                    {hypeCount > 0 ? <span>({hypeCount})</span> : null}
-                    {commentCount > 0 ? (
-                      <span className="flex items-center gap-0.5">
-                        <MessageCircle size={8} strokeWidth={2.5} />
-                        {commentCount}
-                      </span>
-                    ) : null}
-                  </div>
-                ) : (
-                  <Flame size={11} className="text-black/40" />
-                )}
-              </>
-            ) : (
-              <div className="flex flex-col items-center gap-0.5">
-                <Flame size={16} className="text-text-secondary/50" />
-                {commentCount > 0 ? (
-                  <span className="flex items-center gap-0.5 text-[9px] font-semibold leading-none text-text-secondary/70">
-                    <MessageCircle size={8} strokeWidth={2.5} />
-                    {commentCount}
+          {/* Left: community hype square — matches CompletedFightCard's rating square */}
+          <div className="relative w-12 shrink-0">
+            <div
+              className="absolute left-2 top-3 z-[1] flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-md"
+              style={{
+                backgroundColor: hasHype ? hypeColor : '#202020',
+                border: hasHype ? 'none' : '1px solid var(--color-border, #2a2a2a)',
+              }}
+            >
+              {hasHype ? (
+                <>
+                  <span className="text-base font-bold leading-none text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
+                    {hypeScore === 10 ? '10' : hypeScore.toFixed(1)}
                   </span>
-                ) : null}
-              </div>
-            )}
+                  {(hypeCount > 0 || commentCount > 0) ? (
+                    <div className="flex items-center gap-1 text-[9px] font-semibold leading-none text-black/60">
+                      {hypeCount > 0 ? <span>({hypeCount})</span> : null}
+                      {commentCount > 0 ? (
+                        <span className="flex items-center gap-0.5">
+                          <MessageCircle size={8} strokeWidth={2.5} />
+                          {commentCount}
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-0.5">
+                  <Flame size={18} className="text-text-secondary/40" />
+                  {commentCount > 0 ? (
+                    <span className="flex items-center gap-0.5 text-[9px] font-semibold leading-none text-text-secondary/70">
+                      <MessageCircle size={8} strokeWidth={2.5} />
+                      {commentCount}
+                    </span>
+                  ) : null}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Center: fighters + names */}

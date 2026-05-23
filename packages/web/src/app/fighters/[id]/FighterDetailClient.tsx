@@ -23,7 +23,7 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
     initialData: initialFighter ? { fighter: initialFighter } : undefined,
   });
 
-  const { data: fightsData } = useQuery({
+  const { data: fightsData, isLoading: fightsLoading } = useQuery({
     queryKey: ['fighterFights', fighterId],
     queryFn: () => getFights({ fighterId, limit: 50, includeUserData: true }),
     enabled: !!fighterData,
@@ -140,7 +140,13 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
         </section>
       )}
 
-      {upcomingFights.length === 0 && completedFights.length === 0 && (
+      {fightsLoading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      )}
+
+      {!fightsLoading && upcomingFights.length === 0 && completedFights.length === 0 && (
         <p className="py-8 text-center text-sm text-text-secondary">No fights found.</p>
       )}
     </div>
