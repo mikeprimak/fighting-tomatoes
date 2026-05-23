@@ -34,7 +34,7 @@ export function UpcomingHypedBlock() {
     <div className="rounded-lg border border-border bg-card p-4">
       <h3 className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
         <Flame size={11} className="text-primary" />
-        You&apos;re hyped for
+        Upcoming fights you&apos;re hyped for
       </h3>
 
       <ul className="space-y-2.5">

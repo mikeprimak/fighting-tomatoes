@@ -1,29 +1,30 @@
 'use client';
 
 import { IdentityBlock } from './IdentityBlock';
-import { FollowedFightersStrip } from './FollowedFightersStrip';
-import { SpotlightBlock } from './SpotlightBlock';
-import { UpcomingHypedBlock } from './UpcomingHypedBlock';
-import { MightLikeBlock } from './MightLikeBlock';
 import { FanDNABlock } from './FanDNABlock';
 import { DistributionBlock } from './DistributionBlock';
+import { FollowedFightersStrip } from './FollowedFightersStrip';
+import { UpcomingHypedBlock } from './UpcomingHypedBlock';
+import { SpotlightBlock } from './SpotlightBlock';
+import { MightLikeBlock } from './MightLikeBlock';
 
 /**
  * Right-rail "About you" sidebar.
  *
- * Stable spine + a rotating spotlight tile. Each block decides its own
- * empty-room handling — `ProfileSidebar` just composes them in display order.
+ * Order is meaningful — identity first, DNA + distribution next so users see
+ * their own stats high up, then social/following, then forward-looking
+ * recommendation tiles (hype, spotlight, might-like).
  */
 export function ProfileSidebar() {
   return (
     <aside className="space-y-4">
       <IdentityBlock />
-      <FollowedFightersStrip />
-      <SpotlightBlock />
-      <UpcomingHypedBlock />
-      <MightLikeBlock />
       <FanDNABlock />
       <DistributionBlock />
+      <FollowedFightersStrip />
+      <UpcomingHypedBlock />
+      <SpotlightBlock />
+      <MightLikeBlock />
     </aside>
   );
 }
