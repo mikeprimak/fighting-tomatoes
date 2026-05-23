@@ -688,3 +688,48 @@ export async function getUpcomingRecommendedFights(limit = 5) {
     `/fights/upcoming-recommended?limit=${limit}`,
   );
 }
+
+// ==================== HOW-TO-WATCH (BROADCASTS) ====================
+
+export type BroadcastRegion = 'US' | 'CA' | 'GB' | 'AU' | 'NZ' | 'EU';
+export type BroadcastTier = 'FREE' | 'SUBSCRIPTION' | 'PPV';
+export type CardSection = 'EARLY_PRELIMS' | 'PRELIMS' | 'MAIN_CARD';
+
+export interface BroadcastChannelLite {
+  slug: string;
+  name: string;
+  logoUrl: string | null;
+  homepageUrl: string | null;
+  affiliateUrl: string | null;
+}
+
+export interface BroadcastEntry {
+  id: string;
+  channel: BroadcastChannelLite;
+  tier: BroadcastTier;
+  deepLink: string | null;
+  note: string | null;
+  language: string | null;
+  source: 'MANUAL' | 'SCRAPED' | 'DEFAULT';
+  cardSection: CardSection | null;
+}
+
+export interface HowToWatchResponse {
+  eventId: string;
+  region: BroadcastRegion;
+  detectedFrom: 'query-param' | 'user-pref' | 'ip' | 'fallback';
+  availableRegions: BroadcastRegion[];
+  broadcasts: BroadcastEntry[];
+}
+
+export async function getEventBroadcasts(eventId: string, region?: string | null) {
+  const qs = region ? `?region=${encodeURIComponent(region)}` : '';
+  return makeRequest<HowToWatchResponse>(`/events/${eventId}/broadcasts${qs}`);
+}
+
+export async function setBroadcastRegion(region: BroadcastRegion | null) {
+  return makeRequest<{ broadcastRegion: string | null }>('/users/me/broadcast-region', {
+    method: 'PATCH',
+    body: JSON.stringify({ region }),
+  });
+}
