@@ -149,7 +149,7 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
 
 function SectionHeaderRow({ leftLabel, rightLabel }: { leftLabel: string; rightLabel: string }) {
   return (
-    <div className="mb-1 flex items-center justify-between px-2">
+    <div className="mb-1 flex w-full items-center justify-between">
       <span className="w-12 text-center text-[10px] font-bold uppercase tracking-wider text-text-secondary">
         {leftLabel}
       </span>
@@ -169,7 +169,7 @@ function FightWithEventLabel({ fight, children }: { fight: any; children: React.
       {(eventName || eventDate) && (
         <div className="flex items-center justify-between px-3 pt-2 text-[10px] uppercase tracking-wider text-text-secondary">
           <span className="truncate">{eventName}</span>
-          {eventDate && <span className="shrink-0 pl-2">{formatEventDate(eventDate)}</span>}
+          {eventDate && <span className="shrink-0 pl-2">{formatEventDate(eventDate, { year: true })}</span>}
         </div>
       )}
       {children}
