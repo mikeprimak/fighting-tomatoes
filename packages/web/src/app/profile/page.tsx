@@ -41,12 +41,12 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <IdentityBlock />
-      <FollowedFightersStrip />
-      <SpotlightBlock />
-      <UpcomingHypedBlock />
-      <MightLikeBlock />
       <FanDNABlock />
       <DistributionBlock />
+      <FollowedFightersStrip />
+      <UpcomingHypedBlock />
+      <SpotlightBlock />
+      <MightLikeBlock />
 
       <div className="space-y-2 pt-2">
         <Link
