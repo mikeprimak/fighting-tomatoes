@@ -381,6 +381,27 @@ export async function getTopFollowedFighters(limit = 20) {
   }>(`/community/top-followed-fighters?limit=${limit}`);
 }
 
+export interface RecommendedFighter {
+  fighter: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    nickname?: string | null;
+    profileImage?: string | null;
+    weightClass?: string | null;
+    wins: number;
+    losses: number;
+    draws: number;
+  };
+  reason: string;
+}
+
+export async function getRecommendedFighters(limit = 8) {
+  return makeRequest<{ fighters: RecommendedFighter[] }>(
+    `/community/fighters/recommended?limit=${limit}`,
+  );
+}
+
 export interface MyComment {
   id: string;
   fightId: string;
@@ -536,10 +557,18 @@ export async function getTopUpcomingFights(period = 'week') {
   return makeRequest<{ data: any[] }>(`/community/top-upcoming-fights?period=${period}`);
 }
 
-export async function getTopRecentFights(period = 'week', promotions?: string) {
-  const params = new URLSearchParams({ period });
+export async function getTopRecentFights(
+  period = 'week',
+  promotions?: string,
+  page = 1,
+  limit = 25,
+) {
+  const params = new URLSearchParams({ period, page: String(page), limit: String(limit) });
   if (promotions) params.append('promotions', promotions);
-  return makeRequest<{ data: any[] }>(`/community/top-recent-fights?${params.toString()}`);
+  return makeRequest<{
+    data: any[];
+    pagination: { page: number; limit: number; hasMore: boolean };
+  }>(`/community/top-recent-fights?${params.toString()}`);
 }
 
 // ==================== SEARCH ====================

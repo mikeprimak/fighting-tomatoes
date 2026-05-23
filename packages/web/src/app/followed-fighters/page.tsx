@@ -55,7 +55,10 @@ export default function FollowedFightersPage() {
           <ArrowLeft size={14} />
           Profile
         </Link>
-        <h1 className="mb-4 text-lg font-bold">Followed Fighters</h1>
+        <h1 className="text-lg font-bold">Followed Fighters</h1>
+        <p className="mb-4 mt-1 text-xs text-text-secondary">
+          You&apos;ll be notified when they have upcoming fights.
+        </p>
 
         {isLoading && (
           <div className="flex items-center justify-center py-12">
