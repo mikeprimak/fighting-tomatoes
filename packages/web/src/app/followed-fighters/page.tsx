@@ -1,12 +1,15 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getFollowedFighters } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, Bell, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PopularFightersBlock } from '@/components/sidebar/PopularFightersBlock';
+
+const NOTIF_CTA_DISMISSED_KEY = 'followed_fighters_notif_cta_dismissed';
 
 function hasRecord(f: { wins?: number; losses?: number; draws?: number }): boolean {
   return (f.wins ?? 0) + (f.losses ?? 0) + (f.draws ?? 0) > 0;
@@ -23,6 +26,22 @@ function recordLine(f: any): string | null {
 export default function FollowedFightersPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const [ctaDismissed, setCtaDismissed] = useState(true);
+
+  useEffect(() => {
+    try {
+      setCtaDismissed(window.localStorage.getItem(NOTIF_CTA_DISMISSED_KEY) === '1');
+    } catch {
+      setCtaDismissed(false);
+    }
+  }, []);
+
+  const dismissCta = () => {
+    try {
+      window.localStorage.setItem(NOTIF_CTA_DISMISSED_KEY, '1');
+    } catch {}
+    setCtaDismissed(true);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['followedFighters'],
@@ -57,8 +76,49 @@ export default function FollowedFightersPage() {
         </Link>
         <h1 className="text-lg font-bold">Followed Fighters</h1>
         <p className="mb-4 mt-1 text-xs text-text-secondary">
-          You&apos;ll be notified when they have upcoming fights.
+          Follow to save them.{' '}
+          <a
+            href="https://goodfights.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            Get the mobile app
+          </a>{' '}
+          to be notified for upcoming fights.
         </p>
+
+        {!ctaDismissed && (
+          <div className="mb-4 flex items-start gap-3 rounded-lg border border-primary/30 bg-gradient-to-b from-primary/[0.08] to-card p-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+              <Bell size={16} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">
+                Never miss a Good Fight.
+              </p>
+              <p className="mt-0.5 text-xs text-text-secondary">
+                Push notifications are mobile-only. Install Good Fights on iOS or Android to get pinged when fighters you follow are booked or walking out.
+              </p>
+              <a
+                href="https://goodfights.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/20"
+              >
+                Get the app
+              </a>
+            </div>
+            <button
+              type="button"
+              onClick={dismissCta}
+              className="shrink-0 rounded p-1 text-text-secondary hover:bg-background hover:text-foreground"
+              aria-label="Dismiss"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
 
         {isLoading && (
           <div className="flex items-center justify-center py-12">
