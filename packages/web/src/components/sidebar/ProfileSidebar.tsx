@@ -5,6 +5,7 @@ import { FollowedFightersStrip } from './FollowedFightersStrip';
 import { SpotlightBlock } from './SpotlightBlock';
 import { UpcomingHypedBlock } from './UpcomingHypedBlock';
 import { MightLikeBlock } from './MightLikeBlock';
+import { FanDNABlock } from './FanDNABlock';
 import { RecencyBlock } from './RecencyBlock';
 import { DistributionBlock } from './DistributionBlock';
 
@@ -22,6 +23,7 @@ export function ProfileSidebar() {
       <SpotlightBlock />
       <UpcomingHypedBlock />
       <MightLikeBlock />
+      <FanDNABlock />
       <RecencyBlock />
       <DistributionBlock />
     </aside>
