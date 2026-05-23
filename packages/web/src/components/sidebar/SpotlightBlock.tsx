@@ -5,7 +5,8 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { getMyRatings, getTopRecentFights } from '@/lib/api';
-import { Sparkles, Flame, Telescope } from 'lucide-react';
+import { Sparkles, Flame, Telescope, Star } from 'lucide-react';
+import { getHypeHeatmapColor } from '@/utils/heatmap';
 
 // Daily rotation: hash(userId + day-of-year) % variantCount. Stable per day,
 // changes overnight, varies between users so a household device doesn't sync up.
@@ -162,10 +163,18 @@ function PastFightCard({ payload }: { payload: { fight: any } }) {
         <p className="truncate text-sm font-medium text-foreground group-hover:text-primary">
           {fighterLast(f.fighter1)} vs {fighterLast(f.fighter2)}
         </p>
-        <div className="mt-1 flex items-center justify-between text-[11px] text-text-secondary">
+        <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-text-secondary">
           <span className="truncate">{f.event?.name ?? ''}</span>
-          <span className="ml-2 shrink-0 rounded bg-primary/15 px-1.5 py-0.5 font-semibold text-primary">
-            {f.averageRating?.toFixed?.(1) ?? f.averageRating}
+          <span className="relative flex h-7 w-7 shrink-0 items-center justify-center">
+            <Star
+              size={28}
+              fill={getHypeHeatmapColor(f.averageRating ?? 0)}
+              color={getHypeHeatmapColor(f.averageRating ?? 0)}
+              strokeWidth={1.5}
+            />
+            <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_70%)]">
+              {Math.round(f.averageRating ?? 0)}
+            </span>
           </span>
         </div>
         <p className="mt-2 text-[10px] text-text-secondary">
