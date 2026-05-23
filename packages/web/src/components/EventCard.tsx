@@ -4,6 +4,8 @@ import { formatEventDate, formatEventTimeCompact, formatTimeUntil, formatTimeAgo
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { LiveFightCard } from '@/components/fight-cards/LiveFightCard';
+import { HowToWatch, useEventBroadcasts } from '@/components/HowToWatch';
+import type { CardSection } from '@/lib/api';
 import Link from 'next/link';
 
 interface EventCardProps {
@@ -48,6 +50,14 @@ function sectionStartTime(section: string, event: { mainStartTime?: string | nul
   return null;
 }
 
+function sectionToBroadcastKey(section: string): CardSection | null {
+  const key = section.toUpperCase();
+  if (key === 'MAIN CARD') return 'MAIN_CARD';
+  if (key === 'PRELIMS') return 'PRELIMS';
+  if (key === 'EARLY PRELIMS') return 'EARLY_PRELIMS';
+  return null;
+}
+
 export function EventCard({ event, mode }: EventCardProps) {
   const rawFights = event.fights || [];
   const seenIds = new Set<string>();
@@ -74,6 +84,10 @@ export function EventCard({ event, mode }: EventCardProps) {
     const bi = SECTION_ORDER.indexOf(b);
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
   });
+
+  const { data: broadcastsData } = useEventBroadcasts(event.id);
+  const sectionHasBroadcast = (s: CardSection) =>
+    !!broadcastsData?.broadcasts.some((b) => b.cardSection === s);
 
   const timeBadge = mode === 'upcoming'
     ? formatTimeUntil(event.date, event.mainStartTime ?? undefined)
@@ -131,12 +145,25 @@ export function EventCard({ event, mode }: EventCardProps) {
         )}
       </Link>
 
+      {/* Whole-event How to Watch */}
+      <HowToWatch eventId={event.id} />
+
       {/* Fights by section */}
       {sortedSectionKeys.map(section => {
         const sTime = sectionStartTime(section, event);
-        const showHeader = sortedSectionKeys.length > 1 || sTime;
+        const broadcastKey = sectionToBroadcastKey(section);
+        const sectionAbsorbed = broadcastKey ? sectionHasBroadcast(broadcastKey) : false;
+        const showHeader = (sortedSectionKeys.length > 1 || sTime) && !sectionAbsorbed;
         return (
         <div key={section}>
+          {broadcastKey && (
+            <HowToWatch
+              eventId={event.id}
+              section={broadcastKey}
+              label={section}
+              time={sTime && mode !== 'past' ? formatEventTimeCompact(sTime) : undefined}
+            />
+          )}
           {showHeader && (
             <div className="mb-1.5 mt-3 flex items-center gap-2">
               <span className="text-[10px] font-semibold tracking-wider text-text-secondary">{section}</span>

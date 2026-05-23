@@ -5,6 +5,7 @@ import { getQueryClient } from '@/lib/queryClient';
 import { AuthProvider } from '@/lib/auth';
 import { OrgFilterProvider } from '@/lib/orgFilter';
 import { SpoilerFreeProvider } from '@/lib/spoilerFree';
+import { BroadcastRegionProvider } from '@/lib/broadcastRegion';
 import type { ReactNode } from 'react';
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -15,7 +16,9 @@ export function Providers({ children }: { children: ReactNode }) {
       <AuthProvider>
         <OrgFilterProvider>
           <SpoilerFreeProvider>
-            {children}
+            <BroadcastRegionProvider>
+              {children}
+            </BroadcastRegionProvider>
           </SpoilerFreeProvider>
         </OrgFilterProvider>
       </AuthProvider>
