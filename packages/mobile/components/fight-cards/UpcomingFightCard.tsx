@@ -491,22 +491,6 @@ function UpcomingFightCard({
 
       </View>
 
-      {/* AI preview one-liner — sibling of the card body so it doesn't recenter the existing layout */}
-      {(() => {
-        const aiPreviewShort = (fight as any).aiPreviewShort as string | null | undefined;
-        const aiConfidence = (fight as any).aiConfidence as number | null | undefined;
-        if (!aiPreviewShort || aiConfidence == null || aiConfidence < 0.5) return null;
-        return (
-          <Text
-            style={[styles.aiPreviewShort, { color: colors.textSecondary }]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {aiPreviewShort}
-          </Text>
-        );
-      })()}
-
       </View>
     </TouchableOpacity>
   );
@@ -1046,15 +1030,6 @@ const styles = StyleSheet.create({
     bottom: -2,
     right: 6,
     zIndex: 1001,
-  },
-  aiPreviewShort: {
-    fontSize: 11,
-    fontStyle: 'italic',
-    lineHeight: 14,
-    paddingTop: 0,
-    paddingBottom: 5,
-    paddingHorizontal: 64,
-    textAlign: 'center',
   },
 });
 
