@@ -40,6 +40,14 @@ function groupFightsBySection(fights: any[]) {
 
 const SECTION_ORDER = ['MAIN CARD', 'PRELIMS', 'EARLY PRELIMS'];
 
+function sectionStartTime(section: string, event: { mainStartTime?: string | null; prelimStartTime?: string | null; earlyPrelimStartTime?: string | null }): string | null {
+  const key = section.toUpperCase();
+  if (key === 'MAIN CARD') return event.mainStartTime ?? null;
+  if (key === 'PRELIMS') return event.prelimStartTime ?? null;
+  if (key === 'EARLY PRELIMS') return event.earlyPrelimStartTime ?? null;
+  return null;
+}
+
 export function EventCard({ event, mode }: EventCardProps) {
   const rawFights = event.fights || [];
   const seenIds = new Set<string>();
@@ -73,8 +81,6 @@ export function EventCard({ event, mode }: EventCardProps) {
       ? formatTimeAgo(event.date)
       : 'LIVE';
 
-  const mainTime = event.mainStartTime ? formatEventTimeCompact(event.mainStartTime) : null;
-
   const timeBadgeColor = mode === 'live' ? 'bg-danger/20 text-danger' :
     timeBadge === 'TODAY' || timeBadge === 'TOMORROW' ? 'bg-primary/20 text-primary' :
     'bg-card text-text-secondary';
@@ -98,10 +104,7 @@ export function EventCard({ event, mode }: EventCardProps) {
                   {event.name}
                 </h2>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-gray-200 sm:text-base">
-                  <span>
-                    {formatEventDate(event.date)}
-                    {mainTime && ` • Main @ ${mainTime}`}
-                  </span>
+                  <span>{formatEventDate(event.date)}</span>
                   {event.venue && <span>- {event.venue}</span>}
                 </div>
               </div>
@@ -117,10 +120,7 @@ export function EventCard({ event, mode }: EventCardProps) {
                 {event.name}
               </h2>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-text-secondary sm:text-base">
-                <span>
-                  {formatEventDate(event.date)}
-                  {mainTime && ` • Main @ ${mainTime}`}
-                </span>
+                <span>{formatEventDate(event.date)}</span>
                 {event.venue && <span>- {event.venue}</span>}
               </div>
             </div>
@@ -132,11 +132,19 @@ export function EventCard({ event, mode }: EventCardProps) {
       </Link>
 
       {/* Fights by section */}
-      {sortedSectionKeys.map(section => (
+      {sortedSectionKeys.map(section => {
+        const sTime = sectionStartTime(section, event);
+        const showHeader = sortedSectionKeys.length > 1 || sTime;
+        return (
         <div key={section}>
-          {sortedSectionKeys.length > 1 && (
+          {showHeader && (
             <div className="mb-1.5 mt-3 flex items-center gap-2">
               <span className="text-[10px] font-semibold tracking-wider text-text-secondary">{section}</span>
+              {sTime && mode !== 'past' && (
+                <span className="text-[10px] font-semibold tracking-wider text-text-secondary">
+                  @ {formatEventTimeCompact(sTime)}
+                </span>
+              )}
               <div className="h-px flex-1 bg-border" />
             </div>
           )}
@@ -157,7 +165,8 @@ export function EventCard({ event, mode }: EventCardProps) {
             })}
           </div>
         </div>
-      ))}
+        );
+      })}
 
       {fights.length === 0 && (
         <p className="py-4 text-center text-sm text-text-secondary">No fights announced yet</p>
