@@ -44,8 +44,8 @@ export function SpotlightBlock() {
   });
 
   const { data: myRatings } = useQuery({
-    queryKey: ['myRatings', 'all', 'recent', 'sidebar-spotlight'],
-    queryFn: () => getMyRatings({ page: '1', limit: '20', filterType: 'ratings', sortBy: 'recent' }),
+    queryKey: ['myRatings', 'sidebar-spotlight'],
+    queryFn: () => getMyRatings({ page: '1', limit: '20', filterType: 'ratings', sortBy: 'newest' }),
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
   });

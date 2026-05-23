@@ -32,9 +32,9 @@ export function RecencyBlock() {
   const { user, isAuthenticated } = useAuth();
 
   const { data: ratingsData } = useQuery({
-    queryKey: ['myRatings', 'all', 'recent', 'sidebar-last'],
+    queryKey: ['myRatings', 'sidebar-last'],
     queryFn: () =>
-      getMyRatings({ page: '1', limit: '1', filterType: 'ratings', sortBy: 'recent' }),
+      getMyRatings({ page: '1', limit: '1', filterType: 'ratings', sortBy: 'newest' }),
     enabled: isAuthenticated,
     staleTime: 60 * 1000,
   });
