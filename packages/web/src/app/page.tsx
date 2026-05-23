@@ -72,9 +72,7 @@ export default function UpcomingEventsPage() {
       </div>
 
       <div className="mt-6 lg:mt-0">
-        <div className="lg:sticky lg:top-20">
-          <ProfileSidebar />
-        </div>
+        <ProfileSidebar />
       </div>
     </div>
   );
