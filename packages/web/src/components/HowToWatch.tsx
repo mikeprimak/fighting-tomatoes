@@ -13,14 +13,29 @@ import {
 } from '@/lib/api';
 import { useBroadcastRegion } from '@/lib/broadcastRegion';
 
-const REGION_FLAGS: Record<BroadcastRegion, string> = {
-  US: '🇺🇸',
-  CA: '🇨🇦',
-  GB: '🇬🇧',
-  AU: '🇦🇺',
-  NZ: '🇳🇿',
-  EU: '🇪🇺',
+const REGION_CC: Record<BroadcastRegion, string> = {
+  US: 'us',
+  CA: 'ca',
+  GB: 'gb',
+  AU: 'au',
+  NZ: 'nz',
+  EU: 'eu',
 };
+
+function FlagIcon({ region, size = 16 }: { region: BroadcastRegion; size?: number }) {
+  const cc = REGION_CC[region];
+  // flagcdn.com serves ISO 3166-1 SVG flags with a 4:3 ratio. Render at 4×height
+  // and scale via height/width for crisp inline display alongside text.
+  return (
+    <img
+      src={`https://flagcdn.com/${cc}.svg`}
+      alt={`${region} flag`}
+      width={Math.round((size * 4) / 3)}
+      height={size}
+      style={{ display: 'inline-block', objectFit: 'cover', borderRadius: 2, verticalAlign: 'middle' }}
+    />
+  );
+}
 
 const REGION_LABELS: Record<BroadcastRegion, string> = {
   US: 'United States',
@@ -158,10 +173,11 @@ function BroadcastRow({
         <button
           type="button"
           onClick={onRegionPress}
-          className="shrink-0 rounded-full border border-border px-2 py-0.5 text-[11px] font-semibold text-text-secondary hover:border-primary/40 hover:text-foreground"
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-border px-2 py-0.5 text-[11px] font-semibold text-text-secondary hover:border-primary/40 hover:text-foreground"
           style={{ minWidth: 64 }}
         >
-          {REGION_FLAGS[region]} {region}
+          <FlagIcon region={region} size={12} />
+          <span>{region}</span>
         </button>
       ) : (
         <div className="shrink-0" style={{ width: 64 }} />
@@ -247,7 +263,7 @@ function RegionPickerModal({
             onClick={() => onSelect(r)}
             className="flex w-full items-center gap-3 border-b border-border py-3 text-left hover:bg-background"
           >
-            <span className="text-xl">{REGION_FLAGS[r]}</span>
+            <FlagIcon region={r} size={20} />
             <span className="flex-1 text-sm text-foreground">{REGION_LABELS[r]}</span>
             {currentRegion === r && <span className="text-base font-bold text-primary">✓</span>}
           </button>
