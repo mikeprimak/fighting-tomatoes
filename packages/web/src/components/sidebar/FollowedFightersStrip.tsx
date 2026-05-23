@@ -38,7 +38,16 @@ export function FollowedFightersStrip() {
         </Link>
       </div>
       <p className="mb-3 text-[10px] leading-snug text-text-secondary/80">
-        You&apos;ll be notified when they have upcoming fights.
+        Follow to save them.{' '}
+        <a
+          href="https://goodfights.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary hover:underline"
+        >
+          Get the app
+        </a>{' '}
+        to be notified for upcoming fights.
       </p>
 
       <div className="flex gap-2">
