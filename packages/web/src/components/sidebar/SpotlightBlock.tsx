@@ -36,19 +36,24 @@ export function SpotlightBlock() {
 
   // Run both data-bound queries unconditionally so we can fall back when the
   // chosen variant for today turns up empty.
-  const { data: topRecent } = useQuery({
+  const { data: topRecent, isFetched: topRecentFetched } = useQuery({
     queryKey: ['topRecentFights', 'month'],
     queryFn: () => getTopRecentFights('month'),
     enabled: isAuthenticated,
     staleTime: 30 * 60 * 1000,
   });
 
-  const { data: myRatings } = useQuery({
+  const { data: myRatings, isFetched: myRatingsFetched } = useQuery({
     queryKey: ['myRatings', 'sidebar-spotlight'],
     queryFn: () => getMyRatings({ page: '1', limit: '20', filterType: 'ratings', sortBy: 'newest' }),
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Hold rendering until both data-bound queries have resolved at least once.
+  // Otherwise the always-available taste-callout flashes in and then gets
+  // replaced once the network variants load.
+  const queriesSettled = topRecentFetched && myRatingsFetched;
 
   const seed = `${user?.id ?? 'anon'}-${dayKey()}`;
   const chosenIndex = pickVariantIndex(seed, VARIANTS.length);
@@ -100,6 +105,13 @@ export function SpotlightBlock() {
   }, [isAuthenticated, user, topRecent, myRatings]);
 
   if (!isAuthenticated || !user || !built) return null;
+  if (!queriesSettled) {
+    return (
+      <div className="rounded-lg border border-primary/30 bg-card p-4">
+        <div className="h-16 animate-pulse rounded bg-background-secondary" />
+      </div>
+    );
+  }
 
   // Pick today's variant, fall through to whatever has data.
   const order: VariantId[] = [
