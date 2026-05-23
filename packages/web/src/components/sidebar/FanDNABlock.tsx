@@ -32,10 +32,19 @@ export function FanDNABlock() {
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
-      <h3 className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
-        <Dna size={11} style={{ color: FAMILY_COLORS.affinity }} />
-        Your Fan DNA
-      </h3>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
+          <Dna size={11} style={{ color: FAMILY_COLORS.affinity }} />
+          Your Fan DNA
+        </h3>
+        <Link
+          href="/fan-dna"
+          className="flex shrink-0 items-center gap-0.5 text-[10px] font-medium text-text-secondary hover:text-primary"
+        >
+          See full DNA
+          <ChevronRight size={12} />
+        </Link>
+      </div>
 
       <ul className="space-y-3">
         {top.map((card, i) => (
@@ -44,14 +53,6 @@ export function FanDNABlock() {
           </li>
         ))}
       </ul>
-
-      <Link
-        href="/fan-dna"
-        className="mt-3 flex items-center justify-center gap-0.5 rounded border border-border py-1.5 text-[11px] font-medium text-text-secondary hover:border-primary/30 hover:text-primary"
-      >
-        See full DNA
-        <ChevronRight size={12} />
-      </Link>
     </div>
   );
 }

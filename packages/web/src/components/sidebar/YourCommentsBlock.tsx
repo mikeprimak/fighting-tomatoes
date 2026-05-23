@@ -94,9 +94,9 @@ export function YourCommentsBlock() {
         <div className="flex items-center gap-1.5 text-[10px] font-medium text-primary">
           <Icon size={11} />
           <span>{label}</span>
-          {variantId === 'top' && comment.upvotes > 0 ? (
-            <span className="text-text-secondary">· {comment.upvotes} upvote{comment.upvotes === 1 ? '' : 's'}</span>
-          ) : null}
+          <span className="text-text-secondary">
+            · {comment.upvotes} upvote{comment.upvotes === 1 ? '' : 's'}
+          </span>
         </div>
         <p className="mt-1.5 line-clamp-3 text-xs leading-snug text-foreground group-hover:text-primary">
           &ldquo;{comment.content}&rdquo;
