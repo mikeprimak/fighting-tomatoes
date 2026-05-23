@@ -3,6 +3,14 @@
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
 import { User, LogIn } from 'lucide-react';
+import { IdentityBlock } from '@/components/sidebar/IdentityBlock';
+import { FollowedFightersStrip } from '@/components/sidebar/FollowedFightersStrip';
+import { SpotlightBlock } from '@/components/sidebar/SpotlightBlock';
+import { UpcomingHypedBlock } from '@/components/sidebar/UpcomingHypedBlock';
+import { MightLikeBlock } from '@/components/sidebar/MightLikeBlock';
+import { FanDNABlock } from '@/components/sidebar/FanDNABlock';
+import { RecencyBlock } from '@/components/sidebar/RecencyBlock';
+import { DistributionBlock } from '@/components/sidebar/DistributionBlock';
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -32,46 +40,33 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <div className="mb-6 flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-card text-2xl font-bold text-primary">
-          {user.avatar ? (
-            <img src={user.avatar} alt="" className="h-full w-full rounded-full object-cover" />
-          ) : (
-            user.displayName?.[0] || user.email[0].toUpperCase()
-          )}
-        </div>
-        <div>
-          <h1 className="text-xl font-bold">{user.displayName || 'User'}</h1>
-          <p className="text-sm text-text-secondary">{user.email}</p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-2xl space-y-4">
+      <IdentityBlock />
+      <FollowedFightersStrip />
+      <SpotlightBlock />
+      <UpcomingHypedBlock />
+      <MightLikeBlock />
+      <FanDNABlock />
+      <RecencyBlock />
+      <DistributionBlock />
 
-      {/* Stats */}
-      <div className="mb-6 grid grid-cols-3 gap-4 rounded-lg border border-border bg-card p-4">
-        <div className="text-center">
-          <p className="text-2xl font-bold text-primary">{user.totalRatings || 0}</p>
-          <p className="text-xs text-text-secondary">Ratings</p>
-        </div>
-        <div className="text-center">
-          <p className="text-2xl font-bold text-primary">{user.totalReviews || 0}</p>
-          <p className="text-xs text-text-secondary">Reviews</p>
-        </div>
-        <div className="text-center">
-          <p className="text-2xl font-bold text-primary">{user.totalHype || 0}</p>
-          <p className="text-xs text-text-secondary">Hype Scores</p>
-        </div>
-      </div>
-
-      {/* Links */}
-      <div className="space-y-2">
-        <Link href="/profile/edit" className="block rounded-lg border border-border bg-card p-3 text-sm transition-colors hover:border-primary/30">
+      <div className="space-y-2 pt-2">
+        <Link
+          href="/profile/edit"
+          className="block rounded-lg border border-border bg-card p-3 text-sm transition-colors hover:border-primary/30"
+        >
           Edit Profile & Settings
         </Link>
-        <Link href="/activity" className="block rounded-lg border border-border bg-card p-3 text-sm transition-colors hover:border-primary/30">
+        <Link
+          href="/activity"
+          className="block rounded-lg border border-border bg-card p-3 text-sm transition-colors hover:border-primary/30"
+        >
           My Activity
         </Link>
-        <Link href="/followed-fighters" className="block rounded-lg border border-border bg-card p-3 text-sm transition-colors hover:border-primary/30">
+        <Link
+          href="/followed-fighters"
+          className="block rounded-lg border border-border bg-card p-3 text-sm transition-colors hover:border-primary/30"
+        >
           Followed Fighters
         </Link>
       </div>
