@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { getUpcomingHypedFights, type UpcomingHypedFight } from '@/lib/api';
 import { Flame } from 'lucide-react';
+import { getHypeHeatmapColor } from '@/utils/heatmap';
 
 function fighterLast(f: UpcomingHypedFight['fighter1']): string {
   return f.lastName || f.firstName || '';
@@ -44,8 +45,16 @@ export function UpcomingHypedBlock() {
                 <p className="min-w-0 flex-1 truncate text-sm font-medium text-foreground group-hover:text-primary">
                   {fighterLast(f.fighter1)} vs {fighterLast(f.fighter2)}
                 </p>
-                <span className="shrink-0 rounded bg-primary/15 px-1.5 py-0.5 text-[11px] font-semibold text-primary">
-                  {f.userHype}
+                <span className="relative flex h-7 w-7 shrink-0 items-center justify-center">
+                  <Flame
+                    size={28}
+                    fill={getHypeHeatmapColor(f.userHype)}
+                    color={getHypeHeatmapColor(f.userHype)}
+                    strokeWidth={1.5}
+                  />
+                  <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_70%)]">
+                    {Math.round(f.userHype)}
+                  </span>
                 </span>
               </div>
               <p className="mt-0.5 truncate text-[11px] text-text-secondary">
