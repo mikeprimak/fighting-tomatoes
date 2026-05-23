@@ -3,6 +3,7 @@
 import { IdentityBlock } from './IdentityBlock';
 import { FanDNABlock } from './FanDNABlock';
 import { DistributionBlock } from './DistributionBlock';
+import { YourCommentsBlock } from './YourCommentsBlock';
 import { FollowedFightersStrip } from './FollowedFightersStrip';
 import { UpcomingHypedBlock } from './UpcomingHypedBlock';
 import { SpotlightBlock } from './SpotlightBlock';
@@ -21,6 +22,7 @@ export function ProfileSidebar() {
       <IdentityBlock />
       <FanDNABlock />
       <DistributionBlock />
+      <YourCommentsBlock />
       <FollowedFightersStrip />
       <UpcomingHypedBlock />
       <SpotlightBlock />

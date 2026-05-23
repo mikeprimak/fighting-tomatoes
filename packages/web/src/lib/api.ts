@@ -381,6 +381,37 @@ export async function getTopFollowedFighters(limit = 20) {
   }>(`/community/top-followed-fighters?limit=${limit}`);
 }
 
+export interface MyComment {
+  id: string;
+  fightId: string;
+  content: string;
+  rating: number | null;
+  upvotes: number;
+  userHasUpvoted: boolean;
+  createdAt: string;
+  isReply: boolean;
+  fight: {
+    id: string;
+    fighter1Name: string;
+    fighter2Name: string;
+    eventName: string;
+    eventDate: string;
+  };
+}
+
+export async function getMyComments(
+  params: { sortBy?: 'newest' | 'upvotes'; limit?: number } = {},
+) {
+  const qp = new URLSearchParams();
+  qp.append('page', '1');
+  qp.append('limit', String(params.limit ?? 5));
+  qp.append('sortBy', params.sortBy ?? 'newest');
+  return makeRequest<{
+    reviews: MyComment[];
+    pagination: { page: number; limit: number; total: number; totalPages: number };
+  }>(`/fights/my-comments?${qp.toString()}`);
+}
+
 // ==================== PRE-FIGHT COMMENTS ====================
 
 export async function createPreFightComment(fightId: string, content: string) {

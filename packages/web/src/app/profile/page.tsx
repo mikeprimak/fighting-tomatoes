@@ -10,6 +10,7 @@ import { UpcomingHypedBlock } from '@/components/sidebar/UpcomingHypedBlock';
 import { MightLikeBlock } from '@/components/sidebar/MightLikeBlock';
 import { FanDNABlock } from '@/components/sidebar/FanDNABlock';
 import { DistributionBlock } from '@/components/sidebar/DistributionBlock';
+import { YourCommentsBlock } from '@/components/sidebar/YourCommentsBlock';
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -43,6 +44,7 @@ export default function ProfilePage() {
       <IdentityBlock />
       <FanDNABlock />
       <DistributionBlock />
+      <YourCommentsBlock />
       <FollowedFightersStrip />
       <UpcomingHypedBlock />
       <SpotlightBlock />
