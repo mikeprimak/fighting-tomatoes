@@ -51,13 +51,19 @@ export function OrgFilterProvider({ children }: { children: ReactNode }) {
   // don't want to overwrite a persisted selection before the load effect runs.
   const [hydrated, setHydrated] = useState(false);
 
-  // Load saved selection from localStorage on mount (client-only).
+  // Load saved selection from localStorage on mount (client-only). First-time
+  // visitors and fresh accounts default to UFC only — "All" is overwhelming
+  // when most of the value (and most installs) come from UFC fans.
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(ORG_FILTER_STORAGE_KEY);
       if (saved) {
         const orgs = JSON.parse(saved) as Organization[];
-        if (Array.isArray(orgs)) setSelectedOrgs(new Set(orgs));
+        if (Array.isArray(orgs)) {
+          setSelectedOrgs(new Set(orgs));
+        }
+      } else {
+        setSelectedOrgs(new Set(['UFC']));
       }
     } catch (err) {
       console.error('[OrgFilter] Error loading saved filter:', err);

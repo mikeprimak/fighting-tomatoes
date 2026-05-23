@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getMyRatings } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const TABS = [
   { value: 'all', label: 'All Ratings' },
@@ -22,9 +22,22 @@ const SORT_OPTIONS = [
 ];
 
 export default function ActivityPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
+      <ActivityPageInner />
+    </Suspense>
+  );
+}
+
+function ActivityPageInner() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const [filterType, setFilterType] = useState('all');
+  const searchParams = useSearchParams();
+  const initialFilter = (() => {
+    const f = searchParams.get('filter');
+    return TABS.some(t => t.value === f) ? (f as string) : 'all';
+  })();
+  const [filterType, setFilterType] = useState(initialFilter);
   const [sortBy, setSortBy] = useState('recent');
 
   const {

@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { getMyComments, type MyComment } from '@/lib/api';
-import { MessageCircle, TrendingUp, Clock } from 'lucide-react';
+import { MessageCircle, TrendingUp, Clock, ChevronRight } from 'lucide-react';
 
 // Daily rotation: hash(userId + day-of-year) % variantCount. Stable per day,
 // changes overnight, varies between users.
@@ -85,10 +85,19 @@ export function YourCommentsBlock() {
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
-      <h3 className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
-        <MessageCircle size={11} className="text-primary" />
-        Your comments
-      </h3>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h3 className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
+          <MessageCircle size={11} className="text-primary" />
+          Your comments
+        </h3>
+        <Link
+          href="/activity?filter=reviewed"
+          className="flex shrink-0 items-center gap-0.5 text-[10px] font-medium text-text-secondary hover:text-primary"
+        >
+          See all
+          <ChevronRight size={12} />
+        </Link>
+      </div>
 
       <Link href={`/fights/${comment.fightId}`} className="block group">
         <div className="flex items-center gap-1.5 text-[10px] font-medium text-primary">
