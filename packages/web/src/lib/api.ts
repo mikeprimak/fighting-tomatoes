@@ -592,3 +592,33 @@ export async function getUpcomingFollowedFights(limit = 5) {
     `/fights/upcoming-followed?limit=${limit}`,
   );
 }
+
+export interface UpcomingHypedFight {
+  id: string;
+  eventId: string;
+  event: { id: string; name: string; date: string; promotion: string | null };
+  fighter1: { id: string; firstName: string; lastName: string; nickname: string | null; profileImage: string | null };
+  fighter2: { id: string; firstName: string; lastName: string; nickname: string | null; profileImage: string | null };
+  userHype: number;
+}
+
+export async function getUpcomingHypedFights(limit = 5, minHype = 7) {
+  return makeRequest<{ fights: UpcomingHypedFight[] }>(
+    `/fights/upcoming-hyped?limit=${limit}&minHype=${minHype}`,
+  );
+}
+
+export interface RecommendedFight {
+  id: string;
+  eventId: string;
+  event: { id: string; name: string; date: string; promotion: string | null };
+  fighter1: { id: string; firstName: string; lastName: string; nickname: string | null; profileImage: string | null };
+  fighter2: { id: string; firstName: string; lastName: string; nickname: string | null; profileImage: string | null };
+  reason: string;
+}
+
+export async function getUpcomingRecommendedFights(limit = 5) {
+  return makeRequest<{ fights: RecommendedFight[] }>(
+    `/fights/upcoming-recommended?limit=${limit}`,
+  );
+}
