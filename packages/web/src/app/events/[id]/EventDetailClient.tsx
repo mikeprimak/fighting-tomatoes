@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getEvent, getFights } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { formatEventDate, formatEventTime } from '@/utils/dateFormatters';
+import { formatEventDate, formatEventTime, formatEventTimeCompact } from '@/utils/dateFormatters';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { LiveFightCard } from '@/components/fight-cards/LiveFightCard';
@@ -11,6 +11,14 @@ import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 const SECTION_ORDER = ['MAIN CARD', 'PRELIMS', 'EARLY PRELIMS'];
+
+function sectionStartTime(section: string, event: any): string | null {
+  const key = section.toUpperCase();
+  if (key === 'MAIN CARD') return event.mainStartTime ?? null;
+  if (key === 'PRELIMS') return event.prelimStartTime ?? null;
+  if (key === 'EARLY PRELIMS') return event.earlyPrelimStartTime ?? null;
+  return null;
+}
 
 function groupFightsBySection(fights: any[]) {
   const sections: Record<string, any[]> = {};
@@ -93,7 +101,7 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
           <span>{event.promotion}</span>
           <span>-</span>
           <span>{formatEventDate(event.date, { weekday: 'long', month: 'long', year: true })}</span>
-          {event.startTime && <span>at {formatEventTime(event.startTime)}</span>}
+          {event.mainStartTime && <span>• Main @ {formatEventTime(event.mainStartTime)}</span>}
         </div>
         {(event.venue || event.location) && (
           <p className="mt-0.5 text-sm text-text-secondary">
@@ -109,11 +117,18 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
         </div>
       )}
 
-      {sortedSectionKeys.map(section => (
+      {sortedSectionKeys.map(section => {
+        const sectionTime = sectionStartTime(section, event);
+        return (
         <div key={section} className="mb-6">
           {sortedSectionKeys.length > 1 && (
             <div className="mb-1.5 flex items-center gap-2">
               <span className="text-[10px] font-semibold tracking-wider text-text-secondary">{section}</span>
+              {sectionTime && !isPast && (
+                <span className="text-[10px] font-semibold tracking-wider text-text-secondary">
+                  @ {formatEventTimeCompact(sectionTime)}
+                </span>
+              )}
               <div className="h-px flex-1 bg-border" />
             </div>
           )}
@@ -136,7 +151,8 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
             })}
           </div>
         </div>
-      ))}
+        );
+      })}
 
       {fights.length === 0 && !fightsLoading && (
         <p className="py-8 text-center text-sm text-text-secondary">No fights announced yet.</p>

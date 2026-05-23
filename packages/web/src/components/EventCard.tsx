@@ -1,6 +1,6 @@
 'use client';
 
-import { formatEventDate, formatTimeUntil, formatTimeAgo } from '@/utils/dateFormatters';
+import { formatEventDate, formatEventTimeCompact, formatTimeUntil, formatTimeAgo } from '@/utils/dateFormatters';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { LiveFightCard } from '@/components/fight-cards/LiveFightCard';
@@ -17,7 +17,9 @@ interface EventCardProps {
     eventStatus: string;
     bannerImage?: string;
     fights?: any[];
-    startTime?: string;
+    earlyPrelimStartTime?: string | null;
+    prelimStartTime?: string | null;
+    mainStartTime?: string | null;
   };
   mode: 'upcoming' | 'past' | 'live';
 }
@@ -66,10 +68,12 @@ export function EventCard({ event, mode }: EventCardProps) {
   });
 
   const timeBadge = mode === 'upcoming'
-    ? formatTimeUntil(event.date, event.startTime)
+    ? formatTimeUntil(event.date, event.mainStartTime ?? undefined)
     : mode === 'past'
       ? formatTimeAgo(event.date)
       : 'LIVE';
+
+  const mainTime = event.mainStartTime ? formatEventTimeCompact(event.mainStartTime) : null;
 
   const timeBadgeColor = mode === 'live' ? 'bg-danger/20 text-danger' :
     timeBadge === 'TODAY' || timeBadge === 'TOMORROW' ? 'bg-primary/20 text-primary' :
@@ -94,7 +98,10 @@ export function EventCard({ event, mode }: EventCardProps) {
                   {event.name}
                 </h2>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-gray-200 sm:text-base">
-                  <span>{formatEventDate(event.date)}</span>
+                  <span>
+                    {formatEventDate(event.date)}
+                    {mainTime && ` • Main @ ${mainTime}`}
+                  </span>
                   {event.venue && <span>- {event.venue}</span>}
                 </div>
               </div>
@@ -110,7 +117,10 @@ export function EventCard({ event, mode }: EventCardProps) {
                 {event.name}
               </h2>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-text-secondary sm:text-base">
-                <span>{formatEventDate(event.date)}</span>
+                <span>
+                  {formatEventDate(event.date)}
+                  {mainTime && ` • Main @ ${mainTime}`}
+                </span>
                 {event.venue && <span>- {event.venue}</span>}
               </div>
             </div>
