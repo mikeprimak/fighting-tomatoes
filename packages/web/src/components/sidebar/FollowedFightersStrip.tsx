@@ -26,7 +26,7 @@ export function FollowedFightersStrip() {
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
-      <div className="mb-3 flex items-baseline justify-between">
+      <div className="mb-1 flex items-baseline justify-between">
         <h3 className="text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
           Following
         </h3>
@@ -37,6 +37,9 @@ export function FollowedFightersStrip() {
           {fighters.length} · See all
         </Link>
       </div>
+      <p className="mb-3 text-[10px] leading-snug text-text-secondary/80">
+        You&apos;ll be notified when they have upcoming fights.
+      </p>
 
       <div className="flex gap-2">
         {visible.map((f: any) => {

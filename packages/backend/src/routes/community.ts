@@ -1261,5 +1261,137 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       });
     }
   });
+
+  // GET /api/fighters/recommended — sidebar "Fighters you might like".
+  // Personalized when authed: weight-class match against fighters the user
+  // follows or has rated highly. Cold-start (anon, or no signal yet) returns
+  // top-followed across the platform with a generic reason.
+  fastify.get('/fighters/recommended', {
+    preHandler: optionalAuthenticateMiddleware,
+  }, async (request, reply) => {
+    try {
+      const userId = (request as any).user?.id as string | undefined;
+      const limit = Math.min(Number((request.query as any)?.limit) || 8, 20);
+
+      const coldStart = async (excludeFollowedFor?: string) => {
+        const grouped = await fastify.prisma.userFighterFollow.groupBy({
+          by: ['fighterId'],
+          _count: { fighterId: true },
+          orderBy: { _count: { fighterId: 'desc' } },
+          take: limit * 2,
+        });
+        const ids = grouped.map((g) => g.fighterId);
+        if (ids.length === 0) return [];
+        let alreadyFollowed = new Set<string>();
+        if (excludeFollowedFor) {
+          const f = await fastify.prisma.userFighterFollow.findMany({
+            where: { userId: excludeFollowedFor, fighterId: { in: ids } },
+            select: { fighterId: true },
+          });
+          alreadyFollowed = new Set(f.map((x) => x.fighterId));
+        }
+        const fighters = await fastify.prisma.fighter.findMany({
+          where: { id: { in: ids } },
+        });
+        const fighterMap = new Map(fighters.map((f) => [f.id, f]));
+        return grouped
+          .filter((g) => !alreadyFollowed.has(g.fighterId))
+          .map((g) => ({ fighter: fighterMap.get(g.fighterId), reason: 'Popular on Good Fights' }))
+          .filter((x): x is { fighter: any; reason: string } => !!x.fighter)
+          .slice(0, limit);
+      };
+
+      if (!userId) {
+        return reply.send({ fighters: await coldStart() });
+      }
+
+      const [follows, highRatedFights] = await Promise.all([
+        fastify.prisma.userFighterFollow.findMany({
+          where: { userId },
+          select: { fighterId: true },
+        }),
+        fastify.prisma.fightRating.findMany({
+          where: { userId, rating: { gte: 8 } },
+          select: { fight: { select: { fighter1Id: true, fighter2Id: true } } },
+          take: 500,
+        }),
+      ]);
+
+      const followedIds = new Set(follows.map((f) => f.fighterId));
+      const affinityIds = new Set<string>(followedIds);
+      for (const r of highRatedFights) {
+        if (r.fight.fighter1Id) affinityIds.add(r.fight.fighter1Id);
+        if (r.fight.fighter2Id) affinityIds.add(r.fight.fighter2Id);
+      }
+
+      if (affinityIds.size === 0) {
+        return reply.send({ fighters: await coldStart(userId) });
+      }
+
+      const affinityFighters = await fastify.prisma.fighter.findMany({
+        where: { id: { in: [...affinityIds] } },
+        select: { id: true, firstName: true, lastName: true, weightClass: true },
+      });
+
+      // For each weight class in the affinity pool, pick a representative
+      // namesake — prefer a followed fighter over a merely-highly-rated one.
+      const weightClassNamesake = new Map<string, string>();
+      for (const f of affinityFighters) {
+        if (!f.weightClass) continue;
+        if (followedIds.has(f.id) && !weightClassNamesake.has(f.weightClass)) {
+          weightClassNamesake.set(f.weightClass, f.lastName || f.firstName);
+        }
+      }
+      for (const f of affinityFighters) {
+        if (!f.weightClass) continue;
+        if (!weightClassNamesake.has(f.weightClass)) {
+          weightClassNamesake.set(f.weightClass, f.lastName || f.firstName);
+        }
+      }
+      const weightClasses = [...weightClassNamesake.keys()] as any[];
+
+      if (weightClasses.length === 0) {
+        return reply.send({ fighters: await coldStart(userId) });
+      }
+
+      const candidates = await fastify.prisma.fighter.findMany({
+        where: {
+          id: { notIn: [...affinityIds] },
+          weightClass: { in: weightClasses },
+          isActive: true,
+          totalFights: { gt: 0 },
+        },
+        orderBy: [
+          { greatFights: 'desc' },
+          { averageRating: 'desc' },
+          { totalRatings: 'desc' },
+        ],
+        take: limit,
+      });
+
+      const fighters = candidates.map((c) => {
+        const namesake = c.weightClass ? weightClassNamesake.get(c.weightClass) : undefined;
+        const reason = namesake ? `Same weight as ${namesake}` : 'Highly rated fighter';
+        return { fighter: c, reason };
+      });
+
+      // If personalization yielded too few, top up from cold start.
+      if (fighters.length < limit) {
+        const need = limit - fighters.length;
+        const fillerAll = await coldStart(userId);
+        const existingIds = new Set(fighters.map((f) => f.fighter.id));
+        const filler = fillerAll.filter((f) => !existingIds.has(f.fighter.id)).slice(0, need);
+        fighters.push(...filler);
+      }
+
+      return reply.send({ fighters });
+    } catch (error) {
+      console.error('Error fetching recommended fighters:', error);
+      return reply.status(500).send({
+        error: 'Failed to fetch recommended fighters',
+        code: 'FETCH_ERROR',
+      });
+    }
+  });
 }
 

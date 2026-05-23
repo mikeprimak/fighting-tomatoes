@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { getTopRecentFights } from '@/lib/api';
 import { useOrgFilter } from '@/lib/orgFilter';
 import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
+import { LoadMoreSentinel } from '@/components/layout/LoadMoreSentinel';
 import { Loader2, Trophy } from 'lucide-react';
+
+const PAGE_SIZE = 25;
 
 const TIME_PERIODS = [
   { value: 'week', label: 'This Week' },
@@ -22,12 +25,23 @@ export default function TopFightsPage() {
 
   const promotions = selectedOrgs.size > 0 ? Array.from(selectedOrgs).join(',') : undefined;
 
-  const { data, isLoading, error } = useQuery({
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    error,
+  } = useInfiniteQuery({
     queryKey: ['topFights', period, promotions],
-    queryFn: () => getTopRecentFights(period, promotions),
+    queryFn: ({ pageParam = 1 }) =>
+      getTopRecentFights(period, promotions, pageParam as number, PAGE_SIZE),
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.pagination?.hasMore ? allPages.length + 1 : undefined,
+    initialPageParam: 1,
   });
 
-  const fights = data?.data ?? [];
+  const fights = data?.pages.flatMap(p => p.data) ?? [];
 
   return (
     <div>
@@ -75,6 +89,12 @@ export default function TopFightsPage() {
           ))}
         </div>
       )}
+
+      <LoadMoreSentinel
+        hasMore={!!hasNextPage}
+        isFetching={isFetchingNextPage}
+        onIntersect={() => fetchNextPage()}
+      />
 
       {!isLoading && fights.length === 0 && !error && (
         <p className="py-12 text-center text-sm text-text-secondary">
