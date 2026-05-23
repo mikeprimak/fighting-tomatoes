@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
-import { DistributionChart } from '@/components/charts/DistributionChart';
+import { VerticalDistributionChart } from '@/components/charts/VerticalDistributionChart';
 import { Star, Flame } from 'lucide-react';
 
 // Data floor — below this many entries the chart is too noisy to be useful and
@@ -76,7 +76,7 @@ export function DistributionBlock() {
         </div>
       </div>
 
-      <DistributionChart
+      <VerticalDistributionChart
         distribution={activeDist}
         label={activeTab === 'rating' ? 'rating' : 'hype score'}
       />
