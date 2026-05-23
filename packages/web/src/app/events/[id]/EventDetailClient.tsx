@@ -32,7 +32,7 @@ interface Props {
 }
 
 export function EventDetailClient({ eventId, initialEvent, initialFights }: Props) {
-  const { isAuthenticated } = useAuth();
+  const { isLoading: authLoading } = useAuth();
 
   const { data: eventData } = useQuery({
     queryKey: ['event', eventId],
@@ -41,9 +41,11 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
   });
 
   const { data: fightsData, isLoading: fightsLoading } = useQuery({
-    queryKey: ['eventFights', eventId, isAuthenticated],
-    queryFn: () => getFights({ eventId, limit: 50, includeUserData: isAuthenticated }),
+    queryKey: ['eventFights', eventId],
+    queryFn: () => getFights({ eventId, limit: 50, includeUserData: true }),
     initialData: initialFights.length > 0 ? { fights: initialFights, pagination: { page: 1, limit: 50, total: initialFights.length, totalPages: 1 } } : undefined,
+    initialDataUpdatedAt: 0,
+    enabled: !authLoading,
     refetchInterval: eventData?.event?.eventStatus === 'LIVE' ? 10000 : 30000,
   });
 

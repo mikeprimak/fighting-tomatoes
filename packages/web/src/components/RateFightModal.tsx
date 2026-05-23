@@ -91,6 +91,7 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
     }
     await Promise.all(tasks);
     queryClient.invalidateQueries({ queryKey: ['events'] });
+    queryClient.invalidateQueries({ queryKey: ['eventFights'] });
     queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
     queryClient.invalidateQueries({ queryKey: ['fightStats', fight.id] });
     queryClient.invalidateQueries({ queryKey: ['fightReviews', fight.id] });

@@ -83,6 +83,7 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype }: HypeFig
     }
     await Promise.all(tasks);
     queryClient.invalidateQueries({ queryKey: ['events'] });
+    queryClient.invalidateQueries({ queryKey: ['eventFights'] });
     queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
     queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
     queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
