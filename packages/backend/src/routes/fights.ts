@@ -4162,6 +4162,77 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // GET /api/fights/upcoming-followed - upcoming fights involving fighters the user follows.
+  // Used by the web profile sidebar (recency block). Cheap single query.
+  fastify.get<{
+    Querystring: { limit?: string };
+  }>('/fights/upcoming-followed', {
+    preHandler: [authenticateUser],
+  }, async (request, reply) => {
+    try {
+      const currentUserId = (request as any).user.id;
+      const limit = Math.min(Math.max(parseInt(request.query.limit || '5'), 1), 25);
+
+      const follows = await fastify.prisma.userFighterFollow.findMany({
+        where: { userId: currentUserId },
+        select: { fighterId: true },
+      });
+      const fighterIds = follows.map((f) => f.fighterId);
+      if (fighterIds.length === 0) {
+        return reply.send({ fights: [] });
+      }
+
+      const now = new Date();
+      const fights = await fastify.prisma.fight.findMany({
+        where: {
+          fightStatus: { not: 'CANCELLED' },
+          OR: [
+            { fighter1Id: { in: fighterIds } },
+            { fighter2Id: { in: fighterIds } },
+          ],
+          event: { date: { gte: now } },
+        },
+        orderBy: { event: { date: 'asc' } },
+        take: limit,
+        include: {
+          event: {
+            select: {
+              id: true,
+              name: true,
+              date: true,
+              promotion: true,
+            },
+          },
+          fighter1: {
+            select: { id: true, firstName: true, lastName: true, nickname: true, profileImage: true },
+          },
+          fighter2: {
+            select: { id: true, firstName: true, lastName: true, nickname: true, profileImage: true },
+          },
+        },
+      });
+
+      const fighterIdSet = new Set(fighterIds);
+      const transformed = fights.map((f) => ({
+        id: f.id,
+        eventId: f.eventId,
+        event: f.event,
+        fighter1: f.fighter1,
+        fighter2: f.fighter2,
+        isFollowingFighter1: fighterIdSet.has(f.fighter1Id),
+        isFollowingFighter2: fighterIdSet.has(f.fighter2Id),
+      }));
+
+      return reply.send({ fights: transformed });
+    } catch (error) {
+      console.error('Error in /fights/upcoming-followed route:', error);
+      return reply.code(500).send({
+        error: 'Internal server error',
+        code: 'INTERNAL_ERROR',
+      });
+    }
+  });
+
   // GET /api/fights/my-comments - Get user's comments with pagination (by individual comments)
   fastify.get<{
     Querystring: { page?: string; limit?: string; sortBy?: string };
