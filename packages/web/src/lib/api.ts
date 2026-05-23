@@ -525,3 +525,35 @@ export async function sendFeedback(data: { content: string; type: string }) {
     body: JSON.stringify(data),
   });
 }
+
+// ==================== FAN DNA ====================
+
+export interface FanDNAPersonalityType {
+  id: string;
+  label: string;
+  body: string;
+  primaryStat?: string;
+  secondaryStat?: string;
+}
+
+export interface FanDNACard {
+  traitId: string;
+  family: string;
+  headline: string;
+  body?: string;
+  primaryStat?: string;
+  secondaryStat?: string;
+  weight: number;
+  confidence: number;
+  computedAt: string;
+}
+
+export interface FanDNAProfile {
+  personalityType: FanDNAPersonalityType | null;
+  cards: FanDNACard[];
+  count: number;
+}
+
+export async function getFanDNAProfile() {
+  return makeRequest<FanDNAProfile>('/fan-dna/profile');
+}
