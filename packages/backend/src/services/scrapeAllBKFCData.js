@@ -406,99 +406,56 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         }
       }
 
-      // Extract event start time from the event page.
-      // BKFC shows the event start (prelims) time in visible elements like
-      // div.text-color-gold ("March 28, 2026 6:00 PM EDT") and also in a
-      // countdown element [data-countdown-date] which may show the MAIN CARD
-      // time instead. We prioritize the visible page time since it reflects
-      // the earliest start (prelims/free fights).
-      let eventStartTime = null;
-
-      // Try 1: Get time from visible date display elements (most reliable — shows event start/prelims).
-      // The canonical "Month DD, YYYY H:MM PM" string lives in the textContent of
-      // [data-event-date-est] — the EST/EDT-rendered display BKFC uses on every event page.
-      // (The attribute itself is empty; the value is in the inner text.) Other selectors
-      // are kept as legacy fallbacks for older page layouts.
-      const dateDisplaySelectors = [
-        '[data-event-date-est]',
-        'div.text-color-gold',
-        'p',
-        '.event-date',
-        '.header_date',
-      ];
-      for (const selector of dateDisplaySelectors) {
-        if (eventStartTime) break;
-        const els = document.querySelectorAll(selector);
+      // Extract authoritative date + main/prelim times from the event page.
+      //
+      // BKFC's event pages embed the canonical "Month DD, YYYY H:MM PM" string
+      // in [data-event-date-est] elements rendered in US Eastern. Three locations:
+      //   1. Hero — usually has class="hidden" (overlay), shows the earliest
+      //      start time = prelims/free fights. Most reliable for the EVENT DATE.
+      //   2. Inside [data-w-tab="Main Card"] — shows main card start time.
+      //   3. Inside [data-w-tab="Prelims"] — shows free-fights start time.
+      //
+      // We DELIBERATELY ignore [data-event-date-local] (Webflow renders that in
+      // the viewer's local TZ; server-side it can resolve to the wrong calendar
+      // day) and the list-page date for the same reason.
+      //
+      // Returns three raw strings; the TS parser combines them with timezone math.
+      const FULL_DATE_TIME = /([A-Z][a-z]+\s+\d{1,2},\s*\d{4})\s+(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:EDT|EST|ET|CDT|CST|CT|PDT|PST|PT)?/i;
+      const extractDateTime = (rootEl) => {
+        if (!rootEl) return { dateText: null, timeRaw: null };
+        // Don't skip hidden — hero EST element is intentionally class="hidden".
+        const els = rootEl.querySelectorAll('[data-event-date-est]');
         for (const el of els) {
-          // Skip hidden elements
-          if (el.classList.contains('hidden')) continue;
-          const text = el.textContent?.trim() || '';
-          // Match full date+time pattern like "March 28, 2026 6:00 PM EDT"
-          const fullMatch = text.match(/[A-Z][a-z]+\s+\d{1,2},\s*\d{4}\s+(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:EDT|EST|ET|CDT|CST|CT|PDT|PST|PT)?/i);
-          if (fullMatch) {
-            eventStartTime = fullMatch[1].trim().toUpperCase();
-            break;
+          const text = (el.textContent || '').trim();
+          const m = text.match(FULL_DATE_TIME);
+          if (m) {
+            return { dateText: m[1].trim(), timeRaw: m[2].trim().toUpperCase() };
           }
         }
-      }
+        return { dateText: null, timeRaw: null };
+      };
 
-      // Try 2: Get data-countdown-date attribute value
-      // Note: countdown often shows main card time, not prelims — only use if Try 1 failed
-      if (!eventStartTime) {
-        const countdownDateEl = document.querySelector('[data-countdown-date]');
-        if (countdownDateEl) {
-          const attrValue = countdownDateEl.getAttribute('data-countdown-date') || '';
-          const textValue = countdownDateEl.textContent?.trim() || '';
-          const dateText = attrValue || textValue;
+      // Hero (top of page) — authoritative event date + earliest start.
+      const heroRoot = document.querySelector('header, .hero, body');
+      const heroExtract = extractDateTime(heroRoot);
 
-          const timeMatch = dateText.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
-          if (timeMatch) {
-            eventStartTime = timeMatch[1].trim().toUpperCase();
-          }
-        }
-      }
+      // Main Card tab section.
+      const mainTabRoot = document.querySelector('[data-w-tab="Main Card"]');
+      const mainExtract = extractDateTime(mainTabRoot);
 
-      // Try 3: Look for data-event-date-est attribute
-      if (!eventStartTime) {
-        const estDateEl = document.querySelector('[data-event-date-est]');
-        if (estDateEl) {
-          const attrValue = estDateEl.getAttribute('data-event-date-est') || '';
-          const timeMatch = attrValue.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
-          if (timeMatch) {
-            eventStartTime = timeMatch[1].trim().toUpperCase();
-          }
-        }
-      }
+      // Prelims / Free Fights tab section.
+      const prelimTabRoot = document.querySelector('[data-w-tab="Prelims"]');
+      const prelimExtract = extractDateTime(prelimTabRoot);
 
-      // Try 4: Search page text for time pattern near date
-      if (!eventStartTime) {
-        const pageText = document.body.innerText || '';
-        const timePatterns = [
-          /\d{4}\s+(\d{1,2}:\d{2}\s*(?:AM|PM))/gi,
-          /(\d{1,2}:\d{2}\s*(?:AM|PM))\s*(?:EST|ET|EDT)/gi,
-        ];
-        for (const pattern of timePatterns) {
-          const match = pageText.match(pattern);
-          if (match) {
-            const timeExtract = match[0].match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
-            if (timeExtract) {
-              eventStartTime = timeExtract[1].trim().toUpperCase();
-              break;
-            }
-          }
-        }
-      }
+      // Prefer Main Card section, fall back to hero (in case page layout changes).
+      // Same for prelims.
+      const mainStartTimeRaw = mainExtract.timeRaw || heroExtract.timeRaw;
+      const prelimStartTimeRaw = prelimExtract.timeRaw || null;
 
-      // Try 5: Fallback to time-related selectors
-      if (!eventStartTime) {
-        const timeEl = document.querySelector('[class*="time"]');
-        if (timeEl) {
-          const timeMatch = timeEl.textContent.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))/i);
-          if (timeMatch) {
-            eventStartTime = timeMatch[1].trim().toUpperCase();
-          }
-        }
-      }
+      // Event date: prefer Main Card date (matches the displayed card), then
+      // hero, then prelim section. All three should be the same calendar day.
+      const eventDateText =
+        mainExtract.dateText || heroExtract.dateText || prelimExtract.dateText || null;
 
       // Helper to check if a string is a valid fighter name
       function isValidFighterName(name) {
@@ -839,7 +796,9 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
 
       return {
         eventImageUrl,
-        eventStartTime,
+        eventDateText,
+        mainStartTimeRaw,
+        prelimStartTimeRaw,
         fights: allFights
       };
     });
@@ -1064,12 +1023,15 @@ async function main() {
       console.log(`📄 ${event.eventName}`);
       const eventData = await scrapeEventPage(browser, event.eventUrl, event.eventSlug);
 
-      // Merge event data
+      // Merge event data. Event-page extraction (data-event-date-est) is
+      // authoritative for date + times; list-page values are fallbacks only.
       const completeEventData = {
         ...event,
         ...eventData,
         eventImageUrl: eventData.eventImageUrl || event.eventImageUrl,
-        eventStartTime: eventData.eventStartTime || event.eventStartTime
+        eventDateText: eventData.eventDateText || event.dateText || null,
+        mainStartTimeRaw: eventData.mainStartTimeRaw || event.eventStartTime || null,
+        prelimStartTimeRaw: eventData.prelimStartTimeRaw || null,
       };
 
       allEventData.push(completeEventData);
