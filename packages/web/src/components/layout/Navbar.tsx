@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, User, Menu, X, Flame, Radio, Star, Trophy, LogOut, LogIn } from 'lucide-react';
+import { Search, User, Menu, X, Flame, Radio, Star, Trophy, LogOut, LogIn, Newspaper } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 
@@ -11,6 +11,7 @@ const navLinks = [
   { href: '/', label: 'Upcoming', icon: Flame },
   { href: '/events/past', label: 'Past', icon: Star },
   { href: '/fights/top', label: 'Good Fights', icon: Trophy },
+  { href: '/blog', label: 'Blog', icon: Newspaper },
 ];
 
 export function Navbar() {
