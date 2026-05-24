@@ -67,11 +67,20 @@ interface ScrapedBKFCEvent {
   state: string;
   country: string;
   dateText: string;
-  eventDate: string | null; // ISO date string
+  eventDate: string | null; // ISO date string (from list page — fallback only)
   eventImageUrl: string | null;
   status: string;
   fights?: ScrapedBKFCFight[];
   localImagePath?: string;
+  // Authoritative date + times from the event page's [data-event-date-est]
+  // elements in US Eastern. eventDateText is the bare date portion (e.g.
+  // "May 22, 2026"); mainStartTimeRaw and prelimStartTimeRaw are clock
+  // strings (e.g. "10:00 PM", "9:00 PM").
+  eventDateText?: string | null;
+  mainStartTimeRaw?: string | null;
+  prelimStartTimeRaw?: string | null;
+  // Legacy field — superseded by mainStartTimeRaw. Still tolerated for
+  // backward compat with cached scrapes.
   eventStartTime?: string;
 }
 
@@ -221,6 +230,27 @@ function parseEventStartTime(eventDate: Date, timeStr: string | null | undefined
   return eventTimeToUTC(eventDate, timeStr, 'America/New_York');
 }
 
+/**
+ * Parse the canonical date string from [data-event-date-est] (e.g. "May 22, 2026")
+ * into a UTC-midnight Date. Returns null on failure so the caller can fall back
+ * to the list-page eventDate. The date column stores the calendar day; the actual
+ * main/prelim times are computed separately via parseEventStartTime.
+ */
+function parseBKFCEventDateText(dateText: string | null | undefined): Date | null {
+  if (!dateText) return null;
+  const months: Record<string, number> = {
+    january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
+    july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
+  };
+  const m = dateText.match(/([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
+  if (!m) return null;
+  const month = months[m[1].toLowerCase()];
+  if (month === undefined) return null;
+  const day = parseInt(m[2], 10);
+  const year = parseInt(m[3], 10);
+  return new Date(Date.UTC(year, month, day));
+}
+
 // ============== PARSER FUNCTIONS ==============
 
 /**
@@ -318,11 +348,19 @@ async function importBKFCEvents(
   }
 
   for (const [eventUrl, eventData] of Array.from(uniqueEvents.entries())) {
-    // Parse date
-    const eventDate = parseBKFCDate(eventData.eventDate);
+    // Parse date — prefer the canonical event-page date from [data-event-date-est]
+    // (e.g. "May 22, 2026") over the list-page ISO date, which can be off by a day
+    // when Webflow's [data-event-date-local] renders in a non-ET timezone on the
+    // scraping host.
+    const eventDate =
+      parseBKFCEventDateText(eventData.eventDateText) ??
+      parseBKFCDate(eventData.eventDate);
 
-    // Parse main card start time
-    const mainStartTime = parseEventStartTime(eventDate, eventData.eventStartTime);
+    // Parse main + prelim card start times. Fall back to legacy eventStartTime
+    // for older cached scrapes that only captured one time.
+    const mainTimeRaw = eventData.mainStartTimeRaw ?? eventData.eventStartTime ?? null;
+    const mainStartTime = parseEventStartTime(eventDate, mainTimeRaw);
+    const prelimStartTime = parseEventStartTime(eventDate, eventData.prelimStartTimeRaw);
 
     // Build location string
     const locationParts = [eventData.city, eventData.state, eventData.country]
@@ -361,6 +399,7 @@ async function importBKFCEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
+          prelimStartTime: prelimStartTime || undefined,
           scraperType: 'bkfc',
           missingScrapeCount: 0, // event present in this scrape — clear strike counter
           ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
@@ -387,6 +426,7 @@ async function importBKFCEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
+          prelimStartTime: prelimStartTime || undefined,
           scraperType: 'bkfc',
           eventStatus: initialStatus,
         }
