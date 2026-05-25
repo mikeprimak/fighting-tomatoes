@@ -45,7 +45,7 @@ Here's the booking that actually got us emotional: **Arman Tsarukyan vs. Tony Fe
 
 Now, let's be honest about where he is. The guy who built one of the greatest win streaks in lightweight history is long gone. He's old, he's been physically broken for years, and the back half of his MMA run was hard to watch precisely because every fight meant more damage piled onto a body that had already given everything. Watching Tony Ferguson fight had stopped being fun and started being a thing you did with one hand over your eyes.
 
-That's exactly why this is great. There's no striking here. Nobody is putting Tony's chin through another bad night. It's wrestling. For once we get to just *enjoy* Tony Ferguson, the scrambles, the weird angles, the refusal to ever stop moving, without the dread. He's back, he's competing, and for the first time in a long time you can watch El Cucuy and not worry about him. That's a gift.
+That's exactly why this is great. There's no striking here. Nobody is putting Tony's chin through another bad night. It's wrestling. For the first time in a while we get to just *enjoy* Tony Ferguson, the scrambles, the weird angles, the refusal to ever stop moving, without the dread. He's back, he's competing, and for the first time in a long time you can watch El Cucuy and not worry about him. That's a gift.
 
 ## How to watch
 
