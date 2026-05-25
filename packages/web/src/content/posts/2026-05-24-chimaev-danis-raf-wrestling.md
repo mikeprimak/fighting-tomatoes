@@ -3,7 +3,7 @@ title: "Dillon Danis Is About to Get Fed to a Wolf"
 slug: "chimaev-danis-raf-wrestling"
 date: "2026-05-24"
 author: "Good Fights"
-excerpt: "RAF is putting Dillon Danis in a wrestling match against Khamzat Chimaev, a man whose nickname literally means 'wolf.' This isn't a competition. It's a public service."
+excerpt: "RAF is putting Dillon Danis in a wrestling match against Khamzat Chimaev, a man whose nickname literally means 'wolf.' This isn't a competition. It's a public service. Plus: Tony Ferguson is back, and this time you don't have to watch through your fingers."
 tags: ["chimaev", "dillon-danis", "raf", "wrestling", "preview"]
 image: "/blog/chimaev-danis-raf.webp"
 draft: false
