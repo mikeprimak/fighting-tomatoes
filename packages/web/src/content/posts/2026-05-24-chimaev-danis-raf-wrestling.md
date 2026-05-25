@@ -39,6 +39,10 @@ Could it be a squash? Almost certainly. Is a one-sided beatdown "good" competiti
 
 The most realistic version of this is Danis doing nothing of note and lasting only as long as Chimaev feels like dragging it out. There's a slightly more entertaining chance he tries to talk during the match. There is a zero percent chance he wins.
 
+## The rest of the card is no joke
+
+Here's the part that should make actual fight fans set the alarm regardless of how you feel about the main event: the co-feature is **Arman Tsarukyan vs. Tony Ferguson** on the mat. That's not a freak-show booking. That's two genuinely elite grapplers, one of them a top UFC lightweight in his prime, the other a former interim champ whose scrambles and submissions out of nowhere built one of the great win streaks the division has ever seen. Strip away the cage, the gloves, and the strikes, and you're left with the purest version of a question both men have spent careers answering: who controls the floor? Tsarukyan's wrestling is suffocating and his pace never drops. Ferguson is the guy who'll happily invite you into a scramble that looks like he's losing right up until your arm bends the wrong way. On a card built around a public execution, this is the one that's an actual fight, and depending on how the rest of the lineup fills in, it might quietly be the best thing on it.
+
 ## How to watch
 
 The event goes down **Friday, June 13, 2026 at 8 PM ET** at **Chaifetz Arena in St. Louis**, streaming live on **FOX Nation** in the US. Everywhere *outside* the US, it's broadcasting **free** on the [RAF YouTube channel](https://www.youtube.com/@RAFwrestling). Set a reminder. Bring snacks. This is the rare card where the most likely outcome and the most *deserved* outcome are the same thing.
