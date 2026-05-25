@@ -9,11 +9,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   try {
     const res = await fetch(`${API_BASE_URL}/fighters/${id}`, { next: { revalidate: 300 } });
-    if (!res.ok) return { title: 'Fighter — Good Fights' };
+    if (!res.ok) return { title: 'Fighter' };
     const { fighter } = await res.json();
     const name = `${fighter.firstName} ${fighter.lastName}`;
     return {
-      title: `${name} — Good Fights`,
+      title: name,
       description: `${name} (${fighter.wins}-${fighter.losses}-${fighter.draws}). See fight ratings and reviews on Good Fights.`,
       openGraph: {
         title: name,
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     };
   } catch {
-    return { title: 'Fighter — Good Fights' };
+    return { title: 'Fighter' };
   }
 }
 
