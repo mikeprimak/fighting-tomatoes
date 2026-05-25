@@ -47,6 +47,8 @@ Now, let's be honest about where he is. The guy who built one of the greatest wi
 
 That's exactly why this is great. There's no striking here. Nobody is putting Tony's chin through another bad night. It's wrestling. For the first time in a while we get to just *enjoy* Tony Ferguson, the scrambles, the weird angles, the refusal to ever stop moving, without the dread. He's back, he's competing, and for the first time in a long time you can watch El Cucuy and not worry about him. That's a gift.
 
+And the booking we'd actually circle for competitive reasons: **Lance Palmer vs. Aaron Pico** at lightweight. Pico is the kind of athlete this format was built for, a freakishly explosive wrestler with real crossover name value, and Palmer is a multi-time PFL champion and a savvy, decorated grappler in his own right. No gimmick, no narrative, just two high-level guys who can genuinely beat each other. The rest of the lineup quietly backs up the "this is real" claim too: multiple-time freestyle world champs and Olympic medalists are sprinkled across the card, the kind of pedigree that doesn't show up to lose a wrestling match for clicks.
+
 ## Back to the main event
 
 But make no mistake about why you're tuning in. The undercard is the heart, the main event is the spectacle, and the spectacle is a man named after a wolf being handed the internet's most punchable troll as a snack. Everything else on this card is a bonus. The headline is Khamzat Chimaev doing what Khamzat Chimaev does, and Dillon Danis finally collecting a bill he's been running up for years.
