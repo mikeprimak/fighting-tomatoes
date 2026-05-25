@@ -6,10 +6,11 @@ import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { formatEventDate } from '@/utils/dateFormatters';
 import { useSpoilerFree } from '@/lib/spoilerFree';
 import { useAuth } from '@/lib/auth';
-import { Flame, Star, MessageSquare, Loader2, ArrowLeft } from 'lucide-react';
+import { Flame, Star, MessageSquare, Loader2, ThumbsUp } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { DistributionChart } from '@/components/charts/DistributionChart';
+import { VerticalDistributionChart } from '@/components/charts/VerticalDistributionChart';
 import { RateFightModal } from '@/components/RateFightModal';
 import { HypeFightModal } from '@/components/HypeFightModal';
 import { CommentForm } from '@/components/CommentForm';
@@ -21,7 +22,7 @@ interface Props {
   initialFight: any;
 }
 
-function FighterDisplay({ fighter, isWinner, hideSpoilers }: { fighter: any; isWinner: boolean; hideSpoilers: boolean }) {
+function FighterDisplay({ fighter, isWinner, hideSpoilers, resultText }: { fighter: any; isWinner: boolean; hideSpoilers: boolean; resultText?: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <div className={`h-24 w-24 overflow-hidden rounded-full sm:h-32 sm:w-32 ${
@@ -50,6 +51,9 @@ function FighterDisplay({ fighter, isWinner, hideSpoilers }: { fighter: any; isW
       <p className="text-xs text-text-secondary">
         {fighter.wins}-{fighter.losses}-{fighter.draws}
       </p>
+      {!hideSpoilers && isWinner && resultText && (
+        <p className="text-center text-xs font-semibold text-success">{resultText}</p>
+      )}
     </div>
   );
 }
@@ -94,39 +98,25 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
   const isNoContest = fight.winner === 'nc';
   const isDraw = fight.winner === 'draw';
 
+  const resultText = fight.method
+    ? `${fight.method}${fight.round ? ` — Round ${fight.round}` : ''}${fight.time ? ` (${fight.time})` : ''}`
+    : undefined;
+
   return (
     <div className="mx-auto max-w-3xl">
-      {/* Back */}
-      <Link href={fight.event?.id ? `/events/${fight.event.id}` : '/'} className="mb-4 inline-flex items-center gap-1 text-sm text-text-secondary hover:text-primary">
-        <ArrowLeft size={14} />
-        {fight.event?.name || 'Back'}
-      </Link>
-
       {/* Fighters */}
       <div className="mb-6 flex items-start justify-center gap-6 sm:gap-12">
-        <FighterDisplay fighter={fight.fighter1} isWinner={isWinner1} hideSpoilers={hideSpoilers} />
+        <FighterDisplay fighter={fight.fighter1} isWinner={isWinner1} hideSpoilers={hideSpoilers} resultText={resultText} />
         <div className="flex flex-col items-center gap-1 pt-8">
           <span className="text-lg font-bold text-text-secondary">VS</span>
-          {fight.weightClass && (
-            <span className="text-xs text-text-secondary">{fight.weightClass}</span>
-          )}
           {fight.isTitle && (
             <span className="mt-1 rounded bg-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary">
               {fight.titleName || 'TITLE FIGHT'}
             </span>
           )}
         </div>
-        <FighterDisplay fighter={fight.fighter2} isWinner={isWinner2} hideSpoilers={hideSpoilers} />
+        <FighterDisplay fighter={fight.fighter2} isWinner={isWinner2} hideSpoilers={hideSpoilers} resultText={resultText} />
       </div>
-
-      {/* Result (completed) */}
-      {isCompleted && !hideSpoilers && fight.method && (
-        <div className="mb-4 text-center">
-          <p className="text-sm font-medium text-text-secondary">
-            {fight.method}{fight.round ? ` — Round ${fight.round}` : ''}{fight.time ? ` (${fight.time})` : ''}
-          </p>
-        </div>
-      )}
 
       {/* No Contest / Draw badge */}
       {isCompleted && !hideSpoilers && isNoContest && (
@@ -165,6 +155,8 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
         <span>{fight.event?.date ? formatEventDate(fight.event.date, { weekday: 'long', month: 'long', year: true }) : ''}</span>
         {fight.cardType && <span className="mx-2">-</span>}
         {fight.cardType && <span>{fight.cardType}</span>}
+        {fight.weightClass && <span className="mx-2">-</span>}
+        {fight.weightClass && <span>{fight.weightClass}</span>}
       </div>
 
       {/* Odds (upcoming) */}
@@ -228,7 +220,14 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
               <p className="mb-3 text-center text-sm text-text-secondary">No ratings yet</p>
             )}
             {stats.ratingDistribution && Object.keys(stats.ratingDistribution).length > 0 && (
-              <DistributionChart distribution={stats.ratingDistribution} label="Rating" />
+              <VerticalDistributionChart distribution={stats.ratingDistribution} label="Rating" maxBarHeight={80} />
+            )}
+            {fight.userRating != null && (
+              <div className="mt-3 flex items-center justify-center gap-1.5 border-t border-border pt-3 text-sm">
+                <span className="text-text-secondary">Your rating:</span>
+                <Star size={16} style={{ color: getHypeHeatmapColor(fight.userRating) }} fill={getHypeHeatmapColor(fight.userRating)} />
+                <span className="font-bold" style={{ color: getHypeHeatmapColor(fight.userRating) }}>{fight.userRating}</span>
+              </div>
             )}
           </div>
         </div>
@@ -292,10 +291,14 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
         )}
         {isCompleted && (
           <CommentForm
+            key={fight.userReview?.content || 'new-review'}
             placeholder="Write a review..."
+            existingContent={fight.userReview?.content}
+            submitLabel={fight.userReview ? 'Update' : 'Post'}
             onSubmit={async (content) => {
               await reviewFight(fightId, { content, rating: fight.userRating || 5 });
               queryClient.invalidateQueries({ queryKey: ['fightReviews', fightId] });
+              queryClient.invalidateQueries({ queryKey: ['fight', fightId] });
             }}
           />
         )}
@@ -368,8 +371,9 @@ function CommentsSection({ fightId, isCompleted }: { fightId: string; isComplete
           <div className="mb-1 flex items-center justify-between">
             <span className="text-xs font-medium">{item.user?.displayName || 'Anonymous'}</span>
             {item.rating && (
-              <span className="text-xs font-bold" style={{ color: getHypeHeatmapColor(item.rating) }}>
-                {item.rating}/10
+              <span className="flex items-center gap-1 text-xs font-bold" style={{ color: getHypeHeatmapColor(item.rating) }}>
+                <Star size={13} style={{ color: getHypeHeatmapColor(item.rating) }} fill={getHypeHeatmapColor(item.rating)} />
+                {item.rating}
               </span>
             )}
             {item.hypeRating && (
@@ -385,9 +389,12 @@ function CommentsSection({ fightId, isCompleted }: { fightId: string; isComplete
             {item.upvotes != null && (
               <button
                 onClick={() => handleUpvote(item.id)}
-                className={`hover:text-primary ${item.userHasUpvoted ? 'text-primary font-semibold' : ''}`}
+                className="flex items-center gap-1 transition-colors hover:opacity-80"
+                style={{ color: item.userHasUpvoted ? '#F5C518' : undefined }}
+                aria-label="Upvote"
               >
-                {item.upvotes} upvote{item.upvotes !== 1 ? 's' : ''}
+                <ThumbsUp size={14} fill={item.userHasUpvoted ? '#F5C518' : 'none'} />
+                <span className={item.userHasUpvoted ? 'font-semibold' : ''}>{item.upvotes}</span>
               </button>
             )}
           </div>
