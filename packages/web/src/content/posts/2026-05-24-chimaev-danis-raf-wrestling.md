@@ -21,7 +21,7 @@ This is not that.
 
 This is **wrestling**, against a man who out-wrestles UFC champions for fun. Chimaev doesn't take you down so much as *relocate* you, against your will, to a worse place, and then live there rent-free on top of your ribcage until the referee feels bad for you. He has spent his entire career making elite, world-ranked professionals look like they forgot every scrap of defensive wrestling they ever learned. Danis's MMA résumé, by comparison, is two Bellator fights from the Obama-ish era and one boxing match against Logan Paul that he lost by *disqualification* — for trying to grab a guillotine. In a boxing match.
 
-And yes — I know what you're going to say. Chimaev looked slow. He looked tired. He looked beatable, and he just *lost* to Sean Strickland. I'm not fooled by it. A flat night against a top-five middleweight tells you nothing about what he does to a grappler stepping up out of his weight class and his sport. When the cage door closes on Danis, I fully expect the same Borz who's been relocating world-class wrestlers for years — every bit as deadly as ever.
+And yes — I know what you're going to say. Chimaev looked slow at UFC 328. He looked tired. He looked beatable, and he just *lost* to Sean Strickland. I'm not fooled by it. A flat night against a top-five middleweight tells you nothing about what he does to a grappler stepping up out of his weight class and his sport. When the cage door closes on Danis, I fully expect the same Borz who's been relocating world-class wrestlers for years — every bit as deadly as ever.
 
 So yes. Bet accordingly. Or don't bet at all, because the only honest line is "how long until the towel."
 
