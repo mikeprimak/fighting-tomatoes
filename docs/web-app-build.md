@@ -88,17 +88,17 @@ Updated 2026-05-14 from code inspection, not yet from runtime QA.
 - [ ] "Continue as guest" works
 
 **Browse**
-- [ ] Home (`/`) — upcoming events list loads
-- [ ] `/events/live` — auto-refreshing live events
-- [ ] `/events/past` — past events, infinite scroll
-- [ ] `/fights/top` — top fights, time-period filter
-- [ ] `/search` — fighters, fights, events
+- [x] Home (`/`) — upcoming events list loads *(SSR-confirmed 2026-05-25)*
+- [ ] `/events/live` — auto-refreshing live events *(200, not visually QA'd)*
+- [x] `/events/past` — past events list loads *(SSR-confirmed; infinite scroll not tested)*
+- [x] `/fights/top` — top fights list loads *(SSR-confirmed; period filter not tested)*
+- [ ] `/search` — fighters, fights, events *(client-side, not tested)*
 - [ ] Org filter pills work (UFC, ONE, PFL, etc.)
 
 **Event detail**
-- [ ] `/events/[id]` loads with main card / prelims sections
+- [x] `/events/[id]` loads with sections *(SSR-confirmed 2026-05-25)*
 - [ ] Event banner image renders when present
-- [ ] SSR meta tags correct (View Source → check `<title>`, og:image)
+- [x] SSR meta tags correct (`<title>` single-suffix + og:image) *(fixed + confirmed 2026-05-25)*
 
 **Fight detail (upcoming)**
 - [ ] `/fights/[id]` loads for an upcoming fight
@@ -220,6 +220,22 @@ Search intent lives at the intersection. "How to watch PFL in Spain" = clear com
 - **Vercel auto-deploy is stuck** — pushes to main since `aslln2bux` (2h+ ago) have not auto-built. Dashboard "Redeploy" rebuilds the original commit's SHA (not latest main), so it didn't help. `vercel --prod --yes --archive=tgz` from `packages/web` works. Investigate Git integration in next session.
 - **Couldn't QA Live tab** — no fights live during the session.
 - **Spoiler-Free UI toggle for web** added to backlog — context already exists, no UI/persistence yet.
+
+### 2026-05-25 — Automated QA baseline + 2 SSR/SEO fixes
+- **Automated route sweep:** all 35 prod routes return 200 (`/events/upcoming`
+  307s, expected). SSR renders real data on home/past/top/event/fight/blog.
+- **Bug fixed (backend, `7b20f94`):** `/api/fighters/:id` returned 401 to anonymous
+  requests — its optional-auth `preValidation` relied on `authenticateUser`
+  throwing, but `authenticateUser` *sends* the 401 reply instead. So every web
+  fighter page rendered an empty SSR shell (no real title/desc/og:image). Swapped
+  to the reply-safe `optionalAuthenticateMiddleware`. ✅ verified live: anon
+  fighter endpoint + web fighter SSR title/og:image now populate.
+- **Bug fixed (web, `ba19724`):** double `— Good Fights` title suffix on
+  event/fight/fighter pages (template + per-page both appended it). Confirmed live.
+- **Deferred:** `/fan-dna`, `/fight-of-the-night`, `/weekly-hype` have generic
+  default titles — give them real SEO metadata later.
+- **Still open:** the entire interactive QA walk (auth, hype/rate/review modals,
+  spoiler-free, profile, responsive). Mike drives the browser next session.
 
 ### 2026-05-14 (session 6) — Vercel auto-deploy fixed
 - Root cause: Vercel `web` project had **no Git repository connected** (`link` field absent from API response). Every deploy in project history came from CLI; auto-deploy never had a webhook to fire.
