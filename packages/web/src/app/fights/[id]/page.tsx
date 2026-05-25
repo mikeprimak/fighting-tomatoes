@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   try {
     const res = await fetch(`${API_BASE_URL}/fights/${id}`, { next: { revalidate: 300 } });
-    if (!res.ok) return { title: 'Fight — Good Fights' };
+    if (!res.ok) return { title: 'Fight' };
     const { fight } = await res.json();
     const f1 = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
     const f2 = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? `${title} — Rated ${fight.averageRating?.toFixed(1) || 'N/A'}/10 by the community. ${fight.event?.name || ''}`
       : `${title} — ${fight.event?.name || ''} upcoming fight. See hype scores and community predictions.`;
     return {
-      title: `${title} — Good Fights`,
+      title: title,
       description: desc,
       openGraph: {
         title,
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     };
   } catch {
-    return { title: 'Fight — Good Fights' };
+    return { title: 'Fight' };
   }
 }
 
