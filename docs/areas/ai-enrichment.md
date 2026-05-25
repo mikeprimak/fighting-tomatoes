@@ -79,16 +79,18 @@ Default model: **Claude Haiku 4.5** (cheap, structured output reliable, prompt c
 **Phase 6.5 — Historic backfill campaign** — 🟢 INITIAL TARGET HIT (2026-05-20)
 Triaged sweep of the 16K-fight legacy DB. **2,022 fights enriched** with full schema (pre + post long-form, structured tags both directions, ~500-600w/fight) — initial 2,000-fight hand-curated target reached across pilot batches + rounds 1 and 2 (10 parallel windows × 100 fights each, twice). Decision shifted from "Haiku via API" to **using Claude Code as the LLM directly** (Mike already pays for Claude Code; this is a one-off, not a cron; Opus 4.7 quality > Haiku 4.5 for narrative content). Pulled Phase 6 schema design forward — both pre-fight and post-fight long-form per fight because post-fight is the higher-value SEO surface for historic completed fights. Full multi-window protocol at `docs/HANDOFF-historic-enrichment-multi-window-2026-05-18.md`. Open: 25,834 rated fights still null (long tail, suitable for Haiku-via-API if/when needed); web + mobile rendering of the enrichment not yet shipped; parallel programmatic `ufcstats.com` sweep for winner/method/weightClass (97% gap on top-500) not started.
 
-**Phase 6 — Post-fight enrichment** — 🟢 SCHEMA SHIPPED (2026-05-18)
-Migration `20260518000000_add_ai_post_fight_enrichment_fields` added `aiPostFightTags` (JSONB), `aiPostFightSummary` (TEXT), `aiPostFightEnrichedAt` (TIMESTAMP). 30 historic fights already populated via Phase 6.5 campaign. Cron + automatic post-fight enrichment of new completed fights still planned.
-Sibling to Phase 1, runs against COMPLETED fights instead of UPCOMING. Reuses ~80% of the Phase 1 plumbing (DB-as-card-source load, Brave editorial fetch, Puppeteer/Tapology page fetch, fightId-based persist, cron orchestrator). New surfaces:
-- New LLM schema: `aiPostFight` JSON with `methodNarrative`, `momentDescription`, `bonuses[]`, `callouts[]`, `aftermath` (injuries, retirements, ranking implications), `fotyConsideration`.
-- New DB columns: `aiPostFightTags`, `aiPostFightSummary`, `aiPostFightEnrichedAt`. Mirror migration of the Phase 1 add.
-- Cadence: one pass per fight at T+5d after `fightStatus → COMPLETED` (earlier the editorial is still trickling, later it thins out).
-- Cron: new daily workflow `.github/workflows/post-fight-enrichment.yml` (or extend the Phase 1 workflow with a `mode` input).
-- Folder layout: hoist shared bits into `services/aiEnrichment/shared/` (loadCard, fetchEditorial, fetchUFC/Tapology). Phase 1 files move to `services/aiEnrichment/preFight/`. New work lands in `services/aiEnrichment/postFight/`. This split prevents "mode" leakage across the codepath.
-- Consumers: closure-loop screens (Use Case F), weekly digest (E), completed-card detail screen FOTY sticker, post-fight push notifications (D).
-- Estimated effort: ~4-6 hr for plumbing + 1-2 hr for first consumer surface. Becomes its own "post-fight enrichment session" once Phase 1 render quality is locked in.
+**Phase 6 — Post-fight enrichment** — 🟢 PIPELINE + CRON SHIPPED (2026-05-25)
+Migration `20260518000000_add_ai_post_fight_enrichment_fields` added `aiPostFightTags` (JSONB), `aiPostFightSummary` (TEXT), `aiPostFightEnrichedAt` (TIMESTAMP). The recurring **T+5d recap pipeline now runs** — the manual Phase 6.5 historic campaign (2,022 fights) is no longer the only thing writing these columns.
+Sibling to Phase 1, runs against COMPLETED fights instead of UPCOMING. Reuses the Phase 1 fetchers directly. Shipped surfaces:
+- LLM extractor: `services/aiEnrichment/postFight/extractPostFightEnrichment.ts` — Haiku 4.5, `aiPostFight` JSON (`methodNarrative`, `momentDescription`, `bonuses[]`, `callouts[]`, `aftermath[]`, `fotyConsideration`) + long-form `summary`. Card carries the **authoritative DB result** (winner/method/round/time); the LLM narrates but never overrides it. Null-ish strings ("N/A", "none") coerced to null.
+- Single-event enrich: `postFight/enrichOnePostFightEvent.ts` — loads COMPLETED card (winner-set, recap-missing), pulls ufc.com/Tapology/BKFC page + Brave editorial in `mode:'recap'`, persists.
+- Persist: `postFight/persistPostFight.ts` — additive write to `aiPostFight*` only; confidence floor 0.5; appends recap URLs to `aiSourceUrls` (never clobbers pre-fight sources).
+- Orchestrator: `postFight/runPostFight.ts` — selects COMPLETED events in the **T+5d → T+45d** window (older = historic campaign's job), per-fight dedup on `aiPostFightEnrichedAt`, most-recent first, default cap 25 events.
+- Entry + cron: `scripts/run-post-fight-enrichment.ts` + `.github/workflows/post-fight-enrichment.yml` (daily **16:00 UTC**, offset from Phase 1's 14:00 to avoid Puppeteer contention).
+- **Editorial fetcher change:** `fetchEditorialPreviews.ts` gained a `mode: 'preview' | 'recap'` option (default 'preview' — Phase 1 unchanged). 'recap' flips the Brave query to results/recap/highlights and stops excluding results URLs.
+- **Deliberately diverged from the planned folder split:** did NOT move Phase 1 files into `preFight/` or hoist a `shared/` dir — that refactor risked breaking the live pre-fight cron for no functional gain. The pre-fight fetchers are already standalone modules; `postFight/` imports them directly.
+- Cost: **~$0.025/event** (verified on UFC Allen vs. Costa — 12-fight card, all grounded against play-by-play recaps).
+- Consumers (still TODO): closure-loop screens (Use Case F), weekly digest (E), completed-card detail FOTY sticker, post-fight push (D). Data now flows; rendering surfaces are the next session.
 
 ## Schema (Phase 1 — shipped)
 
