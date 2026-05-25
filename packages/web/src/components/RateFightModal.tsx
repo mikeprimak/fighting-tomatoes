@@ -44,9 +44,15 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
 
   useEffect(() => {
     if (!isOpen) return;
-    setSelectedRating(existingRating ?? null);
+    // Prefer the prop-passed rating; fall back to the rating attached to the
+    // current user's own review if userRating didn't load onto the fight.
+    const mineFromList =
+      user?.id && reviewsData?.reviews
+        ? reviewsData.reviews.find((r: any) => r.user?.id === user.id)
+        : null;
+    setSelectedRating(existingRating ?? mineFromList?.rating ?? null);
     setError('');
-  }, [isOpen, existingRating, fight?.id]);
+  }, [isOpen, existingRating, fight?.id, reviewsData, user?.id]);
 
   useEffect(() => {
     if (!isOpen) return;
