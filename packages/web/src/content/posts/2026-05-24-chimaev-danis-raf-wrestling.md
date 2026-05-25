@@ -41,7 +41,9 @@ The most realistic version of this is Danis doing nothing of note and lasting on
 
 ## The rest of the card is no joke
 
-Here's the part that should make actual fight fans set the alarm regardless of how you feel about the main event: the co-feature is **Arman Tsarukyan vs. Tony Ferguson** on the mat. That's not a freak-show booking. That's two genuinely elite grapplers, one of them a top UFC lightweight in his prime, the other a former interim champ whose scrambles and submissions out of nowhere built one of the great win streaks the division has ever seen. Strip away the cage, the gloves, and the strikes, and you're left with the purest version of a question both men have spent careers answering: who controls the floor? Tsarukyan's wrestling is suffocating and his pace never drops. Ferguson is the guy who'll happily invite you into a scramble that looks like he's losing right up until your arm bends the wrong way. On a card built around a public execution, this is the one that's an actual fight, and depending on how the rest of the lineup fills in, it might quietly be the best thing on it.
+Here's the booking that actually got us emotional: **Arman Tsarukyan vs. Tony Ferguson** on the mat. Now, let's be honest about Tony. The guy who built one of the greatest win streaks in lightweight history is long gone. He's old, he's been physically broken for years, and the back half of his MMA run was hard to watch precisely because every fight meant more damage piled onto a body that had already given everything. Watching Tony Ferguson fight had stopped being fun and started being a thing you did with one hand over your eyes.
+
+That's exactly why this is great. There's no striking here. Nobody is putting Tony's chin through another bad night. It's wrestling, on an open mat, against a world-class grappler who can absolutely win without ever hurting him. For once we get to just *enjoy* Tony Ferguson, the scrambles, the weird angles, the refusal to ever stop moving, without the dread. He's back, he's competing, and for the first time in a long time you can watch El Cucuy and not worry about him. That's a gift.
 
 ## How to watch
 
