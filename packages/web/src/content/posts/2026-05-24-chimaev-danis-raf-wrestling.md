@@ -5,12 +5,13 @@ date: "2026-05-24"
 author: "Good Fights"
 excerpt: "RAF is putting Dillon Danis in a wrestling match against Khamzat Chimaev — a man whose nickname literally means 'wolf.' This isn't a competition. It's a public service."
 tags: ["chimaev", "dillon-danis", "raf", "wrestling", "preview"]
-draft: true
+image: "/blog/chimaev-danis-raf.webp"
+draft: false
 ---
 
 Combat sports has finally answered a question nobody asked but everybody secretly wanted: what happens if you take the internet's most punchable man and put him in a wrestling match against Khamzat "Borz" Chimaev — a man whose nickname is *literally the Chechen word for wolf*?
 
-On **[DATE]**, at **[VENUE / PLATFORM]**, the RAF wrestling event is going to give us exactly that. And let me be clear about what this is: it is not a competition. It is a public service.
+On **June 13, 2026**, at **Chaifetz Arena in St. Louis**, RAF 10 is going to give us exactly that — Chimaev vs. Danis as the catchweight wrestling main event. And let me be clear about what this is: it is not a competition. It is a public service.
 
 ## A quick note on the matchup, for the betting men
 
@@ -38,6 +39,6 @@ There's a real chance Danis surprises nobody and survives mostly by virtue of Ch
 
 ## How to watch
 
-The event goes down **[DATE]** at **[VENUE]**, streaming/airing on **[HOW TO WATCH — fill in]**. Set a reminder. Bring snacks. This is the rare card where the most likely outcome and the most *deserved* outcome are the same thing.
+The event goes down **Friday, June 13, 2026 at 8 PM ET** at **Chaifetz Arena in St. Louis**, streaming live on **FOX Nation**. Set a reminder. Bring snacks. This is the rare card where the most likely outcome and the most *deserved* outcome are the same thing.
 
 The wolf is hungry. Dinner is served.
