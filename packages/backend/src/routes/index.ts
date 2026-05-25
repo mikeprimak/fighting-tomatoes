@@ -1384,14 +1384,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    preValidation: async (request, reply) => {
-      // Try to authenticate if token is present, but don't fail if it's not
-      try {
-        await authenticateUser(request, reply);
-      } catch (error) {
-        // Ignore authentication errors - endpoint works for both authenticated and unauthenticated users
-      }
-    },
+    preHandler: optionalAuthenticateMiddleware,
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
 
