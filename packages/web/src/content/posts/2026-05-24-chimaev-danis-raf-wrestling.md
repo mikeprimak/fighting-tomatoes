@@ -1,5 +1,5 @@
 ---
-title: "Dillon Danis Is About to Get Fed to an Actual Wolf"
+title: "Dillon Danis Is About to Get Fed to a Wolf"
 slug: "chimaev-danis-raf-wrestling"
 date: "2026-05-24"
 author: "Good Fights"
@@ -19,7 +19,9 @@ Let's not insult anyone. Dillon Danis can *actually* grapple — he's a legitima
 
 This is not that.
 
-This is **wrestling**, against a man who out-wrestles UFC champions for fun. Chimaev doesn't take you down so much as *relocate* you, against your will, to a worse place, and then live there rent-free on top of your ribcage until the referee feels bad for you. He has spent his entire career making elite, world-ranked professionals look like they're wrestling in a dream where their legs don't work. Danis's MMA résumé, by comparison, is two Bellator fights from the Obama-ish era and one boxing match against Logan Paul that he lost by *disqualification* — for trying to grab a guillotine. In a boxing match.
+This is **wrestling**, against a man who out-wrestles UFC champions for fun. Chimaev doesn't take you down so much as *relocate* you, against your will, to a worse place, and then live there rent-free on top of your ribcage until the referee feels bad for you. He has spent his entire career making elite, world-ranked professionals look like they forgot how to use their own legs. Danis's MMA résumé, by comparison, is two Bellator fights from the Obama-ish era and one boxing match against Logan Paul that he lost by *disqualification* — for trying to grab a guillotine. In a boxing match.
+
+And yes — I know what you're going to say. Chimaev looked slow. He looked tired. He looked beatable, and he just *lost* to Sean Strickland. I'm not fooled by it. A flat night against a top-five middleweight tells you nothing about what he does to a grappler stepping up out of his weight class and his sport. When the cage door closes on Danis, I fully expect the same Borz who's been relocating world-class wrestlers for years — every bit as deadly as ever.
 
 So yes. Bet accordingly. Or don't bet at all, because the only honest line is "how long until the towel."
 
@@ -29,16 +31,16 @@ Officially? It's a sporting event. Realistically? It's catharsis with a ticket p
 
 Danis has spent years building a personal brand out of being insufferable on the internet — the trash talk, the deleted tweets, the feuds with people's *families*. He turned trolling into a job, and the bill for that job is now due, and it's being collected by the scariest grappler alive.
 
-This is fan service, plain and simple. Promoters know it. We know it. There is a not-small number of people who do not particularly follow wrestling but would absolutely set an alarm to watch Dillon Danis get folded like a lawn chair. RAF looked at that demand and, in a moment of beautiful clarity, decided to supply it.
+This is fan service, plain and simple. Promoters know it. We know it. There are a lot of people out there who have never watched a wrestling match in their lives but would happily set an alarm to watch Dillon Danis get folded like a lawn chair. RAF looked at that demand and, in a moment of beautiful clarity, decided to supply it.
 
 ## The honest part
 
 Could it be a squash? Almost certainly. Is a one-sided beatdown "good" competition? No. Is it going to be one of the most-watched things in the sport that week regardless? Also yes — and pretending otherwise would be lying to you.
 
-There's a real chance Danis surprises nobody and survives mostly by virtue of Chimaev getting bored. There's a slightly more entertaining chance he tries to talk during the match. There is a zero percent chance he wins.
+The most realistic version of this is Danis doing nothing of note and lasting only as long as Chimaev feels like dragging it out. There's a slightly more entertaining chance he tries to talk during the match. There is a zero percent chance he wins.
 
 ## How to watch
 
-The event goes down **Friday, June 13, 2026 at 8 PM ET** at **Chaifetz Arena in St. Louis**, streaming live on **FOX Nation**. Set a reminder. Bring snacks. This is the rare card where the most likely outcome and the most *deserved* outcome are the same thing.
+The event goes down **Friday, June 13, 2026 at 8 PM ET** at **Chaifetz Arena in St. Louis**, streaming live on **FOX Nation** in the US. Everywhere *outside* the US, it's broadcasting **free** on the [RAF YouTube channel](https://www.youtube.com/@RAFwrestling). Set a reminder. Bring snacks. This is the rare card where the most likely outcome and the most *deserved* outcome are the same thing.
 
 The wolf is hungry. Dinner is served.
