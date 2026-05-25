@@ -6,6 +6,7 @@ import { useOrgFilter } from '@/lib/orgFilter';
 import { isEventLiveNow } from '@/lib/eventStatus';
 import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { EventCard } from '@/components/EventCard';
+import { EditorialHero } from '@/components/EditorialHero';
 import { Loader2, Radio } from 'lucide-react';
 
 export default function LiveEventsPage() {
@@ -22,6 +23,7 @@ export default function LiveEventsPage() {
 
   return (
     <div>
+      <EditorialHero />
       <div className="mb-4">
         <div className="mb-3 flex items-center gap-2">
           <Radio className="text-danger" size={20} />
