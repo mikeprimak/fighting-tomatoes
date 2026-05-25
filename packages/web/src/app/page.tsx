@@ -11,6 +11,7 @@ import { LoadMoreSentinel } from '@/components/layout/LoadMoreSentinel';
 import { ProfileSidebar } from '@/components/sidebar/ProfileSidebar';
 import { IdentityBlock } from '@/components/sidebar/IdentityBlock';
 import { FanDNABlock } from '@/components/sidebar/FanDNABlock';
+import { EditorialHero } from '@/components/EditorialHero';
 import { Loader2, ChevronRight } from 'lucide-react';
 
 export default function UpcomingEventsPage() {
@@ -38,7 +39,9 @@ export default function UpcomingEventsPage() {
   const filteredEvents = filterEventsByOrg(allEvents.filter((e: any) => !isEventLiveNow(e)));
 
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-6">
+    <>
+      <EditorialHero />
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-6">
       {/* Mobile-only "About you" strip above the feed. The desktop sidebar is
           unreachable on mobile because the events feed lazy-loads forever. */}
       <div className="mb-6 space-y-4 lg:hidden">
@@ -91,6 +94,7 @@ export default function UpcomingEventsPage() {
       <div className="hidden lg:block">
         <ProfileSidebar />
       </div>
-    </div>
+      </div>
+    </>
   );
 }

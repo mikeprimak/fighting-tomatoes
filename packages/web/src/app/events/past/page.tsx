@@ -6,6 +6,7 @@ import { useOrgFilter } from '@/lib/orgFilter';
 import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { EventCard } from '@/components/EventCard';
 import { LoadMoreSentinel } from '@/components/layout/LoadMoreSentinel';
+import { EditorialHero } from '@/components/EditorialHero';
 import { Loader2 } from 'lucide-react';
 
 export default function PastEventsPage() {
@@ -34,6 +35,7 @@ export default function PastEventsPage() {
 
   return (
     <div>
+      <EditorialHero />
       <div className="mb-4">
         <h1 className="mb-3 text-lg font-bold text-foreground">Past Events</h1>
         <OrgFilterTabs />

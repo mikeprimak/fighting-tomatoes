@@ -5,6 +5,9 @@ import { marked } from 'marked';
 
 const POSTS_DIR = path.join(process.cwd(), 'src/content/posts');
 
+// Fallback share/hero image for posts that don't set their own `image`.
+export const DEFAULT_POST_IMAGE = '/good-fights-logo.png';
+
 export type PostMeta = {
   slug: string;
   title: string;
@@ -13,6 +16,8 @@ export type PostMeta = {
   excerpt: string;
   tags: string[];
   draft: boolean;
+  /** Hero/share image path (e.g. /blog/my-slug.jpg). Empty string = use DEFAULT_POST_IMAGE. */
+  image: string;
 };
 
 export type Post = PostMeta & {
@@ -35,6 +40,7 @@ function parseFile(filename: string): { meta: PostMeta; content: string } | null
     excerpt: (data.excerpt as string) || '',
     tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
     draft: data.draft === true,
+    image: (data.image as string) || '',
   };
 
   if (meta.draft && !includeDrafts) return null;

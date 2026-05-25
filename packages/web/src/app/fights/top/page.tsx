@@ -7,6 +7,7 @@ import { useOrgFilter } from '@/lib/orgFilter';
 import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { LoadMoreSentinel } from '@/components/layout/LoadMoreSentinel';
+import { EditorialHero } from '@/components/EditorialHero';
 import { Loader2, Trophy } from 'lucide-react';
 
 const PAGE_SIZE = 25;
@@ -45,6 +46,7 @@ export default function TopFightsPage() {
 
   return (
     <div>
+      <EditorialHero />
       <div className="mb-4">
         <div className="mb-3 flex items-center gap-2">
           <Trophy className="text-primary" size={20} />
