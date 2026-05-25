@@ -54,6 +54,13 @@ export interface FetchEditorialPreviewsOptions {
   topN?: number;
   /** Brave freshness window. Default 'pm' (past month). */
   freshness?: BraveFreshness;
+  /**
+   * 'preview' (default) biases toward pre-fight breakdown articles and excludes
+   * results/recap pages. 'recap' is the post-fight inverse — it biases toward
+   * results/recap/highlights articles and stops excluding them. Phase 1 callers
+   * omit this and get the original behavior unchanged.
+   */
+  mode?: 'preview' | 'recap';
 }
 
 /**
@@ -72,12 +79,17 @@ export async function fetchEditorialPreviews(
 
   const topN = Math.max(1, Math.min(opts.topN ?? 2, 4));
   const freshness = opts.freshness ?? 'pm';
+  const mode = opts.mode ?? 'preview';
 
   // Build a multi-site OR clause so one Brave call covers the whole allowlist.
   const sitesClause = ALLOWED_DOMAINS.map((d) => `site:${d}`).join(' OR ');
   const matchup = matchupHint ?? extractMatchup(eventName);
   const subject = matchup ? `"${matchup}"` : `"${eventName}"`;
-  const query = `${subject} preview OR breakdown OR "what to know" (${sitesClause})`;
+  const intent =
+    mode === 'recap'
+      ? 'results OR recap OR "what happened" OR highlights'
+      : 'preview OR breakdown OR "what to know"';
+  const query = `${subject} ${intent} (${sitesClause})`;
 
   let results;
   try {
@@ -87,10 +99,18 @@ export async function fetchEditorialPreviews(
     return [];
   }
 
+  // Pre-fight: exclude results/recap/live-blog pages (we want previews).
+  // Post-fight: keep them — those ARE the articles we want — but still drop
+  // live-blogs (mid-event noise) and the odds-history filler pages.
+  const excludeUrl =
+    mode === 'recap'
+      ? /\b(live[-_ ]?blog|odds-prediction-history)\b/i
+      : /\b(results|live[-_ ]?blog|recap|odds-prediction-history|fight-card)\b/i;
+
   const candidates = results
     .map((r) => ({ ...r, domain: domainOf(r.url) }))
     .filter((r) => ALLOWED_DOMAINS.includes(r.domain))
-    .filter((r) => !/\b(results|live[-_ ]?blog|recap|odds-prediction-history|fight-card)\b/i.test(r.url))
+    .filter((r) => !excludeUrl.test(r.url))
     // De-dupe to one article per domain — broader coverage beats redundancy.
     .filter((r, idx, arr) => arr.findIndex((x) => x.domain === r.domain) === idx)
     .slice(0, topN);
