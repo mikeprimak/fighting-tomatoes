@@ -47,6 +47,10 @@ Now, let's be honest about where he is. The guy who built one of the greatest wi
 
 That's exactly why this is great. There's no striking here. Nobody is putting Tony's chin through another bad night. It's wrestling. For the first time in a while we get to just *enjoy* Tony Ferguson, the scrambles, the weird angles, the refusal to ever stop moving, without the dread. He's back, he's competing, and for the first time in a long time you can watch El Cucuy and not worry about him. That's a gift.
 
+## Back to the main event
+
+But make no mistake about why you're tuning in. The undercard is the heart, the main event is the spectacle, and the spectacle is a man named after a wolf being handed the internet's most punchable troll as a snack. Everything else on this card is a bonus. The headline is Khamzat Chimaev doing what Khamzat Chimaev does, and Dillon Danis finally collecting a bill he's been running up for years.
+
 ## How to watch
 
 The event goes down **Friday, June 13, 2026 at 8 PM ET** at **Chaifetz Arena in St. Louis**, streaming live on **FOX Nation** in the US. Everywhere *outside* the US, it's broadcasting **free** on the [RAF YouTube channel](https://www.youtube.com/@RAFwrestling). Set a reminder. Bring snacks. This is the rare card where the most likely outcome and the most *deserved* outcome are the same thing.
