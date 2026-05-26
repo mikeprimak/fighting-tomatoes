@@ -9,6 +9,7 @@ import { EventCard } from '@/components/EventCard';
 import { LoadMoreSentinel } from '@/components/layout/LoadMoreSentinel';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { EditorialHero } from '@/components/EditorialHero';
+import { EditorialSecondary } from '@/components/EditorialSecondary';
 import { Loader2 } from 'lucide-react';
 
 export default function UpcomingEventsPage() {
@@ -38,6 +39,7 @@ export default function UpcomingEventsPage() {
   return (
     <>
       <EditorialHero />
+      <EditorialSecondary />
       <SidebarLayout>
         <div className="mb-4">
           <h1 className="mb-3 text-lg font-bold text-foreground">Upcoming Events</h1>
