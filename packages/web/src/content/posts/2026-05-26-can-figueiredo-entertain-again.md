@@ -9,96 +9,13 @@ image: "/blog/figueiredo-rating-arc.png"
 draft: false
 ---
 
+<div style="color:#9ca3af;font-size:0.8rem;text-align:center;margin:-0.5rem 0 1.5rem;">Average Good Fights user rating for every Deiveson Figueiredo UFC fight, June 2017 – January 2026. Gold = the line; red = the two lowest-rated fights of his career.</div>
+
 There was a stretch — call it the eighteen months between February 2020 and the summer of 2021 — where Deiveson Figueiredo was, pound for pound, one of the most *fun* fighters alive. Not the best, though he was close. The most fun. He hit like a heavyweight who'd been shrunk in the wash, he finished people, and he got into a rivalry with Brandon Moreno that produced one of the greatest flyweight fights ever contested.
 
 Then it faded. Slowly at first, then all at once.
 
-We took every one of his UFC fights — twenty-one of them, from his debut in June 2017 to his loss to Umar Nurmagomedov this past January — and plotted what Good Fights users rated each one. Here's nine years of Deiveson Figueiredo in a single line.
-
-<figure style="margin:2rem 0;">
-<figcaption style="color:#9ca3af;font-size:0.8rem;text-align:center;margin-bottom:0.75rem;">Average Good Fights user rating for every Deiveson Figueiredo UFC fight, June 2017 – January 2026. Gold = the line; red = the two lowest-rated fights of his career.</figcaption>
-<svg viewBox="0 0 720 380" role="img" aria-label="Line chart of Deiveson Figueiredo's UFC fight ratings from 2017 to 2026" style="width:100%;height:auto;display:block;font-family:inherit;">
-  <defs>
-    <linearGradient id="figFill" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#F5C518" stop-opacity="0.28"/>
-      <stop offset="100%" stop-color="#F5C518" stop-opacity="0"/>
-    </linearGradient>
-  </defs>
-
-  <rect x="0" y="0" width="720" height="380" rx="14" fill="#202020" stroke="#2e2e2e"/>
-
-  <!-- horizontal gridlines + y labels -->
-  <g stroke="#2e2e2e" stroke-width="1">
-    <line x1="46" y1="336" x2="704" y2="336"/>
-    <line x1="46" y1="273.2" x2="704" y2="273.2"/>
-    <line x1="46" y1="210.4" x2="704" y2="210.4"/>
-    <line x1="46" y1="147.6" x2="704" y2="147.6"/>
-    <line x1="46" y1="84.8" x2="704" y2="84.8"/>
-    <line x1="46" y1="22" x2="704" y2="22"/>
-  </g>
-  <g fill="#9ca3af" font-size="11" text-anchor="end">
-    <text x="38" y="340">0</text>
-    <text x="38" y="277.2">2</text>
-    <text x="38" y="214.4">4</text>
-    <text x="38" y="151.6">6</text>
-    <text x="38" y="88.8">8</text>
-    <text x="38" y="26">10</text>
-  </g>
-
-  <!-- year labels -->
-  <g fill="#9ca3af" font-size="11" text-anchor="middle">
-    <text x="46" y="354">'17</text>
-    <text x="90.2" y="354">'18</text>
-    <text x="166.3" y="354">'19</text>
-    <text x="242.3" y="354">'20</text>
-    <text x="318.6" y="354">'21</text>
-    <text x="394.7" y="354">'22</text>
-    <text x="470.8" y="354">'23</text>
-    <text x="546.8" y="354">'24</text>
-    <text x="623.1" y="354">'25</text>
-    <text x="699.2" y="354">'26</text>
-  </g>
-
-  <!-- area fill -->
-  <path fill="url(#figFill)" d="M46,87.9 L76.6,100.5 L97.1,78.5 L139.4,100.5 L183.1,179 L209.4,78.5 L225.5,62.8 L254.6,72.2 L283.8,59.7 L310.1,75.7 L314.5,42.1 L352.4,56.5 L399.1,75.4 L474.9,97.4 L540.6,100.5 L568.3,103.6 L591.7,106.8 L615,72.2 L648.6,98.6 L682.1,229.2 L704,241.8 L704,336 L46,336 Z"/>
-
-  <!-- rating line -->
-  <polyline fill="none" stroke="#F5C518" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"
-    points="46,87.9 76.6,100.5 97.1,78.5 139.4,100.5 183.1,179 209.4,78.5 225.5,62.8 254.6,72.2 283.8,59.7 310.1,75.7 314.5,42.1 352.4,56.5 399.1,75.4 474.9,97.4 540.6,100.5 568.3,103.6 591.7,106.8 615,72.2 648.6,98.6 682.1,229.2 704,241.8"/>
-
-  <!-- standard points -->
-  <g fill="#F5C518">
-    <circle cx="46" cy="87.9" r="3.4"/>
-    <circle cx="76.6" cy="100.5" r="3.4"/>
-    <circle cx="97.1" cy="78.5" r="3.4"/>
-    <circle cx="139.4" cy="100.5" r="3.4"/>
-    <circle cx="183.1" cy="179" r="3.4"/>
-    <circle cx="209.4" cy="78.5" r="3.4"/>
-    <circle cx="225.5" cy="62.8" r="3.4"/>
-    <circle cx="254.6" cy="72.2" r="3.4"/>
-    <circle cx="283.8" cy="59.7" r="3.4"/>
-    <circle cx="310.1" cy="75.7" r="3.4"/>
-    <circle cx="352.4" cy="56.5" r="3.4"/>
-    <circle cx="399.1" cy="75.4" r="3.4"/>
-    <circle cx="474.9" cy="97.4" r="3.4"/>
-    <circle cx="540.6" cy="100.5" r="3.4"/>
-    <circle cx="568.3" cy="103.6" r="3.4"/>
-    <circle cx="591.7" cy="106.8" r="3.4"/>
-    <circle cx="615" cy="72.2" r="3.4"/>
-    <circle cx="648.6" cy="98.6" r="3.4"/>
-  </g>
-
-  <!-- peak: Moreno I -->
-  <circle cx="314.5" cy="42.1" r="5" fill="#F5C518" stroke="#ffffff" stroke-width="1.5"/>
-  <text x="314.5" y="33" fill="#ffffff" font-size="11.5" font-weight="700" text-anchor="middle">9.36 — Moreno I</text>
-
-  <!-- career lows -->
-  <circle cx="682.1" cy="229.2" r="5" fill="#ef4444"/>
-  <circle cx="704" cy="241.8" r="5" fill="#ef4444"/>
-  <text x="700" y="210" fill="#ef4444" font-size="11.5" font-weight="700" text-anchor="end">3.4 · 3.0</text>
-  <text x="700" y="223" fill="#9ca3af" font-size="10" text-anchor="end">career lows</text>
-</svg>
-</figure>
+We took every one of his UFC fights — twenty-one of them, from his debut in June 2017 to his loss to Umar Nurmagomedov this past January — and plotted what Good Fights users rated each one. That's the chart at the top of this page: nine years of Deiveson Figueiredo in a single line.
 
 ## The climb
 
