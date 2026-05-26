@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { updateProfile, uploadProfileImage, checkDisplayNameAvailability } from '@/lib/api';
 import { useSpoilerFree } from '@/lib/spoilerFree';
-import { ArrowLeft, Camera } from 'lucide-react';
-import Link from 'next/link';
+import { Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function EditProfilePage() {
@@ -14,8 +13,6 @@ export default function EditProfilePage() {
   const router = useRouter();
 
   const [displayName, setDisplayName] = useState(user?.displayName || '');
-  const [firstName, setFirstName] = useState(user?.firstName || '');
-  const [lastName, setLastName] = useState(user?.lastName || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -44,8 +41,6 @@ export default function EditProfilePage() {
       }
       const { user: updatedUser } = await updateProfile({
         displayName: displayName || undefined,
-        firstName: firstName || undefined,
-        lastName: lastName || undefined,
       });
       setUser({ ...user, ...updatedUser });
       setSuccess('Profile updated!');
@@ -69,11 +64,6 @@ export default function EditProfilePage() {
 
   return (
     <div className="mx-auto max-w-md">
-      <Link href="/profile" className="mb-4 inline-flex items-center gap-1 text-sm text-text-secondary hover:text-primary">
-        <ArrowLeft size={14} />
-        Profile
-      </Link>
-
       <h1 className="mb-6 text-xl font-bold">Edit Profile</h1>
 
       {/* Avatar */}
@@ -109,22 +99,10 @@ export default function EditProfilePage() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-text-secondary">First Name</label>
-          <input
-            type="text"
-            value={firstName}
-            onChange={e => setFirstName(e.target.value)}
-            className="w-full rounded-lg border border-border bg-card px-4 py-3 text-foreground focus:border-primary focus:outline-none"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-text-secondary">Last Name</label>
-          <input
-            type="text"
-            value={lastName}
-            onChange={e => setLastName(e.target.value)}
-            className="w-full rounded-lg border border-border bg-card px-4 py-3 text-foreground focus:border-primary focus:outline-none"
-          />
+          <label className="mb-1 block text-xs font-medium text-text-secondary">Email</label>
+          <p className="w-full rounded-lg border border-border bg-card/50 px-4 py-3 text-sm text-text-secondary">
+            {user.email}
+          </p>
         </div>
 
         {/* Spoiler-free mode */}

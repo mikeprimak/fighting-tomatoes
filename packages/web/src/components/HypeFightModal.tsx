@@ -91,6 +91,7 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
     queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
     queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
     queryClient.invalidateQueries({ queryKey: ['search'] });
+    queryClient.invalidateQueries({ queryKey: ['myRatings'] });
   };
 
   const handleDone = async () => {

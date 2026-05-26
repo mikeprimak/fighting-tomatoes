@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { getFollowedFighters } from '@/lib/api';
+import { ChevronRight } from 'lucide-react';
 
 const STRIP_LIMIT = 5;
 
@@ -28,13 +29,14 @@ export function FollowedFightersStrip() {
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-1 flex items-baseline justify-between">
         <h3 className="text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
-          Following
+          Following <span className="text-text-secondary/70">{fighters.length}</span>
         </h3>
         <Link
           href="/followed-fighters"
-          className="text-[10px] font-medium text-text-secondary hover:text-primary"
+          className="flex shrink-0 items-center gap-0.5 text-[10px] font-medium text-text-secondary hover:text-primary"
         >
-          {fighters.length} · See all
+          See all
+          <ChevronRight size={12} />
         </Link>
       </div>
       <p className="mb-3 text-[10px] leading-snug text-text-secondary/80">
