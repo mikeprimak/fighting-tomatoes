@@ -111,7 +111,7 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
     setSaving(true);
     setError('');
     try {
-      await persistChanges();
+      if (isAuthenticated) await persistChanges();
       onClose();
       router.push(`/fights/${fight.id}`);
     } catch (err: any) {
@@ -208,17 +208,19 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
           })}
         </div>
 
-        {/* Comment input — auth only */}
-        {isAuthenticated && (
+        {/* Comment composer (auth only) + See Comments link (always, unless on detail page) */}
+        {(isAuthenticated || !hideCommentsLink) && (
           <div className="mb-4">
-            <textarea
-              value={comment}
-              onChange={e => setComment(e.target.value)}
-              placeholder={selectedHype ? `Why are you ${selectedHype}/10 hyped?` : 'Why are you hyped?'}
-              maxLength={500}
-              rows={3}
-              className="w-full resize-none rounded-lg border border-border bg-card p-3 text-sm text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none"
-            />
+            {isAuthenticated && (
+              <textarea
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+                placeholder={selectedHype ? `Why are you ${selectedHype}/10 hyped?` : 'Why are you hyped?'}
+                maxLength={500}
+                rows={3}
+                className="w-full resize-none rounded-lg border border-border bg-card p-3 text-sm text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none"
+              />
+            )}
             {!hideCommentsLink && (
               <button
                 type="button"
