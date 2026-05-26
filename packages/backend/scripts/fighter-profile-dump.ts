@@ -21,7 +21,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { launchPreviewBrowser, closePreviewBrowser } from '../src/services/aiEnrichment/fetchUFCEventPreview';
 import { fetchFighterBio } from '../src/services/aiEnrichment/fighterProfile/fetchFighterBio';
 
@@ -30,6 +30,7 @@ interface PickRow {
   rating_count: number;
   follower_count: number;
   has_ufc_slug: boolean;
+  already_enriched: boolean;
 }
 
 function prettyWeightClass(wc: string | null): string | null {
@@ -47,10 +48,16 @@ async function main() {
   const outPath =
     process.argv[4] ?? path.join('tmp', `fighter-profile-batch-${offset}-${limit}.json`);
 
+  // FP_DUMP_ALL=1 ranks the FULL engagement-ordered set (ignoring whether a
+  // profile already exists), so OFFSET blocks are STABLE across parallel windows
+  // even as other windows write. Without it, the set shrinks as profiles land,
+  // which shifts offsets and can leave gaps — bad for partitioned parallel runs.
+  // The `id` tiebreaker makes the ordering fully deterministic. already_enriched
+  // lets the author skip anyone already done (only overlaps near the top).
+  const includeDone = !!process.env.FP_DUMP_ALL && process.env.FP_DUMP_ALL !== '0';
+
   const prisma = new PrismaClient();
 
-  // Engagement-ranked fighters needing a profile. Mirrors runFighterProfile's
-  // selectCandidates, minus the threshold (backfill walks the head explicitly).
   const picks = await prisma.$queryRaw<PickRow[]>`
     WITH eng AS (
       SELECT fighter_id, COUNT(*)::int AS rating_count
@@ -70,74 +77,87 @@ async function main() {
       ft.id AS id,
       COALESCE(eng.rating_count, 0) AS rating_count,
       COALESCE(fol.follower_count, 0) AS follower_count,
-      (ft."ufcAthleteSlug" IS NOT NULL) AS has_ufc_slug
+      (ft."ufcAthleteSlug" IS NOT NULL) AS has_ufc_slug,
+      (ft."aiProfileEnrichedAt" IS NOT NULL) AS already_enriched
     FROM fighters ft
     LEFT JOIN eng ON eng.fighter_id = ft.id
     LEFT JOIN fol ON fol.fighter_id = ft.id
-    WHERE ft."aiProfileEnrichedAt" IS NULL
+    WHERE ${includeDone ? Prisma.sql`TRUE` : Prisma.sql`ft."aiProfileEnrichedAt" IS NULL`}
     ORDER BY (COALESCE(eng.rating_count, 0) + COALESCE(fol.follower_count, 0) * 3) DESC,
-             COALESCE(eng.rating_count, 0) DESC
+             COALESCE(eng.rating_count, 0) DESC,
+             ft.id ASC
     LIMIT ${limit} OFFSET ${offset}
   `;
 
   if (picks.length === 0) {
-    console.error('No fighters need a profile in this window. Done.');
+    console.error('No fighters match this window. Done.');
     await prisma.$disconnect();
     return;
   }
 
-  const needsBrowser = picks.some((p) => p.has_ufc_slug);
+  // PHASE 1 — clustered DB reads (fighter row + notable fights). No network here,
+  // so the Render connection isn't held idle through the slow bio fetches (the
+  // cause of the earlier P1017 "server closed the connection" drops).
+  interface Loaded { p: PickRow; f: any; notableFights: any[] }
+  const loaded: Loaded[] = [];
+  for (const p of picks) {
+    const f = await prisma.fighter.findUnique({ where: { id: p.id } });
+    if (!f) continue;
+    const fights = await prisma.fight.findMany({
+      where: {
+        fightStatus: 'COMPLETED',
+        winner: { not: null },
+        OR: [{ fighter1Id: f.id }, { fighter2Id: f.id }],
+      },
+      include: {
+        fighter1: { select: { id: true, firstName: true, lastName: true } },
+        fighter2: { select: { id: true, firstName: true, lastName: true } },
+        event: { select: { name: true, date: true } },
+      },
+      orderBy: { event: { date: 'desc' } },
+      take: 20,
+    });
+    const notableFights = fights.map((fi) => {
+      const isF1 = fi.fighter1Id === f.id;
+      const opp = isF1 ? fi.fighter2 : fi.fighter1;
+      let outcome = 'Result';
+      if (fi.winner === f.id) outcome = 'Win';
+      else if (fi.winner && (fi.winner === fi.fighter1Id || fi.winner === fi.fighter2Id)) outcome = 'Loss';
+      else if (fi.winner?.toLowerCase() === 'draw') outcome = 'Draw';
+      else if (fi.winner) outcome = 'No Contest';
+      const detail = [fi.method, fi.round != null ? `R${fi.round}` : null].filter(Boolean).join(', ');
+      return {
+        opponent: `${opp.firstName} ${opp.lastName}`.trim(),
+        result: detail ? `${outcome} — ${detail}` : outcome,
+        date: fi.event?.date ? fi.event.date.toISOString().slice(0, 10) : null,
+        event: fi.event?.name ?? null,
+      };
+    });
+    loaded.push({ p, f, notableFights });
+  }
+
+  // DB work is done — release the connection before the network-bound phase.
+  await prisma.$disconnect();
+
+  // PHASE 2 — network bio fetches (no DB). Connection drops here are irrelevant.
+  const needsBrowser = loaded.some((l) => l.p.has_ufc_slug);
   const handle = needsBrowser ? await launchPreviewBrowser() : undefined;
 
   const out: any[] = [];
   try {
-    for (const p of picks) {
-      const f = await prisma.fighter.findUnique({ where: { id: p.id } });
-      if (!f) continue;
+    for (const { p, f, notableFights } of loaded) {
       const name = `${f.firstName} ${f.lastName}`.trim();
-
       const bio = await fetchFighterBio(
         { firstName: f.firstName, lastName: f.lastName, nickname: f.nickname, ufcAthleteSlug: f.ufcAthleteSlug, sport: f.sport },
         { browser: f.ufcAthleteSlug ? handle?.browser : undefined },
       );
-
-      // Notable fights from THIS fighter's perspective, recent first.
-      const fights = await prisma.fight.findMany({
-        where: {
-          fightStatus: 'COMPLETED',
-          winner: { not: null },
-          OR: [{ fighter1Id: f.id }, { fighter2Id: f.id }],
-        },
-        include: {
-          fighter1: { select: { id: true, firstName: true, lastName: true } },
-          fighter2: { select: { id: true, firstName: true, lastName: true } },
-          event: { select: { name: true, date: true } },
-        },
-        orderBy: { event: { date: 'desc' } },
-        take: 20,
-      });
-      const notableFights = fights.map((fi) => {
-        const isF1 = fi.fighter1Id === f.id;
-        const opp = isF1 ? fi.fighter2 : fi.fighter1;
-        let outcome = 'Result';
-        if (fi.winner === f.id) outcome = 'Win';
-        else if (fi.winner && (fi.winner === fi.fighter1Id || fi.winner === fi.fighter2Id)) outcome = 'Loss';
-        else if (fi.winner?.toLowerCase() === 'draw') outcome = 'Draw';
-        else if (fi.winner) outcome = 'No Contest';
-        const detail = [fi.method, fi.round != null ? `R${fi.round}` : null].filter(Boolean).join(', ');
-        return {
-          opponent: `${opp.firstName} ${opp.lastName}`.trim(),
-          result: detail ? `${outcome} — ${detail}` : outcome,
-          date: fi.event?.date ? fi.event.date.toISOString().slice(0, 10) : null,
-          event: fi.event?.name ?? null,
-        };
-      });
 
       const nc = f.noContests;
       const hasRecord = f.wins + f.losses + f.draws + nc > 0;
       out.push({
         fighterId: f.id,
         name,
+        alreadyEnriched: !!p.already_enriched,
         engagement: { ratings: p.rating_count, followers: p.follower_count },
         identity: {
           firstName: f.firstName,
@@ -157,7 +177,7 @@ async function main() {
       });
 
       console.error(
-        `  dumped ${name}  (r${p.rating_count}/f${p.follower_count})  sources: ${bio.attempted.map((a) => `${a.label}=${a.ok ? a.chars : 'X'}`).join(' ')}`,
+        `  dumped ${name}${p.already_enriched ? ' [DONE]' : ''}  (r${p.rating_count}/f${p.follower_count})  sources: ${bio.attempted.map((a) => `${a.label}=${a.ok ? a.chars : 'X'}`).join(' ')}`,
       );
     }
   } finally {
@@ -165,10 +185,8 @@ async function main() {
   }
 
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, JSON.stringify({ generatedAt: new Date().toISOString(), offset, limit, fighters: out }, null, 2));
+  fs.writeFileSync(outPath, JSON.stringify({ generatedAt: new Date().toISOString(), offset, limit, includeDone, fighters: out }, null, 2));
   console.error(`\nWrote ${out.length} fighters to ${outPath}`);
-
-  await prisma.$disconnect();
 }
 
 main().catch((err) => {
