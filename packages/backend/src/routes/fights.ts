@@ -4020,7 +4020,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
             const aDate = a.userRatingCreatedAt || a.userHypeCreatedAt || a.userReview?.createdAt || new Date(0);
             const bDate = b.userRatingCreatedAt || b.userHypeCreatedAt || b.userReview?.createdAt || new Date(0);
             return new Date(bDate).getTime() - new Date(aDate).getTime();
-          case 'rating':
+          case 'rating': {
             // For hype filter, sort by hype score instead of rating
             if (query.filterType === 'hype') {
               return (b.userHype || 0) - (a.userHype || 0);
@@ -4029,7 +4029,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
             if (query.filterType === 'comments') {
               return (b.userReview?.rating || 0) - (a.userReview?.rating || 0);
             }
-            return (b.userRating || 0) - (a.userRating || 0);
+            // Highest rating first, then most-recent action within the same rating.
+            const ratingDiff = (b.userRating || 0) - (a.userRating || 0);
+            if (ratingDiff !== 0) return ratingDiff;
+            const aRated = a.userRatingCreatedAt ? new Date(a.userRatingCreatedAt).getTime() : 0;
+            const bRated = b.userRatingCreatedAt ? new Date(b.userRatingCreatedAt).getTime() : 0;
+            return bRated - aRated;
+          }
           case 'aggregate':
             // For hype filter, sort by community hype instead of rating
             if (query.filterType === 'hype') {
