@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { getMyRatings } from '@/lib/api';
+import { getMyRatings, toggleReviewUpvote, togglePreFightCommentUpvote } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
@@ -26,6 +26,13 @@ const SORT_OPTIONS = [
   { value: 'highest', label: 'Highest Rated', api: 'rating' },
 ];
 
+const COMMENT_SORT_OPTIONS = [
+  { value: 'recent', label: 'Most Recent' },
+  { value: 'upvoted', label: 'Most Upvoted' },
+];
+
+type VoteState = { upvotes: number; userHasUpvoted: boolean };
+
 export default function ActivityPage() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>}>
@@ -44,6 +51,9 @@ function ActivityPageInner() {
   })();
   const [filterType, setFilterType] = useState(initialFilter);
   const [sortBy, setSortBy] = useState('recent');
+  const [commentSort, setCommentSort] = useState('recent');
+  // Optimistic upvote overrides keyed by comment id (survive list refetches).
+  const [voteOverrides, setVoteOverrides] = useState<Record<string, VoteState>>({});
 
   const currentTab = TABS.find(t => t.value === filterType) ?? TABS[0];
   const isCommentTab = currentTab.kind === 'comment';
@@ -55,10 +65,14 @@ function ActivityPageInner() {
     isFetchingNextPage,
     isLoading,
   } = useInfiniteQuery({
-    queryKey: ['myRatings', filterType, sortBy],
+    // Comment tabs are always fetched newest-first; their ordering is applied
+    // client-side from commentSort, so the fetch sort stays stable.
+    queryKey: ['myRatings', filterType, isCommentTab ? 'newest' : sortBy],
     queryFn: ({ pageParam = '1' }) => {
       const apiFilter = currentTab.api;
-      const apiSort = SORT_OPTIONS.find(s => s.value === sortBy)?.api ?? 'newest';
+      const apiSort = isCommentTab
+        ? 'newest'
+        : (SORT_OPTIONS.find(s => s.value === sortBy)?.api ?? 'newest');
       return getMyRatings({ page: pageParam, limit: '20', filterType: apiFilter, sortBy: apiSort });
     },
     getNextPageParam: (lastPage) => {
@@ -80,17 +94,59 @@ function ActivityPageInner() {
 
   const fights = data?.pages.flatMap(p => p.fights) ?? [];
 
-  // For comment tabs, flatten each fight's comments into individual cards.
-  const comments = isCommentTab
+  // For comment tabs, flatten each fight's comments into normalized cards.
+  const isPre = filterType === 'preFight';
+  let comments = isCommentTab
     ? fights.flatMap((fight: any) => {
-        const list: any[] = filterType === 'preFight'
-          ? (fight.preFightComments ?? [])
-          : (fight.userReviews ?? []);
+        const list: any[] = isPre ? (fight.preFightComments ?? []) : (fight.userReviews ?? []);
         return list
           .filter((c) => c?.content?.trim())
-          .map((c) => ({ ...c, fight }));
+          .map((c) => {
+            const override = voteOverrides[c.id];
+            const baseUpvoted = isPre ? (c.votes?.length ?? 0) > 0 : !!c.userHasUpvoted;
+            return {
+              id: c.id,
+              fightId: fight.id,
+              fight,
+              content: c.content,
+              createdAt: c.createdAt,
+              rating: isPre ? null : (c.rating ?? null),
+              hypeRating: isPre ? (fight.userHypePrediction ?? null) : null,
+              upvotes: override?.upvotes ?? c.upvotes ?? 0,
+              userHasUpvoted: override?.userHasUpvoted ?? baseUpvoted,
+            };
+          });
       })
     : [];
+
+  if (isCommentTab) {
+    comments = [...comments].sort((a, b) =>
+      commentSort === 'upvoted'
+        ? (b.upvotes - a.upvotes) || (new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+  }
+
+  const handleUpvote = async (comment: any) => {
+    const current: VoteState = { upvotes: comment.upvotes ?? 0, userHasUpvoted: !!comment.userHasUpvoted };
+    const optimistic = !current.userHasUpvoted;
+    setVoteOverrides(prev => ({
+      ...prev,
+      [comment.id]: { upvotes: current.upvotes + (optimistic ? 1 : -1), userHasUpvoted: optimistic },
+    }));
+    try {
+      const res: any = isPre
+        ? await togglePreFightCommentUpvote(comment.fightId, comment.id)
+        : await toggleReviewUpvote(comment.fightId, comment.id);
+      const upvotes = res.upvotesCount ?? res.upvotes;
+      const voted = res.isUpvoted ?? res.userHasUpvoted;
+      if (typeof upvotes === 'number' && typeof voted === 'boolean') {
+        setVoteOverrides(prev => ({ ...prev, [comment.id]: { upvotes, userHasUpvoted: voted } }));
+      }
+    } catch {
+      setVoteOverrides(prev => ({ ...prev, [comment.id]: current }));
+    }
+  };
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -111,22 +167,23 @@ function ActivityPageInner() {
         ))}
       </div>
 
-      {/* Sort (fight tabs only — comment tabs are date-ordered) */}
-      {!isCommentTab && (
-        <div className="mb-4 flex gap-1.5">
-          {SORT_OPTIONS.map(opt => (
+      {/* Sort */}
+      <div className="mb-4 flex gap-1.5">
+        {(isCommentTab ? COMMENT_SORT_OPTIONS : SORT_OPTIONS).map(opt => {
+          const active = isCommentTab ? commentSort === opt.value : sortBy === opt.value;
+          return (
             <button
               key={opt.value}
-              onClick={() => setSortBy(opt.value)}
+              onClick={() => (isCommentTab ? setCommentSort(opt.value) : setSortBy(opt.value))}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                sortBy === opt.value ? 'bg-primary text-text-on-accent' : 'bg-card text-text-secondary hover:text-foreground'
+                active ? 'bg-primary text-text-on-accent' : 'bg-card text-text-secondary hover:text-foreground'
               }`}
             >
               {opt.label}
             </button>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       {isLoading && (
         <div className="flex items-center justify-center py-12">
@@ -138,16 +195,22 @@ function ActivityPageInner() {
       {isCommentTab && comments.length > 0 && (
         <div className="space-y-2">
           {comments.map((c: any) => (
-            <ActivityCommentCard key={c.id} comment={c} kind={filterType === 'preFight' ? 'pre' : 'post'} />
+            <ActivityCommentCard
+              key={c.id}
+              comment={c}
+              onUpvote={() => handleUpvote(c)}
+            />
           ))}
         </div>
       )}
 
-      {/* Fight tabs: render fight cards */}
+      {/* Fight tabs: render fight cards. Rated fights are always completed-style
+          (you can only rate a completed fight) — guards against fights whose
+          fightStatus is stale-UPCOMING on an already-finished event. */}
       {!isCommentTab && fights.length > 0 && (
         <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
           {fights.map((fight: any) => (
-            fight.fightStatus === 'COMPLETED'
+            filterType === 'all' || fight.fightStatus === 'COMPLETED'
               ? <CompletedFightCard key={fight.id} fight={fight} />
               : <UpcomingFightCard key={fight.id} fight={fight} />
           ))}
@@ -185,32 +248,21 @@ function emptyMessage(filterType: string): string {
   }
 }
 
-function ActivityCommentCard({ comment, kind }: { comment: any; kind: 'pre' | 'post' }) {
+function ActivityCommentCard({ comment, onUpvote }: { comment: any; onUpvote: () => void }) {
   const fight = comment.fight ?? {};
   const f1 = fight.fighter1?.lastName ?? '';
   const f2 = fight.fighter2?.lastName ?? '';
   const matchup = f1 && f2 ? `${f1} vs ${f2}` : (fight.event?.name ?? '');
 
-  // Reuse the shared CommentCard. Pre-fight comments surface the user's own hype
-  // next to their name; post-fight comments surface the review rating.
-  const item = {
-    ...comment,
-    rating: kind === 'post' ? comment.rating : null,
-    hypeRating: kind === 'pre' ? (fight.userHypePrediction ?? null) : null,
-  };
-
-  return (
-    <div>
-      <Link
-        href={`/fights/${fight.id}`}
-        className="mb-1 flex items-center gap-2 px-1 text-[10px] uppercase tracking-wider text-text-secondary hover:text-primary"
-      >
-        <span className="truncate font-semibold">{matchup}</span>
-        {fight.event?.name && matchup !== fight.event.name && (
-          <span className="truncate">· {fight.event.name}</span>
-        )}
-      </Link>
-      <CommentCard item={item} isMine />
-    </div>
+  // The matchup + event live inside the card footer, next to the date.
+  const meta = (
+    <Link href={`/fights/${fight.id}`} className="flex min-w-0 items-center gap-1 uppercase tracking-wider hover:text-primary">
+      <span className="truncate font-semibold">{matchup}</span>
+      {fight.event?.name && matchup !== fight.event.name && (
+        <span className="truncate">· {fight.event.name}</span>
+      )}
+    </Link>
   );
+
+  return <CommentCard item={comment} isMine onUpvote={onUpvote} meta={meta} />;
 }

@@ -21,11 +21,15 @@ export function CommentCard({
   isMine = false,
   onUpvote,
   onEdit,
+  meta,
 }: {
   item: any;
   isMine?: boolean;
   onUpvote?: () => void;
   onEdit?: () => void;
+  /** Extra context rendered in the footer row, next to the date (e.g. the
+   *  fight matchup + event on the My Activity screen). */
+  meta?: React.ReactNode;
 }) {
   const upvoteRail = (
     <>
@@ -60,7 +64,7 @@ export function CommentCard({
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center gap-2">
-          <span className="text-xs font-bold">{item.user?.displayName || (isMine ? 'You' : 'Anonymous')}</span>
+          <span className="text-xs font-bold text-text-secondary">{item.user?.displayName || (isMine ? 'You' : 'Anonymous')}</span>
           {item.rating != null && (
             <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: getHypeHeatmapColor(item.rating) }}>
               <Star size={13} style={{ color: getHypeHeatmapColor(item.rating) }} fill={getHypeHeatmapColor(item.rating)} />
@@ -75,8 +79,9 @@ export function CommentCard({
           )}
         </div>
         <p className="text-sm text-foreground">{item.content}</p>
-        <div className="mt-1.5 flex items-center gap-3 text-[10px] text-text-secondary">
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-text-secondary">
           <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+          {meta}
           {isMine && onEdit && (
             <button onClick={onEdit} className="font-semibold uppercase tracking-wide hover:text-primary">
               Edit
