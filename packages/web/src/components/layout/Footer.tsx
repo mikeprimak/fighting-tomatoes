@@ -6,8 +6,8 @@ export function Footer() {
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 text-xs text-text-secondary sm:flex-row sm:justify-between">
         <p>&copy; {new Date().getFullYear()} Good Fights. All rights reserved.</p>
         <div className="flex gap-4">
+          <Link href="/blog" className="hover:text-foreground">Blog</Link>
           <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
-          <Link href="/delete-account" className="hover:text-foreground">Delete Account</Link>
           <Link href="/feedback" className="hover:text-foreground">Feedback</Link>
         </div>
       </div>
