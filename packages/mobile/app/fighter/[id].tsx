@@ -387,7 +387,6 @@ export default function FighterDetailScreen() {
                   ) : null}
                 </View>
               ) : null}
-              <Text style={[styles.aboutAttribution, { color: colors.textSecondary }]}>AI-generated overview</Text>
             </View>
           );
         })()}
@@ -650,11 +649,6 @@ const styles = StyleSheet.create({
   drawText: {
     fontSize: 14,
     lineHeight: 20,
-  },
-  aboutAttribution: {
-    fontSize: 11,
-    fontStyle: 'italic',
-    marginTop: 12,
   },
   comingSoonText: {
     fontSize: 14,

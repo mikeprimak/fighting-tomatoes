@@ -193,7 +193,6 @@ function FighterAbout({ fighter }: { fighter: any }) {
           )}
         </div>
       )}
-      <p className="mt-3 text-[11px] italic text-text-secondary">AI-generated overview</p>
     </section>
   );
 }
