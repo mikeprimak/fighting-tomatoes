@@ -49,14 +49,14 @@ export function EditorialSecondary() {
   if (rest.length === 0) return null;
 
   return (
-    <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
       {rest.map((post) => (
         <Link
           key={post.slug}
           href={post.url}
-          className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:border-primary/40"
+          className="group flex items-center gap-3 overflow-hidden rounded-lg border border-border bg-card p-2 transition-colors hover:border-primary/40"
         >
-          <div className="relative aspect-[16/9] w-full overflow-hidden bg-background-secondary">
+          <div className="relative aspect-square h-16 w-16 shrink-0 overflow-hidden rounded-md bg-background-secondary">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={post.image}
@@ -66,18 +66,15 @@ export function EditorialSecondary() {
             />
           </div>
 
-          <div className="flex flex-1 flex-col p-4">
+          <div className="min-w-0 flex-1">
             {post.date && (
-              <div className="mb-1.5 text-xs font-normal text-text-secondary">
+              <div className="mb-0.5 text-[11px] font-normal text-text-secondary">
                 {formatDate(post.date)}
               </div>
             )}
-            <h3 className="text-base font-bold leading-snug text-foreground group-hover:text-primary">
+            <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground group-hover:text-primary">
               {post.title}
             </h3>
-            {post.excerpt && (
-              <p className="mt-2 line-clamp-2 text-sm text-text-secondary">{post.excerpt}</p>
-            )}
           </div>
         </Link>
       ))}
