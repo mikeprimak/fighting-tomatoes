@@ -8,6 +8,7 @@ import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { EventCard } from '@/components/EventCard';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { EditorialHero } from '@/components/EditorialHero';
+import { EditorialSecondary } from '@/components/EditorialSecondary';
 import { Loader2, Radio } from 'lucide-react';
 
 export default function LiveEventsPage() {
@@ -25,6 +26,7 @@ export default function LiveEventsPage() {
   return (
     <>
       <EditorialHero />
+      <EditorialSecondary />
       <SidebarLayout>
         <div className="mb-4">
           <div className="mb-3 flex items-center gap-2">
