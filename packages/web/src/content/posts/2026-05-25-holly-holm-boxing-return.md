@@ -1,7 +1,7 @@
 ---
 title: "Holly Holm Came Home to Boxing. We're Rooting for Her."
 slug: "holly-holm-boxing-return"
-date: "2026-05-26"
+date: "2026-05-25"
 author: "Good Fights"
 excerpt: "She threw the most famous head kick in MMA history and never found that height again. Now, at 44, Holly Holm has gone back to the sport that made her, and on May 30 she gets a second crack at the only thing missing from her boxing resume. A love letter, an honest accounting, and a hope."
 tags: ["holly-holm", "boxing", "mvp", "ufc", "feature"]

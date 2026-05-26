@@ -1,7 +1,7 @@
 ---
 title: "We Wanted So Much More for Darren Till"
 slug: "darren-till-bkfc-debut"
-date: "2026-05-26"
+date: "2026-05-24"
 author: "Good Fights"
 excerpt: "For about eighteen months, Darren Till was the most exciting thing happening in the UFC welterweight division and the funniest man with a microphone in front of him. Then it all came apart. On May 30 he fights bare knuckle in his own backyard, and we still can't shake the feeling that we got cheated out of the career he should have had."
 tags: ["darren-till", "bkfc", "ufc", "boxing", "feature"]
