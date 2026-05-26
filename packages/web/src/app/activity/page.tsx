@@ -9,16 +9,17 @@ import { Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+// Frontend tab/sort values are semantic and map to the backend's enum values
+// (the backend zod schema rejects anything outside its enums, which silently
+// 500s the request — that's why this page used to render empty).
 const TABS = [
-  { value: 'all', label: 'All Ratings' },
-  { value: 'reviewed', label: 'Reviewed' },
-  { value: 'tagged', label: 'Tagged' },
+  { value: 'all', label: 'Rated', api: 'ratings' },
+  { value: 'reviewed', label: 'Reviewed', api: 'comments' },
 ];
 
 const SORT_OPTIONS = [
-  { value: 'recent', label: 'Most Recent' },
-  { value: 'highest', label: 'Highest Rated' },
-  { value: 'lowest', label: 'Lowest Rated' },
+  { value: 'recent', label: 'Most Recent', api: 'newest' },
+  { value: 'highest', label: 'Highest Rated', api: 'rating' },
 ];
 
 export default function ActivityPage() {
@@ -48,8 +49,11 @@ function ActivityPageInner() {
     isLoading,
   } = useInfiniteQuery({
     queryKey: ['myRatings', filterType, sortBy],
-    queryFn: ({ pageParam = '1' }) =>
-      getMyRatings({ page: pageParam, limit: '20', filterType, sortBy }),
+    queryFn: ({ pageParam = '1' }) => {
+      const apiFilter = TABS.find(t => t.value === filterType)?.api ?? 'ratings';
+      const apiSort = SORT_OPTIONS.find(s => s.value === sortBy)?.api ?? 'newest';
+      return getMyRatings({ page: pageParam, limit: '20', filterType: apiFilter, sortBy: apiSort });
+    },
     getNextPageParam: (lastPage) => {
       const { page, totalPages } = lastPage.pagination;
       return page < totalPages ? String(page + 1) : undefined;

@@ -20,12 +20,15 @@ interface RateFightModalProps {
   fight: any;
   existingRating?: number;
   existingReview?: { content: string; rating?: number; id?: string };
+  /** Hide the "See Comments" link — used on the fight detail page, where it
+   *  would just link to the page the user is already on. */
+  hideCommentsLink?: boolean;
 }
 
 const WHEEL_SLOT_HEIGHT = 120;
 const WHEEL_NUMBERS = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 
-export function RateFightModal({ isOpen, onClose, fight, existingRating, existingReview }: RateFightModalProps) {
+export function RateFightModal({ isOpen, onClose, fight, existingRating, existingReview, hideCommentsLink }: RateFightModalProps) {
   const { isAuthenticated, user } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -226,16 +229,18 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
               rows={3}
               className="w-full resize-none rounded-lg border border-border bg-card p-3 text-sm text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none"
             />
-            <button
-              type="button"
-              onClick={handleSeeComments}
-              disabled={saving}
-              className="mt-2 w-full text-center text-xs text-text-secondary hover:text-foreground disabled:opacity-50"
-            >
-              {reviewCount > 0
-                ? `See ${reviewCount} ${reviewCount === 1 ? 'Comment' : 'Comments'} >`
-                : 'See Comments >'}
-            </button>
+            {!hideCommentsLink && (
+              <button
+                type="button"
+                onClick={handleSeeComments}
+                disabled={saving}
+                className="mt-2 w-full text-center text-xs text-text-secondary hover:text-foreground disabled:opacity-50"
+              >
+                {reviewCount > 0
+                  ? `See ${reviewCount} ${reviewCount === 1 ? 'Comment' : 'Comments'} >`
+                  : 'See Comments >'}
+              </button>
+            )}
           </div>
         )}
 

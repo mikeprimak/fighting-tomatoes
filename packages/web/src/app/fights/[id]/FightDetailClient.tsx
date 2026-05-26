@@ -306,12 +306,14 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
         fight={fight}
         existingRating={fight.userRating}
         existingReview={fight.userReview}
+        hideCommentsLink
       />
       <HypeFightModal
         isOpen={hypeModalOpen}
         onClose={() => setHypeModalOpen(false)}
         fight={fight}
         existingHype={stats?.userHypeScore ?? undefined}
+        hideCommentsLink
       />
     </div>
   );
@@ -433,15 +435,17 @@ function CommentsSection({ fightId, isCompleted, currentUserId, myReviewFromFigh
 
   return (
     <div className="space-y-2">
-      {/* The user's own comment is pinned to the top, with inline edit/update. */}
-      {isAuthenticated && (
-        editing || !myItem ? (
+      {/* The user's own comment is pinned to the top, with inline edit/update.
+          When the user has NOT posted yet, we show nothing here — adding a
+          comment happens through the rate/hype modal, not an inline composer. */}
+      {isAuthenticated && myItem && (
+        editing ? (
           <MyCommentEditor
-            key={myItem?.content || 'new'}
-            initialContent={myItem?.content || ''}
+            key={myItem.content || 'edit'}
+            initialContent={myItem.content || ''}
             placeholder={isCompleted ? 'Write a review…' : 'Share your thoughts on this upcoming fight…'}
-            hasExisting={!!myItem}
-            onCancel={myItem ? () => setEditing(false) : undefined}
+            hasExisting
+            onCancel={() => setEditing(false)}
             onSave={saveMine}
           />
         ) : (
@@ -521,7 +525,7 @@ function CommentCard({
           <span>{new Date(item.createdAt).toLocaleDateString()}</span>
           {isMine && onEdit && (
             <button onClick={onEdit} className="font-semibold uppercase tracking-wide hover:text-primary">
-              Update
+              Edit
             </button>
           )}
         </div>
