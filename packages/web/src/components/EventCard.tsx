@@ -5,6 +5,7 @@ import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { LiveFightCard } from '@/components/fight-cards/LiveFightCard';
 import { HowToWatch, useEventBroadcasts } from '@/components/HowToWatch';
+import { normalizeEventName } from '@/utils/eventName';
 import type { CardSection } from '@/lib/api';
 import Link from 'next/link';
 
@@ -89,6 +90,8 @@ export function EventCard({ event, mode }: EventCardProps) {
   const sectionHasBroadcast = (s: CardSection) =>
     !!broadcastsData?.broadcasts.some((b) => b.cardSection === s);
 
+  const displayName = normalizeEventName(event.name, event.promotion);
+
   const timeBadge = mode === 'upcoming'
     ? formatTimeUntil(event.date, event.mainStartTime ?? undefined)
     : mode === 'past'
@@ -115,7 +118,7 @@ export function EventCard({ event, mode }: EventCardProps) {
             <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between gap-3 p-4 sm:p-5">
               <div className="min-w-0 flex-1">
                 <h2 className="text-xl font-extrabold leading-tight text-white drop-shadow-lg sm:text-3xl">
-                  {event.name}
+                  {displayName}
                 </h2>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-gray-200 sm:text-base">
                   <span>{formatEventDate(event.date)}</span>
@@ -131,7 +134,7 @@ export function EventCard({ event, mode }: EventCardProps) {
           <div className="mb-3 flex items-end justify-between gap-3">
             <div className="min-w-0 flex-1">
               <h2 className="text-xl font-extrabold leading-tight text-foreground sm:text-3xl">
-                {event.name}
+                {displayName}
               </h2>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-text-secondary sm:text-base">
                 <span>{formatEventDate(event.date)}</span>

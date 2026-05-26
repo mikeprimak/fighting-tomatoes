@@ -8,6 +8,7 @@ import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { LiveFightCard } from '@/components/fight-cards/LiveFightCard';
 import { HowToWatch, useEventBroadcasts } from '@/components/HowToWatch';
+import { normalizeEventName } from '@/utils/eventName';
 import type { CardSection } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 
@@ -102,7 +103,7 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
       {/* Event header */}
       <div className="mb-6">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold sm:text-2xl">{event.name}</h1>
+          <h1 className="text-xl font-bold sm:text-2xl">{normalizeEventName(event.name, event.promotion)}</h1>
           {isLive && (
             <span className="inline-flex items-center gap-1 rounded bg-danger/20 px-2 py-0.5 text-xs font-semibold text-danger">
               <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-danger" />
