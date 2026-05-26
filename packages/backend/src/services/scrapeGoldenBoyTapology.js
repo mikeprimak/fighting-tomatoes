@@ -12,6 +12,7 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
+const { FIGHT_CARD_CONTAINER_SELECTOR, FIGHT_ROW_SELECTOR } = require('./tapologyFightExtraction');
 
 // Configuration
 const SCRAPER_MODE = process.env.SCRAPER_MODE || 'manual';
@@ -118,7 +119,7 @@ async function scrapeEventPage(browser, eventUrl) {
     const eventIdMatch = eventUrl.match(/\/events\/(\d+)-/);
     const eventIdFromUrl = eventIdMatch ? eventIdMatch[1] : null;
 
-    const eventData = await page.evaluate((eventId) => {
+    const eventData = await page.evaluate((eventId, containerSel, rowSel) => {
       const data = { eventName: '', dateText: '', eventDate: null, eventStartTime: null, venue: '', city: '', country: '', eventImageUrl: null, fights: [] };
 
       // Prefer og:image meta for authoritative event poster; fall back to id-scoped img
@@ -189,9 +190,17 @@ async function scrapeEventPage(browser, eventUrl) {
         if (idMatch) headshots.set(idMatch[1], src);
       });
 
-      // SCOPED FIGHT EXTRACTION: iterate <li> fight rows so sidebar/related-event
-      // widgets can't bleed unrelated fighters into the card.
-      const fightListItems = document.querySelectorAll('li.border-b, li[class*="border-b"]');
+      // SCOPED to the event's own bout-list container so related/sidebar
+      // bouts can't bleed into the card. Fail CLOSED if the container is
+      // missing (Tapology layout change): extract 0 fights + flag, never
+      // page-wide. See docs/plans/tapology-fight-bleed-hardening-2026-05-26.md
+      const fightCardContainer = document.querySelector(containerSel);
+      let fightListItems = [];
+      if (fightCardContainer) {
+        fightListItems = fightCardContainer.querySelectorAll(rowSel);
+      } else {
+        data.fightCardContainerMissing = true;
+      }
       const processedPairs = new Set();
       fightListItems.forEach(li => {
         if (li.closest('nav, header, footer, aside')) return;
@@ -222,7 +231,11 @@ async function scrapeEventPage(browser, eventUrl) {
         });
       });
       return data;
-    }, eventIdFromUrl);
+    }, eventIdFromUrl, FIGHT_CARD_CONTAINER_SELECTOR, FIGHT_ROW_SELECTOR);
+
+    if (eventData.fightCardContainerMissing) {
+      console.error(`      ⚠️  FAIL-CLOSED: fight-card container not found on ${eventUrl} — extracted 0 fights to avoid bleed. Tapology may have changed layout (selector: ${FIGHT_CARD_CONTAINER_SELECTOR}).`);
+    }
 
     await page.close();
     console.log(`      ✅ Found ${eventData.fights.length} fights`);
