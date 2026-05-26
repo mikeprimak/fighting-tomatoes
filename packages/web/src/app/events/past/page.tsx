@@ -6,6 +6,7 @@ import { useOrgFilter } from '@/lib/orgFilter';
 import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { EventCard } from '@/components/EventCard';
 import { LoadMoreSentinel } from '@/components/layout/LoadMoreSentinel';
+import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { EditorialHero } from '@/components/EditorialHero';
 import { Loader2 } from 'lucide-react';
 
@@ -34,40 +35,42 @@ export default function PastEventsPage() {
   const filteredEvents = filterEventsByOrg(allEvents);
 
   return (
-    <div>
+    <>
       <EditorialHero />
-      <div className="mb-4">
-        <h1 className="mb-3 text-lg font-bold text-foreground">Past Events</h1>
-        <OrgFilterTabs />
-      </div>
-
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      <SidebarLayout>
+        <div className="mb-4">
+          <h1 className="mb-3 text-lg font-bold text-foreground">Past Events</h1>
+          <OrgFilterTabs />
         </div>
-      )}
 
-      {error && (
-        <div className="rounded-lg border border-danger/30 bg-danger/10 p-4 text-center text-sm text-danger">
-          Failed to load events.
-        </div>
-      )}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        )}
 
-      {filteredEvents.map((event: any) => (
-        <EventCard key={event.id} event={event} mode="past" />
-      ))}
+        {error && (
+          <div className="rounded-lg border border-danger/30 bg-danger/10 p-4 text-center text-sm text-danger">
+            Failed to load events.
+          </div>
+        )}
 
-      {!isLoading && filteredEvents.length === 0 && !error && (
-        <p className="py-12 text-center text-sm text-text-secondary">
-          No past events found for the selected promotions.
-        </p>
-      )}
+        {filteredEvents.map((event: any) => (
+          <EventCard key={event.id} event={event} mode="past" />
+        ))}
 
-      <LoadMoreSentinel
-        hasMore={!!hasNextPage}
-        isFetching={isFetchingNextPage}
-        onIntersect={fetchNextPage}
-      />
-    </div>
+        {!isLoading && filteredEvents.length === 0 && !error && (
+          <p className="py-12 text-center text-sm text-text-secondary">
+            No past events found for the selected promotions.
+          </p>
+        )}
+
+        <LoadMoreSentinel
+          hasMore={!!hasNextPage}
+          isFetching={isFetchingNextPage}
+          onIntersect={fetchNextPage}
+        />
+      </SidebarLayout>
+    </>
   );
 }
