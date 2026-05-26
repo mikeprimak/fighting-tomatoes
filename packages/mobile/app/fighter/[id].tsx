@@ -355,6 +355,43 @@ export default function FighterDetailScreen() {
           </View>
         </View>
 
+        {/* About — AI-enriched fighter profile (Phase 5). Confidence-gated at 0.5. */}
+        {(() => {
+          const conf = fighter.aiProfileConfidence ?? 0;
+          const summary: string = fighter.aiProfileSummary || '';
+          const profile = fighter.aiProfile || {};
+          if (conf < 0.5 || (!summary && !profile.tldr)) return null;
+          const paragraphs = summary.split(/\n\n+/).map((p: string) => p.trim()).filter(Boolean);
+          return (
+            <View style={styles.aboutSection}>
+              <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 8 }]}>About</Text>
+              {profile.tldr ? (
+                <Text style={[styles.aboutTldr, { color: colors.text }]}>{profile.tldr}</Text>
+              ) : null}
+              {paragraphs.map((p: string, i: number) => (
+                <Text key={i} style={[styles.aboutParagraph, { color: colors.text }]}>{p}</Text>
+              ))}
+              {(profile.whyFansLove || profile.whyFansHate) ? (
+                <View style={styles.drawContainer}>
+                  {profile.whyFansLove ? (
+                    <View style={styles.drawBlock}>
+                      <Text style={[styles.drawLabel, { color: colors.primary }]}>WHY FANS LOVE THEM</Text>
+                      <Text style={[styles.drawText, { color: colors.text }]}>{profile.whyFansLove}</Text>
+                    </View>
+                  ) : null}
+                  {profile.whyFansHate ? (
+                    <View style={styles.drawBlock}>
+                      <Text style={[styles.drawLabel, { color: colors.textSecondary }]}>WHY SOME FANS HATE THEM</Text>
+                      <Text style={[styles.drawText, { color: colors.text }]}>{profile.whyFansHate}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+              <Text style={[styles.aboutAttribution, { color: colors.textSecondary }]}>AI-generated overview</Text>
+            </View>
+          );
+        })()}
+
         {/* Fights */}
         <View style={styles.fightHistorySection}>
           <View style={styles.fightsTitleRow}>
@@ -581,6 +618,43 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  aboutSection: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  aboutTldr: {
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 21,
+    marginBottom: 10,
+  },
+  aboutParagraph: {
+    fontSize: 14,
+    lineHeight: 21,
+    marginBottom: 10,
+  },
+  drawContainer: {
+    marginTop: 4,
+    gap: 12,
+  },
+  drawBlock: {
+    gap: 4,
+  },
+  drawLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  drawText: {
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  aboutAttribution: {
+    fontSize: 11,
+    fontStyle: 'italic',
+    marginTop: 12,
   },
   comingSoonText: {
     fontSize: 14,
