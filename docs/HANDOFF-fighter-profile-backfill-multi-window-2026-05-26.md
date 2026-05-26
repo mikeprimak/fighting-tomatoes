@@ -40,7 +40,7 @@ Full system background: `docs/areas/ai-enrichment.md` → Phase 5a.
 
 | Block | Dump cmd offset / limit | Rank range | Window / owner | Status | Count written |
 |------|--------------------------|------------|----------------|--------|---------------|
-| A | `40 49`  | 50–89   | remote-control | IN PROGRESS | |
+| A | `40 49`  | 50–89   | remote-control | DONE | 40 |
 | B | `40 89`  | 90–129  | remote-control (opus) | DONE | 40 |
 | C | `40 129` | 130–169 | _unclaimed_ | TODO | |
 | D | `40 169` | 170–209 | _unclaimed_ | TODO | |
