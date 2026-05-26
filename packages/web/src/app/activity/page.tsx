@@ -6,8 +6,8 @@ import { getMyRatings } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
-import { getHypeHeatmapColor } from '@/utils/heatmap';
-import { Loader2, ThumbsUp, Star } from 'lucide-react';
+import { CommentCard } from '@/components/CommentCard';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -190,34 +190,27 @@ function ActivityCommentCard({ comment, kind }: { comment: any; kind: 'pre' | 'p
   const f1 = fight.fighter1?.lastName ?? '';
   const f2 = fight.fighter2?.lastName ?? '';
   const matchup = f1 && f2 ? `${f1} vs ${f2}` : (fight.event?.name ?? '');
-  const rating = comment.rating;
+
+  // Reuse the shared CommentCard. Pre-fight comments surface the user's own hype
+  // next to their name; post-fight comments surface the review rating.
+  const item = {
+    ...comment,
+    rating: kind === 'post' ? comment.rating : null,
+    hypeRating: kind === 'pre' ? (fight.userHypePrediction ?? null) : null,
+  };
 
   return (
-    <Link
-      href={`/fights/${fight.id}`}
-      className="block rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/30"
-    >
-      <div className="mb-1.5 flex items-center justify-between gap-2">
-        <span className="truncate text-xs font-bold text-foreground">{matchup}</span>
-        {kind === 'post' && rating != null && (
-          <span className="flex shrink-0 items-center gap-1 text-xs font-semibold" style={{ color: getHypeHeatmapColor(rating) }}>
-            <Star size={13} style={{ color: getHypeHeatmapColor(rating) }} fill={getHypeHeatmapColor(rating)} />
-            {rating}
-          </span>
+    <div>
+      <Link
+        href={`/fights/${fight.id}`}
+        className="mb-1 flex items-center gap-2 px-1 text-[10px] uppercase tracking-wider text-text-secondary hover:text-primary"
+      >
+        <span className="truncate font-semibold">{matchup}</span>
+        {fight.event?.name && matchup !== fight.event.name && (
+          <span className="truncate">· {fight.event.name}</span>
         )}
-      </div>
-      {fight.event?.name && matchup !== fight.event.name && (
-        <p className="mb-1.5 truncate text-[10px] uppercase tracking-wider text-text-secondary">{fight.event.name}</p>
-      )}
-      <p className="text-sm leading-snug text-foreground">{comment.content}</p>
-      <div className="mt-1.5 flex items-center gap-3 text-[10px] text-text-secondary">
-        <span className="flex items-center gap-1">
-          <ThumbsUp size={11} fill={comment.userHasUpvoted ? '#F5C518' : 'none'} />
-          {comment.upvotes ?? 0}
-        </span>
-        <span>{new Date(comment.createdAt).toLocaleDateString()}</span>
-        {comment.parentReviewId || comment.parentCommentId ? <span className="italic">reply</span> : null}
-      </div>
-    </Link>
+      </Link>
+      <CommentCard item={item} isMine />
+    </div>
   );
 }

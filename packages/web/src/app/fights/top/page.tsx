@@ -22,7 +22,7 @@ const TIME_PERIODS = [
 ];
 
 export default function TopFightsPage() {
-  const [period, setPeriod] = useState('week');
+  const [period, setPeriod] = useState('month');
   const { selectedOrgs } = useOrgFilter();
 
   const promotions = selectedOrgs.size > 0 ? Array.from(selectedOrgs).join(',') : undefined;
