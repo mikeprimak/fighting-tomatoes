@@ -1,0 +1,88 @@
+name: Fighter Profile Enrichment
+
+# Daily job that selects engagement-ranked fighters whose profile is missing,
+# stale, or invalidated by a record change, fetches biographical sources
+# (UFC athlete page + Wikipedia + editorial), runs the LLM extract, and writes
+# the aiProfile* fields on the Fighter row. Sibling to the pre-fight and
+# post-fight enrichment jobs. No admin review inbox — confidence floor (0.5)
+# + grounding URLs are the audit trail.
+#
+# Cron bar is >=25 ratings (the one-time backfill covered the >=100 head).
+# See docs/areas/ai-enrichment.md (Phase 5) for the rationale.
+
+on:
+  schedule:
+    # 18:00 UTC daily — offset from the pre-fight (14:00) and post-fight (16:00)
+    # jobs so the three enrichment crons never contend for the same UFC.com
+    # Puppeteer window.
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run the pipeline but do not write (1 to enable)."
+        required: false
+        default: ""
+      only_fighter_id:
+        description: "Restrict to a single fighter id (manual ad-hoc)."
+        required: false
+        default: ""
+      ignore_threshold:
+        description: "Ignore the engagement bar — backfill an explicit cohort (1 to enable)."
+        required: false
+        default: ""
+      max_fighters:
+        description: "Safety cap on fighters per run (default 40)."
+        required: false
+        default: ""
+      min_ratings:
+        description: "Engagement threshold, rating count (default 25)."
+        required: false
+        default: ""
+      stale_days:
+        description: "Re-enrich profiles older than N days (default 180)."
+        required: false
+        default: ""
+
+jobs:
+  enrich:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install deps
+        run: |
+          cd packages/backend
+          pnpm install
+          npx prisma generate
+
+      - name: Install Chromium for Puppeteer (UFC.com athlete fetch)
+        run: |
+          cd packages/backend
+          npx puppeteer browsers install chrome
+
+      - name: Run fighter-profile enrichment
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+          FIGHTER_PROFILE_DRY_RUN: ${{ github.event.inputs.dry_run }}
+          FIGHTER_PROFILE_ONLY_FIGHTER_ID: ${{ github.event.inputs.only_fighter_id }}
+          FIGHTER_PROFILE_IGNORE_THRESHOLD: ${{ github.event.inputs.ignore_threshold }}
+          FIGHTER_PROFILE_MAX_FIGHTERS: ${{ github.event.inputs.max_fighters }}
+          FIGHTER_PROFILE_MIN_RATINGS: ${{ github.event.inputs.min_ratings }}
+          FIGHTER_PROFILE_STALE_DAYS: ${{ github.event.inputs.stale_days }}
+        run: |
+          cd packages/backend
+          npx ts-node --transpile-only scripts/run-fighter-profile-enrichment.ts
+
+      - name: Report failure
+        if: failure()
+        run: |
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=fighter-profile-enrichment&org=fights" || true

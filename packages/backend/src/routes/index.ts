@@ -1364,6 +1364,14 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 profileImage: { type: 'string' },
                 actionImage: { type: 'string' },
                 isFollowing: { type: 'boolean' },
+                // AI profile enrichment (Phase 5). Floor-gated at write time
+                // (confidence >= 0.5). aiProfile is a free-form JSON object, so
+                // additionalProperties must be true or fast-json-stringify drops it.
+                aiProfile: { type: 'object', additionalProperties: true, nullable: true },
+                aiProfileSummary: { type: 'string', nullable: true },
+                aiProfileEnrichedAt: { type: 'string', nullable: true },
+                aiProfileConfidence: { type: 'number', nullable: true },
+                aiProfileSourceUrls: { type: 'array', items: { type: 'string' } },
               },
             },
           },
@@ -1404,6 +1412,11 @@ export async function registerRoutes(fastify: FastifyInstance) {
           createdAt: true,
           profileImage: true,
           actionImage: true,
+          aiProfile: true,
+          aiProfileSummary: true,
+          aiProfileEnrichedAt: true,
+          aiProfileConfidence: true,
+          aiProfileSourceUrls: true,
         },
       });
 
