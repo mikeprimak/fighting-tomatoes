@@ -44,7 +44,7 @@ Full system background: `docs/areas/ai-enrichment.md` → Phase 5a.
 | B | `40 89`  | 90–129  | remote-control (opus) | DONE | 40 |
 | C | `40 129` | 130–169 | remote-control (opus) | DONE | 40 |
 | D | `40 169` | 170–209 | remote-control (opus) | DONE | 40 |
-| E | `40 209` | 210–249 | _unclaimed_ | TODO | |
+| E | `40 209` | 210–249 | remote-control (opus) | DONE | 40 |
 | F | `40 249` | 250–289 | _unclaimed_ | TODO | |
 | G | `40 289` | 290–329 | _unclaimed_ | TODO | |
 | H | `40 329` | 330–367 | _unclaimed_ | TODO | |
