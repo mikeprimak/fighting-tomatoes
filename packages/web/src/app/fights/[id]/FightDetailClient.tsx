@@ -13,13 +13,25 @@ import { DistributionChart } from '@/components/charts/DistributionChart';
 import { VerticalDistributionChart } from '@/components/charts/VerticalDistributionChart';
 import { RateFightModal } from '@/components/RateFightModal';
 import { HypeFightModal } from '@/components/HypeFightModal';
-import { CommentForm } from '@/components/CommentForm';
-import { createPreFightComment, reviewFight, toggleReviewUpvote, togglePreFightCommentUpvote } from '@/lib/api';
+import {
+  createPreFightComment,
+  updatePreFightComment,
+  updateFightUserData,
+  toggleReviewUpvote,
+  togglePreFightCommentUpvote,
+} from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface Props {
   fightId: string;
   initialFight: any;
+}
+
+/** "WELTERWEIGHT" -> "Welterweight", "WOMEN'S STRAWWEIGHT" -> "Women's Strawweight" */
+function toTitleCase(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function FighterDisplay({ fighter, isWinner, hideSpoilers, resultText }: { fighter: any; isWinner: boolean; hideSpoilers: boolean; resultText?: string }) {
@@ -48,23 +60,22 @@ function FighterDisplay({ fighter, isWinner, hideSpoilers, resultText }: { fight
           <p className="text-xs text-text-secondary">&quot;{fighter.nickname}&quot;</p>
         )}
       </Link>
-      <p className="text-xs text-text-secondary">
-        {fighter.wins}-{fighter.losses}-{fighter.draws}
-      </p>
       {!hideSpoilers && isWinner && resultText && (
         <p className="text-center text-xs font-semibold text-success">{resultText}</p>
       )}
+      <p className="text-xs text-text-secondary">
+        {fighter.wins}-{fighter.losses}-{fighter.draws}
+      </p>
     </div>
   );
 }
 
 export function FightDetailClient({ fightId, initialFight }: Props) {
   const { spoilerFreeMode } = useSpoilerFree();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [outcomeRevealed, setOutcomeRevealed] = useState(false);
   const [rateModalOpen, setRateModalOpen] = useState(false);
   const [hypeModalOpen, setHypeModalOpen] = useState(false);
-  const queryClient = useQueryClient();
 
   const { data: fightData, isLoading } = useQuery({
     queryKey: ['fight', fightId],
@@ -156,7 +167,7 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
         {fight.cardType && <span className="mx-2">-</span>}
         {fight.cardType && <span>{fight.cardType}</span>}
         {fight.weightClass && <span className="mx-2">-</span>}
-        {fight.weightClass && <span>{fight.weightClass}</span>}
+        {fight.weightClass && <span>{toTitleCase(fight.weightClass)}</span>}
       </div>
 
       {/* Odds (upcoming) */}
@@ -280,29 +291,12 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
           <MessageSquare size={16} className="text-primary" />
           {isCompleted ? 'Reviews' : 'Pre-Fight Comments'}
         </h3>
-        {isUpcoming && (
-          <CommentForm
-            placeholder="Share your thoughts on this upcoming fight..."
-            onSubmit={async (content) => {
-              await createPreFightComment(fightId, content);
-              queryClient.invalidateQueries({ queryKey: ['preFightComments', fightId] });
-            }}
-          />
-        )}
-        {isCompleted && (
-          <CommentForm
-            key={fight.userReview?.content || 'new-review'}
-            placeholder="Write a review..."
-            existingContent={fight.userReview?.content}
-            submitLabel={fight.userReview ? 'Update' : 'Post'}
-            onSubmit={async (content) => {
-              await reviewFight(fightId, { content, rating: fight.userRating || 5 });
-              queryClient.invalidateQueries({ queryKey: ['fightReviews', fightId] });
-              queryClient.invalidateQueries({ queryKey: ['fight', fightId] });
-            }}
-          />
-        )}
-        <CommentsSection fightId={fightId} isCompleted={isCompleted} />
+        <CommentsSection
+          fightId={fightId}
+          isCompleted={isCompleted}
+          currentUserId={user?.id}
+          myReviewFromFight={fight.userReview}
+        />
       </div>
 
       {/* Modals */}
@@ -323,20 +317,34 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
   );
 }
 
-function CommentsSection({ fightId, isCompleted }: { fightId: string; isCompleted: boolean }) {
+interface CommentsSectionProps {
+  fightId: string;
+  isCompleted: boolean;
+  currentUserId?: string;
+  myReviewFromFight?: any;
+}
+
+function CommentsSection({ fightId, isCompleted, currentUserId, myReviewFromFight }: CommentsSectionProps) {
   const qc = useQueryClient();
   const { isAuthenticated } = useAuth();
+  const [editing, setEditing] = useState(false);
+
+  const invalidate = () => {
+    if (isCompleted) {
+      qc.invalidateQueries({ queryKey: ['fightReviews', fightId] });
+      qc.invalidateQueries({ queryKey: ['fight', fightId] });
+      qc.invalidateQueries({ queryKey: ['fightStats', fightId] });
+    } else {
+      qc.invalidateQueries({ queryKey: ['preFightComments', fightId] });
+    }
+  };
 
   const handleUpvote = async (itemId: string) => {
     if (!isAuthenticated) return;
     try {
-      if (isCompleted) {
-        await toggleReviewUpvote(fightId, itemId);
-        qc.invalidateQueries({ queryKey: ['fightReviews', fightId] });
-      } else {
-        await togglePreFightCommentUpvote(fightId, itemId);
-        qc.invalidateQueries({ queryKey: ['preFightComments', fightId] });
-      }
+      if (isCompleted) await toggleReviewUpvote(fightId, itemId);
+      else await togglePreFightCommentUpvote(fightId, itemId);
+      invalidate();
     } catch { /* ignore */ }
   };
 
@@ -354,52 +362,194 @@ function CommentsSection({ fightId, isCompleted }: { fightId: string; isComplete
 
   const isLoading = isCompleted ? reviewsLoading : commentsLoading;
 
+  const allItems: any[] = isCompleted ? reviewsData?.reviews ?? [] : commentsData?.comments ?? [];
+  // The user's own comment/review, surfaced from the dedicated field when present.
+  const myItem =
+    (isCompleted ? myReviewFromFight : commentsData?.userComment) ||
+    (currentUserId ? allItems.find((i) => (i.user?.id ?? i.userId) === currentUserId) : null) ||
+    null;
+  const others = allItems.filter((i) => i.id !== myItem?.id).slice(0, 10);
+
+  // Create/update/delete the user's own comment. Empty content deletes (matches mobile).
+  const saveMine = async (content: string) => {
+    const trimmed = content.trim();
+    if (!trimmed && myItem) {
+      // Deletion path — confirm exactly like the mobile app.
+      const ok = typeof window !== 'undefined'
+        && window.confirm('Are you sure you want to delete your comment?');
+      if (!ok) return;
+      if (isCompleted) await updateFightUserData(fightId, { review: null });
+      else await updatePreFightComment(fightId, myItem.id, '');
+    } else if (!trimmed) {
+      return; // nothing to post
+    } else if (isCompleted) {
+      await updateFightUserData(fightId, { review: trimmed });
+    } else if (myItem) {
+      await updatePreFightComment(fightId, myItem.id, trimmed);
+    } else {
+      await createPreFightComment(fightId, trimmed);
+    }
+    setEditing(false);
+    invalidate();
+  };
+
   if (isLoading) {
     return <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-text-secondary" /></div>;
   }
 
-  const items = isCompleted ? reviewsData?.reviews ?? [] : commentsData?.comments ?? [];
-
-  if (items.length === 0) {
-    return <p className="rounded-lg border border-border bg-card p-4 text-center text-sm text-text-secondary">No {isCompleted ? 'reviews' : 'comments'} yet.</p>;
-  }
-
   return (
     <div className="space-y-2">
-      {items.slice(0, 10).map((item: any) => (
-        <div key={item.id} className="rounded-lg border border-border bg-card p-3">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-xs font-medium">{item.user?.displayName || 'Anonymous'}</span>
-            {item.rating && (
-              <span className="flex items-center gap-1 text-xs font-bold" style={{ color: getHypeHeatmapColor(item.rating) }}>
-                <Star size={13} style={{ color: getHypeHeatmapColor(item.rating) }} fill={getHypeHeatmapColor(item.rating)} />
-                {item.rating}
-              </span>
-            )}
-            {item.hypeRating && (
-              <span className="flex items-center gap-0.5 text-xs font-bold" style={{ color: getHypeHeatmapColor(item.hypeRating) }}>
-                <Flame size={10} />
-                {item.hypeRating}
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-text-secondary">{item.content}</p>
-          <div className="mt-1.5 flex items-center gap-3 text-[10px] text-text-secondary">
-            <span>{new Date(item.createdAt).toLocaleDateString()}</span>
-            {item.upvotes != null && (
-              <button
-                onClick={() => handleUpvote(item.id)}
-                className="flex items-center gap-1 transition-colors hover:opacity-80"
-                style={{ color: item.userHasUpvoted ? '#F5C518' : undefined }}
-                aria-label="Upvote"
-              >
-                <ThumbsUp size={14} fill={item.userHasUpvoted ? '#F5C518' : 'none'} />
-                <span className={item.userHasUpvoted ? 'font-semibold' : ''}>{item.upvotes}</span>
-              </button>
-            )}
-          </div>
-        </div>
+      {/* The user's own comment is pinned to the top, with inline edit/update. */}
+      {isAuthenticated && (
+        editing || !myItem ? (
+          <MyCommentEditor
+            key={myItem?.content || 'new'}
+            initialContent={myItem?.content || ''}
+            placeholder={isCompleted ? 'Write a review…' : 'Share your thoughts on this upcoming fight…'}
+            hasExisting={!!myItem}
+            onCancel={myItem ? () => setEditing(false) : undefined}
+            onSave={saveMine}
+          />
+        ) : (
+          <CommentCard
+            item={myItem}
+            isMine
+            onUpvote={() => handleUpvote(myItem.id)}
+            onEdit={() => setEditing(true)}
+          />
+        )
+      )}
+
+      {others.map((item) => (
+        <CommentCard key={item.id} item={item} onUpvote={() => handleUpvote(item.id)} />
       ))}
+
+      {!myItem && others.length === 0 && (
+        <p className="rounded-lg border border-border bg-card p-4 text-center text-sm text-text-secondary">
+          No {isCompleted ? 'reviews' : 'comments'} yet.
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Comment card matching the mobile layout: upvote rail on the left, rating/flame
+ *  inline next to the username. */
+function CommentCard({
+  item,
+  isMine = false,
+  onUpvote,
+  onEdit,
+}: {
+  item: any;
+  isMine?: boolean;
+  onUpvote: () => void;
+  onEdit?: () => void;
+}) {
+  return (
+    <div className={`flex gap-3 rounded-lg border bg-card p-3 ${isMine ? 'border-primary/50' : 'border-border'}`}>
+      {/* Upvote rail (left of everything, like mobile) */}
+      <button
+        onClick={onUpvote}
+        className="flex shrink-0 flex-col items-center gap-1 pt-0.5 transition-colors hover:opacity-80"
+        style={{ color: item.userHasUpvoted ? '#F5C518' : undefined }}
+        aria-label="Upvote"
+      >
+        <ThumbsUp size={18} fill={item.userHasUpvoted ? '#F5C518' : 'none'} />
+        <span className={`text-xs ${item.userHasUpvoted ? 'font-semibold' : 'text-text-secondary'}`}>
+          {item.upvotes ?? 0}
+        </span>
+      </button>
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex items-center gap-2">
+          <span className="text-xs font-bold">{item.user?.displayName || (isMine ? 'You' : 'Anonymous')}</span>
+          {item.rating != null && (
+            <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: getHypeHeatmapColor(item.rating) }}>
+              <Star size={13} style={{ color: getHypeHeatmapColor(item.rating) }} fill={getHypeHeatmapColor(item.rating)} />
+              {item.rating}
+            </span>
+          )}
+          {item.rating == null && item.hypeRating != null && (
+            <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: getHypeHeatmapColor(item.hypeRating) }}>
+              <Flame size={13} style={{ color: getHypeHeatmapColor(item.hypeRating) }} />
+              {item.hypeRating}
+            </span>
+          )}
+        </div>
+        <p className="text-sm text-foreground">{item.content}</p>
+        <div className="mt-1.5 flex items-center gap-3 text-[10px] text-text-secondary">
+          <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+          {isMine && onEdit && (
+            <button onClick={onEdit} className="font-semibold uppercase tracking-wide hover:text-primary">
+              Update
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Inline editor for the user's own comment. Submitting empty content triggers
+ *  the delete-confirm flow in the parent. */
+function MyCommentEditor({
+  initialContent,
+  placeholder,
+  hasExisting,
+  onSave,
+  onCancel,
+}: {
+  initialContent: string;
+  placeholder: string;
+  hasExisting: boolean;
+  onSave: (content: string) => Promise<void>;
+  onCancel?: () => void;
+}) {
+  const [content, setContent] = useState(initialContent);
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    setSaving(true);
+    try {
+      await onSave(content);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const emptied = hasExisting && !content.trim();
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-3">
+      <textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder={placeholder}
+        maxLength={1000}
+        rows={3}
+        className="w-full resize-none rounded-lg border border-border bg-background p-2.5 text-sm text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none"
+      />
+      <div className="mt-2 flex items-center justify-end gap-2">
+        {onCancel && (
+          <button
+            onClick={onCancel}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs text-text-secondary hover:text-foreground"
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          onClick={submit}
+          disabled={saving || (!hasExisting && !content.trim())}
+          className={`rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+            emptied ? 'bg-danger text-white hover:bg-danger/90' : 'bg-primary text-text-on-accent hover:bg-primary/90'
+          }`}
+        >
+          {saving ? 'Saving…' : emptied ? 'Delete' : hasExisting ? 'Update' : 'Post'}
+        </button>
+      </div>
     </div>
   );
 }

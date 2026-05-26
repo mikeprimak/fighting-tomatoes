@@ -435,6 +435,20 @@ export async function getMyComments(
 
 // ==================== PRE-FIGHT COMMENTS ====================
 
+/**
+ * Atomic user-data update (mirrors mobile). Pass `review: null` to delete the
+ * user's review while leaving their rating untouched.
+ */
+export async function updateFightUserData(
+  fightId: string,
+  data: { rating?: number | null; review?: string | null },
+) {
+  return makeRequest<{ message: string; data: any }>(`/fights/${fightId}/user-data`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
 export async function createPreFightComment(fightId: string, content: string) {
   return makeRequest<{ comment: any; message: string }>(`/fights/${fightId}/pre-fight-comment`, {
     method: 'POST',
