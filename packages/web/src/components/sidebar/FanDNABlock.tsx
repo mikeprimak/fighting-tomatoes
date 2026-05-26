@@ -7,7 +7,7 @@ import { getFanDNAProfile, type FanDNACard } from '@/lib/api';
 import { Dna, ChevronRight } from 'lucide-react';
 
 const FAMILY_COLORS: Record<string, string> = {
-  affinity: '#A78BFA',
+  affinity: '#F87171',
   behaviour: '#60A5FA',
   prediction: '#34D399',
   identity: '#F59E0B',

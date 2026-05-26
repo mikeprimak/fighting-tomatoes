@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { getFanDNAProfile, type FanDNACard } from '@/lib/api';
-import { Dna, ChevronLeft, LogIn } from 'lucide-react';
+import { Dna, LogIn } from 'lucide-react';
 
 const FAMILY_LABELS: Record<string, string> = {
   affinity: 'Affinity',
@@ -14,7 +14,7 @@ const FAMILY_LABELS: Record<string, string> = {
 };
 
 const FAMILY_COLORS: Record<string, string> = {
-  affinity: '#A78BFA',
+  affinity: '#F87171',
   behaviour: '#60A5FA',
   prediction: '#34D399',
   identity: '#F59E0B',
@@ -59,19 +59,11 @@ export default function FanDNAPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Link
-        href="/profile"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-text-secondary hover:text-foreground"
-      >
-        <ChevronLeft size={16} />
-        Back to profile
-      </Link>
-
       <div className="mb-6 flex flex-col items-center gap-2 text-center">
         <Dna size={28} style={{ color: FAMILY_COLORS.affinity }} />
         <h1 className="text-2xl font-bold">Your Fan DNA</h1>
         <p className="max-w-md text-sm text-text-secondary">
-          Patterns the app has learned from your ratings and hypes.
+          Patterns <i>Good Fights</i> has learned from your ratings and hypes.
         </p>
       </div>
 
@@ -79,11 +71,11 @@ export default function FanDNAPage() {
         <div
           className="mb-4 rounded-xl border p-5"
           style={{
-            backgroundColor: 'rgba(167, 139, 250, 0.18)',
-            borderColor: 'rgba(167, 139, 250, 0.45)',
+            backgroundColor: 'rgba(248, 113, 113, 0.18)',
+            borderColor: 'rgba(248, 113, 113, 0.45)',
           }}
         >
-          <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: '#A78BFA' }}>
+          <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: '#F87171' }}>
             Your Type
           </p>
           <p className="mt-1 text-xl font-extrabold text-foreground">{personalityType.label}</p>
@@ -92,7 +84,7 @@ export default function FanDNAPage() {
           </p>
           {personalityType.primaryStat ? (
             <div className="mt-2.5 flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold" style={{ color: '#A78BFA' }}>
+              <span className="text-2xl font-extrabold" style={{ color: '#F87171' }}>
                 {personalityType.primaryStat}
               </span>
               {personalityType.secondaryStat ? (
