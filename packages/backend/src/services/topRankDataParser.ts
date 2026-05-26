@@ -609,20 +609,26 @@ async function importTopRankEvents(
       const gender = inferGenderFromWeightClass(fightData.weightClass);
 
       // Update fighter sport and gender
-      await prisma.fighter.update({
-        where: { id: fighter1Id },
+      // Backfill classification only for fighters already classified as this
+      // org's sport — never overwrite sport, never touch a cross-sport fighter
+      // that bled into the scrape. updateMany no-ops when the where misses, so
+      // a bleed fighter is left intact (see lesson_tapology_parsers_overwrite_sport).
+      await prisma.fighter.updateMany({
+        where: { id: fighter1Id, sport: Sport.BOXING },
         data: {
           gender,
-          sport: Sport.BOXING,
           weightClass: weightClass || undefined,
         }
       });
 
-      await prisma.fighter.update({
-        where: { id: fighter2Id },
+      // Backfill classification only for fighters already classified as this
+      // org's sport — never overwrite sport, never touch a cross-sport fighter
+      // that bled into the scrape. updateMany no-ops when the where misses, so
+      // a bleed fighter is left intact (see lesson_tapology_parsers_overwrite_sport).
+      await prisma.fighter.updateMany({
+        where: { id: fighter2Id, sport: Sport.BOXING },
         data: {
           gender,
-          sport: Sport.BOXING,
           weightClass: weightClass || undefined,
         }
       });
@@ -658,11 +664,14 @@ async function importTopRankEvents(
             cardType: fightData.cardType,
             fightStatus: 'UPCOMING',
           },
+          { crossEventDedup: true },
         );
 
-        await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
-          console.warn('[FollowSync]', err)
-        );
+        if (upsertedFight) {
+          await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
+            console.warn('[FollowSync]', err)
+          );
+        }
 
         fightsImported++;
       } catch (error) {

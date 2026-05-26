@@ -407,10 +407,13 @@ async function importMVPEvents(
             cardType: fightData.cardType,
             fightStatus: 'UPCOMING',
           },
+          { crossEventDedup: true },
         );
-        await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
-          console.warn('[FollowSync]', err)
-        );
+        if (upsertedFight) {
+          await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
+            console.warn('[FollowSync]', err)
+          );
+        }
         fightsImported++;
       } catch (error) {
         console.warn(`    ⚠ Failed to upsert fight:`, error);
