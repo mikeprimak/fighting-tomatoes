@@ -16,6 +16,7 @@ Then it faded. Slowly at first, then all at once.
 We took every one of his UFC fights — twenty-one of them, from his debut in June 2017 to his loss to Umar Nurmagomedov this past January — and plotted what Good Fights users rated each one. Here's nine years of Deiveson Figueiredo in a single line.
 
 <figure style="margin:2rem 0;">
+<figcaption style="color:#9ca3af;font-size:0.8rem;text-align:center;margin-bottom:0.75rem;">Average Good Fights user rating for every Deiveson Figueiredo UFC fight, June 2017 – January 2026. Gold = the line; red = the two lowest-rated fights of his career.</figcaption>
 <svg viewBox="0 0 720 380" role="img" aria-label="Line chart of Deiveson Figueiredo's UFC fight ratings from 2017 to 2026" style="width:100%;height:auto;display:block;font-family:inherit;">
   <defs>
     <linearGradient id="figFill" x1="0" y1="0" x2="0" y2="1">
@@ -47,10 +48,13 @@ We took every one of his UFC fights — twenty-one of them, from his debut in Ju
   <!-- year labels -->
   <g fill="#9ca3af" font-size="11" text-anchor="middle">
     <text x="46" y="354">'17</text>
+    <text x="90.2" y="354">'18</text>
     <text x="166.3" y="354">'19</text>
     <text x="242.3" y="354">'20</text>
     <text x="318.6" y="354">'21</text>
+    <text x="394.7" y="354">'22</text>
     <text x="470.8" y="354">'23</text>
+    <text x="546.8" y="354">'24</text>
     <text x="623.1" y="354">'25</text>
     <text x="699.2" y="354">'26</text>
   </g>
@@ -94,7 +98,6 @@ We took every one of his UFC fights — twenty-one of them, from his debut in Ju
   <text x="700" y="210" fill="#ef4444" font-size="11.5" font-weight="700" text-anchor="end">3.4 · 3.0</text>
   <text x="700" y="223" fill="#9ca3af" font-size="10" text-anchor="end">career lows</text>
 </svg>
-<figcaption style="color:#9ca3af;font-size:0.8rem;text-align:center;margin-top:0.5rem;">Average Good Fights user rating for every Deiveson Figueiredo UFC fight, June 2017 – January 2026. Gold = the line; red = the two lowest-rated fights of his career.</figcaption>
 </figure>
 
 ## The climb
@@ -102,6 +105,11 @@ We took every one of his UFC fights — twenty-one of them, from his debut in Ju
 The early part of the line is busy because the early part of his career was busy. Figueiredo came into the UFC in 2017 as a finisher and basically stayed one: Beltran, Morales, Moraga — all stopped. The one ugly dip in 2019, the unanimous-decision loss to Jussier Formiga, is the lone fight in this whole run rated below "good." Everything else from his first four years sits comfortably in the 7-to-9 range.
 
 Then comes the peak, and it's not subtle. Two demolitions of Joseph Benavidez to claim the vacant flyweight title. A first-round guillotine on Alex Perez. And then, in December 2020, **the fight that sits at the very top of this chart**: Figueiredo vs. Brandon Moreno I, a five-round majority draw that fans rated **9.36** — the single highest-rated fight of his career and one of the best flyweight fights anyone has ever produced. He didn't even win it, and it's still his masterpiece.
+
+<figure style="margin:2rem 0;">
+<img src="/blog/figueiredo-hero.jpg" alt="Deiveson Figueiredo roaring inside the Octagon" style="width:100%;height:auto;display:block;border-radius:0.75rem;" />
+<figcaption style="color:#9ca3af;font-size:0.8rem;text-align:center;margin-top:0.5rem;">This is the Figueiredo fans fell for: knockout power in a flyweight frame, and the kind of menace that turned every exchange into a coin flip.</figcaption>
+</figure>
 
 ## The slide
 
@@ -123,6 +131,12 @@ That's the real question, and the chart frames it honestly. Figueiredo is 38. Th
 
 But here's the thing about a line like this: it's a record of a man who, for one incredible stretch, could turn any fight into a 9. That capacity doesn't fully evaporate. It needs the right opponent — someone willing to stand in front of him — and it needs him to fight like a man with nothing to protect. Give Deiveson Figueiredo a striker and a reason to swing, and the gold line on this chart has shown us exactly how high it can go.
 
-The floor is in. We've seen it twice now, in red. The question for his next fight is whether there's any ceiling left.
+## Enter Song Yadong
+
+Which is exactly why his next fight is so interesting. On **May 30, 2026**, Figueiredo headlines a UFC Fight Night at the Galaxy Arena in **Macao** against **Song Yadong** — and on paper, it's the closest thing to the assignment that chart is begging for. Song isn't a wrestler who's going to drag him into another grappling-tax decision. He's a come-forward, heavy-handed striker fighting in front of a home-continent crowd, the kind of opponent who *wants* to trade in the pocket. That's the one ingredient Figueiredo's most recent fights have been missing: someone who refuses to make it boring.
+
+It's also a genuine crossroads. Figueiredo is 38, riding the two lowest-rated nights of his career, and a third in a row would be hard to spin as anything but the end of the road as a relevant bantamweight. But it's a five-round main event against a striker — exactly the setup where the old Deiveson, the 2020 Deiveson, used to live. If there's a fight left on the calendar that could yank that gold line back up off the floor, it's this one.
+
+The floor is in. We've seen it twice now, in red. On May 30, against a man who'll actually stand in front of him, we find out whether there's any ceiling left.
 
 *Rate every fight as it happens on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
