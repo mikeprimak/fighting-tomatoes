@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getFollowedFighters } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getFollowedFighters, unfollowFighter } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { Loader2, ArrowLeft, Bell, X } from 'lucide-react';
+import { Loader2, Bell, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PopularFightersBlock } from '@/components/sidebar/PopularFightersBlock';
@@ -15,18 +15,36 @@ function hasRecord(f: { wins?: number; losses?: number; draws?: number }): boole
   return (f.wins ?? 0) + (f.losses ?? 0) + (f.draws ?? 0) > 0;
 }
 
+/** "LIGHT_HEAVYWEIGHT" -> "Light Heavyweight" */
+function formatWeightClass(wc?: string | null): string | null {
+  if (!wc) return null;
+  return wc
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function recordLine(f: any): string | null {
   const record = hasRecord(f) ? `${f.wins}-${f.losses}-${f.draws}` : null;
-  if (record && f.weightClass) return `${record} · ${f.weightClass}`;
+  const wc = formatWeightClass(f.weightClass);
+  if (record && wc) return `${record} · ${wc}`;
   if (record) return record;
-  if (f.weightClass) return f.weightClass;
+  if (wc) return wc;
   return null;
 }
 
 export default function FollowedFightersPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [ctaDismissed, setCtaDismissed] = useState(true);
+
+  const unfollowMutation = useMutation({
+    mutationFn: (fighterId: string) => unfollowFighter(fighterId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
+    },
+  });
 
   useEffect(() => {
     try {
@@ -67,13 +85,6 @@ export default function FollowedFightersPage() {
   return (
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-6">
       <div className="min-w-0">
-        <Link
-          href="/profile"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-text-secondary hover:text-primary"
-        >
-          <ArrowLeft size={14} />
-          Profile
-        </Link>
         <h1 className="text-lg font-bold">Followed Fighters</h1>
         <p className="mb-4 mt-1 text-xs text-text-secondary">
           Follow to save them.{' '}
@@ -129,9 +140,13 @@ export default function FollowedFightersPage() {
         <div className="grid gap-2 sm:grid-cols-2">
           {fighters.map((fighter: any) => {
             const line = recordLine(fighter);
+            const unfollowing = unfollowMutation.isPending && unfollowMutation.variables === fighter.id;
             return (
-              <Link key={fighter.id} href={`/fighters/${fighter.id}`} className="block">
-                <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/30">
+              <div
+                key={fighter.id}
+                className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/30"
+              >
+                <Link href={`/fighters/${fighter.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                   <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-background">
                     {fighter.profileImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -153,8 +168,16 @@ export default function FollowedFightersPage() {
                     </p>
                     {line ? <p className="truncate text-xs text-text-secondary">{line}</p> : null}
                   </div>
-                </div>
-              </Link>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => unfollowMutation.mutate(fighter.id)}
+                  disabled={unfollowing}
+                  className="shrink-0 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-danger/40 hover:text-danger disabled:opacity-50"
+                >
+                  {unfollowing ? '…' : 'Unfollow'}
+                </button>
+              </div>
             );
           })}
         </div>

@@ -36,7 +36,7 @@ function toTitleCase(value: string): string {
 
 function FighterDisplay({ fighter, isWinner, hideSpoilers, resultText }: { fighter: any; isWinner: boolean; hideSpoilers: boolean; resultText?: string }) {
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex w-28 flex-col items-center gap-2 sm:w-36">
       <div className={`h-24 w-24 overflow-hidden rounded-full sm:h-32 sm:w-32 ${
         !hideSpoilers && isWinner ? 'ring-3 ring-success' : 'bg-card'
       }`}>

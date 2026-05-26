@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Star, MessageCircle } from 'lucide-react';
+import { Star, MessageCircle, MessageSquareQuote } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { useSpoilerFree } from '@/lib/spoilerFree';
 import { RateFightModal } from '@/components/RateFightModal';
@@ -152,6 +152,7 @@ export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps)
   const hasRating = avgRating > 0;
   const hasHype = avgHype > 0;
   const hasUserRating = userRating > 0;
+  const hasUserComment = !!fight.userReview?.content?.trim();
 
   const ratingColor = hasRating ? getHypeHeatmapColor(avgRating) : undefined;
   const hypeColor = hasHype ? getHypeHeatmapColor(avgHype) : undefined;
@@ -286,6 +287,14 @@ export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps)
             </>
           ) : (
             <Star size={30} className="text-text-secondary/30" />
+          )}
+          {hasUserComment && (
+            <MessageSquareQuote
+              size={13}
+              className="absolute right-0 top-1 text-[#F5C518]"
+              fill="#F5C518"
+              aria-label="You commented"
+            />
           )}
         </div>
       </div>

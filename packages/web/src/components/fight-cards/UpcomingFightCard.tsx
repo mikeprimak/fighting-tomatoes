@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Flame, MessageCircle } from 'lucide-react';
+import { Flame, MessageCircle, MessageSquareQuote } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { HypeFightModal } from '@/components/HypeFightModal';
 
@@ -87,6 +87,7 @@ export function UpcomingFightCard({ fight }: UpcomingFightCardProps) {
   const commentCount = fight.commentCount ?? 0;
   const hasHype = hypeScore > 0;
   const hasUserHype = userHype > 0;
+  const hasUserComment = (fight.userCommentCount ?? 0) > 0;
 
   const hypeColor = hasHype ? getHypeHeatmapColor(hypeScore) : undefined;
   const userHypeColor = hasUserHype ? getHypeHeatmapColor(userHype) : undefined;
@@ -164,6 +165,14 @@ export function UpcomingFightCard({ fight }: UpcomingFightCardProps) {
             </>
           ) : (
             <Flame size={30} className="text-text-secondary/30" />
+          )}
+          {hasUserComment && (
+            <MessageSquareQuote
+              size={13}
+              className="absolute right-0 top-1 text-[#F5C518]"
+              fill="#F5C518"
+              aria-label="You commented"
+            />
           )}
         </div>
       </div>
