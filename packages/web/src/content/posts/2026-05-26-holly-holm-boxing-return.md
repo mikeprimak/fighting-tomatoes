@@ -5,7 +5,7 @@ date: "2026-05-26"
 author: "Good Fights"
 excerpt: "She threw the most famous head kick in MMA history and never found that height again. Now, at 44, Holly Holm has gone back to the sport that made her, and on May 30 she gets a second crack at the only thing missing from her boxing resume. A love letter, an honest accounting, and a hope."
 tags: ["holly-holm", "boxing", "mvp", "ufc", "feature"]
-image: ""
+image: "/blog/holly-holm-hero.png"
 draft: false
 ---
 
