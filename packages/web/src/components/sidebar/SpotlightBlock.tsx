@@ -39,7 +39,7 @@ export function SpotlightBlock() {
   if (!isAuthenticated || !user) return null;
   if (!queriesSettled) {
     return (
-      <div className="rounded-lg border border-primary/30 bg-card p-4">
+      <div className="rounded-lg border border-border bg-card p-4">
         <div className="h-16 animate-pulse rounded bg-background-secondary" />
       </div>
     );
@@ -63,9 +63,9 @@ export function SpotlightBlock() {
     : eventName;
 
   return (
-    <div className="rounded-lg border border-primary/30 bg-gradient-to-b from-primary/[0.06] to-card p-4">
-      <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-        <Telescope size={11} />
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
+        <Telescope size={11} className="text-primary" />
         A good fight you might love
       </div>
       <Link href={`/fights/${f.id}`} className="block group">
