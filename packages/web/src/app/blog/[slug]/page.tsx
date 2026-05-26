@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { getPost, getPostSlugs, DEFAULT_POST_IMAGE } from '@/lib/posts';
+import { SITE_URL } from '@/lib/site';
+import { ShareButtons } from '@/components/ShareButtons';
 
 export function generateStaticParams() {
   return getPostSlugs().map((slug) => ({ slug }));
@@ -83,6 +85,8 @@ export default async function BlogPostPage({
       </div>
 
       <div className="blog-content" dangerouslySetInnerHTML={{ __html: post.html }} />
+
+      <ShareButtons url={`${SITE_URL}/blog/${post.slug}`} title={post.title} />
 
       {post.tags.length > 0 && (
         <div className="mt-10 flex flex-wrap gap-2 border-t border-border pt-6">
