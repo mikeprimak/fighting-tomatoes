@@ -145,23 +145,25 @@ export function EventCard({ event, mode }: EventCardProps) {
         )}
       </Link>
 
-      {/* Whole-event How to Watch */}
-      <HowToWatch eventId={event.id} />
+      {/* Whole-event How to Watch — not shown for past events */}
+      {mode !== 'past' && <HowToWatch eventId={event.id} />}
 
       {/* Fights by section */}
       {sortedSectionKeys.map(section => {
         const sTime = sectionStartTime(section, event);
         const broadcastKey = sectionToBroadcastKey(section);
-        const sectionAbsorbed = broadcastKey ? sectionHasBroadcast(broadcastKey) : false;
+        // Past events never show How to Watch, so a broadcast can't absorb the
+        // section header — keep the plain header in that case.
+        const sectionAbsorbed = mode !== 'past' && broadcastKey ? sectionHasBroadcast(broadcastKey) : false;
         const showHeader = (sortedSectionKeys.length > 1 || sTime) && !sectionAbsorbed;
         return (
         <div key={section}>
-          {broadcastKey && (
+          {broadcastKey && mode !== 'past' && (
             <HowToWatch
               eventId={event.id}
               section={broadcastKey}
               label={section}
-              time={sTime && mode !== 'past' ? formatEventTimeCompact(sTime) : undefined}
+              time={sTime ? formatEventTimeCompact(sTime) : undefined}
             />
           )}
           {showHeader && (

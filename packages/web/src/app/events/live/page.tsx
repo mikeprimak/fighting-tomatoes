@@ -6,6 +6,7 @@ import { useOrgFilter } from '@/lib/orgFilter';
 import { isEventLiveNow } from '@/lib/eventStatus';
 import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { EventCard } from '@/components/EventCard';
+import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { EditorialHero } from '@/components/EditorialHero';
 import { Loader2, Radio } from 'lucide-react';
 
@@ -22,38 +23,40 @@ export default function LiveEventsPage() {
   const liveEvents = filterEventsByOrg(allEvents.filter((e: any) => isEventLiveNow(e)));
 
   return (
-    <div>
+    <>
       <EditorialHero />
-      <div className="mb-4">
-        <div className="mb-3 flex items-center gap-2">
-          <Radio className="text-danger" size={20} />
-          <h1 className="text-lg font-bold text-foreground">Live Events</h1>
+      <SidebarLayout>
+        <div className="mb-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Radio className="text-danger" size={20} />
+            <h1 className="text-lg font-bold text-foreground">Live Events</h1>
+          </div>
+          <OrgFilterTabs />
         </div>
-        <OrgFilterTabs />
-      </div>
 
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        </div>
-      )}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        )}
 
-      {error && (
-        <div className="rounded-lg border border-danger/30 bg-danger/10 p-4 text-center text-sm text-danger">
-          Failed to load events.
-        </div>
-      )}
+        {error && (
+          <div className="rounded-lg border border-danger/30 bg-danger/10 p-4 text-center text-sm text-danger">
+            Failed to load events.
+          </div>
+        )}
 
-      {liveEvents.map((event: any) => (
-        <EventCard key={event.id} event={event} mode="live" />
-      ))}
+        {liveEvents.map((event: any) => (
+          <EventCard key={event.id} event={event} mode="live" />
+        ))}
 
-      {!isLoading && liveEvents.length === 0 && !error && (
-        <div className="py-12 text-center">
-          <p className="text-sm text-text-secondary">No events are live right now.</p>
-          <p className="mt-1 text-xs text-text-secondary">Check the Upcoming tab to see what&apos;s next.</p>
-        </div>
-      )}
-    </div>
+        {!isLoading && liveEvents.length === 0 && !error && (
+          <div className="py-12 text-center">
+            <p className="text-sm text-text-secondary">No events are live right now.</p>
+            <p className="mt-1 text-xs text-text-secondary">Check the Upcoming tab to see what&apos;s next.</p>
+          </div>
+        )}
+      </SidebarLayout>
+    </>
   );
 }

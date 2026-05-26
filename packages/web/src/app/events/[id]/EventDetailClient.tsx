@@ -10,7 +10,6 @@ import { LiveFightCard } from '@/components/fight-cards/LiveFightCard';
 import { HowToWatch, useEventBroadcasts } from '@/components/HowToWatch';
 import type { CardSection } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
-import Link from 'next/link';
 
 const SECTION_ORDER = ['MAIN CARD', 'PRELIMS', 'EARLY PRELIMS'];
 
@@ -124,8 +123,8 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
         )}
       </div>
 
-      {/* Whole-event How to Watch */}
-      <HowToWatch eventId={event.id} />
+      {/* Whole-event How to Watch — not shown for past events */}
+      {!isPast && <HowToWatch eventId={event.id} />}
 
       {/* Fights by section */}
       {fightsLoading && fights.length === 0 && (
@@ -137,16 +136,18 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
       {sortedSectionKeys.map(section => {
         const sectionTime = sectionStartTime(section, event);
         const broadcastKey = sectionToBroadcastKey(section);
-        const sectionAbsorbed = broadcastKey ? sectionHasBroadcast(broadcastKey) : false;
+        // Past events never show How to Watch, so a broadcast can't absorb the
+        // section header — keep the plain header in that case.
+        const sectionAbsorbed = !isPast && broadcastKey ? sectionHasBroadcast(broadcastKey) : false;
         const showHeader = sortedSectionKeys.length > 1 && !sectionAbsorbed;
         return (
         <div key={section} className="mb-6">
-          {broadcastKey && (
+          {broadcastKey && !isPast && (
             <HowToWatch
               eventId={event.id}
               section={broadcastKey}
               label={section}
-              time={sectionTime && !isPast ? formatEventTimeCompact(sectionTime) : undefined}
+              time={sectionTime ? formatEventTimeCompact(sectionTime) : undefined}
             />
           )}
           {showHeader && (
@@ -185,13 +186,6 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
       {fights.length === 0 && !fightsLoading && (
         <p className="py-8 text-center text-sm text-text-secondary">No fights announced yet.</p>
       )}
-
-      {/* Back link */}
-      <div className="mt-4 pb-4">
-        <Link href="/" className="text-sm text-primary hover:underline">
-          &larr; Back to events
-        </Link>
-      </div>
     </div>
   );
 }

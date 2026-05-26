@@ -599,7 +599,7 @@ export async function search(query: string, limit = 10) {
 
 // ==================== FEEDBACK ====================
 
-export async function sendFeedback(data: { content: string; type: string }) {
+export async function sendFeedback(data: { content: string; platform?: string; appVersion?: string }) {
   return makeRequest<{ message: string }>('/feedback', {
     method: 'POST',
     body: JSON.stringify(data),
