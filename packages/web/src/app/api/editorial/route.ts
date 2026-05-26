@@ -20,6 +20,7 @@ export async function GET() {
     author: p.author,
     tags: p.tags,
     image: p.image || DEFAULT_POST_IMAGE,
+    featured: p.featured,
     url: `/blog/${p.slug}`,
   }));
 

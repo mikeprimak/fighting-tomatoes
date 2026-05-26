@@ -12,6 +12,7 @@ type EditorialPost = {
   author: string;
   tags: string[];
   image: string;
+  featured?: boolean;
   url: string;
 };
 
@@ -40,7 +41,10 @@ export function EditorialHero() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const post = data?.posts?.[0];
+  // Manual control: pin the hero by setting `featured: true` in a post's
+  // frontmatter. Posts arrive newest-first, so this picks the newest featured
+  // one; with nothing featured we fall back to the newest post.
+  const post = data?.posts?.find((p) => p.featured) ?? data?.posts?.[0];
   if (!post) return null;
 
   return (

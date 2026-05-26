@@ -18,6 +18,9 @@ export type PostMeta = {
   draft: boolean;
   /** Hero/share image path (e.g. /blog/my-slug.jpg). Empty string = use DEFAULT_POST_IMAGE. */
   image: string;
+  /** Pins this post to the EditorialHero band on the main pages. The newest
+   *  `featured: true` post wins; if none are featured we fall back to newest. */
+  featured: boolean;
 };
 
 export type Post = PostMeta & {
@@ -41,6 +44,7 @@ function parseFile(filename: string): { meta: PostMeta; content: string } | null
     tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
     draft: data.draft === true,
     image: (data.image as string) || '',
+    featured: data.featured === true,
   };
 
   if (meta.draft && !includeDrafts) return null;

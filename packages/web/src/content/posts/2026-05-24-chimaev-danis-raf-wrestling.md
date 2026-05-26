@@ -7,6 +7,7 @@ excerpt: "RAF is putting Dillon Danis in a wrestling match against Khamzat Chima
 tags: ["chimaev", "dillon-danis", "raf", "wrestling", "preview"]
 image: "/blog/chimaev-danis-raf.webp"
 draft: false
+featured: true
 ---
 
 Combat sports has finally answered a question nobody asked but everybody secretly wanted: what happens if you take the internet's most punchable man and put him in a wrestling match against Khamzat "Borz" Chimaev, a man whose nickname is *literally the Chechen word for wolf*?
