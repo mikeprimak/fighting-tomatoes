@@ -9,7 +9,6 @@ import { useAuth } from '@/lib/auth';
 import { Flame, Star, MessageSquare, Loader2, ThumbsUp } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { DistributionChart } from '@/components/charts/DistributionChart';
 import { VerticalDistributionChart } from '@/components/charts/VerticalDistributionChart';
 import { RateFightModal } from '@/components/RateFightModal';
 import { HypeFightModal } from '@/components/HypeFightModal';
@@ -204,7 +203,7 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
               <p className="mb-3 text-center text-sm text-text-secondary">No hype ratings yet</p>
             )}
             {stats.hypeDistribution && Object.keys(stats.hypeDistribution).length > 0 && (
-              <DistributionChart distribution={stats.hypeDistribution} label="Hype" />
+              <VerticalDistributionChart distribution={stats.hypeDistribution} label="Hype" maxBarHeight={80} />
             )}
           </div>
         </div>
