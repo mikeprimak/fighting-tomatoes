@@ -262,13 +262,6 @@ export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps)
             </div>
           )}
 
-          {hideSpoilers && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0.5 flex justify-center">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
-                Result hidden
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Right: user-rating star */}

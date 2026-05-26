@@ -5,9 +5,16 @@ import { getFighter, getFights } from '@/lib/api';
 import { formatEventDate } from '@/utils/dateFormatters';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
-import { Loader2, ArrowLeft, Trophy } from 'lucide-react';
-import Link from 'next/link';
+import { Loader2, Trophy } from 'lucide-react';
 import { useState } from 'react';
+
+function formatWeightClass(wc?: string | null): string | null {
+  if (!wc) return null;
+  return wc
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 interface Props {
   fighterId: string;
@@ -54,11 +61,6 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <Link href="/" className="mb-4 inline-flex items-center gap-1 text-sm text-text-secondary hover:text-primary">
-        <ArrowLeft size={14} />
-        Back
-      </Link>
-
       {/* Fighter header */}
       <div className="mb-6 flex items-center gap-4 sm:gap-6">
         <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full bg-card sm:h-32 sm:w-32">
@@ -81,7 +83,7 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
             {fighter.wins}-{fighter.losses}-{fighter.draws}
           </p>
           {fighter.weightClass && (
-            <p className="text-sm text-text-secondary">{fighter.weightClass}</p>
+            <p className="text-sm text-text-secondary">{formatWeightClass(fighter.weightClass)}</p>
           )}
           {fighter.isChampion && fighter.championshipTitle && (
             <div className="mt-1 flex items-center gap-1">
@@ -173,9 +175,9 @@ function FightWithEventLabel({ fight, children }: { fight: any; children: React.
   return (
     <div>
       {(eventName || eventDate) && (
-        <div className="flex items-center justify-between px-3 pt-2 text-[10px] uppercase tracking-wider text-text-secondary">
+        <div className="flex items-center justify-center gap-2 px-3 pt-2 text-[10px] uppercase tracking-wider text-text-secondary">
           <span className="truncate">{eventName}</span>
-          {eventDate && <span className="shrink-0 pl-2">{formatEventDate(eventDate, { year: true })}</span>}
+          {eventDate && <span className="shrink-0">{formatEventDate(eventDate, { year: true })}</span>}
         </div>
       )}
       {children}
