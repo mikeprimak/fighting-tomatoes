@@ -339,13 +339,47 @@ function CommentsSection({ fightId, isCompleted, currentUserId, myReviewFromFigh
     }
   };
 
-  const handleUpvote = async (itemId: string) => {
+  // Patch a single item's upvote state in place. We deliberately do NOT
+  // invalidate/refetch here so the list does not re-sort while the user is
+  // reading it — order only changes on a fresh page load.
+  const patchUpvote = (itemId: string, upvotes: number, userHasUpvoted: boolean) => {
+    const apply = (it: any) =>
+      it && it.id === itemId ? { ...it, upvotes, userHasUpvoted } : it;
+    if (isCompleted) {
+      qc.setQueryData(['fightReviews', fightId], (old: any) =>
+        old ? { ...old, reviews: (old.reviews ?? []).map(apply) } : old,
+      );
+      qc.setQueryData(['fight', fightId], (old: any) =>
+        old?.fight?.userReview ? { ...old, fight: { ...old.fight, userReview: apply(old.fight.userReview) } } : old,
+      );
+    } else {
+      qc.setQueryData(['preFightComments', fightId], (old: any) =>
+        old
+          ? { ...old, comments: (old.comments ?? []).map(apply), userComment: apply(old.userComment) }
+          : old,
+      );
+    }
+  };
+
+  const handleUpvote = async (itemId: string, current: { upvotes: number; userHasUpvoted: boolean }) => {
     if (!isAuthenticated) return;
+    // Optimistic in-place toggle (no reorder).
+    const optimistic = !current.userHasUpvoted;
+    patchUpvote(itemId, current.upvotes + (optimistic ? 1 : -1), optimistic);
     try {
-      if (isCompleted) await toggleReviewUpvote(fightId, itemId);
-      else await togglePreFightCommentUpvote(fightId, itemId);
-      invalidate();
-    } catch { /* ignore */ }
+      const res: any = isCompleted
+        ? await toggleReviewUpvote(fightId, itemId)
+        : await togglePreFightCommentUpvote(fightId, itemId);
+      // Reconcile with the server's authoritative counts, still in place.
+      const upvotes = res.upvotesCount ?? res.upvotes;
+      const voted = res.isUpvoted ?? res.userHasUpvoted;
+      if (typeof upvotes === 'number' && typeof voted === 'boolean') {
+        patchUpvote(itemId, upvotes, voted);
+      }
+    } catch {
+      // Roll back on failure.
+      patchUpvote(itemId, current.upvotes, current.userHasUpvoted);
+    }
   };
 
   const { data: reviewsData, isLoading: reviewsLoading } = useQuery({
@@ -414,14 +448,18 @@ function CommentsSection({ fightId, isCompleted, currentUserId, myReviewFromFigh
           <CommentCard
             item={myItem}
             isMine
-            onUpvote={() => handleUpvote(myItem.id)}
+            onUpvote={() => handleUpvote(myItem.id, { upvotes: myItem.upvotes ?? 0, userHasUpvoted: !!myItem.userHasUpvoted })}
             onEdit={() => setEditing(true)}
           />
         )
       )}
 
       {others.map((item) => (
-        <CommentCard key={item.id} item={item} onUpvote={() => handleUpvote(item.id)} />
+        <CommentCard
+          key={item.id}
+          item={item}
+          onUpvote={() => handleUpvote(item.id, { upvotes: item.upvotes ?? 0, userHasUpvoted: !!item.userHasUpvoted })}
+        />
       ))}
 
       {!myItem && others.length === 0 && (
