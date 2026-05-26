@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
-import { User, LogIn } from 'lucide-react';
+import { User, LogIn, LogOut } from 'lucide-react';
 import { IdentityBlock } from '@/components/sidebar/IdentityBlock';
 import { FollowedFightersStrip } from '@/components/sidebar/FollowedFightersStrip';
 import { SpotlightBlock } from '@/components/sidebar/SpotlightBlock';
@@ -13,7 +13,7 @@ import { DistributionBlock } from '@/components/sidebar/DistributionBlock';
 import { YourCommentsBlock } from '@/components/sidebar/YourCommentsBlock';
 
 export default function ProfilePage() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
 
   if (isLoading) {
     return (
@@ -70,6 +70,14 @@ export default function ProfilePage() {
           Followed Fighters
         </Link>
       </div>
+
+      <button
+        onClick={() => logout()}
+        className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-card p-3 text-sm font-medium text-danger transition-colors hover:border-danger/40 hover:bg-danger/5"
+      >
+        <LogOut size={16} />
+        Log Out
+      </button>
     </div>
   );
 }

@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, User, Menu, X, Flame, Radio, Star, Trophy, LogOut, LogIn } from 'lucide-react';
+import { Search, User, Menu, X, Flame, Radio, Star, Trophy, LogIn, EyeOff, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
+import { useSpoilerFree } from '@/lib/spoilerFree';
 
 const navLinks = [
   { href: '/events/live', label: 'Live', icon: Radio },
@@ -15,7 +16,8 @@ const navLinks = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const { user, isAuthenticated, logout, isGuest } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const { spoilerFreeMode, setSpoilerFreeMode } = useSpoilerFree();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,8 +69,21 @@ export function Navbar() {
             ))}
           </div>
 
-          {/* Right side: search + auth */}
+          {/* Right side: spoiler toggle + search + auth */}
           <div className="flex items-center gap-2">
+            {/* Spoiler-free toggle */}
+            <button
+              onClick={() => setSpoilerFreeMode(!spoilerFreeMode)}
+              className={`rounded-lg p-2 transition-colors ${
+                spoilerFreeMode ? 'text-primary' : 'text-text-secondary hover:text-foreground'
+              }`}
+              title={spoilerFreeMode ? 'Spoiler-free mode: ON' : 'Spoiler-free mode: OFF'}
+              aria-label="Toggle spoiler-free mode"
+              aria-pressed={spoilerFreeMode}
+            >
+              {spoilerFreeMode ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+
             {/* Search */}
             {searchOpen ? (
               <form onSubmit={handleSearch} className="flex items-center">
@@ -109,13 +124,6 @@ export function Navbar() {
                   <User size={16} />
                   {user?.displayName || 'Profile'}
                 </Link>
-                <button
-                  onClick={() => logout()}
-                  className="rounded-lg p-2 text-text-secondary hover:text-danger"
-                  title="Log out"
-                >
-                  <LogOut size={16} />
-                </button>
               </div>
             ) : (
               <Link
@@ -156,23 +164,14 @@ export function Navbar() {
           ))}
           <div className="my-1 border-t border-border" />
           {isAuthenticated ? (
-            <>
-              <Link
-                href="/profile"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-text-secondary"
-              >
-                <User size={16} />
-                {user?.displayName || 'Profile'}
-              </Link>
-              <button
-                onClick={() => { logout(); setMobileMenuOpen(false); }}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-danger"
-              >
-                <LogOut size={16} />
-                Log Out
-              </button>
-            </>
+            <Link
+              href="/profile"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-text-secondary"
+            >
+              <User size={16} />
+              {user?.displayName || 'Profile'}
+            </Link>
           ) : (
             <Link
               href="/login"
