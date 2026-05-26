@@ -91,7 +91,7 @@ export function YourCommentsBlock() {
           Your comments
         </h3>
         <Link
-          href="/activity?filter=reviewed"
+          href="/activity?filter=comments"
           className="flex shrink-0 items-center gap-0.5 text-[10px] font-medium text-text-secondary hover:text-primary"
         >
           See all
