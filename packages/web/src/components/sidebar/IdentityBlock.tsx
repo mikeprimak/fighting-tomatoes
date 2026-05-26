@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { getFanDNAProfile } from '@/lib/api';
-import { LogIn, User as UserIcon } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 
 function formatMemberSince(createdAt: string): string {
   const created = new Date(createdAt);
@@ -39,7 +40,14 @@ export function IdentityBlock() {
   if (!isAuthenticated || !user) {
     return (
       <div className="rounded-lg border border-border bg-card p-5 text-center">
-        <UserIcon size={28} className="mx-auto mb-2 text-text-secondary" />
+        <Image
+          src="/good-fights-full-vertical.png"
+          alt="Good Fights"
+          width={120}
+          height={134}
+          className="mx-auto mb-3 h-auto w-24"
+          priority
+        />
         <p className="mb-3 text-sm font-medium text-foreground">
           Sign in to see your taste profile
         </p>
