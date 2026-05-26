@@ -29,7 +29,15 @@ Here is the part the highlight reels undersell, because it is the part that made
 
 Darren Till was, and is, one of the most entertaining talkers combat sports has produced in years. Brash, quick, genuinely funny, with a Scouse accent and a total absence of fear about saying the wrong thing. He could sell a fight without sounding like he was reading from a script, because he wasn't. He had the confidence of a man who believed every word, and the timing of someone who knew exactly how funny he was being. Press conferences with Till in them were appointment viewing. He would wind up an opponent, charm a hostile room, and turn a staredown into theater, all in the same afternoon.
 
-He never hid what he was doing, either. "I like to talk s---," he once shrugged. "Everyone knows this." His ambition was just as unfiltered: "I'm not going all the way. I'm going to be the best fighter that's ever fought in MMA. That's what I truly believe." And when he was done playing nice, he could be brutally economical about it, walking up to a boxing press-conference mic, telling his opponent "You're s---, you're just s---," and walking straight back off. He led entire arenas in singalongs of "Sweet Caroline." He turned a routine staredown into a comedy bit. He once said that if you are going to get offended by what people say about your mum, maybe this isn't the sport for you, and somehow made it sound like good advice.
+The confidence was the thing. Not media-trained confidence, the real, almost delusional kind that you cannot fake and cannot teach. A few that stuck:
+
+- *"I truly believe deep down that I cannot be beaten."*
+- *"I'm destined to become the greatest fighter the world has known. If I didn't truly believe that, I'd go and teach, or do something else."*
+- *"I don't want the UFC to pick opponents to give me an easier route. I want to fight the best, to know in my head I am the best."*
+- *"I will dethrone the champion and start a new era. I'll be an active champion, so they can all get in line."*
+- *"The market's in America, and I haven't even fought there. So why can't I bring a pay-per-view to Anfield? Why can't I? That's a dream."*
+
+Read those back and remember he was saying them as a kid from Liverpool who had barely cracked the rankings. Most fighters who talk like that are selling something. Till sounded like he genuinely could not conceive of losing, and for a while he made the rest of us believe it too.
 
 That mattered. The UFC sells personalities as much as it sells fights, and Till had the rarest combination: he could back it up and he could make you laugh. In a sport full of media-trained mumblers, he was a character. You either loved him or you loved to hate him, and both of those are worth far more than indifference.
 
