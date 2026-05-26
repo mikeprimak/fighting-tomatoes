@@ -94,6 +94,9 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
         </div>
       </div>
 
+      {/* About — AI-enriched fighter profile (Phase 5). Confidence-gated; also SEO content. */}
+      <FighterAbout fighter={fighter} />
+
       {/* Upcoming section */}
       {upcomingFights.length > 0 && (
         <section className="mb-6">
@@ -152,6 +155,46 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
         <p className="py-8 text-center text-sm text-text-secondary">No fights found.</p>
       )}
     </div>
+  );
+}
+
+function FighterAbout({ fighter }: { fighter: any }) {
+  const conf = fighter.aiProfileConfidence ?? 0;
+  const summary: string = fighter.aiProfileSummary || '';
+  const profile = fighter.aiProfile || {};
+  if (conf < 0.5 || (!summary && !profile.tldr)) return null;
+  const paragraphs = summary.split(/\n\n+/).map((p: string) => p.trim()).filter(Boolean);
+  return (
+    <section className="mb-6">
+      <h2 className="mb-2 text-lg font-bold">About</h2>
+      {profile.tldr && <p className="mb-3 font-semibold">{profile.tldr}</p>}
+      {paragraphs.map((p: string, i: number) => (
+        <p key={i} className="mb-3 text-sm leading-relaxed text-text-secondary">
+          {p}
+        </p>
+      ))}
+      {(profile.whyFansLove || profile.whyFansHate) && (
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {profile.whyFansLove && (
+            <div className="rounded-lg border border-border bg-card p-3">
+              <h3 className="mb-1 text-[11px] font-bold uppercase tracking-wider text-primary">
+                Why fans love them
+              </h3>
+              <p className="text-sm leading-relaxed">{profile.whyFansLove}</p>
+            </div>
+          )}
+          {profile.whyFansHate && (
+            <div className="rounded-lg border border-border bg-card p-3">
+              <h3 className="mb-1 text-[11px] font-bold uppercase tracking-wider text-text-secondary">
+                Why some fans hate them
+              </h3>
+              <p className="text-sm leading-relaxed">{profile.whyFansHate}</p>
+            </div>
+          )}
+        </div>
+      )}
+      <p className="mt-3 text-[11px] italic text-text-secondary">AI-generated overview</p>
+    </section>
   );
 }
 
