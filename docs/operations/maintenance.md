@@ -44,8 +44,9 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 ### Scraper health audit
 - **What:** Review the admin health widget for the per-org retroactive-results system. Confirm UFC, Tapology-based scrapers (Zuffa, KC, DBX, PFL, RIZIN, ONE, Matchroom, Oktagon, BKFC) are still completing their daily runs and not throwing structural errors.
 - **Why:** Source sites change layout regularly. Silent scraper failures cause stale event data, which cascades into bad live tracking and notification firing.
+- **Also:** run `node_modules/.bin/ts-node src/scripts/detectTapologyFightBleed.ts` (from `packages/backend`) to audit for Tapology fight-bleed — the same fighter-pair on >1 same-promotion event. Exit 1 = bleed-signature dups present (cleanup candidates). Watch especially for a fail-closed `⚠️ FAIL-CLOSED: fight-card container not found` line in scraper logs, which means Tapology changed the bout-list container selector (`ul[data-event-view-toggle-target="list"]`) and scrapers are now returning 0 fights until the selector in `services/tapologyFightExtraction.js` is updated.
 - **Time:** ~10 min.
-- **Output:** GitHub issue or daily doc entry if any scraper has been failing > 3 days.
+- **Output:** GitHub issue or daily doc entry if any scraper has been failing > 3 days, or if bleed dups reappear.
 
 ### Sector Swell Monitor brief
 - **What:** Run the (planned) monthly automated briefing on combat sports M&A activity, broadcaster shifts, fighter contract news. Read brief, decide whether to advance the acquisition conversation.

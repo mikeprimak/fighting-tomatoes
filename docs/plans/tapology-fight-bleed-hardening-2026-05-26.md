@@ -1,7 +1,11 @@
 # Plan: Tapology fight-bleed hardening (all scrapers)
 
 **Created:** 2026-05-26
-**Status:** Planned — not started
+**Status:** SHIPPED 2026-05-26 — commits `938af8b` (Layer 1) + `0324852` (Layers 2-3).
+All 3 layers done + tested (production tsc passes, fixture test passes). Code is
+preventive; 9 pre-existing bleed-signature dup groups remain in the DB and need a
+separate rating-preserving cleanup (see `docs/daily/2026-05-26.md`). Run
+`src/scripts/detectTapologyFightBleed.ts` to audit.
 **Trigger phrase for the session:** "tapology hardening session" / "fix the fight bleed"
 
 ## Problem
