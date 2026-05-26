@@ -9,6 +9,7 @@ import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard'
 import { LoadMoreSentinel } from '@/components/layout/LoadMoreSentinel';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { EditorialHero } from '@/components/EditorialHero';
+import { EditorialSecondary } from '@/components/EditorialSecondary';
 import { Loader2, Trophy } from 'lucide-react';
 
 const PAGE_SIZE = 25;
@@ -48,6 +49,7 @@ export default function TopFightsPage() {
   return (
     <>
       <EditorialHero />
+      <EditorialSecondary />
       <SidebarLayout>
         <div className="mb-4">
           <div className="mb-3 flex items-center gap-2">
