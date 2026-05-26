@@ -29,13 +29,15 @@ Here is the part the highlight reels undersell, because it is the part that made
 
 Darren Till was, and is, one of the most entertaining talkers combat sports has produced in years. Brash, quick, genuinely funny, with a Scouse accent and a total absence of fear about saying the wrong thing. He could sell a fight without sounding like he was reading from a script, because he wasn't. He had the confidence of a man who believed every word, and the timing of someone who knew exactly how funny he was being. Press conferences with Till in them were appointment viewing. He would wind up an opponent, charm a hostile room, and turn a staredown into theater, all in the same afternoon.
 
+He never hid what he was doing, either. "I like to talk s---," he once shrugged. "Everyone knows this." His ambition was just as unfiltered: "I'm not going all the way. I'm going to be the best fighter that's ever fought in MMA. That's what I truly believe." And when he was done playing nice, he could be brutally economical about it, walking up to a boxing press-conference mic, telling his opponent "You're s---, you're just s---," and walking straight back off. He led entire arenas in singalongs of "Sweet Caroline." He turned a routine staredown into a comedy bit. He once said that if you are going to get offended by what people say about your mum, maybe this isn't the sport for you, and somehow made it sound like good advice.
+
 That mattered. The UFC sells personalities as much as it sells fights, and Till had the rarest combination: he could back it up and he could make you laugh. In a sport full of media-trained mumblers, he was a character. You either loved him or you loved to hate him, and both of those are worth far more than indifference.
 
 We loved him.
 
 ## So what actually went wrong
 
-This is the honest part, because being a fan of someone means telling the truth about them.
+Now the hard part, the bit no highlight reel wants to dwell on.
 
 Start with the weight. The cut to 170 pounds was brutal and, frankly, unsustainable. Till is a big man, and the Wonderboy fight he missed weight badly and looked drained climbing into the cage. You cannot fight the best welterweights in the world while your body is shutting down on you, and his almost was. The walk-up version of Till was spectacular. The version that had spent fight week starving was a step slower and a beat more cautious.
 
@@ -56,6 +58,16 @@ His opponent is **Aaron Chalmers**, and the matchup is interesting precisely bec
 Does this play to Till's strengths? On paper, yes, and emphatically so. Bare-knuckle boxing strips away the grappling and the takedowns, the exact areas where Till's UFC career came undone. What is left is a phone-booth striking contest, two men squared up, hands only, and that is the single thing Darren Till has always done better than almost anyone he has shared a ring with. No cage to be pressed against, no wrestling to drain his gas tank, no five rounds of positional chess. Just timing, range, and that southpaw left hand that ended Cerrone. Bare knuckle is arguably the purest possible distillation of what made Till special in the first place.
 
 Chalmers is durable and game and will not be intimidated by the occasion, which makes it a real fight rather than a coronation. But if there is a format built to remind everyone what Darren Till's hands can do, this is it.
+
+## There is a blueprint for this, and his name is Mike Perry
+
+If you want a reason to believe a UFC washout can become a bare-knuckle force, look at the man who already did it.
+
+Mike "Platinum" Perry went 7-8 across fifteen UFC fights. Tough, heavy-handed, fun to watch, and never once a real contender. The UFC let him go and the obituaries got written. Then he walked into BKFC and turned into something nobody expected: the self-styled "King of Violence," the promotion's biggest draw, a man who started feeding former UFC champions through the meat grinder. He stopped Luke Rockhold, a former middleweight champion, who quit on the stool. He beat Eddie Alvarez, a former lightweight champion. He flattened Thiago Alves in about a minute. The fighter who looked ordinary in a cage looked terrifying once you took the gloves, the takedowns, and the grappling away from his opponents.
+
+That is the exact mechanism that should worry Aaron Chalmers. Perry's gift was never well-roundedness. It was that, stripped to pure striking with four-ounce-or-less protection, his power and his bad intentions became the whole fight. Till is a more refined striker than Perry ever was, a genuine technician where Perry is a brawler, and he is walking into the same format that turned Perry from a cut man into a star. The precedent is not a guarantee. But it is a very loud hint about what happens when a heavy-handed ex-UFC fighter finds the rule set that finally rewards the one thing he does best.
+
+Till has needled Perry over the years, the way charismatic fighters do. The irony is that Perry may have drawn the map Till is about to follow.
 
 ## What we're actually hoping for
 
