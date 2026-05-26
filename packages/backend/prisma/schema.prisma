@@ -165,6 +165,15 @@ model Fighter {
   totalFights     Int       @default(0)
   greatFights     Int       @default(0) // fights rated 85+
 
+  // AI profile enrichment (see docs/areas/ai-enrichment.md Phase 5 — fighter profile).
+  // Mirrors the Fight.ai* convention. All nullable; confidence floor gates rendering.
+  aiProfile               Json?     // { tldr, careerArc, style, highlights[], signatureFights[], appeal, personaType, whyFansLove, whyFansHate, confidence }
+  aiProfileSummary        String?   // long-form readable paragraphs (mobile "About" + web SEO)
+  aiProfileEnrichedAt     DateTime?
+  aiProfileSourceUrls     String[]  // grounding URLs used for the extraction
+  aiProfileConfidence     Float?    // 0-1, render-gate threshold
+  aiProfileRecordAtEnrich String?   // "W-L-D" snapshot at enrich time; lets the cron detect a record change → re-enrich
+
   // Timestamps
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
