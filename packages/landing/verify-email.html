@@ -220,8 +220,8 @@
 
         <!-- Error State -->
         <div id="error" class="hidden">
-            <div class="status-icon">❌</div>
-            <h1 class="title">Verification Failed</h1>
+            <div class="status-icon" id="error-icon">❌</div>
+            <h1 class="title" id="error-title">Verification Failed</h1>
             <p class="message" id="error-message">
                 This verification link is invalid or has expired. Please request a new verification email from the app.
             </p>
@@ -283,6 +283,8 @@
             const successDesktopEl = document.getElementById('success-desktop');
             const errorEl = document.getElementById('error');
             const noTokenEl = document.getElementById('no-token');
+            const errorIconEl = document.getElementById('error-icon');
+            const errorTitleEl = document.getElementById('error-title');
             const errorMessageEl = document.getElementById('error-message');
             const errorBtnMobile = document.getElementById('error-btn-mobile');
             const errorDesktopMsg = document.getElementById('error-desktop-msg');
@@ -315,13 +317,35 @@
                     }
                 } else {
                     errorEl.classList.remove('hidden');
+
+                    // Tailor the error UI to the specific failure so users can
+                    // self-diagnose instead of all roads leading to "request a new email".
+                    // TOKEN_STALE is the common case: a newer resend replaced this
+                    // link, or the account is already verified. Resending again just
+                    // repeats the cycle, so we steer them to the latest email / sign-in
+                    // rather than offering "Resend".
+                    const isStale = data.code === 'TOKEN_STALE';
+                    const isExpired = data.code === 'TOKEN_EXPIRED';
+
+                    if (isStale) {
+                        errorIconEl.textContent = '📬';
+                        errorTitleEl.textContent = 'Check Your Inbox';
+                    } else if (isExpired) {
+                        errorIconEl.textContent = '⏳';
+                        errorTitleEl.textContent = 'Link Expired';
+                    }
                     if (data.error) {
                         errorMessageEl.textContent = data.error;
                     }
 
-                    // Show appropriate error UI
-                    if (onMobile) {
+                    // Stale links should not prompt another resend (that's what caused
+                    // the dead link). Expired/other errors keep the resend CTA.
+                    if (isStale) {
+                        errorBtnMobile.classList.add('hidden');
+                        errorDesktopMsg.classList.add('hidden');
+                    } else if (onMobile) {
                         errorBtnMobile.classList.remove('hidden');
+                        errorDesktopMsg.classList.add('hidden');
                     } else {
                         errorBtnMobile.classList.add('hidden');
                         errorDesktopMsg.classList.remove('hidden');

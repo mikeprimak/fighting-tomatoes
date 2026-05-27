@@ -2284,10 +2284,28 @@ export async function authRoutes(fastify: FastifyInstance) {
         const tokenPrefix = token.slice(0, 8);
         const ip = request.ip;
         const ua = request.headers['user-agent'] ?? 'unknown';
-        request.log.warn(`[Email] TOKEN_INVALID verify-email attempt token=${tokenPrefix}… ip=${ip} ua="${ua}"`);
+
+        // Distinguish a genuinely expired token (row still holds it, 24h elapsed)
+        // from a stale/consumed one (no row holds it — a newer resend overwrote it,
+        // or it was already verified and nulled). These need different user guidance.
+        const expiredMatch = await fastify.prisma.user.findFirst({
+          where: { emailVerificationToken: token },
+          select: { id: true },
+        });
+
+        if (expiredMatch) {
+          request.log.warn(`[Email] TOKEN_EXPIRED verify-email attempt token=${tokenPrefix}… ip=${ip} ua="${ua}"`);
+          return reply.code(400).send({
+            error: 'This verification link has expired. Request a new one from the app.',
+            code: 'TOKEN_EXPIRED',
+          });
+        }
+
+        // No row holds this token: replaced by a newer email or already verified.
+        request.log.warn(`[Email] TOKEN_STALE verify-email attempt token=${tokenPrefix}… ip=${ip} ua="${ua}"`);
         return reply.code(400).send({
-          error: 'Invalid or expired verification token',
-          code: 'TOKEN_INVALID',
+          error: 'This link is no longer valid — a more recent verification email may have replaced it. Check your inbox for the latest Good Fights email, or if you have already verified, just sign in.',
+          code: 'TOKEN_STALE',
         });
       }
 
