@@ -47,7 +47,7 @@ Full system background: `docs/areas/ai-enrichment.md` → Phase 5a.
 | E | `40 209` | 210–249 | remote-control (opus) | DONE | 40 |
 | F | `40 249` | 250–289 | remote-control (opus) | IN PROGRESS | |
 | G | `40 289` | 290–329 | remote-control (opus) | DONE | 39 (1 already [DONE]) |
-| H | `40 329` | 330–367 | remote-control (opus) | IN PROGRESS | |
+| H | `40 329` | 330–367 | remote-control (opus) | DONE | 40 |
 
 (40-fighter blocks are fine — the dump releases the DB connection before the slow
 bio-fetch phase. If you want a lighter window, take half a block, e.g. `20 49`
