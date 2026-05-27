@@ -42,6 +42,8 @@ const HIDDEN_ORGS: string[] = [];
 
 // AsyncStorage key for persisting filter preference
 const ORG_FILTER_STORAGE_KEY = 'events_org_filter';
+// AsyncStorage key for persisting most-recent-toggle ordering (most recent first)
+const ORG_TOUCH_ORDER_STORAGE_KEY = 'events_org_touch_order';
 
 interface OrgFilterContextType {
   selectedOrgs: Set<Organization>;
@@ -53,6 +55,9 @@ interface OrgFilterContextType {
   /** Orgs to render as filter pills. Hydrated from /api/promotions, falls
    *  back to bundled ORGANIZATIONS until the fetch returns. */
   availableOrgs: readonly Organization[];
+  /** Orgs ordered most-recently-toggled first. Used by OrgFilterTabs to
+   *  float selected orgs to the front (computed on screen focus). */
+  orgTouchOrder: Organization[];
 }
 
 const OrgFilterContext = createContext<OrgFilterContextType | undefined>(undefined);
@@ -60,6 +65,11 @@ const OrgFilterContext = createContext<OrgFilterContextType | undefined>(undefin
 export function OrgFilterProvider({ children }: { children: ReactNode }) {
   // Organization filter state - empty set means "ALL" (show everything)
   const [selectedOrgs, setSelectedOrgs] = useState<Set<Organization>>(new Set());
+
+  // Recency of last toggle, most-recently-toggled first. Drives pill ordering
+  // in OrgFilterTabs: selected orgs float to the front, and within each
+  // (selected / non-selected) group orgs are ordered by how recently touched.
+  const [orgTouchOrder, setOrgTouchOrder] = useState<Organization[]>([]);
 
   // Hydrate the available org pills from the backend registry. 24h stale
   // tolerance — the list rarely changes; on miss we fall back to bundled.
@@ -79,14 +89,20 @@ export function OrgFilterProvider({ children }: { children: ReactNode }) {
     ? registryData.promotions.map(p => p.shortLabel)
     : ORGANIZATIONS;
 
-  // Load saved organization filter on mount
+  // Load saved organization filter + touch order on mount
   useEffect(() => {
     const loadSavedFilter = async () => {
       try {
-        const saved = await AsyncStorage.getItem(ORG_FILTER_STORAGE_KEY);
+        const [saved, savedOrder] = await Promise.all([
+          AsyncStorage.getItem(ORG_FILTER_STORAGE_KEY),
+          AsyncStorage.getItem(ORG_TOUCH_ORDER_STORAGE_KEY),
+        ]);
         if (saved) {
           const orgs = JSON.parse(saved) as Organization[];
           setSelectedOrgs(new Set(orgs));
+        }
+        if (savedOrder) {
+          setOrgTouchOrder(JSON.parse(savedOrder) as Organization[]);
         }
       } catch (error) {
         console.error('[OrgFilter] Error loading saved filter:', error);
@@ -108,6 +124,13 @@ export function OrgFilterProvider({ children }: { children: ReactNode }) {
     saveFilter();
   }, [selectedOrgs]);
 
+  // Persist touch order whenever it changes
+  useEffect(() => {
+    AsyncStorage.setItem(ORG_TOUCH_ORDER_STORAGE_KEY, JSON.stringify(orgTouchOrder)).catch(
+      error => console.error('[OrgFilter] Error saving touch order:', error),
+    );
+  }, [orgTouchOrder]);
+
   // Handler for organization filter tap
   const handleOrgPress = useCallback((org: Organization | 'ALL') => {
     if (org === 'ALL') {
@@ -125,6 +148,9 @@ export function OrgFilterProvider({ children }: { children: ReactNode }) {
         }
         return newSet;
       });
+      // Record this org as the most-recently-toggled so it floats to the front
+      // of its group (selected / non-selected) on the next screen focus.
+      setOrgTouchOrder(prev => [org, ...prev.filter(o => o !== org)]);
     }
   }, []);
 
@@ -174,6 +200,7 @@ export function OrgFilterProvider({ children }: { children: ReactNode }) {
         filterEventsByOrg,
         filterByPromotion,
         availableOrgs,
+        orgTouchOrder,
       }}
     >
       {children}

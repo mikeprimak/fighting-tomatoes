@@ -12,6 +12,7 @@ function VerifyEmailContent() {
   const token = searchParams.get('token') || '';
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
+  const [errorTitle, setErrorTitle] = useState('Verification Failed');
 
   useEffect(() => {
     if (!token) {
@@ -23,7 +24,13 @@ function VerifyEmailContent() {
     fetch(`${API_BASE_URL}/auth/verify-email?token=${token}`)
       .then(res => res.json())
       .then(data => {
-        if (data.error) throw new Error(data.error);
+        if (data.error) {
+          // TOKEN_STALE: a newer resend replaced this link, or already verified.
+          // Steer the user to their latest email / sign-in rather than a generic failure.
+          if (data.code === 'TOKEN_STALE') setErrorTitle('Check Your Inbox');
+          else if (data.code === 'TOKEN_EXPIRED') setErrorTitle('Link Expired');
+          throw new Error(data.error);
+        }
         setStatus('success');
         setMessage('Your email has been verified!');
       })
@@ -49,7 +56,7 @@ function VerifyEmailContent() {
       {status === 'error' && (
         <>
           <XCircle className="mb-4 text-danger" size={48} />
-          <h2 className="mb-2 text-lg font-semibold text-danger">Verification Failed</h2>
+          <h2 className="mb-2 text-lg font-semibold text-danger">{errorTitle}</h2>
           <p className="mb-6 text-center text-sm text-text-secondary">{message}</p>
           <Link href="/login" className="text-sm text-primary hover:underline">
             Go to sign in

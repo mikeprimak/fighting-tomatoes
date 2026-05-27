@@ -84,3 +84,4 @@ Re-check the user row to confirm `isEmailVerified: true`.
 ## Past incidents
 
 - 2026-05-11 — `cray_zegyptian@hotmail.com` (Android v2.0.1) — multiple resends, clicking older link. Manually verified.
+- 2026-05-27 — `thepizzasport@gmail.com` (Android v2.0.1) — live token present, clicking older link (row updated ~16h prior = recent resend). Manually verified via curl endpoint.
