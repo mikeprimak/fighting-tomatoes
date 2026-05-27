@@ -28,6 +28,11 @@ export default function OrgFilterTabs({ onFilterChange }: OrgFilterTabsProps) {
   const orgTouchOrderRef = useRef(orgTouchOrder);
   orgTouchOrderRef.current = orgTouchOrder;
 
+  // Each screen has its own OrgFilterTabs instance, which retains its own
+  // horizontal scroll offset. Reset to the left on focus so every screen load
+  // shows the start of the filter (and the freshly-reordered selected orgs).
+  const scrollRef = useRef<ScrollView>(null);
+
   useFocusEffect(
     useCallback(() => {
       const selected = selectedOrgsRef.current;
@@ -47,6 +52,8 @@ export default function OrgFilterTabs({ onFilterChange }: OrgFilterTabsProps) {
         return (registryIndex.get(a) ?? 0) - (registryIndex.get(b) ?? 0); // stable fallback
       });
       setOrderedOrgs(next);
+      // Snap back to the left edge of the filter on focus.
+      scrollRef.current?.scrollTo({ x: 0, animated: false });
       // availableOrgs in deps re-sorts once the registry hydrates; selection
       // and touch order are read via refs so taps don't trigger a live re-sort.
     }, [availableOrgs]),
@@ -62,6 +69,7 @@ export default function OrgFilterTabs({ onFilterChange }: OrgFilterTabsProps) {
   return (
     <View style={styles.container}>
       <ScrollView
+        ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.tabsContent}
