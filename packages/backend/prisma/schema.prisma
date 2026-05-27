@@ -173,6 +173,7 @@ model Fighter {
   aiProfileSourceUrls     String[]  // grounding URLs used for the extraction
   aiProfileConfidence     Float?    // 0-1, render-gate threshold
   aiProfileRecordAtEnrich String?   // "W-L-D" snapshot at enrich time; lets the cron detect a record change → re-enrich
+  aiProfileSource         String?   // provenance: 'handauthored' (Opus, premium) | 'cron-haiku'. Cron skips 'handauthored' so Haiku never overwrites a hand-authored bio.
 
   // Timestamps
   createdAt       DateTime  @default(now())

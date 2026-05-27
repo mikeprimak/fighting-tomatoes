@@ -142,6 +142,7 @@ export async function enrichOneFighter(
     result.record,
     bio.sources.map((s) => s.url),
     fighterRecordKey(fighter),
+    'cron-haiku',
     { dryRun: !!opts.dryRun, minConfidence: opts.minConfidence },
   );
 
