@@ -10,6 +10,9 @@
  *   (b) The profile needs work: never enriched, OR the record changed since
  *       aiProfileRecordAtEnrich (a new win/loss invalidates the story), OR the
  *       profile is older than STALE_DAYS.
+ *   (c) The profile is NOT hand-authored. aiProfileSource='handauthored' (premium
+ *       Opus bios) is pinned — the Haiku cron never overwrites it, even on a record
+ *       change. Refreshing those is the job of the Opus re-author routine, not this.
  *
  * The cron bar (minRatings) is intentionally LOWER (25) than the one-time backfill
  * bar (100) — the head was hand-backfilled with Opus; the cron extends down the
@@ -197,6 +200,7 @@ async function selectCandidates(
         OR COALESCE(eng.rating_count, 0) >= ${minRatings}
         OR COALESCE(fol.follower_count, 0) > 0
       )
+      AND ft."aiProfileSource" IS DISTINCT FROM 'handauthored'
       AND (
         ft."aiProfileEnrichedAt" IS NULL
         OR ft."aiProfileRecordAtEnrich" IS DISTINCT FROM

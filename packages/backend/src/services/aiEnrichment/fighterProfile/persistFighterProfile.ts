@@ -17,6 +17,13 @@ import type { FighterProfileRecord } from './extractFighterProfile';
 
 export const FIGHTER_PROFILE_CONFIDENCE_FLOOR = 0.5;
 
+/**
+ * Provenance of a written profile. The cron skips 'handauthored' rows so a premium
+ * Opus bio is never overwritten by Haiku; hand-author writes are unconditional so
+ * Opus always wins a conflict.
+ */
+export type FighterProfileSource = 'handauthored' | 'cron-haiku';
+
 export interface PersistFighterProfileOptions {
   dryRun?: boolean;
   minConfidence?: number;
@@ -50,6 +57,7 @@ export async function persistFighterProfile(
   rec: FighterProfileRecord,
   sourceUrls: string[],
   recordKey: string,
+  source: FighterProfileSource,
   opts: PersistFighterProfileOptions = {},
 ): Promise<PersistFighterProfileOutcome> {
   const minConfidence = opts.minConfidence ?? FIGHTER_PROFILE_CONFIDENCE_FLOOR;
@@ -71,6 +79,7 @@ export async function persistFighterProfile(
         aiProfileSourceUrls: Array.from(new Set(sourceUrls.filter(Boolean))),
         aiProfileEnrichedAt: new Date(),
         aiProfileRecordAtEnrich: recordKey,
+        aiProfileSource: source,
       },
     });
   }

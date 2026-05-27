@@ -125,6 +125,7 @@ async function main() {
       record,
       sourceUrls,
       fighterRecordKey(fighter),
+      'handauthored',
       { dryRun },
     );
 
