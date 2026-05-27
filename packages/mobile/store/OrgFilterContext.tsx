@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
 import { API_BASE_URL } from '../services/api';
@@ -85,9 +85,14 @@ export function OrgFilterProvider({ children }: { children: ReactNode }) {
     retry: 1,
   });
 
-  const availableOrgs: readonly Organization[] = registryData?.promotions
-    ? registryData.promotions.map(p => p.shortLabel)
-    : ORGANIZATIONS;
+  // Memoized so its reference is stable across re-renders. Without this, every
+  // provider state change (e.g. tapping an org) would hand OrgFilterTabs a new
+  // array, re-triggering its focus-effect sort on every tap instead of only on
+  // screen focus.
+  const availableOrgs: readonly Organization[] = useMemo(
+    () => (registryData?.promotions ? registryData.promotions.map(p => p.shortLabel) : ORGANIZATIONS),
+    [registryData],
+  );
 
   // Load saved organization filter + touch order on mount
   useEffect(() => {
