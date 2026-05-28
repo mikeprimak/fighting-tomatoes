@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { search } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { FighterAvatar } from '@/components/FighterAvatar';
+import { formatRecord } from '@/lib/record';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { formatEventDate } from '@/utils/dateFormatters';
@@ -94,8 +95,9 @@ function SearchResults() {
                   <div>
                     <p className="text-sm font-medium">{fighter.firstName} {fighter.lastName}</p>
                     <p className="text-xs text-text-secondary">
-                      {fighter.record || `${fighter.wins}-${fighter.losses}-${fighter.draws}`}
-                      {fighter.weightClass ? ` - ${fighter.weightClass}` : ''}
+                      {fighter.record || formatRecord(fighter) || ''}
+                      {(fighter.record || formatRecord(fighter)) && fighter.weightClass ? ' - ' : ''}
+                      {fighter.weightClass || ''}
                     </p>
                   </div>
                 </div>

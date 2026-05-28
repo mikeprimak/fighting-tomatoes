@@ -25,6 +25,7 @@ import { apiService } from '../services/api';
 import { getFighterImageUrl } from './fight-cards/shared/utils';
 import { getHypeHeatmapColor, getFlameColor } from '../utils/heatmap';
 import { getFighterDisplayName } from '../utils/formatFighterName';
+import { hasRecord } from '../utils/formatRecord';
 import { FlagReviewModal, CommentCard, RatingDistributionChart } from '.';
 import HypeDistributionChart from './HypeDistributionChart';
 import { PreFightCommentCard } from './PreFightCommentCard';
@@ -2845,7 +2846,7 @@ export default function CompletedFightDetailScreen({
           <View style={styles.infoRow}>
             <FontAwesome name="user" size={16} color={colors.textSecondary} />
             <Text style={[styles.infoText, { color: colors.text }]}>
-              {getFighterDisplayName(fight.fighter1)}: {fight.fighter1.wins}-{fight.fighter1.losses}-{fight.fighter1.draws}
+              {getFighterDisplayName(fight.fighter1)}{hasRecord(fight.fighter1) ? `: ${fight.fighter1.wins}-${fight.fighter1.losses}-${fight.fighter1.draws}` : ''}
               {fight.fighter1Ranking && fight.weightClass && ` (#${fight.fighter1Ranking} ${formatWeightClass(fight.weightClass)})`}
             </Text>
           </View>
@@ -2854,7 +2855,7 @@ export default function CompletedFightDetailScreen({
           <View style={styles.infoRow}>
             <FontAwesome name="user" size={16} color={colors.textSecondary} />
             <Text style={[styles.infoText, { color: colors.text }]}>
-              {getFighterDisplayName(fight.fighter2)}: {fight.fighter2.wins}-{fight.fighter2.losses}-{fight.fighter2.draws}
+              {getFighterDisplayName(fight.fighter2)}{hasRecord(fight.fighter2) ? `: ${fight.fighter2.wins}-${fight.fighter2.losses}-${fight.fighter2.draws}` : ''}
               {fight.fighter2Ranking && fight.weightClass && ` (#${fight.fighter2Ranking} ${formatWeightClass(fight.weightClass)})`}
             </Text>
           </View>

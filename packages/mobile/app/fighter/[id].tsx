@@ -15,6 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Colors } from '../../constants/Colors';
+import { hasRecord } from '../../utils/formatRecord';
 import { apiService, Fight } from '../../services/api';
 import { ensurePushPermissionAfterAction } from '../../services/notificationService';
 import { DetailScreenHeader, FightDisplayCard, Button } from '../../components';
@@ -315,9 +316,11 @@ export default function FighterDetailScreen() {
               </Text>
             )}
 
-            <Text style={[styles.fighterInfoText, { color: colors.text }]} numberOfLines={1}>
-              Record: {fighter.wins}-{fighter.losses}-{fighter.draws}
-            </Text>
+            {hasRecord(fighter) && (
+              <Text style={[styles.fighterInfoText, { color: colors.text }]} numberOfLines={1}>
+                Record: {fighter.wins}-{fighter.losses}-{fighter.draws}
+              </Text>
+            )}
 
             {/* Follow button — hidden because fighter detail screen has no UI entry point yet.
                 When fighter detail becomes reachable, remove the `false &&` to re-enable. */}

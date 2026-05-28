@@ -5,14 +5,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { followFighter, getTopFollowedFighters } from '@/lib/api';
 import { FighterAvatar } from '@/components/FighterAvatar';
+import { hasRecord } from '@/lib/record';
 import { UserPlus, Check, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
 const VISIBLE_LIMIT = 10;
-
-function hasRecord(f: { wins?: number; losses?: number; draws?: number }): boolean {
-  return (f.wins ?? 0) + (f.losses ?? 0) + (f.draws ?? 0) > 0;
-}
 
 export function PopularFightersBlock() {
   const { isAuthenticated } = useAuth();
