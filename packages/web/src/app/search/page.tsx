@@ -13,6 +13,15 @@ import { Loader2, Search as SearchIcon } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
+// Weight classes are stored as uppercase enums (e.g. LIGHT_HEAVYWEIGHT).
+function formatWeightClass(wc?: string | null): string {
+  if (!wc) return '';
+  return wc
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function SearchResults() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
@@ -100,7 +109,7 @@ function SearchResults() {
                     <p className="text-xs text-text-secondary">
                       {fighter.record || formatRecord(fighter) || ''}
                       {(fighter.record || formatRecord(fighter)) && fighter.weightClass ? ' - ' : ''}
-                      {fighter.weightClass || ''}
+                      {formatWeightClass(fighter.weightClass)}
                     </p>
                   </div>
                 </div>
