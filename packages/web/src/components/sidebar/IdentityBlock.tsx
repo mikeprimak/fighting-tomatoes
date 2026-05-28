@@ -43,9 +43,9 @@ export function IdentityBlock() {
         <Image
           src="/good-fights-full-vertical.png"
           alt="Good Fights"
-          width={120}
-          height={134}
-          className="mx-auto mb-3 h-auto w-24"
+          width={240}
+          height={268}
+          className="mx-auto mb-3 h-auto w-full"
           priority
         />
         <p className="mb-3 text-sm font-medium text-foreground">
