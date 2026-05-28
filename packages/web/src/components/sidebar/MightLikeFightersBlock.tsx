@@ -1,38 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
-import { followFighter, getRecommendedFighters } from '@/lib/api';
+import { getRecommendedFighters } from '@/lib/api';
 import { FighterAvatar } from '@/components/FighterAvatar';
-import { Check, UserPlus, Users } from 'lucide-react';
+import { FollowButton } from '@/components/FollowButton';
+import { Users } from 'lucide-react';
 
 const LIMIT = 8;
 
 export function MightLikeFightersBlock() {
   const { isAuthenticated } = useAuth();
-  const queryClient = useQueryClient();
-  const [pending, setPending] = useState<Set<string>>(new Set());
 
   const { data } = useQuery({
     queryKey: ['recommendedFighters', isAuthenticated],
     queryFn: () => getRecommendedFighters(LIMIT),
     staleTime: 10 * 60 * 1000,
-  });
-
-  const followMutation = useMutation({
-    mutationFn: (fighterId: string) => followFighter(fighterId),
-    onSettled: (_, __, fighterId) => {
-      setPending(prev => {
-        const next = new Set(prev);
-        next.delete(fighterId);
-        return next;
-      });
-      queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
-      queryClient.invalidateQueries({ queryKey: ['recommendedFighters'] });
-      queryClient.invalidateQueries({ queryKey: ['topFollowedFighters'] });
-    },
   });
 
   const entries = data?.fighters ?? [];
@@ -48,7 +32,6 @@ export function MightLikeFightersBlock() {
       <ul className="space-y-2.5">
         {entries.map(({ fighter, reason }) => {
           const initials = `${fighter.firstName?.[0] ?? ''}${fighter.lastName?.[0] ?? ''}`;
-          const isPending = pending.has(fighter.id);
           return (
             <li key={fighter.id} className="flex items-center gap-2">
               <Link
@@ -73,18 +56,7 @@ export function MightLikeFightersBlock() {
                 </div>
               </Link>
               {isAuthenticated ? (
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={() => {
-                    setPending(prev => new Set(prev).add(fighter.id));
-                    followMutation.mutate(fighter.id);
-                  }}
-                  className="shrink-0 rounded-full border border-primary/40 p-1 text-primary hover:bg-primary/10 disabled:opacity-50"
-                  aria-label={`Follow ${fighter.firstName} ${fighter.lastName}`}
-                >
-                  {isPending ? <Check size={12} /> : <UserPlus size={12} />}
-                </button>
+                <FollowButton fighterId={fighter.id} isFollowing={false} />
               ) : null}
             </li>
           );

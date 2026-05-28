@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getFollowedFighters, unfollowFighter } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { getFollowedFighters } from '@/lib/api';
 import { useAuth, useHasApp } from '@/lib/auth';
 import { FighterAvatar } from '@/components/FighterAvatar';
+import { FollowButton } from '@/components/FollowButton';
 import { Loader2, Bell, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -35,15 +36,7 @@ export default function FollowedFightersPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const hasApp = useHasApp();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [ctaDismissed, setCtaDismissed] = useState(true);
-
-  const unfollowMutation = useMutation({
-    mutationFn: (fighterId: string) => unfollowFighter(fighterId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
-    },
-  });
 
   useEffect(() => {
     try {
@@ -145,7 +138,6 @@ export default function FollowedFightersPage() {
         <div className="grid gap-2 sm:grid-cols-2">
           {fighters.map((fighter: any) => {
             const line = recordLine(fighter);
-            const unfollowing = unfollowMutation.isPending && unfollowMutation.variables === fighter.id;
             return (
               <div
                 key={fighter.id}
@@ -167,14 +159,7 @@ export default function FollowedFightersPage() {
                     {line ? <p className="truncate text-xs text-text-secondary">{line}</p> : null}
                   </div>
                 </Link>
-                <button
-                  type="button"
-                  onClick={() => unfollowMutation.mutate(fighter.id)}
-                  disabled={unfollowing}
-                  className="shrink-0 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:border-danger/40 hover:text-danger disabled:opacity-50"
-                >
-                  {unfollowing ? '…' : 'Unfollow'}
-                </button>
+                <FollowButton fighterId={fighter.id} isFollowing />
               </div>
             );
           })}

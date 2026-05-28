@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,18 +9,16 @@ import {
   useColorScheme,
   TouchableOpacity,
   Modal,
-  Animated,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Colors } from '../../constants/Colors';
 import { hasRecord } from '../../utils/formatRecord';
 import { apiService, Fight } from '../../services/api';
-import { ensurePushPermissionAfterAction } from '../../services/notificationService';
-import { DetailScreenHeader, FightDisplayCard, Button } from '../../components';
+import { DetailScreenHeader, FightDisplayCard } from '../../components';
+import FollowFighterButton from '../../components/FollowFighterButton';
 import { useAuth } from '../../store/AuthContext';
-import { useVerification } from '../../store/VerificationContext';
 import { FontAwesome } from '@expo/vector-icons';
 import { getFighterImage } from '../../components/fight-cards/shared/utils';
 
@@ -35,29 +33,19 @@ const SORT_OPTIONS = [
 export default function FighterDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { isAuthenticated } = useAuth();
-  const { requireVerification } = useVerification();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const queryClient = useQueryClient();
   const router = useRouter();
 
   // State
   const [sortBy, setSortBy] = useState<SortOption>('highest-rating');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string>('');
   const [imageLoadError, setImageLoadError] = useState(false);
 
   // Reset image error state when fighter changes
   useEffect(() => {
     setImageLoadError(false);
   }, [id]);
-
-  // Animation for bell ringing
-  const bellRotation = useRef(new Animated.Value(0)).current;
-
-  // Animation for toast notification
-  const toastOpacity = useRef(new Animated.Value(0)).current;
-  const toastTranslateY = useRef(new Animated.Value(50)).current;
 
   // Fetch fighter details
   const { data: fighterData, isLoading, error } = useQuery({
@@ -79,110 +67,6 @@ export default function FighterDetailScreen() {
     },
     enabled: !!id,
   });
-
-  // Bell ringing animation
-  const animateBellRing = () => {
-    bellRotation.setValue(0);
-    Animated.sequence([
-      Animated.timing(bellRotation, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(bellRotation, {
-        toValue: -1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(bellRotation, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(bellRotation, {
-        toValue: 0,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  // Toast notification animation
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    toastOpacity.setValue(0);
-    toastTranslateY.setValue(50);
-
-    Animated.parallel([
-      Animated.timing(toastOpacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(toastTranslateY, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Auto-dismiss after 2 seconds
-    setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(toastOpacity, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(toastTranslateY, {
-          toValue: 50,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setToastMessage('');
-      });
-    }, 2000);
-  };
-
-  // Follow/Unfollow mutation
-  const followMutation = useMutation({
-    mutationFn: async (isCurrentlyFollowing: boolean) => {
-      if (isCurrentlyFollowing) {
-        return await apiService.unfollowFighter(id as string);
-      } else {
-        return await apiService.followFighter(id as string);
-      }
-    },
-    onSuccess: async (data) => {
-      // Animate bell ring and show toast when following
-      if (data.isFollowing && fighter) {
-        animateBellRing();
-        showToast(`You will be notified before ${fighter.lastName} fights.`);
-        ensurePushPermissionAfterAction({
-          context: 'fighter-follow',
-          subject: `${fighter.firstName ?? ''} ${fighter.lastName ?? ''}`.trim() || undefined,
-        }).catch(() => {});
-      }
-
-      // Refetch fighter data and invalidate all fight queries to update bell icons
-      await queryClient.refetchQueries({ queryKey: ['fighter', id] });
-      queryClient.invalidateQueries({ queryKey: ['fights'] });
-      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
-      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
-      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
-      queryClient.invalidateQueries({ queryKey: ['fight'] }); // Invalidate all fight detail queries
-    },
-  });
-
-  const handleFollowPress = () => {
-    if (!isAuthenticated) {
-      return;
-    }
-    if (!requireVerification('follow this fighter')) return;
-    const isCurrentlyFollowing = fighter?.isFollowing || false;
-    followMutation.mutate(isCurrentlyFollowing);
-  };
 
   // Get highest rated fight for header display
   const highestRatedFight = useMemo(() => {
@@ -322,38 +206,20 @@ export default function FighterDetailScreen() {
               </Text>
             )}
 
-            {/* Follow button — hidden because fighter detail screen has no UI entry point yet.
-                When fighter detail becomes reachable, remove the `false &&` to re-enable. */}
-            {false && isAuthenticated && (
-              <Button
-                onPress={handleFollowPress}
-                disabled={followMutation.isPending}
-                loading={followMutation.isPending}
-                variant={fighter.isFollowing ? 'primary' : 'outline'}
-                size="small"
-                icon={
-                  <Animated.View
-                    style={{
-                      transform: [
-                        {
-                          rotate: bellRotation.interpolate({
-                            inputRange: [-1, 0, 1],
-                            outputRange: ['-15deg', '0deg', '15deg'],
-                          }),
-                        },
-                      ],
-                    }}
-                  >
-                    <FontAwesome
-                      name={fighter.isFollowing ? "bell" : "bell-o"}
-                      size={14}
-                      color={fighter.isFollowing ? '#1a1a1a' : colors.primary}
-                    />
-                  </Animated.View>
-                }
-              >
-                {fighter.isFollowing ? 'Notifications On' : 'Notify Me'}
-              </Button>
+            {isAuthenticated && (
+              <FollowFighterButton
+                fighterId={fighter.id}
+                isFollowing={!!fighter.isFollowing}
+                fighterName={`${fighter.firstName ?? ''} ${fighter.lastName ?? ''}`.trim() || undefined}
+                variant="large"
+                style={styles.followButton}
+              />
+            )}
+
+            {typeof fighter.followerCount === 'number' && fighter.followerCount > 0 && (
+              <Text style={[styles.followerCount, { color: colors.textSecondary }]} numberOfLines={1}>
+                {fighter.followerCount.toLocaleString()} {fighter.followerCount === 1 ? 'fan follows' : 'fans follow'}
+              </Text>
             )}
           </View>
         </View>
@@ -525,24 +391,6 @@ export default function FighterDetailScreen() {
           )}
         </View>
       </ScrollView>
-
-      {/* Toast Notification */}
-      {toastMessage !== '' && (
-        <Animated.View
-          style={[
-            styles.toastContainer,
-            {
-              backgroundColor: colors.primary,
-              borderColor: colors.primary,
-              opacity: toastOpacity,
-              transform: [{ translateY: toastTranslateY }],
-            },
-          ]}
-        >
-          <FontAwesome name="bell" size={16} color="#1a1a1a" />
-          <Text style={[styles.toastText, { color: '#1a1a1a' }]}>{toastMessage}</Text>
-        </Animated.View>
-      )}
     </SafeAreaView>
   );
 }
@@ -602,20 +450,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
   },
-  inlineFollowButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-    marginTop: 4,
+  followButton: {
+    marginTop: 8,
   },
-  inlineFollowButtonText: {
+  followerCount: {
     fontSize: 12,
-    fontWeight: '600',
+    marginTop: 6,
   },
   sectionTitle: {
     fontSize: 18,
@@ -753,30 +593,5 @@ const styles = StyleSheet.create({
   noFightsContainer: {
     padding: 20,
     alignItems: 'center',
-  },
-  toastContainer: {
-    position: 'absolute',
-    bottom: 80,
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  toastText: {
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    flex: 1,
   },
 });
