@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { getFollowedFighters } from '@/lib/api';
+import { FighterAvatar } from '@/components/FighterAvatar';
 import { ChevronRight } from 'lucide-react';
 
 const STRIP_LIMIT = 5;
@@ -63,14 +64,12 @@ export function FollowedFightersStrip() {
               className="group flex min-w-0 flex-1 flex-col items-center"
             >
               <div className="h-10 w-10 overflow-hidden rounded-full bg-background-secondary ring-1 ring-border group-hover:ring-primary/60">
-                {f.profileImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={f.profileImage} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-text-secondary">
-                    {initials || '?'}
-                  </div>
-                )}
+                <FighterAvatar
+                  src={f.profileImage}
+                  initials={initials}
+                  imgClassName="h-full w-full object-cover"
+                  initialsClassName="flex h-full w-full items-center justify-center text-[10px] font-bold text-text-secondary"
+                />
               </div>
               <span className="mt-1 w-full truncate text-center text-[10px] text-text-secondary group-hover:text-primary">
                 {label}

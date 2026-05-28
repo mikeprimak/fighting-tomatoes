@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getFight, getFightAggregateStats, getFightReviews, getFightPreFightComments } from '@/lib/api';
+import { FighterAvatar } from '@/components/FighterAvatar';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { formatEventDate } from '@/utils/dateFormatters';
 import { useSpoilerFree } from '@/lib/spoilerFree';
@@ -40,17 +41,13 @@ function FighterDisplay({ fighter, isWinner, hideSpoilers, resultText }: { fight
       <div className={`h-24 w-24 overflow-hidden rounded-full sm:h-32 sm:w-32 ${
         !hideSpoilers && isWinner ? 'ring-3 ring-success' : 'bg-card'
       }`}>
-        {fighter.profileImage ? (
-          <img
-            src={fighter.profileImage}
-            alt={`${fighter.firstName} ${fighter.lastName}`}
-            className={`h-full w-full object-cover ${!hideSpoilers && !isWinner && fighter.id ? 'opacity-60' : ''}`}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-text-secondary">
-            {fighter.firstName[0]}{fighter.lastName[0]}
-          </div>
-        )}
+        <FighterAvatar
+          src={fighter.profileImage}
+          alt={`${fighter.firstName} ${fighter.lastName}`}
+          initials={`${fighter.firstName[0]}${fighter.lastName[0]}`}
+          imgClassName={`h-full w-full object-cover ${!hideSpoilers && !isWinner && fighter.id ? 'opacity-60' : ''}`}
+          initialsClassName="flex h-full w-full items-center justify-center text-2xl font-bold text-text-secondary"
+        />
       </div>
       <Link href={`/fighters/${fighter.id}`} className="text-center hover:text-primary">
         <p className={`text-sm font-bold sm:text-base ${!hideSpoilers && isWinner ? 'text-success' : ''}`}>

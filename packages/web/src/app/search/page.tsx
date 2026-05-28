@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { search } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { FighterAvatar } from '@/components/FighterAvatar';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { formatEventDate } from '@/utils/dateFormatters';
@@ -83,13 +84,12 @@ function SearchResults() {
               <Link key={fighter.id} href={`/fighters/${fighter.id}`} className="block">
                 <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/30">
                   <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-background">
-                    {fighter.profileImage ? (
-                      <img src={fighter.profileImage} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-sm font-bold text-text-secondary">
-                        {fighter.firstName[0]}{fighter.lastName[0]}
-                      </div>
-                    )}
+                    <FighterAvatar
+                      src={fighter.profileImage}
+                      initials={`${fighter.firstName[0]}${fighter.lastName[0]}`}
+                      imgClassName="h-full w-full object-cover"
+                      initialsClassName="flex h-full w-full items-center justify-center text-sm font-bold text-text-secondary"
+                    />
                   </div>
                   <div>
                     <p className="text-sm font-medium">{fighter.firstName} {fighter.lastName}</p>

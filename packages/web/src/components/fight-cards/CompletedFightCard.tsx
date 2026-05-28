@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Star, MessageCircle, MessageSquareQuote } from 'lucide-react';
+import { FighterAvatar } from '@/components/FighterAvatar';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { useSpoilerFree } from '@/lib/spoilerFree';
 import { RateFightModal } from '@/components/RateFightModal';
@@ -79,17 +80,13 @@ function FighterBlock({
           showWinnerRing ? 'ring-2 ring-[#166534]' : 'bg-card'
         }`}
       >
-        {img ? (
-          <img
-            src={img}
-            alt={`${fighter.firstName} ${fighter.lastName}`}
-            className={`h-full w-full object-cover ${showLoserDim ? 'opacity-60' : ''}`}
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-sm font-bold text-text-secondary">
-            {placeholder}
-          </div>
-        )}
+        <FighterAvatar
+          src={img}
+          alt={`${fighter.firstName} ${fighter.lastName}`}
+          initials={placeholder}
+          imgClassName={`h-full w-full object-cover ${showLoserDim ? 'opacity-60' : ''}`}
+          initialsClassName="flex h-full w-full items-center justify-center text-sm font-bold text-text-secondary"
+        />
       </div>
       {!hideSpoilers && userPicked && (
         <div
