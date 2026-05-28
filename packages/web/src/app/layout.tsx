@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { AppDownloadBanner } from "@/components/layout/AppDownloadBanner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,6 +46,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Providers>
+          <AppDownloadBanner />
           <Navbar />
           <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4">
             {children}
