@@ -56,6 +56,7 @@ Hard rules:
   - persona / appeal / whyFansLove / whyFansHate are READS OF DOCUMENTED REPUTATION, not facts you must footnote. If the sources (or widely-documented public reputation reflected in them) establish a fighter as a trash-talking heel, a beloved veteran, a controversial figure, say so plainly — that is the point of this feature. But if a fighter has NO documented persona or public profile to speak of (an obscure prospect, a journeyman with no narrative), leave those fields null and return LOW confidence. Never manufacture a "story" or a "draw" for someone who doesn't have a documented one.
   - "whyFansHate" stays STRICTLY inside combat sports. It may be spicy and honest about in-cage/in-promotion conduct (heel acts, trash talk, ducking, controversial decisions, weight misses, dirty tactics, callouts). It MUST NOT reference out-of-sport matters: no criminal charges, civil suits, arrests, abuse/assault allegations, drug/DUI incidents, politics, religion, family/relationship scandal, or any personal-life controversy — even if well-documented in the sources. If the only "hate" material is out-of-sport, set whyFansHate to null. This is a consumer app profile, not a news dossier. Never make a personal attack or an unsupported allegation.
   - "confidence" (both the top-level one and the profile one — keep them equal) reflects how well-grounded and complete the profile is. Rich sources + a real documented career/persona => 0.7+. Thin sources, a fighter you can only partially describe => 0.4-0.5. Almost nothing to go on => below 0.4 (the app will skip them).
+  - PUNCTUATION (house style, strict): never use em dashes or en dashes ("—", "–") anywhere in your output. Use a hyphen "-", a comma, a colon, or a period instead. Em dashes read as AI-generated and violate our style guide.
   - Output the JSON object only. No commentary, no markdown fences, no rationale before or after the JSON.`;
 
 export interface FighterIdentity {
@@ -256,7 +257,7 @@ function parseProfile(raw: string): FighterProfileRecord | null {
   const NULLISH = new Set(['n/a', 'na', 'none', 'null', 'nil', '-', 'unknown']);
   const clean = (v: any): string | null => {
     if (typeof v !== 'string') return null;
-    const t = v.trim();
+    const t = stripDashes(v.trim());
     return t && !NULLISH.has(t.toLowerCase()) ? t : null;
   };
   const strArr = (v: any): string[] =>
@@ -300,13 +301,24 @@ function parseProfile(raw: string): FighterProfileRecord | null {
 
   return {
     profile,
-    summary: typeof parsed.summary === 'string' ? parsed.summary.trim() : '',
+    summary: typeof parsed.summary === 'string' ? stripDashes(parsed.summary.trim()) : '',
     confidence,
   };
 }
 
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
+}
+
+/**
+ * House-style guard: strip em/en dashes from model output. The prompt forbids them,
+ * but Haiku output auto-publishes via cron with no human sweep, so this is the hard
+ * guarantee. A spaced or bare dash becomes " - " (clause separator); leaves real
+ * hyphens untouched. Only the cron path runs through here — hand-authored writes
+ * (fighter-profile-write.ts) already follow house style.
+ */
+function stripDashes(s: string): string {
+  return s.replace(/\s*[—–]\s*/g, ' - ').replace(/ {2,}/g, ' ').trim();
 }
 
 function extractFirstJsonObject(raw: string): string | null {

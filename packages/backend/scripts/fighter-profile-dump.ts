@@ -16,6 +16,15 @@
  *   batch 1: ... 25 0
  *   batch 2: ... 25 25
  *
+ * Selection modes (WHERE clause):
+ *   default        — fighters with NO profile yet (aiProfileEnrichedAt IS NULL).
+ *   FP_DUMP_ALL=1  — the full engagement-ranked set (stable OFFSET blocks for
+ *                    parallel backfill windows).
+ *   FP_STALE=1     — the Opus RE-AUTHOR routine: hand-authored profiles whose live
+ *                    record no longer matches aiProfileRecordAtEnrich (fighter has
+ *                    fought since). Optional FP_STALE_DAYS=N also pulls bios older
+ *                    than N days. Re-author everyone returned (all show [DONE]).
+ *
  * Engagement = fight_ratings + follows (NOT the denormalized totalRatings).
  */
 
@@ -56,6 +65,29 @@ async function main() {
   // lets the author skip anyone already done (only overlaps near the top).
   const includeDone = !!process.env.FP_DUMP_ALL && process.env.FP_DUMP_ALL !== '0';
 
+  // FP_STALE=1 = the Opus re-author routine's selection: hand-authored profiles
+  // whose live record no longer matches aiProfileRecordAtEnrich (the fighter has
+  // fought since), i.e. the INVERSE of the Haiku cron's pin filter. Optionally also
+  // refresh by age via FP_STALE_DAYS (off by default — a hand-authored bio isn't
+  // stale until the record actually moves). In this mode you RE-author everyone the
+  // dump returns; they all show [DONE], which is expected (do NOT skip them).
+  const staleHandauthored = !!process.env.FP_STALE && process.env.FP_STALE !== '0';
+  const staleDays = process.env.FP_STALE_DAYS ? Number(process.env.FP_STALE_DAYS) : null;
+  const staleCutoff =
+    staleDays != null && Number.isFinite(staleDays)
+      ? new Date(Date.now() - staleDays * 86_400_000)
+      : null;
+
+  const whereClause = staleHandauthored
+    ? Prisma.sql`ft."aiProfileSource" = 'handauthored' AND (
+        ft."aiProfileRecordAtEnrich" IS DISTINCT FROM
+          (ft.wins || '-' || ft.losses || '-' || ft.draws || '-' || ft."noContests")
+        ${staleCutoff ? Prisma.sql`OR ft."aiProfileEnrichedAt" < ${staleCutoff}` : Prisma.empty}
+      )`
+    : includeDone
+      ? Prisma.sql`TRUE`
+      : Prisma.sql`ft."aiProfileEnrichedAt" IS NULL`;
+
   const prisma = new PrismaClient();
 
   const picks = await prisma.$queryRaw<PickRow[]>`
@@ -82,7 +114,7 @@ async function main() {
     FROM fighters ft
     LEFT JOIN eng ON eng.fighter_id = ft.id
     LEFT JOIN fol ON fol.fighter_id = ft.id
-    WHERE ${includeDone ? Prisma.sql`TRUE` : Prisma.sql`ft."aiProfileEnrichedAt" IS NULL`}
+    WHERE ${whereClause}
     ORDER BY (COALESCE(eng.rating_count, 0) + COALESCE(fol.follower_count, 0) * 3) DESC,
              COALESCE(eng.rating_count, 0) DESC,
              ft.id ASC
@@ -185,7 +217,7 @@ async function main() {
   }
 
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, JSON.stringify({ generatedAt: new Date().toISOString(), offset, limit, includeDone, fighters: out }, null, 2));
+  fs.writeFileSync(outPath, JSON.stringify({ generatedAt: new Date().toISOString(), offset, limit, includeDone, staleHandauthored, fighters: out }, null, 2));
   console.error(`\nWrote ${out.length} fighters to ${outPath}`);
 }
 

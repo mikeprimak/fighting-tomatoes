@@ -102,6 +102,13 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 - **When:** Monday after each major card.
 - **Time:** ~30 min.
 
+### Opus re-author of stale top-fighter profiles
+- **What:** Refresh hand-authored (Tier-2 / Opus) fighter bios whose record moved because the fighter fought on the card. Full steps: `docs/playbooks/fighter-profile-reauthor.md`. Trigger phrase: "fighter profile refresh".
+- **Why:** The Haiku cron is pinned OFF hand-authored profiles (so it never downgrades an Opus bio), which means a top fighter's premium bio goes stale until this Opus routine runs. No API cost (Claude Code is the LLM).
+- **When:** Monday after any card featuring a top-367 fighter. Run `FP_STALE=1 ... fighter-profile-dump.ts` first; if it returns nobody, stop.
+- **Time:** ~5 min if empty; ~15-30 min for a handful of fighters.
+- **Also:** after any bulk record backfill (e.g. quarterly `backfillFighterRecords.ts`), run `fighter-profile-reconcile-snapshot.ts --apply` first to clear false-positive staleness before re-authoring.
+
 ### Major card live-event monitoring
 - **What:** Watch eventLifecycle + live tracker logs during the card. Manually intervene if a scraper falls behind or a fight's status doesn't advance.
 - **When:** During every UFC PPV, major Tapology-tracked card, or named target event.
