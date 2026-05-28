@@ -49,11 +49,12 @@ export function IdentityBlock() {
           priority
         />
         <p className="mb-2 text-sm font-bold text-foreground">
-          Rate fights. Build your Fan DNA.
+          Never miss a Good Fight.
         </p>
         <p className="mb-4 text-xs leading-relaxed text-text-secondary">
-          Track every fight you watch, log your hype before the walkout, and
-          get a fan profile that's all yours.
+          See pre-fight hype across 15+ promotions so you know which fights are
+          worth watching. Rate them to find the ones the community loved, and
+          build a Fan DNA that shows what you love about combat sports.
         </p>
         <Link
           href="/register"
