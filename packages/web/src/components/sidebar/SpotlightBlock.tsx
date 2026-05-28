@@ -83,7 +83,7 @@ export function SpotlightBlock() {
           </div>
         </div>
         {eventLine ? (
-          <p className="mt-1 truncate text-[11px] text-text-secondary">{eventLine}</p>
+          <p className="-mt-[3px] truncate text-[11px] text-text-secondary">{eventLine}</p>
         ) : null}
         <p className="mt-2 text-[10px] text-text-secondary">
           {f.totalRatings} fans agreed.

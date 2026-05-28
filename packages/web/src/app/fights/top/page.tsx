@@ -91,7 +91,7 @@ export default function TopFightsPage() {
         {fights.length > 0 && (
           <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
             {fights.map((fight: any, index: number) => (
-              <CompletedFightCard key={fight.id} fight={fight} showRank={index + 1} />
+              <CompletedFightCard key={fight.id} fight={fight} showRank={index + 1} showEvent />
             ))}
           </div>
         )}

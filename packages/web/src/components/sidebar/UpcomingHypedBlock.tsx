@@ -57,7 +57,7 @@ export function UpcomingHypedBlock() {
                   </span>
                 </span>
               </div>
-              <p className="mt-0.5 truncate text-[11px] text-text-secondary">
+              <p className="-mt-[5px] truncate text-[11px] text-text-secondary">
                 {shortDate(f.event.date)} · {f.event.name}
               </p>
             </Link>
