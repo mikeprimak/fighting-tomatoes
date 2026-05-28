@@ -29,8 +29,7 @@ export function AuthGatePrompt({ kind, fightId, value, onCancel }: AuthGatePromp
         Save your {label}
       </h2>
       <p className="mb-5 text-sm leading-relaxed text-text-secondary">
-        Sign up or log in to save your {label} and build your fan profile.
-        We&apos;ll bring you right back.
+        {`Sign up or log in to save your ${label} and build your fan profile. We'll bring you right back.`}
       </p>
       <button
         onClick={() => go('/register')}
