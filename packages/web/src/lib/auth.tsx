@@ -40,6 +40,26 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Login/register/OAuth responses return a minimal user with no aggregate
+// counts (totalRatings/totalHype/totalReviews). /auth/profile returns the full
+// shape, so we fetch it after every login to populate the sidebar stats right
+// away instead of showing 0 until a manual refresh.
+async function fetchProfile(): Promise<User | null> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'https://fightcrewapp-backend.onrender.com/api'}/auth/profile`,
+      { headers: { Authorization: `Bearer ${getAccessToken()}` } },
+    );
+    if (res.ok) {
+      const data = await res.json();
+      return (data.user || data) as User;
+    }
+  } catch {
+    // Ignore — fall back to the login-response user.
+  }
+  return null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,13 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const ok = await refreshSession();
         if (ok) {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://fightcrewapp-backend.onrender.com/api'}/auth/profile`, {
-            headers: { Authorization: `Bearer ${getAccessToken()}` },
-          });
-          if (res.ok) {
-            const data = await res.json();
-            setUser(data.user || data);
-          }
+          const full = await fetchProfile();
+          if (full) setUser(full);
         }
       } catch {
         // Not logged in
@@ -98,24 +113,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await apiLogin(email, password);
     setUser(data.user);
     setIsGuest(false);
+    const full = await fetchProfile();
+    if (full) setUser(full);
   }, []);
 
   const loginWithGoogle = useCallback(async (idToken: string) => {
     const data = await apiLoginWithGoogle(idToken);
     setUser(data.user);
     setIsGuest(false);
+    const full = await fetchProfile();
+    if (full) setUser(full);
   }, []);
 
   const loginWithApple = useCallback(async (payload: { identityToken: string; email?: string; firstName?: string; lastName?: string }) => {
     const data = await apiLoginWithApple(payload);
     setUser(data.user);
     setIsGuest(false);
+    const full = await fetchProfile();
+    if (full) setUser(full);
   }, []);
 
   const register = useCallback(async (userData: { email: string; password: string; firstName?: string; lastName?: string; displayName?: string }) => {
     const data = await apiRegister(userData);
     setUser(data.user);
     setIsGuest(false);
+    const full = await fetchProfile();
+    if (full) setUser(full);
   }, []);
 
   const logout = useCallback(async () => {
