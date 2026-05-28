@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Download, X } from 'lucide-react';
+import { Smartphone, X } from 'lucide-react';
 import { useAuth, useHasApp } from '@/lib/auth';
 
 const DISMISS_KEY = 'appDownloadBannerDismissed';
@@ -37,20 +37,20 @@ export function AppDownloadBanner() {
   if (!mounted || isLoading || hasApp || dismissed) return null;
 
   return (
-    <div className="relative flex items-center justify-center gap-3 bg-primary px-10 py-2 text-center text-sm font-medium text-text-on-accent">
+    <div className="relative flex items-center justify-center gap-3 bg-primary px-12 py-4 text-center text-base font-medium text-text-on-accent">
       <a
         href={APP_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-2 hover:underline"
+        className="flex items-center gap-2.5 hover:underline"
       >
-        <Download size={16} className="shrink-0" />
+        <Smartphone size={22} className="shrink-0" />
         Download the Good Fights mobile app
       </a>
       <button
         onClick={handleDismiss}
         aria-label="Dismiss"
-        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-text-on-accent/80 hover:text-text-on-accent"
+        className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-text-on-accent/80 hover:text-text-on-accent"
       >
         <X size={16} />
       </button>
