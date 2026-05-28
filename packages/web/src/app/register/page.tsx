@@ -1,11 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { AppleSignInButton } from '@/components/auth/AppleSignInButton';
+
+// Only allow same-site relative paths as redirect targets (no open redirects).
+function safeRedirect(raw: string | null): string {
+  if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw;
+  return '/';
+}
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
@@ -13,8 +19,13 @@ export default function RegisterPage() {
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [redirect, setRedirect] = useState('/');
   const { register } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    setRedirect(safeRedirect(new URLSearchParams(window.location.search).get('redirect')));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +33,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register({ email, password, displayName: displayName || undefined });
-      router.push('/');
+      router.push(redirect);
     } catch (err: any) {
       setError(err.error || 'Registration failed');
     } finally {
@@ -30,14 +41,16 @@ export default function RegisterPage() {
     }
   };
 
+  const redirectQuery = redirect !== '/' ? `?redirect=${encodeURIComponent(redirect)}` : '';
+
   return (
     <div className="mx-auto flex max-w-sm flex-col items-center pt-12">
       <h1 className="mb-6 text-2xl font-bold text-primary">GOOD FIGHTS</h1>
       <h2 className="mb-6 text-lg font-semibold">Create Account</h2>
 
       <div className="mb-3 flex w-full flex-col items-center gap-3">
-        <GoogleSignInButton mode="signup" />
-        <AppleSignInButton mode="signup" />
+        <GoogleSignInButton mode="signup" redirectTo={redirect} />
+        <AppleSignInButton mode="signup" redirectTo={redirect} />
       </div>
 
       <div className="mb-4 flex w-full items-center gap-3 text-xs uppercase tracking-wider text-text-secondary">
@@ -84,7 +97,7 @@ export default function RegisterPage() {
       </form>
 
       <div className="mt-4 text-sm">
-        <Link href="/login" className="text-primary hover:underline">
+        <Link href={`/login${redirectQuery}`} className="text-primary hover:underline">
           Already have an account? Sign in
         </Link>
       </div>

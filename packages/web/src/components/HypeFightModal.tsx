@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { AuthGatePrompt } from '@/components/AuthGatePrompt';
 
 interface HypeFightModalProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
   const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [authGate, setAuthGate] = useState(false);
   const initialCommentRef = useRef('');
 
   const { data: commentsData } = useQuery({
@@ -47,6 +49,7 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
     if (!isOpen) return;
     setSelectedHype(existingHype ?? null);
     setError('');
+    setAuthGate(false);
   }, [isOpen, existingHype, fight?.id]);
 
   useEffect(() => {
@@ -95,6 +98,10 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
   };
 
   const handleDone = async () => {
+    if (!isAuthenticated) {
+      setAuthGate(true);
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -135,6 +142,15 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
         className="w-full max-w-md rounded-t-2xl border border-border bg-background p-5 sm:rounded-xl"
         onClick={e => e.stopPropagation()}
       >
+        {authGate ? (
+          <AuthGatePrompt
+            kind="hype"
+            fightId={fight.id}
+            value={selectedHype}
+            onCancel={() => setAuthGate(false)}
+          />
+        ) : (
+        <>
         <h2 className="mb-4 text-center text-base font-bold uppercase tracking-wider text-foreground">
           How Hyped Are You?
         </h2>
@@ -247,6 +263,8 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
         >
           {saving ? 'Saving…' : 'Done'}
         </button>
+        </>
+        )}
       </div>
     </div>
   );

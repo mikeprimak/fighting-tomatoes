@@ -1,19 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { AppleSignInButton } from '@/components/auth/AppleSignInButton';
 
+// Only allow same-site relative paths as redirect targets (no open redirects).
+function safeRedirect(raw: string | null): string {
+  if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw;
+  return '/';
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [redirect, setRedirect] = useState('/');
   const { login, continueAsGuest } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    setRedirect(safeRedirect(new URLSearchParams(window.location.search).get('redirect')));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +32,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      router.push('/');
+      router.push(redirect);
     } catch (err: any) {
       setError(err.error || 'Login failed');
     } finally {
@@ -29,14 +40,16 @@ export default function LoginPage() {
     }
   };
 
+  const redirectQuery = redirect !== '/' ? `?redirect=${encodeURIComponent(redirect)}` : '';
+
   return (
     <div className="mx-auto flex max-w-sm flex-col items-center pt-12">
       <h1 className="mb-6 text-2xl font-bold text-primary">GOOD FIGHTS</h1>
       <h2 className="mb-6 text-lg font-semibold">Sign In</h2>
 
       <div className="mb-3 flex w-full flex-col items-center gap-3">
-        <GoogleSignInButton mode="signin" />
-        <AppleSignInButton mode="signin" />
+        <GoogleSignInButton mode="signin" redirectTo={redirect} />
+        <AppleSignInButton mode="signin" redirectTo={redirect} />
       </div>
 
       <div className="mb-4 flex w-full items-center gap-3 text-xs uppercase tracking-wider text-text-secondary">
@@ -77,14 +90,14 @@ export default function LoginPage() {
       </form>
 
       <div className="mt-4 flex flex-col items-center gap-2 text-sm">
-        <Link href="/register" className="text-primary hover:underline">
+        <Link href={`/register${redirectQuery}`} className="text-primary hover:underline">
           Create an account
         </Link>
         <Link href="/forgot-password" className="text-text-secondary hover:text-foreground">
           Forgot password?
         </Link>
         <button
-          onClick={() => { continueAsGuest(); router.push('/'); }}
+          onClick={() => { continueAsGuest(); router.push(redirect); }}
           className="mt-2 text-text-secondary hover:text-foreground"
         >
           Continue as guest
