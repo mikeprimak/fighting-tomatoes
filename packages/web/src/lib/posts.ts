@@ -21,6 +21,10 @@ export type PostMeta = {
   /** Pins this post to the EditorialHero band on the main pages. The newest
    *  `featured: true` post wins; if none are featured we fall back to newest. */
   featured: boolean;
+  /** Hides this post from the homepage editorial bands (hero + secondary cards)
+   *  while keeping it live on /blog, the sitemap, and the RSS feed. Use to retire
+   *  a post from the homepage rotation without unpublishing it. */
+  hideFromHome: boolean;
 };
 
 export type Post = PostMeta & {
@@ -45,6 +49,7 @@ function parseFile(filename: string): { meta: PostMeta; content: string } | null
     draft: data.draft === true,
     image: (data.image as string) || '',
     featured: data.featured === true,
+    hideFromHome: data.hideFromHome === true,
   };
 
   if (meta.draft && !includeDrafts) return null;

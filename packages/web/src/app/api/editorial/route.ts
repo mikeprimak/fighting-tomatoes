@@ -12,7 +12,9 @@ export const dynamic = 'force-static';
  * Drafts are already stripped from getAllPosts() in production builds.
  */
 export async function GET() {
-  const posts = getAllPosts().map((p) => ({
+  const posts = getAllPosts()
+    .filter((p) => !p.hideFromHome)
+    .map((p) => ({
     slug: p.slug,
     title: p.title,
     excerpt: p.excerpt,

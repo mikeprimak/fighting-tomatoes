@@ -7,6 +7,7 @@ excerpt: "In 2020, Deiveson Figueiredo was the most exciting little man in the s
 tags: ["figueiredo", "ufc", "flyweight", "bantamweight", "data"]
 image: "/blog/figueiredo-rating-arc.png"
 draft: false
+hideFromHome: true
 ---
 
 <div style="color:#9ca3af;font-size:0.8rem;text-align:center;margin:-0.5rem 0 1.5rem;">Average Good Fights user rating for every Deiveson Figueiredo UFC fight, June 2017 to January 2026. Gold = the line; red = the two lowest-rated fights of his career.</div>
