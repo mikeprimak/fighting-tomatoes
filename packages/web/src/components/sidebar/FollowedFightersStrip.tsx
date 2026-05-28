@@ -48,9 +48,7 @@ export function FollowedFightersStrip() {
           <>
             Follow to save them.{' '}
             <a
-              href="https://goodfights.app"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/download?utm_source=web&utm_medium=sidebar&utm_campaign=get-the-app"
               className="text-primary hover:underline"
             >
               Get the app

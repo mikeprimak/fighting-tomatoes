@@ -29,6 +29,18 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // The Apple App Site Association file has no extension, so Vercel would serve
+  // it as application/octet-stream. iOS requires application/json. (Served from
+  // public/.well-known/ — Android's assetlinks.json gets the right type from its
+  // extension automatically.)
+  async headers() {
+    return [
+      {
+        source: '/.well-known/apple-app-site-association',
+        headers: [{ key: 'Content-Type', value: 'application/json' }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

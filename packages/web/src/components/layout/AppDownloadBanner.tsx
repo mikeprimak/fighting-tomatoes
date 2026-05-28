@@ -5,7 +5,7 @@ import { Smartphone, X } from 'lucide-react';
 import { useAuth, useHasApp } from '@/lib/auth';
 
 const DISMISS_KEY = 'appDownloadBannerDismissed';
-const APP_URL = 'https://goodfights.app?utm_source=web&utm_medium=banner&utm_campaign=get-the-app';
+const APP_URL = '/download?utm_source=web&utm_medium=banner&utm_campaign=get-the-app';
 
 export function AppDownloadBanner() {
   const { isLoading } = useAuth();
@@ -40,8 +40,6 @@ export function AppDownloadBanner() {
     <div className="relative flex items-center justify-center gap-3 bg-primary px-12 py-4 text-center text-base font-medium text-text-on-accent">
       <a
         href={APP_URL}
-        target="_blank"
-        rel="noopener noreferrer"
         className="flex items-center gap-2.5 hover:underline"
       >
         <Smartphone size={22} className="shrink-0" />
