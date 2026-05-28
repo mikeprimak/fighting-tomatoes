@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, User, Menu, X, Flame, Radio, Star, Trophy, LogIn, EyeOff, Eye } from 'lucide-react';
+import { Search, User, Menu, X, Flame, Radio, Star, Trophy, EyeOff, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useSpoilerFree } from '@/lib/spoilerFree';
@@ -128,9 +128,8 @@ export function Navbar() {
             ) : (
               <Link
                 href="/login"
-                className="hidden items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-text-on-accent hover:bg-primary/90 md:flex"
+                className="hidden items-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-text-on-accent hover:bg-primary/90 md:flex"
               >
-                <LogIn size={16} />
                 Sign In
               </Link>
             )}
@@ -176,9 +175,8 @@ export function Navbar() {
             <Link
               href="/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-primary"
+              className="flex items-center rounded-lg px-3 py-2.5 text-sm font-medium text-primary"
             >
-              <LogIn size={16} />
               Sign In
             </Link>
           )}

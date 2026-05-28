@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { getFanDNAProfile } from '@/lib/api';
-import { LogIn } from 'lucide-react';
 
 function formatMemberSince(createdAt: string): string {
   const created = new Date(createdAt);
@@ -58,9 +57,8 @@ export function IdentityBlock() {
         </p>
         <Link
           href="/register"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-text-on-accent hover:bg-primary/90"
+          className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-xs font-bold text-text-on-accent hover:bg-primary/90"
         >
-          <LogIn size={14} />
           Create your account
         </Link>
         <p className="mt-3 text-xs text-text-secondary">
