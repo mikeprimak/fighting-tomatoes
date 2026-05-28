@@ -5,6 +5,7 @@ import {
   useColorScheme,
   ViewStyle,
   Animated,
+  Text,
 } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FontAwesome } from '@expo/vector-icons';
@@ -21,12 +22,15 @@ interface FollowFighterButtonProps {
   style?: ViewStyle;
   onFollowed?: () => void;
   suppressToast?: boolean;
+  // 'condensed' = icon-only badge (cards, rows, image corners — default).
+  // 'large' = labeled pill ("+ Follow" / "✓ Following") for prominent spots like fighter pages.
+  variant?: 'condensed' | 'large';
 }
 
 const SIZE = 22;
 const ICON_SIZE = 11;
 
-export default function FollowFighterButton({ fighterId, isFollowing, fighterName, style, onFollowed, suppressToast }: FollowFighterButtonProps) {
+export default function FollowFighterButton({ fighterId, isFollowing, fighterName, style, onFollowed, suppressToast, variant = 'condensed' }: FollowFighterButtonProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
@@ -88,7 +92,11 @@ export default function FollowFighterButton({ fighterId, isFollowing, fighterNam
       queryClient.invalidateQueries({ queryKey: ['fighter', fighterId] });
       queryClient.invalidateQueries({ queryKey: ['fight'] });
       queryClient.invalidateQueries({ queryKey: ['fights'] });
+      queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
+      queryClient.invalidateQueries({ queryKey: ['eventFights'] });
+      queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
       queryClient.invalidateQueries({ queryKey: ['followedFighters'] });
+      queryClient.invalidateQueries({ queryKey: ['topFollowedFighters'] });
       if (data?.isFollowing) {
         ensurePushPermissionAfterAction({
           context: 'fighter-follow',
@@ -109,9 +117,28 @@ export default function FollowFighterButton({ fighterId, isFollowing, fighterNam
   if (!isAuthenticated) return null;
 
   const following = optimistic;
-  const borderColor = following ? colors.primary : colors.textSecondary;
+  const isLarge = variant === 'large';
+  // Following is always solid primary fill. Not-following is an outline:
+  // condensed stays muted (subtle affordance in dense lists), large reads as a
+  // primary CTA.
   const bg = following ? colors.primary : colors.background;
-  const fg = following ? '#1a1a1a' : colors.textSecondary;
+  const borderColor = following ? colors.primary : (isLarge ? colors.primary : colors.textSecondary);
+  const fg = following ? '#1a1a1a' : (isLarge ? colors.primary : colors.textSecondary);
+
+  if (isLarge) {
+    return (
+      <TouchableOpacity
+        onPress={handlePress}
+        activeOpacity={0.7}
+        style={[styles.pill, { backgroundColor: bg, borderColor }, style]}
+      >
+        <FontAwesome name={following ? 'check' : 'plus'} size={13} color={fg} />
+        <Text style={[styles.pillText, { color: fg }]}>
+          {following ? 'Following' : 'Follow'}
+        </Text>
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <>
@@ -150,6 +177,20 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    gap: 6,
+  },
+  pillText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   toast: {
     position: 'absolute',

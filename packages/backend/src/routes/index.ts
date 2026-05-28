@@ -1364,6 +1364,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 profileImage: { type: 'string' },
                 actionImage: { type: 'string' },
                 isFollowing: { type: 'boolean' },
+                followerCount: { type: 'integer' },
                 // AI profile enrichment (Phase 5). Floor-gated at write time
                 // (confidence >= 0.5). aiProfile is a free-form JSON object, so
                 // additionalProperties must be true or fast-json-stringify drops it.
@@ -1427,6 +1428,12 @@ export async function registerRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Total followers — powers the "X fans follow" social proof on fighter pages.
+      // Matches the row-count semantics used by community top-followed (unfollow hard-deletes).
+      const followerCount = await fastify.prisma.userFighterFollow.count({
+        where: { fighterId: id },
+      });
+
       // Check if user is following this fighter (if authenticated)
       let isFollowing = false;
       const user = (request as any).user;
@@ -1446,6 +1453,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         fighter: {
           ...fighter,
           isFollowing,
+          followerCount,
         },
       });
     } catch (error: any) {

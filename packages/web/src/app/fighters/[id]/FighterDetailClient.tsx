@@ -7,6 +7,7 @@ import { hasRecord } from '@/lib/record';
 import { formatEventDate } from '@/utils/dateFormatters';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
+import { FollowButton } from '@/components/FollowButton';
 import { Loader2, Trophy } from 'lucide-react';
 import { useState } from 'react';
 
@@ -95,6 +96,15 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
               <span className="text-xs font-medium text-primary">{fighter.championshipTitle}</span>
             </div>
           )}
+          <div className="mt-3 flex items-center gap-3">
+            <FollowButton fighterId={fighter.id} isFollowing={!!fighter.isFollowing} variant="large" />
+            {typeof fighter.followerCount === 'number' && fighter.followerCount > 0 && (
+              <span className="text-xs text-text-secondary">
+                {fighter.followerCount.toLocaleString()}{' '}
+                {fighter.followerCount === 1 ? 'fan follows' : 'fans follow'}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
