@@ -48,19 +48,26 @@ export function IdentityBlock() {
           className="mx-auto mb-3 h-auto w-full"
           priority
         />
-        <p className="mb-3 text-sm font-medium text-foreground">
-          Sign in to see your taste profile
+        <p className="mb-2 text-sm font-bold text-foreground">
+          Rate fights. Build your Fan DNA.
         </p>
-        <p className="mb-4 text-xs text-text-secondary">
-          Ratings, hype distribution, Fan DNA, fights you might like.
+        <p className="mb-4 text-xs leading-relaxed text-text-secondary">
+          Track every fight you watch, log your hype before the walkout, and
+          get a fan profile that's all yours.
         </p>
         <Link
-          href="/login"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-text-on-accent hover:bg-primary/90"
+          href="/register"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-text-on-accent hover:bg-primary/90"
         >
           <LogIn size={14} />
-          Sign In
+          Create your account
         </Link>
+        <p className="mt-3 text-xs text-text-secondary">
+          Already a fan?{' '}
+          <Link href="/login" className="font-medium text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
       </div>
     );
   }
