@@ -74,6 +74,12 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 - **Time:** ~2 hr.
 - **Blocked until:** Fan DNA engine has ≥ 3 months of engagement data.
 
+### Fighter record refresh (ufcstats)
+- **What:** Re-run `packages/backend/src/scripts/backfillFighterRecords.ts` (dry-run first, then `--apply`) to fill W-L-D on fighters still at 0-0-0 and catch newly-added fighters.
+- **Why:** Only the active UFC roster self-heals daily; historic/off-roster records are filled by this one-shot and drift as fighters return. ufcstats is UFC-only, so boxing + regional MMA stay empty (UI guard hides them).
+- **Time:** ~10 min (the dry-run prints coverage; review the audit JSON before `--apply`).
+- **Note:** ufcstats now sits behind a JS proof-of-work gate; the scraper solves it automatically (`services/scrapeUFCStatsFighters.ts`).
+
 ### Dependency + security update sweep
 - **What:** `pnpm outdated` across all packages, review Dependabot alerts on GitHub, update Expo SDK if a new release exists.
 - **Why:** Security patches + Expo SDK alignment with EAS Build versions.
