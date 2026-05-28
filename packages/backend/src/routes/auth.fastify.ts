@@ -702,6 +702,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                 points: { type: 'integer' },
                 level: { type: 'integer' },
                 broadcastRegion: { type: ['string', 'null'] },
+                hasApp: { type: 'boolean' },
               },
             },
           },
@@ -753,6 +754,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           points: true,
           level: true,
           broadcastRegion: true,
+          pushToken: true,
           ratings: {
             select: {
               rating: true,
@@ -880,8 +882,9 @@ export async function authRoutes(fastify: FastifyInstance) {
         ? (correctMethodCount / completedMethodPredictionsCount) * 100
         : 0;
 
-      // Return user without ratings/predictions arrays, but with calculated averages and distributions
-      const { ratings, predictions, ...userWithoutArrays } = user;
+      // Return user without ratings/predictions arrays, but with calculated averages and distributions.
+      // pushToken is a private credential — expose only its presence as hasApp (registered from the mobile app).
+      const { ratings, predictions, pushToken, ...userWithoutArrays } = user;
 
       request.log.info('[GET /profile] Returning user avatar: ' + user.avatar);
       request.log.info('[GET /profile] Average rating: ' + averageRating);
@@ -906,7 +909,8 @@ export async function authRoutes(fastify: FastifyInstance) {
           totalMethodPredictions,
           completedMethodPredictions: completedMethodPredictionsCount,
           correctMethodPredictions: correctMethodCount,
-          methodAccuracy: Number(methodAccuracy.toFixed(1))
+          methodAccuracy: Number(methodAccuracy.toFixed(1)),
+          hasApp: !!pushToken
         }
       });
 

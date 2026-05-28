@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getFollowedFighters, unfollowFighter } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
+import { useAuth, useHasApp } from '@/lib/auth';
 import { FighterAvatar } from '@/components/FighterAvatar';
 import { Loader2, Bell, X } from 'lucide-react';
 import Link from 'next/link';
@@ -33,6 +33,7 @@ function recordLine(f: any): string | null {
 
 export default function FollowedFightersPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const hasApp = useHasApp();
   const router = useRouter();
   const queryClient = useQueryClient();
   const [ctaDismissed, setCtaDismissed] = useState(true);
@@ -85,19 +86,25 @@ export default function FollowedFightersPage() {
       <div className="min-w-0">
         <h1 className="text-lg font-bold">Followed Fighters</h1>
         <p className="mb-4 mt-1 text-xs text-text-secondary">
-          Follow to save them.{' '}
-          <a
-            href="https://goodfights.app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:underline"
-          >
-            Get the mobile app
-          </a>{' '}
-          to be notified for upcoming fights.
+          {hasApp ? (
+            <>Follow to save them. You&apos;ll be notified in the app for upcoming fights.</>
+          ) : (
+            <>
+              Follow to save them.{' '}
+              <a
+                href="https://goodfights.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Get the mobile app
+              </a>{' '}
+              to be notified for upcoming fights.
+            </>
+          )}
         </p>
 
-        {!ctaDismissed && (
+        {!ctaDismissed && !hasApp && (
           <div className="mb-4 flex items-start gap-3 rounded-lg border border-primary/30 bg-gradient-to-b from-primary/[0.08] to-card p-3">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
               <Bell size={16} />
