@@ -52,7 +52,7 @@ export function IdentityBlock() {
         </p>
         <p className="mb-4 text-xs leading-relaxed text-text-secondary">
           See pre-fight hype across 15+ promotions so you know which fights are
-          worth watching. Rate them to find the ones the community loved, and
+          worth watching. Rate fights and find the ones the community loved, and
           build a Fan DNA that shows what you love about combat sports.
         </p>
         <Link
