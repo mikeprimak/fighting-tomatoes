@@ -13,6 +13,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import { AuthGatePrompt } from '@/components/AuthGatePrompt';
 
 interface RateFightModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
   const [comment, setComment] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [authGate, setAuthGate] = useState(false);
   const initialCommentRef = useRef('');
 
   const { data: reviewsData } = useQuery({
@@ -55,6 +57,7 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
         : null;
     setSelectedRating(existingRating ?? mineFromList?.rating ?? null);
     setError('');
+    setAuthGate(false);
   }, [isOpen, existingRating, fight?.id, reviewsData, user?.id]);
 
   useEffect(() => {
@@ -111,6 +114,10 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
   };
 
   const handleDone = async () => {
+    if (!isAuthenticated) {
+      setAuthGate(true);
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -147,6 +154,15 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
         className="w-full max-w-md rounded-t-2xl border border-border bg-background p-5 sm:rounded-xl"
         onClick={e => e.stopPropagation()}
       >
+        {authGate ? (
+          <AuthGatePrompt
+            kind="rating"
+            fightId={fight.id}
+            value={selectedRating}
+            onCancel={() => setAuthGate(false)}
+          />
+        ) : (
+        <>
         <h2 className="mb-4 text-center text-base font-bold uppercase tracking-wider text-foreground">
           Rate This Fight
         </h2>
@@ -258,6 +274,8 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
         >
           {saving ? 'Saving…' : 'Done'}
         </button>
+        </>
+        )}
       </div>
     </div>
   );
