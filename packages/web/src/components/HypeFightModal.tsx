@@ -137,9 +137,9 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
   const f2 = fight.fighter2 ?? {};
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-t-2xl border border-border bg-background p-5 sm:rounded-xl"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-background p-5"
         onClick={e => e.stopPropagation()}
       >
         {authGate ? (
