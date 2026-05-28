@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { followFighter, getTopFollowedFighters } from '@/lib/api';
+import { FighterAvatar } from '@/components/FighterAvatar';
 import { UserPlus, Check, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
@@ -64,18 +65,12 @@ export function PopularFightersBlock() {
                   className="flex min-w-0 flex-1 items-center gap-2"
                 >
                   <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-background-secondary ring-1 ring-border">
-                    {fighter.profileImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={fighter.profileImage}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-text-secondary">
-                        {initials || '?'}
-                      </div>
-                    )}
+                    <FighterAvatar
+                      src={fighter.profileImage}
+                      initials={initials}
+                      imgClassName="h-full w-full object-cover"
+                      initialsClassName="flex h-full w-full items-center justify-center text-[10px] font-bold text-text-secondary"
+                    />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-medium text-foreground hover:text-primary">

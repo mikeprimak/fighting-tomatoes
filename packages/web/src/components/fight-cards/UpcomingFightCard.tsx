@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Flame, MessageCircle, MessageSquareQuote } from 'lucide-react';
+import { FighterAvatar } from '@/components/FighterAvatar';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { HypeFightModal } from '@/components/HypeFightModal';
 
@@ -40,17 +41,13 @@ function FighterSide({ fighter, side }: { fighter: Fighter; side: 'left' | 'righ
 
   const headshot = (
     <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-background">
-      {img ? (
-        <img
-          src={img}
-          alt={`${fighter.firstName} ${fighter.lastName}`}
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center text-xs font-bold text-text-secondary">
-          {placeholder}
-        </div>
-      )}
+      <FighterAvatar
+        src={img}
+        alt={`${fighter.firstName} ${fighter.lastName}`}
+        initials={placeholder}
+        imgClassName="h-full w-full object-cover"
+        initialsClassName="flex h-full w-full items-center justify-center text-xs font-bold text-text-secondary"
+      />
     </div>
   );
 

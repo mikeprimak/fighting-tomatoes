@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getFighter, getFights } from '@/lib/api';
+import { FighterAvatar } from '@/components/FighterAvatar';
 import { formatEventDate } from '@/utils/dateFormatters';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
@@ -64,13 +65,13 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
       {/* Fighter header */}
       <div className="mb-6 flex items-center gap-4 sm:gap-6">
         <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full bg-card sm:h-32 sm:w-32">
-          {fighter.profileImage ? (
-            <img src={fighter.profileImage} alt={`${fighter.firstName} ${fighter.lastName}`} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-text-secondary">
-              {fighter.firstName[0]}{fighter.lastName[0]}
-            </div>
-          )}
+          <FighterAvatar
+            src={fighter.profileImage}
+            alt={`${fighter.firstName} ${fighter.lastName}`}
+            initials={`${fighter.firstName[0]}${fighter.lastName[0]}`}
+            imgClassName="h-full w-full object-cover"
+            initialsClassName="flex h-full w-full items-center justify-center text-3xl font-bold text-text-secondary"
+          />
         </div>
         <div>
           <h1 className="text-xl font-bold sm:text-2xl">

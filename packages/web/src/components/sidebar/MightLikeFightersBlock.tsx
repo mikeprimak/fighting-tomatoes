@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { followFighter, getRecommendedFighters } from '@/lib/api';
+import { FighterAvatar } from '@/components/FighterAvatar';
 import { Check, UserPlus, Users } from 'lucide-react';
 
 const LIMIT = 8;
@@ -55,18 +56,12 @@ export function MightLikeFightersBlock() {
                 className="flex min-w-0 flex-1 items-center gap-2 group"
               >
                 <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-background-secondary ring-1 ring-border">
-                  {fighter.profileImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={fighter.profileImage}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-[10px] font-bold text-text-secondary">
-                      {initials || '?'}
-                    </div>
-                  )}
+                  <FighterAvatar
+                    src={fighter.profileImage}
+                    initials={initials}
+                    imgClassName="h-full w-full object-cover"
+                    initialsClassName="flex h-full w-full items-center justify-center text-[10px] font-bold text-text-secondary"
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-medium text-foreground group-hover:text-primary">

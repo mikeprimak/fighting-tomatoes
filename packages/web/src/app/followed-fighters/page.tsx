@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getFollowedFighters, unfollowFighter } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { FighterAvatar } from '@/components/FighterAvatar';
 import { Loader2, Bell, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -148,19 +149,12 @@ export default function FollowedFightersPage() {
               >
                 <Link href={`/fighters/${fighter.id}`} className="flex min-w-0 flex-1 items-center gap-3">
                   <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-background">
-                    {fighter.profileImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={fighter.profileImage}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-sm font-bold text-text-secondary">
-                        {fighter.firstName?.[0]}
-                        {fighter.lastName?.[0]}
-                      </div>
-                    )}
+                    <FighterAvatar
+                      src={fighter.profileImage}
+                      initials={`${fighter.firstName?.[0] ?? ''}${fighter.lastName?.[0] ?? ''}`}
+                      imgClassName="h-full w-full object-cover"
+                      initialsClassName="flex h-full w-full items-center justify-center text-sm font-bold text-text-secondary"
+                    />
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">

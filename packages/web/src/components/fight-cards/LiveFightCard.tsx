@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Flame, MessageCircle } from 'lucide-react';
+import { FighterAvatar } from '@/components/FighterAvatar';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { RateFightModal } from '@/components/RateFightModal';
 
@@ -43,13 +44,13 @@ function FighterImage({ fighter, hasUserPick }: { fighter: Fighter; hasUserPick:
   return (
     <div className="relative">
       <div className="h-20 w-20 overflow-hidden rounded-full bg-card sm:h-[88px] sm:w-[88px]">
-        {img ? (
-          <img src={img} alt={`${fighter.firstName} ${fighter.lastName}`} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-lg font-bold text-text-secondary">
-            {placeholder}
-          </div>
-        )}
+        <FighterAvatar
+          src={img}
+          alt={`${fighter.firstName} ${fighter.lastName}`}
+          initials={placeholder}
+          imgClassName="h-full w-full object-cover"
+          initialsClassName="flex h-full w-full items-center justify-center text-lg font-bold text-text-secondary"
+        />
       </div>
       {hasUserPick && (
         <div className="absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full bg-[#F5C518] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-black">
