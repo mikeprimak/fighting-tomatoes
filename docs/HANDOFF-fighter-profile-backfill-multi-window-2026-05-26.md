@@ -12,6 +12,11 @@ Full system background: `docs/areas/ai-enrichment.md` → Phase 5a.
 
 ## Status
 
+> ✅ **CAMPAIGN COMPLETE — reconciled 2026-05-28.** All blocks A–H DONE; final
+> reconciliation pass found the highest unwritten fighter at 91 ratings (below
+> the ≥100 cutoff), so every top-367 fighter is profiled. The ≥25-rating cron
+> owns everything below. Nothing left to run here. (See `docs/daily/2026-05-28.md`.)
+
 - **Target:** top **367** fighters by engagement (the triage cutoff = ≥100 ratings).
 - **Done: 49** (ranks 1-49) — waves 1-3 on 2026-05-26. Verified live & spot-checked.
 - **Remaining: ranks 50-367** (~318 fighters), partitioned into the blocks below.
