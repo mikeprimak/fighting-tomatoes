@@ -30,10 +30,23 @@ function sectionToBroadcastKey(section: string): CardSection | null {
   return null;
 }
 
+// Collapse the many scraper cardType labels into the three canonical sections
+// (matches the mobile app). Crucially "Main Event" folds into MAIN CARD so a
+// single-fight headliner isn't split off into its own section (MVP/Matchroom).
+function canonicalSection(cardType: string | null | undefined): string {
+  if (!cardType) return 'MAIN CARD';
+  const lower = cardType.toLowerCase().trim();
+  if (lower.includes('early prelim') || lower.includes('early-prelim')) return 'EARLY PRELIMS';
+  if ((lower.includes('prelim') && !lower.includes('early')) || lower === 'undercard' || lower === 'under card') {
+    return 'PRELIMS';
+  }
+  return 'MAIN CARD';
+}
+
 function groupFightsBySection(fights: any[]) {
   const sections: Record<string, any[]> = {};
   for (const fight of fights) {
-    const section = fight.cardType || 'MAIN CARD';
+    const section = canonicalSection(fight.cardType);
     if (!sections[section]) sections[section] = [];
     sections[section].push(fight);
   }

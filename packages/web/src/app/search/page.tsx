@@ -33,7 +33,10 @@ function SearchResults() {
     );
   }
 
-  if (isLoading) {
+  // While auth resolves the query is disabled, so React Query reports
+  // isLoading=false (pending+idle). Treat "no data yet, no error" as loading
+  // too, otherwise we flash "No results found" before the fetch runs.
+  if (authLoading || isLoading || (!data && !error)) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
