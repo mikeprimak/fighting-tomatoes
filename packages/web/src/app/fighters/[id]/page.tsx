@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { FighterDetailClient } from './FighterDetailClient';
+import { formatRecord } from '@/lib/record';
 
 const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrender.com/api';
 
@@ -16,15 +17,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // description; fall back to the bare record line.
     const conf = fighter.aiProfileConfidence ?? 0;
     const tldr = conf >= 0.5 ? (fighter.aiProfile?.tldr as string | undefined) : undefined;
+    const record = formatRecord(fighter);
     const description = tldr
       ? `${name}: ${tldr} Fight ratings and reviews on Good Fights.`
-      : `${name} (${fighter.wins}-${fighter.losses}-${fighter.draws}). See fight ratings and reviews on Good Fights.`;
+      : `${name}${record ? ` (${record})` : ''}. See fight ratings and reviews on Good Fights.`;
     return {
       title: name,
       description,
       openGraph: {
         title: name,
-        description: tldr || `${fighter.weightClass || ''} — ${fighter.wins}-${fighter.losses}-${fighter.draws}`.trim(),
+        description: tldr || `${fighter.weightClass || ''}${record ? ` — ${record}` : ''}`.trim(),
         ...(fighter.profileImage ? { images: [fighter.profileImage] } : {}),
       },
     };

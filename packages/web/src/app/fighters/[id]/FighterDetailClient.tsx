@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getFighter, getFights } from '@/lib/api';
 import { FighterAvatar } from '@/components/FighterAvatar';
+import { hasRecord } from '@/lib/record';
 import { formatEventDate } from '@/utils/dateFormatters';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
@@ -80,9 +81,11 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
           {fighter.nickname && (
             <p className="text-sm text-text-secondary">&quot;{fighter.nickname}&quot;</p>
           )}
-          <p className="mt-1 text-lg font-semibold">
-            {fighter.wins}-{fighter.losses}-{fighter.draws}
-          </p>
+          {hasRecord(fighter) && (
+            <p className="mt-1 text-lg font-semibold">
+              {fighter.wins}-{fighter.losses}-{fighter.draws}
+            </p>
+          )}
           {fighter.weightClass && (
             <p className="text-sm text-text-secondary">{formatWeightClass(fighter.weightClass)}</p>
           )}

@@ -9,12 +9,9 @@ import { Loader2, Bell, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PopularFightersBlock } from '@/components/sidebar/PopularFightersBlock';
+import { hasRecord } from '@/lib/record';
 
 const NOTIF_CTA_DISMISSED_KEY = 'followed_fighters_notif_cta_dismissed';
-
-function hasRecord(f: { wins?: number; losses?: number; draws?: number }): boolean {
-  return (f.wins ?? 0) + (f.losses ?? 0) + (f.draws ?? 0) > 0;
-}
 
 /** "LIGHT_HEAVYWEIGHT" -> "Light Heavyweight" */
 function formatWeightClass(wc?: string | null): string | null {

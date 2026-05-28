@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getFight, getFightAggregateStats, getFightReviews, getFightPreFightComments } from '@/lib/api';
 import { FighterAvatar } from '@/components/FighterAvatar';
+import { hasRecord } from '@/lib/record';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { formatEventDate } from '@/utils/dateFormatters';
 import { useSpoilerFree } from '@/lib/spoilerFree';
@@ -60,9 +61,11 @@ function FighterDisplay({ fighter, isWinner, hideSpoilers, resultText }: { fight
       {!hideSpoilers && isWinner && resultText && (
         <p className="text-center text-xs font-semibold text-success">{resultText}</p>
       )}
-      <p className="text-xs text-text-secondary">
-        {fighter.wins}-{fighter.losses}-{fighter.draws}
-      </p>
+      {hasRecord(fighter) && (
+        <p className="text-xs text-text-secondary">
+          {fighter.wins}-{fighter.losses}-{fighter.draws}
+        </p>
+      )}
     </div>
   );
 }
