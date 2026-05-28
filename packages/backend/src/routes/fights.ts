@@ -366,6 +366,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         } else {
           transformed.averageHype = 0;
         }
+        transformed.hypeCount = hypeData?.count || 0;
 
         // Add comment count and review count
         transformed.commentCount = fight._count?.preFightComments || 0;
