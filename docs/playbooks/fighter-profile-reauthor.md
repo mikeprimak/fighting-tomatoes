@@ -19,13 +19,21 @@ mechanics* for the refresh case; the authoring rules are identical to the backfi
 
 ## When to run
 
-**Monday after any card that featured a hand-authored (top-367) fighter.** That's
-the only time the stale set is non-empty. Volume per run is small (typically a
-handful). You can also run it any time to check.
+**Wednesday after any card that featured a hand-authored (top-367) fighter.**
+Not Monday — fight results/reviews aren't fully settled that soon. That's the only
+time the stale set is non-empty. Volume per run is small (typically a handful).
 
-Trigger phrase: **"fighter profile refresh"** — Mike says this, you run the steps
-below. (If we later want it hands-off, wire step 1 into a weekly `/schedule`
-remote agent that exits when the dump is empty.)
+**The nudge is in the admin panel.** The AI Enrichment health widget on
+`admin.html` shows an amber "N VIP bios need an Opus refresh" callout (with names +
+old→new record) whenever the stale set is non-empty, and "✓ VIP bios: all current"
+otherwise. Fed by `/admin/health/enrichment` (`data.staleVipProfiles`), using the
+SAME predicate as `FP_STALE` below — so the panel count and the dump always agree.
+
+Trigger phrase: **"fighter profile refresh"** — Mike says this (usually after
+seeing the admin nudge), you run the steps below. We deliberately did NOT automate
+the *writing* (unattended LLM writes to prod = the exact risk the hand-authored
+tier exists to avoid); we automated the *detection* instead, keeping a reviewed
+write in the loop.
 
 ---
 

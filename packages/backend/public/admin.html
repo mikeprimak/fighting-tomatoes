@@ -4518,6 +4518,25 @@
         `;
       }).join('');
 
+      const vip = data.staleVipProfiles || { count: 0, fighters: [] };
+      let vipBanner;
+      if (vip.count === 0) {
+        vipBanner = `
+          <div style="font-size: 0.8rem; color: #00c853; margin-bottom: 0.75rem;">✓ VIP (hand-authored) bios: all current</div>
+        `;
+      } else {
+        const names = vip.fighters.map(f =>
+          `<li style="margin: 0.15rem 0;">${f.name} <span style="color: var(--text-secondary);">(${f.recordWas} → ${f.recordNow})</span></li>`
+        ).join('');
+        vipBanner = `
+          <div style="padding: 0.75rem; background: rgba(255, 152, 0, 0.1); border: 1px solid rgba(255, 152, 0, 0.4); border-radius: 6px; margin-bottom: 0.75rem;">
+            <div style="font-weight: 600; color: #ff9800;">⚠ ${vip.count} VIP bio${vip.count === 1 ? '' : 's'} need an Opus refresh (the fighter fought since the bio was written)</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">The Haiku cron is pinned off these. Ask Claude Code to run <strong>"fighter profile refresh"</strong> — typically the Wednesday after a card, once results are settled.</div>
+            <ul style="font-size: 0.8rem; margin: 0.5rem 0 0 1.1rem; padding: 0;">${names}</ul>
+          </div>
+        `;
+      }
+
       const inWindowTable = inWin.total > 0 ? `
         <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin: 0.75rem 0 0.25rem 0;">In-window events</div>
         <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 0.75rem;">
@@ -4558,7 +4577,7 @@
         </table>
       `;
 
-      body.innerHTML = summary + windowBanner + inWindowTable + promoTable;
+      body.innerHTML = summary + vipBanner + windowBanner + inWindowTable + promoTable;
     }
 
     function pct(num, total) {

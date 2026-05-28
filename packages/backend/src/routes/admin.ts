@@ -1598,6 +1598,30 @@ export async function adminRoutes(fastify: FastifyInstance) {
         _max: { aiEnrichedAt: true },
       });
 
+      // Stale VIP profiles: hand-authored (Opus-tier) bios whose live record no
+      // longer matches the enrich snapshot because the fighter FOUGHT since. The
+      // Haiku cron is pinned off these, so they only refresh via the manual Opus
+      // re-author routine (docs/playbooks/fighter-profile-reauthor.md). This is the
+      // operator nudge for that. Excludes the '0-0-0-0' snapshot case (a bulk
+      // record backfill landing after authoring — bio is already correct; that's
+      // healed by fighter-profile-reconcile-snapshot.ts, not re-authored).
+      const staleVips = await prisma.$queryRaw<
+        Array<{ id: string; name: string; record_was: string; record_now: string; enriched_at: Date }>
+      >`
+        SELECT
+          ft.id AS id,
+          TRIM(ft."firstName" || ' ' || ft."lastName") AS name,
+          ft."aiProfileRecordAtEnrich" AS record_was,
+          (ft.wins || '-' || ft.losses || '-' || ft.draws || '-' || ft."noContests") AS record_now,
+          ft."aiProfileEnrichedAt" AS enriched_at
+        FROM fighters ft
+        WHERE ft."aiProfileSource" = 'handauthored'
+          AND ft."aiProfileRecordAtEnrich" <> '0-0-0-0'
+          AND ft."aiProfileRecordAtEnrich" IS DISTINCT FROM
+              (ft.wins || '-' || ft.losses || '-' || ft.draws || '-' || ft."noContests")
+        ORDER BY ft."lastName" ASC
+      `;
+
       return reply.send({
         success: true,
         data: {
@@ -1608,6 +1632,16 @@ export async function adminRoutes(fastify: FastifyInstance) {
             withNarrative: totalWithNarrative,
           },
           lastEnrichmentAt: lastEnrichedAcross._max.aiEnrichedAt?.toISOString() ?? null,
+          staleVipProfiles: {
+            count: staleVips.length,
+            fighters: staleVips.map((v) => ({
+              id: v.id,
+              name: v.name,
+              recordWas: v.record_was,
+              recordNow: v.record_now,
+              enrichedAt: v.enriched_at?.toISOString() ?? null,
+            })),
+          },
           inWindow: {
             total: inWindow.length,
             missing: inWindowMissing.length,

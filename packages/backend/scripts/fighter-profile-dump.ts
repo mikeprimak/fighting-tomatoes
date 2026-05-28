@@ -67,10 +67,14 @@ async function main() {
 
   // FP_STALE=1 = the Opus re-author routine's selection: hand-authored profiles
   // whose live record no longer matches aiProfileRecordAtEnrich (the fighter has
-  // fought since), i.e. the INVERSE of the Haiku cron's pin filter. Optionally also
-  // refresh by age via FP_STALE_DAYS (off by default — a hand-authored bio isn't
-  // stale until the record actually moves). In this mode you RE-author everyone the
-  // dump returns; they all show [DONE], which is expected (do NOT skip them).
+  // fought since), i.e. the INVERSE of the Haiku cron's pin filter. Excludes the
+  // '0-0-0-0' snapshot case (a bulk record backfill landing after authoring — the
+  // bio is already correct; heal those with fighter-profile-reconcile-snapshot.ts,
+  // do NOT re-author them). Same predicate as the /admin/health/enrichment VIP
+  // nudge, so the dump and the admin reminder always agree. Optionally also refresh
+  // by age via FP_STALE_DAYS (off by default — a hand-authored bio isn't stale until
+  // the record actually moves). In this mode you RE-author everyone the dump returns;
+  // they all show [DONE], which is expected (do NOT skip them).
   const staleHandauthored = !!process.env.FP_STALE && process.env.FP_STALE !== '0';
   const staleDays = process.env.FP_STALE_DAYS ? Number(process.env.FP_STALE_DAYS) : null;
   const staleCutoff =
@@ -79,11 +83,13 @@ async function main() {
       : null;
 
   const whereClause = staleHandauthored
-    ? Prisma.sql`ft."aiProfileSource" = 'handauthored' AND (
-        ft."aiProfileRecordAtEnrich" IS DISTINCT FROM
-          (ft.wins || '-' || ft.losses || '-' || ft.draws || '-' || ft."noContests")
-        ${staleCutoff ? Prisma.sql`OR ft."aiProfileEnrichedAt" < ${staleCutoff}` : Prisma.empty}
-      )`
+    ? Prisma.sql`ft."aiProfileSource" = 'handauthored'
+        AND ft."aiProfileRecordAtEnrich" <> '0-0-0-0'
+        AND (
+          ft."aiProfileRecordAtEnrich" IS DISTINCT FROM
+            (ft.wins || '-' || ft.losses || '-' || ft.draws || '-' || ft."noContests")
+          ${staleCutoff ? Prisma.sql`OR ft."aiProfileEnrichedAt" < ${staleCutoff}` : Prisma.empty}
+        )`
     : includeDone
       ? Prisma.sql`TRUE`
       : Prisma.sql`ft."aiProfileEnrichedAt" IS NULL`;
