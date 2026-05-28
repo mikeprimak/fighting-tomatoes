@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - Good Fights</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #181818;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 420px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .logo {
+            margin-bottom: 16px;
+            display: inline-block;
+            background-color: #181818;
+            border-radius: 12px;
+            padding: 16px 24px;
+        }
+
+        .logo img {
+            max-height: 150px;
+            width: auto;
+            display: block;
+        }
+
+        .app-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #202020;
+            margin-bottom: 24px;
+        }
+
+        .status-icon {
+            font-size: 72px;
+            margin-bottom: 16px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #202020;
+            margin-bottom: 12px;
+        }
+
+        .message {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: #16a34a;
+            color: #ffffff;
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+            margin-top: 12px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #16a34a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 24px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .store-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .store-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: #000;
+            color: #fff;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .store-btn:hover {
+            background: #333;
+        }
+
+        .store-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .desktop-message {
+            background: #f8f8f8;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .desktop-message p {
+            color: #333;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        .footer {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #eee;
+            font-size: 14px;
+            color: #999;
+        }
+
+        .footer a {
+            color: #16a34a;
+            text-decoration: none;
+        }
+
+        .small-text {
+            font-size: 13px;
+            color: #999;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="https://fightcrewapp-backend.onrender.com/images/logo-v2.png" alt="Good Fights">
+        </div>
+        <div class="app-name">Good Fights</div>
+
+        <!-- Loading State -->
+        <div id="loading">
+            <div class="spinner"></div>
+            <p class="message">Verifying your email address...</p>
+        </div>
+
+        <!-- Success State - Mobile -->
+        <div id="success-mobile" class="hidden">
+            <div class="status-icon">✅</div>
+            <h1 class="title">Email Verified!</h1>
+            <p class="message">
+                Your email has been verified successfully. You now have full access to all Good Fights features.
+            </p>
+            <a href="goodfights://verify-email-success" class="btn btn-primary" id="open-app-btn">Open App</a>
+            <p class="small-text">If the app doesn't open, make sure Good Fights is installed.</p>
+        </div>
+
+        <!-- Success State - Desktop -->
+        <div id="success-desktop" class="hidden">
+            <div class="status-icon">✅</div>
+            <h1 class="title">Email Verified!</h1>
+            <p class="message">
+                Your email has been verified successfully. You now have full access to all Good Fights features.
+            </p>
+            <div class="desktop-message">
+                <p>📱 Open the Good Fights app on your phone to continue. The app will automatically recognize your verified status.</p>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="hidden">
+            <div class="status-icon" id="error-icon">❌</div>
+            <h1 class="title" id="error-title">Verification Failed</h1>
+            <p class="message" id="error-message">
+                This verification link is invalid or has expired. Please request a new verification email from the app.
+            </p>
+            <a href="goodfights://resend-verification" class="btn btn-primary" id="error-btn-mobile">Open App to Resend</a>
+            <div id="error-desktop-msg" class="hidden desktop-message" style="margin-top: 16px;">
+                <p>📱 Open the Good Fights app on your phone to request a new verification email.</p>
+            </div>
+        </div>
+
+        <!-- No Token State -->
+        <div id="no-token" class="hidden">
+            <div class="status-icon">🔗</div>
+            <h1 class="title">Invalid Link</h1>
+            <p class="message">
+                This link appears to be incomplete. Please check your email and click the verification link again.
+            </p>
+            <a href="https://goodfights.app" class="btn btn-secondary">Visit Website</a>
+        </div>
+
+        <div class="footer">
+            <p>Need help? <a href="mailto:contact@goodfights.app">Contact Support</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = 'https://fightcrewapp-backend.onrender.com/api';
+
+        // Detect if user is on mobile
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Try to open the app (for mobile)
+        function tryOpenApp(deepLink) {
+            // Create a hidden iframe to attempt the deep link
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = deepLink;
+            document.body.appendChild(iframe);
+
+            // Also try window.location as backup
+            setTimeout(() => {
+                window.location.href = deepLink;
+            }, 100);
+
+            // Clean up iframe
+            setTimeout(() => {
+                document.body.removeChild(iframe);
+            }, 2000);
+        }
+
+        async function verifyEmail() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+
+            const loadingEl = document.getElementById('loading');
+            const successMobileEl = document.getElementById('success-mobile');
+            const successDesktopEl = document.getElementById('success-desktop');
+            const errorEl = document.getElementById('error');
+            const noTokenEl = document.getElementById('no-token');
+            const errorIconEl = document.getElementById('error-icon');
+            const errorTitleEl = document.getElementById('error-title');
+            const errorMessageEl = document.getElementById('error-message');
+            const errorBtnMobile = document.getElementById('error-btn-mobile');
+            const errorDesktopMsg = document.getElementById('error-desktop-msg');
+
+            const onMobile = isMobile();
+
+            // No token provided
+            if (!token) {
+                loadingEl.classList.add('hidden');
+                noTokenEl.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/verify-email?token=${token}`);
+                const data = await response.json();
+
+                loadingEl.classList.add('hidden');
+
+                if (response.ok) {
+                    // Show appropriate success state
+                    if (onMobile) {
+                        successMobileEl.classList.remove('hidden');
+                        // Auto-try to open the app on mobile
+                        setTimeout(() => {
+                            tryOpenApp('goodfights://verify-email-success');
+                        }, 500);
+                    } else {
+                        successDesktopEl.classList.remove('hidden');
+                    }
+                } else {
+                    errorEl.classList.remove('hidden');
+
+                    // Tailor the error UI to the specific failure so users can
+                    // self-diagnose instead of all roads leading to "request a new email".
+                    // TOKEN_STALE is the common case: a newer resend replaced this
+                    // link, or the account is already verified. Resending again just
+                    // repeats the cycle, so we steer them to the latest email / sign-in
+                    // rather than offering "Resend".
+                    const isStale = data.code === 'TOKEN_STALE';
+                    const isExpired = data.code === 'TOKEN_EXPIRED';
+
+                    if (isStale) {
+                        errorIconEl.textContent = '📬';
+                        errorTitleEl.textContent = 'Check Your Inbox';
+                    } else if (isExpired) {
+                        errorIconEl.textContent = '⏳';
+                        errorTitleEl.textContent = 'Link Expired';
+                    }
+                    if (data.error) {
+                        errorMessageEl.textContent = data.error;
+                    }
+
+                    // Stale links should not prompt another resend (that's what caused
+                    // the dead link). Expired/other errors keep the resend CTA.
+                    if (isStale) {
+                        errorBtnMobile.classList.add('hidden');
+                        errorDesktopMsg.classList.add('hidden');
+                    } else if (onMobile) {
+                        errorBtnMobile.classList.remove('hidden');
+                        errorDesktopMsg.classList.add('hidden');
+                    } else {
+                        errorBtnMobile.classList.add('hidden');
+                        errorDesktopMsg.classList.remove('hidden');
+                    }
+                }
+            } catch (err) {
+                loadingEl.classList.add('hidden');
+                errorEl.classList.remove('hidden');
+                errorMessageEl.textContent = 'Unable to connect to the server. Please try again later.';
+
+                if (!onMobile) {
+                    errorBtnMobile.classList.add('hidden');
+                    errorDesktopMsg.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Run verification when page loads
+        verifyEmail();
+    </script>
+</body>
+</html>

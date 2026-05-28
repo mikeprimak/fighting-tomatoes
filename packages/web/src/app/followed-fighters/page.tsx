@@ -85,9 +85,7 @@ export default function FollowedFightersPage() {
             <>
               Follow to save them.{' '}
               <a
-                href="https://goodfights.app"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/download?utm_source=web&utm_medium=followed-fighters&utm_campaign=get-the-app"
                 className="text-primary hover:underline"
               >
                 Get the mobile app
@@ -110,9 +108,7 @@ export default function FollowedFightersPage() {
                 Push notifications are mobile-only. Install Good Fights on iOS or Android to get pinged when fighters you follow are booked or walking out.
               </p>
               <a
-                href="https://goodfights.app"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/download?utm_source=web&utm_medium=followed-fighters-cta&utm_campaign=get-the-app"
                 className="mt-2 inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/20"
               >
                 Get the app

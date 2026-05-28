@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.fightcrewapp.mobile",
+    "sha256_cert_fingerprints": [
+      "10:8C:1F:6C:73:D8:AB:15:D2:B2:07:83:19:44:AE:9D:9D:92:88:3E:39:B7:89:D5:D2:B2:4F:81:0A:E4:D7:C8"
+    ]
+  }
+}]
