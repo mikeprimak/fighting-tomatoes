@@ -50,7 +50,7 @@ export function AppDownloadBanner() {
       <button
         onClick={handleDismiss}
         aria-label="Dismiss"
-        className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-text-on-accent/80 hover:text-text-on-accent"
+        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer rounded p-1 text-text-on-accent/80 hover:text-text-on-accent"
       >
         <X size={16} />
       </button>
