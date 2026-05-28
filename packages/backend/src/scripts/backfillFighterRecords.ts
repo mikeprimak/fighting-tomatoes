@@ -16,7 +16,7 @@
  *   pnpm exec tsx src/scripts/backfillFighterRecords.ts --apply    # write
  */
 
-import { PrismaClient, Sport } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fetchAllUFCStatsFighters, UFCStatsFighterRow } from '../services/scrapeUFCStatsFighters';
@@ -57,12 +57,18 @@ async function main() {
     }
   }
 
-  // 3. Load our MMA fighters currently at 0-0-0.
+  // 3. Load ALL our fighters currently at 0-0-0 (any sport). ufcstats only
+  //    contains people who fought in a UFC/Zuffa-tracked promotion, so a name
+  //    match is itself strong evidence the fighter is an MMA crossover — even
+  //    if our row is mis-tagged BOXING (e.g. Nate Diaz, scraped off a boxing
+  //    event). We still never overwrite a populated record and skip every
+  //    ambiguous name, so the worst case for a true same-named boxer is leaving
+  //    them at 0-0-0.
   const ours = await prisma.fighter.findMany({
-    where: { sport: Sport.MMA, wins: 0, losses: 0, draws: 0, noContests: 0 },
-    select: { id: true, firstName: true, lastName: true },
+    where: { wins: 0, losses: 0, draws: 0, noContests: 0 },
+    select: { id: true, firstName: true, lastName: true, sport: true },
   });
-  console.log(`Our empty-record MMA fighters: ${ours.length}`);
+  console.log(`Our empty-record fighters (all sports): ${ours.length}`);
 
   // Group our side by name to detect our own duplicates.
   const oursByName = new Map<string, typeof ours>();
@@ -75,7 +81,7 @@ async function main() {
   }
 
   // 4. Match + plan updates.
-  const updates: { id: string; name: string; wins: number; losses: number; draws: number }[] = [];
+  const updates: { id: string; name: string; sport: string; wins: number; losses: number; draws: number }[] = [];
   const skippedAmbiguousStats: string[] = [];
   const skippedAmbiguousOurs: string[] = [];
   const skippedZeroRecord: string[] = [];
@@ -92,8 +98,12 @@ async function main() {
       continue;
     }
     const f = group[0];
-    updates.push({ id: f.id, name: `${f.firstName} ${f.lastName}`, wins: r.wins, losses: r.losses, draws: r.draws });
+    updates.push({ id: f.id, name: `${f.firstName} ${f.lastName}`, sport: f.sport, wins: r.wins, losses: r.losses, draws: r.draws });
   }
+
+  // Surface non-MMA matches separately — these are the newly-included crossover
+  // fighters (boxing-tagged etc.); worth eyeballing before --apply.
+  const nonMmaUpdates = updates.filter(u => u.sport !== 'MMA');
 
   console.log('');
   console.log(`Matched & fillable:        ${updates.length}`);
@@ -102,9 +112,9 @@ async function main() {
   console.log(`Skipped — duplicate on our side:   ${skippedAmbiguousOurs.length}`);
   console.log(`Skipped — ufcstats also 0-0-0:     ${skippedZeroRecord.length}`);
 
-  console.log('\nSample of planned updates:');
-  for (const u of updates.slice(0, 20)) {
-    console.log(`  ${u.name}: ${u.wins}-${u.losses}-${u.draws}`);
+  console.log(`\nNon-MMA matches (newly included): ${nonMmaUpdates.length}`);
+  for (const u of nonMmaUpdates.slice(0, 40)) {
+    console.log(`  [${u.sport}] ${u.name}: ${u.wins}-${u.losses}-${u.draws}`);
   }
 
   // 5. Write a full audit log.

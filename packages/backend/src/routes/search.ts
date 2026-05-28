@@ -96,6 +96,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
           wins: true,
           losses: true,
           draws: true,
+          noContests: true,
           isChampion: true,
           championshipTitle: true,
           totalFights: true,
@@ -631,7 +632,10 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         data: {
           fighters: fighters.map((f) => ({
             ...f,
-            record: `${f.wins}-${f.losses}${f.draws > 0 ? `-${f.draws}` : ''}`,
+            record:
+              f.wins + f.losses + f.draws + f.noContests > 0
+                ? `${f.wins}-${f.losses}${f.draws > 0 ? `-${f.draws}` : ''}`
+                : null,
           })),
           fights,
           events,
