@@ -38,8 +38,17 @@ interface CompletedFightCardProps {
     userReview?: { content: string; rating?: number };
     userPredictedWinner?: string | null;
     fightStatus: string;
+    event?: { name?: string | null; date?: string | null };
   };
   showRank?: number;
+  showEvent?: boolean;
+}
+
+function formatEventDate(iso: string | null | undefined) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function formatMethod(method: string | null | undefined) {
@@ -135,7 +144,7 @@ function FighterBlock({
   );
 }
 
-export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps) {
+export function CompletedFightCard({ fight, showRank, showEvent }: CompletedFightCardProps) {
   const { spoilerFreeMode } = useSpoilerFree();
   const hideSpoilers = spoilerFreeMode && !fight.userRating;
   const [modalOpen, setModalOpen] = useState(false);
@@ -170,7 +179,8 @@ export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps)
         onClick={() => setModalOpen(true)}
         className="block w-full text-left"
       >
-      <div className="group relative flex min-h-[72px] items-stretch overflow-visible transition-colors hover:bg-background/40">
+      <div className="group transition-colors hover:bg-background/40">
+        <div className="relative flex min-h-[72px] items-stretch overflow-visible">
         {/* Left: hype square offset behind rating square */}
         <div className="relative w-12 shrink-0">
           {/* Hype square (behind, offset down+right) */}
@@ -287,6 +297,13 @@ export function CompletedFightCard({ fight, showRank }: CompletedFightCardProps)
             />
           )}
         </div>
+        </div>
+        {showEvent && fight.event?.name && (
+          <p className="truncate px-3 pb-2 text-center text-[10px] leading-none text-text-secondary">
+            {fight.event.name}
+            {fight.event.date ? ` · ${formatEventDate(fight.event.date)}` : ''}
+          </p>
+        )}
       </div>
       </button>
       <RateFightModal
