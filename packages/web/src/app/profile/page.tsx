@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/lib/auth';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { User, LogIn, LogOut } from 'lucide-react';
 import { IdentityBlock } from '@/components/sidebar/IdentityBlock';
 import { FollowedFightersStrip } from '@/components/sidebar/FollowedFightersStrip';
@@ -14,6 +15,12 @@ import { YourCommentsBlock } from '@/components/sidebar/YourCommentsBlock';
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+  };
 
   if (isLoading) {
     return (
@@ -72,7 +79,7 @@ export default function ProfilePage() {
       </div>
 
       <button
-        onClick={() => logout()}
+        onClick={handleLogout}
         className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-card p-3 text-sm font-medium text-danger transition-colors hover:border-danger/40 hover:bg-danger/5"
       >
         <LogOut size={16} />
