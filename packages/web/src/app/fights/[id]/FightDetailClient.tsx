@@ -72,7 +72,7 @@ function FighterDisplay({ fighter, isWinner, hideSpoilers, resultText }: { fight
 
 export function FightDetailClient({ fightId, initialFight }: Props) {
   const { spoilerFreeMode } = useSpoilerFree();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const [outcomeRevealed, setOutcomeRevealed] = useState(false);
   const [rateModalOpen, setRateModalOpen] = useState(false);
   const [hypeModalOpen, setHypeModalOpen] = useState(false);
@@ -81,6 +81,12 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
     queryKey: ['fight', fightId],
     queryFn: () => getFight(fightId),
     initialData: initialFight ? { fight: initialFight } : undefined,
+    // SSR initialFight is fetched unauthenticated (no userRating). Treat it as
+    // stale and refetch once auth is restored so the authenticated response —
+    // which carries the user's own rating/review — replaces it. Mirrors
+    // EventDetailClient's fight query.
+    initialDataUpdatedAt: 0,
+    enabled: !authLoading,
   });
 
   const { data: statsData } = useQuery({
