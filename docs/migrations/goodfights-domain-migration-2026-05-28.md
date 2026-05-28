@@ -9,6 +9,56 @@ start here.
 
 ---
 
+## STATUS: ✅ CUTOVER COMPLETE — 2026-05-28 ~19:15 UTC
+
+`goodfights.app` + `www.goodfights.app` now serve `packages/web` and are owned by
+the **`web`** Vercel project, auto-tracking its latest production deployment.
+Verified live by curl (apex 200, `/blog` 200, both `.well-known` files 200 JSON,
+`/download` UA-redirects to App Store / Play Store, sitemap + robots on
+goodfights.app). Legacy `fightingtomatoes.com` → goodfights.app 308 still intact.
+No observable downtime during the switch.
+
+### What the apex was actually attached to (the surprise)
+
+`goodfights.app` was **not** owned by a project named "landing." It was attached
+to the Vercel project **`fighting-tomatoes-backend`** — a *misnamed* project whose
+production deployment is the static landing site (this is a Vercel-hosted static
+deploy, unrelated to the real Fastify API on Render that the apps actually call).
+`vercel domains inspect goodfights.app` → "Aliases" listed it under that
+deployment. There is no `packages/landing`-named Vercel project.
+
+### Actual cutover commands (run from `packages/web`, linked to `web`)
+
+`vercel domains add goodfights.app --force` **does not move** an apex between
+projects — the API returns `alias_conflict` with no source project id, and the CLI
+`--force` only moves when the id is present. The working sequence was:
+
+1. `vercel alias set web-<hash>-michael-primaks-projects.vercel.app goodfights.app`
+   (+ same for `www`) — surgical, instantly reversible re-point. This got the site
+   serving immediately but **pins to one deployment** (does not track future
+   deploys), so it's only a stopgap.
+2. `vercel domains rm goodfights.app -y` — detaches it from `fighting-tomatoes-backend`
+   (removes the team domain + its 2 aliases). Brief blip only.
+3. `vercel domains add goodfights.app` (linked project = `web`) → "will
+   automatically get assigned to your latest production deployment."
+4. `vercel domains add www.goodfights.app` — same.
+
+DNS is external (Cloudflare A/CNAME → Vercel, unchanged throughout), so the re-add
+re-verified instantly with no registrar action.
+
+### Still open
+
+- `www.goodfights.app` currently serves the app directly (200) rather than
+  308-redirecting to the apex as it did under the old project. Canonical/sitemap
+  are all apex (`SITE_URL=goodfights.app`), so SEO is fine, but a www→apex redirect
+  would be tidier. Configure in Vercel project → Domains → www → "Redirect to."
+- `fighting-tomatoes-backend` Vercel project is now orphaned of the apex (still
+  reachable at `fighting-tomatoes-backend.vercel.app` = the old landing). Keep as a
+  rollback net for a few days, then delete the project.
+- TEAM_ID placeholder in AASA + Android all-URL handling — see Known issues below.
+
+---
+
 ## TL;DR
 
 - `goodfights.app` now serves **`packages/web`** (the Next.js app), not the static landing.
@@ -108,10 +158,15 @@ Store URLs used everywhere:
 
 If the cutover goes wrong:
 
-1. **Fast revert (domain):** In Vercel, remove `goodfights.app` + `www` from the
-   **web** project and re-add them to the **landing** project. The landing site
-   is untouched and still deployed, so this restores the prior state within a
-   minute (plus cert re-issue).
+1. **Fast revert (domain):** From `packages/web` (linked to `web`):
+   `vercel domains rm goodfights.app -y` then re-add to the landing's project —
+   which is **`fighting-tomatoes-backend`**, NOT a "landing" project (see Status
+   note above). Easiest re-attach: `cd` a scratch dir, `vercel link` to
+   `fighting-tomatoes-backend`, `vercel domains add goodfights.app`. Its old
+   landing deployment is untouched and still live at
+   `fighting-tomatoes-backend.vercel.app`, so this restores the prior state in
+   under a minute. Or, faster non-destructive stopgap: `vercel alias set
+   <fighting-tomatoes-backend-prod-deployment-url> goodfights.app`.
 2. **Code revert:** `git revert` the migration commit. The CTA links go back to
    `https://goodfights.app` and the `.well-known`/`/download` additions are
    removed. Harmless to leave in place even if the domain is rolled back.
