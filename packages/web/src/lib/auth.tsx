@@ -22,6 +22,9 @@ interface User {
   hypeDistribution?: Record<string, number>;
   points?: number;
   level?: number;
+  // True when this account has a push token registered (i.e. uses the mobile app).
+  // Only populated by /auth/profile; undefined on the minimal login/register response.
+  hasApp?: boolean;
 }
 
 interface AuthContextType {
@@ -165,4 +168,12 @@ export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
+}
+
+// Whether the signed-in account already uses the mobile app (has a registered
+// push token). Used to reframe/suppress "Get the app" CTAs. Treats the unknown
+// state (logged out, or profile not yet fetched) as false so the CTA shows by default.
+export function useHasApp(): boolean {
+  const { user } = useAuth();
+  return !!user?.hasApp;
 }

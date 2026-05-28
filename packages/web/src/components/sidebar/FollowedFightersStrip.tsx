@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/lib/auth';
+import { useAuth, useHasApp } from '@/lib/auth';
 import { getFollowedFighters } from '@/lib/api';
 import { FighterAvatar } from '@/components/FighterAvatar';
 import { ChevronRight } from 'lucide-react';
@@ -11,6 +11,7 @@ const STRIP_LIMIT = 5;
 
 export function FollowedFightersStrip() {
   const { user, isAuthenticated } = useAuth();
+  const hasApp = useHasApp();
 
   const { data } = useQuery({
     queryKey: ['followedFighters', user?.id ?? null],
@@ -41,16 +42,22 @@ export function FollowedFightersStrip() {
         </Link>
       </div>
       <p className="mb-3 text-[10px] leading-snug text-text-secondary/80">
-        Follow to save them.{' '}
-        <a
-          href="https://goodfights.app"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-primary hover:underline"
-        >
-          Get the app
-        </a>{' '}
-        to be notified for upcoming fights.
+        {hasApp ? (
+          <>Follow to save them. You&apos;ll be notified in the app for upcoming fights.</>
+        ) : (
+          <>
+            Follow to save them.{' '}
+            <a
+              href="https://goodfights.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Get the app
+            </a>{' '}
+            to be notified for upcoming fights.
+          </>
+        )}
       </p>
 
       <div className="flex gap-2">
