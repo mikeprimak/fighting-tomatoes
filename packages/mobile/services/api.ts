@@ -1198,6 +1198,24 @@ class ApiService {
     return this.makeRequest(`/editorial?limit=${limit}`);
   }
 
+  // Single post with rendered HTML body, for the native in-app reader.
+  // Backend route: GET /api/editorial/:slug.
+  async getEditorialPost(slug: string): Promise<{
+    post: {
+      slug: string;
+      title: string;
+      date: string;
+      author: string;
+      excerpt: string;
+      tags: string[];
+      image: string;
+      featured: boolean;
+      html: string;
+    };
+  }> {
+    return this.makeRequest(`/editorial/${encodeURIComponent(slug)}`);
+  }
+
   async getNewsArticle(articleId: string): Promise<{
     article: {
       id: string;

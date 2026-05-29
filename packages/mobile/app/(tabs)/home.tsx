@@ -12,11 +12,10 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import * as WebBrowser from 'expo-web-browser';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
-import { apiService, buildBlogPostUrl, resolveBlogImageUrl, WEB_URL } from '../../services/api';
+import { apiService, resolveBlogImageUrl } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
 import { CommentCard } from '../../components';
 import { PromotionLogo } from '../../components/PromotionLogo';
@@ -26,8 +25,6 @@ import { formatEventDate } from '../../utils/dateFormatters';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import FighterCard from '../../components/FighterCard';
-
-const WEB_BLOG_INDEX = `${WEB_URL}/blog`;
 
 const formatCount = (n: number): string =>
   n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : `${n}`;
@@ -364,7 +361,7 @@ export default function HomeScreen() {
   }, [queryClient]);
 
   const openBlogPost = (slug: string) => {
-    WebBrowser.openBrowserAsync(buildBlogPostUrl(slug)).catch(() => {});
+    router.push(`/blog/${slug}` as any);
   };
 
   const styles = makeStyles(colors);
@@ -384,7 +381,7 @@ export default function HomeScreen() {
         styles={styles}
         title="From the Blog"
         icon="newspaper-o"
-        onSeeAll={() => WebBrowser.openBrowserAsync(WEB_BLOG_INDEX).catch(() => {})}
+        onSeeAll={() => router.push('/blog' as any)}
       >
         {isEditorialLoading ? (
           <Loading colors={colors} styles={styles} />
