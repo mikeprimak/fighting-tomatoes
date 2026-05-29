@@ -1,0 +1,3 @@
+# Editorial blog posts are generated from packages/web by scripts/syncBlogPosts.js
+# (runs on dev/build). Single source of truth lives in the web package.
+src/content/posts/
