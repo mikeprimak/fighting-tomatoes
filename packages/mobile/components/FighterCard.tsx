@@ -9,7 +9,7 @@ import {
 import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../constants/Colors';
-import { getFighterImage, getFighterName } from './fight-cards/shared/utils';
+import { getFighterImage, getFighterName, getFighterDisplayName } from './fight-cards/shared/utils';
 
 interface Fighter {
   id: string;
@@ -31,9 +31,10 @@ interface FighterCardProps {
   lastFightDate?: string; // Most recent completed fight date
   nextFightDate?: string; // Next upcoming fight date
   subtitle?: string; // Optional context line (e.g. "1.2K followers", "Booked Tue")
+  hideNickname?: boolean; // Suppress the "Name "Nickname"" form, show plain name
 }
 
-export default function FighterCard({ fighter, onPress, avgRating, fightCount, lastFightDate, nextFightDate, subtitle }: FighterCardProps) {
+export default function FighterCard({ fighter, onPress, avgRating, fightCount, lastFightDate, nextFightDate, subtitle, hideNickname }: FighterCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -93,7 +94,7 @@ export default function FighterCard({ fighter, onPress, avgRating, fightCount, l
 
       <View style={styles.fighterInfo}>
         <Text style={[styles.fighterName, { color: colors.text }]}>
-          {getFighterName(fighter)}
+          {hideNickname ? getFighterDisplayName(fighter) : getFighterName(fighter)}
         </Text>
 
         {avgRating !== undefined && fightCount !== undefined && (
