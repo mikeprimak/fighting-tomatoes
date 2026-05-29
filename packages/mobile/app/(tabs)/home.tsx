@@ -463,7 +463,7 @@ export default function HomeScreen() {
       <Section
         colors={colors}
         styles={styles}
-        title="Most Hyped"
+        title="Most Hyped Upcoming"
         icon="bolt"
         onSeeAll={() => router.push('/(tabs)/events' as any)}
       >
@@ -517,12 +517,8 @@ export default function HomeScreen() {
           fighters.map((f: any) => {
             // Upcoming (hyped) vs recent (rated) — distinguished by which date is set.
             const subtitle = f.nextFightDate
-              ? `Fights ${f.opponentName} ${relUntilPhrase(f.nextFightDate)}${
-                  f.hype ? ` - hyped ${f.hype.toFixed(1)}` : ''
-                }`
-              : `Fought ${f.opponentName} ${relAgoPhrase(f.lastFightDate)}${
-                  f.rating ? ` - rated ${f.rating.toFixed(1)}` : ''
-                }`;
+              ? `Fights ${f.opponentName} ${relUntilPhrase(f.nextFightDate)}`
+              : `Fought ${f.opponentName} ${relAgoPhrase(f.lastFightDate)}`;
             return (
               <FighterCard
                 key={f.fighter.id}
@@ -553,7 +549,7 @@ export default function HomeScreen() {
               <FighterCard
                 key={b.fighter.id}
                 fighter={b.fighter}
-                subtitle={`vs ${b.opponentName} at ${b.event.name} ${relUntilPhrase(b.nextFightDate)}`}
+                subtitle={`vs ${b.opponentName} at ${b.event.name}`}
                 onPress={() => router.push(`/fighter/${b.fighter.id}` as any)}
               />
             ))

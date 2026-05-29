@@ -381,7 +381,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
 
           return transformed;
         })
-        .sort((a: any, b: any) => b.averageHype - a.averageHype)
+        .sort((a: any, b: any) => b.averageHype - a.averageHype || b.hypeCount - a.hypeCount)
         .slice(0, 10);
 
       console.log('[Top Upcoming Fights] Returning data for first fight:', {
