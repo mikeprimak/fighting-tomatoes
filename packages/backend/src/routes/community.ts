@@ -144,29 +144,48 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         },
       } as const;
 
-      // Recent top comments — prioritize the past month.
-      let topReviews = await fastify.prisma.fightReview.findMany({
+      // Daily rotation: comments cycle each day and never repeat two days in a
+      // row (consecutive days draw from adjacent, non-overlapping chunks of the
+      // top pool).
+      const dayIndex = Math.floor(Date.now() / 86_400_000);
+      const PAGE = 3;
+
+      // Pool of recent top comments (past month, fallback to all-time).
+      const RECENT_POOL = 12;
+      let pool = await fastify.prisma.fightReview.findMany({
         where: { fight: { event: { date: { gte: oneMonthAgo } } } },
         orderBy: [{ upvotes: 'desc' }, { createdAt: 'desc' }],
-        take: 3,
+        take: RECENT_POOL,
         include: reviewInclude,
       });
-
-      // Fallback: if nothing in the past month, the 3 most-upvoted of all time.
-      if (topReviews.length === 0) {
-        topReviews = await fastify.prisma.fightReview.findMany({
+      if (pool.length === 0) {
+        pool = await fastify.prisma.fightReview.findMany({
           orderBy: [{ upvotes: 'desc' }, { createdAt: 'desc' }],
-          take: 3,
+          take: RECENT_POOL,
           include: reviewInclude,
         });
       }
 
-      // Classic throwback — a top comment on a fight from over a year ago.
-      const throwbackReview = await fastify.prisma.fightReview.findFirst({
+      let topReviews: typeof pool;
+      if (pool.length <= PAGE) {
+        topReviews = pool; // too few to rotate
+      } else {
+        const chunks = Math.floor(pool.length / PAGE);
+        const start = (dayIndex % chunks) * PAGE;
+        topReviews = pool.slice(start, start + PAGE);
+      }
+
+      // Classic throwback — rotate daily through the top comments on fights from
+      // over a year ago.
+      const throwbackPool = await fastify.prisma.fightReview.findMany({
         where: { fight: { event: { date: { lt: oneYearAgo } } } },
         orderBy: [{ upvotes: 'desc' }, { createdAt: 'desc' }],
+        take: 10,
         include: reviewInclude,
       });
+      const throwbackReview = throwbackPool.length > 0
+        ? throwbackPool[dayIndex % throwbackPool.length]
+        : null;
 
       // Check which reviews the user has upvoted (if authenticated)
       const reviewIds = [
@@ -1033,12 +1052,16 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         for (const fighter of [fight.fighter1, fight.fighter2]) {
           if (recentFighterStats.has(fighter.id)) continue;
           const form = await lastThreeAvg(fighter.id);
+          const opponent = fighter.id === fight.fighter1.id ? fight.fighter2 : fight.fighter1;
           recentFighterStats.set(fighter.id, {
             fighter,
             // Fall back to the triggering fight's rating if no prior rated history.
             avgRating: form.fightCount > 0 ? form.avgRating : (fight.averageRating || 0),
             fightCount: form.fightCount,
-            lastFightDate: form.lastFightDate ?? fight.event.date,
+            // The rated fight that earned them a spot (what the UI describes).
+            lastFightDate: fight.event.date,
+            opponentName: `${opponent.firstName} ${opponent.lastName}`,
+            rating: fight.averageRating || 0,
           });
         }
         if (recentFighterStats.size >= 6) break;
@@ -1082,12 +1105,14 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         for (const fighter of [fight.fighter1, fight.fighter2]) {
           if (upcomingFighterStats.has(fighter.id) || recentFighterStats.has(fighter.id)) continue;
           const form = await lastThreeAvg(fighter.id);
+          const opponent = fighter.id === fight.fighter1.id ? fight.fighter2 : fight.fighter1;
           upcomingFighterStats.set(fighter.id, {
             fighter,
             avgRating: form.avgRating,
             fightCount: form.fightCount,
             nextFightDate: fight.event.date,
             hype: averageHype,
+            opponentName: `${opponent.firstName} ${opponent.lastName}`,
           });
         }
         if (upcomingFighterStats.size >= 6) break;

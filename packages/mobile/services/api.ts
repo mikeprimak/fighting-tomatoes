@@ -1347,11 +1347,17 @@ class ApiService {
         fighter: any;
         avgRating: number;
         fightCount: number;
+        lastFightDate?: string;
+        opponentName?: string;
+        rating?: number;
       }>;
       upcoming: Array<{
         fighter: any;
         avgRating: number;
         fightCount: number;
+        nextFightDate?: string;
+        opponentName?: string;
+        hype?: number;
       }>;
     };
   }> {
