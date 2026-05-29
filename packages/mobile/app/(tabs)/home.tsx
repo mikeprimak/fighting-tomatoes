@@ -542,7 +542,7 @@ export default function HomeScreen() {
                 key={b.fighter.id}
                 fighter={b.fighter}
                 inlineOpponent={`vs ${b.opponentName}`}
-                subtitle={`at ${b.event.name} ${relUntilPhrase(b.nextFightDate)}`}
+                subtitle={`${b.event.name} ${relUntilPhrase(b.nextFightDate)}`}
                 onPress={() => router.push(`/fighter/${b.fighter.id}` as any)}
               />
             ))
