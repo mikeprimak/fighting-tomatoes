@@ -51,7 +51,11 @@ export function Navbar() {
               aria-hidden="true"
               className="h-8 w-8 shrink-0 object-contain"
             />
-            <span className="text-xl font-bold text-primary">GOOD FIGHTS</span>
+            <img
+              src="/good-fights-wordmark-horizontal.png"
+              alt="Good Fights"
+              className="h-7 w-auto shrink-0 object-contain"
+            />
           </Link>
 
           {/* Desktop nav links */}
