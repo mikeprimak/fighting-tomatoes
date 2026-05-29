@@ -298,7 +298,7 @@ export default function HomeScreen() {
   const upcomingEvents: Event[] = (eventsData?.events || [])
     .filter((e: Event) => e.eventStatus === 'UPCOMING')
     .sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 6);
+    .slice(0, 8);
 
   const upcomingFights = (topUpcomingFights?.data || []).slice(0, 5);
   const recentFights = (
