@@ -1,5 +1,22 @@
 # HANDOFF — BKFC events show no results (winner/method) — 2026-05-29
 
+## ✅ RESOLVED 2026-05-29 — PR #5
+
+The premise below ("0 winners / 0 methods", possible source-layer gap) was **partly wrong**:
+methods *were* populated, only **winners** were null. The data is on bkfc.com; the scraper read
+the wrong element. Winners live in `.fight-card_win-label` badges inside each fighter's headshot
+link (only the real outcome rendered `display:block`); the old code looked for non-existent
+`RedResult`/`BlueResult` `data-render` fields + a `.fight-card_list-title` color heuristic (those
+rows are stat headers, not results). Fixed in `scrapeBKFCLiveEvent.js` (PR #5
+`fix/bkfc-winner-extraction`). Backfilled **80 winners across all 8 completed BKFC events**; 0
+residual method-but-no-winner. Neither candidate fix below was needed (data was native). Full
+writeup: `docs/daily/2026-05-29.md` → "BKFC results: winners now extracted".
+
+**Remaining (separate gap):** some BKFC bouts have neither method nor winner — undercard/free
+fights the bkfc.com stats page doesn't render. Not the winner bug.
+
+---
+
 ## The problem
 
 Every **BKFC** event comes up COMPLETED in the app with **0 winners / 0 methods**
