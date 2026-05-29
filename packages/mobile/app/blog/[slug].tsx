@@ -63,7 +63,7 @@ export default function BlogPostScreen() {
   const html = post ? absolutizeUrls(post.html) : '';
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={[]}>
       <DetailScreenHeader
         title={post?.title ?? 'Article'}
         rightIcon={
